@@ -45,15 +45,15 @@ export type Settings = {
 
 export const DEFAULT_AI_BASE_URL = 'https://api.deepseek.com'
 
-// Baseline settings. Zone defaults mirror hrZones.DEFAULT_HR_ZONES so an
-// untouched settings store renders the detail page exactly as before C-14.
+// v3.2 baseline settings. Zone defaults mirror hrZones.DEFAULT_HR_ZONES so the
+// settings page and activity detail always share the same interval labels.
 export function defaultSettings(): Settings {
   return {
     units: { distance: 'km', pace: 'min/km', weight: 'kg' },
     zones: {
       maxHr: DEFAULT_HR_ZONES.maxHr,
-      lthr: 165,
-      ftp: 250,
+      lthr: 168,
+      ftp: 245,
       bounds: [
         DEFAULT_HR_ZONES.bounds[0],
         DEFAULT_HR_ZONES.bounds[1],

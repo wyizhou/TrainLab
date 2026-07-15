@@ -3,9 +3,10 @@
 .session-rail__desktop {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  width: 212px;
+  gap: var(--gap-rail);
+  width: var(--analysis-rail-width);
   flex-shrink: 0;
+  min-height: 0;
   padding: var(--pad-rail);
   background-color: var(--color-panel-nav);
   border: 1px solid var(--color-border-weak);
@@ -14,24 +15,29 @@
 
 .session-rail__mobile {
   display: flex;
+  flex-shrink: 0;
   gap: var(--space-2);
+  width: 100%;
 }
 
 .session-rail__new {
-  padding: var(--space-2) var(--space-3);
+  padding: var(--pad-rail-new);
   background-color: var(--color-accent);
   color: var(--color-on-accent);
   border: none;
   border-radius: var(--radius-md);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 700;
   cursor: pointer;
 }
 
 .session-rail__list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  flex: 1;
+  gap: var(--gap-rail-list);
+  min-height: 0;
+  overflow-y: auto;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -43,7 +49,7 @@
 .session-rail__item {
   display: flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: var(--gap-rail-item);
   padding: var(--pad-rail-item);
   border-left: 3px solid transparent;
   border-radius: var(--radius-input);
@@ -56,17 +62,16 @@
 
 .session-rail__select {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
+  flex-direction: column;
+  align-items: flex-start;
   flex: 1;
   min-width: 0;
-  padding: var(--space-2);
+  padding: 0;
   background: transparent;
   color: var(--color-text);
   border: none;
   border-radius: var(--radius-sm);
-  font-size: 14px;
+  font-size: 12.5px;
   text-align: left;
   cursor: pointer;
 }
@@ -78,8 +83,9 @@
 }
 
 .session-rail__count {
-  color: var(--color-text-muted);
-  font-size: 12px;
+  margin: var(--margin-rail-count);
+  color: var(--color-text-faint);
+  font-size: 10.5px;
 }
 
 .session-rail__action {
@@ -89,6 +95,14 @@
   border: none;
   border-radius: var(--radius-sm);
   cursor: pointer;
+}
+
+.session-rail__note {
+  margin: 0;
+  padding: var(--pad-rail-note);
+  color: var(--color-text-faint);
+  font-size: 10.5px;
+  line-height: 1.6;
 }
 
 .session-rail__action:hover {

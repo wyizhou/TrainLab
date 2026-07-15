@@ -1,9 +1,17 @@
+.connectors {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
 .connectors__head {
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--margin-connectors-header);
+}
+
+.connectors .connectors__head h1 {
+  margin: 0 0 var(--space-1);
 }
 
 .connectors__intro {
-  margin-top: var(--space-1);
   font-size: 13px;
   color: var(--color-text-muted);
 }
@@ -16,6 +24,6 @@
    the reflow is driven by the container width itself (AC-010b-1, no 横向溢出). */
 .connectors__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
   gap: var(--space-4);
 }

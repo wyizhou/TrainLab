@@ -1,3 +1,10 @@
+.metric-table {
+  overflow: auto;
+  background-color: var(--color-panel);
+  border: 1px solid var(--color-border-panel);
+  border-radius: var(--radius-panel);
+}
+
 .metric-table__scroll {
   overflow-x: auto;
 }
@@ -6,33 +13,31 @@
   width: 100%;
   min-width: 420px;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 12.5px;
 }
 
 .metric-table__caption {
-  padding: 0 0 var(--space-2);
-  text-align: left;
-  font-size: 12px;
-  color: var(--color-text-muted);
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
 }
 
 .metric-table__grid th,
 .metric-table__grid td {
-  padding: var(--space-2) var(--space-3);
-  border-bottom: 1px solid var(--color-border);
+  padding: var(--pad-health-table-row);
+  border-bottom: 1px solid var(--color-border-row);
   text-align: left;
   white-space: nowrap;
 }
 
 .metric-table__grid th {
-  color: var(--color-text-muted);
+  padding: var(--pad-health-table-head);
+  color: var(--color-text-faint);
+  border-bottom-color: var(--color-border-weak);
   font-weight: 600;
   font-size: 12px;
-}
-
-.metric-table__th--num,
-.metric-table__td--num {
-  text-align: right;
 }
 
 /* Mobile card form of the detail table (AC-009b-2). One card per row, no
@@ -40,21 +45,60 @@
 .metric-card-list {
   display: none;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--gap-health-card-list);
 }
 
 .metric-card {
-  padding: var(--space-2) var(--space-3);
-  background-color: var(--color-panel-deep);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  height: 85px;
+  padding: var(--pad-health-record-card);
+  background-color: var(--color-panel);
+  border: 1px solid var(--color-border-panel);
+  border-radius: var(--radius-panel);
+}
+
+.metric-card--rhr {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-health-card-list);
+  height: 45px;
+}
+
+.metric-card__rhr-date {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.metric-card__rhr-value {
+  color: var(--color-text-faint);
+  font-size: 12.5px;
+}
+
+.metric-card__rhr-date + .metric-card__rhr-value {
+  margin-left: auto;
+}
+
+.metric-card__rhr-value strong {
+  color: var(--color-text);
+  font-weight: 700;
 }
 
 .metric-card__head {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   font-size: 13px;
   font-weight: 600;
-  margin-bottom: var(--space-2);
+  margin: var(--margin-health-record-head);
+}
+
+.metric-card__head span {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.metric-card__head strong {
+  font-size: 15px;
 }
 
 .metric-card__metrics {
@@ -71,7 +115,7 @@
 
 .metric-card__metrics dt {
   font-size: 10px;
-  color: var(--color-text-muted);
+  color: var(--color-text-faint);
 }
 
 .metric-card__metrics dd {
@@ -82,6 +126,12 @@
 @media (width < 640px) {
   .metric-table__scroll {
     display: none;
+  }
+
+  .metric-table {
+    overflow: visible;
+    background-color: transparent;
+    border: none;
   }
 
   .metric-card-list {

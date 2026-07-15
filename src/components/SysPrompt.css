@@ -1,8 +1,8 @@
 .sys-prompt {
-  padding: var(--space-3);
-  background-color: var(--color-panel);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-settings-field);
+  padding: 0;
 }
 
 .sys-prompt__head {
@@ -12,30 +12,29 @@
 }
 
 .sys-prompt__label {
-  font-size: 13px;
-  font-weight: 600;
+  color: var(--color-text-muted);
+  font-size: 12px;
 }
 
 .sys-prompt__toggle {
-  margin-left: auto;
   padding: var(--space-1) var(--space-3);
   font-size: 11px;
   color: var(--color-accent);
   background-color: transparent;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
 
 .sys-prompt__body {
-  margin: var(--space-3) 0 0;
-  padding: var(--space-3);
-  overflow-x: auto;
+  margin: 0;
+  padding: var(--pad-analysis-input);
   font-family: var(--font-mono);
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.9;
   color: var(--color-text-muted);
   white-space: pre-wrap;
   background-color: var(--color-panel-deep);
-  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-weak);
+  border-radius: var(--radius-input);
 }

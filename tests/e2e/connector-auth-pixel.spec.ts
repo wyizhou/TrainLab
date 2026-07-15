@@ -16,7 +16,7 @@ async function computed(locator: Locator, props: string[]): Promise<Record<strin
 
 // Open the 2FA auth modal for the disconnected 国际区 card.
 async function openAuthModal(page: Page) {
-  const globalCard = page.getByTestId('connector-card').filter({ hasText: '佳明国际区' })
+  const globalCard = page.getByTestId('connector-card').filter({ hasText: '佳明 Connect 国际区' })
   await globalCard.getByTestId('connector-action').click()
   await expect(page.locator('[data-vc="modal-connector-auth"]')).toBeVisible()
 }

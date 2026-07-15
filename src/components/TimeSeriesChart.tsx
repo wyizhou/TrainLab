@@ -18,14 +18,15 @@ export type TimeSeriesChartProps = {
   xTickCount?: number
   // Formats a Y value for tick labels (e.g. pace seconds -> m'ss").
   formatValue?: (v: number) => string
+  tone?: string
 }
 
 const WIDTH = 340
-const HEIGHT = 120
-const PAD_LEFT = 40
-const PAD_RIGHT = 10
-const PAD_TOP = 12
-const PAD_BOTTOM = 22
+const HEIGHT = 112
+const PAD_LEFT = 44
+const PAD_RIGHT = 8
+const PAD_TOP = 10
+const PAD_BOTTOM = 24
 const PLOT_W = WIDTH - PAD_LEFT - PAD_RIGHT
 const PLOT_H = HEIGHT - PAD_TOP - PAD_BOTTOM
 
@@ -43,6 +44,7 @@ export function TimeSeriesChart({
   timesSec,
   xTickCount = 5,
   formatValue = (v) => `${Math.round(v)}`,
+  tone = 'accent',
 }: TimeSeriesChartProps) {
   const geometry = useMemo(() => {
     const present = values
@@ -90,11 +92,15 @@ export function TimeSeriesChart({
   ]
 
   return (
-    <div className="ts-chart" data-testid="ts-chart">
+    <div
+      className={`ts-chart ts-chart--${tone}`}
+      data-vc="timeseries-chart-card"
+      data-testid="ts-chart"
+    >
       <div className="ts-chart__head">
         <span className="ts-chart__title">{title}</span>
-        <span className="ts-chart__source num" data-testid="ts-source">
-          来源：{sourceField}
+        <span className="ts-chart__source" data-testid="ts-source">
+          Y:{unit} · X:时间 · <span className="num">{sourceField}</span>
         </span>
       </div>
       <svg

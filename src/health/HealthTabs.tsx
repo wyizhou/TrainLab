@@ -18,6 +18,7 @@ export function HealthTabs({ tabs, active, onSelect }: HealthTabsProps) {
       className="health-tabs"
       role="tablist"
       aria-label="健康记录子标签"
+      data-vc="health-tabs"
       data-testid="health-tabs"
     >
       {tabs.map((tab) => {

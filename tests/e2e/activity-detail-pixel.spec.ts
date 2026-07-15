@@ -67,22 +67,20 @@ test('AC-008c-1: metric-card visual contract + grid auto-fit ≥130px (desktop)'
   for (const px of tracks) expect(px).toBeGreaterThanOrEqual(130)
 })
 
-// ── C-8 AC-008c-2: hr-zone-bar height/radius + five-segment Z1–Z5 colours. ─────
-test('AC-008c-2: hr-zone-bar 16/4 + five-segment zone colours (desktop)', async ({ page }) => {
+// ── C-8 AC-008c-2: five row bars, each 16/4 and coloured Z1–Z5. ───────────
+test('AC-008c-2: five hr-zone bars are 16/4 with Z1–Z5 colours (desktop)', async ({ page }) => {
   await page.setViewportSize(DESKTOP)
   await page.goto(FIT_DETAIL_URL)
   await expect(page.getByTestId('page-activity-detail')).toBeVisible()
 
   const bar = page.locator('[data-vc="hr-zone-bar"]')
-  await expect(bar).toHaveCount(1)
+  await expect(bar).toHaveCount(5)
 
-  const b = await computed(bar, ['height', 'border-radius'])
+  const b = await computed(bar.first(), ['height', 'border-radius'])
   expect(b['height']).toBe('16px') // padZoneTrackH
   expect(b['border-radius']).toBe('4px') // radiusZone
 
-  // Five direct children in DOM order = Z1..Z5, each in its zone colour.
-  const segs = bar.locator('> *')
-  await expect(segs).toHaveCount(5)
+  // Five bars in DOM order = Z1..Z5, each in its zone colour.
   const expected = [
     'rgb(92, 104, 126)', // Z1 textFaint
     'rgb(66, 146, 224)', // Z2 accent
@@ -91,7 +89,7 @@ test('AC-008c-2: hr-zone-bar 16/4 + five-segment zone colours (desktop)', async 
     'rgb(224, 96, 96)', // Z5 danger
   ]
   for (let i = 0; i < expected.length; i++) {
-    const seg = await computed(segs.nth(i), ['background-color'])
+    const seg = await computed(bar.nth(i), ['background-color'])
     expect(seg['background-color']).toBe(expected[i])
   }
 })

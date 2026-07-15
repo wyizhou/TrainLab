@@ -115,18 +115,18 @@ export function ConnectorAuthModal({
           <h2 id={titleId} className="auth-modal__title">
             连接 {connectorName}
           </h2>
-          <button type="button" className="auth-modal__close" onClick={onClose} aria-label="关闭">
-            ✕
-          </button>
+          <p className="auth-modal__subtitle">使用该平台的账号授权，授权后将定时同步数据</p>
         </header>
 
-        <form className="auth-modal__form" onSubmit={handleSubmit} noValidate>
+        <form className="auth-modal__form" onSubmit={handleSubmit} noValidate data-vc="auth-form">
           <div className="auth-modal__field">
-            <label htmlFor="auth-account">账号</label>
+            <label htmlFor="auth-account">账号(邮箱 / 手机号)</label>
             <input
               id="auth-account"
               type="text"
+              aria-label="账号"
               autoComplete="username"
+              placeholder="请输入平台账号"
               value={account}
               disabled={stage === 'code'}
               onChange={(event) => setAccount(event.target.value)}
@@ -139,6 +139,7 @@ export function ConnectorAuthModal({
               id="auth-password"
               type="password"
               autoComplete="current-password"
+              placeholder="请输入平台密码"
               value={password}
               disabled={stage === 'code'}
               onChange={(event) => setPassword(event.target.value)}
@@ -148,24 +149,33 @@ export function ConnectorAuthModal({
           <label className="auth-modal__checkbox">
             <input
               type="checkbox"
+              aria-label="启用了 2FA"
               checked={twoFactor}
               // Locked once the two-stage flow has advanced to the code stage.
               disabled={stage === 'code'}
               onChange={(event) => setTwoFactor(event.target.checked)}
             />
-            启用了 2FA
+            该账号启用了两步验证(2FA)
           </label>
 
           {stage === 'code' && (
-            <div className="auth-modal__field" data-testid="auth-code-field">
-              <label htmlFor="auth-code">6 位验证码</label>
+            <div
+              className="auth-modal__field auth-modal__code-panel"
+              data-vc="auth-2fa-panel"
+              data-testid="auth-code-field"
+            >
+              <label htmlFor="auth-code">
+                已向你的设备发送验证码，请输入 2FA 验证码后再次点击登录
+              </label>
               <input
                 id="auth-code"
                 className="num"
                 type="text"
+                aria-label="6 位验证码"
                 inputMode="numeric"
                 maxLength={6}
                 autoFocus
+                placeholder="6 位验证码"
                 value={code}
                 onChange={(event) => setCode(event.target.value)}
               />
@@ -178,16 +188,21 @@ export function ConnectorAuthModal({
             </p>
           )}
 
-          <button
-            type="submit"
-            className="auth-modal__submit"
-            data-testid="auth-submit"
-            disabled={busy}
-            aria-busy={busy}
-          >
-            {busy && <span className="auth-modal__spinner" aria-hidden="true" />}
-            {busy ? '登录中…' : '登录'}
-          </button>
+          <div className="auth-modal__actions">
+            <button type="button" className="auth-modal__cancel" onClick={onClose} disabled={busy}>
+              取消
+            </button>
+            <button
+              type="submit"
+              className="auth-modal__submit"
+              data-testid="auth-submit"
+              disabled={busy}
+              aria-busy={busy}
+            >
+              {busy && <span className="auth-modal__spinner" aria-hidden="true" />}
+              {busy ? '验证中…' : stage === 'code' ? '登 录(提交验证码)' : '登 录'}
+            </button>
+          </div>
         </form>
       </div>
     </div>

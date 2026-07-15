@@ -16,12 +16,39 @@ body {
   color: var(--color-text);
   font-family: var(--font-sans);
   font-size: 14px;
-  line-height: 1.5;
+  line-height: normal;
 
   /* G-nums: all numeric display uses tabular figures globally. */
   font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizelegibility;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 1px solid var(--color-accent);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-border-panel);
+  border-radius: var(--radius-sm);
+}
+
+::-webkit-scrollbar-track {
+  background-color: transparent;
 }
 
 /* Numeric columns opt into the monospace stack (G-nums). */

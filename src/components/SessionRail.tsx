@@ -57,7 +57,11 @@ export function SessionRail({
   if (!isRail) {
     // Mobile/tablet: no aside, just a session dropdown + new button.
     return (
-      <div className="session-rail__mobile" data-testid="session-rail-mobile">
+      <div
+        className="session-rail__mobile"
+        data-vc="analysis-session-select"
+        data-testid="session-rail-mobile"
+      >
         <select
           className="session-rail__select-menu"
           aria-label="选择会话"
@@ -66,7 +70,7 @@ export function SessionRail({
         >
           {sessions.map((session) => (
             <option key={session.id} value={session.id}>
-              {session.name}（{session.messageCount}）
+              {session.name}
             </option>
           ))}
         </select>
@@ -91,7 +95,7 @@ export function SessionRail({
       <button type="button" className="session-rail__new" aria-label="新建会话" onClick={onCreate}>
         ＋ 新建会话
       </button>
-      <ul className="session-rail__list">
+      <ul className="session-rail__list" data-vc="session-list">
         {sessions.map((session) => {
           const active = session.id === activeId
           const itemClass = active
@@ -123,7 +127,7 @@ export function SessionRail({
                     onDoubleClick={() => startEdit(session)}
                   >
                     <span className="session-rail__name">{session.name}</span>
-                    <span className="session-rail__count num">{session.messageCount}</span>
+                    <span className="session-rail__count num">{session.messageCount} 条消息</span>
                   </button>
                   <button
                     type="button"
@@ -139,7 +143,7 @@ export function SessionRail({
                     aria-label={`删除 ${session.name}`}
                     onClick={() => onDelete(session.id)}
                   >
-                    🗑
+                    ✕
                   </button>
                 </>
               )}
@@ -147,6 +151,9 @@ export function SessionRail({
           )
         })}
       </ul>
+      <p className="session-rail__note">
+        衍生指标(TSS / CTL / ATL / TSB…)仅在 AI 回复中产出,系统不预计算。
+      </p>
     </aside>
   )
 }

@@ -19,9 +19,10 @@ type Action =
   | { type: 'select'; id: string }
   | { type: 'rename'; id: string; name: string }
   | { type: 'delete'; id: string }
+  | { type: 'set-message-count'; id: string; count: number }
 
 function makeSession(n: number): Session {
-  return { id: `s${n}`, name: `会话 ${n}`, messageCount: 0 }
+  return { id: `s${n}`, name: `会话 ${n}`, messageCount: 1 }
 }
 
 function reducer(state: State, action: Action): State {
@@ -54,14 +55,26 @@ function reducer(state: State, action: Action): State {
       const activeId = state.activeId === action.id ? remaining[0].id : state.activeId
       return { ...state, sessions: remaining, activeId }
     }
+    case 'set-message-count':
+      return {
+        ...state,
+        sessions: state.sessions.map((session) =>
+          session.id === action.id
+            ? { ...session, messageCount: Math.max(0, action.count) }
+            : session,
+        ),
+      }
     default:
       return state
   }
 }
 
 function init(): State {
-  const session = makeSession(1)
-  return { sessions: [session], activeId: session.id, counter: 1 }
+  const sessions: Session[] = [
+    { id: 's1', name: '状态评估', messageCount: 1 },
+    { id: 's2', name: '马拉松备赛计划', messageCount: 1 },
+  ]
+  return { sessions, activeId: sessions[0].id, counter: 2 }
 }
 
 export function useSessions() {
@@ -73,5 +86,7 @@ export function useSessions() {
     selectSession: (id: string) => dispatch({ type: 'select', id }),
     renameSession: (id: string, name: string) => dispatch({ type: 'rename', id, name }),
     deleteSession: (id: string) => dispatch({ type: 'delete', id }),
+    setMessageCount: (id: string, count: number) =>
+      dispatch({ type: 'set-message-count', id, count }),
   }
 }

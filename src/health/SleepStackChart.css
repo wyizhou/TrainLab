@@ -1,78 +1,32 @@
 .sleep-stack {
-  padding: var(--space-3);
-  background-color: var(--color-panel-deep);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
+  padding: var(--pad-health-card);
+  background-color: var(--color-panel);
+  border: 1px solid var(--color-border-panel);
+  border-radius: var(--radius-panel);
+}
+
+.sleep-stack__head {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-detail-header);
+  margin: var(--margin-health-chart-head);
 }
 
 .sleep-stack__title {
-  margin: 0 0 var(--space-2);
+  margin: 0;
   font-size: 13px;
   font-weight: 600;
-}
-
-.sleep-stack__svg {
-  display: block;
-  max-width: 100%;
-}
-
-/* Pixel-contract 代表柱 (C-9 AC-009c-1): 单根堆叠柱，三段 data-vc 锚点。段高由
-   flex-grow 按分期分钟分配。deep 底段 accentDeep+底圆角、light 中段 accent+无圆角、
-   rem 顶段 sleepRem+顶圆角. */
-.sleep-stack__vc {
-  display: flex;
-  flex-direction: column;
-  width: 14px;
-  height: 60px;
-  margin: 0 0 var(--space-2);
-}
-
-.sleep-stack__vc-seg {
-  display: block;
-  width: 100%;
-}
-
-.sleep-stack__vc-seg--deep {
-  background-color: var(--color-accent-deep);
-  border-radius: var(--radius-sleep-deep);
-}
-
-.sleep-stack__vc-seg--light {
-  background-color: var(--color-accent);
-  border-radius: 0;
-}
-
-.sleep-stack__vc-seg--rem {
-  background-color: var(--color-sleep-rem);
-  border-radius: var(--radius-sleep-rem);
-}
-
-.sleep-stack__tick {
-  fill: var(--color-text-muted);
-  font-family: var(--font-mono);
-  font-size: 9px;
-}
-
-.sleep-stack__seg--deep {
-  fill: var(--color-type-run);
-}
-
-.sleep-stack__seg--light {
-  fill: var(--color-type-swim);
-}
-
-.sleep-stack__seg--rem {
-  fill: var(--color-type-trail);
 }
 
 .sleep-stack__legend {
   display: flex;
   gap: var(--space-4);
-  margin: var(--space-2) 0 0;
+  margin: 0 0 0 auto;
   padding: 0;
-  list-style: none;
-  font-size: 11px;
   color: var(--color-text-muted);
+  font-size: 11px;
+  list-style: none;
 }
 
 .sleep-stack__key {
@@ -82,25 +36,71 @@
 }
 
 .sleep-stack__swatch {
-  width: 10px;
-  height: 10px;
-  border-radius: var(--radius-sm);
+  width: 9px;
+  height: 9px;
+  border-radius: var(--radius-health-swatch);
 }
 
-.sleep-stack__swatch--deep {
-  background-color: var(--color-type-run);
+.sleep-stack__swatch--deep,
+.sleep-stack__seg--deep {
+  background-color: var(--color-accent-deep);
 }
 
-.sleep-stack__swatch--light {
-  background-color: var(--color-type-swim);
+.sleep-stack__swatch--light,
+.sleep-stack__seg--light {
+  background-color: var(--color-accent);
 }
 
-.sleep-stack__swatch--rem {
-  background-color: var(--color-type-trail);
+.sleep-stack__swatch--rem,
+.sleep-stack__seg--rem {
+  background-color: var(--color-sleep-rem);
+}
+
+.sleep-stack__bars {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+  height: 150px;
+}
+
+.sleep-stack__bar-slot {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: flex-end;
+  height: 100%;
+  min-width: 0;
+}
+
+.sleep-stack__bar {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.sleep-stack__seg {
+  display: block;
+  flex: 0 0 auto;
+  width: 100%;
+}
+
+.sleep-stack__seg--deep {
+  border-radius: var(--radius-sleep-deep);
+}
+
+.sleep-stack__seg--rem {
+  border-radius: var(--radius-sleep-rem);
+}
+
+.sleep-stack__date {
+  margin: var(--margin-sleep-date);
+  color: var(--color-text-faint);
+  font-size: 10px;
+  text-align: center;
 }
 
 .sleep-stack__empty {
   margin: 0;
-  font-size: 12px;
   color: var(--color-text-muted);
+  font-size: 12px;
 }

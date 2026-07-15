@@ -11,12 +11,15 @@
   --color-accent: #4292e0;
   --color-on-accent: #06101e;
   --color-text: #e6ebf4;
+  --color-text-soft: #b8c2d4;
 
   /* textMuted = v3.1 表 (a) 实测 rgb(138,148,168)（次要文字 / 常态胶囊·导航项文字 /
      status-pill-disconnected）。design_rev 4 权威源迁移：原 #8a97a8 与三表不符，
      校正为 #8a94a8（零 AC 值变更——无已 verified AC 断言旧值）。 */
   --color-text-muted: #8a94a8;
   --color-border: #1e2a3c;
+  --color-upload-deep: #0e1524;
+  --color-hover-row: #16202f;
 
   /* 语义色 success/warn/danger — design_rev 4「G-token 权威源与 token 表」固化：
      v2.0 的 oklch() 渲染值 ≠ 原型实测 rgb，固化为原型实测值（与既有 AC 目标值一致，
@@ -32,7 +35,13 @@
   --color-success-12: rgb(63 191 143 / 0.12);
   --color-success-35: rgb(63 191 143 / 0.35);
   --color-danger-10: rgb(224 96 96 / 0.1);
+  --color-danger-07: rgb(224 96 96 / 0.07);
+  --color-danger-35: rgb(224 96 96 / 0.35);
   --color-danger-40: rgb(224 96 96 / 0.4);
+  --color-success-10: rgb(63 191 143 / 0.1);
+  --color-success-30: rgb(63 191 143 / 0.3);
+  --color-warn-08: rgb(224 160 64 / 0.08);
+  --color-warn-40: rgb(224 160 64 / 0.4);
   --color-text-muted-10: rgb(138 148 168 / 0.1);
 
   /* textFaint = v3.1 表 (a) rgb(92,104,126)（hr-zone-bar Z1 分段色；C-8 AC-008c-2）. */
@@ -47,6 +56,8 @@
 
   /* accent@0.18 = scope-chip-selected 底 (v3.1 表 (a) 派生半透明; C-4 AC-004c-1). */
   --color-accent-18: rgb(66 146 224 / 0.18);
+  --color-accent-07: rgb(66 146 224 / 0.07);
+  --color-accent-30: rgb(66 146 224 / 0.3);
 
   /* accentDeep = v3.1 表 (a) rgb(46,92,158)（chat-bubble-user 底 / sleep-chart-bar-deep;
      C-6 AC-006c-2）——比 accent 更沉的实心蓝，非 accent 半透明派生。 */
@@ -60,6 +71,7 @@
      modal 面板 / scope-chip 常态边框; C-4 AC-004c-1). */
   --color-border-input: #2a3a55;
   --color-border-weak: #1c2739;
+  --color-border-row: #151e2e;
   --color-border-toast: #3a4e70;
   --color-toast-bg: #1a2436;
 
@@ -105,11 +117,61 @@
   --pad-sync-chip: 6px 14px;
   --pad-btn-primary: 11px 22px;
 
+  /* Global chrome and login geometry from the current visual contract. */
+  --gap-header: 14px;
+  --pad-header: 0 20px;
+  --gap-brand: 9px;
+  --gap-nav: 2px;
+  --margin-nav: 0 0 0 10px;
+  --size-sync-dot: 7px;
+  --gap-user-actions: 10px;
+  --size-avatar: 30px;
+  --pad-logout: 6px 12px;
+  --radius-logout: 7px;
+  --radius-activity-picker: 9px;
+  --pad-header-compact: 0 12px;
+  --login-background: radial-gradient(ellipse 900px 600px at 50% -10%, #13203a 0%, #0a0f18 60%);
+  --login-column-width: 400px;
+  --login-brand-margin: 0 0 28px;
+  --login-brand-gap: 10px;
+  --login-mark-size: 34px;
+  --login-card-padding: 28px;
+  --login-title-margin: 0 0 18px;
+  --login-field-gap: 6px;
+  --login-field-margin: 0 0 14px;
+  --login-input-padding: 11px 12px;
+  --login-captcha-padding: 9px 16px;
+  --login-submit-margin: 6px 0 0;
+  --login-demo-margin: 14px 0 0;
+
   /* Analysis · session rail pixel-contract (C-3 / AC-003c-*; v3.1 表 (c)). */
   --pad-rail: 12px 10px;
+  --gap-rail: 10px;
+  --gap-rail-list: 2px;
+  --gap-rail-item: 6px;
   --pad-rail-item: 9px 10px;
+  --pad-rail-new: 9px;
+  --pad-rail-note: 0 4px;
+  --margin-rail-count: 2px 0 0;
   --pad-analysis-input: 12px 14px;
   --gap-analysis: 18px;
+  --margin-analysis-header: 0 0 14px;
+  --margin-analysis-subtitle: 4px 0 0;
+  --gap-analysis-messages: 14px;
+  --pad-analysis-messages: 4px 2px 16px;
+  --gap-analysis-typing: 5px;
+  --pad-analysis-typing: 11px 14px;
+  --margin-analysis-session-select: 0 0 10px;
+  --height-analysis-welcome-mobile: 119.75px;
+  --margin-analysis-composer: 0 0 8px;
+  --margin-analysis-controls: 0 0 10px;
+  --pad-analysis-textarea: 10px 12px;
+  --pad-chart-card-header: 11px 14px;
+  --pad-chart-card-expanded: 4px 14px 14px;
+  --margin-analysis-summary: 8px 0 0;
+  --analysis-rail-width: 212px;
+  --gap-activity-picker: 10px;
+  --pad-activity-picker-row: 8px 12px;
 
   /* Analysis · scope-chip pixel-contract (C-4 / AC-004c-1; v3.1 表 (c) padChip 5 13). */
   --pad-chip: 5px 13px;
@@ -120,16 +182,92 @@
   --pad-chip-type: 6px 14px;
   --pad-card-list-item: 14px 16px;
   --gap-card-mobile: 10px;
+  --margin-page-header: 0 0 18px;
+  --margin-filter-row: 0 0 14px;
+  --pad-table-header: 12px 16px;
+  --pad-table-row: 11px 16px;
+  --pad-fit-button: 5px 10px;
+  --pad-batch-download: 9px 18px;
+  --pad-fit-button-mobile: 6px 10px;
+  --margin-card-metric-value: 2px 0 0;
+  --pad-pagination-desktop: 12px 16px;
+  --pad-pagination-mobile: 4px 2px;
+  --gap-pagination: 12px;
+  --gap-pagination-mobile: 10px;
+  --height-pagination-mobile: 37px;
+  --gap-pagination-size: 6px;
+  --pad-pagination-select: 5px 8px;
 
   /* 运动详情 pixel-contract (C-8 / AC-008c-1; v3.1 表 (c) padMetric 14): metric-card 内边距. */
   --pad-metric: 14px;
+  --gap-detail-header: 14px;
+  --margin-detail-header: 0 0 18px;
+  --margin-detail-meta: 2px 0 0;
+  --pad-detail-back: 7px 14px;
+  --pad-detail-download: 9px 18px;
+  --margin-detail-hero: 0 0 16px;
+  --margin-hero-value: 6px 0 0;
+  --pad-detail-toggle: 7px 16px;
+  --margin-detail-toggle: 0 0 14px;
+  --margin-detail-content: 0 0 16px;
+  --pad-timeseries-card: 16px 18px;
+  --margin-timeseries-head: 0 0 8px;
+  --pad-detail-section: 18px;
+  --margin-detail-section-title: 0 0 14px;
+  --gap-detail-metric-grid: 14px 12px;
+  --margin-detail-value: 4px 0 0;
+  --margin-laps-title: 2px 0 10px;
+  --pad-laps-row: 9px 18px;
+  --pad-record-row: 7px 18px;
+  --pad-lap-card: 13px 16px;
+  --margin-lap-head: 0 0 8px;
+  --margin-zones-head: 0 0 12px;
+  --margin-zones-head-desktop: 24px;
+  --pad-laps-title: 16px 18px 4px;
+  --pad-laps-inner-bottom: 6px;
+  --pad-laps-header: 10px 18px;
+  --pad-tablet-scrollbar: 11px;
+  --gap-hr-zone: 9px;
 
   /* 连接器卡 pixel-contract (C-10 / AC-010c-1; v3.1 表 (c) padConnectorCard 20): off-scale
      具名 token (裁定 (a)), connector-card 内边距. */
   --pad-connector-card: 20px;
+  --gap-connector-card: 14px;
+  --size-connector-icon: 38px;
+  --margin-connector-description: 2px 0 0;
+  --pad-connector-error: 10px 12px;
+  --gap-connector-meta: 20px;
+  --margin-connector-value: 3px 0 0;
+  --gap-connector-controls: 10px;
+  --pad-connector-select: 7px 10px;
+  --pad-connector-action: 8px 18px;
+  --margin-connectors-intro: 0 0 20px;
+  --margin-connectors-header: 20px;
+  --margin-upload-title: 20px 0 12px;
+  --pad-upload-dropzone: 36px 24px;
+  --margin-upload-icon: 0 0 8px;
+  --margin-upload-sub: 8px 0 0;
+  --pad-upload-list-title: 13px 18px;
+  --pad-upload-row: 10px 18px;
+  --pad-upload-pill: 3px 10px;
 
   /* 健康子标签 pixel-contract (C-9 / AC-009c-2; v3.1 表 (c) padTab 7 18): health-tab 内边距. */
   --pad-tab: 7px 18px;
+  --pad-health-card: 20px;
+  --margin-health-chart-head: 0 0 16px;
+  --radius-health-swatch: 2px;
+  --margin-sleep-date: 6px 0 0;
+  --pad-health-table-head: 12px 18px;
+  --pad-health-table-row: 10px 18px;
+  --pad-health-record-card: 13px 16px;
+  --margin-health-record-head: 0 0 8px;
+  --gap-health-card-list: 10px;
+  --gap-habit-toolbar: 14px;
+  --pad-habit-date: 9px 12px;
+  --pad-habit-count: 6px 14px;
+  --pad-habit-group: 18px 20px;
+  --margin-habit-title: 0 0 14px;
+  --pad-habit-chip: 8px 16px;
 
   /* Analysis · 对话气泡 pixel-contract (C-6 / AC-006c-1/2; v3.1 表 (c) off-scale 具名 token,
      裁定 (a)): padBubbleAI 13 16 / padBubbleUser 12 14. */
@@ -139,14 +277,40 @@
   /* 设置分组 pixel-contract (C-14 / AC-014c-1; v3.1 表 (c) padGroup 22, off-scale 具名
      token, 裁定 (a)): settings-group 内边距. */
   --pad-group: 22px;
+  --pad-settings-input: 10px 12px;
+  --margin-settings-header: 18px;
+  --gap-settings-field: 6px;
+  --gap-settings-grid: 14px;
+  --pad-settings-chip: 7px 16px;
+  --pad-settings-save: 10px 22px;
+  --pad-settings-test: 9px 20px;
+  --pad-modal-mobile: 24px 20px;
+  --gap-auth-form: 13px;
+  --gap-auth-field: 6px;
+  --size-auth-checkbox: 14px;
+  --margin-modal-title: 0 0 4px;
+  --margin-modal-subtitle: 0 0 18px;
+  --margin-modal-actions: 4px 0 0;
+  --gap-modal-actions: 10px;
+  --gap-conflict-list: 14px;
+  --margin-conflict-list: 0 0 18px;
+  --margin-conflict-row-head: 0 0 10px;
+  --pad-auth-input: 10px 12px;
+  --pad-auth-button: 10px;
+  --pad-conflict-row: 14px 16px;
+  --pad-conflict-choice: 9px 14px;
+  --min-width-conflict-choice: 180px;
+  --margin-conflict-choice-source: 0 0 0 6px;
 
   /* Typography */
-  --font-sans: system-ui, -apple-system, 'Segoe UI', roboto, 'Helvetica Neue', arial, sans-serif;
+  --font-sans: 'Helvetica Neue', helvetica, 'PingFang SC', 'Microsoft YaHei', sans-serif;
   --font-mono: ui-monospace, sfmono-regular, 'SF Mono', menlo, consolas, monospace;
 
   /* Layout */
   --nav-height: 56px;
   --bottom-tab-height: 60px;
+  --gap-bottom-nav: 3px;
+  --z-bottom-nav: 40;
 
   /* Main content padding, graded per G-resp breakpoint (contract C-1 / AC-001b-4).
      Mobile reserves bottom room (76px) so content clears the fixed bottom tab bar. */

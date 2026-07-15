@@ -10,7 +10,7 @@ test('connects a Garmin account through the 2FA two-stage flow', async ({ page }
   await page.goto('/connectors')
 
   // Open the auth modal for the disconnected 国际区 card.
-  const globalCard = page.getByTestId('connector-card').filter({ hasText: '佳明国际区' })
+  const globalCard = page.getByTestId('connector-card').filter({ hasText: '佳明 Connect 国际区' })
   await expect(globalCard.getByTestId('connector-pill')).toHaveText('未连接')
   await globalCard.getByTestId('connector-action').click()
 
@@ -57,7 +57,7 @@ test('auth modal: fullscreen on mobile, centered 390px on desktop', async ({ pag
   await page.goto('/connectors')
 
   // Precondition: open the 2FA auth modal (国际区 starts disconnected).
-  const globalCard = page.getByTestId('connector-card').filter({ hasText: '佳明国际区' })
+  const globalCard = page.getByTestId('connector-card').filter({ hasText: '佳明 Connect 国际区' })
   await globalCard.getByTestId('connector-action').click()
   await expect(page.getByTestId('auth-modal')).toBeVisible()
 

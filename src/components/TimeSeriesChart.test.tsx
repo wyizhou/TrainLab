@@ -13,7 +13,7 @@ describe('TimeSeriesChart', () => {
       />,
     )
     expect(screen.getByTestId('ts-svg')).toBeInTheDocument()
-    expect(screen.getByTestId('ts-source')).toHaveTextContent('来源：heart_rate')
+    expect(screen.getByTestId('ts-source')).toHaveTextContent('Y:bpm · X:时间 · heart_rate')
   })
 
   it('draws three Y ticks (max / mid / min) via the formatter', () => {

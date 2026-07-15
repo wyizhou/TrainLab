@@ -1,211 +1,283 @@
 .activity-detail {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
+  max-width: 1180px;
 }
 
-/* Header ---------------------------------------------------------------- */
 .activity-detail__head {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.activity-detail__title {
-  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--gap-detail-header);
+  margin: var(--margin-detail-header);
 }
 
-.activity-detail__title h1 {
-  margin: 0;
-  font-size: 20px;
+.activity-detail__identity {
+  min-width: 0;
+}
+
+.activity-detail__name {
+  font-size: 18px;
+  font-weight: 700;
 }
 
 .activity-detail__meta {
-  margin: 0;
-  font-size: 12px;
+  margin: var(--margin-detail-meta);
   color: var(--color-text-muted);
+  font-size: 12px;
 }
 
 .activity-detail__download {
-  align-self: flex-start;
-  margin-top: var(--space-1);
-  padding: var(--space-2) var(--space-4);
-  font-size: 13px;
+  margin-left: auto;
+  padding: var(--pad-detail-download);
   color: var(--color-on-accent);
   background-color: var(--color-accent);
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-input);
+  font-size: 13px;
+  font-weight: 700;
   cursor: pointer;
 }
 
-.activity-detail__section-title {
-  margin: 0 0 var(--space-3);
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.activity-detail__empty {
-  margin: 0;
-  font-size: 12px;
-  color: var(--color-text-muted);
-}
-
-/* Metric sections ------------------------------------------------------- */
-
-/* metric-card grid (C-8 §A4 / AC-008c-1): repeat(auto-fit,minmax(130px,1fr)). */
-.activity-detail__metrics {
+.activity-detail__hero {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: var(--space-3);
+  margin: var(--margin-detail-hero);
 }
 
-/* metric-card pixel-contract (C-8 / AC-008c-1): panel bg + borderPanel + radiusCardSm
-   10 + padMetric 14. data-vc mirrored onto this root in ActivityDetail.tsx. */
-.metric-section {
+.hero-metric {
   padding: var(--pad-metric);
   background-color: var(--color-panel);
   border: 1px solid var(--color-border-panel);
   border-radius: var(--radius-md);
 }
 
-.metric-section__title {
-  margin: 0 0 var(--space-2);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-text-muted);
+.hero-metric__label {
+  color: var(--color-text-faint);
+  font-size: 11px;
   letter-spacing: 0.5px;
 }
 
-.metric-section__grid {
-  margin: 0;
+.hero-metric__value {
+  margin: var(--margin-hero-value);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.activity-detail__mode {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  align-items: center;
   gap: var(--space-2);
+  margin: var(--margin-detail-toggle);
+}
+
+.mode-btn {
+  padding: var(--pad-detail-toggle);
+  color: var(--color-text-muted);
+  background-color: var(--color-panel);
+  border: 1px solid var(--color-border-panel);
+  border-radius: var(--radius-input);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.mode-btn--active {
+  color: var(--color-accent-text);
+  background-color: var(--color-accent-16);
+  border-color: var(--color-accent);
+}
+
+.activity-detail__mode-hint {
+  color: var(--color-text-faint);
+  font-size: 11px;
+}
+
+.activity-detail__empty {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.activity-detail__charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr));
+  gap: var(--space-4);
+  margin: var(--margin-detail-content);
+}
+
+.activity-detail__zones {
+  min-height: 204px;
+  padding: var(--pad-timeseries-card);
+  background-color: var(--color-panel);
+  border: 1px solid var(--color-border-panel);
+  border-radius: var(--radius-panel);
+}
+
+.activity-detail__zones-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: var(--margin-zones-head);
+}
+
+.activity-detail__zones-head h2 {
+  margin: 0;
+  font-size: 13px;
+}
+
+.activity-detail__zones-head span {
+  color: var(--color-text-faint);
+  font-size: 11px;
+}
+
+.activity-detail__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr));
+  gap: var(--space-4);
+  align-items: start;
+  margin: var(--margin-detail-content);
+}
+
+.metric-section {
+  padding: var(--pad-detail-section);
+  background-color: var(--color-panel);
+  border: 1px solid var(--color-border-panel);
+  border-radius: var(--radius-panel);
+}
+
+.metric-section__title {
+  margin: var(--margin-detail-section-title);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.metric-section__en {
+  color: var(--color-text-faint);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.metric-section__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--gap-detail-metric-grid);
+  margin: 0;
 }
 
 .metric-section__row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-3);
+  min-width: 0;
 }
 
 .metric-section__label {
   display: flex;
   flex-direction: column;
-  font-size: 13px;
+  color: var(--color-text-faint);
+  font-size: 11px;
 }
 
 .metric-section__field {
-  font-size: 10px;
-  color: var(--color-text-muted);
-}
-
-.metric-section__value {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 600;
+  overflow: hidden;
+  color: var(--color-text-faint);
+  font-size: 9px;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* Section panels -------------------------------------------------------- */
-.activity-detail__zones,
-.activity-detail__series,
+.metric-section__value {
+  margin: var(--margin-detail-value);
+  font-size: 15px;
+  font-weight: 600;
+}
+
 .activity-detail__laps {
-  padding: var(--space-4);
-  background-color: var(--color-panel);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  min-width: 0;
 }
 
-.activity-detail__series-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  margin-bottom: var(--space-3);
+.activity-detail__section-title {
+  display: none;
+  margin: var(--margin-laps-title);
+  font-size: 13px;
+  font-weight: 600;
 }
 
-.activity-detail__mode {
-  display: flex;
-  gap: var(--space-1);
-}
-
-.mode-btn {
-  padding: var(--space-1) var(--space-3);
-  font-size: 12px;
-  color: var(--color-text-muted);
-  background-color: transparent;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-pill);
-  cursor: pointer;
-}
-
-.mode-btn--active {
-  color: var(--color-on-accent);
-  background-color: var(--color-accent);
-  border-color: var(--color-accent);
-}
-
-.activity-detail__charts {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: var(--space-3);
-}
-
-/* Laps ------------------------------------------------------------------ */
 .laps-table {
+  height: 185px;
   overflow-x: auto;
+  background-color: var(--color-panel);
+  border: 1px solid var(--color-border-panel);
+  border-radius: var(--radius-panel);
+}
+
+.laps-table__title {
+  margin: 0;
+  padding: var(--pad-laps-title);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.laps-table__inner {
+  min-width: 640px;
+  padding-bottom: var(--pad-laps-inner-bottom);
 }
 
 .laps-table__row {
   display: grid;
-  grid-template-columns: 40px 88px 88px 88px 96px 88px;
-  gap: 0 var(--space-2);
+  grid-template-columns: 60px repeat(6, 1fr);
   align-items: center;
-  padding: var(--space-2) var(--space-2);
-  border-bottom: 1px solid var(--color-border);
-  font-size: 12px;
+  gap: 0 var(--space-2);
+  min-width: 640px;
+  padding: var(--pad-laps-row);
+  border-bottom: 1px solid var(--color-border-row);
+  font-size: 12.5px;
 }
 
 .laps-table__row--head {
+  padding: var(--pad-laps-header);
+  color: var(--color-text-faint);
+  border-bottom-color: var(--color-border-weak);
   font-size: 11px;
-  color: var(--color-text-muted);
-  letter-spacing: 0.5px;
 }
 
 .laps-table__row:last-child {
   border-bottom: none;
 }
 
-/* Mobile card form of the laps table (AC-008b-1): one card per lap, no grid to
-   overflow. Hidden on desktop/tablet, where the grid table above is shown. */
 .laps-card-list {
   display: none;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--gap-card-mobile);
 }
 
 .lap-card {
-  padding: var(--space-2) var(--space-3);
-  background-color: var(--color-panel-deep);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  height: 83px;
+  padding: var(--pad-lap-card);
+  background-color: var(--color-panel);
+  border: 1px solid var(--color-border-panel);
+  border-radius: var(--radius-panel);
 }
 
 .lap-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin: var(--margin-lap-head);
   font-size: 13px;
   font-weight: 600;
-  margin-bottom: var(--space-2);
+}
+
+.lap-card__summary {
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 400;
 }
 
 .lap-card__metrics {
-  margin: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: var(--space-2);
+  margin: 0;
 }
 
 .lap-card__metrics div {
@@ -214,20 +286,22 @@
 }
 
 .lap-card__metrics dt {
+  color: var(--color-text-faint);
   font-size: 10px;
-  color: var(--color-text-muted);
 }
 
 .lap-card__metrics dd {
-  margin: 0;
-  font-size: 13px;
+  margin: var(--margin-card-metric-value);
+  font-size: 12px;
 }
 
-/* Below 980px the wide per-second and laps grids give way to card lists; the
-   per-second section keeps horizontal scroll as a belt-and-braces guard. */
-@media (width < 980px) {
-  .activity-detail__series {
-    overflow-x: auto;
+@media (width < 640px) {
+  .activity-detail__head {
+    height: 142px;
+  }
+
+  .activity-detail__section-title {
+    display: block;
   }
 
   .laps-table {
@@ -236,5 +310,21 @@
 
   .laps-card-list {
     display: flex;
+  }
+}
+
+@media (width >= 980px) {
+  .activity-detail__zones-head {
+    margin-top: var(--margin-zones-head-desktop);
+  }
+}
+
+@media (width < 640px) {
+  .activity-detail__download {
+    margin-left: auto;
+  }
+
+  .activity-detail__hero {
+    grid-template-columns: repeat(2, 1fr);
   }
 }

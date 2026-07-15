@@ -6,7 +6,9 @@ import type { Connector } from './connectorData'
 
 const base: Connector = {
   id: 'garmin-cn',
-  name: '佳明中国区',
+  abbr: 'GC',
+  name: '佳明 Connect 中国区',
+  description: 'connect.garmin.cn',
   status: 'connected',
   lastSyncAt: '2026-07-11 08:00',
   syncedCount: 1200,
@@ -79,8 +81,8 @@ describe('ConnectorCard four states', () => {
 
   it('shows the four auto-sync interval options and the selected one', () => {
     render(<ConnectorCard connector={make({ autoSyncInterval: 360 })} />)
-    const select = screen.getByLabelText('自动同步间隔') as HTMLSelectElement
-    for (const label of ['30 分钟', '1 小时', '6 小时', '仅手动']) {
+    const select = screen.getByLabelText('自动同步') as HTMLSelectElement
+    for (const label of ['每 30 分钟', '每 1 小时', '每 6 小时', '仅手动']) {
       expect(screen.getByRole('option', { name: label })).toBeInTheDocument()
     }
     expect(select.value).toBe('360')
@@ -114,7 +116,7 @@ describe('ConnectorCard four states', () => {
     await user.click(screen.getByTestId('connector-action'))
     expect(onConnect).toHaveBeenCalledWith('garmin-cn')
 
-    await user.selectOptions(screen.getByLabelText('自动同步间隔'), '仅手动')
+    await user.selectOptions(screen.getByLabelText('自动同步'), '仅手动')
     expect(onIntervalChange).toHaveBeenCalledWith('garmin-cn', 'manual')
   })
 })

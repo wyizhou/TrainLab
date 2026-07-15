@@ -118,7 +118,7 @@ test('AC-001c-4: toast visual contract (desktop)', async ({ page }) => {
   // Trigger one sync success (中国区 starts 同步失败 → 重试同步) and wait for the toast.
   await page
     .getByTestId('connector-card')
-    .filter({ hasText: '佳明中国区' })
+    .filter({ hasText: '佳明 Connect 中国区' })
     .getByTestId('connector-action')
     .click()
   const toast = page.locator('[data-vc="toast"]')

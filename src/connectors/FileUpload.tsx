@@ -13,6 +13,7 @@ type ParsedEntry = {
   fileName: string
   sizeLabel: string
   timeLabel: string
+  demo?: boolean
 }
 
 type RejectedEntry = {
@@ -41,7 +42,15 @@ function formatFileTime(ms: number): string {
 }
 
 export function FileUpload() {
-  const [parsed, setParsed] = useState<ParsedEntry[]>([])
+  const [parsed, setParsed] = useState<ParsedEntry[]>([
+    {
+      key: -1,
+      fileName: '2026-07-06-evening-ride.fit',
+      sizeLabel: '1.2 MB',
+      timeLabel: '07-06 21:03',
+      demo: true,
+    },
+  ])
   const [rejected, setRejected] = useState<RejectedEntry[]>([])
   const keyRef = useRef(0)
 
@@ -84,25 +93,57 @@ export function FileUpload() {
 
   return (
     <section className="file-upload" data-testid="file-upload">
-      <div className="file-upload__head">
-        <h2 className="file-upload__title">文件上传</h2>
-        <p className="file-upload__hint">
-          支持 FIT / TCX / GPX，可多选，单文件 ≤ 50MB · 解析入库为前端模拟
-        </p>
-      </div>
+      <h2 className="file-upload__title">文件上传</h2>
 
-      <label className="file-upload__drop">
-        <input
-          type="file"
-          className="file-upload__input"
-          multiple
-          accept={ALLOWED_EXTENSIONS.join(',')}
-          onChange={onChange}
-          data-testid="file-upload-input"
-        />
-        <span className="file-upload__cue">点击选择文件</span>
-        <span className="file-upload__sub">FIT · TCX · GPX，可多选</span>
-      </label>
+      <div className="file-upload__grid" data-vc="upload-grid">
+        <label className="file-upload__drop" data-vc="upload-dropzone">
+          <input
+            type="file"
+            className="file-upload__input"
+            multiple
+            accept={ALLOWED_EXTENSIONS.join(',')}
+            onChange={onChange}
+            data-testid="file-upload-input"
+          />
+          <span className="file-upload__icon" aria-hidden="true">
+            ⇪
+          </span>
+          <span className="file-upload__cue">点击选择或拖入文件(可多选)</span>
+          <span className="file-upload__sub">
+            支持 FIT / TCX / GPX,单个文件 ≤ 50 MB ·
+            解析后入库到运动记录,来源标记为&quot;FIT上传&quot;
+          </span>
+        </label>
+
+        <div
+          className="file-upload__parsed"
+          data-vc="upload-file-list"
+          data-testid="file-upload-parsed"
+        >
+          <div className="file-upload__parsed-title">已解析文件</div>
+          {parsed.map((e) => (
+            <div
+              key={e.key}
+              className="file-upload__row"
+              data-vc="upload-file-row"
+              data-testid={e.demo ? 'parsed-file-demo' : 'parsed-file'}
+            >
+              <span className="file-upload__check" aria-hidden="true">
+                ✓
+              </span>
+              <span className="file-upload__name">{e.fileName}</span>
+              <span className="file-upload__meta">{e.sizeLabel}</span>
+              <span className="file-upload__meta">{e.timeLabel}</span>
+              <span
+                className="file-upload__stored"
+                data-testid={e.demo ? undefined : 'parsed-stored'}
+              >
+                已入库
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {rejected.length > 0 && (
         <ul className="file-upload__errors" data-testid="file-upload-errors">
@@ -114,37 +155,6 @@ export function FileUpload() {
           ))}
         </ul>
       )}
-
-      <div className="file-upload__parsed" data-testid="file-upload-parsed">
-        <div className="file-upload__row file-upload__row--head" role="row">
-          <span>名称</span>
-          <span>大小</span>
-          <span>时间</span>
-          <span>已入库</span>
-        </div>
-        {parsed.length === 0 ? (
-          <p className="file-upload__empty" data-testid="file-upload-empty">
-            尚未解析任何文件
-          </p>
-        ) : (
-          parsed.map((e) => (
-            <div key={e.key} className="file-upload__row" role="row" data-testid="parsed-file">
-              <span className="file-upload__name" data-label="名称">
-                {e.fileName}
-              </span>
-              <span className="file-upload__num" data-label="大小">
-                {e.sizeLabel}
-              </span>
-              <span className="file-upload__num" data-label="时间">
-                {e.timeLabel}
-              </span>
-              <span className="file-upload__stored" data-label="已入库" data-testid="parsed-stored">
-                已入库
-              </span>
-            </div>
-          ))
-        )}
-      </div>
     </section>
   )
 }

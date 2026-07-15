@@ -63,6 +63,7 @@ export type FitLap = {
   distanceM: number
   durationSec: number
   avgHr: number | null
+  maxHr: number | null
   avgPaceSecPerKm: number | null
   avgPowerW: number | null
 }
@@ -182,6 +183,7 @@ export function parseFitActivity(bytes: Uint8Array): ParsedActivity {
       distanceM: num(l.totalDistance) ?? 0,
       durationSec: num(l.totalTimerTime) ?? num(l.totalElapsedTime) ?? 0,
       avgHr: num(l.avgHeartRate),
+      maxHr: num(l.maxHeartRate),
       avgPaceSecPerKm: paceFromSpeed(speed),
       avgPowerW: num(l.avgPower),
     }

@@ -32,25 +32,24 @@ export type RestingHrRecord = {
 export type HrvRecord = {
   date: string
   hrvMs: number // nightly average HRV
+  maxHrvMs: number
+  restingHr: number
 }
 
 // ---- deterministic generators -------------------------------------------------
 
-// mulberry32 — a tiny seeded PRNG so each series is identical every run.
-function mulberry32(seed: number): () => number {
-  let a = seed
+// Matches the deterministic generator embedded in the exported v3.2 prototype.
+function seeded(seed: number): () => number {
+  let value = seed
   return () => {
-    a |= 0
-    a = (a + 0x6d2b79f5) | 0
-    let t = Math.imul(a ^ (a >>> 15), 1 | a)
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+    value = (value * 9301 + 49297) % 233280
+    return value / 233280
   }
 }
 
 // Fixed anchor (not `new Date()`) keeps generated dates stable for tests. Shared
 // with activityData's anchor so "今天" is consistent across the app's mock data.
-const ANCHOR_MS = Date.parse('2026-07-11T00:00:00Z')
+const ANCHOR_MS = Date.parse('2026-07-09T00:00:00Z')
 const DAY_MS = 86_400_000
 
 function dateFor(offsetDays: number): string {
@@ -65,58 +64,84 @@ export const HEALTH_TODAY = dateFor(0)
 // weight / resting HR / HRV each ≥30, sleep ≥14 — 90 clears all of them.
 const DAYS = 90
 
-// Index 0 = most recent day (offset 0), matching the activities list ordering.
-function offsets(): number[] {
-  return Array.from({ length: DAYS }, (_, i) => i)
+type HealthSeries = {
+  sleep: SleepRecord[]
+  weight: WeightRecord[]
+  restingHr: RestingHrRecord[]
+  hrv: HrvRecord[]
 }
 
-export function generateSleep(): SleepRecord[] {
-  const rnd = mulberry32(21)
-  return offsets().map((off) => {
-    const deepMin = Math.round(55 + rnd() * 45) // 55–100
-    const lightMin = Math.round(190 + rnd() * 80) // 190–270
-    const remMin = Math.round(60 + rnd() * 50) // 60–110
+function buildHealthSeries(): HealthSeries {
+  const rnd = seeded(42)
+  const sleepOldest = Array.from({ length: DAYS }, (_, index) => {
+    const offset = DAYS - 1 - index
+    const deepMin = Math.round(+(1.1 + rnd() * 0.9).toFixed(1) * 60)
+    const lightMin = Math.round(+(3.4 + rnd() * 1.2).toFixed(1) * 60)
+    const remMin = Math.round(+(1 + rnd() * 0.9).toFixed(1) * 60)
     return {
-      date: dateFor(off),
+      date: dateFor(offset),
       deepMin,
       lightMin,
       remMin,
       totalMin: deepMin + lightMin + remMin,
-      restingHr: Math.round(46 + rnd() * 12), // 46–58
+      restingHr: Math.round(44 + rnd() * 8),
     }
   })
+  const weightOldest = Array.from({ length: DAYS }, (_, index) => {
+    const offset = DAYS - 1 - index
+    return {
+      date: dateFor(offset),
+      weightKg: +(69.2 - index * 0.008 + (rnd() - 0.5) * 0.5).toFixed(1),
+      bodyFatPct: +(14.5 + (rnd() - 0.5) * 1.2).toFixed(1),
+      muscleKg: +(54.2 + (rnd() - 0.5) * 0.6).toFixed(1),
+      waterPct: +(58.5 + (rnd() - 0.5) * 1.5).toFixed(1),
+    }
+  })
+  const hrvOldest = Array.from({ length: DAYS }, (_, index) => {
+    const offset = DAYS - 1 - index
+    const hrvMs = Math.round(52 + Math.sin(index / 4) * 7 + (rnd() - 0.5) * 8)
+    const restingHr = Math.round(44 + rnd() * 7)
+    return {
+      date: dateFor(offset),
+      hrvMs,
+      maxHrvMs: hrvMs + Math.round(8 + rnd() * 10),
+      restingHr,
+      nightlyMinHr: restingHr - Math.round(3 + rnd() * 4),
+    }
+  })
+  return {
+    sleep: sleepOldest.reverse(),
+    weight: weightOldest.reverse(),
+    restingHr: hrvOldest
+      .map(({ date, restingHr, nightlyMinHr }) => ({ date, restingHr, nightlyMinHr }))
+      .reverse(),
+    hrv: hrvOldest
+      .map(({ date, hrvMs, maxHrvMs, restingHr }) => ({
+        date,
+        hrvMs,
+        maxHrvMs,
+        restingHr,
+      }))
+      .reverse(),
+  }
+}
+
+const HEALTH_SERIES = buildHealthSeries()
+
+export function generateSleep(): SleepRecord[] {
+  return HEALTH_SERIES.sleep.map((record) => ({ ...record }))
 }
 
 export function generateWeight(): WeightRecord[] {
-  const rnd = mulberry32(37)
-  return offsets().map((off) => ({
-    date: dateFor(off),
-    // Gentle downward trend toward "today" plus daily noise.
-    weightKg: +(67.5 + off * 0.012 + (rnd() - 0.5) * 0.7).toFixed(1),
-    bodyFatPct: +(14 + rnd() * 4).toFixed(1), // 14–18 %
-    muscleKg: +(31 + rnd() * 2.5).toFixed(1),
-    waterPct: +(55 + rnd() * 6).toFixed(1), // 55–61 %
-  }))
+  return HEALTH_SERIES.weight.map((record) => ({ ...record }))
 }
 
 export function generateRestingHr(): RestingHrRecord[] {
-  const rnd = mulberry32(53)
-  return offsets().map((off) => {
-    const restingHr = Math.round(45 + rnd() * 13) // 45–58
-    return {
-      date: dateFor(off),
-      restingHr,
-      nightlyMinHr: restingHr - (2 + Math.round(rnd() * 4)), // 2–6 bpm lower
-    }
-  })
+  return HEALTH_SERIES.restingHr.map((record) => ({ ...record }))
 }
 
 export function generateHrv(): HrvRecord[] {
-  const rnd = mulberry32(67)
-  return offsets().map((off) => ({
-    date: dateFor(off),
-    hrvMs: Math.round(48 + rnd() * 45), // 48–93 ms
-  }))
+  return HEALTH_SERIES.hrv.map((record) => ({ ...record }))
 }
 
 // ---- habit factors ------------------------------------------------------------
@@ -131,33 +156,53 @@ export const HABIT_GROUPS: readonly HabitGroup[] = [
     id: 'morning',
     label: '早上',
     factors: [
-      { id: 'coffee', label: '咖啡' },
-      { id: 'fasted', label: '空腹训练' },
+      { id: 'morning-coffee', label: '咖啡' },
+      { id: 'morning-light-exercise', label: '轻量运动' },
+      { id: 'morning-medium-exercise', label: '中度运动' },
+      { id: 'morning-hard-exercise', label: '重度运动' },
+      { id: 'morning-reading', label: '看书' },
+      { id: 'morning-meditation', label: '冥想' },
+      { id: 'morning-stretch', label: '拉伸' },
+      { id: 'morning-protein-breakfast', label: '高蛋白早餐' },
+      { id: 'morning-fasted', label: '空腹训练' },
     ],
   },
   {
     id: 'noon',
     label: '中午',
     factors: [
-      { id: 'nap', label: '午睡' },
-      { id: 'sedentary', label: '久坐' },
+      { id: 'noon-nap', label: '午睡' },
+      { id: 'noon-coffee', label: '咖啡' },
+      { id: 'noon-eating-out', label: '外食' },
+      { id: 'noon-walk', label: '散步' },
+      { id: 'noon-dessert', label: '奶茶/甜品' },
+      { id: 'noon-light-exercise', label: '轻量运动' },
     ],
   },
   {
     id: 'evening',
     label: '晚上',
     factors: [
-      { id: 'alcohol', label: '酒精' },
-      { id: 'reading', label: '看书' },
-      { id: 'latenight', label: '熬夜' },
+      { id: 'evening-reading', label: '看书' },
+      { id: 'evening-stretch', label: '拉伸' },
+      { id: 'evening-foot-bath', label: '泡脚' },
+      { id: 'evening-meditation', label: '冥想' },
+      { id: 'evening-alcohol', label: '酒精' },
+      { id: 'evening-late-night', label: '熬夜(>23:30)' },
+      { id: 'evening-screen', label: '长时间屏幕' },
+      { id: 'evening-snack', label: '宵夜' },
     ],
   },
   {
     id: 'allday',
     label: '全天',
     factors: [
-      { id: 'intensity', label: '运动强度' },
-      { id: 'hydration', label: '多饮水' },
+      { id: 'allday-hydration', label: '补水充足' },
+      { id: 'allday-protein', label: '高蛋白饮食' },
+      { id: 'allday-supplements', label: '补剂(镁/维D)' },
+      { id: 'allday-sedentary', label: '久坐' },
+      { id: 'allday-stress', label: '压力大' },
+      { id: 'allday-sunlight', label: '户外日晒' },
     ],
   },
 ] as const
@@ -169,9 +214,9 @@ export type HabitRecords = Record<string, string[]>
 
 export function generateHabitSeed(): HabitRecords {
   return {
-    [dateFor(0)]: ['coffee', 'sedentary', 'reading', 'intensity'],
-    [dateFor(1)]: ['coffee', 'alcohol', 'latenight'],
-    [dateFor(2)]: ['fasted', 'nap', 'hydration'],
+    [dateFor(0)]: ['morning-coffee', 'morning-light-exercise', 'allday-hydration'],
+    [dateFor(1)]: ['morning-coffee', 'evening-stretch', 'evening-screen', 'allday-sedentary'],
+    [dateFor(2)]: ['morning-medium-exercise', 'noon-nap', 'evening-reading', 'allday-protein'],
   }
 }
 
@@ -180,13 +225,22 @@ export function recordedDayCount(records: HabitRecords): number {
   return Object.values(records).filter((ids) => ids.length > 0).length
 }
 
+export function selectedFactorCount(records: HabitRecords, date: string): number {
+  return records[date]?.length ?? 0
+}
+
 // ---- display formatters -------------------------------------------------------
 
-// Duration minutes → "Xh YYm" (sleep totals read as hours; per-stage stays min).
+// Duration minutes → one-decimal hours, matching the exported prototype table.
 export function formatSleepHm(min: number): string {
-  const h = Math.floor(min / 60)
-  const m = min % 60
-  return `${h}h ${String(m).padStart(2, '0')}m`
+  return `${(min / 60).toFixed(1)} h`
+}
+
+const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'] as const
+
+export function formatHealthDate(date: string): string {
+  const day = new Date(`${date}T00:00:00Z`).getUTCDay()
+  return `${date.slice(5)} ${WEEKDAYS[day]}`
 }
 
 // Short month-day label for chart x-axis ticks.

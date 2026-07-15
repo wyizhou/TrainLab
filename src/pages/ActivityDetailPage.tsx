@@ -71,11 +71,11 @@ export function ActivityDetailPage({ loadFit = loadRealFitActivity }: ActivityDe
   }
 
   return (
-    <section className="page activity-detail-page" data-testid="page-activity-detail">
-      <Link className="activity-detail-page__back" to="/activities">
-        ← 返回运动记录
-      </Link>
-
+    <section
+      className="page activity-detail-page"
+      data-vc="page-activities"
+      data-testid="page-activity-detail"
+    >
       {state === 'loading' && (
         <p className="activity-detail-page__loading" data-testid="detail-loading">
           正在解析 FIT 原始数据…
@@ -87,15 +87,26 @@ export function ActivityDetailPage({ loadFit = loadRealFitActivity }: ActivityDe
         </p>
       )}
 
-      <ActivityDetail activity={activity} parsed={parsed} onDownload={download} />
+      <ActivityDetail
+        activity={activity}
+        parsed={parsed}
+        onDownload={download}
+        backAction={
+          <Link className="activity-detail-page__back" to="/activities">
+            ← 返回列表
+          </Link>
+        }
+      />
 
-      <p
-        className="activity-detail-page__note num"
-        role="status"
-        data-testid="detail-download-note"
-      >
-        {downloadNote}
-      </p>
+      {downloadNote && (
+        <p
+          className="activity-detail-page__note num"
+          role="status"
+          data-testid="detail-download-note"
+        >
+          {downloadNote}
+        </p>
+      )}
     </section>
   )
 }
