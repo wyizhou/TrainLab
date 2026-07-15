@@ -79,17 +79,19 @@ export function ActivitiesPage() {
   }
 
   return (
-    <section className="page activities" data-testid="page-activities">
-      <div className="activities__head">
+    <section className="page activities" data-vc="page-activities" data-testid="page-activities">
+      <div className="activities__head" data-vc="page-header">
         <div>
           <h1>运动记录</h1>
           <p className="activities__count">
             来自连接器的原始运动数据 · 共 <span className="num">{activities.length}</span> 条
           </p>
         </div>
+        <div className="activities__head-spacer" aria-hidden="true" />
         <button
           type="button"
           className="activities__batch"
+          data-vc="batch-download-button"
           data-testid="batch-download"
           disabled={selected.size === 0}
           onClick={downloadSelected}
@@ -98,7 +100,12 @@ export function ActivitiesPage() {
         </button>
       </div>
 
-      <div className="activities__filters" role="group" aria-label="类型筛选">
+      <div
+        className="activities__filters"
+        data-vc="activity-filter-row"
+        role="group"
+        aria-label="类型筛选"
+      >
         {TYPE_FILTERS.map((type) => {
           const active = type === filter
           return (
@@ -129,27 +136,40 @@ export function ActivitiesPage() {
             onToggle={toggle}
             onDownload={downloadOne}
             onOpen={(id) => navigate(`/activities/${id}`)}
-          />
+          >
+            <Pager
+              total={filtered.length}
+              page={safePage}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={changePageSize}
+            />
+          </ActivityCardList>
         )}
-        <ActivityTable
-          activities={pageSlice}
-          selectedIds={selected}
-          onToggle={toggle}
-          onDownload={downloadOne}
-          onOpen={(id) => navigate(`/activities/${id}`)}
-        />
-        <Pager
-          total={filtered.length}
-          page={safePage}
-          pageSize={pageSize}
-          onPageChange={setPage}
-          onPageSizeChange={changePageSize}
-        />
+        {!isMobile && (
+          <ActivityTable
+            activities={pageSlice}
+            selectedIds={selected}
+            onToggle={toggle}
+            onDownload={downloadOne}
+            onOpen={(id) => navigate(`/activities/${id}`)}
+          >
+            <Pager
+              total={filtered.length}
+              page={safePage}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={changePageSize}
+            />
+          </ActivityTable>
+        )}
       </div>
 
-      <p className="activities__note num" role="status" data-testid="download-status">
-        {downloadNote}
-      </p>
+      {downloadNote && (
+        <p className="activities__note num" role="status" data-testid="download-status">
+          {downloadNote}
+        </p>
+      )}
     </section>
   )
 }

@@ -20,7 +20,7 @@ async function sendMessage(page: Page) {
   await page.goto('/')
   await page.getByTestId('chat-input').fill('分析我最近的心率趋势')
   await page.getByRole('button', { name: '发送' }).click()
-  await expect(page.getByTestId('msg-ai')).toBeVisible()
+  await expect(page.getByTestId('msg-ai').last()).toBeVisible()
 }
 
 function corners(el: Element) {
@@ -45,7 +45,7 @@ test('user / AI bubbles carry the 4px asymmetric tail corner (desktop)', async (
   expect(user.tr).toBe('14px')
   expect(user.bl).toBe('14px')
 
-  const ai = await page.getByTestId('msg-ai').evaluate(corners)
+  const ai = await page.getByTestId('msg-ai').last().evaluate(corners)
   expect(ai.bl).toBe('4px')
   expect(ai.tl).toBe('14px')
   expect(ai.tr).toBe('14px')
@@ -63,6 +63,7 @@ test('AI bubble has no min-width floor; max-width fills the container on mobile'
     await sendMessage(page)
     const minWidth = await page
       .getByTestId('msg-ai')
+      .last()
       .evaluate((el) => getComputedStyle(el).minWidth)
     // No 46% floor: resolves to the content-hugging default (auto / 0).
     expect(minWidth).toMatch(/^(auto|0px)$/)
@@ -71,7 +72,10 @@ test('AI bubble has no min-width floor; max-width fills the container on mobile'
   // Mobile: max-width resolves to the thread container's full width (100%).
   await page.setViewportSize(MOBILE)
   await sendMessage(page)
-  const maxWidth = await page.getByTestId('msg-ai').evaluate((el) => getComputedStyle(el).maxWidth)
+  const maxWidth = await page
+    .getByTestId('msg-ai')
+    .last()
+    .evaluate((el) => getComputedStyle(el).maxWidth)
   const containerWidth = await page.getByTestId('analysis-thread').evaluate((el) => el.clientWidth)
   if (maxWidth.endsWith('%')) {
     expect(maxWidth).toBe('100%')
@@ -91,7 +95,7 @@ test('AC-006c-1: AI bubble full visual contract (desktop)', async ({ page }) => 
   await page.setViewportSize(DESKTOP)
   await sendMessage(page)
 
-  const ai = page.locator('[data-vc="chat-bubble-ai"]')
+  const ai = page.locator('[data-vc="chat-bubble-ai"]').last()
   const c = await computed(ai, [
     'background-color',
     'border-top-width',
@@ -151,7 +155,10 @@ test('AC-006c-2: user bubble full visual contract (desktop)', async ({ page }) =
 // container — whether the browser keeps the percentage or resolves it to px
 // (承接 §7.3 max-width 细则: computed_px == round(容器内容宽 × pct) ±1px).
 async function expectMaxWidth(page: Page, selector: string, pct: number) {
-  const maxWidth = await page.locator(selector).evaluate((el) => getComputedStyle(el).maxWidth)
+  const maxWidth = await page
+    .locator(selector)
+    .last()
+    .evaluate((el) => getComputedStyle(el).maxWidth)
   const containerWidth = await page.getByTestId('analysis-thread').evaluate((el) => el.clientWidth)
   if (maxWidth.endsWith('%')) {
     expect(maxWidth).toBe(`${pct}%`)

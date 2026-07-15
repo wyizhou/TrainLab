@@ -1,7 +1,8 @@
 import { test, expect, type Page } from '@playwright/test'
 
-// Baseline viewports (contract G-resp): mobile 390 / desktop 1280.
+// Baseline viewports (contract G-resp): mobile 390 / tablet 768 / desktop 1280.
 const MOBILE = { width: 390, height: 844 }
+const TABLET = { width: 768, height: 1024 }
 const DESKTOP = { width: 1280, height: 800 }
 
 // The real FIT-backed 晨间轻松跑 detail. Contract paths say /activities/1 (the
@@ -55,7 +56,7 @@ test('opens the FIT activity detail and toggles curve ⇄ per-second table', asy
   await expect(page.getByTestId('series-curve')).toBeVisible()
 
   // Returning to the list works.
-  await page.getByRole('link', { name: '← 返回运动记录' }).click()
+  await page.getByRole('link', { name: '← 返回列表' }).click()
   await expect(page.getByTestId('page-activities')).toBeVisible()
 })
 
@@ -101,6 +102,26 @@ test('mobile: per-second table and laps render as cards with no wide-grid overfl
   // The document does not overflow the 390px viewport.
   const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth)
   expect(scrollWidth).toBeLessThanOrEqual(390)
+})
+
+test('tablet: per-second records and seven-column laps stay as scrollable tables', async ({
+  page,
+}) => {
+  await page.setViewportSize(TABLET)
+  await page.goto(FIT_DETAIL_URL)
+  await expect(page.getByTestId('page-activity-detail')).toBeVisible()
+  await page.getByTestId('mode-table').click()
+
+  await expect(page.locator('.record-table__grid')).toBeVisible()
+  await expect(page.getByTestId('record-card-list')).toBeHidden()
+  await expect(page.getByTestId('laps-table')).toBeVisible()
+  await expect(page.getByTestId('laps-card-list')).toBeHidden()
+  await expect(page.getByTestId('laps-table')).toContainText('最大心率')
+  const lapColumnCount = await page
+    .getByTestId('laps-table')
+    .locator('.laps-table__row--head > span')
+    .count()
+  expect(lapColumnCount).toBe(7)
 })
 
 // AC-008b-2 (C-8): X-axis ticks bin by breakpoint (desktop 5 / mobile 3), the Y

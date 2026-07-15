@@ -21,12 +21,11 @@ describe('ConflictModal', () => {
     render(<ConflictModal groups={groups} onConfirm={onConfirm} onClose={() => {}} />)
 
     const confirm = screen.getByTestId('conflict-confirm')
-    expect(confirm).toBeDisabled()
+    expect(confirm).toBeEnabled()
 
     const rows = screen.getAllByTestId('conflict-group')
     await user.click(within(rows[0]).getByTestId('conflict-choice-cn'))
-    // still disabled — second group unresolved
-    expect(confirm).toBeDisabled()
+    expect(confirm).toBeEnabled()
     await user.click(within(rows[1]).getByTestId('conflict-choice-global'))
     expect(confirm).toBeEnabled()
 

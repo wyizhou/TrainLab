@@ -1,8 +1,5 @@
 .scope-bar {
-  border: 1px solid var(--color-border);
-  background-color: var(--color-panel);
-  border-radius: var(--radius-lg);
-  padding: var(--space-3) var(--space-4);
+  min-width: 0;
 }
 
 .scope-bar__row {
@@ -10,6 +7,7 @@
   align-items: center;
   gap: var(--space-2);
   flex-wrap: wrap;
+  margin: var(--margin-analysis-controls);
 }
 
 .scope-bar__label {
@@ -36,7 +34,6 @@
   background-color: var(--color-accent-18);
   color: var(--color-accent-text);
   border-color: var(--color-accent);
-  font-weight: 600;
 }
 
 .scope-bar__toggles {
@@ -63,16 +60,16 @@
 .scope-bar__picklist {
   max-height: 180px;
   overflow-y: auto;
-  margin: var(--space-3) 0 0;
+  margin: 0 0 var(--gap-activity-picker);
   padding: 0;
   list-style: none;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-weak);
+  border-radius: var(--radius-activity-picker);
   background-color: var(--color-panel-deep);
 }
 
 .scope-bar__pickrow {
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border-row);
 }
 
 .scope-bar__pickrow:last-child {
@@ -82,9 +79,9 @@
 .scope-bar__pickitem {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-3);
-  font-size: 13px;
+  gap: var(--gap-activity-picker);
+  padding: var(--pad-activity-picker-row);
+  font-size: 12.5px;
   cursor: pointer;
 }
 
@@ -95,8 +92,8 @@
 }
 
 .scope-bar__pickdate {
-  width: 56px;
-  color: var(--color-text-muted);
+  width: 88px;
+  color: var(--color-text-faint);
   font-size: 12px;
 }
 
@@ -118,25 +115,4 @@
 
 .scope-bar__effective {
   margin-left: var(--space-1);
-}
-
-/* Tablet: toggles wrap under the chips instead of pinning right. */
-@media (width < 980px) {
-  .scope-bar__toggles {
-    margin-left: 0;
-  }
-}
-
-/* Mobile: the companion toggles flex-wrap onto their own rows so they never
-   share a line or force horizontal overflow (AC-004b-1). */
-@media (width < 640px) {
-  .scope-bar__toggles {
-    flex-wrap: wrap;
-    gap: var(--space-2);
-    width: 100%;
-  }
-
-  .scope-bar__toggle {
-    flex: 1 1 100%;
-  }
 }

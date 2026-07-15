@@ -12,18 +12,16 @@
 }
 
 .conflict-modal {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  width: 100%;
-  max-width: 620px;
+  display: block;
+  width: 620px;
+  max-width: 100%;
 
   /* max-height = round(0.86 × innerHeight) — desktop 800 → 688px (AC-012c-1). */
   max-height: 86vh;
   overflow-y: auto;
   padding: var(--space-5);
   background-color: var(--color-panel);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-input);
   border-radius: var(--radius-lg);
 }
 
@@ -36,99 +34,150 @@
   }
 
   .conflict-modal {
+    width: 100%;
     max-width: none;
     max-height: none;
     height: 100%;
+    padding: var(--pad-modal-mobile);
+    border: none;
     border-radius: 0;
   }
 }
 
 .conflict-modal__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
+  display: block;
+  margin: var(--margin-modal-subtitle);
 }
 
 .conflict-modal__title {
-  margin: 0;
+  margin: var(--margin-modal-title);
   font-size: 16px;
+  font-weight: 700;
   color: var(--color-text);
 }
 
-.conflict-modal__close {
-  padding: var(--space-1) var(--space-2);
-  background: none;
-  color: var(--color-text-muted);
-  border: none;
-  border-radius: var(--radius-sm);
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.conflict-modal__close:hover {
-  color: var(--color-text);
+.conflict-modal__subtitle {
+  margin: 0;
+  color: var(--color-text-faint);
+  font-size: 12px;
 }
 
 .conflict-modal__form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
+  display: block;
 }
 
 .conflict-modal__groups {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  margin: 0;
+  gap: var(--gap-conflict-list);
+  margin: var(--margin-conflict-list);
   padding: 0;
   list-style: none;
 }
 
 .conflict-modal__group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-3);
+  display: block;
+  padding: var(--pad-conflict-row);
   background-color: var(--color-panel-deep);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-weak);
   border-radius: var(--radius-md);
+}
+
+.conflict-modal__group-head {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-connector-controls);
+  flex-wrap: wrap;
+  margin: var(--margin-conflict-row-head);
+  font-size: 13px;
+}
+
+.conflict-modal__group-head span {
+  color: var(--color-text-faint);
+  font-size: 12px;
+}
+
+.conflict-modal__group-head strong {
+  font-weight: 600;
+}
+
+.conflict-modal__choices {
+  display: flex;
+  gap: var(--gap-connector-controls);
+  flex-wrap: wrap;
 }
 
 .conflict-modal__choice {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-2);
+  position: relative;
+  display: block;
+  flex: 1;
+  min-width: var(--min-width-conflict-choice);
+  padding: var(--pad-conflict-choice);
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+  background-color: var(--color-panel);
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-input);
   cursor: pointer;
+}
+
+.conflict-modal__choice--selected {
+  color: var(--color-accent-text);
+  background-color: var(--color-accent-16);
+  border-color: var(--color-accent);
+}
+
+.conflict-modal__choice input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
 }
 
 .conflict-modal__choice-body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
+  display: inline;
 }
 
 .conflict-modal__choice-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--color-text);
+  font-size: 12.5px;
+  font-weight: 400;
+  color: inherit;
 }
 
 .conflict-modal__choice-summary {
-  font-size: 12px;
+  margin: var(--margin-conflict-choice-source);
+  font-size: 11px;
+  color: var(--color-text-faint);
+}
+
+.conflict-modal__actions {
+  display: flex;
+  gap: var(--gap-modal-actions);
+}
+
+.conflict-modal__later,
+.conflict-modal__confirm {
+  flex: 1;
+  padding: var(--pad-auth-button);
+  border-radius: var(--radius-input);
+  cursor: pointer;
+}
+
+.conflict-modal__later {
   color: var(--color-text-muted);
+  background-color: transparent;
+  border: 1px solid var(--color-border-input);
+  font-size: 13px;
+  font-weight: 400;
 }
 
 .conflict-modal__confirm {
-  align-self: flex-end;
-  padding: var(--space-2) var(--space-5);
+  flex: 2;
   background-color: var(--color-accent);
   color: var(--color-on-accent);
-  border: 1px solid var(--color-accent);
-  border-radius: var(--radius-md);
+  border: none;
   font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
+  font-weight: 700;
 }
 
 .conflict-modal__confirm:disabled {

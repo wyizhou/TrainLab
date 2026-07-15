@@ -52,12 +52,11 @@ test('AC-007c-1: activities-table / card-list breakpoint reflow (mobile + deskto
   // Card list is absent from the DOM on desktop.
   await expect(page.locator('[data-vc="activities-card-list"]')).toHaveCount(0)
 
-  // Mobile: the table hides (display:none) and the card list takes over.
+  // Mobile: the table is unmounted and the card list takes over.
   await page.setViewportSize(MOBILE)
   await page.goto('/activities')
 
-  const tm = await computed(page.locator('[data-vc="activities-table"]'), ['display'])
-  expect(tm['display']).toBe('none')
+  await expect(page.locator('[data-vc="activities-table"]')).toHaveCount(0)
 
   const cardList = page.locator('[data-vc="activities-card-list"]')
   await expect(cardList).toHaveCount(1)

@@ -1,5 +1,5 @@
 import { useId, useState, type FormEvent } from 'react'
-import { formatDistance, formatDuration } from '../activities/activityData'
+import { formatDuration } from '../activities/activityData'
 import {
   formatStartTime,
   REGION_LABEL,
@@ -21,12 +21,19 @@ type ConflictModalProps = {
 }
 
 function sideSummary(side: ConflictSide): string {
-  const dist = side.distanceKm === null ? '' : ` · ${formatDistance(side.distanceKm)}`
-  return `${side.name} · ${formatStartTime(side.startTime)} · ${formatDuration(side.durationSec)}${dist}`
+  const date = formatStartTime(side.startTime).slice(0, 10)
+  const weekday = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][
+    new Date(`${date}T00:00:00Z`).getUTCDay()
+  ]
+  const distance =
+    side.distanceKm === null ? '—' : `${side.distanceKm.toFixed(side.distanceKm < 10 ? 2 : 1)} km`
+  return `${date.slice(5)} ${weekday} · ${distance} · ${formatDuration(side.durationSec)}`
 }
 
 export function ConflictModal({ groups, onConfirm, onClose }: ConflictModalProps) {
-  const [choices, setChoices] = useState<Record<string, ConflictRegion>>({})
+  const [choices, setChoices] = useState<Record<string, ConflictRegion>>(() =>
+    Object.fromEntries(groups.map((group) => [group.id, 'cn'])),
+  )
   const titleId = useId()
 
   const allChosen = groups.every((g) => choices[g.id] !== undefined)
@@ -61,61 +68,75 @@ export function ConflictModal({ groups, onConfirm, onClose }: ConflictModalProps
       >
         <header className="conflict-modal__head">
           <h2 id={titleId} className="conflict-modal__title">
-            处理疑似重复运动
+            处理重复运动
           </h2>
-          <button
-            type="button"
-            className="conflict-modal__close"
-            onClick={onClose}
-            aria-label="关闭"
-          >
-            ✕
-          </button>
+          <p className="conflict-modal__subtitle">
+            以下运动在中国区与国际区同时存在(开始时间 + 时长一致),请选择保留哪一条,另一条将被忽略
+          </p>
         </header>
 
         <form className="conflict-modal__form" onSubmit={handleSubmit}>
-          <ul className="conflict-modal__groups">
+          <ul className="conflict-modal__groups" data-vc="conflict-list">
             {groups.map((group) => (
               <li
                 key={group.id}
                 className="conflict-modal__group"
                 data-testid="conflict-group"
+                data-vc="conflict-row"
                 role="radiogroup"
                 aria-label={`${group.cn.name} 与 ${group.global.name}`}
               >
-                {regions.map((region) => {
-                  const side = group[region]
-                  const label = `保留${REGION_LABEL[region]}`
-                  return (
-                    <label key={region} className="conflict-modal__choice">
-                      <input
-                        type="radio"
-                        name={group.id}
-                        data-testid={`conflict-choice-${region}`}
-                        checked={choices[group.id] === region}
-                        onChange={() => choose(group.id, region)}
-                      />
-                      <span className="conflict-modal__choice-body">
-                        <span className="conflict-modal__choice-label">{label}</span>
-                        <span className="conflict-modal__choice-summary num">
-                          {sideSummary(side)}
+                <div className="conflict-modal__group-head">
+                  <strong>{group.cn.name}</strong>
+                  <span className="num">{sideSummary(group.cn)}</span>
+                </div>
+                <div className="conflict-modal__choices">
+                  {regions.map((region) => {
+                    const side = group[region]
+                    const label = `保留${REGION_LABEL[region]}`
+                    return (
+                      <label
+                        key={region}
+                        className={
+                          choices[group.id] === region
+                            ? 'conflict-modal__choice conflict-modal__choice--selected'
+                            : 'conflict-modal__choice'
+                        }
+                      >
+                        <input
+                          type="radio"
+                          name={group.id}
+                          data-testid={`conflict-choice-${region}`}
+                          checked={choices[group.id] === region}
+                          onChange={() => choose(group.id, region)}
+                        />
+                        <span className="conflict-modal__choice-body">
+                          <span className="conflict-modal__choice-label">{label}</span>
+                          <span className="conflict-modal__choice-summary num">
+                            {side.region === 'cn' ? 'connect.garmin.cn' : 'connect.garmin.com'}
+                          </span>
                         </span>
-                      </span>
-                    </label>
-                  )
-                })}
+                      </label>
+                    )
+                  })}
+                </div>
               </li>
             ))}
           </ul>
 
-          <button
-            type="submit"
-            className="conflict-modal__confirm"
-            data-testid="conflict-confirm"
-            disabled={!allChosen}
-          >
-            确认合并
-          </button>
+          <div className="conflict-modal__actions">
+            <button type="button" className="conflict-modal__later" onClick={onClose}>
+              稍后处理
+            </button>
+            <button
+              type="submit"
+              className="conflict-modal__confirm"
+              data-testid="conflict-confirm"
+              disabled={!allChosen}
+            >
+              确认合并
+            </button>
+          </div>
         </form>
       </div>
     </div>

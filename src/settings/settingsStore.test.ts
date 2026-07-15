@@ -14,8 +14,12 @@ describe('settingsStore (C-14)', () => {
     expect(s.ai.baseUrl).toBe(DEFAULT_AI_BASE_URL)
     expect(s.ai.baseUrl).toBe('https://api.deepseek.com')
     expect(s.units).toEqual({ distance: 'km', pace: 'min/km', weight: 'kg' })
-    // Zone defaults mirror the pre-C-14 detail-page config.
-    expect(s.zones.bounds).toEqual([114, 133, 152, 171])
+    expect(s.zones).toEqual({
+      maxHr: 192,
+      lthr: 168,
+      ftp: 245,
+      bounds: [121, 141, 161, 181],
+    })
   })
 
   // 返工 design_rev 2: the system offers no retention / auto-clean data policy, so

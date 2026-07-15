@@ -95,11 +95,11 @@ describe('ConnectorAuthModal', () => {
     expect(onSuccess).not.toHaveBeenCalled()
   })
 
-  it('closes via the backdrop and the ✕ button', async () => {
+  it('closes via the backdrop and the cancel button', async () => {
     const user = userEvent.setup()
     const { onClose } = renderModal()
 
-    await user.click(screen.getByLabelText('关闭'))
+    await user.click(screen.getByRole('button', { name: '取消' }))
     expect(onClose).toHaveBeenCalledTimes(1)
 
     await user.click(screen.getByTestId('auth-modal-backdrop'))

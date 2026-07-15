@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { ActivityDetailPage } from './ActivityDetailPage'
 import type { ParsedActivity } from '../activities/fitParser'
@@ -59,6 +59,7 @@ function parsedStub(): ParsedActivity {
         distanceM: 300.94,
         durationSec: 120,
         avgHr: 118,
+        maxHr: 132,
         avgPaceSecPerKm: 398,
         avgPowerW: 244,
       },
@@ -88,8 +89,8 @@ describe('ActivityDetailPage', () => {
     renderAt('/activities/a0', () => Promise.resolve(parsedStub()))
     expect(screen.getByTestId('detail-loading')).toBeInTheDocument()
     // Once parsed, the FIT-only metric (calories) renders its value.
-    expect(await screen.findByText('344 kcal')).toBeInTheDocument()
-    expect(screen.queryByTestId('detail-loading')).not.toBeInTheDocument()
+    expect(await screen.findAllByText('344 kcal')).toHaveLength(2)
+    await waitFor(() => expect(screen.queryByTestId('detail-loading')).not.toBeInTheDocument())
     expect(screen.getByTestId('series-curve')).toBeInTheDocument()
   })
 

@@ -50,7 +50,7 @@ export function RecordTable({ records, paceSport }: RecordTableProps) {
     paceSport ? fmtPace(r.paceSecPerKm) : fmtNum(r.speedMps === null ? null : r.speedMps * 3.6, 1)
 
   return (
-    <div className="record-table" data-testid="record-table">
+    <div className="record-table" data-vc="records-table" data-testid="record-table">
       {/* Desktop/tablet: the min-width:820px grid. Hidden on mobile (AC-008b-1). */}
       <div className="record-table__grid">
         <div className="record-table__row record-table__row--head" role="row">
@@ -86,9 +86,14 @@ export function RecordTable({ records, paceSport }: RecordTableProps) {
 
       {/* Mobile: one card per second — no wide grid to overflow (AC-008b-1). Same
           paged slice, so paging behaviour is shared with the grid above. */}
-      <div className="record-card-list" data-testid="record-card-list">
+      <div className="record-card-list" data-vc="records-card-list" data-testid="record-card-list">
         {slice.map((r, i) => (
-          <div className="record-card" data-testid="record-card" key={safePage * pageSize + i}>
+          <div
+            className="record-card"
+            data-vc="record-card"
+            data-testid="record-card"
+            key={safePage * pageSize + i}
+          >
             <span className="record-card__time num">{fmtTime(r.tSec)}</span>
             <dl className="record-card__metrics">
               <div>

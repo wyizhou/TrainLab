@@ -7,6 +7,7 @@ import { HabitPicker } from './HabitPicker'
 import { useBreakpoint } from '../hooks/useBreakpoint'
 import {
   formatSleepHm,
+  formatHealthDate,
   generateHrv,
   generateRestingHr,
   generateSleep,
@@ -37,16 +38,21 @@ function recentAsc<T>(rows: T[], count: number): T[] {
 }
 
 const SLEEP_COLUMNS: MetricColumn<SleepRecord>[] = [
-  { key: 'date', header: '日期', render: (r) => r.date, numeric: true },
+  { key: 'date', header: '日期', render: (r) => formatHealthDate(r.date), numeric: true },
   { key: 'total', header: '总时长', render: (r) => formatSleepHm(r.totalMin), numeric: true },
-  { key: 'deep', header: '深睡', render: (r) => `${r.deepMin} min`, numeric: true },
-  { key: 'light', header: '浅睡', render: (r) => `${r.lightMin} min`, numeric: true },
-  { key: 'rem', header: 'REM', render: (r) => `${r.remMin} min`, numeric: true },
+  { key: 'deep', header: '深睡', render: (r) => `${(r.deepMin / 60).toFixed(1)} h`, numeric: true },
+  {
+    key: 'light',
+    header: '浅睡',
+    render: (r) => `${(r.lightMin / 60).toFixed(1)} h`,
+    numeric: true,
+  },
+  { key: 'rem', header: 'REM', render: (r) => `${(r.remMin / 60).toFixed(1)} h`, numeric: true },
   { key: 'rhr', header: '静息心率', render: (r) => `${r.restingHr} bpm`, numeric: true },
 ]
 
 const WEIGHT_COLUMNS: MetricColumn<WeightRecord>[] = [
-  { key: 'date', header: '日期', render: (r) => r.date, numeric: true },
+  { key: 'date', header: '日期', render: (r) => formatHealthDate(r.date), numeric: true },
   { key: 'weight', header: '体重', render: (r) => `${r.weightKg.toFixed(1)} kg`, numeric: true },
   { key: 'fat', header: '体脂率', render: (r) => `${r.bodyFatPct.toFixed(1)} %`, numeric: true },
   { key: 'muscle', header: '肌肉量', render: (r) => `${r.muscleKg.toFixed(1)} kg`, numeric: true },
@@ -54,14 +60,16 @@ const WEIGHT_COLUMNS: MetricColumn<WeightRecord>[] = [
 ]
 
 const RHR_COLUMNS: MetricColumn<RestingHrRecord>[] = [
-  { key: 'date', header: '日期', render: (r) => r.date, numeric: true },
+  { key: 'date', header: '日期', render: (r) => formatHealthDate(r.date), numeric: true },
   { key: 'resting', header: '静息心率', render: (r) => `${r.restingHr} bpm`, numeric: true },
   { key: 'min', header: '夜间最低', render: (r) => `${r.nightlyMinHr} bpm`, numeric: true },
 ]
 
 const HRV_COLUMNS: MetricColumn<HrvRecord>[] = [
-  { key: 'date', header: '日期', render: (r) => r.date, numeric: true },
-  { key: 'hrv', header: 'HRV', render: (r) => `${r.hrvMs} ms`, numeric: true },
+  { key: 'date', header: '日期', render: (r) => formatHealthDate(r.date), numeric: true },
+  { key: 'hrv', header: '夜间平均 HRV', render: (r) => `${r.hrvMs} ms`, numeric: true },
+  { key: 'max', header: '最高 HRV', render: (r) => `${r.maxHrvMs} ms`, numeric: true },
+  { key: 'rhr', header: '静息心率', render: (r) => `${r.restingHr} bpm`, numeric: true },
 ]
 
 export function HealthPage() {
@@ -78,82 +86,82 @@ export function HealthPage() {
   const [hrv] = useState<HrvRecord[]>(generateHrv)
 
   return (
-    <section className="page health" data-testid="page-health">
-      <div className="health__head">
-        <h1>健康记录</h1>
-        <p className="health__intro">
-          来自连接器与设备的原始健康数据 · 均为设备原始值，无系统预计算
-        </p>
+    <section className="page" data-testid="page-health">
+      <div className="health" data-vc="page-health">
+        <div className="health__head">
+          <h1 data-vc="page-title">健康记录</h1>
+          <p className="health__intro">睡眠 / 体重 / HRV 等设备原始健康数据(近 90 天)</p>
+        </div>
+
+        <HealthTabs tabs={TABS} active={tab} onSelect={setTab} />
+
+        {tab === 'sleep' && (
+          <div className="health__panel" data-testid="panel-sleep">
+            <SleepStackChart records={recentAsc(sleep, sleepDays)} title={`近 ${sleepDays} 天`} />
+            <MetricTable
+              rows={sleep}
+              columns={SLEEP_COLUMNS}
+              rowKey={(r) => r.date}
+              caption="睡眠明细（深/浅/REM + 静息心率）"
+            />
+          </div>
+        )}
+
+        {tab === 'weight' && (
+          <div className="health__panel" data-testid="panel-weight">
+            <HealthLineChart
+              title="近 30 天体重"
+              unit="kg"
+              colorSlug="success"
+              points={recentAsc(weight, 30).map((r) => ({ date: r.date, value: r.weightKg }))}
+            />
+            <MetricTable
+              rows={weight}
+              columns={WEIGHT_COLUMNS}
+              rowKey={(r) => r.date}
+              caption="体重明细（体重/体脂率/肌肉量/体水分）"
+            />
+          </div>
+        )}
+
+        {tab === 'rhr' && (
+          <div className="health__panel" data-testid="panel-rhr">
+            <HealthLineChart
+              title="近 30 天静息心率"
+              unit="Y:bpm · X:日期 · resting_heart_rate"
+              colorSlug="accent"
+              points={recentAsc(rhr, 30).map((r) => ({ date: r.date, value: r.restingHr }))}
+            />
+            <MetricTable
+              rows={rhr}
+              columns={RHR_COLUMNS}
+              rowKey={(r) => r.date}
+              caption="静息心率明细（静息/夜间最低）"
+              mobileVariant="rhr"
+            />
+          </div>
+        )}
+
+        {tab === 'hrv' && (
+          <div className="health__panel" data-testid="panel-hrv">
+            <HealthLineChart
+              title="近 30 天夜间 HRV"
+              unit="ms（设备原始值）"
+              colorSlug="hrv"
+              points={recentAsc(hrv, 30).map((r) => ({ date: r.date, value: r.hrvMs }))}
+            />
+            <MetricTable
+              rows={hrv}
+              columns={HRV_COLUMNS}
+              rowKey={(r) => r.date}
+              caption="HRV 明细（夜间平均 / 最高 / 静息心率）"
+            />
+          </div>
+        )}
       </div>
 
-      <HealthTabs tabs={TABS} active={tab} onSelect={setTab} />
-
-      {tab === 'sleep' && (
-        <div className="health__panel" data-testid="panel-sleep">
-          <SleepStackChart records={recentAsc(sleep, sleepDays)} title={`近 ${sleepDays} 天`} />
-          <MetricTable
-            rows={sleep}
-            columns={SLEEP_COLUMNS}
-            rowKey={(r) => r.date}
-            caption="睡眠明细（深/浅/REM + 静息心率）"
-          />
-        </div>
-      )}
-
-      {tab === 'weight' && (
-        <div className="health__panel" data-testid="panel-weight">
-          <HealthLineChart
-            title="体重趋势（近 30 天）"
-            unit="kg"
-            colorSlug="accent"
-            points={recentAsc(weight, 30).map((r) => ({ date: r.date, value: r.weightKg }))}
-            formatValue={(v) => v.toFixed(1)}
-          />
-          <MetricTable
-            rows={weight}
-            columns={WEIGHT_COLUMNS}
-            rowKey={(r) => r.date}
-            caption="体重明细（体重/体脂率/肌肉量/体水分）"
-          />
-        </div>
-      )}
-
-      {tab === 'rhr' && (
-        <div className="health__panel" data-testid="panel-rhr">
-          <HealthLineChart
-            title="静息心率趋势（近 30 天）"
-            unit="bpm"
-            colorSlug="heart"
-            points={recentAsc(rhr, 30).map((r) => ({ date: r.date, value: r.restingHr }))}
-          />
-          <MetricTable
-            rows={rhr}
-            columns={RHR_COLUMNS}
-            rowKey={(r) => r.date}
-            caption="静息心率明细（静息/夜间最低）"
-          />
-        </div>
-      )}
-
-      {tab === 'hrv' && (
-        <div className="health__panel" data-testid="panel-hrv">
-          <HealthLineChart
-            title="夜间 HRV 趋势（近 30 天）"
-            unit="ms"
-            colorSlug="hrv"
-            points={recentAsc(hrv, 30).map((r) => ({ date: r.date, value: r.hrvMs }))}
-          />
-          <MetricTable
-            rows={hrv}
-            columns={HRV_COLUMNS}
-            rowKey={(r) => r.date}
-            caption="HRV 明细（夜间平均）"
-          />
-        </div>
-      )}
-
       {tab === 'habit' && (
-        <div className="health__panel" data-testid="panel-habit">
+        <div className="health" data-vc="page-habits" data-testid="panel-habit">
           <HabitPicker />
         </div>
       )}

@@ -18,20 +18,21 @@ test('file upload: single-column stack, no horizontal overflow on mobile', async
   const row = page.getByTestId('parsed-file').first()
   await expect(row).toBeVisible()
 
-  // The parsed row collapses to a single grid track on mobile (vs the desktop
-  // 4-column grid).
-  const tracks = await row.evaluate(
-    (el) => getComputedStyle(el).gridTemplateColumns.split(' ').filter(Boolean).length,
-  )
-  expect(tracks, 'parsed row is a single column on mobile').toBe(1)
+  // v3.2 keeps each parsed entry as a compact flex row; the filename may shrink
+  // and ellipsize while metadata remains visible.
+  expect(await row.evaluate((el) => getComputedStyle(el).display)).toBe('flex')
+  await expect(row.locator('.file-upload__name')).toBeVisible()
+  await expect(row.locator('.file-upload__meta')).toHaveCount(2)
+  await expect(row.locator('.file-upload__stored')).toBeVisible()
 
-  // Its 名称 and 大小 cells share a left edge and stack top-to-bottom.
-  const nameBox = await row.locator('[data-label="名称"]').boundingBox()
-  const sizeBox = await row.locator('[data-label="大小"]').boundingBox()
-  expect(nameBox, '名称 cell rendered').not.toBeNull()
-  expect(sizeBox, '大小 cell rendered').not.toBeNull()
-  expect(Math.abs(nameBox!.x - sizeBox!.x), 'cells share a left edge').toBeLessThanOrEqual(1)
-  expect(sizeBox!.y, '大小 stacks below 名称').toBeGreaterThan(nameBox!.y)
+  // The upload zone and parsed list stack as two rows at the mobile breakpoint.
+  const grid = page.locator('[data-vc="upload-grid"]')
+  const children = grid.locator(':scope > *')
+  const first = await children.nth(0).boundingBox()
+  const second = await children.nth(1).boundingBox()
+  expect(first).not.toBeNull()
+  expect(second).not.toBeNull()
+  expect(second!.y).toBeGreaterThan(first!.y)
 
   // No horizontal overflow at 390px.
   const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth)

@@ -115,8 +115,10 @@ export function ChartCard({
         data-testid="chart-card"
         data-state="loading"
       >
-        <span className="chart-card__spinner" aria-hidden="true" />
-        <span className="chart-card__loading-text">正在读取原始数据并生成图表…</span>
+        <div className="chart-card__loading">
+          <span className="chart-card__spinner" aria-hidden="true" />
+          <span className="chart-card__loading-text">正在读取原始数据并生成图表…</span>
+        </div>
       </div>
     )
   }
@@ -152,11 +154,16 @@ export function ChartCard({
       data-testid="chart-card"
       data-state={expanded ? 'expanded' : 'collapsed'}
     >
-      <div className="chart-card__header">
+      <div className="chart-card__header" data-vc="chart-card-header">
         <span className="chart-card__icon" aria-hidden="true">
           📊
         </span>
         <span className="chart-card__title">{title}</span>
+        {!expanded && (
+          <p className="chart-card__summary num" data-testid="chart-summary">
+            {summary}
+          </p>
+        )}
         <button
           type="button"
           className="chart-card__toggle"
@@ -167,13 +174,13 @@ export function ChartCard({
         </button>
       </div>
 
-      <p className="chart-card__summary num" data-testid="chart-summary">
-        {summary}
-      </p>
-
       {expanded && geometry && (
-        <div className="chart-card__expanded" data-testid="chart-expanded">
-          <p className="chart-card__axis-note">Y：{unit} · X：日期</p>
+        <div
+          className="chart-card__expanded"
+          data-vc="chart-card-expanded"
+          data-testid="chart-expanded"
+        >
+          <p className="chart-card__axis-note">Y:{unit} · X:日期</p>
 
           <svg
             className="chart-card__svg"

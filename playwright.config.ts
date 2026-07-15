@@ -5,6 +5,9 @@ const BASE_URL = `http://localhost:${PORT}`
 
 export default defineConfig({
   testDir: './tests/e2e',
+  // v3.2 screenshots are the checked-in visual source of truth. Named
+  // toHaveScreenshot assertions resolve directly to that handoff directory.
+  snapshotPathTemplate: 'design/v3.2/交接/基线截图/{arg}{ext}',
   timeout: 30_000,
   fullyParallel: true,
   forbidOnly: !!process.env.CI,

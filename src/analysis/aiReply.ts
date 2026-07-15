@@ -31,10 +31,9 @@ export type AnalysisReply = {
 // Demo heart-rate trend for the analysis reply, one point per activity, until
 // real activity data (C-7 / C-8) feeds the analysis.
 const TREND_POINTS: ChartPoint[] = [
-  { date: '07-05', value: 142 },
-  { date: '07-07', value: 151 },
-  { date: '07-09', value: 138 },
-  { date: '07-11', value: 146 },
+  { date: '07-07', value: 128 },
+  { date: '07-08', value: 151 },
+  { date: '07-09', value: 152 },
 ]
 
 // Seven-day training plan emitted when the question mentions「计划」.
@@ -52,29 +51,41 @@ const PLAN_DAYS: readonly [string, string, string][] = [
 function interpretation(scope: ReplyScope): string {
   const parts: string[] = []
   if (scope.includeHealth) {
-    parts.push('<p>结合睡眠与静息心率，本周整体恢复状态良好，可维持当前训练负荷。</p>')
+    parts.push(
+      '<p><strong>健康记录:</strong>近 7 天夜间 HRV 平均 <strong>56 ms</strong>、睡眠平均 <strong>7.1 h</strong>,恢复状态基本正常,可承接当前负荷。</p>',
+    )
   }
   if (scope.includeHabits) {
-    parts.push('<p>习惯记录显示补水与拉伸达标率较高，有助于降低受伤风险。</p>')
+    parts.push(
+      '<p><strong>习惯因子(近 7 天):</strong>咖啡×2、轻量运动×1、补水充足×1、拉伸×1、长时间屏幕×1。注意咖啡因摄入时间与晚间屏幕时间对深睡的潜在影响,建议训练日保持拉伸习惯。</p>',
+    )
   }
   return parts.join('')
 }
 
 function trendReply(scope: ReplyScope): AnalysisReply {
-  const rows = TREND_POINTS.map((p) => `<tr><td>${p.date}</td><td>${p.value} bpm</td></tr>`).join(
-    '',
-  )
+  const activities = [
+    { date: '07-09', name: '晨间轻松跑', distance: '5.1 km', heartRate: '152 bpm' },
+    { date: '07-08', name: '间歇功率课', distance: '45.3 km', heartRate: '151 bpm' },
+    { date: '07-07', name: '泳池有氧', distance: '2.0 km', heartRate: '128 bpm' },
+  ]
+  const rows = activities
+    .map(
+      ({ date, name, distance, heartRate }) =>
+        `<tr><td>${date}</td><td>${name}</td><td>${distance}</td><td>${heartRate}</td></tr>`,
+    )
+    .join('')
   const avg = Math.round(TREND_POINTS.reduce((sum, p) => sum + p.value, 0) / TREND_POINTS.length)
   const html = [
-    '<h3>心率趋势分析</h3>',
-    '<table><thead><tr><th>日期</th><th>平均心率</th></tr></thead>',
+    `<p>基于最近 3 天的 3 次运动(总距离 <strong>52.4 km</strong>,平均心率 <strong>${avg} bpm</strong>):</p>`,
+    '<table><thead><tr><th>日期</th><th>名称</th><th>距离</th><th>平均心率</th></tr></thead>',
     `<tbody>${rows}</tbody></table>`,
-    `<p>结论：所选范围内平均心率约 ${avg} bpm，趋势平稳，强度分布合理。</p>`,
+    '<ol><li>强度分布:多数课次平均心率处于有氧区间,高低强度交替合理;</li><li>心率趋势:同强度下心率未见异常抬升,无疲劳堆积信号;</li><li>建议:保持当前节奏,下一训练块可小幅提高长课占比,高强度课后安排 1 天低强度恢复。</li></ol>',
     interpretation(scope),
   ].join('')
   return {
     html,
-    chart: { title: '平均心率趋势', rangeLabel: '最近 7 天', points: TREND_POINTS },
+    chart: { title: '平均心率趋势', rangeLabel: '最近 3 天', points: TREND_POINTS },
   }
 }
 

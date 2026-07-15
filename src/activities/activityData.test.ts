@@ -10,7 +10,7 @@ import {
 function make(overrides: Partial<Activity>): Activity {
   return {
     id: 'a0',
-    date: '2026-07-11',
+    date: '2026-07-09',
     type: '跑步',
     name: '测试',
     distanceKm: 5,
@@ -25,9 +25,9 @@ function make(overrides: Partial<Activity>): Activity {
 }
 
 describe('activity formatters', () => {
-  it('formats distance with two decimals and "--" for strength', () => {
-    expect(formatDistance(5.08)).toBe('5.08 km')
-    expect(formatDistance(null)).toBe('--')
+  it('formats distance with one decimal and an em dash for strength', () => {
+    expect(formatDistance(5.08)).toBe('5.1 km')
+    expect(formatDistance(null)).toBe('—')
   })
 
   it('formats duration as M:SS under an hour and H:MM:SS over', () => {
@@ -35,14 +35,14 @@ describe('activity formatters', () => {
     expect(formatDuration(3671)).toBe('1:01:11')
   })
 
-  it('renders pace for run/swim, power for ride, "--" for strength', () => {
+  it('renders pace for run/swim, power for ride, and an em dash for strength', () => {
     expect(formatPaceOrPower(make({ paceSecPerKm: 371 }))).toBe(`6'11"/km`)
     expect(formatPaceOrPower(make({ type: '游泳', paceSecPerKm: null, pace100Sec: 145 }))).toBe(
       `2'25"/100m`,
     )
     expect(formatPaceOrPower(make({ type: '骑行', paceSecPerKm: null, powerW: 212 }))).toBe('212 W')
     expect(formatPaceOrPower(make({ type: '力量', paceSecPerKm: null, distanceKm: null }))).toBe(
-      '--',
+      '—',
     )
   })
 
@@ -56,7 +56,7 @@ describe('generateActivities', () => {
     const a = generateActivities()
     const b = generateActivities()
     expect(a.length).toBe(b.length)
-    expect(a.length).toBeGreaterThan(60)
+    expect(a).toHaveLength(104)
     expect(a.map((x) => x.id)).toEqual(b.map((x) => x.id))
   })
 

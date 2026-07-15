@@ -79,17 +79,17 @@ export function ConnectorsPage() {
   const authConnector = connectors.find((c) => c.id === authForId) ?? null
 
   return (
-    <section className="page connectors" data-testid="page-connectors">
+    <section className="page connectors" data-vc="page-connectors" data-testid="page-connectors">
       <div className="connectors__head">
-        <h1>连接器</h1>
-        <p className="connectors__intro">连接佳明账号，自动同步运动与健康数据 · 同步均为前端模拟</p>
+        <h1 data-vc="page-title">连接器</h1>
+        <p className="connectors__intro">
+          平台连接与数据同步 · 双账号按「开始时间 + 时长」自动合并去重,无法判定时需手动处理
+        </p>
       </div>
 
       {conflicts.length > 0 && (
         <ConflictBanner count={conflicts.length} onResolve={() => setShowConflictModal(true)} />
       )}
-
-      <FileUpload />
 
       <div className="connectors__grid" data-vc="connectors-grid">
         {connectors.map((connector) => (
@@ -102,6 +102,8 @@ export function ConnectorsPage() {
           />
         ))}
       </div>
+
+      <FileUpload />
 
       {authConnector && (
         <ConnectorAuthModal

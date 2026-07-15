@@ -3,7 +3,7 @@ import {
   generateHabitSeed,
   HABIT_GROUPS,
   HEALTH_TODAY,
-  recordedDayCount,
+  selectedFactorCount,
   type HabitRecords,
 } from './healthData'
 import './HabitPicker.css'
@@ -18,7 +18,7 @@ export function HabitPicker() {
   const [date, setDate] = useState<string>(HEALTH_TODAY)
 
   const selected = useMemo(() => new Set(records[date] ?? []), [records, date])
-  const count = recordedDayCount(records)
+  const count = selectedFactorCount(records, date)
 
   const toggle = (factorId: string) => {
     setRecords((prev) => {
@@ -31,44 +31,51 @@ export function HabitPicker() {
 
   return (
     <div className="habit-picker" data-testid="habit-picker">
-      <div className="habit-picker__bar">
+      <div className="habit-picker__bar" data-vc="habit-date-toolbar">
         <label className="habit-picker__date">
           日期
           <input
             type="date"
             aria-label="选择日期"
             value={date}
+            max={HEALTH_TODAY}
             onChange={(event) => setDate(event.target.value)}
           />
         </label>
+        <span className="habit-picker__today">{date === HEALTH_TODAY ? '今天' : ''}</span>
         <span className="habit-picker__count" data-testid="habit-count">
-          已记录 <span className="num">{count}</span> 天
+          已记录 <span className="num">{count}</span> 项
         </span>
       </div>
 
-      {HABIT_GROUPS.map((group) => (
-        <fieldset key={group.id} className="habit-picker__group">
-          <legend className="habit-picker__legend">{group.label}</legend>
-          <div className="habit-picker__chips">
-            {group.factors.map((factor) => {
-              const on = selected.has(factor.id)
-              return (
-                <button
-                  key={factor.id}
-                  type="button"
-                  aria-pressed={on}
-                  className={
-                    on ? 'habit-picker__chip habit-picker__chip--on' : 'habit-picker__chip'
-                  }
-                  onClick={() => toggle(factor.id)}
-                >
-                  {factor.label}
-                </button>
-              )
-            })}
-          </div>
-        </fieldset>
-      ))}
+      <div className="habit-picker__groups" data-vc="habit-groups">
+        {HABIT_GROUPS.map((group) => (
+          <section key={group.id} className="habit-picker__group" data-vc="habit-group">
+            <h2 className="habit-picker__legend">
+              <span className={`habit-picker__dot habit-picker__dot--${group.id}`} />
+              {group.label}
+            </h2>
+            <div className="habit-picker__chips">
+              {group.factors.map((factor) => {
+                const on = selected.has(factor.id)
+                return (
+                  <button
+                    key={factor.id}
+                    type="button"
+                    aria-pressed={on}
+                    className={
+                      on ? 'habit-picker__chip habit-picker__chip--on' : 'habit-picker__chip'
+                    }
+                    onClick={() => toggle(factor.id)}
+                  >
+                    {factor.label}
+                  </button>
+                )
+              })}
+            </div>
+          </section>
+        ))}
+      </div>
     </div>
   )
 }

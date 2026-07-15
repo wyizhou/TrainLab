@@ -194,44 +194,44 @@ export function demoImportRecords(): ImportRecord[] {
       distanceKm: 10.02,
     },
 
-    // fuzzy pair #1 → conflict (Δ开始 2 分钟, Δ时长 40 秒)
+    // fuzzy pair #1 → conflict: the real FIT-backed morning run.
     {
       id: 'cn-2',
       region: 'cn',
-      startTime: '2026-07-06T18:30',
-      durationSec: 2700,
-      name: '傍晚配速跑',
+      startTime: '2026-07-09T06:40',
+      durationSec: 1887,
+      name: '晨间轻松跑',
       type: '跑步',
-      distanceKm: 8.5,
+      distanceKm: 5.08,
     },
     {
       id: 'gl-2',
       region: 'global',
-      startTime: '2026-07-06T18:32',
-      durationSec: 2740,
-      name: '配速跑',
+      startTime: '2026-07-09T06:42',
+      durationSec: 1900,
+      name: '晨跑',
       type: '跑步',
-      distanceKm: 8.6,
+      distanceKm: 5.1,
     },
 
-    // fuzzy pair #2 → conflict (Δ开始 0, Δ时长 45 秒)
+    // fuzzy pair #2 → conflict: the long aerobic ride.
     {
       id: 'cn-3',
       region: 'cn',
-      startTime: '2026-07-03T06:50',
-      durationSec: 5400,
-      name: '长距离骑行',
+      startTime: '2026-07-02T06:50',
+      durationSec: 9900,
+      name: '有氧耐力骑',
       type: '骑行',
-      distanceKm: 45.0,
+      distanceKm: 78.4,
     },
     {
       id: 'gl-3',
       region: 'global',
-      startTime: '2026-07-03T06:50',
-      durationSec: 5445,
-      name: '耐力骑',
+      startTime: '2026-07-02T06:50',
+      durationSec: 9945,
+      name: '长途耐力骑',
       type: '骑行',
-      distanceKm: 45.2,
+      distanceKm: 78.5,
     },
 
     // unique 国际区 record → passes through

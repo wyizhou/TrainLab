@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { Pager, type PageSize } from '../components/Pager'
+import { useBreakpoint } from '../hooks/useBreakpoint'
 import './MetricTable.css'
 
 // Generic paginated detail table for the health tabs (contract C-9: 明细表, 各表
@@ -19,9 +20,18 @@ type MetricTableProps<T> = {
   columns: MetricColumn<T>[]
   rowKey: (row: T) => string
   caption: string
+  mobileVariant?: 'default' | 'rhr'
 }
 
-export function MetricTable<T>({ rows, columns, rowKey, caption }: MetricTableProps<T>) {
+export function MetricTable<T>({
+  rows,
+  columns,
+  rowKey,
+  caption,
+  mobileVariant = 'default',
+}: MetricTableProps<T>) {
+  const breakpoint = useBreakpoint()
+  const isMobile = breakpoint === 'mobile'
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState<PageSize>(20)
 
@@ -35,7 +45,7 @@ export function MetricTable<T>({ rows, columns, rowKey, caption }: MetricTablePr
   }
 
   return (
-    <div className="metric-table" data-testid="metric-table">
+    <div className="metric-table" data-vc="health-table" data-testid="metric-table">
       <div className="metric-table__scroll">
         <table className="metric-table__grid">
           <caption className="metric-table__caption">{caption}</caption>
@@ -69,29 +79,62 @@ export function MetricTable<T>({ rows, columns, rowKey, caption }: MetricTablePr
           the four detail tables no longer overflow a 390px viewport (AC-009b-2).
           Same paged slice, so paging behaviour is shared with the grid. Column 0
           (日期) is the card head; the rest render as label/value pairs. */}
-      <div className="metric-card-list" data-testid="metric-card-list">
+      <div className="metric-card-list" data-vc="health-card-list" data-testid="metric-card-list">
         {slice.map((row) => (
-          <div className="metric-card" data-testid="metric-card" key={rowKey(row)}>
-            <span className="metric-card__head num">{columns[0]?.render(row)}</span>
-            <dl className="metric-card__metrics">
-              {columns.slice(1).map((col) => (
-                <div key={col.key}>
-                  <dt>{col.header}</dt>
-                  <dd className={col.numeric ? 'num' : undefined}>{col.render(row)}</dd>
+          <div
+            className={mobileVariant === 'rhr' ? 'metric-card metric-card--rhr' : 'metric-card'}
+            data-vc="health-record-card"
+            data-testid="metric-card"
+            key={rowKey(row)}
+          >
+            {mobileVariant === 'rhr' ? (
+              <>
+                <span className="metric-card__rhr-date num">{columns[0]?.render(row)}</span>
+                <span className="metric-card__rhr-value">
+                  静息 <strong className="num">{columns[1]?.render(row)}</strong>
+                </span>
+                <span className="metric-card__rhr-value">
+                  最低 <strong className="num">{columns[2]?.render(row)}</strong>
+                </span>
+              </>
+            ) : (
+              <>
+                <div className="metric-card__head">
+                  <span className="num">{columns[0]?.render(row)}</span>
+                  <strong className="num">{columns[1]?.render(row)}</strong>
                 </div>
-              ))}
-            </dl>
+                <dl className="metric-card__metrics">
+                  {columns.slice(2).map((col) => (
+                    <div key={col.key}>
+                      <dt>{col.header}</dt>
+                      <dd className={col.numeric ? 'num' : undefined}>{col.render(row)}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </>
+            )}
           </div>
         ))}
+        {isMobile && (
+          <Pager
+            total={rows.length}
+            page={safePage}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={changePageSize}
+          />
+        )}
       </div>
 
-      <Pager
-        total={rows.length}
-        page={safePage}
-        pageSize={pageSize}
-        onPageChange={setPage}
-        onPageSizeChange={changePageSize}
-      />
+      {!isMobile && (
+        <Pager
+          total={rows.length}
+          page={safePage}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={changePageSize}
+        />
+      )}
     </div>
   )
 }

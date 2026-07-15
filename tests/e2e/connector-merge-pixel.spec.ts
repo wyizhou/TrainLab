@@ -24,7 +24,7 @@ async function centering(locator: Locator): Promise<{ left: number; right: numbe
 
 // Connect the disconnected 国际区 account (no 2FA) and open the merge modal.
 async function openMergeModal(page: Page) {
-  const globalCard = page.getByTestId('connector-card').filter({ hasText: '佳明国际区' })
+  const globalCard = page.getByTestId('connector-card').filter({ hasText: '佳明 Connect 国际区' })
   await globalCard.getByTestId('connector-action').click()
 
   const authModal = page.getByTestId('auth-modal')

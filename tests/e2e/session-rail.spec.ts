@@ -19,28 +19,30 @@ async function computed(locator: Locator, props: string[]): Promise<Record<strin
 test('creates, renames, and deletes sessions until empty auto-creates one', async ({ page }) => {
   await page.goto('/')
   const rail = page.getByTestId('session-rail-desktop')
-  await expect(rail.getByTestId('session-item')).toHaveCount(1)
+  await expect(rail.getByTestId('session-item')).toHaveCount(2)
 
   // New session becomes active.
   await rail.getByRole('button', { name: '新建会话' }).click()
-  await expect(rail.getByTestId('session-item')).toHaveCount(2)
+  await expect(rail.getByTestId('session-item')).toHaveCount(3)
 
   // Inline rename: Enter confirms.
-  await rail.getByRole('button', { name: '重命名 会话 2' }).click()
+  await rail.getByRole('button', { name: '重命名 会话 3' }).click()
   const input = rail.getByLabel('会话名称')
   await input.fill('训练分析')
   await input.press('Enter')
   await expect(rail.getByText('训练分析')).toBeVisible()
 
-  // Delete the active session -> falls back to the first remaining.
+  // Delete the active session -> falls back to the two designed demo sessions.
   await rail.getByRole('button', { name: '删除 训练分析' }).click()
-  await expect(rail.getByTestId('session-item')).toHaveCount(1)
-  await expect(rail.getByText('会话 1')).toBeVisible()
+  await expect(rail.getByTestId('session-item')).toHaveCount(2)
+  await expect(rail.getByText('状态评估')).toBeVisible()
 
-  // Delete the last session -> a fresh one is auto-created.
-  await rail.getByRole('button', { name: '删除 会话 1' }).click()
+  // Delete both remaining sessions -> a fresh one is auto-created.
+  await rail.getByRole('button', { name: '删除 状态评估' }).click()
+  await rail.getByRole('button', { name: '删除 马拉松备赛计划' }).click()
   await expect(rail.getByTestId('session-item')).toHaveCount(1)
-  await expect(rail.getByText('会话 1')).toHaveCount(0)
+  await expect(rail.getByText('状态评估')).toHaveCount(0)
+  await expect(rail.getByText('马拉松备赛计划')).toHaveCount(0)
 })
 
 // AC-003b-1 (C-3): desktop keeps a 212px session aside; mobile/tablet drop the
@@ -117,8 +119,7 @@ test('AC-003c-2: session-rail-item active/normal visual contract (desktop)', asy
   await page.setViewportSize(DESKTOP)
   await page.goto('/')
   const rail = page.getByTestId('session-rail-desktop')
-  // Seed a second session; the new one becomes active, 会话 1 becomes normal.
-  await rail.getByRole('button', { name: '新建会话' }).click()
+  // The v3.2 demo starts with two sessions, so active and normal coexist.
   await expect(rail.getByTestId('session-item')).toHaveCount(2)
 
   const active = page.locator('[data-vc="session-rail-item-active"]')

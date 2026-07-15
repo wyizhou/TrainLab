@@ -2,7 +2,7 @@
   display: flex;
   gap: var(--space-2);
   flex-wrap: wrap;
-  margin-bottom: var(--space-4);
+  margin: var(--margin-page-header);
 }
 
 /* health-tab pixel-contract (C-9 AC-009c-2; v3.1 A13): 常态 panel 底 / borderPanel
@@ -22,5 +22,29 @@
   background-color: var(--color-accent-16);
   color: var(--color-accent-text);
   border-color: var(--color-accent);
-  font-weight: 600;
+}
+
+@media (width < 640px) {
+  .health-tabs {
+    flex-wrap: nowrap;
+  }
+
+  .health-tabs__tab {
+    flex: none;
+    height: 52px;
+  }
+
+  .health-tabs__tab:nth-child(1),
+  .health-tabs__tab:nth-child(2),
+  .health-tabs__tab:nth-child(5) {
+    width: 59.6px;
+  }
+
+  .health-tabs__tab:nth-child(3) {
+    width: 81.2px;
+  }
+
+  .health-tabs__tab:nth-child(4) {
+    width: 64px;
+  }
 }

@@ -73,19 +73,31 @@ describe('HealthPage', () => {
     render(<HealthPage />)
     await user.click(screen.getByRole('tab', { name: '习惯' }))
 
-    // Seed: 3 recorded days; the default date (今天) shows its stored factors.
-    expect(screen.getByTestId('habit-count')).toHaveTextContent('已记录 3 天')
-    expect(screen.getByRole('button', { name: '咖啡' })).toHaveAttribute('aria-pressed', 'true')
+    // Seed: today's 3 selected factors are shown in the toolbar.
+    expect(screen.getByTestId('habit-count')).toHaveTextContent('已记录 3 项')
+    expect(screen.getAllByRole('button', { name: '咖啡' })[0]).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
 
     // Switch to a fresh, unrecorded date — nothing is pre-selected.
     fireEvent.change(screen.getByLabelText('选择日期'), { target: { value: '2026-05-01' } })
-    expect(screen.getByRole('button', { name: '咖啡' })).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getAllByRole('button', { name: '咖啡' })[0]).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
 
     // Tick one factor in each of the four groups; the new date joins the count once.
-    for (const label of ['咖啡', '午睡', '看书', '运动强度']) {
-      await user.click(screen.getByRole('button', { name: label }))
-      expect(screen.getByRole('button', { name: label })).toHaveAttribute('aria-pressed', 'true')
+    const choices = [
+      screen.getAllByRole('button', { name: '咖啡' })[0],
+      screen.getByRole('button', { name: '午睡' }),
+      screen.getAllByRole('button', { name: '看书' })[0],
+      screen.getByRole('button', { name: '补水充足' }),
+    ]
+    for (const choice of choices) {
+      await user.click(choice)
+      expect(choice).toHaveAttribute('aria-pressed', 'true')
     }
-    expect(screen.getByTestId('habit-count')).toHaveTextContent('已记录 4 天')
+    expect(screen.getByTestId('habit-count')).toHaveTextContent('已记录 4 项')
   })
 })

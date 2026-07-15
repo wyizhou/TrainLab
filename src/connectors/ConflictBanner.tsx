@@ -13,9 +13,17 @@ type ConflictBannerProps = {
 
 export function ConflictBanner({ count, onResolve }: ConflictBannerProps) {
   return (
-    <div className="conflict-banner" role="alert" data-testid="conflict-banner">
+    <div
+      className="conflict-banner"
+      role="alert"
+      data-vc="conflict-banner"
+      data-testid="conflict-banner"
+    >
+      <span className="conflict-banner__icon" aria-hidden="true">
+        ⚠
+      </span>
       <span className="conflict-banner__text">
-        发现 <span className="num">{count}</span> 组疑似重复运动
+        中国区与国际区发现 <span className="num">{count}</span> 组疑似重复运动,需要你确认保留哪一条
       </span>
       <button
         type="button"
@@ -23,7 +31,7 @@ export function ConflictBanner({ count, onResolve }: ConflictBannerProps) {
         data-testid="conflict-resolve"
         onClick={onResolve}
       >
-        处理重复
+        处理重复 (<span className="num">{count}</span>)
       </button>
     </div>
   )

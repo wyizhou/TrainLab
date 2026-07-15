@@ -1,32 +1,45 @@
+.activities {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
 .activities__head {
   display: flex;
   align-items: flex-end;
   gap: var(--space-4);
   flex-wrap: wrap;
-  margin-bottom: var(--space-4);
+  margin: var(--margin-page-header);
 }
 
 .activities__count {
-  margin-top: var(--space-1);
+  margin: 0;
   font-size: 13px;
 }
 
+.activities .activities__head h1 {
+  margin: 0 0 var(--space-1);
+}
+
 .activities__batch {
-  margin-left: auto;
+  margin: 0;
   background-color: var(--color-accent);
   color: var(--color-on-accent);
   border: none;
-  border-radius: var(--radius-md);
-  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-input);
+  padding: var(--pad-batch-download);
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
 }
 
+.activities__head-spacer {
+  flex: 1;
+}
+
 .activities__batch:disabled {
-  background-color: var(--color-panel);
-  color: var(--color-text-muted);
-  border: 1px solid var(--color-border);
+  background-color: var(--color-toast-bg);
+  color: var(--color-text-faint);
+  border: none;
   cursor: not-allowed;
 }
 
@@ -34,7 +47,7 @@
   display: flex;
   gap: var(--space-2);
   flex-wrap: wrap;
-  margin-bottom: var(--space-4);
+  margin: var(--margin-filter-row);
 }
 
 /* type-chip pixel-contract (C-7 AC-007c-2): normal = panel bg + borderPanel +
@@ -54,7 +67,6 @@
   background-color: var(--color-accent-16);
   color: var(--color-accent-text);
   border-color: var(--color-accent);
-  font-weight: 600;
 }
 
 /* The table / card list each carry their own panel chrome now (C-7 AC-007c-1);
@@ -62,7 +74,6 @@
 .activities__panel {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
 }
 
 .activities__note {
