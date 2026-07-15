@@ -47,7 +47,7 @@ test('analysis question -> AI text first -> card loads -> collapsed -> expand sh
   await page.getByRole('button', { name: '发送' }).click()
 
   // AI bubble text lands first — the HTML reply (table) is visible immediately.
-  const bubble = page.getByTestId('msg-ai')
+  const bubble = page.getByTestId('msg-ai').last()
   await expect(bubble).toBeVisible()
   await expect(bubble.getByRole('table')).toBeVisible()
 
@@ -96,7 +96,7 @@ test('AC-005c-1: chart-card container visual contract + deeper than AI bubble (d
 
   // Layer check: the card (#0B1220) is strictly deeper than the AI bubble it
   // sits inside (#121A28) — every channel darker.
-  const bubbleBg = (await computed(page.getByTestId('msg-ai'), ['background-color']))[
+  const bubbleBg = (await computed(page.getByTestId('msg-ai').last(), ['background-color']))[
     'background-color'
   ]
   expect(bubbleBg).toBe('rgb(18, 26, 40)')
@@ -112,7 +112,7 @@ test('desktop shows the data rows; tablet drops them, keeping only the chart', a
   await page.setViewportSize(TABLET)
   const tabletCard = await expandChartCard(page)
   await expect(tabletCard.getByTestId('chart-rows')).toHaveCount(0)
-  await expect(tabletCard.getByText('Y：bpm · X：日期')).toBeVisible()
+  await expect(tabletCard.getByText('Y:bpm · X:日期')).toBeVisible()
   await expect(tabletCard.getByTestId('chart-svg')).toBeVisible()
 
   // Desktop: the rows exist; each row is 12px and its values are mono.

@@ -22,7 +22,7 @@ describe('SettingsPage (C-14)', () => {
       expect(screen.getByTestId(testid)).toBeInTheDocument()
     }
     // AI 接口 defaults to DeepSeek and surfaces the hidden system prompt.
-    expect(screen.getByLabelText('base_url')).toHaveValue('https://api.deepseek.com')
+    expect(screen.getByLabelText('API 地址（base_url）')).toHaveValue('https://api.deepseek.com')
     expect(within(screen.getByTestId('settings-ai')).getByTestId('sys-prompt')).toBeInTheDocument()
   })
 
@@ -34,7 +34,10 @@ describe('SettingsPage (C-14)', () => {
     // Four groups all carry the settings-group anchor.
     expect(container.querySelectorAll('[data-vc="settings-group"]')).toHaveLength(4)
     expect(container.querySelector('[data-vc="settings-account-grid"]')).not.toBeNull()
+    expect(container.querySelector('[data-vc="settings-unit-options"]')).not.toBeNull()
+    expect(container.querySelector('[data-vc="settings-threshold-grid"]')).not.toBeNull()
     expect(container.querySelector('[data-vc="settings-zone-grid"]')).not.toBeNull()
+    expect(container.querySelector('[data-vc="settings-api-form"]')).not.toBeNull()
   })
 
   // 返工 design_rev 2: the 数据保留策略 group is deleted — no group, no copy, no
@@ -54,13 +57,13 @@ describe('SettingsPage (C-14)', () => {
 
     await user.type(screen.getByLabelText('新密码'), 'abc12345')
     await user.type(screen.getByLabelText('确认新密码'), 'abc99999')
-    await user.click(screen.getByRole('button', { name: '保存密码' }))
+    await user.click(screen.getByRole('button', { name: '保存账户' }))
     expect(screen.getByTestId('settings-password-error')).toHaveTextContent('不一致')
 
     // Correcting the confirmation clears the error and confirms the save.
     await user.clear(screen.getByLabelText('确认新密码'))
     await user.type(screen.getByLabelText('确认新密码'), 'abc12345')
-    await user.click(screen.getByRole('button', { name: '保存密码' }))
+    await user.click(screen.getByRole('button', { name: '保存账户' }))
     expect(screen.queryByTestId('settings-password-error')).not.toBeInTheDocument()
     expect(screen.getByText('密码已更新')).toBeInTheDocument()
   })
@@ -69,7 +72,7 @@ describe('SettingsPage (C-14)', () => {
     const user = userEvent.setup()
     const { unmount } = render(<SettingsPage />)
 
-    const maxHr = screen.getByLabelText('MaxHR')
+    const maxHr = screen.getByLabelText('最大心率 bpm')
     await user.clear(maxHr)
     await user.type(maxHr, '205')
     await user.click(screen.getByRole('button', { name: '保存区间' }))
@@ -79,7 +82,7 @@ describe('SettingsPage (C-14)', () => {
     // The detail page's HR-zone chart reads the same store — Z5 now tops out at 205.
     render(<HrZoneChart zones={ZONE_TIMES} />)
     const rows = screen.getAllByTestId('hr-zone-row')
-    expect(within(rows[4]).getByText('171–205')).toBeInTheDocument()
+    expect(within(rows[4]).getByText('181–205')).toBeInTheDocument()
   })
 
   it('validates zone bounds are ascending positive numbers', async () => {

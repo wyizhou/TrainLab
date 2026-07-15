@@ -17,7 +17,9 @@ export type SyncError = {
 
 export type Connector = {
   id: string
-  name: string // 佳明中国区 / 佳明国际区
+  abbr: string
+  name: string // 佳明 Connect 中国区 / 佳明 Connect 国际区
+  description: string
   status: ConnectorStatus
   lastSyncAt: string | null // 上次成功同步时间; null = 从未
   syncedCount: number // 已同步数量
@@ -39,9 +41,9 @@ export function statusLabel(status: ConnectorStatus): string {
 }
 
 const INTERVAL_LABELS: Record<string, string> = {
-  '30': '30 分钟',
-  '60': '1 小时',
-  '360': '6 小时',
+  '30': '每 30 分钟',
+  '60': '每 1 小时',
+  '360': '每 6 小时',
   manual: '仅手动',
 }
 
@@ -59,16 +61,20 @@ export function demoConnectors(): Connector[] {
   return [
     {
       id: 'garmin-cn',
-      name: '佳明中国区',
+      abbr: 'GC',
+      name: '佳明 Connect 中国区',
+      description: 'connect.garmin.cn',
       status: 'failed',
-      lastSyncAt: '2026-07-10 22:14',
-      syncedCount: 1284,
+      lastSyncAt: '昨天 22:41',
+      syncedCount: 186,
       autoSyncInterval: 60,
-      error: { at: '2026-07-11 06:30', reason: 'ETIMEDOUT' },
+      error: { at: '今天 06:00', reason: '请求超时(ETIMEDOUT),已自动重试 3 次' },
     },
     {
       id: 'garmin-global',
-      name: '佳明国际区',
+      abbr: 'GI',
+      name: '佳明 Connect 国际区',
+      description: 'connect.garmin.com',
       status: 'disconnected',
       lastSyncAt: null,
       syncedCount: 0,

@@ -10,10 +10,14 @@ export const color = {
   accent: '#4292E0',
   onAccent: '#06101E',
   text: '#E6EBF4',
+  textSoft: '#B8C2D4',
   // v3.1 表 (a) 实测 rgb(138,148,168); design_rev 4 权威源迁移校正原 #8A97A8（零 AC 值变更）.
   textMuted: '#8A94A8',
   border: '#1E2A3C',
+  uploadDeep: '#0E1524',
+  hoverRow: '#16202F',
   success: 'oklch(0.72 0.17 150)',
+  warn: '#E0A040',
   danger: 'oklch(0.62 0.2 25)',
   // Global chrome (C-1 / AC-001c-*; v3.1 表 (a)).
   panelNav: '#0D1420',

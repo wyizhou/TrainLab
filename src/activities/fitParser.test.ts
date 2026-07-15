@@ -60,6 +60,7 @@ describe('parseFitActivity — FIT field whitelist (contract C-8, ≥8 assertion
     expect(records.length).toBe(1890)
     expect(laps.length).toBe(8)
     expect(laps[0].avgPowerW).toBe(244)
+    expect(laps[0].maxHr).not.toBeNull()
     expect(hrZoneSeconds).toHaveLength(5)
     // FIT session time_in_hr_zone: most time in Z2/Z3.
     expect(hrZoneSeconds[1].seconds).toBeCloseTo(798.924, 2)

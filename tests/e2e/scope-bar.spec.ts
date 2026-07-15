@@ -14,11 +14,9 @@ async function computed(locator: Locator, props: string[]): Promise<Record<strin
   }, props)
 }
 
-// AC-004b-1 (C-4): on mobile the two companion toggles「附带健康记录」「附带习惯记录」
-// flex-wrap onto separate rows and the page has no horizontal overflow.
-test('mobile stacks the health/habit toggles onto separate rows without overflow', async ({
-  page,
-}) => {
+// AC-004b-1 (C-4): v3.2 keeps the two companion toggles
+// 「附带健康记录」「附带习惯记录」on one compact row without page overflow.
+test('mobile keeps the health/habit toggles aligned without overflow', async ({ page }) => {
   await page.setViewportSize(MOBILE)
   await page.goto('/')
 
@@ -32,8 +30,8 @@ test('mobile stacks the health/habit toggles onto separate rows without overflow
   expect(healthBox).not.toBeNull()
   expect(habitBox).not.toBeNull()
 
-  // The second toggle sits on a lower row than the first (not the same line).
-  expect(habitBox!.y).toBeGreaterThan(healthBox!.y)
+  expect(habitBox!.y).toBeCloseTo(healthBox!.y, 0)
+  expect(habitBox!.x).toBeGreaterThan(healthBox!.x)
 
   // No horizontal overflow at the mobile viewport.
   const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth)

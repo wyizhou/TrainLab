@@ -12,12 +12,12 @@ describe('ConnectorsPage demo initial state', () => {
     expect(screen.getByTestId('page-connectors')).toBeInTheDocument()
     expect(cards()).toHaveLength(2)
 
-    const cn = cardByName('佳明中国区')
+    const cn = cardByName('佳明 Connect 中国区')
     expect(within(cn).getByTestId('connector-pill')).toHaveTextContent('同步失败')
     expect(within(cn).getByTestId('connector-error')).toHaveTextContent('ETIMEDOUT')
     expect(within(cn).getByTestId('connector-action')).toHaveTextContent('重试同步')
 
-    const global = cardByName('佳明国际区')
+    const global = cardByName('佳明 Connect 国际区')
     expect(within(global).getByTestId('connector-pill')).toHaveTextContent('未连接')
     expect(within(global).getByTestId('connector-action')).toHaveTextContent('连接账号')
   })
@@ -26,9 +26,9 @@ describe('ConnectorsPage demo initial state', () => {
     const user = userEvent.setup()
     render(<ConnectorsPage />)
 
-    await user.click(within(cardByName('佳明中国区')).getByTestId('connector-action'))
+    await user.click(within(cardByName('佳明 Connect 中国区')).getByTestId('connector-action'))
 
-    const cn = cardByName('佳明中国区')
+    const cn = cardByName('佳明 Connect 中国区')
     expect(within(cn).getByTestId('connector-pill')).toHaveTextContent('已连接')
     expect(within(cn).queryByTestId('connector-error')).not.toBeInTheDocument()
     expect(within(cn).getByTestId('connector-action')).toHaveTextContent('立即同步')
@@ -39,18 +39,18 @@ describe('ConnectorsPage demo initial state', () => {
     const user = userEvent.setup()
     render(<ConnectorsPage />)
 
-    await user.click(within(cardByName('佳明国际区')).getByTestId('connector-action'))
+    await user.click(within(cardByName('佳明 Connect 国际区')).getByTestId('connector-action'))
 
     // C-11: connecting opens the auth modal rather than connecting directly.
     const modal = await screen.findByRole('dialog')
-    expect(modal).toHaveTextContent('连接 佳明国际区')
+    expect(modal).toHaveTextContent('连接 佳明 Connect 国际区')
 
     await user.type(screen.getByLabelText('账号'), 'alice')
     await user.type(screen.getByLabelText('密码'), 'secret')
     await user.click(screen.getByTestId('auth-submit'))
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
-    const global = cardByName('佳明国际区')
+    const global = cardByName('佳明 Connect 国际区')
     expect(within(global).getByTestId('connector-pill')).toHaveTextContent('已连接')
   })
 
@@ -59,7 +59,7 @@ describe('ConnectorsPage demo initial state', () => {
     render(<ConnectorsPage />)
 
     // Connect 国际区 (no 2FA) to trigger the double-account merge check.
-    await user.click(within(cardByName('佳明国际区')).getByTestId('connector-action'))
+    await user.click(within(cardByName('佳明 Connect 国际区')).getByTestId('connector-action'))
     await user.type(screen.getByLabelText('账号'), 'alice')
     await user.type(screen.getByLabelText('密码'), 'secret')
     await user.click(screen.getByTestId('auth-submit'))
@@ -67,7 +67,7 @@ describe('ConnectorsPage demo initial state', () => {
 
     // Banner announces the two suspected duplicates.
     const banner = await screen.findByTestId('conflict-banner')
-    expect(banner).toHaveTextContent('发现 2 组疑似重复运动')
+    expect(banner).toHaveTextContent('中国区与国际区发现 2 组疑似重复运动')
 
     // 处理重复 → per-group choice → 确认合并.
     await user.click(screen.getByTestId('conflict-resolve'))
@@ -87,7 +87,7 @@ describe('ConnectorsPage demo initial state', () => {
     render(<ConnectorsPage />)
     expect(screen.queryByTestId('toast')).not.toBeInTheDocument()
 
-    await user.click(within(cardByName('佳明中国区')).getByTestId('connector-action'))
+    await user.click(within(cardByName('佳明 Connect 中国区')).getByTestId('connector-action'))
 
     const toast = screen.getByTestId('toast')
     expect(toast).toHaveAttribute('data-vc', 'toast')
@@ -97,7 +97,7 @@ describe('ConnectorsPage demo initial state', () => {
   it('retry-syncing 中国区 does not raise a merge banner', async () => {
     const user = userEvent.setup()
     render(<ConnectorsPage />)
-    await user.click(within(cardByName('佳明中国区')).getByTestId('connector-action'))
+    await user.click(within(cardByName('佳明 Connect 中国区')).getByTestId('connector-action'))
     expect(screen.queryByTestId('conflict-banner')).not.toBeInTheDocument()
   })
 
@@ -105,13 +105,14 @@ describe('ConnectorsPage demo initial state', () => {
     const user = userEvent.setup()
     render(<ConnectorsPage />)
 
-    const global = cardByName('佳明国际区')
-    const select = within(global).getByLabelText('自动同步间隔') as HTMLSelectElement
+    const global = cardByName('佳明 Connect 国际区')
+    const select = within(global).getByLabelText('自动同步') as HTMLSelectElement
     expect(select.value).toBe('manual')
 
-    await user.selectOptions(select, '6 小时')
+    await user.selectOptions(select, '每 6 小时')
     expect(
-      (within(cardByName('佳明国际区')).getByLabelText('自动同步间隔') as HTMLSelectElement).value,
+      (within(cardByName('佳明 Connect 国际区')).getByLabelText('自动同步') as HTMLSelectElement)
+        .value,
     ).toBe('360')
   })
 })

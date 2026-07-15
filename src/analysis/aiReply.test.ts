@@ -14,10 +14,13 @@ describe('buildRequest', () => {
 })
 
 describe('runAnalysis', () => {
-  it('returns a data table, a conclusion and a chart for a trend question', () => {
+  it('returns the v3.2 activity summary, findings and chart for a trend question', () => {
     const reply = runAnalysis(buildRequest('分析我最近的心率趋势', FULL_SCOPE))
     expect(reply.html).toContain('<table>')
-    expect(reply.html).toContain('结论：')
+    expect(reply.html).toContain('总距离 <strong>52.4 km</strong>')
+    expect(reply.html).toContain('强度分布:')
+    expect(reply.html).toContain('心率趋势:')
+    expect(reply.html).toContain('建议:')
     expect(reply.chart?.points.length).toBeGreaterThanOrEqual(2)
   })
 
@@ -31,11 +34,11 @@ describe('runAnalysis', () => {
 
   it('appends health / habit interpretation only when the scope includes them', () => {
     const withBoth = runAnalysis(buildRequest('分析', FULL_SCOPE)).html
-    expect(withBoth).toContain('恢复状态良好')
-    expect(withBoth).toContain('习惯记录显示')
+    expect(withBoth).toContain('健康记录:')
+    expect(withBoth).toContain('习惯因子(近 7 天):')
 
     const withNeither = runAnalysis(buildRequest('分析', BARE_SCOPE)).html
-    expect(withNeither).not.toContain('恢复状态良好')
-    expect(withNeither).not.toContain('习惯记录显示')
+    expect(withNeither).not.toContain('健康记录:')
+    expect(withNeither).not.toContain('习惯因子(近 7 天):')
   })
 })

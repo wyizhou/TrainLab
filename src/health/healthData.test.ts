@@ -8,6 +8,7 @@ import {
   HABIT_GROUPS,
   HEALTH_TODAY,
   recordedDayCount,
+  selectedFactorCount,
 } from './healthData'
 
 describe('health mock generators', () => {
@@ -32,12 +33,15 @@ describe('health mock generators', () => {
   it('exposes four habit groups covering the preset factors', () => {
     expect(HABIT_GROUPS).toHaveLength(4)
     const factorIds = HABIT_GROUPS.flatMap((g) => g.factors.map((f) => f.id))
-    expect(factorIds).toEqual(expect.arrayContaining(['coffee', 'nap', 'alcohol', 'intensity']))
+    expect(factorIds).toEqual(
+      expect.arrayContaining(['morning-coffee', 'noon-nap', 'evening-alcohol', 'allday-hydration']),
+    )
   })
 
   it('seeds three recorded habit days and counts only non-empty dates', () => {
     const seed = generateHabitSeed()
     expect(recordedDayCount(seed)).toBe(3)
     expect(recordedDayCount({ ...seed, '2026-01-01': [] })).toBe(3)
+    expect(selectedFactorCount(seed, HEALTH_TODAY)).toBe(3)
   })
 })

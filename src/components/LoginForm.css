@@ -2,51 +2,92 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  min-width: auto;
   min-height: 100vh;
   padding: var(--space-5);
+  background: var(--login-background);
 }
 
-.login__card {
+.login__column {
+  width: var(--login-column-width);
+  max-width: 100%;
+}
+
+.login__brand {
+  margin: var(--login-brand-margin);
+  text-align: center;
+}
+
+.login__brand-row {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--login-brand-gap);
+}
+
+.login__mark {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  width: 100%;
-  max-width: 360px;
-  padding: var(--space-6);
-  background-color: var(--color-panel);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  align-items: center;
+  justify-content: center;
+  width: var(--login-mark-size);
+  height: var(--login-mark-size);
+  border-radius: var(--radius-input);
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+  font-size: 17px;
+  font-weight: 700;
 }
 
 .login__title {
   margin: 0;
   font-size: 22px;
-  text-align: center;
+  letter-spacing: 1px;
+}
+
+.login__subtitle {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.login__card {
+  width: 100%;
+  padding: var(--login-card-padding);
+  background-color: var(--color-panel);
+  border: 1px solid var(--color-border-panel);
+  border-radius: var(--radius-panel);
+}
+
+.login__card-title {
+  margin: var(--login-title-margin);
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .login__field {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--login-field-gap);
+  margin: var(--login-field-margin);
 }
 
 .login__field label {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--color-text-muted);
 }
 
 .login__field input {
-  padding: var(--space-2) var(--space-3);
+  width: 100%;
+  padding: var(--login-input-padding);
   background-color: var(--color-panel-deep);
   color: var(--color-text);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-input);
   font-size: 14px;
 }
 
 .login__captcha-row {
   display: flex;
-  gap: var(--space-3);
+  gap: var(--login-brand-gap);
 }
 
 .login__captcha-row input {
@@ -55,37 +96,45 @@
 }
 
 .login__field input:focus {
-  outline: 2px solid var(--color-accent);
-  outline-offset: -1px;
+  outline: 1px solid var(--color-accent);
 }
 
 .login__captcha {
-  padding: var(--space-2) var(--space-4);
+  padding: var(--login-captcha-padding);
   background-color: var(--color-panel-deep);
-  color: var(--color-text);
-  border: 1px dashed var(--color-border);
-  border-radius: var(--radius-md);
+  border: 1px dashed var(--color-border-toast);
+  border-radius: var(--radius-input);
   font-size: 18px;
-  letter-spacing: 0.3em;
+  letter-spacing: 6px;
+  color: var(--color-accent-text);
+  font-style: italic;
   cursor: pointer;
   user-select: none;
 }
 
 .login__error {
-  margin: 0;
+  margin: var(--login-field-margin);
   color: var(--color-danger);
   font-size: 13px;
 }
 
 .login__submit {
+  margin: var(--login-submit-margin);
   padding: var(--space-3);
   background-color: var(--color-accent);
   color: var(--color-on-accent);
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-input);
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
+}
+
+.login__demo {
+  margin: var(--login-demo-margin);
+  color: var(--color-text-faint);
+  font-size: 12px;
+  text-align: center;
 }
 
 .login__submit:hover {

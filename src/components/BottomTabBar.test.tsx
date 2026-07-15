@@ -18,7 +18,7 @@ describe('BottomTabBar', () => {
     expect(bar.children).toHaveLength(5)
     const labels = within(bar)
       .getAllByRole('link')
-      .map((link) => link.textContent)
+      .map((link) => link.querySelector('.bottom-tab-bar__label')?.textContent)
     expect(labels).toEqual(['分析', '运动记录', '健康记录', '连接器', '设置'])
   })
 

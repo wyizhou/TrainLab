@@ -39,7 +39,7 @@ describe('SessionRail', () => {
     const items = desktopRail().getAllByTestId('session-item')
     expect(items).toHaveLength(2)
     expect(within(items[0]).getByText('会话 1')).toBeInTheDocument()
-    expect(within(items[0]).getByText('3')).toBeInTheDocument()
+    expect(within(items[0]).getByText('3 条消息')).toBeInTheDocument()
     expect(desktopRail().getByRole('button', { name: '新建会话' })).toBeInTheDocument()
   })
 

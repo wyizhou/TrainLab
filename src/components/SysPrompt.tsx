@@ -11,18 +11,24 @@ export function SysPrompt({ prompt }: { prompt: string }) {
   return (
     <div className="sys-prompt" data-testid="sys-prompt">
       <div className="sys-prompt__head">
-        <span className="sys-prompt__label">隐藏系统提示词</span>
+        <span className="sys-prompt__label">
+          内置系统提示词（每次对话隐藏发送，强制 AI 以 HTML 回复）
+        </span>
         <button
           type="button"
           className="sys-prompt__toggle"
           aria-expanded={open}
           onClick={() => setOpen((prev) => !prev)}
         >
-          {open ? '收起' : '查看'}
+          {open ? '收起提示词' : '展开提示词'}
         </button>
       </div>
       {open && (
-        <pre className="sys-prompt__body" data-testid="sys-prompt-body">
+        <pre
+          className="sys-prompt__body"
+          data-vc="system-prompt-panel"
+          data-testid="sys-prompt-body"
+        >
           {prompt}
         </pre>
       )}

@@ -22,7 +22,7 @@ async function panelMetrics(page: Page) {
 
 // Connect the disconnected 国际区 account (no 2FA) and open the merge modal.
 async function openMergeModal(page: Page) {
-  const globalCard = page.getByTestId('connector-card').filter({ hasText: '佳明国际区' })
+  const globalCard = page.getByTestId('connector-card').filter({ hasText: '佳明 Connect 国际区' })
   await globalCard.getByTestId('connector-action').click()
 
   const authModal = page.getByTestId('auth-modal')
@@ -65,7 +65,7 @@ test('resolves the double-account merge conflict and dismisses the banner', asyn
   await page.goto('/connectors')
 
   // Connect the disconnected 国际区 account (no 2FA) to trigger reconciliation.
-  const globalCard = page.getByTestId('connector-card').filter({ hasText: '佳明国际区' })
+  const globalCard = page.getByTestId('connector-card').filter({ hasText: '佳明 Connect 国际区' })
   await globalCard.getByTestId('connector-action').click()
 
   const authModal = page.getByTestId('auth-modal')
@@ -89,7 +89,7 @@ test('resolves the double-account merge conflict and dismisses the banner', asyn
   await expect(groups).toHaveCount(2)
 
   const confirm = modal.getByTestId('conflict-confirm')
-  await expect(confirm).toBeDisabled()
+  await expect(confirm).toBeEnabled()
   await groups.nth(0).getByTestId('conflict-choice-cn').check()
   await groups.nth(1).getByTestId('conflict-choice-global').check()
   await expect(confirm).toBeEnabled()

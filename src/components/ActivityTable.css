@@ -2,6 +2,7 @@
    panel bg + borderPanel + radiusCard(12) + overflow-x auto; the inner __grid
    carries the fixed min-width:960px column track (承 v3.1 A14). */
 .activity-table {
+  min-width: 0;
   background-color: var(--color-panel);
   border: 1px solid var(--color-border-panel);
   border-radius: var(--radius-panel);
@@ -10,6 +11,12 @@
 
 .activity-table__grid {
   min-width: 960px;
+}
+
+@media (640px <= width < 980px) {
+  .activity-table__grid {
+    padding-bottom: var(--pad-tablet-scrollbar);
+  }
 }
 
 /* Only mobile (<640) drops the table for ActivityCardList; tablet/desktop keep
@@ -22,24 +29,30 @@
 
 .activity-table__row {
   display: grid;
-  grid-template-columns: 36px 112px 78px 1fr 88px 88px 78px 118px 92px 70px;
+  grid-template-columns: 36px 112px 78px 1fr 84px 88px 90px 110px 92px 70px;
   gap: 0 var(--space-2);
   align-items: center;
-  padding: var(--space-3) var(--space-4);
-  border-bottom: 1px solid var(--color-border);
+  padding: var(--pad-table-row);
+  border-bottom: 1px solid var(--color-border-row);
   font-size: 13px;
   cursor: pointer;
 }
 
 .activity-table__row--head {
+  padding: var(--pad-table-header);
+  border-bottom-color: var(--color-border-weak);
   font-size: 11px;
-  color: var(--color-text-muted);
+  color: var(--color-text-faint);
   letter-spacing: 0.5px;
   cursor: default;
 }
 
 .activity-table__row:last-child {
   border-bottom: none;
+}
+
+.activity-table__row:not(.activity-table__row--head):hover {
+  background-color: var(--color-hover-row);
 }
 
 .activity-table__check {
@@ -57,7 +70,7 @@
 .activity-table__type {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--gap-pagination-size);
   font-size: 12px;
 }
 
@@ -102,10 +115,10 @@
 
 .activity-table__download {
   background-color: transparent;
-  border: 1px solid var(--color-border);
-  color: var(--color-accent);
+  border: 1px solid var(--color-border-input);
+  color: var(--color-accent-text);
   font-size: 11px;
-  padding: var(--space-1) var(--space-2);
+  padding: var(--pad-fit-button);
   border-radius: var(--radius-sm);
   cursor: pointer;
 }

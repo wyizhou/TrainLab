@@ -77,6 +77,7 @@ function makeParsed(overrides: Partial<ParsedActivity['summary']> = {}): ParsedA
         distanceM: 300.94,
         durationSec: 120,
         avgHr: 118,
+        maxHr: 132,
         avgPaceSecPerKm: 398,
         avgPowerW: 244,
       },
@@ -85,6 +86,7 @@ function makeParsed(overrides: Partial<ParsedActivity['summary']> = {}): ParsedA
         distanceM: 400,
         durationSec: 130,
         avgHr: 150,
+        maxHr: 164,
         avgPaceSecPerKm: 360,
         avgPowerW: 260,
       },
@@ -102,11 +104,13 @@ function makeParsed(overrides: Partial<ParsedActivity['summary']> = {}): ParsedA
 describe('ActivityDetail', () => {
   it('annotates metric sections with FIT field names and shows raw training effects', () => {
     render(<ActivityDetail activity={activity} parsed={makeParsed()} />)
-    expect(screen.getByText('avg_heart_rate')).toBeInTheDocument()
-    expect(screen.getByText('total_training_effect')).toBeInTheDocument()
-    expect(screen.getByText('normalized_power')).toBeInTheDocument()
+    expect(screen.getByText('avg_heart_rate / max_heart_rate')).toBeInTheDocument()
+    expect(screen.getByText('total_training_effect / training_load_peak')).toBeInTheDocument()
+    expect(screen.getByText('avg_power / max_power / normalized_power')).toBeInTheDocument()
     // Training effect renders the raw stored value.
-    const section = screen.getByText('total_training_effect').closest('.metric-section')
+    const section = screen
+      .getByText('total_training_effect / training_load_peak')
+      .closest('.metric-section')
     expect(section).toHaveTextContent('2.7')
   })
 
@@ -125,18 +129,27 @@ describe('ActivityDetail', () => {
     expect(screen.queryByTestId('series-curve')).not.toBeInTheDocument()
   })
 
-  it('renders the HR-zone bars and the laps table with an average-power column', () => {
+  it('renders the HR-zone bars and the seven-column laps table', () => {
     render(<ActivityDetail activity={activity} parsed={makeParsed()} />)
     expect(screen.getAllByTestId('hr-zone-row')).toHaveLength(5)
     const laps = screen.getByTestId('laps-table')
     expect(laps).toHaveTextContent('平均功率')
+    expect(laps).toHaveTextContent('最大心率')
     expect(screen.getAllByTestId('lap-row')).toHaveLength(2)
     expect(laps).toHaveTextContent('244 W')
+    expect(laps).toHaveTextContent('132')
   })
 
   it('renders "--" for FIT fields the sample lacks', () => {
-    render(<ActivityDetail activity={activity} parsed={makeParsed({ maxPowerW: null })} />)
-    const section = screen.getByText('max_power').closest('.metric-section')
+    render(
+      <ActivityDetail
+        activity={{ ...activity, id: 'a1' }}
+        parsed={makeParsed({ maxPowerW: null })}
+      />,
+    )
+    const section = screen
+      .getByText('avg_power / max_power / normalized_power')
+      .closest('.metric-section')
     expect(section).toHaveTextContent('--')
   })
 
@@ -151,7 +164,7 @@ describe('ActivityDetail', () => {
   it('falls back to the list summary and empty notes without a parsed FIT', () => {
     render(<ActivityDetail activity={activity} parsed={null} />)
     // Basics still come from the list row.
-    const hr = screen.getByText('avg_heart_rate').closest('.metric-section')
+    const hr = screen.getByText('avg_heart_rate / max_heart_rate').closest('.metric-section')
     expect(hr).toHaveTextContent('152 bpm')
     expect(screen.getByText('该记录无逐秒原始数据')).toBeInTheDocument()
     expect(screen.getByText('该记录无分段数据')).toBeInTheDocument()

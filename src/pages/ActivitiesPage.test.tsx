@@ -83,9 +83,9 @@ describe('ActivitiesPage', () => {
     // download button exists twice; scope to the table surface for this assert.
     const table = within(screen.getByTestId('activity-table'))
     await user.click(table.getByRole('button', { name: '下载 晨间轻松跑 的 FIT' }))
-    // a0 → 2026-07-11_a0.fit (see fitFileName); download is a mock (G-mock).
+    // a0 → 2026-07-09_a0.fit (see fitFileName); download is a mock (G-mock).
     expect(screen.getByTestId('download-status')).toHaveTextContent(
-      '已开始下载 2026-07-11_a0.fit（模拟）',
+      '已开始下载 2026-07-09_a0.fit（模拟）',
     )
   })
 })

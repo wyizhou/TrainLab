@@ -12,10 +12,10 @@ export type HrZoneConfig = {
   bounds: [number, number, number, number]
 }
 
-// Default 区间设定 — a five-zone split of a 190 bpm reference max heart rate.
+// v3.2 baseline interval settings shared by settings and activity detail.
 export const DEFAULT_HR_ZONES: HrZoneConfig = {
-  maxHr: 190,
-  bounds: [114, 133, 152, 171],
+  maxHr: 192,
+  bounds: [121, 141, 161, 181],
 }
 
 export type HrZoneRange = {

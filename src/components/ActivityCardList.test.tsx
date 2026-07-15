@@ -47,13 +47,13 @@ describe('ActivityCardList', () => {
 
     const run = within(cards[0])
     expect(run.getByText('晨间轻松跑')).toBeInTheDocument()
-    expect(run.getByText('5.08 km')).toBeInTheDocument()
+    expect(run.getByText('5.1 km')).toBeInTheDocument()
     expect(run.getByText('31:25')).toBeInTheDocument()
     expect(run.getByText(`6'11"/km`)).toBeInTheDocument()
 
     // Strength card: distance and pace/power collapse to "--".
     const strength = within(cards[1])
-    expect(strength.getAllByText('--')).toHaveLength(2)
+    expect(strength.getAllByText('—')).toHaveLength(2)
   })
 
   it('reflects selection and fires the toggle / download callbacks', async () => {

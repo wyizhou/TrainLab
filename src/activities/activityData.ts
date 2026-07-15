@@ -62,7 +62,7 @@ function mulberry32(seed: number): () => number {
 }
 
 // Fixed anchor (not `new Date()`) keeps the generated dates stable for tests.
-const ANCHOR_MS = Date.parse('2026-07-11T00:00:00Z')
+const ANCHOR_MS = Date.parse('2026-07-09T00:00:00Z')
 const DAY_MS = 86_400_000
 
 function dateFor(offsetDays: number): string {
@@ -193,7 +193,7 @@ export function generateActivities(): Activity[] {
     rnd() < 0.72 ? '佳明CN' : rnd() < 0.7 ? '佳明国际' : 'FIT上传'
 
   let off = 16
-  while (off < 180) {
+  while (acts.length < 104) {
     const r = rnd()
     const src = pickSource()
     if (r < 0.42) {
@@ -245,10 +245,16 @@ export function generateActivities(): Activity[] {
 
 // ---- display formatters -------------------------------------------------------
 
-const DASH = '--'
+const DASH = '—'
 
 export function formatDistance(km: number | null): string {
-  return km === null ? DASH : `${km.toFixed(2)} km`
+  return km === null ? DASH : `${km.toFixed(1)} km`
+}
+
+export function formatActivityDate(date: string): string {
+  const parsed = new Date(`${date}T00:00:00Z`)
+  const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+  return `${date.slice(5)} ${weekdays[parsed.getUTCDay()]}`
 }
 
 export function formatDuration(sec: number): string {

@@ -23,6 +23,7 @@ export type EffectiveScope = {
 type ScopeBarProps = {
   activities?: ScopeActivity[]
   onScopeChange?: (scope: EffectiveScope) => void
+  hideSummary?: boolean
 }
 
 // C-4: the four day-range chips; 3 is the default.
@@ -41,7 +42,11 @@ const DEFAULT_ACTIVITIES: ScopeActivity[] = [
   { id: 'a6', date: '06-20', name: '越野跑', type: '越野跑', offsetDays: 21 },
 ]
 
-export function ScopeBar({ activities = DEFAULT_ACTIVITIES, onScopeChange }: ScopeBarProps) {
+export function ScopeBar({
+  activities = DEFAULT_ACTIVITIES,
+  onScopeChange,
+  hideSummary = false,
+}: ScopeBarProps) {
   const [rangeDays, setRangeDays] = useState<number>(DEFAULT_RANGE)
   const [pickedIds, setPickedIds] = useState<string[]>([])
   const [includeHealth, setIncludeHealth] = useState(true)
@@ -94,7 +99,7 @@ export function ScopeBar({ activities = DEFAULT_ACTIVITIES, onScopeChange }: Sco
 
   return (
     <div className="scope-bar" data-testid="scope-bar">
-      <div className="scope-bar__row">
+      <div className="scope-bar__row" data-vc="analysis-controls">
         <span className="scope-bar__label">数据范围</span>
         {RANGE_DAYS.map((days) => {
           const active = pickedIds.length === 0 && days === rangeDays
@@ -122,6 +127,7 @@ export function ScopeBar({ activities = DEFAULT_ACTIVITIES, onScopeChange }: Sco
               : 'scope-bar__picker'
           }
           aria-expanded={pickOpen}
+          data-vc="activity-picker-trigger"
           onClick={() => setPickOpen((open) => !open)}
         >
           选择运动 (<span className="num">{pickedIds.length}</span>)
@@ -148,7 +154,7 @@ export function ScopeBar({ activities = DEFAULT_ACTIVITIES, onScopeChange }: Sco
       </div>
 
       {pickOpen && (
-        <ul className="scope-bar__picklist" data-testid="scope-picklist">
+        <ul className="scope-bar__picklist" data-vc="activity-picker" data-testid="scope-picklist">
           {activities.map((activity) => (
             <li key={activity.id} className="scope-bar__pickrow">
               <label className="scope-bar__pickitem">
@@ -166,12 +172,14 @@ export function ScopeBar({ activities = DEFAULT_ACTIVITIES, onScopeChange }: Sco
         </ul>
       )}
 
-      <div className="scope-bar__summary" data-testid="scope-summary">
-        当前范围：{summary}
-        <span className="scope-bar__effective" data-testid="scope-effective">
-          （生效 <span className="num">{scopedActivities.length}</span> 次运动）
-        </span>
-      </div>
+      {!hideSummary && (
+        <div className="scope-bar__summary" data-testid="scope-summary">
+          当前范围：{summary}
+          <span className="scope-bar__effective" data-testid="scope-effective">
+            （生效 <span className="num">{scopedActivities.length}</span> 次运动）
+          </span>
+        </div>
+      )}
     </div>
   )
 }

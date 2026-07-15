@@ -1,14 +1,15 @@
 .habit-picker {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
 }
 
 .habit-picker__bar {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
+  gap: var(--gap-habit-toolbar);
   flex-wrap: wrap;
+  min-width: 0;
+  margin: var(--margin-detail-header);
 }
 
 .habit-picker__date {
@@ -20,7 +21,7 @@
 }
 
 .habit-picker__date input {
-  padding: var(--space-1) var(--space-2);
+  padding: var(--pad-habit-date);
   background-color: var(--color-panel-deep);
   color: var(--color-text);
   border: 1px solid var(--color-border);
@@ -30,22 +31,66 @@
 }
 
 .habit-picker__count {
+  margin-left: auto;
+  padding: var(--pad-habit-count);
+  color: var(--color-accent-text);
+  background-color: var(--color-accent-12);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-pill);
   font-size: 13px;
+}
+
+.habit-picker__today {
+  color: var(--color-text-faint);
+  font-size: 12px;
+}
+
+.habit-picker__groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
 }
 
 .habit-picker__group {
   margin: 0;
-  padding: var(--space-3);
-  background-color: var(--color-panel-deep);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  padding: var(--pad-habit-group);
+  background-color: var(--color-panel);
+  border: 1px solid var(--color-border-panel);
+  border-radius: var(--radius-panel);
 }
 
 .habit-picker__legend {
-  padding: 0 var(--space-2);
-  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--margin-habit-title);
+  padding: 0;
+  font-size: 13px;
   font-weight: 600;
-  color: var(--color-text-muted);
+  color: var(--color-text);
+}
+
+.habit-picker__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.habit-picker__dot--morning {
+  background-color: var(--color-warn);
+}
+
+.habit-picker__dot--noon {
+  background-color: var(--color-accent);
+}
+
+.habit-picker__dot--evening {
+  background-color: var(--color-type-trail);
+}
+
+.habit-picker__dot--allday {
+  background-color: var(--color-success);
 }
 
 .habit-picker__chips {
@@ -55,18 +100,18 @@
 }
 
 .habit-picker__chip {
-  padding: var(--space-1) var(--space-3);
-  background-color: var(--color-panel);
+  padding: var(--pad-habit-chip);
+  background-color: var(--color-panel-deep);
   color: var(--color-text-muted);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-pill);
-  font-size: 12px;
+  font-size: 13px;
   cursor: pointer;
 }
 
 .habit-picker__chip--on {
-  background-color: var(--color-accent);
-  color: var(--color-on-accent);
+  background-color: var(--color-accent-18);
+  color: var(--color-accent-text);
   border-color: var(--color-accent);
   font-weight: 600;
 }

@@ -5,8 +5,8 @@ import { test, expect } from '@playwright/test'
 test('rejects a wrong captcha, then logs in and lands on the analysis page', async ({ page }) => {
   await page.goto('/login')
 
-  await page.getByLabel('用户名').fill('alice')
-  await page.getByLabel('密码').fill('secret')
+  await page.getByLabel('用户名').fill('alice123')
+  await page.getByLabel('密码').fill('secret1')
 
   // The displayed code is always 1000-9999, so 0000 is guaranteed wrong.
   const code = (await page.getByTestId('captcha-code').textContent())?.trim() ?? ''

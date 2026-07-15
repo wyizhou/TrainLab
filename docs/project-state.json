@@ -4,12 +4,12 @@
   "design_baseline": {
     "revision": 5,
     "version": "v3.2",
-    "status": "ready_for_implementation"
+    "status": "implemented_and_verified"
   },
   "implementation_baseline": {
-    "revision": 4,
-    "version": "v3.1",
+    "revision": 5,
+    "version": "v3.2",
     "status": "verified"
   },
-  "next_milestone": "align_implementation_to_v3.2"
+  "next_milestone": "await_next_product_milestone"
 }

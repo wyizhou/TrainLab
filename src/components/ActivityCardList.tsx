@@ -1,10 +1,12 @@
 import {
   formatDistance,
   formatDuration,
+  formatActivityDate,
   formatPaceOrPower,
   TYPE_DOT_SLUG,
   type Activity,
 } from '../activities/activityData'
+import type { ReactNode } from 'react'
 import './ActivityCardList.css'
 
 type ActivityCardListProps = {
@@ -13,6 +15,7 @@ type ActivityCardListProps = {
   onToggle: (id: string) => void
   onDownload: (id: string) => void
   onOpen?: (id: string) => void
+  children?: ReactNode
 }
 
 // Mobile form of the activity list (contract C-7, AC-007b-1 / AC-007c-1). The
@@ -28,6 +31,7 @@ export function ActivityCardList({
   onToggle,
   onDownload,
   onOpen,
+  children,
 }: ActivityCardListProps) {
   return (
     <div
@@ -39,6 +43,7 @@ export function ActivityCardList({
         <div
           key={a.id}
           className="activity-card"
+          data-vc="activity-card"
           data-testid="activity-card"
           onClick={() => onOpen?.(a.id)}
         >
@@ -51,36 +56,8 @@ export function ActivityCardList({
               onChange={() => onToggle(a.id)}
               onClick={(event) => event.stopPropagation()}
             />
-            <span className="activity-card__type">
-              <span className={`activity-dot activity-dot--${TYPE_DOT_SLUG[a.type]}`} />
-              {a.type}
-            </span>
-            <span className="activity-card__date num">{a.date}</span>
-          </div>
-
-          <div className="activity-card__name">{a.name}</div>
-
-          <dl className="activity-card__metrics">
-            <div>
-              <dt>距离</dt>
-              <dd className="num">{formatDistance(a.distanceKm)}</dd>
-            </div>
-            <div>
-              <dt>时长</dt>
-              <dd className="num">{formatDuration(a.durationSec)}</dd>
-            </div>
-            <div>
-              <dt>平均心率</dt>
-              <dd className="num">{a.avgHr}</dd>
-            </div>
-            <div>
-              <dt>配速 / 功率</dt>
-              <dd className="num">{formatPaceOrPower(a)}</dd>
-            </div>
-          </dl>
-
-          <div className="activity-card__foot">
-            <span className="activity-card__src">{a.source}</span>
+            <span className={`activity-dot activity-dot--${TYPE_DOT_SLUG[a.type]}`} />
+            <span className="activity-card__name">{a.name}</span>
             <button
               type="button"
               className="activity-card__download"
@@ -93,8 +70,34 @@ export function ActivityCardList({
               FIT ↓
             </button>
           </div>
+
+          <dl className="activity-card__metrics" data-vc="activity-card-metrics">
+            <div>
+              <dt>距离</dt>
+              <dd className="num">{formatDistance(a.distanceKm)}</dd>
+            </div>
+            <div>
+              <dt>时长</dt>
+              <dd className="num">{formatDuration(a.durationSec)}</dd>
+            </div>
+            <div>
+              <dt>平均心率</dt>
+              <dd className="num">{a.avgHr} bpm</dd>
+            </div>
+            <div>
+              <dt>配速 / 功率</dt>
+              <dd className="num">{formatPaceOrPower(a)}</dd>
+            </div>
+          </dl>
+
+          <div className="activity-card__foot">
+            <span className="activity-card__date num">{formatActivityDate(a.date)}</span>
+            <span className="activity-card__type">{a.type}</span>
+            <span className="activity-card__src">{a.source}</span>
+          </div>
         </div>
       ))}
+      {children}
     </div>
   )
 }

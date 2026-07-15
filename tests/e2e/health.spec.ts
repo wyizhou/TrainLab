@@ -1,4 +1,5 @@
 import { test, expect, type Locator, type Page } from '@playwright/test'
+import { generateSleep } from '../../src/health/healthData'
 
 // Baseline viewports (contract G-resp): mobile 390 / tablet 768 / desktop 1280.
 const MOBILE = { width: 390, height: 844 }
@@ -94,27 +95,58 @@ test('AC-009c-1: sleep stacked-bar segment colours + radii (desktop)', async ({ 
   const deep = page.locator('[data-vc="sleep-chart-bar-deep"]')
   const light = page.locator('[data-vc="sleep-chart-bar-light"]')
   const rem = page.locator('[data-vc="sleep-chart-bar-rem"]')
-  await expect(deep).toHaveCount(1)
-  await expect(light).toHaveCount(1)
-  await expect(rem).toHaveCount(1)
+  await expect(deep).toHaveCount(14)
+  await expect(light).toHaveCount(14)
+  await expect(rem).toHaveCount(14)
 
-  const deepC = await computed(deep, ['background-color', ...RADIUS_CORNERS])
+  const deepC = await computed(deep.first(), ['background-color', ...RADIUS_CORNERS])
   expect(deepC['background-color']).toBe('rgb(46, 92, 158)') // accentDeep
   expect(deepC['border-top-left-radius']).toBe('0px')
   expect(deepC['border-top-right-radius']).toBe('0px')
   expect(deepC['border-bottom-right-radius']).toBe('3px')
   expect(deepC['border-bottom-left-radius']).toBe('3px')
 
-  const lightC = await computed(light, ['background-color', ...RADIUS_CORNERS])
+  const lightC = await computed(light.first(), ['background-color', ...RADIUS_CORNERS])
   expect(lightC['background-color']).toBe('rgb(66, 146, 224)') // accent
   for (const corner of RADIUS_CORNERS) expect(lightC[corner]).toBe('0px')
 
-  const remC = await computed(rem, ['background-color', ...RADIUS_CORNERS])
+  const remC = await computed(rem.first(), ['background-color', ...RADIUS_CORNERS])
   expect(remC['background-color']).toBe('rgb(143, 193, 242)') // sleepRem
   expect(remC['border-top-left-radius']).toBe('3px')
   expect(remC['border-top-right-radius']).toBe('3px')
   expect(remC['border-bottom-right-radius']).toBe('0px')
   expect(remC['border-bottom-left-radius']).toBe('0px')
+})
+
+test('sleep segment geometry uses the fixed 15px-per-hour scale', async ({ page }) => {
+  await page.setViewportSize(DESKTOP)
+  await page.goto('/health')
+  await expect(page.getByTestId('sleep-bar')).toHaveCount(14)
+
+  const firstRecord = generateSleep().slice(0, 14).reverse()[0]
+  const expectedHeights = {
+    rem: firstRecord.remMin / 4,
+    light: firstRecord.lightMin / 4,
+    deep: firstRecord.deepMin / 4,
+  }
+  const actualHeights = await page
+    .getByTestId('sleep-bar')
+    .first()
+    .evaluate((bar) => ({
+      rem: (
+        bar.querySelector('[data-vc="sleep-chart-bar-rem"]') as HTMLElement
+      ).getBoundingClientRect().height,
+      light: (
+        bar.querySelector('[data-vc="sleep-chart-bar-light"]') as HTMLElement
+      ).getBoundingClientRect().height,
+      deep: (
+        bar.querySelector('[data-vc="sleep-chart-bar-deep"]') as HTMLElement
+      ).getBoundingClientRect().height,
+    }))
+
+  expect(actualHeights.rem).toBeCloseTo(expectedHeights.rem, 1)
+  expect(actualHeights.light).toBeCloseTo(expectedHeights.light, 1)
+  expect(actualHeights.deep).toBeCloseTo(expectedHeights.deep, 1)
 })
 
 // AC-009c-2 (C-9): health-tab selected vs 常态 visual contract. Desktop.
