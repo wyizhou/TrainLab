@@ -1,0 +1,80 @@
+/* analysis-main pixel-contract (AC-003c-3): flex · gap 18 · max-width 1200 · centered. */
+.analysis {
+  display: flex;
+  gap: var(--gap-analysis);
+  align-items: flex-start;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.analysis__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.analysis__main h1 {
+  margin: 0 0 var(--space-3);
+  font-size: 20px;
+}
+
+.analysis__main p {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+/* Conversation thread — the visual hierarchy of C-5 (bubbles live in ChatMessage.css). */
+.analysis__thread {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: var(--space-5);
+}
+
+.analysis__hint {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* Composer / analysis-input pixel-contract (AC-003c-4): panel bg · borderPanel 1px ·
+   radius 14 · pad 12/14; stays in flow (non-fixed input bar) wrapping input + send. */
+.analysis__composer {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  padding: var(--pad-analysis-input);
+  background-color: var(--color-panel);
+  border: 1px solid var(--color-border-panel);
+  border-radius: var(--radius-lg);
+}
+
+.analysis__input {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-2) var(--space-3);
+  font-size: 13px;
+  color: var(--color-text);
+  background-color: var(--color-panel-deep);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+/* btn-primary pixel-contract (AC-001c-5): accent fill · onAccent text · border none ·
+   radiusBtnPrimary 10px · padBtnPrimary 11px 22px · font-weight 700. */
+.analysis__send {
+  padding: var(--pad-btn-primary);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-on-accent);
+  background-color: var(--color-accent);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+/* Tablet: rail becomes a top dropdown, so stack it above the content. */
+@media (width < 980px) {
+  .analysis {
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+}

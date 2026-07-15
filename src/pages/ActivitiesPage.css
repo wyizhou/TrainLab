@@ -1,0 +1,73 @@
+.activities__head {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
+.activities__count {
+  margin-top: var(--space-1);
+  font-size: 13px;
+}
+
+.activities__batch {
+  margin-left: auto;
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+  border: none;
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-4);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.activities__batch:disabled {
+  background-color: var(--color-panel);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  cursor: not-allowed;
+}
+
+.activities__filters {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
+/* type-chip pixel-contract (C-7 AC-007c-2): normal = panel bg + borderPanel +
+   textMuted; selected = accent@0.16 fill + accent border + accentText. Both share
+   radiusPill + padChipType(6 14). */
+.activities__chip {
+  padding: var(--pad-chip-type);
+  background-color: var(--color-panel);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border-panel);
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.activities__chip--active {
+  background-color: var(--color-accent-16);
+  color: var(--color-accent-text);
+  border-color: var(--color-accent);
+  font-weight: 600;
+}
+
+/* The table / card list each carry their own panel chrome now (C-7 AC-007c-1);
+   the page column just stacks them above the pager. */
+.activities__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.activities__note {
+  margin-top: var(--space-3);
+  min-height: 18px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}

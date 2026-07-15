@@ -1,0 +1,32 @@
+.conflict-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background-color: color-mix(in oklab, var(--color-danger) 16%, var(--color-panel));
+  border: 1px solid color-mix(in oklab, var(--color-danger) 45%, var(--color-border));
+  border-radius: var(--radius-md);
+}
+
+.conflict-banner__text {
+  font-size: 14px;
+  color: var(--color-text);
+}
+
+.conflict-banner__action {
+  padding: var(--space-2) var(--space-4);
+  background-color: var(--color-danger);
+  color: var(--color-on-accent);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.conflict-banner__action:hover {
+  opacity: 0.9;
+}

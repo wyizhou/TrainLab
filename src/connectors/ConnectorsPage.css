@@ -1,0 +1,21 @@
+.connectors__head {
+  margin-bottom: var(--space-4);
+}
+
+.connectors__intro {
+  margin-top: var(--space-1);
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* Intrinsically responsive card grid (contract C-10, design_rev 2): the min track
+   is `min(320px, 100%)` so a viewport narrower than 320px collapses the column to
+   the container width instead of overflowing it. auto-fill then packs as many 320px
+   columns as fit — two 佳明 cards sit side by side on desktop and stack into a single
+   column once only one 320px track fits (mobile). No breakpoint media query needed:
+   the reflow is driven by the container width itself (AC-010b-1, no 横向溢出). */
+.connectors__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
+  gap: var(--space-4);
+}

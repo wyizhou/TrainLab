@@ -1,0 +1,26 @@
+.health-tabs {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
+/* health-tab pixel-contract (C-9 AC-009c-2; v3.1 A13): 常态 panel 底 / borderPanel
+   边 / textMuted 字，选中 accent@0.16 底 / accent 边 / accentText 字。padTab 7 18、
+   radiusInput 8、font-size 13. data-vc 镜像在 HealthTabs.tsx 的按钮上. */
+.health-tabs__tab {
+  padding: var(--pad-tab);
+  background-color: var(--color-panel);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border-panel);
+  border-radius: var(--radius-input);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.health-tabs__tab--active {
+  background-color: var(--color-accent-16);
+  color: var(--color-accent-text);
+  border-color: var(--color-accent);
+  font-weight: 600;
+}

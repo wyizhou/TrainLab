@@ -1,0 +1,29 @@
+.activity-detail-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.activity-detail-page__back {
+  align-self: flex-start;
+  font-size: 13px;
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.activity-detail-page__back:hover {
+  text-decoration: underline;
+}
+
+.activity-detail-page__loading,
+.activity-detail-page__error,
+.activity-detail-page__missing,
+.activity-detail-page__note {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.activity-detail-page__error {
+  color: var(--color-danger);
+}

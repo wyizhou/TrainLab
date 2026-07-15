@@ -1,0 +1,111 @@
+/* activities-table pixel-contract (C-7 AC-007c-1): the scroll container gets the
+   panel bg + borderPanel + radiusCard(12) + overflow-x auto; the inner __grid
+   carries the fixed min-width:960px column track (承 v3.1 A14). */
+.activity-table {
+  background-color: var(--color-panel);
+  border: 1px solid var(--color-border-panel);
+  border-radius: var(--radius-panel);
+  overflow-x: auto;
+}
+
+.activity-table__grid {
+  min-width: 960px;
+}
+
+/* Only mobile (<640) drops the table for ActivityCardList; tablet/desktop keep
+   the table (block) and scroll it in-panel (v3.1 A14: display desktop/tablet=block). */
+@media (width < 640px) {
+  .activity-table {
+    display: none;
+  }
+}
+
+.activity-table__row {
+  display: grid;
+  grid-template-columns: 36px 112px 78px 1fr 88px 88px 78px 118px 92px 70px;
+  gap: 0 var(--space-2);
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.activity-table__row--head {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  letter-spacing: 0.5px;
+  cursor: default;
+}
+
+.activity-table__row:last-child {
+  border-bottom: none;
+}
+
+.activity-table__check {
+  accent-color: var(--color-accent);
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+.activity-table__date {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.activity-table__type {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 12px;
+}
+
+.activity-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  flex-shrink: 0;
+}
+
+.activity-dot--run {
+  background-color: var(--color-type-run);
+}
+
+.activity-dot--ride {
+  background-color: var(--color-type-ride);
+}
+
+.activity-dot--swim {
+  background-color: var(--color-type-swim);
+}
+
+.activity-dot--strength {
+  background-color: var(--color-type-strength);
+}
+
+.activity-dot--trail {
+  background-color: var(--color-type-trail);
+}
+
+.activity-table__name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.activity-table__src {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.activity-table__download {
+  background-color: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-accent);
+  font-size: 11px;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
