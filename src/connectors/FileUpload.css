@@ -1,0 +1,167 @@
+.file-upload {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  background-color: var(--color-panel);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.file-upload__head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.file-upload__title {
+  margin: 0;
+  font-size: 16px;
+  color: var(--color-text);
+}
+
+.file-upload__hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.file-upload__drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  background-color: var(--color-panel-deep);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.file-upload__drop:hover {
+  border-color: var(--color-accent);
+}
+
+/* Visually hidden but still focusable/clickable via the wrapping label. */
+.file-upload__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.file-upload__cue {
+  color: var(--color-accent);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.file-upload__sub {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.file-upload__errors {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.file-upload__error {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background-color: color-mix(in oklab, var(--color-danger) 14%, transparent);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+}
+
+.file-upload__error-name {
+  color: var(--color-text);
+}
+
+.file-upload__error-reason {
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+.file-upload__parsed {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.file-upload__row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.6fr auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-2) var(--space-3);
+  border-top: 1px solid var(--color-border);
+  font-size: 13px;
+  color: var(--color-text);
+}
+
+.file-upload__row--head {
+  border-top: 0;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.file-upload__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-upload__num {
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+  color: var(--color-text-muted);
+}
+
+.file-upload__stored {
+  color: var(--color-success);
+  font-weight: 600;
+}
+
+.file-upload__empty {
+  margin: 0;
+  padding: var(--space-3);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+/* Mobile single-column stack (AC-013b-1, design_rev 2). The desktop 4-column
+   parsed grid crowds a 390px viewport, so each row collapses to one column with
+   its column name inlined per field; the shared header row is dropped. The
+   上传区 (flex-column drop zone) already stacks. No horizontal overflow: every
+   track is 1fr, capped at the container width. */
+@media (width < 640px) {
+  .file-upload__row--head {
+    display: none;
+  }
+
+  .file-upload__row {
+    grid-template-columns: 1fr;
+    gap: var(--space-1);
+  }
+
+  .file-upload__row > span[data-label]::before {
+    content: attr(data-label) '：';
+    color: var(--color-text-muted);
+    font-weight: 600;
+  }
+}

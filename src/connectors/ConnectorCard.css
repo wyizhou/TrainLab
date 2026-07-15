@@ -1,0 +1,157 @@
+/* connector-card pixel-contract (C-10 / AC-010c-1): panel bg · borderPanel 边框 ·
+   radiusCard 12 · padConnectorCard 20. */
+.connector-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--pad-connector-card);
+  background-color: var(--color-panel);
+  border: 1px solid var(--color-border-panel);
+  border-radius: var(--radius-panel);
+}
+
+.connector-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.connector-card__name {
+  margin: 0;
+  font-size: 16px;
+  color: var(--color-text);
+}
+
+/* status-pill 三态 pixel-contract (C-10 / AC-010c-2): 公共 pill 圆角 / padding 4 12 /
+   font-size 11 / border-width 1; 三态各自 color/底/边框见下. */
+.connector-card__pill {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* connected: success 字 · success@0.12 底 · success@0.35 边框. */
+.connector-card__pill--connected {
+  color: var(--color-success);
+  background-color: var(--color-success-12);
+  border-color: var(--color-success-35);
+}
+
+/* disconnected: textMuted 字 · textMuted@0.10 底 · borderInput 边框. */
+.connector-card__pill--disconnected {
+  color: var(--color-text-muted);
+  background-color: var(--color-text-muted-10);
+  border-color: var(--color-border-input);
+}
+
+.connector-card__pill--syncing {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+/* failed: danger 字 · danger@0.10 底 · danger@0.40 边框. */
+.connector-card__pill--failed {
+  color: var(--color-danger);
+  background-color: var(--color-danger-10);
+  border-color: var(--color-danger-40);
+}
+
+.connector-card__error {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-3);
+  background-color: color-mix(in oklab, var(--color-danger) 14%, transparent);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+}
+
+.connector-card__error-time {
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.connector-card__error-reason {
+  color: var(--color-danger);
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.connector-card__meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.connector-card__meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.connector-card__meta-row dt {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.connector-card__meta-row dd {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 13px;
+}
+
+.connector-card__num {
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+}
+
+.connector-card__interval {
+  padding: var(--space-1) var(--space-2);
+  background-color: var(--color-panel-deep);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+}
+
+.connector-card__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.connector-card__action:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.connector-card__spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid color-mix(in oklab, var(--color-on-accent) 40%, transparent);
+  border-top-color: var(--color-on-accent);
+  border-radius: var(--radius-pill);
+  animation: connector-spin 0.7s linear infinite;
+}
+
+@keyframes connector-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

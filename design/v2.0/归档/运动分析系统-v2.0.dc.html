@@ -1,0 +1,2224 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+  html,body{margin:0;padding:0;background:#0A0F18;}
+  *{box-sizing:border-box;}
+  a{color:#5EA3E8;text-decoration:none;}
+  a:hover{color:#8FC1F2;text-decoration:underline;}
+  input,select,button,textarea{font-family:inherit;}
+  input:focus,select:focus,textarea:focus{outline:1px solid #4292E0;}
+  ::-webkit-scrollbar{width:10px;height:10px;}
+  ::-webkit-scrollbar-thumb{background:#243349;border-radius:6px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  nav.top-nav{scrollbar-width:none;}
+  nav.top-nav::-webkit-scrollbar{display:none;}
+  input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.7);}
+  @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+  @keyframes blink{0%,100%{opacity:.2}50%{opacity:1}}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  @keyframes shimmer{0%{opacity:.45}50%{opacity:1}100%{opacity:.45}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;display:flex;flex-direction:column;font-family:'Helvetica Neue',Helvetica,'PingFang SC','Microsoft YaHei',sans-serif;color:#E6EBF4;background:#0A0F18;font-size:14px;font-variant-numeric:tabular-nums;">
+
+<!-- ======================= 登录页 ======================= -->
+<sc-if value="{{ showLogin }}" hint-placeholder-val="{{ true }}">
+  <div data-screen-label="登录页" style="flex:1;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse 900px 600px at 50% -10%, #13203A 0%, #0A0F18 60%);padding:24px;">
+    <div style="width:400px;max-width:100%;">
+      <div style="text-align:center;margin-bottom:28px;">
+        <div style="display:inline-flex;align-items:center;gap:10px;">
+          <div style="width:34px;height:34px;border-radius:8px;background:#4292E0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:17px;color:#06101E;">TL</div>
+          <div style="font-size:22px;font-weight:700;letter-spacing:1px;">TrainLab</div>
+        </div>
+        <div style="color:#8A94A8;margin-top:8px;font-size:13px;">运动数据分析系统 · 原始数据存储 + AI 分析</div>
+      </div>
+      <div style="background:#121A28;border:1px solid #223049;border-radius:12px;padding:28px;">
+        <div style="font-size:16px;font-weight:600;margin-bottom:18px;">验证登录</div>
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <label style="font-size:12px;color:#8A94A8;">用户名</label>
+            <input value="{{ loginUser }}" onChange="{{ onLoginUser }}" placeholder="请输入用户名" style="background:#0B1220;border:1px solid #2A3A55;color:#E6EBF4;border-radius:8px;padding:11px 12px;font-size:14px;width:100%;" />
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <label style="font-size:12px;color:#8A94A8;">密码</label>
+            <input type="password" value="{{ loginPass }}" onChange="{{ onLoginPass }}" onKeyDown="{{ onLoginKey }}" placeholder="请输入密码" style="background:#0B1220;border:1px solid #2A3A55;color:#E6EBF4;border-radius:8px;padding:11px 12px;font-size:14px;width:100%;" />
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <label style="font-size:12px;color:#8A94A8;">验证码</label>
+            <div style="display:flex;gap:10px;">
+              <input value="{{ captchaInput }}" onChange="{{ onCaptchaInput }}" onKeyDown="{{ onLoginKey }}" placeholder="输入右侧字符" style="background:#0B1220;border:1px solid #2A3A55;color:#E6EBF4;border-radius:8px;padding:11px 12px;font-size:14px;flex:1;min-width:0;" />
+              <div onClick="{{ refreshCaptcha }}" title="点击刷新" style="cursor:pointer;user-select:none;background:#0B1220;border:1px dashed #3A4E70;border-radius:8px;padding:9px 16px;font-family:ui-monospace,'SF Mono',Consolas,monospace;font-size:18px;letter-spacing:6px;color:#5EA3E8;font-style:italic;">{{ captcha }}</div>
+            </div>
+          </div>
+          <sc-if value="{{ loginErr }}" hint-placeholder-val="{{ false }}">
+            <div style="color:#E06060;font-size:12px;">{{ loginErr }}</div>
+          </sc-if>
+          <button onClick="{{ doLogin }}" style="margin-top:6px;background:#4292E0;border:none;color:#06101E;font-weight:700;font-size:15px;padding:12px;border-radius:8px;cursor:pointer;">登 录</button>
+          <div style="color:#5C687E;font-size:12px;text-align:center;">演示账号:任意用户名 + 任意密码(≥4位)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+<!-- ======================= 主应用 ======================= -->
+<sc-if value="{{ showApp }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden;">
+
+  <!-- 顶栏 -->
+  <header style="display:flex;align-items:center;gap:14px;padding:0 20px;height:56px;border-bottom:1px solid #1C2739;background:#0D1420;flex-shrink:0;">
+    <div style="display:flex;align-items:center;gap:9px;flex-shrink:0;">
+      <div style="width:26px;height:26px;border-radius:6px;background:#4292E0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#06101E;">TL</div>
+      <div style="font-weight:700;font-size:15px;letter-spacing:.5px;">TrainLab</div>
+    </div>
+    <sc-if value="{{ topNav }}" hint-placeholder-val="{{ true }}">
+      <nav class="top-nav" style="display:flex;gap:2px;margin-left:10px;overflow-x:auto;flex-shrink:1;min-width:0;">
+        <sc-for list="{{ navItems }}" as="nv" hint-placeholder-count="7">
+          <div onClick="{{ nv.go }}" style="{{ nv.topStyle }}">{{ nv.label }}</div>
+        </sc-for>
+      </nav>
+    </sc-if>
+    <div style="flex:1;"></div>
+    <sc-if value="{{ showSyncChip }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#8A94A8;background:#121A28;border:1px solid #223049;border-radius:99px;padding:6px 14px;white-space:nowrap;flex-shrink:0;">
+        <span style="width:7px;height:7px;border-radius:50%;background:#3FBF8F;display:inline-block;"></span>
+        <span>上次同步 {{ globalLastSync }}</span>
+      </div>
+    </sc-if>
+    <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+      <div style="width:30px;height:30px;border-radius:50%;background:#223049;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#5EA3E8;">{{ avatarText }}</div>
+      <button onClick="{{ doLogout }}" style="background:transparent;border:1px solid #2A3A55;color:#8A94A8;font-size:12px;padding:6px 12px;border-radius:7px;cursor:pointer;">退出</button>
+    </div>
+  </header>
+
+  <sc-if value="{{ showBottomNav }}" hint-placeholder-val="{{ false }}">
+    <nav style="position:fixed;bottom:0;left:0;right:0;height:60px;background:#0D1420;border-top:1px solid #1C2739;display:flex;z-index:40;">
+      <sc-for list="{{ navItems }}" as="nv" hint-placeholder-count="5">
+        <div onClick="{{ nv.go }}" style="{{ nv.bottomStyle }}">
+          <span style="font-size:17px;line-height:1;">{{ nv.icon }}</span>
+          <span style="font-size:10px;">{{ nv.label }}</span>
+        </div>
+      </sc-for>
+    </nav>
+  </sc-if>
+
+  <div style="flex:1;display:flex;overflow:hidden;">
+    <sc-if value="{{ sideNav }}" hint-placeholder-val="{{ false }}">
+      <aside style="{{ sidebarStyle }}">
+        <sc-for list="{{ navItems }}" as="nv" hint-placeholder-count="7">
+          <div onClick="{{ nv.go }}" style="{{ nv.sideStyle }}" title="{{ nv.label }}">
+            <span style="font-size:16px;width:20px;text-align:center;">{{ nv.icon }}</span>
+            <sc-if value="{{ showNavLabels }}" hint-placeholder-val="{{ true }}">
+              <span>{{ nv.label }}</span>
+            </sc-if>
+          </div>
+        </sc-for>
+      </aside>
+    </sc-if>
+
+    <!-- 内容区 -->
+    <main style="{{ mainStyle }}">
+
+      <!-- ============ 运动记录 ============ -->
+      <sc-if value="{{ tabActivities }}" hint-placeholder-val="{{ true }}">
+        <div data-screen-label="运动记录" style="animation:fadeUp .25s ease;max-width:1280px;margin:0 auto;">
+          <sc-if value="{{ noDetail }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px;">
+              <div>
+                <div style="font-size:19px;font-weight:700;margin-bottom:4px;">运动记录</div>
+                <div style="color:#8A94A8;font-size:13px;">来自连接器的原始运动数据 · 共 {{ actCount }} 条</div>
+              </div>
+              <div style="flex:1;"></div>
+              <button onClick="{{ downloadSelected }}" style="{{ batchBtnStyle }}">下载选中 FIT ({{ selCount }})</button>
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+              <sc-for list="{{ typeChips }}" as="ch" hint-placeholder-count="6">
+                <div onClick="{{ ch.pick }}" style="{{ ch.style }}">{{ ch.label }}</div>
+              </sc-for>
+            </div>
+            <!-- 手机:行转卡片 -->
+            <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <sc-for list="{{ actRows }}" as="a" hint-placeholder-count="6">
+                  <div onClick="{{ a.open }}" style="background:#121A28;border:1px solid #223049;border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
+                    <div style="display:flex;align-items:center;gap:9px;">
+                      <input type="checkbox" checked="{{ a.checked }}" onChange="{{ a.toggle }}" onClick="{{ stopClick }}" style="accent-color:#4292E0;width:16px;height:16px;cursor:pointer;" />
+                      <span style="{{ a.dotStyle }}"></span>
+                      <span style="font-weight:600;font-size:14px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ a.name }}</span>
+                      <button onClick="{{ a.download }}" style="background:transparent;border:1px solid #2A3A55;color:#5EA3E8;font-size:11px;padding:6px 10px;border-radius:6px;cursor:pointer;">FIT ↓</button>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+                      <div><div style="font-size:10px;color:#5C687E;">距离</div><div style="font-size:12.5px;font-family:ui-monospace,'SF Mono',Consolas,monospace;margin-top:2px;">{{ a.distText }}</div></div>
+                      <div><div style="font-size:10px;color:#5C687E;">时长</div><div style="font-size:12.5px;font-family:ui-monospace,'SF Mono',Consolas,monospace;margin-top:2px;">{{ a.durText }}</div></div>
+                      <div><div style="font-size:10px;color:#5C687E;">平均心率</div><div style="font-size:12.5px;font-family:ui-monospace,'SF Mono',Consolas,monospace;margin-top:2px;">{{ a.hrText }}</div></div>
+                      <div><div style="font-size:10px;color:#5C687E;">配速/功率</div><div style="font-size:12.5px;font-family:ui-monospace,'SF Mono',Consolas,monospace;margin-top:2px;">{{ a.paceText }}</div></div>
+                    </div>
+                    <div style="display:flex;gap:10px;font-size:11px;color:#5C687E;">
+                      <span style="font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ a.date }}</span><span>{{ a.type }}</span><span style="margin-left:auto;">{{ a.src }}</span>
+                    </div>
+                  </div>
+                </sc-for>
+                <div style="display:flex;align-items:center;gap:10px;font-size:12px;color:#8A94A8;padding:4px 2px;">
+                  <span>{{ actPager.info }}</span>
+                  <div style="flex:1;"></div>
+                  <button onClick="{{ actPager.prev }}" style="{{ actPager.prevStyle }}">←</button>
+                  <span style="font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ actPager.pageLabel }}</span>
+                  <button onClick="{{ actPager.next }}" style="{{ actPager.nextStyle }}">→</button>
+                </div>
+              </div>
+            </sc-if>
+            <div style="{{ deskTableStyle }}">
+              <div style="min-width:960px;">
+                <div style="display:grid;grid-template-columns:36px 112px 78px 1fr 84px 88px 90px 110px 92px 70px;gap:0 8px;align-items:center;padding:12px 16px;border-bottom:1px solid #1C2739;font-size:11px;color:#5C687E;letter-spacing:.5px;">
+                  <span></span><span>日期</span><span>类型</span><span>名称</span><span>距离</span><span>时长</span><span>平均心率</span><span>配速 / 功率</span><span>来源</span><span></span>
+                </div>
+                <sc-for list="{{ actRows }}" as="a" hint-placeholder-count="10">
+                  <div style="display:grid;grid-template-columns:36px 112px 78px 1fr 84px 88px 90px 110px 92px 70px;gap:0 8px;align-items:center;padding:11px 16px;border-bottom:1px solid #151E2E;font-size:13px;cursor:pointer;" style-hover="background:#16202FF0" onClick="{{ a.open }}">
+                    <input type="checkbox" checked="{{ a.checked }}" onChange="{{ a.toggle }}" onClick="{{ stopClick }}" style="accent-color:#4292E0;width:15px;height:15px;cursor:pointer;" />
+                    <span style="color:#8A94A8;font-family:ui-monospace,'SF Mono',Consolas,monospace;font-size:12px;">{{ a.date }}</span>
+                    <span style="display:flex;align-items:center;gap:6px;"><span style="{{ a.dotStyle }}"></span><span style="font-size:12px;">{{ a.type }}</span></span>
+                    <span style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ a.name }}</span>
+                    <span style="font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ a.distText }}</span>
+                    <span style="font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ a.durText }}</span>
+                    <span style="font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ a.hrText }}</span>
+                    <span style="font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ a.paceText }}</span>
+                    <span style="color:#8A94A8;font-size:12px;">{{ a.src }}</span>
+                    <button onClick="{{ a.download }}" title="下载 FIT" style="background:transparent;border:1px solid #2A3A55;color:#5EA3E8;font-size:11px;padding:5px 10px;border-radius:6px;cursor:pointer;">FIT ↓</button>
+                  </div>
+                </sc-for>
+                <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;font-size:12px;color:#8A94A8;flex-wrap:wrap;">
+                  <span>{{ actPager.info }}</span>
+                  <div style="flex:1;"></div>
+                  <label style="display:flex;align-items:center;gap:6px;">每页
+                    <select value="{{ actPager.sizeVal }}" onChange="{{ actPager.onSize }}" style="background:#0B1220;border:1px solid #2A3A55;color:#E6EBF4;border-radius:6px;padding:5px 8px;font-size:12px;">
+                      <option value="20">20 条</option><option value="50">50 条</option><option value="100">100 条</option>
+                    </select>
+                  </label>
+                  <button onClick="{{ actPager.prev }}" style="{{ actPager.prevStyle }}">← 上一页</button>
+                  <span style="font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ actPager.pageLabel }}</span>
+                  <button onClick="{{ actPager.next }}" style="{{ actPager.nextStyle }}">下一页 →</button>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- 运动详情(统一佳明式指标结构) -->
+          <sc-if value="{{ hasDetail }}" hint-placeholder-val="{{ false }}">
+            <div style="max-width:1180px;">
+              <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap;">
+                <button onClick="{{ closeDetail }}" style="background:transparent;border:1px solid #2A3A55;color:#8A94A8;font-size:13px;padding:7px 14px;border-radius:8px;cursor:pointer;">← 返回列表</button>
+                <div>
+                  <div style="font-size:18px;font-weight:700;">{{ det.name }}</div>
+                  <div style="color:#8A94A8;font-size:12px;margin-top:2px;">{{ det.date }} · {{ det.type }} · 来源 {{ det.src }} · {{ det.device }}</div>
+                </div>
+                <div style="flex:1;"></div>
+                <button onClick="{{ det.download }}" style="background:#4292E0;border:none;color:#06101E;font-weight:700;font-size:13px;padding:9px 18px;border-radius:8px;cursor:pointer;">下载 FIT 文件</button>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:16px;">
+                <sc-for list="{{ detHero }}" as="m" hint-placeholder-count="4">
+                  <div style="background:#121A28;border:1px solid #223049;border-radius:10px;padding:14px;">
+                    <div style="color:#5C687E;font-size:11px;letter-spacing:.5px;">{{ m.label }}</div>
+                    <div style="font-size:20px;font-weight:700;margin-top:6px;font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ m.value }}</div>
+                  </div>
+                </sc-for>
+              </div>
+              <!-- 时序数据:图表(降采样)/ 逐秒数据表 切换 -->
+              <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap;">
+                <div onClick="{{ viewCharts }}" style="{{ viewChartsStyle }}">图表(降采样)</div>
+                <div onClick="{{ viewTable }}" style="{{ viewTableStyle }}">逐秒数据表</div>
+                <span style="font-size:11px;color:#5C687E;">{{ tsHint }}</span>
+              </div>
+
+              <sc-if value="{{ showDetTable }}" hint-placeholder-val="{{ false }}">
+                <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+                    <sc-for list="{{ recRows }}" as="r" hint-placeholder-count="10">
+                      <div style="background:#121A28;border:1px solid #223049;border-radius:10px;padding:11px 14px;">
+                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                          <span style="font-size:12px;color:#8A94A8;font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ r.t }}</span>
+                          <span style="margin-left:auto;font-size:11px;color:#5C687E;">距离 <span style="color:#E6EBF4;font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ r.dist }} m</span></span>
+                        </div>
+                        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
+                          <div><div style="font-size:10px;color:#5C687E;">{{ recPaceHeader }}</div><div style="font-size:12px;font-family:ui-monospace,'SF Mono',Consolas,monospace;margin-top:2px;">{{ r.pace }}</div></div>
+                          <div><div style="font-size:10px;color:#5C687E;">心率 bpm</div><div style="font-size:12px;font-family:ui-monospace,'SF Mono',Consolas,monospace;margin-top:2px;">{{ r.hr }}</div></div>
+                          <div><div style="font-size:10px;color:#5C687E;">功率 W</div><div style="font-size:12px;font-family:ui-monospace,'SF Mono',Consolas,monospace;margin-top:2px;">{{ r.pwr }}</div></div>
+                          <div><div style="font-size:10px;color:#5C687E;">{{ recCadHeader }}</div><div style="font-size:12px;font-family:ui-monospace,'SF Mono',Consolas,monospace;margin-top:2px;">{{ r.cad }}</div></div>
+                          <div><div style="font-size:10px;color:#5C687E;">海拔 m</div><div style="font-size:12px;font-family:ui-monospace,'SF Mono',Consolas,monospace;margin-top:2px;">{{ r.alt }}</div></div>
+                          <div><div style="font-size:10px;color:#5C687E;">温度 °C</div><div style="font-size:12px;font-family:ui-monospace,'SF Mono',Consolas,monospace;margin-top:2px;">{{ r.temp }}</div></div>
+                        </div>
+                      </div>
+                    </sc-for>
+                    <div style="display:flex;align-items:center;gap:10px;font-size:12px;color:#8A94A8;padding:4px 2px;">
+                      <span>{{ recPager.info }}</span>
+                      <div style="flex:1;"></div>
+                      <button onClick="{{ recPager.prev }}" style="{{ recPager.prevStyle }}">←</button>
+                      <span style="font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ recPager.pageLabel }}</span>
+                      <button onClick="{{ recPager.next }}" style="{{ recPager.nextStyle }}">→</button>
+                    </div>
+                  </div>
+                </sc-if>
+                <div style="{{ deskTableStyleMb }}">
+                  <div style="min-width:820px;">
+                    <div style="display:grid;grid-template-columns:repeat(8,1fr);padding:12px 18px;border-bottom:1px solid #1C2739;font-size:11px;color:#5C687E;">
+                      <span>时间</span><span>距离 m</span><span>{{ recPaceHeader }}</span><span>心率 bpm</span><span>功率 W</span><span>{{ recCadHeader }}</span><span>海拔 m</span><span>温度 °C</span>
+                    </div>
+                    <sc-for list="{{ recRows }}" as="r" hint-placeholder-count="20">
+                      <div style="display:grid;grid-template-columns:repeat(8,1fr);padding:7px 18px;border-bottom:1px solid #151E2E;font-size:12px;font-family:ui-monospace,'SF Mono',Consolas,monospace;">
+                        <span style="color:#8A94A8;">{{ r.t }}</span><span>{{ r.dist }}</span><span>{{ r.pace }}</span><span>{{ r.hr }}</span><span>{{ r.pwr }}</span><span>{{ r.cad }}</span><span>{{ r.alt }}</span><span>{{ r.temp }}</span>
+                      </div>
+                    </sc-for>
+                    <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;font-size:12px;color:#8A94A8;flex-wrap:wrap;">
+                      <span>{{ recPager.info }}</span>
+                      <div style="flex:1;"></div>
+                      <label style="display:flex;align-items:center;gap:6px;">每页
+                        <select value="{{ recPager.sizeVal }}" onChange="{{ recPager.onSize }}" style="background:#0B1220;border:1px solid #2A3A55;color:#E6EBF4;border-radius:6px;padding:5px 8px;font-size:12px;">
+                          <option value="20">20 条</option><option value="50">50 条</option><option value="100">100 条</option>
+                        </select>
+                      </label>
+                      <button onClick="{{ recPager.prev }}" style="{{ recPager.prevStyle }}">← 上一页</button>
+                      <span style="font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ recPager.pageLabel }}</span>
+                      <button onClick="{{ recPager.next }}" style="{{ recPager.nextStyle }}">下一页 →</button>
+                    </div>
+                  </div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ showDetCharts }}" hint-placeholder-val="{{ true }}">
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(340px,100%),1fr));gap:16px;margin-bottom:16px;">
+                <sc-for list="{{ det.charts }}" as="c" hint-placeholder-count="4">
+                  <div style="background:#121A28;border:1px solid #223049;border-radius:12px;padding:16px 18px;">
+                    <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+                      <div style="font-size:13px;font-weight:600;">{{ c.title }}</div>
+                      <div style="font-size:11px;color:#5C687E;">Y:{{ c.yLabel }} · X:时间 · <span style="font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ c.src }}</span></div>
+                    </div>
+                    <svg viewBox="0 0 340 112" style="width:100%;display:block;">
+                      <line x1="44" y1="10" x2="44" y2="88" stroke="#243349" stroke-width="1"></line>
+                      <line x1="44" y1="88" x2="332" y2="88" stroke="#243349" stroke-width="1"></line>
+                      <sc-for list="{{ c.yTicks }}" as="t" hint-placeholder-count="3">
+                        <line x1="44" y1="{{ t.y }}" x2="332" y2="{{ t.y }}" stroke="#1C2739" stroke-width="0.6"></line>
+                      </sc-for>
+                      {{ c.labels }}
+                      <polyline points="{{ c.pts }}" fill="none" stroke="{{ c.color }}" stroke-width="1.5"></polyline>
+                    </svg>
+                  </div>
+                </sc-for>
+                <sc-if value="{{ det.hasZones }}" hint-placeholder-val="{{ false }}">
+                  <div style="background:#121A28;border:1px solid #223049;border-radius:12px;padding:16px 18px;">
+                    <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+                      <div style="font-size:13px;font-weight:600;">心率区间时间</div>
+                      <div style="font-size:11px;color:#5C687E;">Time in HR Zones · Y:区间 · X:时长 · <span style="font-family:ui-monospace,'SF Mono',Consolas,monospace;">time_in_hr_zone</span></div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:9px;">
+                      <sc-for list="{{ det.zones }}" as="z" hint-placeholder-count="5">
+                        <div style="display:flex;align-items:center;gap:10px;font-size:12px;">
+                          <span style="width:24px;color:#8A94A8;font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ z.label }}</span>
+                          <span style="width:92px;color:#5C687E;font-size:11px;font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ z.range }}</span>
+                          <div style="flex:1;background:#0B1220;border-radius:4px;height:16px;overflow:hidden;"><div style="{{ z.barStyle }}"></div></div>
+                          <span style="width:48px;text-align:right;font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ z.time }}</span>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+              </sc-if>
+
+              <!-- 统一指标分区:无数据显示 -- -->
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(340px,100%),1fr));gap:16px;margin-bottom:16px;align-items:start;">
+                <sc-for list="{{ detSections }}" as="sec" hint-placeholder-count="6">
+                  <div style="background:#121A28;border:1px solid #223049;border-radius:12px;padding:18px;">
+                    <div style="font-size:13px;font-weight:600;margin-bottom:14px;">{{ sec.title }} <span style="color:#5C687E;font-weight:400;font-size:11px;">{{ sec.en }}</span></div>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px 12px;">
+                      <sc-for list="{{ sec.items }}" as="m" hint-placeholder-count="3">
+                        <div>
+                          <div style="color:#5C687E;font-size:11px;">{{ m.label }}</div>
+                          <div style="{{ m.valStyle }}">{{ m.value }}</div>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+
+              <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size:13px;font-weight:600;margin:2px 0 10px;">分段(Laps)</div>
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                  <sc-for list="{{ det.laps }}" as="lp" hint-placeholder-count="4">
+                    <div style="background:#121A28;border:1px solid #223049;border-radius:12px;padding:13px 16px;">
+                      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                        <span style="font-size:12px;color:#5C687E;font-family:ui-monospace,'SF Mono',Consolas,monospace;">圈 {{ lp.n }}</span>
+                        <span style="margin-left:auto;font-size:13px;font-weight:700;font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ lp.dist }} · {{ lp.time }}</span>
+                      </div>
+                      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+                        <div><div style="font-size:10px;color:#5C687E;">平均心率</div><div style="font-size:12px;font-family:ui-monospace,'SF Mono',Consolas,monospace;margin-top:2px;">{{ lp.ahr }}</div></div>
+                        <div><div style="font-size:10px;color:#5C687E;">最大心率</div><div style="font-size:12px;font-family:ui-monospace,'SF Mono',Consolas,monospace;margin-top:2px;">{{ lp.mhr }}</div></div>
+                        <div><div style="font-size:10px;color:#5C687E;">{{ det.lapPaceLabel }}</div><div style="font-size:12px;font-family:ui-monospace,'SF Mono',Consolas,monospace;margin-top:2px;">{{ lp.pace }}</div></div>
+                        <div><div style="font-size:10px;color:#5C687E;">平均功率</div><div style="font-size:12px;font-family:ui-monospace,'SF Mono',Consolas,monospace;margin-top:2px;">{{ lp.pwr }}</div></div>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <div style="{{ deskTableStyle }}">
+                <div style="padding:16px 18px 4px;font-size:13px;font-weight:600;">分段(Laps)</div>
+                <div style="min-width:640px;padding-bottom:6px;">
+                  <div style="display:grid;grid-template-columns:60px 1fr 1fr 1fr 1fr 1fr 1fr;padding:10px 18px;border-bottom:1px solid #1C2739;font-size:11px;color:#5C687E;">
+                    <span>圈</span><span>距离</span><span>时间</span><span>平均心率</span><span>最大心率</span><span>{{ det.lapPaceLabel }}</span><span>平均功率</span>
+                  </div>
+                  <sc-for list="{{ det.laps }}" as="lp" hint-placeholder-count="5">
+                    <div style="display:grid;grid-template-columns:60px 1fr 1fr 1fr 1fr 1fr 1fr;padding:9px 18px;border-bottom:1px solid #151E2E;font-size:12.5px;font-family:ui-monospace,'SF Mono',Consolas,monospace;">
+                      <span style="color:#5C687E;">{{ lp.n }}</span><span>{{ lp.dist }}</span><span>{{ lp.time }}</span><span>{{ lp.ahr }}</span><span>{{ lp.mhr }}</span><span>{{ lp.pace }}</span><span>{{ lp.pwr }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <!-- ============ 健康记录 ============ -->
+      <sc-if value="{{ tabHealth }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="健康记录" style="animation:fadeUp .25s ease;max-width:1180px;margin:0 auto;">
+          <div style="font-size:19px;font-weight:700;margin-bottom:4px;">健康记录</div>
+          <div style="color:#8A94A8;font-size:13px;margin-bottom:18px;">睡眠 / 体重 / HRV 等设备原始健康数据(近 90 天)</div>
+          <div style="display:flex;gap:8px;margin-bottom:18px;">
+            <sc-for list="{{ healthTabs }}" as="ht" hint-placeholder-count="3">
+              <div onClick="{{ ht.pick }}" style="{{ ht.style }}">{{ ht.label }}</div>
+            </sc-for>
+          </div>
+
+          <sc-if value="{{ showSleep }}" hint-placeholder-val="{{ true }}">
+            <div style="background:#121A28;border:1px solid #223049;border-radius:12px;padding:20px;margin-bottom:16px;">
+              <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+                <div style="font-size:13px;font-weight:600;">近 {{ sleepBarCount }} 天睡眠结构</div>
+                <div style="flex:1;"></div>
+                <span style="font-size:11px;color:#8A94A8;display:flex;align-items:center;gap:5px;"><span style="width:9px;height:9px;background:#2E5C9E;border-radius:2px;display:inline-block;"></span>深睡</span>
+                <span style="font-size:11px;color:#8A94A8;display:flex;align-items:center;gap:5px;"><span style="width:9px;height:9px;background:#4292E0;border-radius:2px;display:inline-block;"></span>浅睡</span>
+                <span style="font-size:11px;color:#8A94A8;display:flex;align-items:center;gap:5px;"><span style="width:9px;height:9px;background:#8FC1F2;border-radius:2px;display:inline-block;"></span>REM</span>
+              </div>
+              <div style="display:flex;align-items:flex-end;gap:8px;height:150px;">
+                <sc-for list="{{ sleepBars }}" as="sb" hint-placeholder-count="14">
+                  <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:stretch;gap:0;height:100%;" title="{{ sb.tip }}">
+                    <div style="{{ sb.remStyle }}"></div>
+                    <div style="{{ sb.lightStyle }}"></div>
+                    <div style="{{ sb.deepStyle }}"></div>
+                    <div style="text-align:center;font-size:10px;color:#5C687E;margin-top:6px;">{{ sb.day }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <sc-for list="{{ sleepRows }}" as="sr" hint-placeholder-count="6">
+                  <div style="background:#121A28;border:1px solid #223049;border-radius:12px;padding:13px 16px;">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                      <span style="font-size:12px;color:#8A94A8;font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ sr.date }}</span>
+                      <span style="margin-left:auto;font-size:15px;font-weight:700;font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ sr.total }}</span>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+                      <div><div style="font-size:10px;color:#5C687E;">深睡</div><div style="font-size:12.5px;font-family:ui-monospace,'SF Mono',Consolas,monospace;margin-top:2px;">{{ sr.deep }}</div></div>
+                      <div><div style="font-size:10px;color:#5C687E;">浅睡</div><div style="font-size:12.5px;font-family:ui-monospace,'SF Mono',Consolas,monospace;margin-top:2px;">{{ sr.light }}</div></div>
+                      <div><div style="font-size:10px;color:#5C687E;">REM</div><div style="font-size:12.5px;font-family:ui-monospace,'SF Mono',Consolas,monospace;margin-top:2px;">{{ sr.rem }}</div></div>
+                      <div><div style="font-size:10px;color:#5C687E;">静息心率</div><div style="font-size:12.5px;font-family:ui-monospace,'SF Mono',Consolas,monospace;margin-top:2px;">{{ sr.rhr }} bpm</div></div>
+                    </div>
+                  </div>
+                </sc-for>
+                <div style="display:flex;align-items:center;gap:10px;font-size:12px;color:#8A94A8;padding:4px 2px;">
+                  <span>{{ healthPager.info }}</span>
+                  <div style="flex:1;"></div>
+                  <button onClick="{{ healthPager.prev }}" style="{{ healthPager.prevStyle }}">←</button>
+                  <span style="font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ healthPager.pageLabel }}</span>
+                  <button onClick="{{ healthPager.next }}" style="{{ healthPager.nextStyle }}">→</button>
+                </div>
+              </div>
+            </sc-if>
+            <div style="{{ deskTableStyle }}">
+              <div style="min-width:640px;">
+                <div style="display:grid;grid-template-columns:110px 1fr 1fr 1fr 1fr 1fr;padding:12px 18px;border-bottom:1px solid #1C2739;font-size:11px;color:#5C687E;">
+                  <span>日期</span><span>总时长</span><span>深睡</span><span>浅睡</span><span>REM</span><span>静息心率</span>
+                </div>
+                <sc-for list="{{ sleepRows }}" as="sr" hint-placeholder-count="10">
+                  <div style="display:grid;grid-template-columns:110px 1fr 1fr 1fr 1fr 1fr;padding:10px 18px;border-bottom:1px solid #151E2E;font-size:12.5px;font-family:ui-monospace,'SF Mono',Consolas,monospace;">
+                    <span style="color:#8A94A8;">{{ sr.date }}</span><span>{{ sr.total }}</span><span>{{ sr.deep }}</span><span>{{ sr.light }}</span><span>{{ sr.rem }}</span><span>{{ sr.rhr }} bpm</span>
+                  </div>
+                </sc-for>
+                <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;font-size:12px;color:#8A94A8;flex-wrap:wrap;">
+                  <span>{{ healthPager.info }}</span>
+                  <div style="flex:1;"></div>
+                  <label style="display:flex;align-items:center;gap:6px;">每页
+                    <select value="{{ healthPager.sizeVal }}" onChange="{{ healthPager.onSize }}" style="background:#0B1220;border:1px solid #2A3A55;color:#E6EBF4;border-radius:6px;padding:5px 8px;font-size:12px;">
+                      <option value="20">20 条</option><option value="50">50 条</option><option value="100">100 条</option>
+                    </select>
+                  </label>
+                  <button onClick="{{ healthPager.prev }}" style="{{ healthPager.prevStyle }}">← 上一页</button>
+                  <span style="font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ healthPager.pageLabel }}</span>
+                  <button onClick="{{ healthPager.next }}" style="{{ healthPager.nextStyle }}">下一页 →</button>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ showWeight }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#121A28;border:1px solid #223049;border-radius:12px;padding:20px;margin-bottom:16px;">
+              <div style="font-size:13px;font-weight:600;margin-bottom:12px;">近 30 天体重 <span style="color:#5C687E;font-weight:400;">kg</span></div>
+              <svg viewBox="0 0 300 80" style="width:100%;height:130px;display:block;" preserveAspectRatio="none">
+                <line x1="0" y1="40" x2="300" y2="40" stroke="#1C2739" stroke-width="1"></line>
+                <polyline points="{{ weightPts }}" fill="none" stroke="#3FBF8F" stroke-width="1.8"></polyline>
+              </svg>
+            </div>
+            <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <sc-for list="{{ weightRows }}" as="wr" hint-placeholder-count="6">
+                  <div style="background:#121A28;border:1px solid #223049;border-radius:12px;padding:13px 16px;">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                      <span style="font-size:12px;color:#8A94A8;font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ wr.date }}</span>
+                      <span style="margin-left:auto;font-size:15px;font-weight:700;font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ wr.kg }} kg</span>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+                      <div><div style="font-size:10px;color:#5C687E;">体脂率</div><div style="font-size:12.5px;font-family:ui-monospace,'SF Mono',Consolas,monospace;margin-top:2px;">{{ wr.fat }}%</div></div>
+                      <div><div style="font-size:10px;color:#5C687E;">肌肉量</div><div style="font-size:12.5px;font-family:ui-monospace,'SF Mono',Consolas,monospace;margin-top:2px;">{{ wr.muscle }} kg</div></div>
+                      <div><div style="font-size:10px;color:#5C687E;">体水分</div><div style="font-size:12.5px;font-family:ui-monospace,'SF Mono',Consolas,monospace;margin-top:2px;">{{ wr.water }}%</div></div>
+                    </div>
+                  </div>
+                </sc-for>
+                <div style="display:flex;align-items:center;gap:10px;font-size:12px;color:#8A94A8;padding:4px 2px;">
+                  <span>{{ healthPager.info }}</span>
+                  <div style="flex:1;"></div>
+                  <button onClick="{{ healthPager.prev }}" style="{{ healthPager.prevStyle }}">←</button>
+                  <span style="font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ healthPager.pageLabel }}</span>
+                  <button onClick="{{ healthPager.next }}" style="{{ healthPager.nextStyle }}">→</button>
+                </div>
+              </div>
+            </sc-if>
+            <div style="{{ deskTableStyle }}">
+              <div style="min-width:560px;">
+                <div style="display:grid;grid-template-columns:110px 1fr 1fr 1fr 1fr;padding:12px 18px;border-bottom:1px solid #1C2739;font-size:11px;color:#5C687E;">
+                  <span>日期</span><span>体重</span><span>体脂率</span><span>肌肉量</span><span>体水分</span>
+                </div>
+                <sc-for list="{{ weightRows }}" as="wr" hint-placeholder-count="10">
+                  <div style="display:grid;grid-template-columns:110px 1fr 1fr 1fr 1fr;padding:10px 18px;border-bottom:1px solid #151E2E;font-size:12.5px;font-family:ui-monospace,'SF Mono',Consolas,monospace;">
+                    <span style="color:#8A94A8;">{{ wr.date }}</span><span>{{ wr.kg }} kg</span><span>{{ wr.fat }}%</span><span>{{ wr.muscle }} kg</span><span>{{ wr.water }}%</span>
+                  </div>
+                </sc-for>
+                <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;font-size:12px;color:#8A94A8;flex-wrap:wrap;">
+                  <span>{{ healthPager.info }}</span>
+                  <div style="flex:1;"></div>
+                  <label style="display:flex;align-items:center;gap:6px;">每页
+                    <select value="{{ healthPager.sizeVal }}" onChange="{{ healthPager.onSize }}" style="background:#0B1220;border:1px solid #2A3A55;color:#E6EBF4;border-radius:6px;padding:5px 8px;font-size:12px;">
+                      <option value="20">20 条</option><option value="50">50 条</option><option value="100">100 条</option>
+                    </select>
+                  </label>
+                  <button onClick="{{ healthPager.prev }}" style="{{ healthPager.prevStyle }}">← 上一页</button>
+                  <span style="font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ healthPager.pageLabel }}</span>
+                  <button onClick="{{ healthPager.next }}" style="{{ healthPager.nextStyle }}">下一页 →</button>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ showRhr }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#121A28;border:1px solid #223049;border-radius:12px;padding:20px;margin-bottom:16px;">
+              <div style="font-size:13px;font-weight:600;margin-bottom:12px;">近 30 天静息心率 <span style="color:#5C687E;font-weight:400;font-size:11px;">Y:bpm · X:日期 · resting_heart_rate</span></div>
+              <svg viewBox="0 0 300 80" style="width:100%;height:130px;display:block;" preserveAspectRatio="none">
+                <line x1="0" y1="40" x2="300" y2="40" stroke="#1C2739" stroke-width="1"></line>
+                <polyline points="{{ rhrPts }}" fill="none" stroke="#4292E0" stroke-width="1.8"></polyline>
+              </svg>
+            </div>
+            <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <sc-for list="{{ rhrRows }}" as="rr" hint-placeholder-count="6">
+                  <div style="background:#121A28;border:1px solid #223049;border-radius:12px;padding:13px 16px;display:flex;align-items:center;gap:10px;">
+                    <span style="font-size:12px;color:#8A94A8;font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ rr.date }}</span>
+                    <span style="margin-left:auto;font-size:12.5px;color:#5C687E;">静息 <span style="color:#E6EBF4;font-weight:700;font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ rr.rhr }}</span></span>
+                    <span style="font-size:12.5px;color:#5C687E;">最低 <span style="color:#E6EBF4;font-weight:700;font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ rr.minHr }}</span> bpm</span>
+                  </div>
+                </sc-for>
+                <div style="display:flex;align-items:center;gap:10px;font-size:12px;color:#8A94A8;padding:4px 2px;">
+                  <span>{{ healthPager.info }}</span>
+                  <div style="flex:1;"></div>
+                  <button onClick="{{ healthPager.prev }}" style="{{ healthPager.prevStyle }}">←</button>
+                  <span style="font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ healthPager.pageLabel }}</span>
+                  <button onClick="{{ healthPager.next }}" style="{{ healthPager.nextStyle }}">→</button>
+                </div>
+              </div>
+            </sc-if>
+            <div style="{{ deskTableStyle }}">
+              <div style="min-width:480px;">
+                <div style="display:grid;grid-template-columns:110px 1fr 1fr;padding:12px 18px;border-bottom:1px solid #1C2739;font-size:11px;color:#5C687E;">
+                  <span>日期</span><span>静息心率</span><span>夜间最低心率</span>
+                </div>
+                <sc-for list="{{ rhrRows }}" as="rr" hint-placeholder-count="10">
+                  <div style="display:grid;grid-template-columns:110px 1fr 1fr;padding:10px 18px;border-bottom:1px solid #151E2E;font-size:12.5px;font-family:ui-monospace,'SF Mono',Consolas,monospace;">
+                    <span style="color:#8A94A8;">{{ rr.date }}</span><span>{{ rr.rhr }} bpm</span><span>{{ rr.minHr }} bpm</span>
+                  </div>
+                </sc-for>
+                <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;font-size:12px;color:#8A94A8;flex-wrap:wrap;">
+                  <span>{{ healthPager.info }}</span>
+                  <div style="flex:1;"></div>
+                  <button onClick="{{ healthPager.prev }}" style="{{ healthPager.prevStyle }}">← 上一页</button>
+                  <span style="font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ healthPager.pageLabel }}</span>
+                  <button onClick="{{ healthPager.next }}" style="{{ healthPager.nextStyle }}">下一页 →</button>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ showHrv }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#121A28;border:1px solid #223049;border-radius:12px;padding:20px;margin-bottom:16px;">
+              <div style="font-size:13px;font-weight:600;margin-bottom:12px;">近 30 天夜间 HRV <span style="color:#5C687E;font-weight:400;">ms(设备原始值)</span></div>
+              <svg viewBox="0 0 300 80" style="width:100%;height:130px;display:block;" preserveAspectRatio="none">
+                <line x1="0" y1="40" x2="300" y2="40" stroke="#1C2739" stroke-width="1"></line>
+                <polyline points="{{ hrvPts }}" fill="none" stroke="#9B7BE0" stroke-width="1.8"></polyline>
+              </svg>
+            </div>
+            <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <sc-for list="{{ hrvRows }}" as="hr" hint-placeholder-count="6">
+                  <div style="background:#121A28;border:1px solid #223049;border-radius:12px;padding:13px 16px;">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                      <span style="font-size:12px;color:#8A94A8;font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ hr.date }}</span>
+                      <span style="margin-left:auto;font-size:15px;font-weight:700;font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ hr.avg }} ms</span>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
+                      <div><div style="font-size:10px;color:#5C687E;">最高 HRV</div><div style="font-size:12.5px;font-family:ui-monospace,'SF Mono',Consolas,monospace;margin-top:2px;">{{ hr.max }} ms</div></div>
+                      <div><div style="font-size:10px;color:#5C687E;">静息心率</div><div style="font-size:12.5px;font-family:ui-monospace,'SF Mono',Consolas,monospace;margin-top:2px;">{{ hr.rhr }} bpm</div></div>
+                    </div>
+                  </div>
+                </sc-for>
+                <div style="display:flex;align-items:center;gap:10px;font-size:12px;color:#8A94A8;padding:4px 2px;">
+                  <span>{{ healthPager.info }}</span>
+                  <div style="flex:1;"></div>
+                  <button onClick="{{ healthPager.prev }}" style="{{ healthPager.prevStyle }}">←</button>
+                  <span style="font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ healthPager.pageLabel }}</span>
+                  <button onClick="{{ healthPager.next }}" style="{{ healthPager.nextStyle }}">→</button>
+                </div>
+              </div>
+            </sc-if>
+            <div style="{{ deskTableStyle }}">
+              <div style="min-width:560px;">
+                <div style="display:grid;grid-template-columns:110px 1fr 1fr 1fr;padding:12px 18px;border-bottom:1px solid #1C2739;font-size:11px;color:#5C687E;">
+                  <span>日期</span><span>夜间平均 HRV</span><span>最高 HRV</span><span>静息心率</span>
+                </div>
+                <sc-for list="{{ hrvRows }}" as="hr" hint-placeholder-count="10">
+                  <div style="display:grid;grid-template-columns:110px 1fr 1fr 1fr;padding:10px 18px;border-bottom:1px solid #151E2E;font-size:12.5px;font-family:ui-monospace,'SF Mono',Consolas,monospace;">
+                    <span style="color:#8A94A8;">{{ hr.date }}</span><span>{{ hr.avg }} ms</span><span>{{ hr.max }} ms</span><span>{{ hr.rhr }} bpm</span>
+                  </div>
+                </sc-for>
+                <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;font-size:12px;color:#8A94A8;flex-wrap:wrap;">
+                  <span>{{ healthPager.info }}</span>
+                  <div style="flex:1;"></div>
+                  <label style="display:flex;align-items:center;gap:6px;">每页
+                    <select value="{{ healthPager.sizeVal }}" onChange="{{ healthPager.onSize }}" style="background:#0B1220;border:1px solid #2A3A55;color:#E6EBF4;border-radius:6px;padding:5px 8px;font-size:12px;">
+                      <option value="20">20 条</option><option value="50">50 条</option><option value="100">100 条</option>
+                    </select>
+                  </label>
+                  <button onClick="{{ healthPager.prev }}" style="{{ healthPager.prevStyle }}">← 上一页</button>
+                  <span style="font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ healthPager.pageLabel }}</span>
+                  <button onClick="{{ healthPager.next }}" style="{{ healthPager.nextStyle }}">下一页 →</button>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <!-- ============ 习惯记录(健康记录子标签页) ============ -->
+      <sc-if value="{{ showHabits }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="习惯记录" style="animation:fadeUp .25s ease;max-width:1180px;margin:0 auto;">
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap;">
+            <label style="display:flex;align-items:center;gap:10px;font-size:13px;color:#8A94A8;">日期
+              <input type="date" value="{{ habitDate }}" onChange="{{ onHabitDate }}" max="2026-07-09" style="background:#0B1220;border:1px solid #2A3A55;color:#E6EBF4;border-radius:8px;padding:9px 12px;font-size:13px;font-family:ui-monospace,'SF Mono',Consolas,monospace;" />
+            </label>
+            <span style="font-size:12px;color:#5C687E;">{{ habitDateHint }}</span>
+            <div style="flex:1;"></div>
+            <span style="font-size:12px;color:#5EA3E8;background:rgba(66,146,224,.12);border:1px solid rgba(66,146,224,.3);border-radius:99px;padding:6px 14px;">已记录 {{ habitCount }} 项</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:16px;">
+            <sc-for list="{{ habitGroups }}" as="hg" hint-placeholder-count="4">
+              <div style="background:#121A28;border:1px solid #223049;border-radius:12px;padding:18px 20px;">
+                <div style="font-size:13px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px;"><span style="{{ hg.dotStyle }}"></span>{{ hg.label }}</div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                  <sc-for list="{{ hg.chips }}" as="hc" hint-placeholder-count="6">
+                    <div onClick="{{ hc.toggle }}" style="{{ hc.style }}">{{ hc.label }}</div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ============ 分析(AI 对话) ============ -->
+      <sc-if value="{{ tabAnalysis }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="分析(AI对话)" style="animation:fadeUp .25s ease;max-width:1200px;margin:0 auto;display:flex;gap:18px;height:100%;">
+          <!-- 会话列表(桌面) -->
+          <sc-if value="{{ showSessionRail }}" hint-placeholder-val="{{ true }}">
+            <aside style="width:212px;flex-shrink:0;display:flex;flex-direction:column;gap:10px;background:#0D1420;border:1px solid #1C2739;border-radius:12px;padding:12px 10px;">
+              <button onClick="{{ newSession }}" style="background:#4292E0;border:none;color:#06101E;font-weight:700;font-size:13px;padding:9px;border-radius:8px;cursor:pointer;">+ 新建会话</button>
+              <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:2px;">
+                <sc-for list="{{ sessionItems }}" as="ss" hint-placeholder-count="2">
+                  <div onClick="{{ ss.pick }}" style="{{ ss.style }}" style-hover="background:#16202F">
+                    <sc-if value="{{ ss.renaming }}" hint-placeholder-val="{{ false }}">
+                      <input value="{{ renameText }}" onChange="{{ onRenameText }}" onKeyDown="{{ ss.renameKey }}" onClick="{{ stopClick }}" style="background:#0B1220;border:1px solid #4292E0;color:#E6EBF4;border-radius:6px;padding:5px 8px;font-size:12.5px;width:100%;" />
+                    </sc-if>
+                    <sc-if value="{{ ss.notRenaming }}" hint-placeholder-val="{{ true }}">
+                      <div style="flex:1;min-width:0;">
+                        <div style="font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ ss.name }}</div>
+                        <div style="font-size:10.5px;color:#5C687E;margin-top:2px;">{{ ss.meta }}</div>
+                      </div>
+                      <span onClick="{{ ss.startRename }}" title="重命名" style="color:#5C687E;font-size:12px;cursor:pointer;padding:2px 4px;">✎</span>
+                      <span onClick="{{ ss.del }}" title="删除" style="color:#5C687E;font-size:12px;cursor:pointer;padding:2px 4px;">✕</span>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="font-size:10.5px;color:#3A4457;padding:0 4px;line-height:1.6;">衍生指标(TSS / CTL / ATL / TSB…)仅在 AI 回复中产出,系统不预计算。</div>
+            </aside>
+          </sc-if>
+
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;height:100%;">
+          <!-- 会话选择(平板) -->
+          <sc-if value="{{ showSessionSelect }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;gap:8px;margin-bottom:10px;flex-shrink:0;">
+              <select value="{{ curSessionId }}" onChange="{{ pickSessionSel }}" style="flex:1;background:#0B1220;border:1px solid #2A3A55;color:#E6EBF4;border-radius:8px;padding:8px 10px;font-size:13px;">
+                <sc-for list="{{ sessionItems }}" as="ss" hint-placeholder-count="2">
+                  <option value="{{ ss.id }}">{{ ss.name }}</option>
+                </sc-for>
+              </select>
+              <button onClick="{{ newSession }}" style="background:#4292E0;border:none;color:#06101E;font-weight:700;font-size:13px;padding:8px 14px;border-radius:8px;cursor:pointer;">+ 新建</button>
+            </div>
+          </sc-if>
+          <div style="margin-bottom:14px;">
+            <div style="font-size:19px;font-weight:700;margin-bottom:4px;">{{ curSessionName }}</div>
+            <div style="color:#8A94A8;font-size:13px;">AI 读取已存储的原始数据进行分析 · TSS / CTL / ATL / TSB 等衍生指标仅在回复中产出</div>
+          </div>
+          <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding:4px 2px 16px;">
+            <sc-for list="{{ messages }}" as="msg" hint-placeholder-count="2">
+              <div style="{{ msg.wrapStyle }}">
+                <div style="{{ msg.bubbleStyle }}">
+                  <sc-if value="{{ msg.typing }}" hint-placeholder-val="{{ false }}">
+                    <span style="display:inline-flex;gap:4px;padding:2px 0;">
+                      <span style="width:6px;height:6px;border-radius:50%;background:#8A94A8;animation:blink 1s infinite;"></span>
+                      <span style="width:6px;height:6px;border-radius:50%;background:#8A94A8;animation:blink 1s .2s infinite;"></span>
+                      <span style="width:6px;height:6px;border-radius:50%;background:#8A94A8;animation:blink 1s .4s infinite;"></span>
+                    </span>
+                  </sc-if>
+                  {{ msg.body }}
+                  <!-- 图表卡片:加载 / 空 / 折叠 / 展开 四态 -->
+                  <sc-if value="{{ msg.hasChart }}" hint-placeholder-val="{{ false }}">
+                    <div style="margin-top:12px;background:#0B1220;border:1px solid #2A3A55;border-radius:10px;overflow:hidden;">
+                      <sc-if value="{{ msg.cardLoading }}" hint-placeholder-val="{{ false }}">
+                        <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;animation:shimmer 1.4s infinite;">
+                          <span style="display:inline-block;width:13px;height:13px;border:2px solid #4292E0;border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite;"></span>
+                          <span style="font-size:12.5px;color:#8A94A8;">正在读取原始数据并生成图表…</span>
+                        </div>
+                      </sc-if>
+                      <sc-if value="{{ msg.cardEmpty }}" hint-placeholder-val="{{ false }}">
+                        <div style="padding:14px;display:flex;gap:12px;align-items:flex-start;">
+                          <span style="font-size:16px;color:#5C687E;">▦</span>
+                          <div>
+                            <div style="font-size:13px;font-weight:600;color:#8A94A8;">数据不足,无法生成图表</div>
+                            <div style="font-size:12px;color:#5C687E;margin-top:4px;line-height:1.7;">{{ msg.emptyReason }}<br>请扩大数据范围或勾选更多运动后重新提问。</div>
+                          </div>
+                        </div>
+                      </sc-if>
+                      <sc-if value="{{ msg.cardReady }}" hint-placeholder-val="{{ false }}">
+                        <div onClick="{{ msg.toggle }}" style="display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;user-select:none;">
+                          <span style="color:#4292E0;font-size:13px;flex-shrink:0;">📊</span>
+                          <span style="font-size:13px;font-weight:600;flex-shrink:0;">{{ msg.chartTitle }}</span>
+                          <sc-if value="{{ msg.collapsed }}" hint-placeholder-val="{{ true }}">
+                            <span style="font-size:12px;color:#8A94A8;font-family:ui-monospace,'SF Mono',Consolas,monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">{{ msg.cardSummary }}</span>
+                          </sc-if>
+                          <sc-if value="{{ msg.expanded }}" hint-placeholder-val="{{ false }}">
+                            <span style="flex:1;"></span>
+                          </sc-if>
+                          <span style="color:#5C687E;font-size:12px;flex-shrink:0;">{{ msg.expandLabel }}</span>
+                        </div>
+                        <sc-if value="{{ msg.expanded }}" hint-placeholder-val="{{ false }}">
+                          <div style="padding:4px 14px 14px;">
+                            <div style="font-size:11px;color:#5C687E;margin-bottom:6px;">Y:{{ msg.cardYLabel }} · X:日期</div>
+                            <svg viewBox="0 0 340 112" style="width:100%;display:block;">
+                              <line x1="44" y1="10" x2="44" y2="88" stroke="#243349" stroke-width="1"></line>
+                              <line x1="44" y1="88" x2="332" y2="88" stroke="#243349" stroke-width="1"></line>
+                              <line x1="44" y1="49" x2="332" y2="49" stroke="#1C2739" stroke-width="0.6"></line>
+                              <line x1="44" y1="10" x2="332" y2="10" stroke="#1C2739" stroke-width="0.6"></line>
+                              {{ msg.cardLabels }}
+                              <polyline points="{{ msg.chartPts }}" fill="none" stroke="#4292E0" stroke-width="1.8"></polyline>
+                            </svg>
+                            <sc-if value="{{ showCardRows }}" hint-placeholder-val="{{ true }}">
+                              <div style="display:flex;flex-direction:column;gap:4px;margin-top:10px;">
+                                <sc-for list="{{ msg.chartItems }}" as="ci" hint-placeholder-count="3">
+                                  <div style="display:flex;gap:10px;font-size:12px;font-family:ui-monospace,'SF Mono',Consolas,monospace;color:#8A94A8;">
+                                    <span style="width:88px;color:#5C687E;">{{ ci.date }}</span><span style="flex:1;color:#B8C2D4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ ci.name }}</span><span>{{ ci.val }}</span>
+                                  </div>
+                                </sc-for>
+                              </div>
+                            </sc-if>
+                          </div>
+                        </sc-if>
+                      </sc-if>
+                    </div>
+                  </sc-if>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="border:1px solid #223049;background:#121A28;border-radius:14px;padding:12px 14px;margin-bottom:8px;flex-shrink:0;">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+              <span style="font-size:11px;color:#5C687E;">数据范围</span>
+              <sc-for list="{{ rangeChips }}" as="rc" hint-placeholder-count="4">
+                <div onClick="{{ rc.pick }}" style="{{ rc.style }}">{{ rc.label }}</div>
+              </sc-for>
+              <div onClick="{{ togglePicker }}" style="{{ pickerBtnStyle }}">选择运动 ({{ pickedCount }})</div>
+              <div style="margin-left:auto;display:flex;gap:14px;">
+                <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#8A94A8;cursor:pointer;">
+                  <input type="checkbox" checked="{{ includeHealth }}" onChange="{{ toggleHealth }}" style="accent-color:#4292E0;width:14px;height:14px;" />
+                  附带健康记录
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#8A94A8;cursor:pointer;">
+                  <input type="checkbox" checked="{{ includeHabits }}" onChange="{{ toggleHabits }}" style="accent-color:#4292E0;width:14px;height:14px;" />
+                  附带习惯记录
+                </label>
+              </div>
+            </div>
+            <sc-if value="{{ pickOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="max-height:180px;overflow-y:auto;border:1px solid #1C2739;border-radius:9px;margin-bottom:10px;background:#0B1220;">
+                <sc-for list="{{ pickRows }}" as="pk" hint-placeholder-count="6">
+                  <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #151E2E;font-size:12.5px;cursor:pointer;">
+                    <input type="checkbox" checked="{{ pk.checked }}" onChange="{{ pk.toggle }}" style="accent-color:#4292E0;width:14px;height:14px;" />
+                    <span style="color:#5C687E;font-family:ui-monospace,'SF Mono',Consolas,monospace;width:88px;">{{ pk.date }}</span>
+                    <span style="flex:1;">{{ pk.name }}</span>
+                    <span style="color:#8A94A8;">{{ pk.type }}</span>
+                  </label>
+                </sc-for>
+              </div>
+            </sc-if>
+            <div style="display:flex;gap:10px;align-items:flex-end;">
+              <textarea value="{{ draft }}" onChange="{{ onDraft }}" onKeyDown="{{ onDraftKey }}" rows="2" placeholder="向 AI 提问,例如:分析我最近的有氧状态 / 帮我生成下周训练计划…" style="flex:1;resize:none;background:#0B1220;border:1px solid #2A3A55;color:#E6EBF4;border-radius:10px;padding:10px 12px;font-size:13.5px;line-height:1.5;"></textarea>
+              <button onClick="{{ sendMsg }}" style="background:#4292E0;border:none;color:#06101E;font-weight:700;font-size:14px;padding:11px 22px;border-radius:10px;cursor:pointer;flex-shrink:0;">发送</button>
+            </div>
+            <div style="font-size:11px;color:#5C687E;margin-top:8px;">当前范围:{{ scopeSummary }}</div>
+          </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ============ 连接器 ============ -->
+      <sc-if value="{{ tabConnectors }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="连接器" style="animation:fadeUp .25s ease;max-width:1100px;margin:0 auto;">
+          <div style="font-size:19px;font-weight:700;margin-bottom:4px;">连接器</div>
+          <div style="color:#8A94A8;font-size:13px;margin-bottom:20px;">平台连接与数据同步 · 双账号按「开始时间 + 时长」自动合并去重,无法判定时需手动处理</div>
+
+          <sc-if value="{{ hasConflicts }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:12px;background:rgba(224,160,64,.08);border:1px solid rgba(224,160,64,.4);border-radius:10px;padding:12px 16px;margin-bottom:16px;flex-wrap:wrap;">
+              <span style="color:#E0A040;font-size:15px;">⚠</span>
+              <span style="font-size:13px;color:#E0A040;flex:1;min-width:200px;">中国区与国际区发现 {{ conflictCount }} 组疑似重复运动,需要你确认保留哪一条</span>
+              <button onClick="{{ openConflicts }}" style="background:#E0A040;border:none;color:#06101E;font-weight:700;font-size:12.5px;padding:8px 16px;border-radius:8px;cursor:pointer;">处理重复 ({{ conflictCount }})</button>
+            </div>
+          </sc-if>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr));gap:16px;">
+            <sc-for list="{{ connectors }}" as="cn" hint-placeholder-count="2">
+              <div style="background:#121A28;border:1px solid #223049;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:14px;">
+                <div style="display:flex;align-items:center;gap:12px;">
+                  <div style="width:38px;height:38px;border-radius:9px;background:#0B1220;border:1px solid #2A3A55;display:flex;align-items:center;justify-content:center;font-weight:700;color:#5EA3E8;font-size:13px;">{{ cn.abbr }}</div>
+                  <div style="flex:1;">
+                    <div style="font-weight:600;font-size:15px;">{{ cn.name }}</div>
+                    <div style="color:#5C687E;font-size:12px;margin-top:2px;">{{ cn.desc }}</div>
+                  </div>
+                  <span style="{{ cn.pillStyle }}">{{ cn.statusText }}</span>
+                </div>
+                <sc-if value="{{ cn.failed }}" hint-placeholder-val="{{ false }}">
+                  <div style="background:rgba(224,96,96,.07);border:1px solid rgba(224,96,96,.35);border-radius:8px;padding:10px 12px;font-size:12px;color:#E06060;line-height:1.6;">
+                    上次同步失败({{ cn.failTime }}):{{ cn.failReason }}
+                  </div>
+                </sc-if>
+                <div style="display:flex;gap:20px;font-size:12px;color:#8A94A8;">
+                  <div>上次成功同步<div style="color:#E6EBF4;font-size:13px;margin-top:3px;font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ cn.last }}</div></div>
+                  <div>已同步运动<div style="color:#E6EBF4;font-size:13px;margin-top:3px;font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ cn.count }}</div></div>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <label style="font-size:12px;color:#8A94A8;">自动同步</label>
+                  <select value="{{ cn.auto }}" onChange="{{ cn.onAuto }}" style="background:#0B1220;border:1px solid #2A3A55;color:#E6EBF4;border-radius:7px;padding:7px 10px;font-size:12px;">
+                    <option value="30分钟">每 30 分钟</option>
+                    <option value="1小时">每 1 小时</option>
+                    <option value="6小时">每 6 小时</option>
+                    <option value="手动">仅手动</option>
+                  </select>
+                  <div style="flex:1;"></div>
+                  <sc-if value="{{ cn.connected }}" hint-placeholder-val="{{ true }}">
+                    <button onClick="{{ cn.doSync }}" style="{{ cn.syncBtnStyle }}">
+                      <sc-if value="{{ cn.syncing }}" hint-placeholder-val="{{ false }}">
+                        <span style="display:inline-block;width:12px;height:12px;border:2px solid #06101E;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px;margin-right:6px;"></span>
+                      </sc-if>
+                      {{ cn.syncLabel }}
+                    </button>
+                  </sc-if>
+                  <sc-if value="{{ cn.disconnected }}" hint-placeholder-val="{{ false }}">
+                    <button onClick="{{ cn.doConnect }}" style="background:transparent;border:1px solid #4292E0;color:#5EA3E8;font-size:13px;padding:8px 18px;border-radius:8px;cursor:pointer;">连接账号</button>
+                  </sc-if>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="font-size:14px;font-weight:600;margin:20px 0 12px;">文件上传</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr));gap:16px;">
+            <label style="display:block;border:1px dashed #3A4E70;border-radius:14px;padding:36px 24px;text-align:center;cursor:pointer;color:#8A94A8;font-size:13.5px;background:#0E1524;">
+              <div style="font-size:26px;margin-bottom:8px;color:#4292E0;">⇪</div>
+              点击选择或拖入文件(可多选)
+              <div style="font-size:12px;color:#5C687E;margin-top:8px;">支持 FIT / TCX / GPX,单个文件 ≤ 50 MB · 解析后入库到运动记录,来源标记为"FIT上传"</div>
+              <input type="file" multiple accept=".fit,.tcx,.gpx" onChange="{{ onFitUpload }}" style="display:none;" />
+            </label>
+            <div style="background:#121A28;border:1px solid #223049;border-radius:12px;overflow:hidden;align-self:start;">
+              <div style="padding:13px 18px;border-bottom:1px solid #1C2739;font-size:13px;font-weight:600;">已解析文件</div>
+              <sc-for list="{{ fitFiles }}" as="ff" hint-placeholder-count="2">
+                <div style="display:flex;align-items:center;gap:12px;font-size:12.5px;padding:10px 18px;border-bottom:1px solid #151E2E;">
+                  <span style="color:#3FBF8F;">✓</span>
+                  <span style="font-family:ui-monospace,'SF Mono',Consolas,monospace;color:#B8C2D4;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ ff.name }}</span>
+                  <span style="color:#5C687E;">{{ ff.size }}</span>
+                  <span style="color:#5C687E;">{{ ff.time }}</span>
+                  <span style="color:#3FBF8F;font-size:11px;background:rgba(63,191,143,.1);border:1px solid rgba(63,191,143,.3);border-radius:99px;padding:3px 10px;">已入库</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ============ 设置 ============ -->
+      <sc-if value="{{ tabSettings }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="设置" style="animation:fadeUp .25s ease;max-width:760px;margin:0 auto;">
+          <div style="font-size:19px;font-weight:700;margin-bottom:18px;">设置</div>
+          <div style="background:#121A28;border:1px solid #223049;border-radius:12px;padding:22px;margin-bottom:16px;">
+            <div style="font-size:14px;font-weight:600;margin-bottom:16px;">账户信息</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;">
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <label style="font-size:12px;color:#8A94A8;">用户名</label>
+                <input value="{{ username }}" onChange="{{ onUsername }}" style="background:#0B1220;border:1px solid #2A3A55;color:#E6EBF4;border-radius:8px;padding:10px 12px;font-size:13px;" />
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <label style="font-size:12px;color:#8A94A8;">昵称</label>
+                <input value="{{ nickname }}" onChange="{{ onNickname }}" style="background:#0B1220;border:1px solid #2A3A55;color:#E6EBF4;border-radius:8px;padding:10px 12px;font-size:13px;" />
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <label style="font-size:12px;color:#8A94A8;">新密码</label>
+                <input type="password" value="{{ newPwd }}" onChange="{{ onNewPwd }}" placeholder="留空则不修改" style="background:#0B1220;border:1px solid #2A3A55;color:#E6EBF4;border-radius:8px;padding:10px 12px;font-size:13px;" />
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <label style="font-size:12px;color:#8A94A8;">确认新密码</label>
+                <input type="password" value="{{ newPwd2 }}" onChange="{{ onNewPwd2 }}" placeholder="再次输入" style="background:#0B1220;border:1px solid #2A3A55;color:#E6EBF4;border-radius:8px;padding:10px 12px;font-size:13px;" />
+              </div>
+            </div>
+            <button onClick="{{ saveAccount }}" style="margin-top:16px;background:#4292E0;border:none;color:#06101E;font-weight:700;font-size:13px;padding:10px 22px;border-radius:8px;cursor:pointer;">保存账户</button>
+          </div>
+
+          <div style="background:#121A28;border:1px solid #223049;border-radius:12px;padding:22px;margin-bottom:16px;">
+            <div style="font-size:14px;font-weight:600;margin-bottom:16px;">单位制</div>
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                <span style="font-size:12px;color:#8A94A8;width:90px;">距离 / 海拔</span>
+                <sc-for list="{{ unitSystemChips }}" as="uc" hint-placeholder-count="2">
+                  <div onClick="{{ uc.pick }}" style="{{ uc.style }}">{{ uc.label }}</div>
+                </sc-for>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                <span style="font-size:12px;color:#8A94A8;width:90px;">配速</span>
+                <sc-for list="{{ paceUnitChips }}" as="uc" hint-placeholder-count="2">
+                  <div onClick="{{ uc.pick }}" style="{{ uc.style }}">{{ uc.label }}</div>
+                </sc-for>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                <span style="font-size:12px;color:#8A94A8;width:90px;">体重</span>
+                <sc-for list="{{ weightUnitChips }}" as="uc" hint-placeholder-count="2">
+                  <div onClick="{{ uc.pick }}" style="{{ uc.style }}">{{ uc.label }}</div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+
+          <div style="background:#121A28;border:1px solid #223049;border-radius:12px;padding:22px;margin-bottom:16px;">
+            <div style="font-size:14px;font-weight:600;margin-bottom:4px;">区间设定</div>
+            <div style="font-size:12px;color:#5C687E;margin-bottom:16px;">仅作为原始数据的标注边界(如详情页心率区间图);AI 分析时随数据一并附带,系统不用它计算任何指标</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-bottom:16px;">
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <label style="font-size:12px;color:#8A94A8;">最大心率 bpm</label>
+                <input value="{{ zMaxHr }}" onChange="{{ onZMaxHr }}" style="background:#0B1220;border:1px solid #2A3A55;color:#E6EBF4;border-radius:8px;padding:10px 12px;font-size:13px;font-family:ui-monospace,'SF Mono',Consolas,monospace;" />
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <label style="font-size:12px;color:#8A94A8;">LTHR bpm</label>
+                <input value="{{ zLthr }}" onChange="{{ onZLthr }}" style="background:#0B1220;border:1px solid #2A3A55;color:#E6EBF4;border-radius:8px;padding:10px 12px;font-size:13px;font-family:ui-monospace,'SF Mono',Consolas,monospace;" />
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <label style="font-size:12px;color:#8A94A8;">FTP W</label>
+                <input value="{{ zFtp }}" onChange="{{ onZFtp }}" style="background:#0B1220;border:1px solid #2A3A55;color:#E6EBF4;border-radius:8px;padding:10px 12px;font-size:13px;font-family:ui-monospace,'SF Mono',Consolas,monospace;" />
+              </div>
+            </div>
+            <div style="font-size:12px;color:#8A94A8;margin-bottom:8px;">心率区间上界 bpm(Z5 上界为最大心率)</div>
+            <div style="{{ zoneGridStyle }}">
+              <sc-for list="{{ zoneInputs }}" as="zi" hint-placeholder-count="4">
+                <div style="display:flex;flex-direction:column;gap:6px;">
+                  <label style="font-size:12px;color:#8A94A8;">{{ zi.label }}</label>
+                  <input value="{{ zi.val }}" onChange="{{ zi.onChange }}" style="background:#0B1220;border:1px solid #2A3A55;color:#E6EBF4;border-radius:8px;padding:10px 12px;font-size:13px;font-family:ui-monospace,'SF Mono',Consolas,monospace;" />
+                </div>
+              </sc-for>
+            </div>
+            <button onClick="{{ saveZones }}" style="margin-top:16px;background:#4292E0;border:none;color:#06101E;font-weight:700;font-size:13px;padding:10px 22px;border-radius:8px;cursor:pointer;">保存区间</button>
+          </div>
+
+          <div style="background:#121A28;border:1px solid #223049;border-radius:12px;padding:22px;">
+            <div style="font-size:14px;font-weight:600;margin-bottom:4px;">AI 接口(OpenAI 兼容)</div>
+            <div style="font-size:12px;color:#5C687E;margin-bottom:16px;">参照 DeepSeek 官方接入方式:base_url + API Key + 模型名称</div>
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <label style="font-size:12px;color:#8A94A8;">API 地址(base_url)</label>
+                <input value="{{ apiBase }}" onChange="{{ onApiBase }}" style="background:#0B1220;border:1px solid #2A3A55;color:#E6EBF4;border-radius:8px;padding:10px 12px;font-size:13px;font-family:ui-monospace,'SF Mono',Consolas,monospace;" />
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <label style="font-size:12px;color:#8A94A8;">API Key</label>
+                <input type="password" value="{{ apiKey }}" onChange="{{ onApiKey }}" placeholder="sk-…" style="background:#0B1220;border:1px solid #2A3A55;color:#E6EBF4;border-radius:8px;padding:10px 12px;font-size:13px;font-family:ui-monospace,'SF Mono',Consolas,monospace;" />
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <label style="font-size:12px;color:#8A94A8;">模型名称</label>
+                <input value="{{ model }}" onChange="{{ onModel }}" list="model-list" style="background:#0B1220;border:1px solid #2A3A55;color:#E6EBF4;border-radius:8px;padding:10px 12px;font-size:13px;font-family:ui-monospace,'SF Mono',Consolas,monospace;" />
+                <datalist id="model-list">
+                  <option value="deepseek-chat"></option>
+                  <option value="deepseek-reasoner"></option>
+                </datalist>
+                <div style="font-size:11px;color:#5C687E;">deepseek-chat(通用)/ deepseek-reasoner(推理);也可填其它兼容模型名</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <label style="font-size:12px;color:#8A94A8;">内置系统提示词(每次对话隐藏发送,强制 AI 以 HTML 回复)</label>
+                  <button onClick="{{ togglePrompt }}" style="background:transparent;border:1px solid #2A3A55;color:#5EA3E8;font-size:11px;padding:4px 12px;border-radius:6px;cursor:pointer;">{{ promptToggleLabel }}</button>
+                </div>
+                <sc-if value="{{ promptOpen }}" hint-placeholder-val="{{ false }}">
+                  <div style="background:#0B1220;border:1px solid #1C2739;border-radius:8px;padding:12px 14px;font-size:12px;color:#8A94A8;line-height:1.9;font-family:ui-monospace,'SF Mono',Consolas,monospace;white-space:pre-wrap;">{{ sysPrompt }}</div>
+                </sc-if>
+              </div>
+              <div style="display:flex;gap:12px;align-items:center;">
+                <button onClick="{{ testApi }}" style="background:transparent;border:1px solid #4292E0;color:#5EA3E8;font-size:13px;padding:9px 20px;border-radius:8px;cursor:pointer;">
+                  <sc-if value="{{ testing }}" hint-placeholder-val="{{ false }}">
+                    <span style="display:inline-block;width:11px;height:11px;border:2px solid #5EA3E8;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-1px;margin-right:6px;"></span>
+                  </sc-if>
+                  测试连接并识别模型
+                </button>
+                <span style="font-size:12px;color:#3FBF8F;">{{ apiTestResult }}</span>
+                <div style="flex:1;"></div>
+                <button onClick="{{ saveApi }}" style="background:#4292E0;border:none;color:#06101E;font-weight:700;font-size:13px;padding:10px 22px;border-radius:8px;cursor:pointer;">保存配置</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+    </main>
+  </div>
+</div>
+</sc-if>
+
+<!-- 连接器登录弹窗 -->
+<sc-if value="{{ cmShow }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ cmCancel }}" style="{{ modalOverlayStyle }}">
+    <div onClick="{{ stopClick }}" style="{{ cmPanelStyle }}">
+      <div style="font-size:16px;font-weight:700;margin-bottom:4px;">连接 {{ cmTitle }}</div>
+      <div style="font-size:12px;color:#5C687E;margin-bottom:18px;">使用该平台的账号授权,授权后将定时同步数据</div>
+      <div style="display:flex;flex-direction:column;gap:13px;">
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <label style="font-size:12px;color:#8A94A8;">账号(邮箱 / 手机号)</label>
+          <input value="{{ cmUser }}" onChange="{{ cmOnUser }}" placeholder="请输入平台账号" style="background:#0B1220;border:1px solid #2A3A55;color:#E6EBF4;border-radius:8px;padding:10px 12px;font-size:13px;" />
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <label style="font-size:12px;color:#8A94A8;">密码</label>
+          <input type="password" value="{{ cmPass }}" onChange="{{ cmOnPass }}" placeholder="请输入平台密码" style="background:#0B1220;border:1px solid #2A3A55;color:#E6EBF4;border-radius:8px;padding:10px 12px;font-size:13px;" />
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#8A94A8;cursor:pointer;">
+          <input type="checkbox" checked="{{ cmUse2fa }}" onChange="{{ cmToggle2fa }}" disabled="{{ cmCodeStage }}" style="accent-color:#4292E0;width:14px;height:14px;" />
+          该账号启用了两步验证(2FA)
+        </label>
+        <sc-if value="{{ cmCodeStage }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:6px;background:rgba(66,146,224,.07);border:1px solid rgba(66,146,224,.3);border-radius:10px;padding:12px;">
+            <label style="font-size:12px;color:#5EA3E8;">已向你的设备发送验证码,请输入 2FA 验证码后再次点击登录</label>
+            <input value="{{ cmCode }}" onChange="{{ cmOnCode }}" placeholder="6 位验证码" maxLength="6" style="background:#0B1220;border:1px solid #2A3A55;color:#E6EBF4;border-radius:8px;padding:10px 12px;font-size:15px;letter-spacing:6px;font-family:ui-monospace,'SF Mono',Consolas,monospace;" />
+          </div>
+        </sc-if>
+        <sc-if value="{{ cmErr }}" hint-placeholder-val="{{ false }}">
+          <div style="color:#E06060;font-size:12px;">{{ cmErr }}</div>
+        </sc-if>
+        <div style="display:flex;gap:10px;margin-top:4px;">
+          <button onClick="{{ cmCancel }}" style="flex:1;background:transparent;border:1px solid #2A3A55;color:#8A94A8;font-size:13px;padding:10px;border-radius:8px;cursor:pointer;">取消</button>
+          <button onClick="{{ cmLogin }}" style="flex:2;background:#4292E0;border:none;color:#06101E;font-weight:700;font-size:14px;padding:10px;border-radius:8px;cursor:pointer;">
+            <sc-if value="{{ cmBusy }}" hint-placeholder-val="{{ false }}">
+              <span style="display:inline-block;width:12px;height:12px;border:2px solid #06101E;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px;margin-right:6px;"></span>
+            </sc-if>
+            {{ cmBtnLabel }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+<!-- 重复运动处理弹窗 -->
+<sc-if value="{{ conflictOpen }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ closeConflicts }}" style="{{ modalOverlayStyle }}">
+    <div onClick="{{ stopClick }}" style="{{ conflictPanelStyle }}">
+      <div style="font-size:16px;font-weight:700;margin-bottom:4px;">处理重复运动</div>
+      <div style="font-size:12px;color:#5C687E;margin-bottom:18px;">以下运动在中国区与国际区同时存在(开始时间 + 时长一致),请选择保留哪一条,另一条将被忽略</div>
+      <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:18px;">
+        <sc-for list="{{ conflictRows }}" as="cf" hint-placeholder-count="2">
+          <div style="background:#0B1220;border:1px solid #1C2739;border-radius:10px;padding:14px 16px;">
+            <div style="display:flex;gap:10px;font-size:13px;margin-bottom:10px;align-items:center;flex-wrap:wrap;">
+              <span style="font-weight:600;">{{ cf.name }}</span>
+              <span style="color:#5C687E;font-size:12px;font-family:ui-monospace,'SF Mono',Consolas,monospace;">{{ cf.date }} · {{ cf.dist }} · {{ cf.dur }}</span>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <div onClick="{{ cf.pickCn }}" style="{{ cf.cnStyle }}">保留中国区 <span style="color:#5C687E;font-size:11px;margin-left:6px;">connect.garmin.cn</span></div>
+              <div onClick="{{ cf.pickIntl }}" style="{{ cf.intlStyle }}">保留国际区 <span style="color:#5C687E;font-size:11px;margin-left:6px;">connect.garmin.com</span></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button onClick="{{ closeConflicts }}" style="flex:1;background:transparent;border:1px solid #2A3A55;color:#8A94A8;font-size:13px;padding:10px;border-radius:8px;cursor:pointer;">稍后处理</button>
+        <button onClick="{{ resolveConflicts }}" style="flex:2;background:#4292E0;border:none;color:#06101E;font-weight:700;font-size:14px;padding:10px;border-radius:8px;cursor:pointer;">确认合并</button>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#1A2436;border:1px solid #3A4E70;color:#E6EBF4;font-size:13px;padding:11px 22px;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.5);z-index:99;animation:fadeUp .25s ease;">{{ toast }}</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: &quot;100%&quot;, &quot;height&quot;: 900}, &quot;layout&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;顶部导航&quot;, &quot;侧边导航&quot;], &quot;default&quot;: &quot;顶部导航&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;布局&quot;}, &quot;skipLogin&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;调试&quot;}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.TODAY = new Date('2026-07-09');
+    const wd = ['周日','周一','周二','周三','周四','周五','周六'];
+    this.dstr = (off) => {
+      const d = new Date(this.TODAY); d.setDate(d.getDate() - off);
+      return String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0') + ' ' + wd[d.getDay()];
+    };
+    this.iso = (off) => {
+      const d = new Date(this.TODAY); d.setDate(d.getDate() - off);
+      return d.toISOString().slice(0, 10);
+    };
+    this.typeColors = {'跑步':'#4292E0','骑行':'#3FBF8F','游泳':'#3FB8BF','力量':'#E0A040','越野跑':'#9B7BE0'};
+
+    // ---------- 运动数据(近180天,含分页量级) ----------
+    const acts = [];
+    let seq = 0;
+    const mkRun = (off, name, dist, paceSec, aHr, mHr, elev, src, type) => acts.push({
+      id: 'a' + (seq++), off, type: type || '跑步', name, dist, paceSec,
+      durSec: Math.round(dist * paceSec), aHr, mHr, elev, cal: Math.round(dist * 64),
+      cad: Math.round(170 + (paceSec < 300 ? 12 : 4)), src
+    });
+    const mkRide = (off, name, dist, kmh, pwr, aHr, mHr, elev, src) => acts.push({
+      id: 'a' + (seq++), off, type: '骑行', name, dist, kmh, pwr,
+      durSec: Math.round(dist / kmh * 3600), aHr, mHr, elev,
+      cal: Math.round(dist / kmh * 620), cad: Math.round(82 + kmh / 4), src
+    });
+    const mkSwim = (off, name, dist, pace100, aHr, mHr, src) => acts.push({
+      id: 'a' + (seq++), off, type: '游泳', name, dist, pace100,
+      durSec: Math.round(dist * 10 * pace100), aHr, mHr, elev: 0,
+      cal: Math.round(dist * 220), cad: 30, src
+    });
+    const mkStr = (off, name, durMin, aHr, mHr, cal, src) => acts.push({
+      id: 'a' + (seq++), off, type: '力量', name, dist: null,
+      durSec: durMin * 60, aHr, mHr, elev: 0, cal, cad: null, src
+    });
+    // 近期精选
+    mkRun(0, '晨间轻松跑', 5.08, 371, 152, 170, 2, '佳明CN');
+    mkRide(1, '间歇功率课', 45.3, 29.5, 212, 151, 176, 420, '佳明CN');
+    mkSwim(2, '泳池有氧', 2.0, 145, 128, 145, '佳明国际');
+    mkStr(3, '下肢力量', 55, 112, 139, 320, '佳明CN');
+    mkRun(4, '山地越野', 15.6, 456, 149, 171, 860, '佳明国际', '越野跑');
+    mkRun(5, '节奏跑 6×1km', 12.1, 292, 156, 172, 84, '佳明CN');
+    mkRide(7, '有氧耐力骑', 78.4, 28.5, 186, 138, 162, 640, '佳明CN');
+    mkRun(9, '长距离慢跑', 21.1, 320, 145, 160, 210, '佳明CN');
+    mkSwim(11, '技术课', 1.5, 160, 120, 138, '佳明国际');
+    mkRun(14, '恢复跑', 6.0, 340, 128, 141, 40, 'FIT上传');
+    // 程序化生成(近180天)
+    const rnd = this.seeded(7);
+    const runNames = ['轻松跑','有氧跑','间歇训练','节奏跑','长距离跑','渐加速跑','恢复跑'];
+    const rideNames = ['有氧骑行','间歇骑','长途骑行','恢复骑','爬坡训练'];
+    const swimNames = ['泳池训练','有氧游','技术课'];
+    const strNames = ['力量训练','核心训练','上肢力量'];
+    const trailNames = ['越野跑','山地越野','丘陵越野'];
+    let off = 16;
+    while (off < 180) {
+      const r = rnd();
+      const src = rnd() < 0.72 ? '佳明CN' : (rnd() < 0.7 ? '佳明国际' : 'FIT上传');
+      if (r < 0.42) mkRun(off, runNames[Math.floor(rnd()*runNames.length)], +(5 + rnd()*17).toFixed(2), Math.round(280 + rnd()*70), Math.round(130 + rnd()*28), Math.round(150 + rnd()*28), Math.round(rnd()*220), src);
+      else if (r < 0.65) mkRide(off, rideNames[Math.floor(rnd()*rideNames.length)], +(30 + rnd()*70).toFixed(1), +(26 + rnd()*7).toFixed(1), Math.round(170 + rnd()*70), Math.round(130 + rnd()*26), Math.round(155 + rnd()*28), Math.round(200 + rnd()*900), src);
+      else if (r < 0.78) mkSwim(off, swimNames[Math.floor(rnd()*swimNames.length)], +(1 + rnd()*2).toFixed(1), Math.round(135 + rnd()*35), Math.round(115 + rnd()*20), Math.round(135 + rnd()*18), src);
+      else if (r < 0.9) mkStr(off, strNames[Math.floor(rnd()*strNames.length)], Math.round(35 + rnd()*30), Math.round(100 + rnd()*20), Math.round(125 + rnd()*20), Math.round(220 + rnd()*160), src);
+      else mkRun(off, trailNames[Math.floor(rnd()*trailNames.length)], +(9 + rnd()*10).toFixed(1), Math.round(420 + rnd()*80), Math.round(140 + rnd()*16), Math.round(162 + rnd()*16), Math.round(400 + rnd()*700), src, '越野跑');
+      off += 1 + Math.floor(rnd() * 3);
+    }
+    acts.forEach(a => { a.date = this.dstr(a.off); });
+    this.acts = acts;
+    // a0 = 真实 FIT 文件(614797758_ACTIVITY.fit)解析出的原始数据
+    Object.assign(this.acts[0], { durSec: 1887, cal: 344, real: {
+      moving: '31:22', elapsed: '32:28',
+      avgPace: "6'11\"/km", bestPace: "5'33\"/km",
+      avgPower: '265 W', maxPower: '310 W', np: '264 W',
+      stepLen: '0.92 m', vosc: '8.1 cm', vratio: '8.8 %', gct: '265 ms',
+      te: '2.7(有氧基础)', ate: '0.0', load: '65',
+      descent: '4 m', minElev: '494 m', maxElev: '498 m',
+      tempAvg: '32.0 °C', tempMin: '31.0 °C', tempMax: '33.0 °C',
+      calAct: '300 kcal', calRest: '44 kcal', calTot: '344 kcal',
+      feel: '正常', rpe: '3/10',
+      ciqDist: '5043.0 m', ciqCad: '174.9 spm', ciqGct: '265.6 ms', ciqVosc: '7.0 cm',
+      ciqPwr: '247.1 W', ciqLss: '4.56 kn/m', ciqVilr: '39.5 bw/s', ciqPif: '17.6 g'
+    } });
+    this.SYS_PROMPT = '你是专业的耐力训练数据分析师。规则:\n1. 始终以 HTML 片段回复(仅内联样式),以便在对话框中直接渲染 — 数据对比用 <table>,计划/流程用列表或表格,趋势用系统图表卡片,图片用占位说明;\n2. 仅基于系统随对话附带的原始数据(运动记录 / 健康记录 / 习惯记录)进行分析,不得编造数据;\n3. TSS、训练负荷等衍生指标由你计算并注明计算依据,系统不预先计算;\n4. 中文回复,专业指标可用英文缩写(HRV、NP、GAP 等)。';
+
+    // ---------- 健康数据(近90天) ----------
+    const hrnd = this.seeded(42);
+    this.sleepDays = Array.from({length: 90}, (_, i) => {
+      const o = 89 - i;
+      return { off: o, date: this.dstr(o), deep: +(1.1 + hrnd()*0.9).toFixed(1), light: +(3.4 + hrnd()*1.2).toFixed(1), rem: +(1.0 + hrnd()*0.9).toFixed(1), rhr: Math.round(44 + hrnd()*8) };
+    });
+    this.weights = Array.from({length: 90}, (_, i) => {
+      const o = 89 - i;
+      return { off: o, date: this.dstr(o), kg: +(69.2 - i*0.008 + (hrnd()-0.5)*0.5).toFixed(1), fat: +(14.5 + (hrnd()-0.5)*1.2).toFixed(1), muscle: +(54.2 + (hrnd()-0.5)*0.6).toFixed(1), water: +(58.5 + (hrnd()-0.5)*1.5).toFixed(1) };
+    });
+    this.hrvDays = Array.from({length: 90}, (_, i) => {
+      const o = 89 - i;
+      const avg = Math.round(52 + Math.sin(i/4)*7 + (hrnd()-0.5)*8);
+      const rhr = Math.round(44 + hrnd()*7);
+      return { off: o, date: this.dstr(o), avg, max: avg + Math.round(8 + hrnd()*10), rhr, minHr: rhr - Math.round(3 + hrnd()*4) };
+    });
+
+    // ---------- 习惯分组 ----------
+    this.habitGroupsDef = [
+      { id: 'morning', label: '早上', color: '#E0A040', items: ['咖啡','轻量运动','中度运动','重度运动','看书','冥想','拉伸','高蛋白早餐','空腹训练'] },
+      { id: 'noon', label: '中午', color: '#4292E0', items: ['午睡','咖啡','外食','散步','奶茶/甜品','轻量运动'] },
+      { id: 'evening', label: '晚上', color: '#9B7BE0', items: ['看书','拉伸','泡脚','冥想','酒精','熬夜(>23:30)','长时间屏幕','宵夜'] },
+      { id: 'allday', label: '全天', color: '#3FBF8F', items: ['补水充足','高蛋白饮食','补剂(镁/维D)','久坐','压力大','户外日晒'] }
+    ];
+  }
+
+  seeded(s) { let x = s; return () => { x = (x * 9301 + 49297) % 233280; return x / 233280; }; }
+
+  optChip(on) {
+    return {
+      padding: '7px 16px', borderRadius: '99px', cursor: 'pointer', fontSize: '12.5px', userSelect: 'none',
+      background: on ? 'rgba(66,146,224,.16)' : '#0B1220',
+      color: on ? '#5EA3E8' : '#8A94A8',
+      border: '1px solid ' + (on ? '#4292E0' : '#2A3A55')
+    };
+  }
+  conflictOptStyle(on) {
+    return {
+      padding: '9px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12.5px', flex: 1, minWidth: '180px', userSelect: 'none',
+      background: on ? 'rgba(66,146,224,.16)' : '#121A28',
+      color: on ? '#5EA3E8' : '#8A94A8',
+      border: '1px solid ' + (on ? '#4292E0' : '#2A3A55')
+    };
+  }
+
+  fmtDur(sec) {
+    sec = Math.round(sec);
+    const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+    return h ? h + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0') : m + ':' + String(s).padStart(2,'0');
+  }
+  fmtPace(sec) {
+    sec = Math.max(1, Math.round(sec));
+    return Math.floor(sec / 60) + "'" + String(sec % 60).padStart(2, '0') + '"';
+  }
+  paceText(a) {
+    if (a.type === '骑行') return a.pwr + ' W';
+    if (a.type === '游泳') return this.fmtPace(a.pace100) + '/100m';
+    if (a.paceSec) return this.fmtPace(a.paceSec) + '/km';
+    return '—';
+  }
+
+  state = {
+    loggedIn: false, loginUser: '', loginPass: '', captchaInput: '', captcha: this.genCaptcha(), loginErr: '',
+    tab: 'analysis', narrow: false, bp: 'desktop',
+    connectors: [
+      { id: 'cn', abbr: 'GC', name: '佳明 Connect 中国区', desc: 'connect.garmin.cn', status: 'error', last: '昨天 22:41', count: 186, auto: '1小时', syncing: false, failTime: '今天 06:00', failReason: '请求超时(ETIMEDOUT),已自动重试 3 次' },
+      { id: 'intl', abbr: 'GI', name: '佳明 Connect 国际区', desc: 'connect.garmin.com', status: 'disconnected', last: '—', count: 0, auto: '手动', syncing: false }
+    ],
+    connModal: null,
+    conflicts: [], conflictOpen: false, conflictChoices: {},
+    fitFiles: [{ name: '2026-07-06-evening-ride.fit', size: '1.2 MB', time: '07-06 21:03' }],
+    extraActs: [],
+    actFilter: '全部', selected: {}, detailId: null,
+    actPage: 0, actSize: 20,
+    detView: 'charts', recPage: 0, recSize: 20,
+    healthTab: 'sleep', healthPage: 0, healthSize: 20,
+    habitDate: '2026-07-09',
+    habitLog: {
+      '2026-07-09': { 'morning|咖啡': true, 'morning|轻量运动': true, 'allday|补水充足': true },
+      '2026-07-08': { 'morning|咖啡': true, 'evening|拉伸': true, 'evening|长时间屏幕': true, 'allday|久坐': true },
+      '2026-07-07': { 'morning|中度运动': true, 'noon|午睡': true, 'evening|看书': true, 'allday|高蛋白饮食': true }
+    },
+    sessions: [
+      { id: 's1', name: '状态评估', msgs: [{ id: 0, role: 'ai', text: '你好!我基于已存储的<b>原始数据</b>(运动 / 健康 / 习惯 + 你的区间设定)做分析。TSS、CTL/ATL/TSB 等衍生指标会在回复中计算并注明依据,系统不预存任何计算结果。<br>当前默认读取最近 <b>3 天</b>数据,已附带健康与习惯记录。' }] },
+      { id: 's2', name: '马拉松备赛计划', msgs: [{ id: 0, role: 'ai', text: '这是「马拉松备赛计划」会话。告诉我目标赛事日期与目标成绩,我会基于你的原始训练数据在回复中生成周期化计划。' }] }
+    ],
+    curSession: 's1', renamingId: null, renameText: '',
+    draft: '', rangeDays: 3, includeHealth: true, includeHabits: true, pickOpen: false, picked: {}, msgSeq: 1,
+    username: 'athlete', nickname: '耐力选手', newPwd: '', newPwd2: '',
+    apiBase: 'https://api.deepseek.com', apiKey: '', model: 'deepseek-chat', testing: false, apiTestResult: '', promptOpen: false,
+    unitSystem: '公制(km / m)', paceUnit: 'min/km', weightUnit: 'kg',
+    zones: { z1: 121, z2: 141, z3: 161, z4: 181, maxHr: 192, lthr: 168, ftp: 245 },
+    toast: null
+  };
+
+  genCaptcha() {
+    const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; let s = '';
+    for (let i = 0; i < 4; i++) s += chars[Math.floor(Math.random() * chars.length)];
+    return s;
+  }
+
+  componentDidMount() {
+    this.onResize = () => {
+      const w = window.innerWidth;
+      const bp = w < 640 ? 'mobile' : (w < 980 ? 'tablet' : (w < 1440 ? 'desktop' : 'wide'));
+      this.setState({ narrow: w < 980, bp });
+    };
+    window.addEventListener('resize', this.onResize);
+    this.onResize();
+  }
+  componentWillUnmount() { window.removeEventListener('resize', this.onResize); clearTimeout(this._toastT); }
+
+  showToast(t) {
+    this.setState({ toast: t });
+    clearTimeout(this._toastT);
+    this._toastT = setTimeout(() => this.setState(() => ({ toast: null })), 2600);
+  }
+
+  allActs() { return [...this.state.extraActs, ...this.acts].sort((a, b) => a.off - b.off); }
+
+  chartPts(arr, w = 300, h = 80, pad = 6) {
+    if (!arr.length) return '';
+    const min = Math.min(...arr), max = Math.max(...arr), span = (max - min) || 1;
+    return arr.map((v, i) => {
+      const x = arr.length === 1 ? w / 2 : (i / (arr.length - 1)) * w;
+      const y = h - pad - ((v - min) / span) * (h - pad * 2);
+      return x.toFixed(1) + ',' + y.toFixed(1);
+    }).join(' ');
+  }
+
+  stream(base, amp, n, seedNum) {
+    const rnd = this.seeded(seedNum);
+    return Array.from({ length: n }, (_, i) => base + Math.sin(i / 5) * amp * 0.6 + (rnd() - 0.5) * amp);
+  }
+
+  // 分页器
+  pager(total, pageKey, sizeKey) {
+    const st = this.state;
+    const size = st[sizeKey];
+    const pages = Math.max(1, Math.ceil(total / size));
+    const page = Math.min(st[pageKey], pages - 1);
+    const from = total ? page * size + 1 : 0;
+    const to = Math.min(total, (page + 1) * size);
+    const btn = (en) => ({
+      background: 'transparent', border: '1px solid ' + (en ? '#2A3A55' : '#1C2739'),
+      color: en ? '#8A94A8' : '#3A4457', fontSize: '12px', padding: '5px 12px',
+      borderRadius: '6px', cursor: en ? 'pointer' : 'default'
+    });
+    return {
+      page, size,
+      info: '共 ' + total + ' 条 · 显示 ' + from + '–' + to,
+      sizeVal: String(size),
+      onSize: (e) => this.setState({ [sizeKey]: +e.target.value, [pageKey]: 0 }),
+      prev: () => { if (page > 0) this.setState({ [pageKey]: page - 1 }); },
+      next: () => { if (page < pages - 1) this.setState({ [pageKey]: page + 1 }); },
+      prevStyle: btn(page > 0), nextStyle: btn(page < pages - 1),
+      pageLabel: (page + 1) + ' / ' + pages
+    };
+  }
+
+  habitLabels(dates) {
+    const st = this.state;
+    const counts = {};
+    dates.forEach(d => {
+      const log = st.habitLog[d] || {};
+      Object.keys(log).forEach(k => { if (log[k]) { const lb = k.split('|')[1]; counts[lb] = (counts[lb] || 0) + 1; } });
+    });
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([l, c]) => l + '×' + c).join('、');
+  }
+
+  aiReply(userText) {
+    const st = this.state;
+    const pickedIds = Object.keys(st.picked).filter(k => st.picked[k]);
+    const all = this.allActs();
+    let scope, label;
+    if (pickedIds.length) {
+      scope = all.filter(a => pickedIds.includes(a.id));
+      label = '你勾选的 ' + scope.length + ' 次运动';
+    } else {
+      scope = all.filter(a => a.off < st.rangeDays);
+      label = '最近 ' + st.rangeDays + ' 天';
+    }
+    const n = scope.length;
+    const dist = scope.reduce((s, a) => s + (a.dist || 0), 0).toFixed(1);
+    const hrs = scope.filter(a => a.aHr);
+    const avgHr = hrs.length ? Math.round(hrs.reduce((s, a) => s + a.aHr, 0) / hrs.length) : 0;
+    const td = 'padding:6px 8px;border-bottom:1px solid #223049;text-align:left;';
+    const mono = "font-family:ui-monospace,'SF Mono',Consolas,monospace;";
+    const th = (h) => '<th style="' + td + 'color:#5C687E;font-weight:400;font-size:11px">' + h + '</th>';
+    const actTable = '<table style="width:100%;border-collapse:collapse;margin:10px 0;font-size:12.5px"><thead><tr>'
+      + ['日期', '名称', '距离', '平均心率'].map(th).join('') + '</tr></thead><tbody>'
+      + scope.slice(0, 8).map(a => '<tr><td style="' + td + mono + 'color:#8A94A8">' + a.date.slice(0, 5) + '</td><td style="' + td + '">' + a.name + '</td><td style="' + td + mono + '">' + (a.dist == null ? '—' : a.dist.toFixed(1) + ' km') + '</td><td style="' + td + mono + '">' + a.aHr + ' bpm</td></tr>').join('')
+      + '</tbody></table>';
+    let extra = '';
+    if (st.includeHealth) {
+      const recentHrv = this.hrvDays.slice(-7);
+      const hrvAvg = Math.round(recentHrv.reduce((s, d) => s + d.avg, 0) / recentHrv.length);
+      const sl = this.sleepDays.slice(-7);
+      const slAvg = (sl.reduce((s, d) => s + d.deep + d.light + d.rem, 0) / sl.length).toFixed(1);
+      extra += '<p style="margin:10px 0 0;color:#B8C2D4"><b style="color:#E6EBF4">健康记录:</b>近 7 天夜间 HRV 平均 <b style="' + mono + '">' + hrvAvg + ' ms</b>、睡眠平均 <b style="' + mono + '">' + slAvg + ' h</b>,恢复状态基本正常,可承接当前负荷。</p>';
+    }
+    if (st.includeHabits) {
+      const dates = Array.from({ length: 7 }, (_, i) => this.iso(i));
+      const hl = this.habitLabels(dates);
+      extra += hl
+        ? '<p style="margin:10px 0 0;color:#B8C2D4"><b style="color:#E6EBF4">习惯因子(近 7 天):</b>' + hl + '。注意咖啡因摄入时间与晚间屏幕时间对深睡的潜在影响,建议训练日保持拉伸习惯。</p>'
+        : '<p style="margin:10px 0 0;color:#B8C2D4"><b style="color:#E6EBF4">习惯记录:</b>近 7 天暂无数据,建议每日勾选,以便做相关性分析。</p>';
+    }
+    let body;
+    if (/计划/.test(userText)) {
+      const plan = [
+        ['周四', '恢复跑 6 km', '心率 < 135 bpm'],
+        ['周五', '力量训练 45 min', '下肢为主'],
+        ['周六', '节奏跑 8 km', "目标 4'55\"/km"],
+        ['周日', '长距离慢跑 22 km 或骑 80 km', '有氧耐力'],
+        ['周一', '休息 / 轻松游泳 1.5 km', '主动恢复'],
+        ['周二', '间歇 6×1 km', "4'40\"/km · 间歇慢跑 400 m"],
+        ['周三', '轻松跑 8 km', '有氧']
+      ];
+      body = '<p style="margin:0">基于<b>' + label + '</b>(' + n + ' 次运动 · ' + dist + ' km · 平均心率 ' + avgHr + ' bpm),未来 7 天建议计划:</p>'
+        + '<table style="width:100%;border-collapse:collapse;margin:10px 0;font-size:12.5px"><thead><tr>' + ['日期', '课次', '目标'].map(th).join('') + '</tr></thead><tbody>'
+        + plan.map(r => '<tr><td style="' + td + mono + 'color:#8A94A8">' + r[0] + '</td><td style="' + td + '">' + r[1] + '</td><td style="' + td + mono + 'color:#B8C2D4">' + r[2] + '</td></tr>').join('')
+        + '</tbody></table>' + extra;
+    } else {
+      body = '<p style="margin:0">基于<b>' + label + '</b>的 ' + n + ' 次运动(总距离 <b style="' + mono + '">' + dist + ' km</b>,平均心率 <b style="' + mono + '">' + avgHr + ' bpm</b>):</p>'
+        + actTable
+        + '<ol style="margin:6px 0 0;padding-left:18px;color:#B8C2D4"><li>强度分布:多数课次平均心率处于有氧区间,高低强度交替合理;</li><li>心率趋势:同强度下心率未见异常抬升,无疲劳堆积信号;</li><li>建议:保持当前节奏,下一训练块可小幅提高长课占比,高强度课后安排 1 天低强度恢复。</li></ol>' + extra;
+    }
+    const ordered = scope.slice().reverse();
+    let chart;
+    if (ordered.length < 2) {
+      chart = { empty: true, reason: '当前范围仅包含 ' + ordered.length + ' 次运动,趋势图表至少需要 2 次运动。' };
+    } else {
+      const vals = ordered.map(a => a.aHr || 100);
+      const mn = Math.min(...vals), mx = Math.max(...vals);
+      chart = {
+        title: '平均心率趋势',
+        yLabel: 'bpm',
+        summary: label + ' · ' + ordered.length + ' 次运动 · 平均 ' + avgHr + ' bpm · 区间 ' + mn + '–' + mx,
+        vals,
+        dates: ordered.map(a => a.date.slice(0, 5)),
+        items: ordered.map(a => ({ date: a.date.slice(0, 5), name: a.name, val: (a.aHr || '—') + ' bpm' }))
+      };
+    }
+    return { text: body, chart };
+  }
+
+  introMsg() {
+    return { id: 0, role: 'ai', text: '你好!我基于已存储的<b>原始数据</b>(运动 / 健康 / 习惯 + 你的区间设定)做分析。TSS、CTL/ATL/TSB 等衍生指标会在回复中计算并注明依据,系统不预存任何计算结果。' };
+  }
+
+  cardPts(vals) {
+    const x0 = 44, x1 = 332, y0 = 10, y1 = 88;
+    const min = Math.min(...vals), max = Math.max(...vals), span = (max - min) || 1;
+    return vals.map((v, i) => {
+      const x = vals.length === 1 ? (x0 + x1) / 2 : x0 + (i / (vals.length - 1)) * (x1 - x0);
+      const y = y1 - ((v - min) / span) * (y1 - y0);
+      return x.toFixed(1) + ',' + y.toFixed(1);
+    }).join(' ');
+  }
+
+  cardLabels(vals, dates) {
+    const min = Math.min(...vals), max = Math.max(...vals);
+    const tickStyle = { fill: '#5C687E', fontSize: '8.5px', fontFamily: "ui-monospace,'SF Mono',Consolas,monospace" };
+    const ys = [{ y: 13, label: Math.round(max) }, { y: 52, label: Math.round((min + max) / 2) }, { y: 91, label: Math.round(min) }];
+    const xs = [];
+    if (dates.length) {
+      xs.push({ x: 44, a: 'start', label: dates[0] });
+      if (dates.length > 2) xs.push({ x: 188, a: 'middle', label: dates[Math.floor(dates.length / 2)] });
+      if (dates.length > 1) xs.push({ x: 332, a: 'end', label: dates[dates.length - 1] });
+    }
+    return React.createElement(React.Fragment, null,
+      ...ys.map((t, i) => React.createElement('text', { key: 'y' + i, x: 39, y: t.y, textAnchor: 'end', style: tickStyle }, t.label)),
+      ...xs.map((t, i) => React.createElement('text', { key: 'x' + i, x: t.x, y: 103, textAnchor: t.a, style: tickStyle }, t.label))
+    );
+  }
+
+  // FIT 原始字段 ∩ 佳明详情页展示项(无数据显示 --,分区标注 FIT 字段名)
+  fitSections(a) {
+    const NA = '--';
+    const isRun = a.type === '跑步' || a.type === '越野跑';
+    const isRide = a.type === '骑行';
+    const isSwim = a.type === '游泳';
+    const outdoor = isRun || isRide;
+    const rnd = this.seeded(a.durSec + a.aHr);
+    const P = (s) => this.fmtPace(s);
+    const R = (k, def) => (a.real && a.real[k] !== undefined) ? a.real[k] : def;
+    const valStyle = (v) => ({
+      fontSize: '15px', fontWeight: 600, marginTop: '4px',
+      fontFamily: "ui-monospace,'SF Mono',Consolas,monospace",
+      color: v === NA ? '#3A4457' : '#E6EBF4'
+    });
+    const mk = (pairs) => pairs.map(([label, value]) => ({ label, value, valStyle: valStyle(value) }));
+    return [
+      { title: '计时', en: 'total_timer_time / total_elapsed_time', items: mk([
+        ['时间', this.fmtDur(a.durSec)],
+        ['移动时间', R('moving', this.fmtDur(a.durSec * 0.985))],
+        ['经过时间', R('elapsed', this.fmtDur(a.durSec * 1.032))]
+      ]) },
+      { title: '配速 / 速度', en: 'enhanced_avg_speed / enhanced_max_speed', items: mk([
+        ['平均配速', isRun ? R('avgPace', P(a.paceSec) + '/km') : (isSwim ? P(a.pace100) + '/100m' : NA)],
+        ['最佳配速', isRun ? R('bestPace', P(a.paceSec - 28) + '/km') : (isSwim ? P(a.pace100 - 12) + '/100m' : NA)],
+        ['平均速度', isRide ? a.kmh.toFixed(1) + ' km/h' : NA],
+        ['最大速度', isRide ? (a.kmh * 1.38).toFixed(1) + ' km/h' : NA]
+      ]) },
+      { title: '心率', en: 'avg_heart_rate / max_heart_rate', items: mk([
+        ['平均心率', a.aHr + ' bpm'],
+        ['最大心率', a.mHr + ' bpm']
+      ]) },
+      { title: '功率', en: 'avg_power / max_power / normalized_power', items: mk([
+        ['平均功率', isRide ? a.pwr + ' W' : (isRun ? R('avgPower', Math.round(230 + rnd() * 60) + ' W') : NA)],
+        ['最大功率', isRide ? Math.round(a.pwr * 1.45) + ' W' : (isRun ? R('maxPower', Math.round(300 + rnd() * 80) + ' W') : NA)],
+        ['标准化功率 NP®', isRide ? Math.round(a.pwr * 1.04) + ' W' : (isRun ? R('np', Math.round(235 + rnd() * 60) + ' W') : NA)]
+      ]) },
+      { title: '跑步动态', en: 'avg_running_cadence / avg_step_length / avg_stance_time…', items: mk([
+        ['平均步频', isRun ? a.cad + ' spm' : NA],
+        ['最大步频', isRun ? (a.cad + 4) + ' spm' : NA],
+        ['平均步幅', isRun ? R('stepLen', (0.85 + rnd() * 0.25).toFixed(2) + ' m') : NA],
+        ['垂直振幅 V.OSC', isRun ? R('vosc', (6.5 + rnd() * 2.5).toFixed(1) + ' cm') : NA],
+        ['垂直比', isRun ? R('vratio', (7.8 + rnd() * 2).toFixed(1) + ' %') : NA],
+        ['触地时间 GCT', isRun ? R('gct', Math.round(240 + rnd() * 50) + ' ms') : NA]
+      ]) },
+      { title: '踏频', en: 'avg_cadence / max_cadence', items: mk([
+        ['平均踏频', isRide ? a.cad + ' rpm' : (isSwim ? a.cad + ' spm' : NA)],
+        ['最大踏频', isRide ? (a.cad + 14) + ' rpm' : (isSwim ? (a.cad + 6) + ' spm' : NA)]
+      ]) },
+      { title: '训练效果', en: 'total_training_effect / training_load_peak', items: mk([
+        ['有氧训练效果 TE', R('te', (1.5 + rnd() * 1.8).toFixed(1))],
+        ['无氧训练效果', R('ate', (rnd() * 1.2).toFixed(1))],
+        ['运动负荷', R('load', String(Math.round(30 + rnd() * 90)))]
+      ]) },
+      { title: '海拔', en: 'total_ascent / total_descent / enhanced_altitude', items: mk([
+        ['总爬升', outdoor ? a.elev + ' m' : NA],
+        ['总下降', outdoor ? R('descent', Math.round(a.elev * 0.96) + ' m') : NA],
+        ['最低海拔', outdoor ? R('minElev', Math.round(480 + rnd() * 30) + ' m') : NA],
+        ['最高海拔', outdoor ? R('maxElev', (Math.round(490 + rnd() * 40) + a.elev) + ' m') : NA]
+      ]) },
+      { title: '温度', en: 'avg_temperature / min_temperature / max_temperature', items: mk([
+        ['平均温度', outdoor ? R('tempAvg', (26 + rnd() * 6).toFixed(1) + ' °C') : (isSwim ? '27.0 °C' : NA)],
+        ['最低温度', outdoor ? R('tempMin', (24 + rnd() * 3).toFixed(1) + ' °C') : NA],
+        ['最高温度', outdoor ? R('tempMax', (30 + rnd() * 4).toFixed(1) + ' °C') : NA]
+      ]) },
+      { title: '卡路里', en: 'total_calories / metabolic_calories', items: mk([
+        ['活动卡路里', R('calAct', a.cal + ' kcal')],
+        ['静息卡路里', R('calRest', Math.round(38 + a.durSec / 90) + ' kcal')],
+        ['总消耗', R('calTot', (a.cal + Math.round(38 + a.durSec / 90)) + ' kcal')]
+      ]) },
+      { title: '自我评价', en: 'workout_feel / workout_rpe', items: mk([
+        ['感觉如何', R('feel', ['很好', '正常', '一般'][Math.floor(rnd() * 3)])],
+        ['自觉强度 RPE', R('rpe', Math.round(2 + rnd() * 5) + '/10')]
+      ]) },
+      { title: 'Connect IQ 数据字段', en: 'developer_fields(跑步动力学传感器)', items: mk([
+        ['距离', isRun ? R('ciqDist', (a.dist * 1000 - 30).toFixed(1) + ' m') : NA],
+        ['步频', isRun ? R('ciqCad', (a.cad + rnd()).toFixed(1) + ' spm') : NA],
+        ['触地时间 GCT', isRun ? R('ciqGct', (245 + rnd() * 30).toFixed(1) + ' ms') : NA],
+        ['垂直振幅 V.OSC', isRun ? R('ciqVosc', (6.5 + rnd() * 1.5).toFixed(1) + ' cm') : NA],
+        ['总功率', isRun ? R('ciqPwr', (230 + rnd() * 40).toFixed(1) + ' W') : NA],
+        ['腿部刚度 LSS', isRun ? R('ciqLss', (4 + rnd()).toFixed(2) + ' kn/m') : NA],
+        ['垂直冲击负荷率 V.ILR', isRun ? R('ciqVilr', (36 + rnd() * 8).toFixed(1) + ' bw/s') : NA],
+        ['Y轴冲击峰值 Body Y PIF', isRun ? R('ciqPif', (15 + rnd() * 5).toFixed(1) + ' g') : NA]
+      ]) }
+    ];
+  }
+
+  makeChart(title, yLabel, src, color, data, durSec, fmt) {
+    const f = fmt || ((v) => String(Math.round(v)));
+    const x0 = 44, x1 = 332, y0 = 10, y1 = 88;
+    const min = Math.min(...data), max = Math.max(...data), span = (max - min) || 1;
+    const pts = data.map((v, i) => {
+      const x = x0 + (i / (data.length - 1)) * (x1 - x0);
+      const y = y1 - ((v - min) / span) * (y1 - y0);
+      return x.toFixed(1) + ',' + y.toFixed(1);
+    }).join(' ');
+    const mid = (y0 + y1) / 2;
+    const yTicks = [
+      { y: y0, ty: y0 + 3, label: f(max) },
+      { y: mid, ty: mid + 3, label: f((min + max) / 2) },
+      { y: y1, ty: y1 + 3, label: f(min) }
+    ];
+    const xFr = this.state.bp === 'mobile' ? [0, 0.5, 1] : [0, 0.25, 0.5, 0.75, 1];
+    const xTicks = xFr.map(fr => ({
+      x: +(x0 + fr * (x1 - x0)).toFixed(1),
+      label: this.fmtDur(durSec * fr)
+    }));
+    // SVG <text> 内不能用模板插值,刻度标签用 React 节点整体挂载
+    const tickStyle = { fill: '#5C687E', fontSize: '8.5px', fontFamily: "ui-monospace,'SF Mono',Consolas,monospace" };
+    const labels = React.createElement(React.Fragment, null,
+      ...yTicks.map((t, i) => React.createElement('text', { key: 'y' + i, x: 39, y: t.ty, textAnchor: 'end', style: tickStyle }, t.label)),
+      ...xTicks.map((t, i) => React.createElement('text', { key: 'x' + i, x: t.x, y: 103, textAnchor: i === 0 ? 'start' : (i === xTicks.length - 1 ? 'end' : 'middle'), style: tickStyle }, t.label))
+    );
+    return { title, yLabel, src, color, pts, yTicks, xTicks, labels };
+  }
+
+  buildCharts(a) {
+    const isRun = a.type === '跑步' || a.type === '越野跑';
+    const isRide = a.type === '骑行';
+    const isSwim = a.type === '游泳';
+    const dur = a.durSec;
+    const pace = (v) => this.fmtPace(v);
+    const list = [];
+    const add = (title, yLabel, src, color, base, amp, fmt) =>
+      list.push(this.makeChart(title, yLabel, src, color, this.stream(base, amp, 56, Math.round(base * 7 + a.durSec)), dur, fmt));
+    if (isRun) {
+      add('配速', 'min/km', 'record.enhanced_speed', '#4292E0', a.paceSec, 42, pace);
+      add('心率', 'bpm', 'record.heart_rate', '#E06060', a.aHr, 20);
+      add('功率', 'W', 'record.power', '#E0A040', a.real ? 265 : 240, 48);
+      add('步频', 'spm', 'record.cadence', '#3FBF8F', a.cad, 8);
+      add('海拔', 'm', 'record.enhanced_altitude', '#9B7BE0', a.real ? 496 : 500 + a.elev / 2, a.real ? 4 : Math.max(6, a.elev / 3));
+      add('温度', '°C', 'record.temperature', '#3FB8BF', 32, 2);
+      add('触地时间', 'ms', 'record.stance_time', '#8FC1F2', a.real ? 265 : 260, 24);
+      add('垂直振幅', 'cm', 'record.vertical_oscillation', '#B8C2D4', 8.1, 1.4, (v) => v.toFixed(1));
+    } else if (isRide) {
+      add('速度', 'km/h', 'record.enhanced_speed', '#4292E0', a.kmh, 8, (v) => v.toFixed(1));
+      add('心率', 'bpm', 'record.heart_rate', '#E06060', a.aHr, 18);
+      add('功率', 'W', 'record.power', '#E0A040', a.pwr, 70);
+      add('踏频', 'rpm', 'record.cadence', '#3FBF8F', a.cad, 12);
+      add('海拔', 'm', 'record.enhanced_altitude', '#9B7BE0', 500 + a.elev / 2, Math.max(10, a.elev / 3));
+      add('温度', '°C', 'record.temperature', '#3FB8BF', 30, 3);
+    } else if (isSwim) {
+      add('配速', 'min/100m', 'record.enhanced_speed', '#4292E0', a.pace100, 16, pace);
+      add('心率', 'bpm', 'record.heart_rate', '#E06060', a.aHr, 14);
+    } else {
+      add('心率', 'bpm', 'record.heart_rate', '#E06060', a.aHr, 18);
+    }
+    return list;
+  }
+
+  buildZones(a) {
+    if (a.type === '力量' || a.type === '游泳') return [];
+    const colors = ['#5C687E', '#4292E0', '#3FBF8F', '#E0A040', '#E06060'];
+    const z = this.state.zones;
+    const ranges = ['< ' + z.z1 + ' bpm', z.z1 + '–' + z.z2 + ' bpm', z.z2 + '–' + z.z3 + ' bpm', z.z3 + '–' + z.z4 + ' bpm', '> ' + z.z4 + ' bpm'];
+    let secs;
+    if (a.real) secs = [204, 1452, 211, 20, 0];
+    else {
+      const rnd = this.seeded(a.durSec);
+      const w = [0.18 + rnd() * 0.1, 0.42 + rnd() * 0.15, 0.2 + rnd() * 0.1, 0.05 + rnd() * 0.06, rnd() * 0.02];
+      const tot = w.reduce((s, x) => s + x, 0);
+      secs = w.map(x => Math.round(a.durSec * x / tot));
+    }
+    const maxSec = Math.max(...secs, 1);
+    return secs.map((s, i) => ({
+      label: 'Z' + (i + 1),
+      range: ranges[i],
+      time: this.fmtDur(s),
+      barStyle: { width: Math.max(1, Math.round(s / maxSec * 100)) + '%', height: '100%', background: colors[i], borderRadius: '4px' }
+    }));
+  }
+
+  renderVals() {
+    const st = this.state;
+    const setS = (o) => this.setState(o);
+    const layout = this.props.layout ?? '顶部导航';
+    const skipLogin = this.props.skipLogin ?? false;
+    const loggedIn = st.loggedIn || skipLogin;
+    const sideNav = layout === '侧边导航';
+    const bp = st.bp || 'desktop';
+    const isMobile = bp === 'mobile';
+    const bind = (key) => (e) => setS({ [key]: e.target.value });
+
+    // 导航(连接器在设置之前、其他之后)
+    const tabDefs = [
+      { id: 'analysis', label: '分析', icon: '✦' },
+      { id: 'activities', label: '运动记录', icon: '▶' },
+      { id: 'health', label: '健康记录', icon: '♥' },
+      { id: 'connectors', label: '连接器', icon: '⇅' },
+      { id: 'settings', label: '设置', icon: '⚙' }
+    ];
+    const navItems = tabDefs.map(t => {
+      const active = st.tab === t.id;
+      return {
+        ...t,
+        go: () => setS({ tab: t.id, detailId: null }),
+        sideStyle: {
+          display: 'flex', alignItems: 'center', gap: '10px', padding: '11px 14px', borderRadius: '9px',
+          cursor: 'pointer', fontSize: '13.5px', marginBottom: '4px', whiteSpace: 'nowrap',
+          color: active ? '#E6EBF4' : '#8A94A8', fontWeight: active ? 600 : 400,
+          background: active ? 'rgba(66,146,224,.14)' : 'transparent',
+          borderLeft: active ? '3px solid #4292E0' : '3px solid transparent'
+        },
+        topStyle: {
+          padding: st.narrow ? '7px 9px' : '8px 13px', borderRadius: '8px', cursor: 'pointer',
+          fontSize: st.narrow ? '12px' : '13px', whiteSpace: 'nowrap',
+          color: active ? '#E6EBF4' : '#8A94A8', fontWeight: active ? 600 : 400,
+          background: active ? 'rgba(66,146,224,.16)' : 'transparent'
+        },
+        bottomStyle: {
+          flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          gap: '3px', cursor: 'pointer', userSelect: 'none',
+          color: active ? '#5EA3E8' : '#8A94A8',
+          borderTop: active ? '2px solid #4292E0' : '2px solid transparent'
+        }
+      };
+    });
+
+    // 连接器
+    const connectors = st.connectors.map((c, idx) => {
+      const failed = c.status === 'error';
+      const connected = c.status === 'connected' || failed;
+      const upd = (patch) => setS({ connectors: st.connectors.map((x, i) => i === idx ? { ...x, ...patch } : x) });
+      const pillColor = failed ? '#E06060' : (connected ? '#3FBF8F' : '#8A94A8');
+      return {
+        ...c, connected, disconnected: !connected, failed,
+        statusText: failed ? '同步失败' : (connected ? '已连接' : '未连接'),
+        pillStyle: {
+          fontSize: '11px', padding: '4px 12px', borderRadius: '99px',
+          background: failed ? 'rgba(224,96,96,.1)' : (connected ? 'rgba(63,191,143,.12)' : 'rgba(138,148,168,.1)'),
+          color: pillColor,
+          border: '1px solid ' + (failed ? 'rgba(224,96,96,.4)' : (connected ? 'rgba(63,191,143,.35)' : '#2A3A55'))
+        },
+        syncLabel: c.syncing ? '同步中…' : (failed ? '重试同步' : '立即同步'),
+        syncBtnStyle: {
+          background: c.syncing ? '#2E5C9E' : '#4292E0', border: 'none', color: '#06101E',
+          fontWeight: 700, fontSize: '13px', padding: '8px 18px', borderRadius: '8px',
+          cursor: c.syncing ? 'default' : 'pointer'
+        },
+        onAuto: (e) => upd({ auto: e.target.value }),
+        doSync: () => {
+          if (c.syncing) return;
+          upd({ syncing: true });
+          setTimeout(() => {
+            this.setState(s => ({ connectors: s.connectors.map((x, i) => i === idx ? { ...x, syncing: false, status: 'connected', last: '刚刚', count: x.count + 2 } : x) }));
+            this.showToast(c.name + ' 同步完成,新增 2 条运动记录');
+          }, 1600);
+        },
+        doConnect: () => setS({ connModal: { idx, user: '', pass: '', use2fa: false, code: '', stage: 'cred', busy: false, err: '' } })
+      };
+    });
+
+    const onFitUpload = (e) => {
+      const files = Array.from(e.target.files || []);
+      if (!files.length) return;
+      const newFits = files.map(f => ({ name: f.name, size: (f.size / 1048576).toFixed(1) + ' MB', time: '刚刚' }));
+      const newActs = files.map((f, i) => ({
+        id: 'u' + Date.now() + i, off: 0, date: '今天', type: '跑步', name: f.name.replace(/\.(fit|tcx|gpx)$/i, ''),
+        dist: 5.0, paceSec: 360, durSec: 1800, aHr: 135, mHr: 152, elev: 30, cal: 300, cad: 172, src: 'FIT上传'
+      }));
+      setS({ fitFiles: [...newFits, ...st.fitFiles], extraActs: [...newActs, ...st.extraActs] });
+      this.showToast('已解析并入库 ' + files.length + ' 个文件');
+      e.target.value = '';
+    };
+
+    // 运动记录 + 分页
+    const all = this.allActs();
+    const filtered = st.actFilter === '全部' ? all : all.filter(a => a.type === st.actFilter);
+    const typeChips = ['全部', '跑步', '骑行', '游泳', '力量', '越野跑'].map(t => ({
+      label: t, pick: () => setS({ actFilter: t, actPage: 0 }),
+      style: {
+        padding: '6px 14px', borderRadius: '99px', cursor: 'pointer', fontSize: '12px',
+        background: st.actFilter === t ? 'rgba(66,146,224,.16)' : '#121A28',
+        color: st.actFilter === t ? '#5EA3E8' : '#8A94A8',
+        border: '1px solid ' + (st.actFilter === t ? '#4292E0' : '#223049')
+      }
+    }));
+    const actPager = this.pager(filtered.length, 'actPage', 'actSize');
+    const pageActs = filtered.slice(actPager.page * actPager.size, (actPager.page + 1) * actPager.size);
+    const selCount = Object.values(st.selected).filter(Boolean).length;
+    const actRows = pageActs.map(a => ({
+      ...a,
+      distText: a.dist == null ? '—' : a.dist.toFixed(1) + ' km',
+      durText: this.fmtDur(a.durSec),
+      hrText: a.aHr + ' bpm',
+      paceText: this.paceText(a),
+      dotStyle: { width: '8px', height: '8px', borderRadius: '50%', background: this.typeColors[a.type] || '#8A94A8', display: 'inline-block' },
+      checked: !!st.selected[a.id],
+      toggle: () => setS({ selected: { ...st.selected, [a.id]: !st.selected[a.id] } }),
+      open: () => setS({ detailId: a.id }),
+      download: (e) => { e.stopPropagation(); this.showToast('已开始下载 ' + a.name + '.fit'); }
+    }));
+
+    // 详情
+    const detAct = all.find(a => a.id === st.detailId);
+    let det = null, detSections = [], detHero = [];
+    if (detAct) {
+      const isRide = detAct.type === '骑行';
+      const lapCount = detAct.dist ? Math.min(8, Math.max(3, Math.round(detAct.dist / 2))) : 4;
+      const rnd = this.seeded(detAct.durSec + detAct.mHr);
+      const laps = Array.from({ length: lapCount }, (_, i) => ({
+        n: i + 1,
+        dist: detAct.dist ? (detAct.dist / lapCount).toFixed(2) + ' km' : '—',
+        time: this.fmtDur(detAct.durSec / lapCount * (0.92 + rnd() * 0.16)),
+        ahr: Math.round(detAct.aHr + (rnd() - 0.5) * 14) + ' bpm',
+        mhr: Math.round(detAct.mHr - rnd() * 8) + ' bpm',
+        pwr: isRide ? Math.round(detAct.pwr * (0.9 + rnd() * 0.2)) + ' W' : ((detAct.type === '跑步' || detAct.type === '越野跑') ? Math.round(235 + rnd() * 50) + ' W' : '--'),
+        pace: isRide ? detAct.kmh.toFixed(1) + ' km/h' : this.paceText(detAct)
+      }));
+      const zz = this.buildZones(detAct);
+      det = {
+        ...detAct,
+        device: detAct.src === 'FIT上传' ? 'FIT 文件' : 'Forerunner 970 · Software 17.33',
+        lapPaceLabel: isRide ? '平均速度' : '平均配速',
+        charts: this.buildCharts(detAct),
+        zones: zz, hasZones: zz.length > 0,
+        laps,
+        download: () => this.showToast('已开始下载 ' + detAct.name + '.fit')
+      };
+      detSections = this.fitSections(detAct);
+      detHero = [
+        { label: '距离', value: detAct.dist == null ? '--' : detAct.dist.toFixed(1) + ' km' },
+        { label: '时间', value: this.fmtDur(detAct.durSec) },
+        { label: '平均心率', value: detAct.aHr + ' bpm' },
+        { label: detAct.type === '骑行' ? '平均功率' : '平均配速', value: this.paceText(detAct) },
+        { label: '总爬升', value: (detAct.type === '游泳' || detAct.type === '力量') ? '--' : detAct.elev + ' m' },
+        { label: '卡路里', value: detAct.cal + ' kcal' }
+      ];
+    }
+
+    // 逐秒数据表(降采样图表的原始对照)
+    const segStyle = (on) => ({
+      padding: '7px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '12.5px', userSelect: 'none',
+      background: on ? 'rgba(66,146,224,.16)' : '#121A28',
+      color: on ? '#5EA3E8' : '#8A94A8',
+      border: '1px solid ' + (on ? '#4292E0' : '#223049')
+    });
+    const recPager = this.pager(detAct ? detAct.durSec : 0, 'recPage', 'recSize');
+    let recRows = [], recPaceHeader = '配速 /km', recCadHeader = '步频 spm';
+    if (detAct && st.detView === 'table') {
+      const isRideT = detAct.type === '骑行', isSwimT = detAct.type === '游泳', isStrT = detAct.type === '力量';
+      recPaceHeader = isRideT ? '速度 km/h' : (isSwimT ? '配速 /100m' : '配速 /km');
+      recCadHeader = isRideT ? '踏频 rpm' : '步频 spm';
+      const N = detAct.durSec;
+      const wig = (i, b, amp, p) => b + Math.sin(i / p) * amp * 0.6 + Math.sin(i * 0.13 + p) * amp * 0.4;
+      const distTot = detAct.dist ? detAct.dist * 1000 : 0;
+      const start = recPager.page * recPager.size, end = Math.min(N, start + recPager.size);
+      for (let i = start; i < end; i++) {
+        recRows.push({
+          t: this.fmtDur(i),
+          dist: distTot ? String(Math.round(distTot * i / N)) : '--',
+          pace: isStrT ? '--' : (isRideT ? wig(i, detAct.kmh, 5, 40).toFixed(1) : (isSwimT ? this.fmtPace(wig(i, detAct.pace100, 14, 60)) : this.fmtPace(wig(i, detAct.paceSec, 30, 47)))),
+          hr: String(Math.round(wig(i, detAct.aHr, 16, 53))),
+          pwr: isRideT ? String(Math.round(wig(i, detAct.pwr, 55, 31))) : ((detAct.type === '跑步' || detAct.type === '越野跑') ? String(Math.round(wig(i, 255, 40, 37))) : '--'),
+          cad: isStrT ? '--' : String(Math.round(wig(i, detAct.cad || 170, 6, 61))),
+          alt: (isSwimT || isStrT) ? '--' : String(Math.round(wig(i, detAct.real ? 496 : 500 + detAct.elev / 2, detAct.real ? 3 : Math.max(4, detAct.elev / 4), 90))),
+          temp: wig(i, 32, 1.5, 120).toFixed(0)
+        });
+      }
+    }
+
+    // 健康 + 分页
+    const healthTabs = [
+      { id: 'sleep', label: '睡眠' }, { id: 'weight', label: '体重' }, { id: 'rhr', label: '静息心率' }, { id: 'hrv', label: 'HRV' }, { id: 'habits', label: '习惯' }
+    ].map(t => ({
+      ...t, pick: () => setS({ healthTab: t.id, healthPage: 0 }),
+      style: {
+        padding: '7px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px',
+        background: st.healthTab === t.id ? 'rgba(66,146,224,.16)' : '#121A28',
+        color: st.healthTab === t.id ? '#5EA3E8' : '#8A94A8',
+        border: '1px solid ' + (st.healthTab === t.id ? '#4292E0' : '#223049')
+      }
+    }));
+    const px = 15;
+    const sleepBars = this.sleepDays.slice(isMobile ? -7 : -14).map(d => ({
+      day: d.date.slice(3, 5),
+      tip: d.date + ' 深' + d.deep + 'h 浅' + d.light + 'h REM ' + d.rem + 'h',
+      deepStyle: { height: (d.deep * px) + 'px', background: '#2E5C9E', borderRadius: '0 0 3px 3px' },
+      lightStyle: { height: (d.light * px) + 'px', background: '#4292E0' },
+      remStyle: { height: (d.rem * px) + 'px', background: '#8FC1F2', borderRadius: '3px 3px 0 0' }
+    }));
+    const healthList = st.healthTab === 'sleep' ? this.sleepDays : st.healthTab === 'weight' ? this.weights : this.hrvDays;
+    const healthPager = this.pager(healthList.length, 'healthPage', 'healthSize');
+    const hSlice = (list) => list.slice().reverse().slice(healthPager.page * healthPager.size, (healthPager.page + 1) * healthPager.size);
+    const sleepRows = hSlice(this.sleepDays).map(d => ({
+      date: d.date, total: (d.deep + d.light + d.rem).toFixed(1) + ' h',
+      deep: d.deep + ' h', light: d.light + ' h', rem: d.rem + ' h', rhr: d.rhr
+    }));
+    const weightRows = hSlice(this.weights);
+    const hrvRows = hSlice(this.hrvDays);
+    const rhrRows = hSlice(this.hrvDays);
+
+    // 习惯记录
+    const dayLog = st.habitLog[st.habitDate] || {};
+    const habitCount = Object.values(dayLog).filter(Boolean).length;
+    const habitGroups = this.habitGroupsDef.map(g => ({
+      label: g.label,
+      dotStyle: { width: '9px', height: '9px', borderRadius: '50%', background: g.color, display: 'inline-block' },
+      chips: g.items.map(item => {
+        const key = g.id + '|' + item;
+        const on = !!dayLog[key];
+        return {
+          label: item,
+          toggle: () => setS({ habitLog: { ...st.habitLog, [st.habitDate]: { ...dayLog, [key]: !on } } }),
+          style: {
+            padding: '8px 16px', borderRadius: '99px', cursor: 'pointer', fontSize: '13px', userSelect: 'none',
+            background: on ? 'rgba(66,146,224,.18)' : '#0B1220',
+            color: on ? '#5EA3E8' : '#8A94A8',
+            border: '1px solid ' + (on ? '#4292E0' : '#2A3A55'),
+            fontWeight: on ? 600 : 400
+          }
+        };
+      })
+    }));
+
+    // 分析
+    const pickedCount = Object.values(st.picked).filter(Boolean).length;
+    const rangeChips = [3, 7, 15, 30].map(d => ({
+      label: d + ' 天', pick: () => setS({ rangeDays: d, picked: {} }),
+      style: {
+        padding: '5px 13px', borderRadius: '99px', cursor: 'pointer', fontSize: '12px',
+        background: (st.rangeDays === d && !pickedCount) ? 'rgba(66,146,224,.18)' : '#0B1220',
+        color: (st.rangeDays === d && !pickedCount) ? '#5EA3E8' : '#8A94A8',
+        border: '1px solid ' + ((st.rangeDays === d && !pickedCount) ? '#4292E0' : '#2A3A55')
+      }
+    }));
+    const pickRows = all.slice(0, 15).map(a => ({
+      ...a, checked: !!st.picked[a.id],
+      toggle: () => setS({ picked: { ...st.picked, [a.id]: !st.picked[a.id] } })
+    }));
+    // 会话
+    const sessions = st.sessions;
+    const cur = sessions.find(x => x.id === st.curSession) || sessions[0];
+    const mutateSession = (sid, fn) => this.setState(s => ({
+      sessions: s.sessions.map(x => x.id === sid ? { ...x, msgs: fn(x.msgs) } : x)
+    }));
+    const sessionItems = sessions.map(s0 => {
+      const active = cur && s0.id === cur.id;
+      return {
+        id: s0.id, name: s0.name,
+        meta: s0.msgs.length + ' 条消息',
+        renaming: st.renamingId === s0.id, notRenaming: st.renamingId !== s0.id,
+        pick: () => setS({ curSession: s0.id }),
+        startRename: (e) => { e.stopPropagation(); setS({ renamingId: s0.id, renameText: s0.name }); },
+        renameKey: (e) => {
+          if (e.key === 'Enter') {
+            const nm = st.renameText.trim() || s0.name;
+            setS({ sessions: sessions.map(x => x.id === s0.id ? { ...x, name: nm } : x), renamingId: null });
+          }
+          if (e.key === 'Escape') setS({ renamingId: null });
+        },
+        del: (e) => {
+          e.stopPropagation();
+          let rest = sessions.filter(x => x.id !== s0.id);
+          if (!rest.length) rest = [{ id: 'sn' + Date.now(), name: '新会话', msgs: [this.introMsg()] }];
+          setS({ sessions: rest, curSession: s0.id === st.curSession ? rest[0].id : st.curSession, renamingId: null });
+          this.showToast('会话「' + s0.name + '」已删除');
+        },
+        style: {
+          display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 10px', borderRadius: '8px', cursor: 'pointer',
+          background: active ? 'rgba(66,146,224,.12)' : 'transparent',
+          borderLeft: active ? '3px solid #4292E0' : '3px solid transparent'
+        }
+      };
+    });
+    const newSession = () => {
+      const id = 'sn' + Date.now();
+      setS({ sessions: [{ id, name: '新会话 ' + this.dstr(0).slice(0, 5), msgs: [this.introMsg()] }, ...sessions], curSession: id, renamingId: null });
+    };
+
+    const messages = (cur ? cur.msgs : []).map(m => {
+      const isUser = m.role === 'user';
+      const c = m.chart;
+      return {
+        id: m.id,
+        typing: !!m.typing,
+        body: isUser
+          ? React.createElement('div', { style: { whiteSpace: 'pre-wrap', lineHeight: 1.7 } }, m.text)
+          : (m.typing ? null : React.createElement('div', { style: { lineHeight: 1.7 }, dangerouslySetInnerHTML: { __html: m.text } })),
+        hasChart: !!c,
+        cardLoading: !!c && !!c.loading,
+        cardEmpty: !!c && !!c.empty,
+        cardReady: !!c && !c.loading && !c.empty,
+        emptyReason: c && c.empty ? c.reason : '',
+        chartTitle: c ? (c.title || '') : '',
+        cardSummary: c ? (c.summary || '') : '',
+        cardYLabel: c ? (c.yLabel || '') : '',
+        chartPts: c && c.vals ? this.cardPts(c.vals) : '',
+        cardLabels: c && c.vals ? this.cardLabels(c.vals, c.dates || []) : null,
+        chartItems: c && c.items ? c.items : [],
+        collapsed: !m.expanded, expanded: !!m.expanded,
+        expandLabel: m.expanded ? '收起 ▲' : '展开 ▼',
+        toggle: () => mutateSession(cur.id, ms => ms.map(x => x.id === m.id ? { ...x, expanded: !x.expanded } : x)),
+        wrapStyle: { display: 'flex', justifyContent: isUser ? 'flex-end' : 'flex-start' },
+        bubbleStyle: isUser ? {
+          maxWidth: isMobile ? '94%' : (bp === 'tablet' ? '80%' : '68%'),
+          padding: '12px 14px', fontSize: '13.5px', borderRadius: '14px 14px 4px 14px',
+          background: '#2E5C9E', color: '#E6EBF4'
+        } : {
+          maxWidth: isMobile ? '100%' : (bp === 'tablet' ? '92%' : '82%'),
+          padding: '13px 16px', fontSize: '13.5px', borderRadius: '14px 14px 14px 4px',
+          background: '#121A28', border: '1px solid #223049', color: '#E6EBF4'
+        }
+      };
+    });
+    const sendMsg = () => {
+      const text = st.draft.trim();
+      if (!text || !cur) return;
+      const sid = cur.id;
+      const uid = st.msgSeq, aid = st.msgSeq + 1;
+      mutateSession(sid, ms => [...ms, { id: uid, role: 'user', text }, { id: aid, role: 'ai', text: '', typing: true }]);
+      this.setState(s => ({ draft: '', msgSeq: s.msgSeq + 2 }));
+      setTimeout(() => {
+        const rep = this.aiReply(text);
+        const chart = rep.chart.empty ? rep.chart : { ...rep.chart, loading: true };
+        mutateSession(sid, ms => ms.map(m => m.id === aid ? { id: aid, role: 'ai', text: rep.text, chart, expanded: false } : m));
+        if (!rep.chart.empty) {
+          setTimeout(() => mutateSession(sid, ms => ms.map(m => m.id === aid ? { ...m, chart: { ...m.chart, loading: false } } : m)), 1100);
+        }
+      }, 1400);
+    };
+    const scopeParts = [];
+    scopeParts.push(pickedCount ? '已勾选 ' + pickedCount + ' 次运动' : '最近 ' + st.rangeDays + ' 天运动数据');
+    if (st.includeHealth) scopeParts.push('健康记录');
+    if (st.includeHabits) scopeParts.push('习惯记录');
+    const scopeSummary = scopeParts.join(' + ');
+
+    // 登录
+    const doLogin = () => {
+      if (!st.loginUser.trim()) return setS({ loginErr: '请输入用户名' });
+      if (st.loginPass.length < 4) return setS({ loginErr: '密码至少 4 位' });
+      if (st.captchaInput.trim().toUpperCase() !== st.captcha) {
+        return setS({ loginErr: '验证码不正确', captcha: this.genCaptcha(), captchaInput: '' });
+      }
+      setS({ loggedIn: true, loginErr: '', username: st.loginUser.trim(), nickname: st.loginUser.trim() });
+      this.showToast('登录成功,欢迎回来');
+    };
+
+    return {
+      showLogin: !loggedIn, showApp: loggedIn,
+      sideNav: sideNav && !isMobile, topNav: !sideNav && !isMobile,
+      showBottomNav: isMobile, isMobile, navItems,
+      showNavLabels: !st.narrow,
+      mainStyle: {
+        flex: 1, overflowY: 'auto',
+        padding: isMobile ? '14px 12px 76px' : (bp === 'tablet' ? '18px 16px' : '22px 24px')
+      },
+      deskTableStyle: {
+        background: '#121A28', border: '1px solid #223049', borderRadius: '12px', overflowX: 'auto',
+        display: isMobile ? 'none' : 'block'
+      },
+      deskTableStyleMb: {
+        background: '#121A28', border: '1px solid #223049', borderRadius: '12px', overflowX: 'auto',
+        marginBottom: '16px', display: isMobile ? 'none' : 'block'
+      },
+      modalOverlayStyle: {
+        position: 'fixed', inset: 0, background: 'rgba(4,8,14,.72)', display: 'flex',
+        alignItems: isMobile ? 'stretch' : 'center', justifyContent: 'center', zIndex: 50,
+        padding: isMobile ? '0' : '20px'
+      },
+      cmPanelStyle: isMobile
+        ? { width: '100%', background: '#121A28', padding: '24px 20px', overflowY: 'auto', animation: 'fadeUp .2s ease' }
+        : { width: '390px', maxWidth: '100%', background: '#121A28', border: '1px solid #2A3A55', borderRadius: '14px', padding: '24px', animation: 'fadeUp .2s ease' },
+      conflictPanelStyle: isMobile
+        ? { width: '100%', background: '#121A28', padding: '24px 20px', overflowY: 'auto', animation: 'fadeUp .2s ease' }
+        : { width: '620px', maxWidth: '100%', background: '#121A28', border: '1px solid #2A3A55', borderRadius: '14px', padding: '24px', animation: 'fadeUp .2s ease', maxHeight: '86vh', overflowY: 'auto' },
+      zoneGridStyle: {
+        display: 'grid', gap: '12px', maxWidth: '480px',
+        gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,minmax(80px,1fr))'
+      },
+      sleepBarCount: isMobile ? 7 : 14,
+      sidebarStyle: {
+        width: st.narrow ? '64px' : '196px', flexShrink: 0, borderRight: '1px solid #1C2739',
+        background: '#0D1420', padding: '14px 10px', transition: 'width .2s'
+      },
+      tabConnectors: st.tab === 'connectors', tabActivities: st.tab === 'activities',
+      tabHealth: st.tab === 'health',
+      tabAnalysis: st.tab === 'analysis', tabSettings: st.tab === 'settings',
+      tabScroll: st.tab !== 'analysis',
+      globalLastSync: st.connectors[0].last,
+      showSyncChip: bp === 'desktop' || bp === 'wide',
+      avatarText: (st.nickname || 'U').slice(0, 1).toUpperCase(),
+      nickname: st.nickname,
+      doLogout: () => setS({ loggedIn: false, loginPass: '', captchaInput: '', captcha: this.genCaptcha(), tab: 'activities', detailId: null }),
+
+      loginUser: st.loginUser, loginPass: st.loginPass, captcha: st.captcha, captchaInput: st.captchaInput, loginErr: st.loginErr,
+      onLoginUser: bind('loginUser'), onLoginPass: bind('loginPass'), onCaptchaInput: bind('captchaInput'),
+      refreshCaptcha: () => setS({ captcha: this.genCaptcha() }),
+      onLoginKey: (e) => { if (e.key === 'Enter') doLogin(); },
+      doLogin,
+
+      connectors, fitFiles: st.fitFiles, onFitUpload,
+
+      // 连接器登录弹窗
+      cmShow: !!st.connModal,
+      cmTitle: st.connModal ? st.connectors[st.connModal.idx].name : '',
+      cmUser: st.connModal ? st.connModal.user : '',
+      cmPass: st.connModal ? st.connModal.pass : '',
+      cmUse2fa: st.connModal ? st.connModal.use2fa : false,
+      cmCode: st.connModal ? st.connModal.code : '',
+      cmCodeStage: !!st.connModal && st.connModal.stage === 'code',
+      cmErr: st.connModal ? st.connModal.err : '',
+      cmBusy: !!st.connModal && st.connModal.busy,
+      cmBtnLabel: st.connModal && st.connModal.busy ? '验证中…' : (st.connModal && st.connModal.stage === 'code' ? '登 录(提交验证码)' : '登 录'),
+      cmOnUser: (e) => setS({ connModal: { ...st.connModal, user: e.target.value, err: '' } }),
+      cmOnPass: (e) => setS({ connModal: { ...st.connModal, pass: e.target.value, err: '' } }),
+      cmOnCode: (e) => setS({ connModal: { ...st.connModal, code: e.target.value.replace(/\D/g, ''), err: '' } }),
+      cmToggle2fa: () => setS({ connModal: { ...st.connModal, use2fa: !st.connModal.use2fa } }),
+      cmCancel: () => { if (!(st.connModal && st.connModal.busy)) setS({ connModal: null }); },
+      cmLogin: () => {
+        const cm = st.connModal;
+        if (!cm || cm.busy) return;
+        const finish = () => {
+          const conn = st.connectors[cm.idx];
+          const isIntl = conn.id === 'intl';
+          this.setState(s => ({
+            connModal: null,
+            connectors: s.connectors.map((x, i) => i === cm.idx ? { ...x, status: 'connected', last: '刚刚', count: isIntl ? 42 : x.count } : x),
+            conflicts: isIntl ? [
+              { id: 'c1', name: '晨间轻松跑', date: '07-09 周四', dist: '5.08 km', dur: '31:27' },
+              { id: 'c2', name: '有氧耐力骑', date: '07-02 周四', dist: '78.4 km', dur: '2:45:00' }
+            ] : s.conflicts,
+            conflictChoices: isIntl ? { c1: 'cn', c2: 'cn' } : s.conflictChoices
+          }));
+          this.showToast(conn.name + ' 授权成功,已开始首次同步' + (isIntl ? ';发现 2 组重复运动待处理' : ''));
+        };
+        if (cm.stage === 'cred') {
+          if (!cm.user.trim()) return setS({ connModal: { ...cm, err: '请输入平台账号' } });
+          if (cm.pass.length < 4) return setS({ connModal: { ...cm, err: '请输入平台密码(≥4位)' } });
+          setS({ connModal: { ...cm, busy: true, err: '' } });
+          setTimeout(() => {
+            if (cm.use2fa) {
+              this.setState(s => ({ connModal: { ...s.connModal, busy: false, stage: 'code' } }));
+            } else finish();
+          }, 1300);
+        } else {
+          if (cm.code.length !== 6) return setS({ connModal: { ...cm, err: '请输入 6 位 2FA 验证码' } });
+          setS({ connModal: { ...cm, busy: true, err: '' } });
+          setTimeout(finish, 1100);
+        }
+      },
+
+      actCount: all.length, typeChips, actRows, selCount, actPager,
+      stopClick: (e) => e.stopPropagation(),
+      batchBtnStyle: {
+        background: selCount ? '#4292E0' : '#1A2436', border: 'none',
+        color: selCount ? '#06101E' : '#5C687E', fontWeight: 700, fontSize: '13px',
+        padding: '9px 18px', borderRadius: '8px', cursor: selCount ? 'pointer' : 'default'
+      },
+      downloadSelected: () => { if (selCount) { this.showToast('已开始下载 ' + selCount + ' 个 FIT 文件'); this.setState({ selected: {} }); } },
+      noDetail: !detAct, hasDetail: !!detAct, det: det || {}, detSections, detHero,
+      closeDetail: () => setS({ detailId: null }),
+      showDetCharts: st.detView === 'charts', showDetTable: st.detView === 'table',
+      viewCharts: () => setS({ detView: 'charts' }),
+      viewTable: () => setS({ detView: 'table', recPage: 0 }),
+      viewChartsStyle: segStyle(st.detView === 'charts'), viewTableStyle: segStyle(st.detView === 'table'),
+      tsHint: detAct ? (st.detView === 'charts' ? '曲线由逐秒 record 流降采样至 56 点绘制,逐秒原值见"逐秒数据表"' : '完整逐秒 record 流 · 共 ' + detAct.durSec + ' 行') : '',
+      recRows, recPager, recPaceHeader, recCadHeader,
+
+      healthTabs, healthPager,
+      showSleep: st.healthTab === 'sleep', showWeight: st.healthTab === 'weight', showHrv: st.healthTab === 'hrv',
+      showRhr: st.healthTab === 'rhr',
+      showHabits: st.tab === 'health' && st.healthTab === 'habits',
+      sleepBars, sleepRows, weightRows, hrvRows, rhrRows,
+      weightPts: this.chartPts(this.weights.slice(-30).map(w => w.kg)),
+      hrvPts: this.chartPts(this.hrvDays.slice(-30).map(h => h.avg)),
+      rhrPts: this.chartPts(this.hrvDays.slice(-30).map(h => h.rhr)),
+
+      habitDate: st.habitDate,
+      onHabitDate: (e) => setS({ habitDate: e.target.value || '2026-07-09' }),
+      habitDateHint: st.habitDate === '2026-07-09' ? '今天' : '',
+      habitCount, habitGroups,
+
+      showSessionRail: !st.narrow, showSessionSelect: st.narrow,
+      sessionItems, newSession,
+      curSessionId: cur ? cur.id : '', curSessionName: cur ? cur.name : 'AI 分析',
+      pickSessionSel: (e) => setS({ curSession: e.target.value }),
+      renameText: st.renameText, onRenameText: bind('renameText'),
+      showCardRows: !st.narrow,
+      messages, draft: st.draft, onDraft: bind('draft'),
+      onDraftKey: (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); } },
+      sendMsg, rangeChips, pickedCount, pickRows, pickOpen: st.pickOpen,
+      togglePicker: () => setS({ pickOpen: !st.pickOpen }),
+      pickerBtnStyle: {
+        padding: '5px 13px', borderRadius: '99px', cursor: 'pointer', fontSize: '12px',
+        background: pickedCount ? 'rgba(66,146,224,.18)' : '#0B1220',
+        color: pickedCount ? '#5EA3E8' : '#8A94A8',
+        border: '1px solid ' + (pickedCount || st.pickOpen ? '#4292E0' : '#2A3A55')
+      },
+      includeHealth: st.includeHealth,
+      toggleHealth: () => setS({ includeHealth: !st.includeHealth }),
+      includeHabits: st.includeHabits,
+      toggleHabits: () => setS({ includeHabits: !st.includeHabits }),
+      scopeSummary,
+
+      username: st.username, onUsername: bind('username'),
+      onNickname: bind('nickname'),
+      newPwd: st.newPwd, onNewPwd: bind('newPwd'), newPwd2: st.newPwd2, onNewPwd2: bind('newPwd2'),
+      saveAccount: () => {
+        if (st.newPwd && st.newPwd !== st.newPwd2) return this.showToast('两次输入的新密码不一致');
+        this.setState({ newPwd: '', newPwd2: '' });
+        this.showToast('账户信息已保存');
+      },
+      apiBase: st.apiBase, onApiBase: bind('apiBase'),
+      apiKey: st.apiKey, onApiKey: bind('apiKey'),
+      model: st.model, onModel: bind('model'),
+      testing: st.testing, apiTestResult: st.apiTestResult,
+      testApi: () => {
+        if (st.testing) return;
+        setS({ testing: true, apiTestResult: '' });
+        setTimeout(() => this.setState(s => ({ testing: false, apiTestResult: '✓ 连接成功,识别到模型 ' + (s.model || 'deepseek-chat') })), 1500);
+      },
+      saveApi: () => this.showToast('AI 接口配置已保存'),
+      promptOpen: st.promptOpen,
+      togglePrompt: () => setS({ promptOpen: !st.promptOpen }),
+      promptToggleLabel: st.promptOpen ? '收起 ▲' : '查看 ▼',
+      sysPrompt: this.SYS_PROMPT,
+
+      // 单位制 / 区间设定 / 数据保留
+      unitSystemChips: ['公制(km / m)', '英制(mi / ft)'].map(v => ({ label: v, pick: () => setS({ unitSystem: v }), style: this.optChip(st.unitSystem === v) })),
+      paceUnitChips: ['min/km', 'min/mi'].map(v => ({ label: v, pick: () => setS({ paceUnit: v }), style: this.optChip(st.paceUnit === v) })),
+      weightUnitChips: ['kg', 'lb'].map(v => ({ label: v, pick: () => setS({ weightUnit: v }), style: this.optChip(st.weightUnit === v) })),
+
+      zoneInputs: ['z1', 'z2', 'z3', 'z4'].map((k, i) => ({
+        label: 'Z' + (i + 1) + ' 上界',
+        val: String(st.zones[k]),
+        onChange: (e) => setS({ zones: { ...st.zones, [k]: e.target.value.replace(/\D/g, '') } })
+      })),
+      zMaxHr: String(st.zones.maxHr), onZMaxHr: (e) => setS({ zones: { ...st.zones, maxHr: e.target.value.replace(/\D/g, '') } }),
+      zLthr: String(st.zones.lthr), onZLthr: (e) => setS({ zones: { ...st.zones, lthr: e.target.value.replace(/\D/g, '') } }),
+      zFtp: String(st.zones.ftp), onZFtp: (e) => setS({ zones: { ...st.zones, ftp: e.target.value.replace(/\D/g, '') } }),
+      saveZones: () => this.showToast('区间设定已保存'),
+
+      // 重复运动处理
+      hasConflicts: st.conflicts.length > 0, conflictCount: st.conflicts.length,
+      conflictOpen: st.conflictOpen,
+      openConflicts: () => setS({ conflictOpen: true }),
+      closeConflicts: () => setS({ conflictOpen: false }),
+      conflictRows: st.conflicts.map(cf => {
+        const ch = st.conflictChoices[cf.id] || 'cn';
+        return {
+          ...cf,
+          pickCn: () => setS({ conflictChoices: { ...st.conflictChoices, [cf.id]: 'cn' } }),
+          pickIntl: () => setS({ conflictChoices: { ...st.conflictChoices, [cf.id]: 'intl' } }),
+          cnStyle: this.conflictOptStyle(ch === 'cn'), intlStyle: this.conflictOptStyle(ch === 'intl')
+        };
+      }),
+      resolveConflicts: () => { setS({ conflicts: [], conflictOpen: false, conflictChoices: {} }); this.showToast('重复运动已按你的选择合并完成'); },
+
+      toast: st.toast
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,240 @@
+.activity-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* Header ---------------------------------------------------------------- */
+.activity-detail__head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.activity-detail__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.activity-detail__title h1 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.activity-detail__meta {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.activity-detail__download {
+  align-self: flex-start;
+  margin-top: var(--space-1);
+  padding: var(--space-2) var(--space-4);
+  font-size: 13px;
+  color: var(--color-on-accent);
+  background-color: var(--color-accent);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.activity-detail__section-title {
+  margin: 0 0 var(--space-3);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.activity-detail__empty {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* Metric sections ------------------------------------------------------- */
+
+/* metric-card grid (C-8 §A4 / AC-008c-1): repeat(auto-fit,minmax(130px,1fr)). */
+.activity-detail__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: var(--space-3);
+}
+
+/* metric-card pixel-contract (C-8 / AC-008c-1): panel bg + borderPanel + radiusCardSm
+   10 + padMetric 14. data-vc mirrored onto this root in ActivityDetail.tsx. */
+.metric-section {
+  padding: var(--pad-metric);
+  background-color: var(--color-panel);
+  border: 1px solid var(--color-border-panel);
+  border-radius: var(--radius-md);
+}
+
+.metric-section__title {
+  margin: 0 0 var(--space-2);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  letter-spacing: 0.5px;
+}
+
+.metric-section__grid {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.metric-section__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.metric-section__label {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+}
+
+.metric-section__field {
+  font-size: 10px;
+  color: var(--color-text-muted);
+}
+
+.metric-section__value {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Section panels -------------------------------------------------------- */
+.activity-detail__zones,
+.activity-detail__series,
+.activity-detail__laps {
+  padding: var(--space-4);
+  background-color: var(--color-panel);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.activity-detail__series-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.activity-detail__mode {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.mode-btn {
+  padding: var(--space-1) var(--space-3);
+  font-size: 12px;
+  color: var(--color-text-muted);
+  background-color: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+
+.mode-btn--active {
+  color: var(--color-on-accent);
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.activity-detail__charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-3);
+}
+
+/* Laps ------------------------------------------------------------------ */
+.laps-table {
+  overflow-x: auto;
+}
+
+.laps-table__row {
+  display: grid;
+  grid-template-columns: 40px 88px 88px 88px 96px 88px;
+  gap: 0 var(--space-2);
+  align-items: center;
+  padding: var(--space-2) var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  font-size: 12px;
+}
+
+.laps-table__row--head {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  letter-spacing: 0.5px;
+}
+
+.laps-table__row:last-child {
+  border-bottom: none;
+}
+
+/* Mobile card form of the laps table (AC-008b-1): one card per lap, no grid to
+   overflow. Hidden on desktop/tablet, where the grid table above is shown. */
+.laps-card-list {
+  display: none;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.lap-card {
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--color-panel-deep);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.lap-card__head {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+}
+
+.lap-card__metrics {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: var(--space-2);
+}
+
+.lap-card__metrics div {
+  display: flex;
+  flex-direction: column;
+}
+
+.lap-card__metrics dt {
+  font-size: 10px;
+  color: var(--color-text-muted);
+}
+
+.lap-card__metrics dd {
+  margin: 0;
+  font-size: 13px;
+}
+
+/* Below 980px the wide per-second and laps grids give way to card lists; the
+   per-second section keeps horizontal scroll as a belt-and-braces guard. */
+@media (width < 980px) {
+  .activity-detail__series {
+    overflow-x: auto;
+  }
+
+  .laps-table {
+    display: none;
+  }
+
+  .laps-card-list {
+    display: flex;
+  }
+}

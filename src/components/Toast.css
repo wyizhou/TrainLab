@@ -1,0 +1,16 @@
+/* toast pixel-contract (AC-001c-4): fixed · bottom 28px · centered · toastBg fill ·
+   borderToast 1px · radiusCardSm 10px · padBtnPrimary 11px 22px · font-size 13px. */
+.toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  z-index: 20;
+  padding: var(--pad-btn-primary);
+  color: var(--color-text);
+  font-size: 13px;
+  background-color: var(--color-toast-bg);
+  border: 1px solid var(--color-border-toast);
+  border-radius: var(--radius-md);
+  transform: translateX(-50%);
+  pointer-events: none;
+}

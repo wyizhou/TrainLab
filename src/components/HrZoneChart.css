@@ -1,0 +1,98 @@
+.hr-zone {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* Compact distribution bar (C-8 AC-008c-2): height 16 / radius 4, five Z1–Z5
+   segment children in DOM order. data-vc mirrored onto this root. */
+.hr-zone-bar {
+  display: flex;
+  height: 16px;
+  border-radius: var(--radius-zone);
+  overflow: hidden;
+  background-color: var(--color-panel-deep);
+}
+
+.hr-zone-bar__seg {
+  height: 100%;
+}
+
+/* 五区分段色（实测，C-8 AC-008c-2）: Z1 textFaint / Z2 accent / Z3 success /
+   Z4 warn / Z5 danger. */
+.hr-zone-bar__seg--z1 {
+  background-color: var(--color-text-faint);
+}
+
+.hr-zone-bar__seg--z2 {
+  background-color: var(--color-accent);
+}
+
+.hr-zone-bar__seg--z3 {
+  background-color: var(--color-success);
+}
+
+.hr-zone-bar__seg--z4 {
+  background-color: var(--color-warn);
+}
+
+.hr-zone-bar__seg--z5 {
+  background-color: var(--color-danger);
+}
+
+.hr-zone__row {
+  display: grid;
+  grid-template-columns: 32px 64px 1fr 56px;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 12px;
+}
+
+.hr-zone__label {
+  font-weight: 600;
+}
+
+.hr-zone__bound {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.hr-zone__track {
+  height: 12px;
+  background-color: var(--color-panel-deep);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.hr-zone__fill {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+}
+
+/* Distinct hues per zone, reusing the palette tokens (cool -> warm). */
+.hr-zone__fill--z1 {
+  background-color: var(--color-type-swim);
+}
+
+.hr-zone__fill--z2 {
+  background-color: var(--color-type-ride);
+}
+
+.hr-zone__fill--z3 {
+  background-color: var(--color-type-strength);
+}
+
+.hr-zone__fill--z4 {
+  background-color: var(--color-type-trail);
+}
+
+.hr-zone__fill--z5 {
+  background-color: var(--color-danger);
+}
+
+.hr-zone__time {
+  text-align: right;
+  color: var(--color-text-muted);
+}

@@ -1,0 +1,156 @@
+/* Central design tokens (CSS custom properties). Mirror of src/design/tokens.ts.
+   This file is exempt from the strict-value rule; every other stylesheet must
+   reference these variables via var() (G-token). */
+
+:root {
+  /* Dark dashboard palette (contract C-1). design_rev 4 固化 accent oklch→原型实测
+     rgb (see G-token 权威源与 token 表); onAccent/text 对齐 v3.1 三表实测 computed。 */
+  --color-bg: #0a0f18;
+  --color-panel: #121a28;
+  --color-panel-deep: #0b1220;
+  --color-accent: #4292e0;
+  --color-on-accent: #06101e;
+  --color-text: #e6ebf4;
+
+  /* textMuted = v3.1 表 (a) 实测 rgb(138,148,168)（次要文字 / 常态胶囊·导航项文字 /
+     status-pill-disconnected）。design_rev 4 权威源迁移：原 #8a97a8 与三表不符，
+     校正为 #8a94a8（零 AC 值变更——无已 verified AC 断言旧值）。 */
+  --color-text-muted: #8a94a8;
+  --color-border: #1e2a3c;
+
+  /* 语义色 success/warn/danger — design_rev 4「G-token 权威源与 token 表」固化：
+     v2.0 的 oklch() 渲染值 ≠ 原型实测 rgb，固化为原型实测值（与既有 AC 目标值一致，
+     非目标值变更）。success #3FBF8F rgb(63,191,143) · warn #E0A040 rgb(224,160,64) ·
+     danger #E06060 rgb(224,96,96)。hr-zone-bar 五区色复用（Z3/Z4/Z5；C-8 AC-008c-2）。 */
+  --color-success: #3fbf8f;
+  --color-warn: #e0a040;
+  --color-danger: #e06060;
+
+  /* status-pill 三态派生半透明 (v3.1 表 (a) 派生; C-10 AC-010c-2). success@0.12/0.35 =
+     connected 底/边框 · danger@0.10/0.40 = failed 底/边框 · textMuted@0.10 =
+     disconnected 底 (边框复用 borderInput rgb(42,58,85)). 具名集中定义, 勿散裸 rgba. */
+  --color-success-12: rgb(63 191 143 / 0.12);
+  --color-success-35: rgb(63 191 143 / 0.35);
+  --color-danger-10: rgb(224 96 96 / 0.1);
+  --color-danger-40: rgb(224 96 96 / 0.4);
+  --color-text-muted-10: rgb(138 148 168 / 0.1);
+
+  /* textFaint = v3.1 表 (a) rgb(92,104,126)（hr-zone-bar Z1 分段色；C-8 AC-008c-2）. */
+  --color-text-faint: #5c687e;
+
+  /* Global chrome — top-nav / sync-chip / bottom-nav / toast pixel-contract
+     (C-1 / AC-001c-*; values = v3.1 表 (a)). accent-16 = accent@0.16 半透明底. */
+  --color-panel-nav: #0d1420;
+  --color-accent-text: #5ea3e8;
+  --color-accent-16: rgb(66 146 224 / 0.16);
+  --color-accent-12: rgb(66 146 224 / 0.12);
+
+  /* accent@0.18 = scope-chip-selected 底 (v3.1 表 (a) 派生半透明; C-4 AC-004c-1). */
+  --color-accent-18: rgb(66 146 224 / 0.18);
+
+  /* accentDeep = v3.1 表 (a) rgb(46,92,158)（chat-bubble-user 底 / sleep-chart-bar-deep;
+     C-6 AC-006c-2）——比 accent 更沉的实心蓝，非 accent 半透明派生。 */
+  --color-accent-deep: #2e5c9e;
+
+  /* sleepRem = v3.1 表 (a) rgb(143,193,242)（sleep-chart-bar-rem 顶段; C-9 AC-009c-1）. */
+  --color-sleep-rem: #8fc1f2;
+  --color-border-panel: #223049;
+
+  /* borderInput = v3.1 表 (a) rgb(42,58,85)（输入框 / chart-card / 次要按钮 /
+     modal 面板 / scope-chip 常态边框; C-4 AC-004c-1). */
+  --color-border-input: #2a3a55;
+  --color-border-weak: #1c2739;
+  --color-border-toast: #3a4e70;
+  --color-toast-bg: #1a2436;
+
+  /* scrim = modal 遮罩底 rgba(4,8,14,0.72)（v3.1 表 (a) scrim@0.72; C-11 AC-011c-1 /
+     C-12 AC-012c-1 modal-overlay）. 具名 token, 勿散裸 rgba / color-mix. */
+  --color-scrim: rgb(4 8 14 / 0.72);
+
+  /* Activity-type accent dots (contract C-7 list / C-8 detail) */
+  --color-type-run: #4292e0;
+  --color-type-ride: #3fbf8f;
+  --color-type-swim: #3fb8bf;
+  --color-type-strength: #e0a040;
+  --color-type-trail: #9b7be0;
+
+  /* Radius scale (radius-input = v3.1 表 (b) radiusInput 8px, top-nav-item/输入框).
+     radius-zone = v3.1 表 (b) radiusZone 4px（hr-zone-bar 轨道/分段条; C-8 AC-008c-2). */
+  --radius-xs: 4px;
+  --radius-zone: 4px;
+  --radius-sm: 6px;
+  --radius-input: 8px;
+  --radius-md: 10px;
+  --radius-panel: 12px;
+  --radius-lg: 14px;
+  --radius-pill: 99px;
+
+  /* 睡眠堆叠柱非对称圆角 (v3.1 表 (b) radiusSleepDeep/radiusSleepRem; C-9 AC-009c-1):
+     deep 底段仅底部圆角、rem 顶段仅顶部圆角、light 中段无圆角(直接用 0). */
+  --radius-sleep-deep: 0 0 3px 3px;
+  --radius-sleep-rem: 3px 3px 0 0;
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  /* Off-scale chrome paddings — named tokens (v3.1 表 (c)) so no bare spacing leaks
+     outside this module (G-token 口径不放宽). */
+  --pad-nav-item: 8px 13px;
+  --pad-nav-item-tablet: 7px 9px;
+  --pad-sync-chip: 6px 14px;
+  --pad-btn-primary: 11px 22px;
+
+  /* Analysis · session rail pixel-contract (C-3 / AC-003c-*; v3.1 表 (c)). */
+  --pad-rail: 12px 10px;
+  --pad-rail-item: 9px 10px;
+  --pad-analysis-input: 12px 14px;
+  --gap-analysis: 18px;
+
+  /* Analysis · scope-chip pixel-contract (C-4 / AC-004c-1; v3.1 表 (c) padChip 5 13). */
+  --pad-chip: 5px 13px;
+
+  /* 运动列表 pixel-contract (C-7 / AC-007c-1/2; v3.1 三表 (b)/(c)):
+     padChipType 6 14 (type-chip) · padCardListItem 14 16 (卡片列单卡·mobile) ·
+     gapCardMobile 10 (卡片列 gap). radiusCard 12 复用 --radius-panel. */
+  --pad-chip-type: 6px 14px;
+  --pad-card-list-item: 14px 16px;
+  --gap-card-mobile: 10px;
+
+  /* 运动详情 pixel-contract (C-8 / AC-008c-1; v3.1 表 (c) padMetric 14): metric-card 内边距. */
+  --pad-metric: 14px;
+
+  /* 连接器卡 pixel-contract (C-10 / AC-010c-1; v3.1 表 (c) padConnectorCard 20): off-scale
+     具名 token (裁定 (a)), connector-card 内边距. */
+  --pad-connector-card: 20px;
+
+  /* 健康子标签 pixel-contract (C-9 / AC-009c-2; v3.1 表 (c) padTab 7 18): health-tab 内边距. */
+  --pad-tab: 7px 18px;
+
+  /* Analysis · 对话气泡 pixel-contract (C-6 / AC-006c-1/2; v3.1 表 (c) off-scale 具名 token,
+     裁定 (a)): padBubbleAI 13 16 / padBubbleUser 12 14. */
+  --pad-bubble-ai: 13px 16px;
+  --pad-bubble-user: 12px 14px;
+
+  /* 设置分组 pixel-contract (C-14 / AC-014c-1; v3.1 表 (c) padGroup 22, off-scale 具名
+     token, 裁定 (a)): settings-group 内边距. */
+  --pad-group: 22px;
+
+  /* Typography */
+  --font-sans: system-ui, -apple-system, 'Segoe UI', roboto, 'Helvetica Neue', arial, sans-serif;
+  --font-mono: ui-monospace, sfmono-regular, 'SF Mono', menlo, consolas, monospace;
+
+  /* Layout */
+  --nav-height: 56px;
+  --bottom-tab-height: 60px;
+
+  /* Main content padding, graded per G-resp breakpoint (contract C-1 / AC-001b-4).
+     Mobile reserves bottom room (76px) so content clears the fixed bottom tab bar. */
+  --main-pad-mobile: 14px 12px 76px;
+  --main-pad-tablet: 18px 16px;
+  --main-pad-desktop: 22px 24px;
+}

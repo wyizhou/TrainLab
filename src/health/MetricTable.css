@@ -1,0 +1,90 @@
+.metric-table__scroll {
+  overflow-x: auto;
+}
+
+.metric-table__grid {
+  width: 100%;
+  min-width: 420px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.metric-table__caption {
+  padding: 0 0 var(--space-2);
+  text-align: left;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.metric-table__grid th,
+.metric-table__grid td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.metric-table__grid th {
+  color: var(--color-text-muted);
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.metric-table__th--num,
+.metric-table__td--num {
+  text-align: right;
+}
+
+/* Mobile card form of the detail table (AC-009b-2). One card per row, no
+   min-width, so the four tables no longer overflow a 390px viewport. */
+.metric-card-list {
+  display: none;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.metric-card {
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--color-panel-deep);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.metric-card__head {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+}
+
+.metric-card__metrics {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: var(--space-2);
+}
+
+.metric-card__metrics div {
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-card__metrics dt {
+  font-size: 10px;
+  color: var(--color-text-muted);
+}
+
+.metric-card__metrics dd {
+  margin: 0;
+  font-size: 13px;
+}
+
+@media (width < 640px) {
+  .metric-table__scroll {
+    display: none;
+  }
+
+  .metric-card-list {
+    display: flex;
+  }
+}
