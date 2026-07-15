@@ -1,0 +1,176 @@
+/* The card is the deepest layer of the visual hierarchy: it sinks below the AI
+   bubble it lives in (contract C-5). pixel-contract (design_rev 3/4, AC-005c-1):
+   panelDeep #0B1220 fill · borderInput rgb(42,58,85) border · radius-md 10px ·
+   overflow hidden. borderInput (not --color-border) per v3.1 表 (a) chart-card. */
+.chart-card {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  overflow: hidden;
+  background-color: var(--color-panel-deep);
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-md);
+}
+
+/* Loading -------------------------------------------------------------- */
+.chart-card--loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+
+  /* Whole-row shimmer breathing while the chart is generated. */
+  animation: chart-card-shimmer 1.4s ease-in-out infinite;
+}
+
+.chart-card__spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-accent);
+  border-radius: var(--radius-pill);
+  animation: chart-card-spin 0.8s linear infinite;
+}
+
+.chart-card__loading-text {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* Empty ---------------------------------------------------------------- */
+.chart-card--empty {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+}
+
+.chart-card__empty-icon {
+  font-size: 20px;
+  color: var(--color-text-muted);
+}
+
+.chart-card__empty-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.chart-card__empty-reason,
+.chart-card__empty-hint {
+  margin: var(--space-1) 0 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* Collapsed / expanded shared header ----------------------------------- */
+.chart-card__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.chart-card__icon {
+  font-size: 14px;
+}
+
+.chart-card__title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.chart-card__toggle {
+  margin-left: auto;
+  padding: var(--space-1) var(--space-2);
+  font-size: 11px;
+  color: var(--color-accent);
+  background-color: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+
+.chart-card__summary {
+  margin: var(--space-2) 0 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* Expanded ------------------------------------------------------------- */
+.chart-card__expanded {
+  margin-top: var(--space-3);
+}
+
+.chart-card__axis-note {
+  margin: 0 0 var(--space-2);
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.chart-card__svg {
+  display: block;
+  max-width: 100%;
+}
+
+.chart-card__grid {
+  stroke: var(--color-border);
+  stroke-width: 1;
+}
+
+.chart-card__tick {
+  fill: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+
+.chart-card__line {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chart-card__dot {
+  fill: var(--color-accent);
+}
+
+.chart-card__rows {
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chart-card__row {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-1) 0;
+  font-size: 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.chart-card__row:last-child {
+  border-bottom: none;
+}
+
+.chart-card__row-date {
+  color: var(--color-text-muted);
+}
+
+@keyframes chart-card-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes chart-card-shimmer {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* The expanded per-activity data rows are desktop/wide only. Gating is
+   breakpoint-conditional in ChartCard.tsx (not CSS display:none) so the rows
+   container is absent from the DOM below 980px (contract C-5, AC-005b-1). */

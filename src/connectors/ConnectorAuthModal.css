@@ -1,0 +1,150 @@
+.auth-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+
+  /* modal-overlay scrim rgba(4,8,14,0.72) (C-11 AC-011c-1). */
+  background-color: var(--color-scrim);
+}
+
+.auth-modal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: 390px;
+  padding: var(--space-5);
+  background-color: var(--color-panel);
+
+  /* borderInput rgb(42,58,85) = modal 面板边框 (C-11 AC-011c-1). */
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-lg);
+}
+
+/* Mobile (AC-011b-1): the modal takes over the full viewport — panel width =
+   viewport width, square corners — while desktop keeps the centered 390px card. */
+@media (width < 640px) {
+  .auth-modal__backdrop {
+    padding: 0;
+  }
+
+  .auth-modal {
+    max-width: none;
+    height: 100%;
+
+    /* Fullscreen mobile takeover: square corners + no border (AC-011c-1). */
+    border: none;
+    border-radius: 0;
+    overflow-y: auto;
+  }
+}
+
+.auth-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.auth-modal__title {
+  margin: 0;
+  font-size: 16px;
+  color: var(--color-text);
+}
+
+.auth-modal__close {
+  padding: var(--space-1) var(--space-2);
+  background: none;
+  color: var(--color-text-muted);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.auth-modal__close:hover {
+  color: var(--color-text);
+}
+
+.auth-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.auth-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.auth-modal__field label {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.auth-modal__field input {
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--color-panel-deep);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+}
+
+.auth-modal__field input:disabled {
+  opacity: 0.6;
+}
+
+.auth-modal__checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 13px;
+  color: var(--color-text);
+}
+
+.auth-modal__error {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: 13px;
+}
+
+.auth-modal__submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.auth-modal__submit:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.auth-modal__spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid color-mix(in oklab, var(--color-on-accent) 40%, transparent);
+  border-top-color: var(--color-on-accent);
+  border-radius: var(--radius-pill);
+  animation: auth-modal-spin 0.7s linear infinite;
+}
+
+@keyframes auth-modal-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

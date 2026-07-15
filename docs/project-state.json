@@ -1,0 +1,15 @@
+{
+  "workflow": "codex-three-stage",
+  "legacy_harness": "retired",
+  "design_baseline": {
+    "revision": 5,
+    "version": "v3.2",
+    "status": "ready_for_implementation"
+  },
+  "implementation_baseline": {
+    "revision": 4,
+    "version": "v3.1",
+    "status": "verified"
+  },
+  "next_milestone": "align_implementation_to_v3.2"
+}

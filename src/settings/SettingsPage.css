@@ -1,0 +1,124 @@
+/* settings-page max-width 760 居中 (AC-014c-1). 760 是固定结构尺寸例外（G-token 不
+   lint），由 e2e computed 锁; margin 0 auto 使左右 margin 相等（居中）. */
+.settings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.settings__head {
+  margin-bottom: var(--space-1);
+}
+
+.settings__intro {
+  margin-top: var(--space-1);
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* settings-group pixel-contract (AC-014c-1): bg panel rgb(18,26,40) / border 1px
+   borderPanel rgb(34,48,73) / radius 12 / padding 22. */
+.settings__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--pad-group);
+  background-color: var(--color-panel);
+  border: 1px solid var(--color-border-panel);
+  border-radius: var(--radius-panel);
+}
+
+.settings__group-title {
+  margin: 0;
+  font-size: 16px;
+  color: var(--color-text);
+}
+
+.settings__hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.settings__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.settings__label {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.settings__input {
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--color-panel-deep);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.settings__input:focus {
+  border-color: var(--color-accent);
+  outline: none;
+}
+
+/* 账户信息双列 (settings-account-grid, AC-014c-2): auto-fit minmax(240px,1fr) —
+   760 面板内 desktop 解析 2 列，mobile 窄容器折叠为 1 列（按已填充列几何判列）. */
+.settings__account-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-3);
+}
+
+/* 心率区间输入 (settings-zone-grid, AC-014c-2): desktop/tablet 显式 4 轨. */
+.settings__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(80px, 1fr));
+  gap: var(--space-3);
+}
+
+.settings__actions {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.settings__save {
+  padding: var(--space-2) var(--space-4);
+  background-color: var(--color-accent);
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--color-on-accent);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.settings__ok {
+  font-size: 13px;
+  color: var(--color-success);
+}
+
+.settings__error {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  background-color: color-mix(in oklab, var(--color-danger) 14%, transparent);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-sm);
+  color: var(--color-danger);
+  font-size: 13px;
+}
+
+/* 心率区间输入 collapses to a 2×2 grid on mobile (AC-014b-2): first row 2 boxes,
+   the 3rd wraps. Tablet/desktop keep the 4-column track. */
+@media (width < 640px) {
+  .settings__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
