@@ -1,10 +1,10 @@
 import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { resolve } from 'node:path'
 import { downsampleRecords, parseFitActivity, type ParsedActivity } from './fitParser'
 import { FIT_A0 } from './activityData'
 
 // The real sample lives as committed test infrastructure (contract C-8 前置).
-const FIXTURE = join(process.cwd(), 'tests/fixtures/614797758_ACTIVITY.fit')
+const FIXTURE = resolve(process.cwd(), 'tests/fixtures/614797758_ACTIVITY.fit')
 
 function parseFixture(): ParsedActivity {
   return parseFitActivity(new Uint8Array(readFileSync(FIXTURE)))

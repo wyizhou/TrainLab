@@ -9,12 +9,14 @@
 按改动范围先跑相关测试，交付前按风险运行：
 
 ```bash
-npm run typecheck
-npm run lint
-npm run test
-npm run e2e
-npm run build
+npm --prefix frontend run typecheck
+npm --prefix frontend run lint
+npm --prefix frontend run test
+npm --prefix frontend run e2e
+npm --prefix frontend run build
 ```
+
+后端工程初始化后，再把 `backend/` 实际提供的类型、测试、规范和构建命令加入门禁；不在未选型时虚构命令。
 
 不得通过删除测试、扩大容差或降低规则等级来解决失败。
 

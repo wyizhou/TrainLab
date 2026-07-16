@@ -1,11 +1,12 @@
 import { test, expect } from '@playwright/test'
+import { fileURLToPath } from 'node:url'
 
 // Baseline mobile viewport (contract G-resp): 390 wide.
 const MOBILE = { width: 390, height: 844 }
 
 // A real FIT so the 已解析文件 list renders a data row to measure (same fixture
 // the FileUpload unit test parses).
-const FIT_FIXTURE = 'tests/fixtures/614797758_ACTIVITY.fit'
+const FIT_FIXTURE = fileURLToPath(new URL('../fixtures/614797758_ACTIVITY.fit', import.meta.url))
 
 // AC-013b-1 (C-13): on mobile the 文件上传 area and the 已解析文件 list stack into a
 // single column and the page does not overflow horizontally.

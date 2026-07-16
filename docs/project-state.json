@@ -11,5 +11,11 @@
     "version": "v3.2",
     "status": "verified"
   },
-  "next_milestone": "await_next_product_milestone"
+  "repository_layout": {
+    "frontend": "frontend",
+    "backend": "backend",
+    "shared_docs": "docs",
+    "design_inputs": "design"
+  },
+  "next_milestone": "define_backend_architecture_and_api_contract"
 }
