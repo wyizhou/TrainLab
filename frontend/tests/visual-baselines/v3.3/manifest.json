@@ -1,0 +1,52 @@
+{
+  "design_version": "v3.3",
+  "design_rev": 6,
+  "theme": "global-light-theme",
+  "geometry_source": "../v3.2/geometry.json",
+  "screenshot_states": 64,
+  "viewports": {
+    "mobile": { "width": 390, "height": 844 },
+    "tablet": { "width": 768, "height": 1024 },
+    "desktop": { "width": 1280, "height": 800 },
+    "wide": { "width": 1536, "height": 900 }
+  },
+  "source_hashes": {
+    "index_html": "c560eb8d6af57de1cd62e11e493bbc601268b733b9bc464037fa2d870edde728",
+    "design_handoff": "82b0d04bd05674a052e4d1e10d728d6e9c9007243294f68a0a18779c6d565f4c",
+    "geometry_v3_2": "54a59f0baa74e9da3b543fb360e845b9b05c22f3dab40005f36f3a683375ad7a",
+    "support": "ae4f0ac8449655e17cca1e3b179effcb6817a3b0d8dc47f112a9c39c25c39fd7",
+    "update": "cfc73d97fae98d157b8f07ed7711dd83ef8b4beed573a5aa8e8e87f6092ad516"
+  },
+  "colors": {
+    "bgPage": "#E8EDF3",
+    "panelNav": "#F8FAFC",
+    "panel": "#FFFFFF",
+    "panelDeep": "#F4F7FA",
+    "uploadDeep": "#EEF3F7",
+    "accent": "#2F7FC4",
+    "accentText": "#256EA8",
+    "accentDeep": "#315F9A",
+    "onAccent": "#FFFFFF",
+    "text": "#172033",
+    "textSoft": "#334155",
+    "textMuted": "#5B6B7E",
+    "textFaint": "#748296",
+    "disabledText": "#94A3B8",
+    "borderWeak": "#D4DDE7",
+    "borderPanel": "#CBD5E1",
+    "borderInput": "#B7C4D2",
+    "borderUpload": "#8FA2B7",
+    "hoverRow": "#E8EEF4",
+    "activityHoverRow": "#E8EEF4F0",
+    "toastBg": "#E3EAF2",
+    "loginGlow": "#D8E4EF",
+    "divider": "#E2E8F0",
+    "chartAxis": "#BAC7D6",
+    "success": "#16805D",
+    "warn": "#A66B0A",
+    "danger": "#C24141",
+    "sleepRem": "#6AA6DD",
+    "typeSwim": "#167B82",
+    "typeTrail": "#7652B6"
+  }
+}

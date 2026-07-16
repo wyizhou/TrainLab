@@ -59,10 +59,10 @@ test('AC-010c-1: connectors-grid columns + connector-card contract (mobile + des
     'padding-bottom',
     'padding-left',
   ])
-  expect(c['background-color']).toBe('rgb(18, 26, 40)') // panel
+  expect(c['background-color']).toBe('rgb(255, 255, 255)') // panel
   expect(c['border-top-width']).toBe('1px')
   expect(c['border-top-style']).toBe('solid')
-  expect(c['border-top-color']).toBe('rgb(34, 48, 73)') // borderPanel
+  expect(c['border-top-color']).toBe('rgb(203, 213, 225)') // borderPanel
   expect(c['border-radius']).toBe('12px') // radiusCard
   expect(c['padding-top']).toBe('20px')
   expect(c['padding-right']).toBe('20px')
@@ -110,9 +110,9 @@ test('AC-010c-2: status-pill three-state visual contract (desktop)', async ({ pa
   await expect(failed).toHaveCount(1)
   const f = await computed(failed, [...common, 'color', 'background-color', 'border-top-color'])
   expectCommon(f)
-  expect(f['color']).toBe('rgb(224, 96, 96)')
-  expect(f['background-color']).toBe('rgba(224, 96, 96, 0.1)')
-  expect(f['border-top-color']).toBe('rgba(224, 96, 96, 0.4)')
+  expect(f['color']).toBe('rgb(194, 65, 65)')
+  expect(f['background-color']).toBe('rgba(194, 65, 65, 0.1)')
+  expect(f['border-top-color']).toBe('rgba(194, 65, 65, 0.4)')
 
   // disconnected (国际区, demo initial): textMuted 字 · textMuted@0.10 底 · borderInput 边框.
   const disconnected = page.locator('[data-vc="status-pill-disconnected"]')
@@ -124,9 +124,9 @@ test('AC-010c-2: status-pill three-state visual contract (desktop)', async ({ pa
     'border-top-color',
   ])
   expectCommon(d)
-  expect(d['color']).toBe('rgb(138, 148, 168)')
-  expect(d['background-color']).toBe('rgba(138, 148, 168, 0.1)')
-  expect(d['border-top-color']).toBe('rgb(42, 58, 85)') // borderInput
+  expect(d['color']).toBe('rgb(91, 107, 126)')
+  expect(d['background-color']).toBe('rgba(91, 107, 126, 0.1)')
+  expect(d['border-top-color']).toBe('rgb(183, 196, 210)') // borderInput
 
   // connected: trigger one successful sync on the failed (中国区) card → 已连接.
   await page.locator('[data-status="failed"] [data-testid="connector-action"]').click()
@@ -134,7 +134,7 @@ test('AC-010c-2: status-pill three-state visual contract (desktop)', async ({ pa
   await expect(connected).toHaveCount(1)
   const cc = await computed(connected, [...common, 'color', 'background-color', 'border-top-color'])
   expectCommon(cc)
-  expect(cc['color']).toBe('rgb(63, 191, 143)')
-  expect(cc['background-color']).toBe('rgba(63, 191, 143, 0.12)')
-  expect(cc['border-top-color']).toBe('rgba(63, 191, 143, 0.35)')
+  expect(cc['color']).toBe('rgb(22, 128, 93)')
+  expect(cc['background-color']).toBe('rgba(22, 128, 93, 0.12)')
+  expect(cc['border-top-color']).toBe('rgba(22, 128, 93, 0.35)')
 })

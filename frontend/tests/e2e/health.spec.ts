@@ -100,18 +100,18 @@ test('AC-009c-1: sleep stacked-bar segment colours + radii (desktop)', async ({ 
   await expect(rem).toHaveCount(14)
 
   const deepC = await computed(deep.first(), ['background-color', ...RADIUS_CORNERS])
-  expect(deepC['background-color']).toBe('rgb(46, 92, 158)') // accentDeep
+  expect(deepC['background-color']).toBe('rgb(49, 95, 154)') // accentDeep
   expect(deepC['border-top-left-radius']).toBe('0px')
   expect(deepC['border-top-right-radius']).toBe('0px')
   expect(deepC['border-bottom-right-radius']).toBe('3px')
   expect(deepC['border-bottom-left-radius']).toBe('3px')
 
   const lightC = await computed(light.first(), ['background-color', ...RADIUS_CORNERS])
-  expect(lightC['background-color']).toBe('rgb(66, 146, 224)') // accent
+  expect(lightC['background-color']).toBe('rgb(47, 127, 196)') // accent
   for (const corner of RADIUS_CORNERS) expect(lightC[corner]).toBe('0px')
 
   const remC = await computed(rem.first(), ['background-color', ...RADIUS_CORNERS])
-  expect(remC['background-color']).toBe('rgb(143, 193, 242)') // sleepRem
+  expect(remC['background-color']).toBe('rgb(106, 166, 221)') // sleepRem
   expect(remC['border-top-left-radius']).toBe('3px')
   expect(remC['border-top-right-radius']).toBe('3px')
   expect(remC['border-bottom-right-radius']).toBe('0px')
@@ -173,11 +173,11 @@ test('AC-009c-2: health-tab selected vs 常态 contract (desktop)', async ({ pag
     'padding-left',
     'font-size',
   ])
-  expect(s['background-color']).toBe('rgba(66, 146, 224, 0.16)') // accent@0.16
+  expect(s['background-color']).toBe('rgba(47, 127, 196, 0.16)') // accent@0.16
   expect(s['border-top-width']).toBe('1px')
   expect(s['border-top-style']).toBe('solid')
-  expect(s['border-top-color']).toBe('rgb(66, 146, 224)') // accent
-  expect(s['color']).toBe('rgb(94, 163, 232)') // accentText
+  expect(s['border-top-color']).toBe('rgb(47, 127, 196)') // accent
+  expect(s['color']).toBe('rgb(37, 110, 168)') // accentText
   expect(s['border-top-left-radius']).toBe('8px') // radiusInput
   expect(s['padding-top']).toBe('7px') // padTab
   expect(s['padding-right']).toBe('18px')
@@ -192,9 +192,9 @@ test('AC-009c-2: health-tab selected vs 常态 contract (desktop)', async ({ pag
     'border-top-color',
     'color',
   ])
-  expect(n['background-color']).toBe('rgb(18, 26, 40)') // panel
+  expect(n['background-color']).toBe('rgb(255, 255, 255)') // panel
   expect(n['border-top-width']).toBe('1px')
   expect(n['border-top-style']).toBe('solid')
-  expect(n['border-top-color']).toBe('rgb(34, 48, 73)') // borderPanel
-  expect(n['color']).toBe('rgb(138, 148, 168)') // textMuted
+  expect(n['border-top-color']).toBe('rgb(203, 213, 225)') // borderPanel
+  expect(n['color']).toBe('rgb(91, 107, 126)') // textMuted
 })

@@ -10,7 +10,7 @@ export default defineConfig({
   testDir: './tests/e2e',
   // Named screenshot assertions use checked-in implementation-regression
   // assets. External prototypes remain read-only inputs outside the repository.
-  snapshotPathTemplate: join(FRONTEND_ROOT, 'tests/visual-baselines/v3.2/screenshots/{arg}{ext}'),
+  snapshotPathTemplate: join(FRONTEND_ROOT, 'tests/visual-baselines/v3.3/screenshots/{arg}{ext}'),
   timeout: 30_000,
   fullyParallel: true,
   forbidOnly: !!process.env.CI,

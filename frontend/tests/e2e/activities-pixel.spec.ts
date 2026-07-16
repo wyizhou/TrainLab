@@ -37,10 +37,10 @@ test('AC-007c-1: activities-table / card-list breakpoint reflow (mobile + deskto
     'overflow-x',
   ])
   expect(t['display']).not.toBe('none') // block
-  expect(t['background-color']).toBe('rgb(18, 26, 40)') // panel
+  expect(t['background-color']).toBe('rgb(255, 255, 255)') // panel
   expect(t['border-top-width']).toBe('1px')
   expect(t['border-top-style']).toBe('solid')
-  expect(t['border-top-color']).toBe('rgb(34, 48, 73)') // borderPanel
+  expect(t['border-top-color']).toBe('rgb(203, 213, 225)') // borderPanel
   expect(t['border-radius']).toBe('12px') // radiusCard
   expect(t['overflow-x']).toBe('auto')
 
@@ -90,11 +90,11 @@ test('AC-007c-2: type-chip selected vs normal visual contract (desktop)', async 
     'padding-bottom',
     'padding-left',
   ])
-  expect(s['background-color']).toBe('rgba(66, 146, 224, 0.16)')
+  expect(s['background-color']).toBe('rgba(47, 127, 196, 0.16)')
   expect(s['border-top-width']).toBe('1px')
   expect(s['border-top-style']).toBe('solid')
-  expect(s['border-top-color']).toBe('rgb(66, 146, 224)')
-  expect(s['color']).toBe('rgb(94, 163, 232)')
+  expect(s['border-top-color']).toBe('rgb(47, 127, 196)')
+  expect(s['color']).toBe('rgb(37, 110, 168)')
   expect(s['border-radius']).toBe('99px')
   expect(s['padding-top']).toBe('6px')
   expect(s['padding-bottom']).toBe('6px')
@@ -109,9 +109,52 @@ test('AC-007c-2: type-chip selected vs normal visual contract (desktop)', async 
     'border-top-color',
     'color',
   ])
-  expect(n['background-color']).toBe('rgb(18, 26, 40)')
+  expect(n['background-color']).toBe('rgb(255, 255, 255)')
   expect(n['border-top-width']).toBe('1px')
   expect(n['border-top-style']).toBe('solid')
-  expect(n['border-top-color']).toBe('rgb(34, 48, 73)')
-  expect(n['color']).toBe('rgb(138, 148, 168)')
+  expect(n['border-top-color']).toBe('rgb(203, 213, 225)')
+  expect(n['color']).toBe('rgb(91, 107, 126)')
+})
+
+test('AC-007c-3: activity hover and shared pager use the r6 light-state colors', async ({
+  page,
+}) => {
+  await page.setViewportSize(DESKTOP)
+  await page.goto('/activities')
+
+  const row = page.getByTestId('activity-row').first()
+  await row.hover()
+  await expect(row).toHaveCSS('background-color', 'rgba(232, 238, 244, 0.94)')
+
+  const previous = page.getByRole('button', { name: '← 上一页' })
+  const next = page.getByRole('button', { name: '下一页 →' })
+  const disabled = await computed(previous, [
+    'background-color',
+    'border-top-color',
+    'color',
+    'opacity',
+    'cursor',
+  ])
+  expect(disabled['background-color']).toBe('rgba(0, 0, 0, 0)')
+  expect(disabled['border-top-color']).toBe('rgb(212, 221, 231)')
+  expect(disabled['color']).toBe('rgb(148, 163, 184)')
+  expect(disabled['opacity']).toBe('1')
+  expect(disabled['cursor']).toBe('default')
+
+  const enabled = await computed(next, [
+    'background-color',
+    'border-top-color',
+    'color',
+    'border-radius',
+    'padding-top',
+    'padding-right',
+    'cursor',
+  ])
+  expect(enabled['background-color']).toBe('rgba(0, 0, 0, 0)')
+  expect(enabled['border-top-color']).toBe('rgb(183, 196, 210)')
+  expect(enabled['color']).toBe('rgb(91, 107, 126)')
+  expect(enabled['border-radius']).toBe('6px')
+  expect(enabled['padding-top']).toBe('5px')
+  expect(enabled['padding-right']).toBe('12px')
+  expect(enabled['cursor']).toBe('pointer')
 })

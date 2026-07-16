@@ -62,9 +62,9 @@ test('analysis question -> AI text first -> card loads -> collapsed -> expand sh
   await expect(card).toHaveAttribute('data-state', 'expanded')
 })
 
-// ── pixel-contract (design_rev 3/4, C-5 AC-005c-1). Colour zero-tolerance; px
-//    exact. Desktop anchor; card in the collapsed (ready) state. The chart card
-//    is the deepest sink layer: #0B1220 sits below the AI bubble's #121A28. ────
+// ── pixel-contract (C-5 AC-005c-1). Colour zero-tolerance; px exact. Desktop
+//    anchor; card in the collapsed (ready) state. The chart card uses the
+//    deeper panel surface inside the outer AI bubble. ─────────────────────────
 test('AC-005c-1: chart-card container visual contract + deeper than AI bubble (desktop)', async ({
   page,
 }) => {
@@ -76,7 +76,7 @@ test('AC-005c-1: chart-card container visual contract + deeper than AI bubble (d
   const card = page.locator('[data-vc="chart-card"]')
   await expect(card).toHaveAttribute('data-state', 'collapsed')
 
-  // panelDeep #0B1220 fill · borderInput border · radius-md 10px · overflow hidden.
+  // panelDeep fill · borderInput border · radius-md 10px · overflow hidden.
   const c = await computed(card, [
     'background-color',
     'border-top-width',
@@ -86,20 +86,19 @@ test('AC-005c-1: chart-card container visual contract + deeper than AI bubble (d
     'overflow-x',
     'overflow-y',
   ])
-  expect(c['background-color']).toBe('rgb(11, 18, 32)')
+  expect(c['background-color']).toBe('rgb(244, 247, 250)')
   expect(c['border-top-width']).toBe('1px')
   expect(c['border-top-style']).toBe('solid')
-  expect(c['border-top-color']).toBe('rgb(42, 58, 85)')
+  expect(c['border-top-color']).toBe('rgb(183, 196, 210)')
   expect(c['border-radius']).toBe('10px')
   expect(c['overflow-x']).toBe('hidden')
   expect(c['overflow-y']).toBe('hidden')
 
-  // Layer check: the card (#0B1220) is strictly deeper than the AI bubble it
-  // sits inside (#121A28) — every channel darker.
+  // Layer check: the card is strictly deeper than the outer AI bubble.
   const bubbleBg = (await computed(page.getByTestId('msg-ai').last(), ['background-color']))[
     'background-color'
   ]
-  expect(bubbleBg).toBe('rgb(18, 26, 40)')
+  expect(bubbleBg).toBe('rgb(255, 255, 255)')
   const cardCh = rgbChannels(c['background-color'])
   const bubbleCh = rgbChannels(bubbleBg)
   for (let i = 0; i < 3; i++) expect(cardCh[i]).toBeLessThan(bubbleCh[i])

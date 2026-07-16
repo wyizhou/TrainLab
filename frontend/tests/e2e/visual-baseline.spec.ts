@@ -4,8 +4,10 @@ import { fileURLToPath } from 'node:url'
 import { test, expect, type Page } from '@playwright/test'
 import { SYSTEM_PROMPT } from '../../src/analysis/systemPrompt'
 
-const VISUAL_BASELINE_ROOT = fileURLToPath(new URL('../visual-baselines/v3.2/', import.meta.url))
-const BASELINE_PATH = join(VISUAL_BASELINE_ROOT, 'geometry.json')
+const GEOMETRY_BASELINE_ROOT = fileURLToPath(new URL('../visual-baselines/v3.2/', import.meta.url))
+const VISUAL_BASELINE_ROOT = fileURLToPath(new URL('../visual-baselines/v3.3/', import.meta.url))
+const BASELINE_PATH = join(GEOMETRY_BASELINE_ROOT, 'geometry.json')
+const MANIFEST_PATH = join(VISUAL_BASELINE_ROOT, 'manifest.json')
 const SCREENSHOT_DIR = join(VISUAL_BASELINE_ROOT, 'screenshots')
 
 type ViewportName = 'mobile' | 'tablet' | 'desktop' | 'wide'
@@ -88,6 +90,60 @@ type InteractionState =
   | 'settings-prompt-expanded'
 
 const baseline = JSON.parse(readFileSync(BASELINE_PATH, 'utf8')) as Baseline
+const manifest = JSON.parse(readFileSync(MANIFEST_PATH, 'utf8')) as {
+  design_version: string
+  design_rev: number
+  theme: string
+  geometry_source: string
+  screenshot_states: number
+  source_hashes: Record<string, string>
+}
+
+// v3.3 is a theme-only revision. Keep the audited v3.2 geometry and computed
+// layout contract, but translate its color channels to the authoritative r6
+// palette before comparing the live application.
+const COLOR_CHANNEL_MAP = new Map<string, string>([
+  ['10, 15, 24', '232, 237, 243'],
+  ['18, 26, 40', '255, 255, 255'],
+  ['11, 18, 32', '244, 247, 250'],
+  ['13, 20, 32', '248, 250, 252'],
+  ['14, 21, 36', '238, 243, 247'],
+  ['22, 32, 47', '232, 238, 244'],
+  ['66, 146, 224', '47, 127, 196'],
+  ['94, 163, 232', '37, 110, 168'],
+  ['46, 92, 158', '49, 95, 154'],
+  ['6, 16, 30', '255, 255, 255'],
+  ['230, 235, 244', '23, 32, 51'],
+  ['184, 194, 212', '51, 65, 85'],
+  ['138, 148, 168', '91, 107, 126'],
+  ['92, 104, 126', '116, 130, 150'],
+  ['30, 42, 60', '183, 196, 210'],
+  ['42, 58, 85', '183, 196, 210'],
+  ['34, 48, 73', '203, 213, 225'],
+  ['28, 39, 57', '212, 221, 231'],
+  ['21, 30, 46', '226, 232, 240'],
+  ['58, 78, 112', '143, 162, 183'],
+  ['26, 36, 54', '227, 234, 242'],
+  ['63, 191, 143', '22, 128, 93'],
+  ['224, 160, 64', '166, 107, 10'],
+  ['224, 96, 96', '194, 65, 65'],
+  ['143, 193, 242', '106, 166, 221'],
+  ['63, 184, 191', '22, 123, 130'],
+  ['155, 123, 224', '118, 82, 182'],
+])
+
+function currentThemeValue(value: string, vc: string): string {
+  let translated = value
+  for (const [previous, current] of COLOR_CHANNEL_MAP) {
+    translated = translated
+      .replaceAll(`rgb(${previous})`, `rgb(${current})`)
+      .replaceAll(`rgba(${previous},`, `rgba(${current},`)
+  }
+  if (vc === 'session-rail-item-active') {
+    translated = translated.replace('rgba(47, 127, 196, 0.12)', 'rgba(47, 127, 196, 0.14)')
+  }
+  return translated
+}
 
 function pngSize(name: string): { width: number; height: number } {
   const png = readFileSync(join(SCREENSHOT_DIR, name))
@@ -272,10 +328,12 @@ async function expectComputedContract(
             continue
           }
         }
-        if (actual[field] !== expected[field]) {
-          differences.push(
-            `${vc}[${index}].${field}: ${actual[field]}, expected ${expected[field]}`,
-          )
+        const expectedValue =
+          field === 'background' || field === 'border' || field === 'color'
+            ? currentThemeValue(expected[field], vc)
+            : expected[field]
+        if (actual[field] !== expectedValue) {
+          differences.push(`${vc}[${index}].${field}: ${actual[field]}, expected ${expectedValue}`)
         }
       }
       if (compareGeometry === false || (compareGeometry !== true && !compareGeometry.has(vc))) {
@@ -310,8 +368,8 @@ async function expectDynamicInteractionContract(page: Page, state: InteractionSt
     await expect(banner).toHaveCSS('align-items', 'center')
     await expect(banner).toHaveCSS('gap', '12px')
     await expect(banner).toHaveCSS('flex-wrap', 'wrap')
-    await expect(banner).toHaveCSS('background-color', 'rgba(224, 160, 64, 0.08)')
-    await expect(banner).toHaveCSS('border', '1px solid rgba(224, 160, 64, 0.4)')
+    await expect(banner).toHaveCSS('background-color', 'rgba(166, 107, 10, 0.08)')
+    await expect(banner).toHaveCSS('border', '1px solid rgba(166, 107, 10, 0.4)')
     await expect(banner).toHaveCSS('border-radius', '10px')
     await expect(banner).toHaveCSS('padding', '12px 16px')
     await expect(banner).toHaveCSS('margin-bottom', '16px')
@@ -325,8 +383,8 @@ async function expectDynamicInteractionContract(page: Page, state: InteractionSt
     const picker = page.locator('[data-vc="activity-picker"]')
     await expect(picker).toHaveCSS('max-height', '180px')
     await expect(picker).toHaveCSS('overflow-y', 'auto')
-    await expect(picker).toHaveCSS('background-color', 'rgb(11, 18, 32)')
-    await expect(picker).toHaveCSS('border', '1px solid rgb(28, 39, 57)')
+    await expect(picker).toHaveCSS('background-color', 'rgb(244, 247, 250)')
+    await expect(picker).toHaveCSS('border', '1px solid rgb(212, 221, 231)')
     await expect(picker).toHaveCSS('border-radius', '9px')
     await expect(picker).toHaveCSS('margin-bottom', '10px')
     const row = picker.locator('.scope-bar__pickitem').first()
@@ -336,15 +394,19 @@ async function expectDynamicInteractionContract(page: Page, state: InteractionSt
     return
   }
   if (state === 'settings-prompt-expanded') {
+    const toggle = page.locator('.sys-prompt__toggle')
+    await expect(toggle).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+    await expect(toggle).toHaveCSS('border', '1px solid rgb(183, 196, 210)')
+    await expect(toggle).toHaveCSS('color', 'rgb(37, 110, 168)')
     const panel = page.locator('[data-vc="system-prompt-panel"]')
     await expect(panel).toHaveText(SYSTEM_PROMPT)
-    await expect(panel).toHaveCSS('background-color', 'rgb(11, 18, 32)')
-    await expect(panel).toHaveCSS('border', '1px solid rgb(28, 39, 57)')
+    await expect(panel).toHaveCSS('background-color', 'rgb(244, 247, 250)')
+    await expect(panel).toHaveCSS('border', '1px solid rgb(212, 221, 231)')
     await expect(panel).toHaveCSS('border-radius', '8px')
     await expect(panel).toHaveCSS('padding', '12px 14px')
     await expect(panel).toHaveCSS('font-size', '12px')
     await expect(panel).toHaveCSS('line-height', '22.8px')
-    await expect(panel).toHaveCSS('color', 'rgb(138, 148, 168)')
+    await expect(panel).toHaveCSS('color', 'rgb(91, 107, 126)')
     await expect(panel).toHaveCSS('white-space', 'pre-wrap')
     await expect(panel).toHaveCSS('margin', '0px')
   }
@@ -436,8 +498,18 @@ async function openInteractionState(page: Page, state: InteractionState) {
   await expect(page.getByTestId('sys-prompt-body')).toBeVisible()
 }
 
-test('v3.2 baseline manifest is complete and uses all four audited viewports', () => {
+test('v3.3 baseline manifest inherits complete v3.2 geometry at all audited viewports', () => {
   expect(baseline.design_rev).toBe(5)
+  expect(manifest).toMatchObject({
+    design_version: 'v3.3',
+    design_rev: 6,
+    theme: 'global-light-theme',
+    geometry_source: '../v3.2/geometry.json',
+    screenshot_states: 64,
+  })
+  expect(manifest.source_hashes.index_html).toBe(
+    'c560eb8d6af57de1cd62e11e493bbc601268b733b9bc464037fa2d870edde728',
+  )
   expect(baseline.audited_viewports).toEqual({
     mobile: { width: 390, height: 844 },
     tablet: { width: 768, height: 1024 },
@@ -570,7 +642,7 @@ for (const viewport of VIEWPORTS.filter(({ name }) => name === 'mobile' || name 
 
 for (const viewport of VIEWPORTS) {
   for (const state of PRIMARY_STATES) {
-    test(`${viewport.name}: ${state} matches the v3.2 full-page baseline`, async ({ page }) => {
+    test(`${viewport.name}: ${state} matches the v3.3 full-page baseline`, async ({ page }) => {
       await page.setViewportSize(baseline.audited_viewports[viewport.name])
       await openPrimaryState(page, state)
       await expectBaselineScreenshot(page, `${viewport.prefix}-${state}.png`)
@@ -580,7 +652,7 @@ for (const viewport of VIEWPORTS) {
 
 for (const viewport of VIEWPORTS.filter(({ name }) => name === 'mobile' || name === 'desktop')) {
   for (const state of INTERACTION_STATES) {
-    test(`${viewport.name}: ${state} matches the v3.2 interaction baseline`, async ({ page }) => {
+    test(`${viewport.name}: ${state} matches the v3.3 interaction baseline`, async ({ page }) => {
       await page.setViewportSize(baseline.audited_viewports[viewport.name])
       await openInteractionState(page, state)
       await expectDynamicInteractionContract(page, state)
