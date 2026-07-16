@@ -34,8 +34,8 @@ test('AC-001c-1: top-nav-item-active visual contract (desktop)', async ({ page }
     'padding-bottom',
     'padding-left',
   ])
-  expect(c['background-color']).toBe('rgba(66, 146, 224, 0.16)')
-  expect(c['color']).toBe('rgb(230, 235, 244)')
+  expect(c['background-color']).toBe('rgba(47, 127, 196, 0.16)')
+  expect(c['color']).toBe('rgb(23, 32, 51)')
   expect(c['font-weight']).toBe('600')
   expect(c['border-radius']).toBe('8px')
   expect(c['padding-top']).toBe('8px')
@@ -62,10 +62,10 @@ test('AC-001c-2: sync-chip visual contract (desktop)', async ({ page }) => {
     'padding-bottom',
     'padding-left',
   ])
-  expect(c['background-color']).toBe('rgb(18, 26, 40)')
+  expect(c['background-color']).toBe('rgb(255, 255, 255)')
   expect(c['border-top-width']).toBe('1px')
   expect(c['border-top-style']).toBe('solid')
-  expect(c['border-top-color']).toBe('rgb(34, 48, 73)')
+  expect(c['border-top-color']).toBe('rgb(203, 213, 225)')
   expect(c['border-radius']).toBe('99px')
   expect(c['padding-top']).toBe('6px')
   expect(c['padding-bottom']).toBe('6px')
@@ -92,10 +92,10 @@ test('AC-001c-3: bottom-nav visual contract (mobile)', async ({ page }) => {
   expect(nav['position']).toBe('fixed')
   expect(nav['bottom']).toBe('0px')
   expect(nav['height']).toBe('60px')
-  expect(nav['background-color']).toBe('rgb(13, 20, 32)')
+  expect(nav['background-color']).toBe('rgb(248, 250, 252)')
   expect(nav['border-top-width']).toBe('1px')
   expect(nav['border-top-style']).toBe('solid')
-  expect(nav['border-top-color']).toBe('rgb(28, 39, 57)')
+  expect(nav['border-top-color']).toBe('rgb(212, 221, 231)')
 
   const active = page.locator('[data-vc="bottom-nav-item-active"]')
   const item = await computed(active, [
@@ -104,10 +104,10 @@ test('AC-001c-3: bottom-nav visual contract (mobile)', async ({ page }) => {
     'border-top-style',
     'border-top-color',
   ])
-  expect(item['color']).toBe('rgb(94, 163, 232)')
+  expect(item['color']).toBe('rgb(37, 110, 168)')
   expect(item['border-top-width']).toBe('2px')
   expect(item['border-top-style']).toBe('solid')
-  expect(item['border-top-color']).toBe('rgb(66, 146, 224)')
+  expect(item['border-top-color']).toBe('rgb(47, 127, 196)')
 })
 
 // AC-001c-4 — toast visual contract after a mock sync success (/connectors).
@@ -137,19 +137,21 @@ test('AC-001c-4: toast visual contract (desktop)', async ({ page }) => {
     'padding-bottom',
     'padding-left',
     'font-size',
+    'box-shadow',
   ])
   expect(c['position']).toBe('fixed')
   expect(c['bottom']).toBe('28px')
-  expect(c['background-color']).toBe('rgb(26, 36, 54)')
+  expect(c['background-color']).toBe('rgb(227, 234, 242)')
   expect(c['border-top-width']).toBe('1px')
   expect(c['border-top-style']).toBe('solid')
-  expect(c['border-top-color']).toBe('rgb(58, 78, 112)')
+  expect(c['border-top-color']).toBe('rgb(143, 162, 183)')
   expect(c['border-radius']).toBe('10px')
   expect(c['padding-top']).toBe('11px')
   expect(c['padding-bottom']).toBe('11px')
   expect(c['padding-left']).toBe('22px')
   expect(c['padding-right']).toBe('22px')
   expect(c['font-size']).toBe('13px')
+  expect(c['box-shadow']).toBe('rgba(15, 23, 42, 0.18) 0px 8px 30px 0px')
 })
 
 // AC-001c-5 — btn-primary (send button) visual contract.
@@ -170,8 +172,8 @@ test('AC-001c-5: btn-primary visual contract (desktop)', async ({ page }) => {
     'padding-left',
     'font-weight',
   ])
-  expect(c['background-color']).toBe('rgb(66, 146, 224)')
-  expect(c['color']).toBe('rgb(6, 16, 30)')
+  expect(c['background-color']).toBe('rgb(47, 127, 196)')
+  expect(c['color']).toBe('rgb(255, 255, 255)')
   expect(c['border-top-style']).toBe('none')
   expect(c['border-radius']).toBe('10px')
   expect(c['padding-top']).toBe('11px')
