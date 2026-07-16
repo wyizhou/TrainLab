@@ -1,11 +1,12 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { test, expect, type Page } from '@playwright/test'
 import { SYSTEM_PROMPT } from '../../src/analysis/systemPrompt'
 
-const ROOT = process.cwd()
-const BASELINE_PATH = join(ROOT, 'design/v3.2/交接/v3.2-视觉基线.json')
-const SCREENSHOT_DIR = join(ROOT, 'design/v3.2/交接/基线截图')
+const REPOSITORY_ROOT = fileURLToPath(new URL('../../..', import.meta.url))
+const BASELINE_PATH = join(REPOSITORY_ROOT, 'design/v3.2/交接/v3.2-视觉基线.json')
+const SCREENSHOT_DIR = join(REPOSITORY_ROOT, 'design/v3.2/交接/基线截图')
 
 type ViewportName = 'mobile' | 'tablet' | 'desktop' | 'wide'
 type Baseline = {

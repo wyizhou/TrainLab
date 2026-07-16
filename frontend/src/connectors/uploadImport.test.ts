@@ -1,10 +1,10 @@
 import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { formatFileSize, MAX_UPLOAD_BYTES, parseUploadFile, validateUpload } from './uploadImport'
 
 // Real FIT sample (contract C-8 fixture) — the same bytes the detail page parses.
-const FIT_FIXTURE = join(process.cwd(), 'tests/fixtures/614797758_ACTIVITY.fit')
+const FIT_FIXTURE = resolve(process.cwd(), 'tests/fixtures/614797758_ACTIVITY.fit')
 function fitBytes(): Uint8Array {
   return new Uint8Array(readFileSync(FIT_FIXTURE))
 }

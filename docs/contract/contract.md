@@ -6,6 +6,8 @@
 
 文中仍出现的角色、ack 和返工编号属于历史落成记录，不代表当前还需要启动对应角色。旧提案已归档到 `docs/archive/harness/contract-pending/`。
 
+自 2026-07-16 起，前端工程位于 `frontend/`。本文当前可执行命令以 `frontend/package.json` 为准，并从仓库根通过 `npm --prefix frontend ...` 运行；当前源码和测试路径分别为 `frontend/src/` 与 `frontend/tests/`。
+
 ---
 
 ## 条目格式
@@ -44,13 +46,13 @@
 
 ## 全局验证基线（G-*）
 
-每条正式条目**默认继承**下列基线；条目正文只写增量，不重复 G-*。命令以工程 `package.json` scripts 为准。
+每条正式条目**默认继承**下列基线；条目正文只写增量，不重复 G-*。命令以前端工程 `frontend/package.json` scripts 为准。
 
-- **G-lint**：`npm run lint`（ESLint + Prettier check + Stylelint）0 error、0 warning。
-- **G-type**：`npm run typecheck`（`tsc --noEmit`）0 error。
-- **G-unit**：`npm run test`（Vitest run）全绿；条目新增/触及组件须有对应 `*.test.tsx`（Testing Library）。
-- **G-e2e**：`npm run e2e`（Playwright）条目指定 spec 通过（仅标注 e2e 的条目要求，见下「E2E 门禁冒烟集」）。
-- **G-token**：颜色/圆角/间距 token 集中定义于单一模块（如 `src/design/tokens.ts` 及/或 CSS 变量）；ESLint（JS/TS 内联样式）+ Stylelint（CSS）对 token 文件之外的裸 `#hex` / `rgb()` / `oklch()` / 裸像素间距值报 **error**。`npm run lint` 0 error 即判 G-token 通过；抽验 token 文件外裸值命中数须为 0。**不引入视觉快照测试。**（**design_rev 4 升级**：token 唯一事实源迁至 v3.1 三表，off-scale 间距口径〔裁定 (a)〕与 typography/结构尺寸例外边界见下「G-token 权威源与 token 表（design_rev 4 补全）」节。）
+- **G-lint**：`npm --prefix frontend run lint`（ESLint + Prettier check + Stylelint）0 error、0 warning。
+- **G-type**：`npm --prefix frontend run typecheck`（`tsc --noEmit`）0 error。
+- **G-unit**：`npm --prefix frontend run test`（Vitest run）全绿；条目新增/触及组件须有对应 `*.test.tsx`（Testing Library）。
+- **G-e2e**：`npm --prefix frontend run e2e`（Playwright）条目指定 spec 通过（仅标注 e2e 的条目要求，见下「E2E 门禁冒烟集」）。
+- **G-token**：颜色/圆角/间距 token 集中定义于单一模块（如 `frontend/src/design/tokens.ts` 及/或 CSS 变量）；ESLint（JS/TS 内联样式）+ Stylelint（CSS）对 token 文件之外的裸 `#hex` / `rgb()` / `oklch()` / 裸像素间距值报 **error**。`npm --prefix frontend run lint` 0 error 即判 G-token 通过；抽验 token 文件外裸值命中数须为 0。**不引入视觉快照测试。**（**design_rev 4 升级**：token 唯一事实源迁至 v3.1 三表，off-scale 间距口径〔裁定 (a)〕与 typography/结构尺寸例外边界见下「G-token 权威源与 token 表（design_rev 4 补全）」节。）
 - **G-nums**：所有数值展示走 `font-variant-numeric: tabular-nums`；数值列用 ui-monospace。
 - **G-resp（design_rev 2 升级）**：断点矩阵由 rev 1 的「平板 `<980px`」升级为四档 **mobile `<640` / tablet `640–979` / desktop `980–1439` / wide `≥1440`**（`window.innerWidth` 驱动，resize 即时生效）。新增硬不变量：**全部 7 个可达路由（`/login`、`/`、`/activities`、`/activities/1`、`/health`、`/connectors`、`/settings`）在所有断点下 `document.documentElement.scrollWidth <= window.innerWidth`（无横向溢出）**。基准视口：mobile 390×844 / tablet 768×1024 / desktop 1280×800 / wide 1920×1080。#2 视觉保真的精确 token/圆角/间距值经 G-token（token 文件外裸值 lint error）承接；结构性/重排参数（宽度、display、grid 列、圆角非对称、padding 分级）由各条目 e2e-browser 承接。
 - **G-mock**：同步、下载、AI 回复、API 测试均为前端模拟，不发真实网络请求（设置页 AI「测试连接」真实探测可选，默认亦 mock）。
@@ -62,7 +64,7 @@
 
 > design_rev 4（TrainLab v3.1）经历史提案 `docs/archive/harness/contract-pending/design-rev-4.md` 落成。本节补全 G-token 的**权威源与口径边界**——**不新增/不修改任何 pixel-contract AC 判定值（零 AC 值变更）**。v3.1 性质：对 rev-3 残缺 token 交底的补全纠错，零视觉设计变更。
 
-**权威源迁移（唯一事实源）**：颜色/圆角/间距 token 的唯一事实源为 `design/v3.1/交接/v3.1-设计文档.md` 三表——表 (a) 颜色 / 表 (b) 圆角 / 表 (c) 间距。token 模块（`src/design/tokens.ts` 及/或 CSS 变量）的值须 **1:1 对齐三表 computed 值**。v3.0「色板/间距 token 以 v2.0 为准」「无 token 值变更」的表述**作废**——其自相矛盾（既要求实现产出 rgb(66,146,224) 等 pixel-contract 值，又称 token 以 v2.0 为准、无值变更，而 v2.0 token 基础无法产出这些值）。下游一律以 v3.1 三表实测 rgb/px 为准。
+**权威源迁移（唯一事实源）**：颜色/圆角/间距 token 的唯一事实源为 `design/v3.1/交接/v3.1-设计文档.md` 三表——表 (a) 颜色 / 表 (b) 圆角 / 表 (c) 间距。token 模块（`frontend/src/design/tokens.ts` 及/或 CSS 变量）的值须 **1:1 对齐三表 computed 值**。v3.0「色板/间距 token 以 v2.0 为准」「无 token 值变更」的表述**作废**——其自相矛盾（既要求实现产出 rgb(66,146,224) 等 pixel-contract 值，又称 token 以 v2.0 为准、无值变更，而 v2.0 token 基础无法产出这些值）。下游一律以 v3.1 三表实测 rgb/px 为准。
 
 **语义色 oklch→rgb 固化（有意为之，非笔误）**：accent 及 success/warn/danger 由 v2.0 的 `oklch()` 定义固化为原型实测 rgb——accent `#4292E0`（rgb(66,146,224)）、success `#3FBF8F`（rgb(63,191,143)）、warn `#E0A040`（rgb(224,160,64)）、danger `#E06060`（rgb(224,96,96)）。v2.0 oklch 渲染值 ≠ 原型实测（accent oklch 渲染为 rgb(0,158,216)，原型实为 #4292E0）；本固化为实现向原型对齐，**与既有各 AC 目标值一致**，非目标值变更。
 
@@ -92,7 +94,7 @@
 
 ## E2E 门禁冒烟集（design_rev 2）
 
-`npm run e2e` 下列为**门禁必过**冒烟集。
+`npm --prefix frontend run e2e` 下列为**门禁必过**冒烟集。
 
 rev 1 的 5 条门禁**不增删**，语义随各返工条目沿用：
 1. 登录：错误验证码被拒 → 正确输入登录成功跳分析页（C-2）。门禁#1 在双模导航下仍以「错误验证码被拒 → 正确登录跳分析页」为准（与导航模式无关）。
@@ -103,7 +105,7 @@ rev 1 的 5 条门禁**不增删**，语义随各返工条目沿用：
 
 **新增门禁#6 —— 响应式无溢出冒烟**（升级后 G-resp 的门禁化）：
 - **无横向溢出**：遍历全部 **7** 个可达路由（`/login`、`/`、`/activities`、`/activities/1`、`/health`、`/connectors`、`/settings`，均稳定可达；`/activities/1` 取运动列表首条「晨间轻松跑」），在 4 视口（390 / 768 / 1280 / 1920）断言 `document.documentElement.scrollWidth <= window.innerWidth`。
-- **双模导航**（仅对 **6** 个 in-app 路由，**排除 `/login`**——`/login` 渲染在 `AppLayout` 之外、无任何导航 chrome，`src/App.tsx:16` 已证实）：mobile 断言底部 tab 5 项可见、顶部导航不在 DOM；desktop 断言顶部导航在、底部 tab 不在。
+- **双模导航**（仅对 **6** 个 in-app 路由，**排除 `/login`**——`/login` 渲染在 `AppLayout` 之外、无任何导航 chrome，`frontend/src/App.tsx:16` 已证实）：mobile 断言底部 tab 5 项可见、顶部导航不在 DOM；desktop 断言顶部导航在、底部 tab 不在。
 - **`/login` 单独断言**（避免误判）：mobile 与 desktop 下 `/login` 均**无** top-nav、**无**底部固定 tab（login 页两种导航都不应存在）。
 
 此外各条目正文标注的 `e2e` 行须各自通过（C-1 五路由、C-3 会话增改删至空、C-7 筛选+翻页+批量计数）。**C-4 / C-9 / C-10 / C-13 / C-14 不要求「功能 e2e」，但其响应式 `e2e-browser` 断言（下列各条 AC-*）为该条目验收组成部分**——响应式是 v2.0 的交付主体，必须自动验，不下放 visual/manual。
@@ -123,7 +125,7 @@ rev 1 的 5 条门禁**不增删**，语义随各返工条目沿用：
 - 受影响需求: 001, 001b, 001c
 - 决议: 返工
 - 可验证标准（继承升级后 G-*）：
-  - [ ] rev 1 功能判据保留：Vite+React+TS 工程 `npm run build` 成功、`npm run dev` 起服务；顶部导航含五项且顺序为 **分析(默认页) / 运动记录 / 健康记录 / 连接器 / 设置**，`/` 默认路由指向分析页；深色视觉 token 集中定义（背景 #0A0F18 / 面板 #121A28 / 深面板 #0B1220 / 强调 accent = **#4292E0**（rgb(66,146,224)，design_rev 4 由 v2.0 `oklch` 固化为原型实测 rgb，见「G-token 权威源与 token 表」节）等），全局 `tabular-nums` 生效（G-token / G-nums）。
+  - [ ] rev 1 功能判据保留：Vite+React+TS 工程 `npm --prefix frontend run build` 成功、`npm --prefix frontend run dev` 起服务；顶部导航含五项且顺序为 **分析(默认页) / 运动记录 / 健康记录 / 连接器 / 设置**，`/` 默认路由指向分析页；深色视觉 token 集中定义（背景 #0A0F18 / 面板 #121A28 / 深面板 #0B1220 / 强调 accent = **#4292E0**（rgb(66,146,224)，design_rev 4 由 v2.0 `oklch` 固化为原型实测 rgb，见「G-token 权威源与 token 表」节）等），全局 `tabular-nums` 生效（G-token / G-nums）。
   - [ ] BreakpointState：`innerWidth` 落 mobile/tablet/desktop/wide 四区间，resize 切换即时生效（unit）。
   - id: AC-001b-1
     描述: mobile 隐藏顶部导航，底部固定 tab 栏 5 项
@@ -394,9 +396,9 @@ rev 1 的 5 条门禁**不增删**，语义随各返工条目沿用：
 - fidelity: pixel-contract
 - 受影响需求: 008, 008b, 008c
 - 决议: 返工
-- **验收前置（承接 rev 1 §7.3，已满足）**：真实样本 `tests/fixtures/614797758_ACTIVITY.fit`（`fixture_owner: human`）已在 repo（复核 245KB 真实 FIT），无新增 human fixture、无 blocked 风险；FIT 字段白名单断言（≥8 项）判据原样保留。
+- **验收前置（承接 rev 1 §7.3，已满足）**：真实样本 `frontend/tests/fixtures/614797758_ACTIVITY.fit`（`fixture_owner: human`）已在 repo（复核 245KB 真实 FIT），无新增 human fixture、无 blocked 风险；FIT 字段白名单断言（≥8 项）判据原样保留。
 - 可验证标准（继承升级后 G-*）：
-  - [ ] rev 1 功能判据保留：字段集 = 真实 FIT（`tests/fixtures/614797758_ACTIVITY.fit`，`@garmin/fitsdk` 解析）∩ 佳明 Connect 详情页，列表第一条「晨间轻松跑」为该真实数据，缺失字段显示「--」；指标分区各标注 FIT 字段名，训练效果为 FIT 原始存储值（非系统计算）；时序双模式（降采样曲线：跑步 8 图/骑行 6/游泳 2/力量 1，Y 轴 3 档 + X 轴 5 档 + 来源字段标注 ⇄ 逐秒数据表：分页 20/50/100，行数 = 运动秒数）；心率区间条形图（`time_in_hr_zone`）边界取自设置页区间设定；Laps 分段表含平均功率列 + 「下载 FIT 文件」主按钮（模拟）。
+  - [ ] rev 1 功能判据保留：字段集 = 真实 FIT（`frontend/tests/fixtures/614797758_ACTIVITY.fit`，`@garmin/fitsdk` 解析）∩ 佳明 Connect 详情页，列表第一条「晨间轻松跑」为该真实数据，缺失字段显示「--」；指标分区各标注 FIT 字段名，训练效果为 FIT 原始存储值（非系统计算）；时序双模式（降采样曲线：跑步 8 图/骑行 6/游泳 2/力量 1，Y 轴 3 档 + X 轴 5 档 + 来源字段标注 ⇄ 逐秒数据表：分页 20/50/100，行数 = 运动秒数）；心率区间条形图（`time_in_hr_zone`）边界取自设置页区间设定；Laps 分段表含平均功率列 + 「下载 FIT 文件」主按钮（模拟）。
   - [ ] **FIT 字段白名单断言（unit，首条「晨间轻松跑」解析值 == 佳明详情，≥8 项）**：`sport`(+`sub_sport` 若有) / `start_time`(时间戳精确相等) / `total_timer_time` / `total_distance` / `avg_heart_rate` / `max_heart_rate` / `total_calories` / `avg_speed`(→配速换算一致)；`total_ascent`（若详情展示则纳入）；`total_training_effect` / `total_anaerobic_training_effect` 断言为 FIT 原始存储值。容差：整数/时间戳精确相等，浮点按展示精度四舍五入相等；缺失字段渲染「--」可不参与断言。
   - [ ] e2e（门禁#4）：降采样曲线 ⇄ 逐秒表 模式切换。
   - id: AC-008b-1

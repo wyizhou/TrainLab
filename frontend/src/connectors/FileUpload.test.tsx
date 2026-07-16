@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { resolve } from 'node:path'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
@@ -13,7 +13,7 @@ import {
 } from '../activities/uploadStore'
 import { ActivitiesPage } from '../pages/ActivitiesPage'
 
-const FIT_FIXTURE = join(process.cwd(), 'tests/fixtures/614797758_ACTIVITY.fit')
+const FIT_FIXTURE = resolve(process.cwd(), 'tests/fixtures/614797758_ACTIVITY.fit')
 const fitFile = (name = '晨间轻松跑.fit') =>
   new File([new Uint8Array(readFileSync(FIT_FIXTURE))], name, {
     lastModified: Date.parse('2026-05-01T08:00:00Z'),

@@ -1,6 +1,6 @@
 # TrainLab
 
-TrainLab 是一个运动数据分析前端产品原型，覆盖 AI 分析、运动记录、FIT 详情、健康记录、佳明连接器、文件上传和设置页面。
+TrainLab 是一个运动数据分析项目。当前可运行产品为前端原型，覆盖 AI 分析、运动记录、FIT 详情、健康记录、佳明连接器、文件上传和设置页面；仓库已预留独立后端边界，但尚未选定后端技术栈。
 
 项目最初用于实验 Claude Code 三角色开发 harness，目前已迁移为 Codex 三阶段开发模式。规划、实现、验收是每个任务的固定阶段；独立 Planner / Validator 是否介入由任务风险决定，主 Agent 负责实现和协调。
 
@@ -14,6 +14,8 @@ TrainLab 是一个运动数据分析前端产品原型，覆盖 AI 分析、运�
 
 ## 技术栈
 
+当前技术栈属于 `frontend/`：
+
 - React 18 + TypeScript + Vite
 - Vitest + Testing Library
 - Playwright
@@ -23,8 +25,8 @@ TrainLab 是一个运动数据分析前端产品原型，覆盖 AI 分析、运�
 ## 本地运行
 
 ```bash
-npm ci
-npm run dev
+npm --prefix frontend ci
+npm --prefix frontend run dev
 ```
 
 默认地址：`http://localhost:5173/`。
@@ -32,14 +34,24 @@ npm run dev
 常用检查：
 
 ```bash
-npm run typecheck
-npm run lint
-npm run test
-npm run e2e
-npm run build
+npm --prefix frontend run typecheck
+npm --prefix frontend run lint
+npm --prefix frontend run test
+npm --prefix frontend run e2e
+npm --prefix frontend run build
 ```
 
+## 仓库结构
+
+- `frontend/`：当前 React 前端工程，包含依赖、源码、测试和构建配置。
+- `backend/`：后端工程预留目录；当前只有启动边界说明。
+- `design/`：人工导入的只读设计输入。
+- `docs/`：全项目状态、待办、工作流和历史契约。
+- `AGENTS.md`：对整个仓库生效的 Codex 项目规则。
+
 ## 页面
+
+以下路由由 `frontend/` 提供：
 
 - `/login`：登录页
 - `/`：分析
