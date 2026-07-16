@@ -127,7 +127,12 @@ const FONT_FLOW_GROUPS = [
   ['health-tab', 'health-tab-selected'],
 ] as const
 
-const RIGHT_ALIGNED_INTRINSIC_VCS = ['sync-chip', 'batch-download-button'] as const
+const RIGHT_ALIGNED_INTRINSIC_VCS = ['batch-download-button'] as const
+const RIGHT_ALIGNMENT_PARENT_VC: Readonly<
+  Record<(typeof RIGHT_ALIGNED_INTRINSIC_VCS)[number], string>
+> = {
+  'batch-download-button': 'page-header',
+}
 
 type PrimaryState =
   | 'login'
@@ -223,9 +228,9 @@ async function expectFontIntrinsicHorizontalContract(
   expectedAnchors: Array<Baseline['render_states'][string]['anchors'][number] & { vc: string }>,
 ) {
   for (const vcs of FONT_FLOW_GROUPS) {
-    const expected = expectedAnchors
-      .filter((anchor) => (vcs as readonly string[]).includes(anchor.vc))
-      .sort((left, right) => left.rect.y - right.rect.y || left.rect.x - right.rect.x)
+    const expected = expectedAnchors.filter((anchor) =>
+      (vcs as readonly string[]).includes(anchor.vc),
+    )
     if (expected.length === 0) continue
 
     const expectedVcs = new Set(expected.map((anchor) => anchor.vc))
@@ -234,21 +239,19 @@ async function expectFontIntrinsicHorizontalContract(
       .map((vc) => `[data-vc="${vc}"]`)
       .join(',')
     const actual = await page.locator(selector).evaluateAll((elements) =>
-      elements
-        .map((element) => {
-          const rect = element.getBoundingClientRect()
-          const style = getComputedStyle(element)
-          return {
-            vc: element.getAttribute('data-vc'),
-            rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
-            whiteSpace: style.whiteSpace,
-            clientWidth: element.clientWidth,
-            clientHeight: element.clientHeight,
-            scrollWidth: element.scrollWidth,
-            scrollHeight: element.scrollHeight,
-          }
-        })
-        .sort((left, right) => left.rect.y - right.rect.y || left.rect.x - right.rect.x),
+      elements.map((element) => {
+        const rect = element.getBoundingClientRect()
+        const style = getComputedStyle(element)
+        return {
+          vc: element.getAttribute('data-vc'),
+          rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+          whiteSpace: style.whiteSpace,
+          clientWidth: element.clientWidth,
+          clientHeight: element.clientHeight,
+          scrollWidth: element.scrollWidth,
+          scrollHeight: element.scrollHeight,
+        }
+      }),
     )
 
     expect(actual, `${vcs.join('/')}: relational item count`).toHaveLength(expected.length)
@@ -294,9 +297,10 @@ async function expectFontIntrinsicHorizontalContract(
     const actual = await page.locator(`[data-vc="${vc}"]`).evaluateAll((elements) =>
       elements.map((element) => {
         const rect = element.getBoundingClientRect()
+        const parentRect = element.parentElement!.getBoundingClientRect()
         const style = getComputedStyle(element)
         return {
-          right: rect.right,
+          rightInset: parentRect.right - rect.right,
           whiteSpace: style.whiteSpace,
           clientWidth: element.clientWidth,
           scrollWidth: element.scrollWidth,
@@ -304,10 +308,18 @@ async function expectFontIntrinsicHorizontalContract(
       }),
     )
     expect(actual, `${vc}: right-aligned item count`).toHaveLength(expected.length)
+    const expectedParent = expectedAnchors.find(
+      (anchor) => anchor.vc === RIGHT_ALIGNMENT_PARENT_VC[vc],
+    )
+    expect(expectedParent, `${vc}: missing right-alignment parent`).toBeDefined()
     for (let index = 0; index < expected.length; index += 1) {
+      const expectedInset =
+        expectedParent!.rect.x +
+        expectedParent!.rect.width -
+        (expected[index].rect.x + expected[index].rect.width)
       expect(
-        Math.abs(actual[index].right - (expected[index].rect.x + expected[index].rect.width)),
-        `${vc}[${index}]: right edge`,
+        Math.abs(actual[index].rightInset - expectedInset),
+        `${vc}[${index}]: parent right inset`,
       ).toBeLessThanOrEqual(1)
       expect(actual[index].whiteSpace, `${vc}[${index}]: text must stay on one line`).toBe('nowrap')
       expect(
@@ -315,6 +327,22 @@ async function expectFontIntrinsicHorizontalContract(
         `${vc}[${index}]: text must not be clipped`,
       ).toBe(true)
     }
+  }
+
+  const expectedSync = expectedAnchors.find((anchor) => anchor.vc === 'sync-chip')
+  const expectedUserActions = expectedAnchors.find((anchor) => anchor.vc === 'user-actions')
+  if (expectedSync && expectedUserActions) {
+    const actualGap = await page.evaluate(() => {
+      const sync = document.querySelector('[data-vc="sync-chip"]')!.getBoundingClientRect()
+      const userActions = document
+        .querySelector('[data-vc="user-actions"]')!
+        .getBoundingClientRect()
+      return userActions.left - sync.right
+    })
+    const expectedGap = expectedUserActions.rect.x - (expectedSync.rect.x + expectedSync.rect.width)
+    expect(Math.abs(actualGap - expectedGap), 'sync chip to user actions gap').toBeLessThanOrEqual(
+      1,
+    )
   }
 
   const chromeDoesNotOverlap = await page.evaluate(() => {
