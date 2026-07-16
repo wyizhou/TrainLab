@@ -16,7 +16,8 @@
     "revision": 6,
     "version": "v3.3",
     "status": "verified",
-    "geometry_inherited_from": "v3.2"
+    "geometry_inherited_from": "v3.2",
+    "typography_contract": "ordered-cross-platform-system-font-stack"
   },
   "backend_baseline": {
     "version": "v0.1",

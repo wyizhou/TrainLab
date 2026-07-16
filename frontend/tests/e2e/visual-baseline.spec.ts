@@ -63,6 +63,71 @@ type ComputedContract = Record<ComputedField, string> & {
 }
 
 type GeometryComparison = boolean | ReadonlySet<string>
+type RectField = 'x' | 'y' | 'width' | 'height'
+
+const APPROVED_SANS_FONTS = [
+  'Helvetica Neue',
+  'helvetica',
+  'Segoe UI',
+  'tahoma',
+  'arial',
+  'Liberation Sans',
+  'PingFang SC',
+  '苹方-简',
+  'Hiragino Sans GB',
+  'stxihei',
+  '华文细黑',
+  'Microsoft YaHei',
+  '微软雅黑',
+  'Noto Sans CJK SC',
+  'Noto Sans SC',
+  'Source Han Sans SC',
+  'WenQuanYi Micro Hei',
+  'sans-serif',
+] as const
+
+const APPROVED_MONO_FONTS = [
+  'ui-monospace',
+  'SFMono-Regular',
+  'SF Mono',
+  'menlo',
+  'monaco',
+  'consolas',
+  'Liberation Mono',
+  'Noto Sans Mono CJK SC',
+  'PingFang SC',
+  'Microsoft YaHei',
+  'monospace',
+] as const
+
+// Text in these inline controls is intentionally rendered by the first
+// available member of the approved platform stack. Glyph advance widths may
+// change their intrinsic width and the x position of following siblings. Only
+// those two fields use relational checks; y, height, styles, gaps, insets,
+// right edges, wrapping, and every other anchor remain on the exact contract.
+const FONT_INTRINSIC_HORIZONTAL_FIELDS: Readonly<Record<string, ReadonlySet<RectField>>> = {
+  'top-nav': new Set(['width']),
+  'top-nav-item': new Set(['x', 'width']),
+  'top-nav-item-active': new Set(['x', 'width']),
+  'sync-chip': new Set(['x', 'width']),
+  'health-tab': new Set(['x', 'width']),
+  'health-tab-selected': new Set(['x', 'width']),
+  'scope-chip': new Set(['x', 'width']),
+  'scope-chip-selected': new Set(['x', 'width']),
+  'type-chip': new Set(['x', 'width']),
+  'type-chip-selected': new Set(['x', 'width']),
+  'activity-picker-trigger': new Set(['x', 'width']),
+  'batch-download-button': new Set(['x', 'width']),
+}
+
+const FONT_FLOW_GROUPS = [
+  ['top-nav-item', 'top-nav-item-active'],
+  ['scope-chip', 'scope-chip-selected', 'activity-picker-trigger'],
+  ['type-chip', 'type-chip-selected'],
+  ['health-tab', 'health-tab-selected'],
+] as const
+
+const RIGHT_ALIGNED_INTRINSIC_VCS = ['sync-chip', 'batch-download-button'] as const
 
 type PrimaryState =
   | 'login'
@@ -143,6 +208,128 @@ function currentThemeValue(value: string, vc: string): string {
     translated = translated.replace('rgba(47, 127, 196, 0.12)', 'rgba(47, 127, 196, 0.14)')
   }
   return translated
+}
+
+function normalizedFontFamilies(value: string): string[] {
+  return value.split(',').map((family) => family.trim().replace(/^["']|["']$/g, ''))
+}
+
+function usesRelationalHorizontalGeometry(vc: string, field: RectField): boolean {
+  return FONT_INTRINSIC_HORIZONTAL_FIELDS[vc]?.has(field) ?? false
+}
+
+async function expectFontIntrinsicHorizontalContract(
+  page: Page,
+  expectedAnchors: Array<Baseline['render_states'][string]['anchors'][number] & { vc: string }>,
+) {
+  for (const vcs of FONT_FLOW_GROUPS) {
+    const expected = expectedAnchors
+      .filter((anchor) => (vcs as readonly string[]).includes(anchor.vc))
+      .sort((left, right) => left.rect.y - right.rect.y || left.rect.x - right.rect.x)
+    if (expected.length === 0) continue
+
+    const expectedVcs = new Set(expected.map((anchor) => anchor.vc))
+    const selector = vcs
+      .filter((vc) => expectedVcs.has(vc))
+      .map((vc) => `[data-vc="${vc}"]`)
+      .join(',')
+    const actual = await page.locator(selector).evaluateAll((elements) =>
+      elements
+        .map((element) => {
+          const rect = element.getBoundingClientRect()
+          const style = getComputedStyle(element)
+          return {
+            vc: element.getAttribute('data-vc'),
+            rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+            whiteSpace: style.whiteSpace,
+            clientWidth: element.clientWidth,
+            clientHeight: element.clientHeight,
+            scrollWidth: element.scrollWidth,
+            scrollHeight: element.scrollHeight,
+          }
+        })
+        .sort((left, right) => left.rect.y - right.rect.y || left.rect.x - right.rect.x),
+    )
+
+    expect(actual, `${vcs.join('/')}: relational item count`).toHaveLength(expected.length)
+    for (let index = 0; index < expected.length; index += 1) {
+      const item = actual[index]
+      const reference = expected[index]
+      expect(item.vc, `${vcs.join('/')}[${index}]: state/order`).toBe(reference.vc)
+      expect(item.whiteSpace, `${reference.vc}[${index}]: text must stay on one line`).toBe(
+        'nowrap',
+      )
+      expect(
+        item.scrollWidth <= item.clientWidth + 1,
+        `${reference.vc}[${index}]: text must not be horizontally clipped`,
+      ).toBe(true)
+      expect(
+        item.scrollHeight <= item.clientHeight + 1,
+        `${reference.vc}[${index}]: text must not be vertically clipped`,
+      ).toBe(true)
+
+      const previousReference = expected[index - 1]
+      const previousItem = actual[index - 1]
+      const startsRow = index === 0 || Math.abs(reference.rect.y - previousReference.rect.y) > 1
+      if (startsRow) {
+        expect(
+          Math.abs(item.rect.x - reference.rect.x),
+          `${reference.vc}[${index}]: row inset`,
+        ).toBeLessThanOrEqual(1)
+      } else {
+        const expectedGap =
+          reference.rect.x - (previousReference.rect.x + previousReference.rect.width)
+        const actualGap = item.rect.x - (previousItem.rect.x + previousItem.rect.width)
+        expect(
+          Math.abs(actualGap - expectedGap),
+          `${reference.vc}[${index}]: sibling gap`,
+        ).toBeLessThanOrEqual(1)
+      }
+    }
+  }
+
+  for (const vc of RIGHT_ALIGNED_INTRINSIC_VCS) {
+    const expected = expectedAnchors.filter((anchor) => anchor.vc === vc)
+    if (expected.length === 0) continue
+    const actual = await page.locator(`[data-vc="${vc}"]`).evaluateAll((elements) =>
+      elements.map((element) => {
+        const rect = element.getBoundingClientRect()
+        const style = getComputedStyle(element)
+        return {
+          right: rect.right,
+          whiteSpace: style.whiteSpace,
+          clientWidth: element.clientWidth,
+          scrollWidth: element.scrollWidth,
+        }
+      }),
+    )
+    expect(actual, `${vc}: right-aligned item count`).toHaveLength(expected.length)
+    for (let index = 0; index < expected.length; index += 1) {
+      expect(
+        Math.abs(actual[index].right - (expected[index].rect.x + expected[index].rect.width)),
+        `${vc}[${index}]: right edge`,
+      ).toBeLessThanOrEqual(1)
+      expect(actual[index].whiteSpace, `${vc}[${index}]: text must stay on one line`).toBe('nowrap')
+      expect(
+        actual[index].scrollWidth <= actual[index].clientWidth + 1,
+        `${vc}[${index}]: text must not be clipped`,
+      ).toBe(true)
+    }
+  }
+
+  const chromeDoesNotOverlap = await page.evaluate(() => {
+    const nav = document.querySelector('[data-vc="top-nav"]')?.getBoundingClientRect()
+    const sync = document.querySelector('[data-vc="sync-chip"]')?.getBoundingClientRect()
+    return !nav || !sync || nav.right <= sync.left + 1
+  })
+  expect(chromeDoesNotOverlap, 'top navigation must not overlap the sync chip').toBe(true)
+
+  const hasHorizontalOverflow = await page.evaluate(
+    () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+  )
+  expect(hasHorizontalOverflow, 'approved font fallback must not create document overflow').toBe(
+    false,
+  )
 }
 
 function pngSize(name: string): { width: number; height: number } {
@@ -340,6 +527,9 @@ async function expectComputedContract(
         continue
       }
       for (const field of ['x', 'y', 'width', 'height'] as const) {
+        if (usesRelationalHorizontalGeometry(vc, field)) {
+          continue
+        }
         if (
           field === 'height' &&
           (vc === 'app-shell' || vc === 'main-content' || vc === 'page-health')
@@ -358,6 +548,7 @@ async function expectComputedContract(
     }
   }
 
+  await expectFontIntrinsicHorizontalContract(page, expectedAnchors)
   expect(differences.slice(0, 100), `${screenshotState}: computed/geometry drift`).toEqual([])
 }
 
@@ -528,6 +719,18 @@ test('v3.3 baseline manifest inherits complete v3.2 geometry at all audited view
   expect(expectedNames).toEqual(manifestNames)
   expect(baseline.anchor_inventory.resolved_unique).toBe(103)
   expect(new Set(baseline.anchor_inventory.resolved_names).size).toBe(103)
+})
+
+test('approved cross-platform sans and monospace stacks stay complete and ordered', async ({
+  page,
+}) => {
+  await page.goto('/activities')
+  const families = await page.evaluate(() => ({
+    sans: getComputedStyle(document.body).fontFamily,
+    mono: getComputedStyle(document.querySelector('.num')!).fontFamily,
+  }))
+  expect(normalizedFontFamilies(families.sans)).toEqual(APPROVED_SANS_FONTS)
+  expect(normalizedFontFamilies(families.mono)).toEqual(APPROVED_MONO_FONTS)
 })
 
 const PRIMARY_STATES: readonly PrimaryState[] = [

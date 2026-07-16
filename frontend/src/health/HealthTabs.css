@@ -15,6 +15,7 @@
   border: 1px solid var(--color-border-panel);
   border-radius: var(--radius-input);
   font-size: 13px;
+  white-space: nowrap;
   cursor: pointer;
 }
 

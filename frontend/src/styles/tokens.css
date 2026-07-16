@@ -286,8 +286,13 @@
   --margin-conflict-choice-source: 0 0 0 6px;
 
   /* Typography */
-  --font-sans: 'Helvetica Neue', helvetica, 'PingFang SC', 'Microsoft YaHei', sans-serif;
-  --font-mono: ui-monospace, sfmono-regular, 'SF Mono', menlo, consolas, monospace;
+  --font-sans:
+    'Helvetica Neue', helvetica, 'Segoe UI', tahoma, arial, 'Liberation Sans', 'PingFang SC',
+    '苹方-简', 'Hiragino Sans GB', stxihei, '华文细黑', 'Microsoft YaHei', '微软雅黑',
+    'Noto Sans CJK SC', 'Noto Sans SC', 'Source Han Sans SC', 'WenQuanYi Micro Hei', sans-serif;
+  --font-mono:
+    ui-monospace, 'SFMono-Regular', 'SF Mono', menlo, monaco, consolas, 'Liberation Mono',
+    'Noto Sans Mono CJK SC', 'PingFang SC', 'Microsoft YaHei', monospace;
 
   /* Layout */
   --nav-height: 56px;
