@@ -26,7 +26,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `npm run dev -- --port ${PORT} --strictPort`,
+    command: `VITE_AUTH_MODE=demo npm run dev -- --port ${PORT} --strictPort`,
     cwd: FRONTEND_ROOT,
     url: BASE_URL,
     reuseExistingServer: !process.env.CI,

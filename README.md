@@ -1,6 +1,6 @@
 # TrainLab
 
-TrainLab 是一个运动数据分析项目。当前可运行产品为前端原型，覆盖 AI 分析、运动记录、FIT 详情、健康记录、佳明连接器、文件上传和设置页面；仓库已预留独立后端边界，但尚未选定后端技术栈。
+TrainLab 是一个运动数据分析项目。前端覆盖 AI 分析、运动记录、FIT 详情、健康记录、佳明连接器、文件上传和设置页面；后端基础已提供真实账号登录、会话、数据库迁移和前后端一体化运行。运动业务、同步、上传和 AI 仍保持前端模拟。
 
 项目最初用于实验 Claude Code 三角色开发 harness，目前已迁移为 Codex 三阶段开发模式。规划、实现、验收是每个任务的固定阶段；独立 Planner / Validator 是否介入由任务风险决定，主 Agent 负责实现和协调。
 
@@ -14,7 +14,7 @@ TrainLab 是一个运动数据分析项目。当前可运行产品为前端原�
 
 ## 技术栈
 
-当前技术栈属于 `frontend/`：
+前端：
 
 - React 18 + TypeScript + Vite
 - Vitest + Testing Library
@@ -22,14 +22,23 @@ TrainLab 是一个运动数据分析项目。当前可运行产品为前端原�
 - ESLint + Prettier + Stylelint
 - Garmin FIT SDK
 
+后端：
+
+- Python 3.12 + FastAPI
+- SQLAlchemy 2 + PostgreSQL 17 + Alembic
+- uv + Ruff + mypy + pytest
+- Docker Compose
+
 ## 本地运行
 
+完整产品推荐使用 Docker Compose：
+
 ```bash
-npm --prefix frontend ci
-npm --prefix frontend run dev
+backend/scripts/compose.sh up --build -d db backend
+backend/scripts/compose.sh exec backend trainlab create-owner --username owner-user
 ```
 
-默认地址：`http://localhost:5173/`。
+默认地址：`http://localhost:8000/`。初始化命令会安全地交互读取密码。前端单独开发仍可运行 `npm --prefix frontend run dev`，默认地址为 `http://localhost:5173/`。
 
 常用检查：
 
@@ -39,6 +48,7 @@ npm --prefix frontend run lint
 npm --prefix frontend run test
 npm --prefix frontend run e2e
 npm --prefix frontend run build
+backend/scripts/check.sh
 ```
 
 ## 仓库结构
@@ -46,7 +56,8 @@ npm --prefix frontend run build
 - `frontend/`：当前 React 前端工程，包含依赖、源码、测试和构建配置。
 - `frontend/src/styles/`：集中维护的前端样式和设计 token。
 - `frontend/tests/visual-baselines/`：实现侧自包含的视觉回归测试资产。
-- `backend/`：后端工程预留目录；当前只有启动边界说明。
+- `backend/`：FastAPI 后端、数据库模型与迁移、测试和运行脚本。
+- `compose.yaml`：PostgreSQL、完整应用与隔离测试环境。
 - `docs/`：全项目状态、待办、工作流和历史契约。
 - `AGENTS.md`：对整个仓库生效的 Codex 项目规则。
 

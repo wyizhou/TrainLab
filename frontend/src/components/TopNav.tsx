@@ -1,4 +1,5 @@
-import { NavLink, matchPath, useLocation } from 'react-router-dom'
+import { NavLink, matchPath, useLocation, useNavigate } from 'react-router-dom'
+import { useAuth } from '../auth/AuthState'
 import { NAV_ITEMS } from './navItems'
 import './TopNav.css'
 
@@ -17,6 +18,8 @@ export function TopNav({
   showSync?: boolean
 }) {
   const { pathname } = useLocation()
+  const navigate = useNavigate()
+  const auth = useAuth()
 
   return (
     <header className="topnav" data-vc="app-header" data-testid="app-header">
@@ -52,7 +55,16 @@ export function TopNav({
         <span className="topnav__avatar" aria-hidden="true">
           A
         </span>
-        <button type="button" className="topnav__logout">
+        <button
+          type="button"
+          className="topnav__logout"
+          onClick={() =>
+            void auth
+              .logout()
+              .catch(() => undefined)
+              .finally(() => navigate('/login', { replace: true }))
+          }
+        >
           退出
         </button>
       </div>

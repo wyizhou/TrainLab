@@ -14,9 +14,20 @@ npm --prefix frontend run lint
 npm --prefix frontend run test
 npm --prefix frontend run e2e
 npm --prefix frontend run build
+backend/scripts/check.sh
+backend/scripts/compose.sh --profile test run --build --rm backend-test
 ```
 
-后端工程初始化后，再把 `backend/` 实际提供的类型、测试、规范和构建命令加入门禁；不在未选型时虚构命令。
+跨端登录、会话、静态托管或 Compose 变化还需运行：
+
+```bash
+backend/scripts/compose.sh up --build -d db backend
+backend/scripts/compose.sh exec -T -e TRAINLAB_OWNER_PASSWORD=correct-password backend \
+  trainlab create-owner --username owner-user --password-env TRAINLAB_OWNER_PASSWORD
+npm --prefix frontend run e2e:fullstack
+```
+
+后端测试数据库名必须以 `_test` 结尾。数据库迁移变化应至少验证空库升级，以及当前迁移允许时的回退再升级。
 
 不得通过删除测试、扩大容差或降低规则等级来解决失败。
 
