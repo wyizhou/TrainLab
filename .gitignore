@@ -22,8 +22,5 @@ npm-debug.log*
 .DS_Store
 *.local
 
-# Design exports: source is committed; drop heavy reference PDFs
-design/**/*.pdf
-
 # One-off generated handoff package
 TrainLab-交接包.md

@@ -44,8 +44,9 @@ npm --prefix frontend run build
 ## 仓库结构
 
 - `frontend/`：当前 React 前端工程，包含依赖、源码、测试和构建配置。
+- `frontend/src/styles/`：集中维护的前端样式和设计 token。
+- `frontend/tests/visual-baselines/`：实现侧自包含的视觉回归测试资产。
 - `backend/`：后端工程预留目录；当前只有启动边界说明。
-- `design/`：人工导入的只读设计输入。
 - `docs/`：全项目状态、待办、工作流和历史契约。
 - `AGENTS.md`：对整个仓库生效的 Codex 项目规则。
 
@@ -75,7 +76,8 @@ npm --prefix frontend run build
 
 ## 设计与历史
 
-- 当前视觉基线：由 `docs/project-state.json` 指向 `design/<当前设计版本>/` 中的交接材料。
+- 当前设计来源：由用户在每个 UI 任务中提供仓库外的只读原型路径；`docs/project-state.json` 只保存可迁移的版本、修订号和摘要，不保存本机绝对路径。
+- 视觉回归资产：`frontend/tests/visual-baselines/` 用于检测实现漂移，不替代外部设计来源，也不能为了让测试通过而随意更新。
 - rev 4 历史功能与验收基线：`docs/contract/contract.md`
 - 旧 Claude Code harness 历史：`docs/archive/harness/`
 - 中文项目交接：`项目交接文档.md`

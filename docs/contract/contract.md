@@ -2,11 +2,13 @@
 
 本文件保存 design_rev 1～4 已交付功能和验收标准，供 Codex 在后续开发中防止既有行为回归。
 
-自 2026-07-15 起，项目不再运行 Planner / Executor / Validator 三角色状态机。本文件不再负责调度，也不是 v3.2 的完整视觉标准。当前任务按根 `AGENTS.md` 的“规划 → 实现 → 验收”流程执行；视觉事实以 `design/v3.2/交接/` 为准。
+自 2026-07-15 起，项目不再运行 Planner / Executor / Validator 三角色状态机。本文件不再负责调度，也不是当前版本的完整视觉标准。当前任务按根 `AGENTS.md` 的“规划 → 实现 → 验收”流程执行；当前视觉事实以用户在该任务中提供并核验过的外部设计输入为准。
 
 文中仍出现的角色、ack 和返工编号属于历史落成记录，不代表当前还需要启动对应角色。旧提案已归档到 `docs/archive/harness/contract-pending/`。
 
 自 2026-07-16 起，前端工程位于 `frontend/`。本文当前可执行命令以 `frontend/package.json` 为准，并从仓库根通过 `npm --prefix frontend ...` 运行；当前源码和测试路径分别为 `frontend/src/` 与 `frontend/tests/`。
+
+同日起，仓库不再保存原型导出包。本文中的 `design/...` 是落成时的历史来源记录，只能从 Git 历史追溯，不能当作当前输入；实现侧视觉回归资产位于 `frontend/tests/visual-baselines/`，当前样式与 token 位于 `frontend/src/styles/`。仓库不持久化外部设计的本机绝对路径。
 
 ---
 
@@ -52,11 +54,11 @@
 - **G-type**：`npm --prefix frontend run typecheck`（`tsc --noEmit`）0 error。
 - **G-unit**：`npm --prefix frontend run test`（Vitest run）全绿；条目新增/触及组件须有对应 `*.test.tsx`（Testing Library）。
 - **G-e2e**：`npm --prefix frontend run e2e`（Playwright）条目指定 spec 通过（仅标注 e2e 的条目要求，见下「E2E 门禁冒烟集」）。
-- **G-token**：颜色/圆角/间距 token 集中定义于单一模块（如 `frontend/src/design/tokens.ts` 及/或 CSS 变量）；ESLint（JS/TS 内联样式）+ Stylelint（CSS）对 token 文件之外的裸 `#hex` / `rgb()` / `oklch()` / 裸像素间距值报 **error**。`npm --prefix frontend run lint` 0 error 即判 G-token 通过；抽验 token 文件外裸值命中数须为 0。**不引入视觉快照测试。**（**design_rev 4 升级**：token 唯一事实源迁至 v3.1 三表，off-scale 间距口径〔裁定 (a)〕与 typography/结构尺寸例外边界见下「G-token 权威源与 token 表（design_rev 4 补全）」节。）
+- **G-token**：颜色/圆角/间距 token 集中定义于单一模块（如 `frontend/src/styles/tokens.ts` 及/或 CSS 变量）；ESLint（JS/TS 内联样式）+ Stylelint（CSS）对 token 文件之外的裸 `#hex` / `rgb()` / `oklch()` / 裸像素间距值报 **error**。`npm --prefix frontend run lint` 0 error 即判 G-token 通过；抽验 token 文件外裸值命中数须为 0。**不引入视觉快照测试。**（**design_rev 4 升级**：token 唯一事实源迁至 v3.1 三表，off-scale 间距口径〔裁定 (a)〕与 typography/结构尺寸例外边界见下「G-token 权威源与 token 表（design_rev 4 补全）」节。）
 - **G-nums**：所有数值展示走 `font-variant-numeric: tabular-nums`；数值列用 ui-monospace。
 - **G-resp（design_rev 2 升级）**：断点矩阵由 rev 1 的「平板 `<980px`」升级为四档 **mobile `<640` / tablet `640–979` / desktop `980–1439` / wide `≥1440`**（`window.innerWidth` 驱动，resize 即时生效）。新增硬不变量：**全部 7 个可达路由（`/login`、`/`、`/activities`、`/activities/1`、`/health`、`/connectors`、`/settings`）在所有断点下 `document.documentElement.scrollWidth <= window.innerWidth`（无横向溢出）**。基准视口：mobile 390×844 / tablet 768×1024 / desktop 1280×800 / wide 1920×1080。#2 视觉保真的精确 token/圆角/间距值经 G-token（token 文件外裸值 lint error）承接；结构性/重排参数（宽度、display、grid 列、圆角非对称、padding 分级）由各条目 e2e-browser 承接。
 - **G-mock**：同步、下载、AI 回复、API 测试均为前端模拟，不发真实网络请求（设置页 AI「测试连接」真实探测可选，默认亦 mock）。
-- **G-fidelity（新增，design_rev 3）**：原型（`design/v3.0/运动分析系统.dc.html`）为**像素级保真契约源**，非结构示意图。设计文档 §A 每个 `data-vc` 锚点的契约属性以**浏览器 computed 值**为准（rgb/rgba、px）。命中锚点的返工条目必须：(1) 把 `data-vc="<锚点名>"` 镜像到实现对应组件的**根元素**（否则 `[data-vc=…]` 选空、断言全废）；(2) 命中锚点的 computed 契约属性与 §A 值**直接相等**。验法边界：pixel-contract 契约属性走 **e2e-browser computed-style 断言**；纯 token 集中定义仍由 **G-token** 承接，**不引入视觉快照测试**。锚点名一经落成不再变更。v3.2 开始还必须结合整页截图与几何基线检查。
+- **G-fidelity（新增，design_rev 3）**：落成时的原型是**像素级保真契约源**，非结构示意图；其历史仓库路径仅保留在 Git 记录中。设计文档 §A 每个 `data-vc` 锚点的契约属性以**浏览器 computed 值**为准（rgb/rgba、px）。命中锚点的返工条目必须：(1) 把 `data-vc="<锚点名>"` 镜像到实现对应组件的**根元素**（否则 `[data-vc=…]` 选空、断言全废）；(2) 命中锚点的 computed 契约属性与 §A 值**直接相等**。验法边界：pixel-contract 契约属性走 **e2e-browser computed-style 断言**；纯 token 集中定义仍由 **G-token** 承接，**不引入视觉快照测试**。锚点名一经落成不再变更。后续版本还必须结合整页截图与几何基线检查；当前设计判断以任务中提供的外部原型为准。
 
 技术栈（用户 2026-07-10 确认）：**React + TypeScript + Vite**（纯前端，无后端）；验证链 **Vitest + Testing Library + ESLint/Prettier/Stylelint + Playwright**。
 
@@ -64,7 +66,7 @@
 
 > design_rev 4（TrainLab v3.1）经历史提案 `docs/archive/harness/contract-pending/design-rev-4.md` 落成。本节补全 G-token 的**权威源与口径边界**——**不新增/不修改任何 pixel-contract AC 判定值（零 AC 值变更）**。v3.1 性质：对 rev-3 残缺 token 交底的补全纠错，零视觉设计变更。
 
-**权威源迁移（唯一事实源）**：颜色/圆角/间距 token 的唯一事实源为 `design/v3.1/交接/v3.1-设计文档.md` 三表——表 (a) 颜色 / 表 (b) 圆角 / 表 (c) 间距。token 模块（`frontend/src/design/tokens.ts` 及/或 CSS 变量）的值须 **1:1 对齐三表 computed 值**。v3.0「色板/间距 token 以 v2.0 为准」「无 token 值变更」的表述**作废**——其自相矛盾（既要求实现产出 rgb(66,146,224) 等 pixel-contract 值，又称 token 以 v2.0 为准、无值变更，而 v2.0 token 基础无法产出这些值）。下游一律以 v3.1 三表实测 rgb/px 为准。
+**权威源迁移（历史落成事实）**：design_rev 4 当时以 v3.1 设计文档三表——表 (a) 颜色 / 表 (b) 圆角 / 表 (c) 间距——作为颜色、圆角和间距 token 的唯一事实源；原始文件已从活跃仓库移除，可从 Git 历史追溯。当前 token 模块位于 `frontend/src/styles/`。v3.0「色板/间距 token 以 v2.0 为准」「无 token 值变更」的表述**作废**——其自相矛盾（既要求实现产出 rgb(66,146,224) 等 pixel-contract 值，又称 token 以 v2.0 为准、无值变更，而 v2.0 token 基础无法产出这些值）。对于新任务，设计事实以用户提供并核验过的外部原型实测为准。
 
 **语义色 oklch→rgb 固化（有意为之，非笔误）**：accent 及 success/warn/danger 由 v2.0 的 `oklch()` 定义固化为原型实测 rgb——accent `#4292E0`（rgb(66,146,224)）、success `#3FBF8F`（rgb(63,191,143)）、warn `#E0A040`（rgb(224,160,64)）、danger `#E06060`（rgb(224,96,96)）。v2.0 oklch 渲染值 ≠ 原型实测（accent oklch 渲染为 rgb(0,158,216)，原型实为 #4292E0）；本固化为实现向原型对齐，**与既有各 AC 目标值一致**，非目标值变更。
 

@@ -1,4 +1,4 @@
-/* Central design tokens (CSS custom properties). Mirror of src/design/tokens.ts.
+/* Central design tokens (CSS custom properties). Mirror of src/styles/tokens.ts.
    This file is exempt from the strict-value rule; every other stylesheet must
    reference these variables via var() (G-token). */
 

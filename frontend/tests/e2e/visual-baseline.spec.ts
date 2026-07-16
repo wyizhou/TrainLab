@@ -4,9 +4,9 @@ import { fileURLToPath } from 'node:url'
 import { test, expect, type Page } from '@playwright/test'
 import { SYSTEM_PROMPT } from '../../src/analysis/systemPrompt'
 
-const REPOSITORY_ROOT = fileURLToPath(new URL('../../..', import.meta.url))
-const BASELINE_PATH = join(REPOSITORY_ROOT, 'design/v3.2/交接/v3.2-视觉基线.json')
-const SCREENSHOT_DIR = join(REPOSITORY_ROOT, 'design/v3.2/交接/基线截图')
+const VISUAL_BASELINE_ROOT = fileURLToPath(new URL('../visual-baselines/v3.2/', import.meta.url))
+const BASELINE_PATH = join(VISUAL_BASELINE_ROOT, 'geometry.json')
+const SCREENSHOT_DIR = join(VISUAL_BASELINE_ROOT, 'screenshots')
 
 type ViewportName = 'mobile' | 'tablet' | 'desktop' | 'wide'
 type Baseline = {
