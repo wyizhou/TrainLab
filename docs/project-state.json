@@ -2,9 +2,14 @@
   "workflow": "codex-three-stage",
   "legacy_harness": "retired",
   "design_baseline": {
-    "revision": 5,
-    "version": "v3.2",
-    "status": "implemented_and_verified"
+    "provider": "open-design",
+    "project_id": "e7be4d5a-73a1-4237-a9ca-dff73980c8e9",
+    "revision": 6,
+    "version": "v3.3",
+    "status": "verified_external_input",
+    "entrypoint_sha256": "c560eb8d6af57de1cd62e11e493bbc601268b733b9bc464037fa2d870edde728",
+    "handoff_sha256": "82b0d04bd05674a052e4d1e10d728d6e9c9007243294f68a0a18779c6d565f4c",
+    "source_path_persisted": false
   },
   "implementation_baseline": {
     "revision": 5,
@@ -13,9 +18,11 @@
   },
   "repository_layout": {
     "frontend": "frontend",
+    "frontend_styles": "frontend/src/styles",
+    "visual_test_assets": "frontend/tests/visual-baselines",
     "backend": "backend",
     "shared_docs": "docs",
-    "design_inputs": "design"
+    "external_design_input": "provided_per_task"
   },
-  "next_milestone": "define_backend_architecture_and_api_contract"
+  "next_milestone": "implement_v3_3_revision_6"
 }
