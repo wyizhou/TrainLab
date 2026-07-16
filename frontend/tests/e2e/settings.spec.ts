@@ -90,10 +90,10 @@ test('settings: page 760 centered + group pixel-contract on desktop', async ({ p
       pad: [s.paddingTop, s.paddingRight, s.paddingBottom, s.paddingLeft],
     }
   })
-  expect(g0.bg, 'group bg').toBe('rgb(18, 26, 40)')
+  expect(g0.bg, 'group bg').toBe('rgb(255, 255, 255)')
   expect(g0.bw, 'group border width').toBe('1px')
   expect(g0.bs, 'group border style').toBe('solid')
-  expect(g0.bc, 'group border color').toBe('rgb(34, 48, 73)')
+  expect(g0.bc, 'group border color').toBe('rgb(203, 213, 225)')
   expect(g0.radius, 'group radius').toBe('12px')
   expect(g0.pad, 'group padding 22 all sides').toEqual(['22px', '22px', '22px', '22px'])
 

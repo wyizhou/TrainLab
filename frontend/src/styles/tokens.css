@@ -3,88 +3,70 @@
    reference these variables via var() (G-token). */
 
 :root {
-  /* Dark dashboard palette (contract C-1). design_rev 4 固化 accent oklch→原型实测
-     rgb (see G-token 权威源与 token 表); onAccent/text 对齐 v3.1 三表实测 computed。 */
-  --color-bg: #0a0f18;
-  --color-panel: #121a28;
-  --color-panel-deep: #0b1220;
-  --color-accent: #4292e0;
-  --color-on-accent: #06101e;
-  --color-text: #e6ebf4;
-  --color-text-soft: #b8c2d4;
+  /* v3.3 r6 light palette. Geometry remains inherited from the verified v3.2 contract. */
+  --color-bg: #e8edf3;
+  --color-panel: #fff;
+  --color-panel-deep: #f4f7fa;
+  --color-panel-nav: #f8fafc;
+  --color-upload-deep: #eef3f7;
+  --color-hover-row: #e8eef4;
+  --color-activity-hover-row: rgb(232 238 244 / 0.94);
+  --color-accent: #2f7fc4;
+  --color-accent-text: #256ea8;
+  --color-accent-deep: #315f9a;
+  --color-on-accent: #fff;
+  --color-text: #172033;
+  --color-text-soft: #334155;
+  --color-text-muted: #5b6b7e;
+  --color-text-faint: #748296;
+  --color-disabled-text: #94a3b8;
 
-  /* textMuted = v3.1 表 (a) 实测 rgb(138,148,168)（次要文字 / 常态胶囊·导航项文字 /
-     status-pill-disconnected）。design_rev 4 权威源迁移：原 #8a97a8 与三表不符，
-     校正为 #8a94a8（零 AC 值变更——无已 verified AC 断言旧值）。 */
-  --color-text-muted: #8a94a8;
-  --color-border: #1e2a3c;
-  --color-upload-deep: #0e1524;
-  --color-hover-row: #16202f;
+  /* Controls, panels, dividers, charts, uploads, and transient surfaces. */
+  --color-border: #b7c4d2;
+  --color-border-input: #b7c4d2;
+  --color-border-panel: #cbd5e1;
+  --color-border-weak: #d4dde7;
+  --color-border-row: #e2e8f0;
+  --color-border-toast: #8fa2b7;
+  --color-chart-axis: #bac7d6;
+  --color-toast-bg: #e3eaf2;
+  --color-toast-shadow: rgb(15 23 42 / 0.18);
 
-  /* 语义色 success/warn/danger — design_rev 4「G-token 权威源与 token 表」固化：
-     v2.0 的 oklch() 渲染值 ≠ 原型实测 rgb，固化为原型实测值（与既有 AC 目标值一致，
-     非目标值变更）。success #3FBF8F rgb(63,191,143) · warn #E0A040 rgb(224,160,64) ·
-     danger #E06060 rgb(224,96,96)。hr-zone-bar 五区色复用（Z3/Z4/Z5；C-8 AC-008c-2）。 */
-  --color-success: #3fbf8f;
-  --color-warn: #e0a040;
-  --color-danger: #e06060;
+  /* Semantic colors and the transparent variants used by status components. */
+  --color-success: #16805d;
+  --color-warn: #a66b0a;
+  --color-danger: #c24141;
+  --color-success-12: rgb(22 128 93 / 0.12);
+  --color-success-35: rgb(22 128 93 / 0.35);
+  --color-danger-10: rgb(194 65 65 / 0.1);
+  --color-danger-07: rgb(194 65 65 / 0.07);
+  --color-danger-35: rgb(194 65 65 / 0.35);
+  --color-danger-40: rgb(194 65 65 / 0.4);
+  --color-success-10: rgb(22 128 93 / 0.1);
+  --color-success-30: rgb(22 128 93 / 0.3);
+  --color-warn-08: rgb(166 107 10 / 0.08);
+  --color-warn-40: rgb(166 107 10 / 0.4);
+  --color-text-muted-10: rgb(91 107 126 / 0.1);
 
-  /* status-pill 三态派生半透明 (v3.1 表 (a) 派生; C-10 AC-010c-2). success@0.12/0.35 =
-     connected 底/边框 · danger@0.10/0.40 = failed 底/边框 · textMuted@0.10 =
-     disconnected 底 (边框复用 borderInput rgb(42,58,85)). 具名集中定义, 勿散裸 rgba. */
-  --color-success-12: rgb(63 191 143 / 0.12);
-  --color-success-35: rgb(63 191 143 / 0.35);
-  --color-danger-10: rgb(224 96 96 / 0.1);
-  --color-danger-07: rgb(224 96 96 / 0.07);
-  --color-danger-35: rgb(224 96 96 / 0.35);
-  --color-danger-40: rgb(224 96 96 / 0.4);
-  --color-success-10: rgb(63 191 143 / 0.1);
-  --color-success-30: rgb(63 191 143 / 0.3);
-  --color-warn-08: rgb(224 160 64 / 0.08);
-  --color-warn-40: rgb(224 160 64 / 0.4);
-  --color-text-muted-10: rgb(138 148 168 / 0.1);
-
-  /* textFaint = v3.1 表 (a) rgb(92,104,126)（hr-zone-bar Z1 分段色；C-8 AC-008c-2）. */
-  --color-text-faint: #5c687e;
-
-  /* Global chrome — top-nav / sync-chip / bottom-nav / toast pixel-contract
-     (C-1 / AC-001c-*; values = v3.1 表 (a)). accent-16 = accent@0.16 半透明底. */
-  --color-panel-nav: #0d1420;
-  --color-accent-text: #5ea3e8;
-  --color-accent-16: rgb(66 146 224 / 0.16);
-  --color-accent-12: rgb(66 146 224 / 0.12);
-
-  /* accent@0.18 = scope-chip-selected 底 (v3.1 表 (a) 派生半透明; C-4 AC-004c-1). */
-  --color-accent-18: rgb(66 146 224 / 0.18);
-  --color-accent-07: rgb(66 146 224 / 0.07);
-  --color-accent-30: rgb(66 146 224 / 0.3);
-
-  /* accentDeep = v3.1 表 (a) rgb(46,92,158)（chat-bubble-user 底 / sleep-chart-bar-deep;
-     C-6 AC-006c-2）——比 accent 更沉的实心蓝，非 accent 半透明派生。 */
-  --color-accent-deep: #2e5c9e;
-
-  /* sleepRem = v3.1 表 (a) rgb(143,193,242)（sleep-chart-bar-rem 顶段; C-9 AC-009c-1）. */
-  --color-sleep-rem: #8fc1f2;
-  --color-border-panel: #223049;
-
-  /* borderInput = v3.1 表 (a) rgb(42,58,85)（输入框 / chart-card / 次要按钮 /
-     modal 面板 / scope-chip 常态边框; C-4 AC-004c-1). */
-  --color-border-input: #2a3a55;
-  --color-border-weak: #1c2739;
-  --color-border-row: #151e2e;
-  --color-border-toast: #3a4e70;
-  --color-toast-bg: #1a2436;
+  /* Accent variants. Session-rail selection is the source prototype's 14% state. */
+  --color-accent-07: rgb(47 127 196 / 0.07);
+  --color-accent-12: rgb(47 127 196 / 0.12);
+  --color-accent-14: rgb(47 127 196 / 0.14);
+  --color-accent-16: rgb(47 127 196 / 0.16);
+  --color-accent-18: rgb(47 127 196 / 0.18);
+  --color-accent-30: rgb(47 127 196 / 0.3);
+  --color-sleep-rem: #6aa6dd;
 
   /* scrim = modal 遮罩底 rgba(4,8,14,0.72)（v3.1 表 (a) scrim@0.72; C-11 AC-011c-1 /
      C-12 AC-012c-1 modal-overlay）. 具名 token, 勿散裸 rgba / color-mix. */
   --color-scrim: rgb(4 8 14 / 0.72);
 
-  /* Activity-type accent dots (contract C-7 list / C-8 detail) */
-  --color-type-run: #4292e0;
-  --color-type-ride: #3fbf8f;
-  --color-type-swim: #3fb8bf;
-  --color-type-strength: #e0a040;
-  --color-type-trail: #9b7be0;
+  /* Activity-type accent dots (contract C-7 list / C-8 detail). */
+  --color-type-run: #2f7fc4;
+  --color-type-ride: #16805d;
+  --color-type-swim: #167b82;
+  --color-type-strength: #a66b0a;
+  --color-type-trail: #7652b6;
 
   /* Radius scale (radius-input = v3.1 表 (b) radiusInput 8px, top-nav-item/输入框).
      radius-zone = v3.1 表 (b) radiusZone 4px（hr-zone-bar 轨道/分段条; C-8 AC-008c-2). */
@@ -130,7 +112,7 @@
   --radius-logout: 7px;
   --radius-activity-picker: 9px;
   --pad-header-compact: 0 12px;
-  --login-background: radial-gradient(ellipse 900px 600px at 50% -10%, #13203a 0%, #0a0f18 60%);
+  --login-background: radial-gradient(ellipse 900px 600px at 50% -10%, #d8e4ef 0%, #e8edf3 60%);
   --login-column-width: 400px;
   --login-brand-margin: 0 0 28px;
   --login-brand-gap: 10px;
@@ -197,6 +179,7 @@
   --height-pagination-mobile: 37px;
   --gap-pagination-size: 6px;
   --pad-pagination-select: 5px 8px;
+  --pad-pagination-nav: 5px 12px;
 
   /* 运动详情 pixel-contract (C-8 / AC-008c-1; v3.1 表 (c) padMetric 14): metric-card 内边距. */
   --pad-metric: 14px;

@@ -63,11 +63,11 @@ test('AC-004c-1: scope-chip selected vs normal visual contract (desktop)', async
     'padding-bottom',
     'padding-left',
   ])
-  expect(s['background-color']).toBe('rgba(66, 146, 224, 0.18)')
+  expect(s['background-color']).toBe('rgba(47, 127, 196, 0.18)')
   expect(s['border-top-width']).toBe('1px')
   expect(s['border-top-style']).toBe('solid')
-  expect(s['border-top-color']).toBe('rgb(66, 146, 224)')
-  expect(s['color']).toBe('rgb(94, 163, 232)')
+  expect(s['border-top-color']).toBe('rgb(47, 127, 196)')
+  expect(s['color']).toBe('rgb(37, 110, 168)')
   expect(s['border-radius']).toBe('99px')
   expect(s['padding-top']).toBe('5px')
   expect(s['padding-bottom']).toBe('5px')
@@ -82,9 +82,9 @@ test('AC-004c-1: scope-chip selected vs normal visual contract (desktop)', async
     'border-top-color',
     'color',
   ])
-  expect(n['background-color']).toBe('rgb(11, 18, 32)')
+  expect(n['background-color']).toBe('rgb(244, 247, 250)')
   expect(n['border-top-width']).toBe('1px')
   expect(n['border-top-style']).toBe('solid')
-  expect(n['border-top-color']).toBe('rgb(42, 58, 85)')
-  expect(n['color']).toBe('rgb(138, 148, 168)')
+  expect(n['border-top-color']).toBe('rgb(183, 196, 210)')
+  expect(n['color']).toBe('rgb(91, 107, 126)')
 })

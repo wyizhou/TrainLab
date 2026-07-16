@@ -30,7 +30,7 @@
 }
 
 .health-line__grid {
-  stroke: var(--color-border);
+  stroke: var(--color-border-weak);
   stroke-width: 1;
 }
 

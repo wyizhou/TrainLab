@@ -101,10 +101,10 @@ test('AC-003c-1: session-rail visual contract (desktop)', async ({ page }) => {
   ])
   expect(c['width']).toBe('212px')
   expect(c['flex-shrink']).toBe('0')
-  expect(c['background-color']).toBe('rgb(13, 20, 32)')
+  expect(c['background-color']).toBe('rgb(248, 250, 252)')
   expect(c['border-top-width']).toBe('1px')
   expect(c['border-top-style']).toBe('solid')
-  expect(c['border-top-color']).toBe('rgb(28, 39, 57)')
+  expect(c['border-top-color']).toBe('rgb(212, 221, 231)')
   expect(c['border-radius']).toBe('12px')
   expect(c['padding-top']).toBe('12px')
   expect(c['padding-bottom']).toBe('12px')
@@ -138,10 +138,10 @@ test('AC-003c-2: session-rail-item active/normal visual contract (desktop)', asy
     'padding-bottom',
     'padding-left',
   ])
-  expect(a['background-color']).toBe('rgba(66, 146, 224, 0.12)')
+  expect(a['background-color']).toBe('rgba(47, 127, 196, 0.14)')
   expect(a['border-left-width']).toBe('3px')
   expect(a['border-left-style']).toBe('solid')
-  expect(a['border-left-color']).toBe('rgb(66, 146, 224)')
+  expect(a['border-left-color']).toBe('rgb(47, 127, 196)')
   expect(a['border-radius']).toBe('8px')
   expect(a['padding-top']).toBe('9px')
   expect(a['padding-bottom']).toBe('9px')
@@ -201,10 +201,10 @@ test('AC-003c-4: analysis-input visual contract (desktop)', async ({ page }) => 
     'padding-left',
     'position',
   ])
-  expect(c['background-color']).toBe('rgb(18, 26, 40)')
+  expect(c['background-color']).toBe('rgb(255, 255, 255)')
   expect(c['border-top-width']).toBe('1px')
   expect(c['border-top-style']).toBe('solid')
-  expect(c['border-top-color']).toBe('rgb(34, 48, 73)')
+  expect(c['border-top-color']).toBe('rgb(203, 213, 225)')
   expect(c['border-radius']).toBe('14px')
   expect(c['padding-top']).toBe('12px')
   expect(c['padding-bottom']).toBe('12px')
