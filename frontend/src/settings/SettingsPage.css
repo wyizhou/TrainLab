@@ -14,8 +14,8 @@
   margin: 0;
 }
 
-/* settings-group pixel-contract (AC-014c-1): bg panel rgb(18,26,40) / border 1px
-   borderPanel rgb(34,48,73) / radius 12 / padding 22. */
+/* settings-group pixel-contract (AC-014c-1): panel fill / borderPanel 1px /
+   radius 12 / padding 22. */
 .settings__group {
   display: block;
   margin-bottom: var(--space-4);

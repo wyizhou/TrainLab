@@ -1,7 +1,6 @@
 /* The card is the deepest layer of the visual hierarchy: it sinks below the AI
-   bubble it lives in (contract C-5). pixel-contract (design_rev 3/4, AC-005c-1):
-   panelDeep #0B1220 fill · borderInput rgb(42,58,85) border · radius-md 10px ·
-   overflow hidden. borderInput (not --color-border) per v3.1 表 (a) chart-card. */
+   bubble it lives in (contract C-5). Geometry is inherited from v3.2; the
+   surface and border colors come from the current theme tokens. */
 .chart-card {
   margin-top: var(--space-3);
   padding: 0;
@@ -125,7 +124,7 @@
 }
 
 .chart-card__grid {
-  stroke: var(--color-border);
+  stroke: var(--color-border-weak);
   stroke-width: 1;
 }
 
@@ -158,7 +157,7 @@
   justify-content: space-between;
   padding: var(--space-1) 0;
   font-size: 12px;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border-row);
 }
 
 .chart-card__row:last-child {

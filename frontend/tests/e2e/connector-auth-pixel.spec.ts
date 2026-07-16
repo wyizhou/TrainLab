@@ -47,13 +47,13 @@ test('AC-011c-1: modal-connector-auth desktop centered 390 / mobile fullscreen +
   expect(d['width']).toBe('390px') // border-box outer (global box-sizing: border-box)
   expect(d['border-top-width']).toBe('1px')
   expect(d['border-top-style']).toBe('solid')
-  expect(d['border-top-color']).toBe('rgb(42, 58, 85)') // borderInput
+  expect(d['border-top-color']).toBe('rgb(183, 196, 210)') // borderInput
   expect(d['border-radius']).toBe('14px') // radiusLg
   expect(d['padding-top']).toBe('24px')
   expect(d['padding-right']).toBe('24px')
   expect(d['padding-bottom']).toBe('24px')
   expect(d['padding-left']).toBe('24px')
-  expect(d['background-color']).toBe('rgb(18, 26, 40)') // panel
+  expect(d['background-color']).toBe('rgb(255, 255, 255)') // panel
 
   // modal-overlay: fixed full-viewport scrim rgba(4,8,14,0.72).
   const overlay = page.locator('[data-vc="modal-overlay"]')

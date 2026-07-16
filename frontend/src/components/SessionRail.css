@@ -44,7 +44,7 @@
 }
 
 /* session-rail-item pixel-contract (AC-003c-2): both states share pad 9/10 · radius 8 ·
-   3px left border (transparent placeholder → no jump). Active: accent@0.12 fill +
+   3px left border (transparent placeholder → no jump). Active: accent@0.14 fill +
    accent left border. */
 .session-rail__item {
   display: flex;
@@ -57,7 +57,7 @@
 
 .session-rail__item--active {
   border-left-color: var(--color-accent);
-  background-color: var(--color-accent-12);
+  background-color: var(--color-accent-14);
 }
 
 .session-rail__select {
@@ -100,7 +100,7 @@
 .session-rail__note {
   margin: 0;
   padding: var(--pad-rail-note);
-  color: var(--color-text-faint);
+  color: var(--color-disabled-text);
   font-size: 10.5px;
   line-height: 1.6;
 }

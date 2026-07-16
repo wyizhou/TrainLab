@@ -3,6 +3,7 @@ import { test, expect, type Locator } from '@playwright/test'
 // Baseline viewport (contract G-resp): desktop 1280. Both AC-008c anchors are
 // desktop-only.
 const DESKTOP = { width: 1280, height: 800 }
+const MOBILE = { width: 390, height: 844 }
 
 // The real FIT-backed 晨间轻松跑 detail. Contract paths say /activities/1 (the
 // first / real-FIT activity); its route id is a0 (see activity-detail.spec.ts).
@@ -41,10 +42,10 @@ test('AC-008c-1: metric-card visual contract + grid auto-fit ≥130px (desktop)'
     'padding-bottom',
     'padding-left',
   ])
-  expect(c['background-color']).toBe('rgb(18, 26, 40)') // panel
+  expect(c['background-color']).toBe('rgb(255, 255, 255)') // panel
   expect(c['border-top-width']).toBe('1px')
   expect(c['border-top-style']).toBe('solid')
-  expect(c['border-top-color']).toBe('rgb(34, 48, 73)') // borderPanel
+  expect(c['border-top-color']).toBe('rgb(203, 213, 225)') // borderPanel
   expect(c['border-radius']).toBe('10px') // radiusCardSm
   expect(c['padding-top']).toBe('14px') // padMetric
   expect(c['padding-right']).toBe('14px')
@@ -82,14 +83,34 @@ test('AC-008c-2: five hr-zone bars are 16/4 with Z1–Z5 colours (desktop)', asy
 
   // Five bars in DOM order = Z1..Z5, each in its zone colour.
   const expected = [
-    'rgb(92, 104, 126)', // Z1 textFaint
-    'rgb(66, 146, 224)', // Z2 accent
-    'rgb(63, 191, 143)', // Z3 success
-    'rgb(224, 160, 64)', // Z4 warn
-    'rgb(224, 96, 96)', // Z5 danger
+    'rgb(116, 130, 150)', // Z1 textFaint
+    'rgb(47, 127, 196)', // Z2 accent
+    'rgb(22, 128, 93)', // Z3 success
+    'rgb(166, 107, 10)', // Z4 warn
+    'rgb(194, 65, 65)', // Z5 danger
   ]
   for (let i = 0; i < expected.length; i++) {
     const seg = await computed(bar.nth(i), ['background-color'])
     expect(seg['background-color']).toBe(expected[i])
   }
+})
+
+test('AC-008c-3: mobile record cards use the r6 panel surface and border', async ({ page }) => {
+  await page.setViewportSize(MOBILE)
+  await page.goto(FIT_DETAIL_URL)
+  await page.getByTestId('mode-table').click()
+
+  const cards = page.locator('[data-vc="record-card"]')
+  await expect(cards).toHaveCount(20)
+  const card = cards.first()
+  const c = await computed(card, [
+    'background-color',
+    'border-top-width',
+    'border-top-style',
+    'border-top-color',
+  ])
+  expect(c['background-color']).toBe('rgb(255, 255, 255)')
+  expect(c['border-top-width']).toBe('1px')
+  expect(c['border-top-style']).toBe('solid')
+  expect(c['border-top-color']).toBe('rgb(203, 213, 225)')
 })

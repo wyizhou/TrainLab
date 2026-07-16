@@ -52,7 +52,7 @@
 }
 
 .activity-table__row:not(.activity-table__row--head):hover {
-  background-color: var(--color-hover-row);
+  background-color: var(--color-activity-hover-row);
 }
 
 .activity-table__check {

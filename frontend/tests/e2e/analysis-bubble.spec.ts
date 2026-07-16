@@ -107,23 +107,23 @@ test('AC-006c-1: AI bubble full visual contract (desktop)', async ({ page }) => 
     'padding-left',
     'color',
   ])
-  expect(c['background-color']).toBe('rgb(18, 26, 40)')
+  expect(c['background-color']).toBe('rgb(255, 255, 255)')
   expect(c['border-top-width']).toBe('1px')
   expect(c['border-top-style']).toBe('solid')
-  expect(c['border-top-color']).toBe('rgb(34, 48, 73)')
+  expect(c['border-top-color']).toBe('rgb(203, 213, 225)')
   // padding 13px 16px.
   expect(c['padding-top']).toBe('13px')
   expect(c['padding-right']).toBe('16px')
   expect(c['padding-bottom']).toBe('13px')
   expect(c['padding-left']).toBe('16px')
-  expect(c['color']).toBe('rgb(230, 235, 244)')
+  expect(c['color']).toBe('rgb(23, 32, 51)')
   // border-radius 14px 14px 14px 4px (bottom-left tail).
   const r = await ai.evaluate(corners)
   expect(r).toEqual({ tl: '14px', tr: '14px', br: '14px', bl: '4px' })
 })
 
 // AC-006c-2 (C-6): the user bubble is solid accentDeep blue with no border —
-// bg rgb(46,92,158) · border none · radius 14/14/4/14 · pad 12/14 · text colour.
+// border none · radius 14/14/4/14 · pad 12/14 · standard foreground text colour.
 test('AC-006c-2: user bubble full visual contract (desktop)', async ({ page }) => {
   await page.setViewportSize(DESKTOP)
   await sendMessage(page)
@@ -138,14 +138,14 @@ test('AC-006c-2: user bubble full visual contract (desktop)', async ({ page }) =
     'padding-left',
     'color',
   ])
-  expect(c['background-color']).toBe('rgb(46, 92, 158)')
+  expect(c['background-color']).toBe('rgb(49, 95, 154)')
   expect(c['border-top-style']).toBe('none')
   // padding 12px 14px.
   expect(c['padding-top']).toBe('12px')
   expect(c['padding-right']).toBe('14px')
   expect(c['padding-bottom']).toBe('12px')
   expect(c['padding-left']).toBe('14px')
-  expect(c['color']).toBe('rgb(230, 235, 244)')
+  expect(c['color']).toBe('rgb(23, 32, 51)')
   // border-radius 14px 14px 4px 14px (bottom-right tail).
   const r = await user.evaluate(corners)
   expect(r).toEqual({ tl: '14px', tr: '14px', br: '4px', bl: '14px' })

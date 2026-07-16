@@ -43,7 +43,7 @@ textarea:focus {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: var(--color-border-panel);
+  background-color: var(--color-chart-axis);
   border-radius: var(--radius-sm);
 }
 
