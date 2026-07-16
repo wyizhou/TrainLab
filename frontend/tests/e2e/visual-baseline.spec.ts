@@ -133,7 +133,44 @@ const RIGHT_ALIGNMENT_PARENT_VC: Readonly<
 > = {
   'batch-download-button': 'page-header',
 }
-const RELATIONAL_GEOMETRY_ONLY = process.env.TRAINLAB_VISUAL_GEOMETRY === 'relational'
+const USE_PORTABLE_FONT_METRICS = process.env.TRAINLAB_PORTABLE_FONT_METRICS === '1'
+// These auto-sized vertical fields inherit the line-box metrics of an approved
+// platform fallback. Keep the list closed and evidence-based: every other
+// anchor field remains on the exact ±1px geometry contract in Linux as well.
+const PORTABLE_FONT_METRIC_GEOMETRY_FIELDS: Readonly<
+  Record<string, ReadonlySet<'x' | 'y' | 'width' | 'height'>>
+> = {
+  'activity-detail': new Set(['height']),
+  'btn-primary': new Set(['y', 'height']),
+  'detail-hero-grid': new Set(['height']),
+  'detail-metric-grid': new Set(['y', 'height']),
+  'detail-section': new Set(['y', 'height']),
+  'detail-sections-grid': new Set(['y', 'height']),
+  'detail-view-toggle': new Set(['y']),
+  'hr-zone-bar': new Set(['y']),
+  'hr-zone-section': new Set(['y']),
+  'lap-card': new Set(['y']),
+  'laps-card-list': new Set(['y']),
+  'laps-table': new Set(['y']),
+  'login-card': new Set(['y', 'height']),
+  'metric-card': new Set(['y', 'height']),
+  'modal-connector-auth': new Set(['height']),
+  'page-activities': new Set(['height']),
+  'page-connectors': new Set(['height']),
+  'settings-account-grid': new Set(['y']),
+  'settings-api-form': new Set(['y', 'height']),
+  'settings-group': new Set(['y', 'height']),
+  'settings-page': new Set(['height']),
+  'settings-threshold-grid': new Set(['y']),
+  'settings-unit-options': new Set(['y', 'height']),
+  'settings-zone-grid': new Set(['y']),
+  'timeseries-chart-card': new Set(['y']),
+  'timeseries-grid': new Set(['y']),
+  'upload-dropzone': new Set(['y', 'height']),
+  'upload-file-list': new Set(['y']),
+  'upload-file-row': new Set(['y']),
+  'upload-grid': new Set(['y', 'height']),
+}
 
 type PrimaryState =
   | 'login'
@@ -562,6 +599,9 @@ async function expectComputedContract(
         if (usesRelationalHorizontalGeometry(vc, field)) {
           continue
         }
+        if (USE_PORTABLE_FONT_METRICS && PORTABLE_FONT_METRIC_GEOMETRY_FIELDS[vc]?.has(field)) {
+          continue
+        }
         if (
           field === 'height' &&
           (vc === 'app-shell' || vc === 'main-content' || vc === 'page-health')
@@ -839,7 +879,7 @@ for (const { before } of baseline.equivalence) {
         height: baseline.audited_viewports[viewport!.name].height,
       })
     }
-    await expectComputedContract(page, before, undefined, RELATIONAL_GEOMETRY_ONLY ? false : true)
+    await expectComputedContract(page, before)
   })
 }
 
@@ -863,19 +903,12 @@ for (const viewport of VIEWPORTS.filter(({ name }) => name === 'mobile' || name 
             height: baseline.audited_viewports[viewport.name].height,
           })
         }
-        const geometryComparison = RELATIONAL_GEOMETRY_ONLY
-          ? false
-          : FULL_INTERACTION_GEOMETRY_STATES.has(screenshotState)
-            ? true
-            : (STABLE_INTERACTION_GEOMETRY_VCS[screenshotState] ?? false)
+        const geometryComparison = FULL_INTERACTION_GEOMETRY_STATES.has(screenshotState)
+          ? true
+          : (STABLE_INTERACTION_GEOMETRY_VCS[screenshotState] ?? false)
         await expectComputedContract(page, screenshotState, directRenderState, geometryComparison)
       } else {
-        await expectComputedContract(
-          page,
-          equivalentDefault!,
-          undefined,
-          RELATIONAL_GEOMETRY_ONLY ? false : true,
-        )
+        await expectComputedContract(page, equivalentDefault!)
       }
       await expectDynamicInteractionContract(page, state)
     })
