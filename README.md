@@ -51,6 +51,8 @@ npm --prefix frontend run build
 backend/scripts/check.sh
 ```
 
+`npm --prefix frontend run e2e` 会执行完整的功能、样式、几何与截图契约。字体验收采用有序的跨平台字体栈：macOS、Windows 和 Linux 可以使用栈中各自可用的字体；文字内在宽度通过不重叠、固定间距、边界和无溢出关系验收，其他几何仍执行严格基线比较。
+
 ## 仓库结构
 
 - `frontend/`：当前 React 前端工程，包含依赖、源码、测试和构建配置。
@@ -89,6 +91,7 @@ backend/scripts/check.sh
 
 - 当前设计来源：由用户在每个 UI 任务中提供仓库外的只读原型路径；`docs/project-state.json` 只保存可迁移的版本、修订号和摘要，不保存本机绝对路径。
 - 视觉回归资产：`frontend/tests/visual-baselines/` 用于检测实现漂移，不替代外部设计来源，也不能为了让测试通过而随意更新。
+- 字体回归：批准字体栈的声明顺序、字号、字重、行高、单行约束与结构关系属于视觉契约；不同系统字体的自然字宽不要求伪装成同一个字体的像素宽度。
 - rev 4 历史功能与验收基线：`docs/contract/contract.md`
 - 旧 Claude Code harness 历史：`docs/archive/harness/`
 - 中文项目交接：`项目交接文档.md`

@@ -51,6 +51,10 @@
   border-bottom: none;
 }
 
+.activity-table__row:not(.activity-table__row--head) {
+  height: 51px;
+}
+
 .activity-table__row:not(.activity-table__row--head):hover {
   background-color: var(--color-activity-hover-row);
 }
@@ -120,5 +124,6 @@
   font-size: 11px;
   padding: var(--pad-fit-button);
   border-radius: var(--radius-sm);
+  line-height: 16px;
   cursor: pointer;
 }
