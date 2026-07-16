@@ -76,11 +76,6 @@ jobs:
         working-directory: frontend
       - run: npm run test
         working-directory: frontend
-      - name: Install the approved Linux CJK fallback
-        run: |
-          sudo apt-get update
-          sudo apt-get install --yes fonts-noto-cjk
-          fc-match "Noto Sans CJK SC" | grep --ignore-case "NotoSansCJK"
       - run: npx playwright install --with-deps chromium
         working-directory: frontend
       - run: npm run e2e:ci
