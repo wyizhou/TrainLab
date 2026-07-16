@@ -1,16 +1,19 @@
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
+import { AuthTestProvider } from '../auth/AuthTestProvider'
 import { AppLayout } from './AppLayout'
 
 function renderLayout(width: number) {
   window.innerWidth = width
   return render(
     <MemoryRouter initialEntries={['/']}>
-      <Routes>
-        <Route element={<AppLayout />}>
-          <Route path="/" element={<div data-testid="page" />} />
-        </Route>
-      </Routes>
+      <AuthTestProvider>
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route path="/" element={<div data-testid="page" />} />
+          </Route>
+        </Routes>
+      </AuthTestProvider>
     </MemoryRouter>,
   )
 }

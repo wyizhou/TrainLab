@@ -46,6 +46,7 @@
   white-space: nowrap;
   font-weight: 600;
   font-size: 14px;
+  line-height: 20px;
 }
 
 .activity-card__metrics {
@@ -57,12 +58,14 @@
 
 .activity-card__metrics dt {
   font-size: 10px;
+  line-height: 14px;
   color: var(--color-text-faint);
 }
 
 .activity-card__metrics dd {
   margin: var(--margin-card-metric-value);
   font-size: 12.5px;
+  line-height: 15px;
 }
 
 .activity-card__foot {
@@ -71,6 +74,7 @@
   gap: var(--gap-connector-controls);
   color: var(--color-text-faint);
   font-size: 11px;
+  line-height: 16px;
 }
 
 .activity-card__src {
@@ -90,5 +94,6 @@
   font-size: 11px;
   padding: var(--pad-fit-button-mobile);
   border-radius: var(--radius-sm);
+  line-height: 16px;
   cursor: pointer;
 }

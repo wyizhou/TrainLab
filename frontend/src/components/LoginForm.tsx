@@ -8,7 +8,7 @@ function generateCaptcha(): string {
 }
 
 type LoginFormProps = {
-  onAuthenticated: () => void
+  onAuthenticated: (username: string, password: string) => void | Promise<void>
 }
 
 export function LoginForm({ onAuthenticated }: LoginFormProps) {
@@ -17,13 +17,14 @@ export function LoginForm({ onAuthenticated }: LoginFormProps) {
   const [captcha, setCaptcha] = useState('')
   const [captchaCode, setCaptchaCode] = useState(generateCaptcha)
   const [error, setError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
 
   const refreshCaptcha = useCallback(() => {
     setCaptchaCode(generateCaptcha())
     setCaptcha('')
   }, [])
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (username.trim().length <= 6) {
       setError('账号必须大于 6 位')
@@ -38,7 +39,14 @@ export function LoginForm({ onAuthenticated }: LoginFormProps) {
       return
     }
     setError(null)
-    onAuthenticated()
+    setSubmitting(true)
+    try {
+      await onAuthenticated(username.trim(), password)
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : '登录失败，请稍后重试')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -110,10 +118,10 @@ export function LoginForm({ onAuthenticated }: LoginFormProps) {
             </p>
           )}
 
-          <button type="submit" className="login__submit" aria-label="登录">
-            登 录
+          <button type="submit" className="login__submit" aria-label="登录" disabled={submitting}>
+            {submitting ? '登录中…' : '登 录'}
           </button>
-          <p className="login__demo">演示账号:任意用户名 + 任意密码(≥4位)</p>
+          <p className="login__demo">账号和密码均需大于 6 位</p>
         </form>
       </div>
     </div>

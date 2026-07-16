@@ -11,7 +11,10 @@
     "lint": "eslint . --max-warnings 0 && prettier --check \"src/**/*.{ts,tsx,css}\" \"tests/**/*.ts\" \"./*.{js,ts,json}\" && stylelint \"src/**/*.css\"",
     "lint:fix": "eslint . --fix && prettier --write \"src/**/*.{ts,tsx,css}\" \"tests/**/*.ts\" \"./*.{js,ts,json}\" && stylelint \"src/**/*.css\" --fix",
     "test": "vitest run",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "e2e:ci": "playwright test --config playwright.ci.config.ts",
+    "e2e:visual": "playwright test --config playwright.visual.config.ts",
+    "e2e:fullstack": "playwright test --config playwright.fullstack.config.ts"
   },
   "dependencies": {
     "@garmin/fitsdk": "^21.208.0",

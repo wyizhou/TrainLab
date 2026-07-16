@@ -1,0 +1,140 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: trainlab_test
+          POSTGRES_USER: trainlab
+          POSTGRES_PASSWORD: trainlab
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U trainlab -d trainlab_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      TRAINLAB_ENVIRONMENT: test
+      TRAINLAB_DATABASE_URL: postgresql+psycopg://trainlab:trainlab@localhost:5432/trainlab_test
+      TRAINLAB_PUBLIC_ORIGIN: http://testserver
+      TRAINLAB_TRUSTED_ORIGINS: '["http://testserver"]'
+      TRAINLAB_ALLOWED_HOSTS: '["testserver","localhost"]'
+      TRAINLAB_SESSION_COOKIE_SECURE: 'false'
+      TRAINLAB_FRONTEND_DIST: /tmp/trainlab-no-frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: '0.11.29'
+          enable-cache: true
+      - run: uv sync --frozen --extra dev
+        working-directory: backend
+      - run: uv run ruff format --check .
+        working-directory: backend
+      - run: uv run ruff check .
+        working-directory: backend
+      - run: uv run mypy src
+        working-directory: backend
+      - run: uv run alembic upgrade head
+        working-directory: backend
+      - run: uv run alembic downgrade base
+        working-directory: backend
+      - run: uv run alembic upgrade head
+        working-directory: backend
+      - run: uv run pytest
+        working-directory: backend
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - run: npm run typecheck
+        working-directory: frontend
+      - run: npm run lint
+        working-directory: frontend
+      - run: npm run test
+        working-directory: frontend
+      - run: npx playwright install --with-deps chromium
+        working-directory: frontend
+      - run: npm run e2e:ci
+        working-directory: frontend
+      - run: npm run build
+        working-directory: frontend
+
+  frontend-visual:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - run: npx playwright install chromium
+        working-directory: frontend
+      - run: npm run e2e:visual
+        working-directory: frontend
+
+  fullstack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - run: npx playwright install --with-deps chromium
+        working-directory: frontend
+      - name: Build and start the application
+        run: backend/scripts/compose.sh up --build -d db backend
+      - name: Wait for readiness
+        run: >-
+          curl --fail --retry 30 --retry-delay 1 --retry-connrefused --retry-all-errors
+          http://localhost:8000/readyz
+      - name: Initialize the owner
+        env:
+          TRAINLAB_OWNER_PASSWORD: correct-password
+        run: >-
+          backend/scripts/compose.sh exec -T -e TRAINLAB_OWNER_PASSWORD backend
+          trainlab create-owner --username owner-user --password-env TRAINLAB_OWNER_PASSWORD
+      - run: npm run e2e:fullstack
+        working-directory: frontend
+      - name: Show logs after failure
+        if: failure()
+        run: backend/scripts/compose.sh logs backend
+      - name: Stop services
+        if: always()
+        run: backend/scripts/compose.sh down -v
+
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --target runtime -f backend/Dockerfile .
