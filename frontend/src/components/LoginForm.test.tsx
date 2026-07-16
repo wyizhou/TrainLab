@@ -23,7 +23,7 @@ describe('LoginForm', () => {
     expect(screen.getByLabelText('验证码')).toBeInTheDocument()
     expect(screen.getByTestId('captcha-code')).toHaveTextContent(/^\d{4}$/)
     expect(screen.getByRole('button', { name: '登录' })).toBeInTheDocument()
-    expect(screen.getByText('演示账号:任意用户名 + 任意密码(≥4位)')).toBeInTheDocument()
+    expect(screen.getByText('账号和密码均需大于 6 位')).toBeInTheDocument()
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
@@ -78,6 +78,7 @@ describe('LoginForm', () => {
     await user.click(screen.getByRole('button', { name: '登录' }))
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     expect(onAuthenticated).toHaveBeenCalledOnce()
+    expect(onAuthenticated).toHaveBeenCalledWith('alice123', 'secret1')
   })
 
   it('submits on Enter within the form', async () => {
