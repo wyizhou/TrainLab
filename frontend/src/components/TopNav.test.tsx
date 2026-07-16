@@ -1,11 +1,14 @@
 import { render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
+import { AuthTestProvider } from '../auth/AuthTestProvider'
 import { TopNav } from './TopNav'
 
 function renderNav(initialPath = '/', showSync = false) {
   return render(
     <MemoryRouter initialEntries={[initialPath]}>
-      <TopNav showSync={showSync} />
+      <AuthTestProvider>
+        <TopNav showSync={showSync} />
+      </AuthTestProvider>
     </MemoryRouter>,
   )
 }

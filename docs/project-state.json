@@ -16,7 +16,26 @@
     "revision": 6,
     "version": "v3.3",
     "status": "verified",
-    "geometry_inherited_from": "v3.2"
+    "geometry_inherited_from": "v3.2",
+    "typography_contract": "ordered-cross-platform-system-font-stack"
+  },
+  "backend_baseline": {
+    "version": "v0.1",
+    "status": "implemented_and_verified",
+    "runtime": "python-3.12-fastapi",
+    "database": "postgresql-17",
+    "migration_head": "0001_backend_foundation",
+    "api_contract": {
+      "version": "v1",
+      "openapi_sha256": "1af2e1c798b4ae8c5f97957b520b93e236fafdbdaee5fa789950ddc390eb7f9c"
+    },
+    "scope": [
+      "health-readiness",
+      "owner-bootstrap",
+      "cookie-session-auth",
+      "react-static-serving"
+    ],
+    "business_apis": "not_implemented"
   },
   "repository_layout": {
     "frontend": "frontend",
@@ -26,5 +45,5 @@
     "shared_docs": "docs",
     "external_design_input": "provided_per_task"
   },
-  "next_milestone": "define_backend_foundation"
+  "next_milestone": "define_first_user_scoped_business_vertical"
 }

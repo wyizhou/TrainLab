@@ -29,6 +29,7 @@
   padding: var(--pad-batch-download);
   font-size: 13px;
   font-weight: 700;
+  white-space: nowrap;
   cursor: pointer;
 }
 
@@ -60,6 +61,7 @@
   border: 1px solid var(--color-border-panel);
   border-radius: var(--radius-pill);
   font-size: 12px;
+  white-space: nowrap;
   cursor: pointer;
 }
 

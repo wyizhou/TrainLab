@@ -14,9 +14,20 @@ npm --prefix frontend run lint
 npm --prefix frontend run test
 npm --prefix frontend run e2e
 npm --prefix frontend run build
+backend/scripts/check.sh
+backend/scripts/compose.sh --profile test run --build --rm backend-test
 ```
 
-后端工程初始化后，再把 `backend/` 实际提供的类型、测试、规范和构建命令加入门禁；不在未选型时虚构命令。
+跨端登录、会话、静态托管或 Compose 变化还需运行：
+
+```bash
+backend/scripts/compose.sh up --build -d db backend
+backend/scripts/compose.sh exec -T -e TRAINLAB_OWNER_PASSWORD=correct-password backend \
+  trainlab create-owner --username owner-user --password-env TRAINLAB_OWNER_PASSWORD
+npm --prefix frontend run e2e:fullstack
+```
+
+后端测试数据库名必须以 `_test` 结尾。数据库迁移变化应至少验证空库升级，以及当前迁移允许时的回退再升级。
 
 不得通过删除测试、扩大容差或降低规则等级来解决失败。
 
@@ -32,6 +43,8 @@ npm --prefix frontend run build
 6. 检查 document 级横向溢出，并记录原型已知例外。
 7. 运行 `frontend/tests/visual-baselines/` 对应的实现回归检查；它只能发现实现漂移，最终设计判断仍以本次外部原型实测为准。
 8. 完成后复核外部设计关键文件摘要未变化，并确认仓库中没有持久化外部绝对路径。
+
+跨平台字体按批准的有序字体栈验收。字体栈声明、字号、字重、行高、间距、单行与溢出规则必须严格一致；由不同批准字体的字形宽度引起的内在横向尺寸，使用固定边界、相邻间距、顺序、不重叠和无裁切关系验收。不得把字体差异扩大为全局几何豁免：纵向尺寸、固定容器、网格轨道和非文字驱动的位置仍执行当前精确基线。
 
 ## 独立复核
 

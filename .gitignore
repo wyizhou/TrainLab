@@ -16,7 +16,19 @@ npm-debug.log*
 # Env / secrets
 .env
 .env.*
+!.env.example
+!**/.env.example
 .envrc
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
 
 # Editor / OS
 .DS_Store
@@ -24,3 +36,5 @@ npm-debug.log*
 
 # One-off generated handoff package
 TrainLab-交接包.md
+backups/
+*.dump
