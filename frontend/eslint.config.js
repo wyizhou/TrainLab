@@ -11,25 +11,25 @@ import prettier from 'eslint-config-prettier'
 const bareColorRules = [
   {
     selector: 'Literal[value=/#[0-9a-fA-F]{3,8}\\b/]',
-    message: 'Bare hex color banned — reference a token from src/design (G-token).',
+    message: 'Bare hex color banned — reference a token from src/styles (G-token).',
   },
   {
     selector: 'Literal[value=/(?:rgb|rgba|hsl|hsla|oklch|oklab)\\(/]',
-    message: 'Bare color function banned — reference a token from src/design (G-token).',
+    message: 'Bare color function banned — reference a token from src/styles (G-token).',
   },
   {
     selector: 'TemplateElement[value.raw=/#[0-9a-fA-F]{3,8}\\b/]',
-    message: 'Bare hex color banned — reference a token from src/design (G-token).',
+    message: 'Bare hex color banned — reference a token from src/styles (G-token).',
   },
   {
     selector: 'TemplateElement[value.raw=/(?:rgb|rgba|hsl|hsla|oklch|oklab)\\(/]',
-    message: 'Bare color function banned — reference a token from src/design (G-token).',
+    message: 'Bare color function banned — reference a token from src/styles (G-token).',
   },
 ]
 
 export default tseslint.config(
   {
-    ignores: ['dist', 'coverage', 'playwright-report', 'test-results', 'node_modules', 'design/**'],
+    ignores: ['dist', 'coverage', 'playwright-report', 'test-results', 'node_modules'],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
@@ -55,7 +55,7 @@ export default tseslint.config(
     // literal token values to guard against drift. e2e pixel-contract specs
     // (AC-001c-*, design_rev 3) likewise pin computed rgb values from §A. None of
     // these ship styling code, so the bare-color ban does not apply.
-    files: ['src/design/tokens.ts', '**/*.test.{ts,tsx}', 'tests/e2e/**/*.spec.ts'],
+    files: ['src/styles/tokens.ts', '**/*.test.{ts,tsx}', 'tests/e2e/**/*.spec.ts'],
     rules: { 'no-restricted-syntax': 'off' },
   },
   {

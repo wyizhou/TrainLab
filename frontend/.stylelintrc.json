@@ -33,7 +33,7 @@
   },
   "overrides": [
     {
-      "files": ["src/design/tokens.css"],
+      "files": ["src/styles/tokens.css"],
       "rules": { "scale-unlimited/declaration-strict-value": null }
     }
   ]
