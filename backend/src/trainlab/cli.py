@@ -11,6 +11,8 @@ from trainlab.core.config import get_settings
 from trainlab.core.security import hash_password, normalize_username
 from trainlab.db.database import create_database_engine
 from trainlab.db.models.user import User
+from trainlab.services.activity_storage import PrivateActivityStorage, StorageError
+from trainlab.services.storage_usage import reconcile_storage
 
 
 def _create_user(
@@ -73,6 +75,31 @@ def create_user(username: str, display_name: str | None, password: str) -> int:
     return _create_user(username, display_name, password, owner=False)
 
 
+def reconcile_private_storage(*, apply: bool) -> int:
+    settings = get_settings()
+    engine = create_database_engine(settings.database_url)
+    try:
+        with Session(engine) as db:
+            report = reconcile_storage(
+                db,
+                PrivateActivityStorage(settings.private_storage_root),
+                settings.storage_staging_grace_minutes,
+                apply=apply,
+            )
+        mode = "apply" if apply else "dry-run"
+        print(
+            f"mode={mode} candidates={report.candidate_count} "
+            f"candidate_bytes={report.candidate_bytes} removed={report.removed_count} "
+            f"removed_bytes={report.removed_bytes}"
+        )
+        return 0
+    except (SQLAlchemyError, StorageError):
+        print("存储审计失败：请确认数据库、迁移和私有存储可用", file=sys.stderr)
+        return 4
+    finally:
+        engine.dispose()
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="trainlab")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -90,11 +117,19 @@ def build_parser() -> argparse.ArgumentParser:
         "--password-env",
         help="从指定环境变量读取密码（自动化场景）",
     )
+    reconcile = subparsers.add_parser("reconcile-storage", help="审计无数据库引用的私有存储文件")
+    reconcile.add_argument(
+        "--apply",
+        action="store_true",
+        help="删除超过宽限期的孤儿文件；省略时仅审计",
+    )
     return parser
 
 
 def main() -> None:
     args = build_parser().parse_args()
+    if args.command == "reconcile-storage":
+        raise SystemExit(reconcile_private_storage(apply=args.apply))
     if args.command not in {"create-owner", "create-user"}:
         raise SystemExit(2)
     if args.password_env:
