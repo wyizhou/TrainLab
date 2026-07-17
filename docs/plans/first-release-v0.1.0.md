@@ -1,6 +1,6 @@
 # TrainLab 首个正式版本 v0.1.0 发布计划
 
-- 状态：执行中（F0 范围已冻结）
+- 状态：实现与本地完整门禁已完成，等待最终独立 Validator 和 PR 检查
 - 产品版本：`v0.1.0`
 - 组件基线：前端 design v3.4 / design_rev 7；后端 v0.3 / 迁移 `0003_activity_data_lifecycle`
 - 工作方式：共享基础串行冻结，三个隔离单元并行实现和独立验收，最后由集成负责人统一收口
@@ -209,3 +209,12 @@ npm --prefix frontend audit
 - 本执行任务停在 PR 和远程检查证据，不合并 PR、不打 `v0.1.0` tag、不创建 GitHub Release。
 - 只清理本里程碑创建、已经合入集成分支且不再需要的临时 worktree 与本地分支；不触碰其他 worktree、未合并分支或来源不明对象。
 - 产品发布是否完成只在 PR 合并、最终独立验收、tag 和 Release 由主协调任务完成后更新；本计划当前状态不冒充该结果。
+
+## 9. 执行证据
+
+- F0 计划提交为 `c4ccfa6`；U1、U2、U3 分别由隔离 worktree 实现、独立复核并按顺序集成，集成提交为 `29c105d`、`f6d95f1`、`befd9cd`。
+- 后端空库迁移与 133 项 pytest 通过，覆盖率 89.79%；Ruff format/check、mypy 和 13 项备份安全测试通过。
+- Python 运行时锁定依赖经 `pip-audit 2.10.1` 检查，未发现已知漏洞；npm 全依赖与生产依赖审计均为 0。
+- 前端 typecheck、lint、43 文件/240 项单测和 build 通过；184 项完整 e2e、126 项 Linux CI e2e、117 项 macOS 视觉回归通过。
+- 隔离 Compose 的 3 项真实全栈旅程、密码重置/会话撤销、重建持久化和 FIT 双卷全毁恢复演练通过；真实默认项目、实际 owner 和外部设计均未改动。
+- 本记录只证明发布候选本地门禁；最终独立 Validator、PR checks、`main` 合并、tag 和 GitHub Release 必须以各自后续证据为准。

@@ -23,8 +23,8 @@ services:
     environment:
       TRAINLAB_ENVIRONMENT: development
       TRAINLAB_DATABASE_URL: postgresql+psycopg://trainlab:trainlab@db:5432/trainlab
-      TRAINLAB_PUBLIC_ORIGIN: http://localhost:8000
-      TRAINLAB_TRUSTED_ORIGINS: '["http://localhost:8000","http://localhost:5173"]'
+      TRAINLAB_PUBLIC_ORIGIN: http://localhost:${TRAINLAB_HOST_PORT:-8000}
+      TRAINLAB_TRUSTED_ORIGINS: '["http://localhost:${TRAINLAB_HOST_PORT:-8000}","http://127.0.0.1:${TRAINLAB_HOST_PORT:-8000}","http://localhost:5173"]'
       TRAINLAB_ALLOWED_HOSTS: '["localhost","127.0.0.1"]'
       TRAINLAB_SESSION_COOKIE_SECURE: "false"
       TRAINLAB_FRONTEND_DIST: /app/frontend-dist

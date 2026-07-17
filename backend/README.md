@@ -1,6 +1,6 @@
 # TrainLab Backend
 
-TrainLab 后端采用 Python 3.12、FastAPI、SQLAlchemy 2、PostgreSQL、Alembic 和 uv。当前实现主人账号、Cookie 会话，以及登录用户私有的本地 FIT 上传、解析、活动列表、通用详情、原文件下载、活动重命名、导入记录、可恢复删除和存储配额。佳明在线同步、TCX/GPX 后端导入、AI、公开注册和后台队列不在当前范围。
+TrainLab 后端采用 Python 3.12、FastAPI、SQLAlchemy 2、PostgreSQL、Alembic 和 uv。组件基线为 v0.3，参与产品 `v0.1.0` 发布。当前实现主人账号、Cookie 会话，以及登录用户私有的本地 FIT 上传、解析、活动列表、通用详情、原文件下载、活动重命名、导入记录、可恢复删除和存储配额。佳明在线同步、TCX/GPX 后端导入、AI、公开注册和后台队列不在当前范围。
 
 ## 推荐：Docker Compose
 
@@ -12,13 +12,29 @@ backend/scripts/compose.sh up --build -d db backend
 backend/scripts/compose.sh exec backend trainlab create-owner --username owner-user
 ```
 
-命令会交互式读取密码，不写入 shell 历史。账号和密码都必须大于 6 位。随后访问 `http://localhost:8000/`，FastAPI 会同时提供 React 单页应用和 `/api/v1`。连接器页上传 FIT 后，运动会持久出现在运动记录和 v3.4 共用详情中。
+命令会交互式读取密码，不写入 shell 历史。账号和密码都必须大于 6 位。随后访问 `http://localhost:8000/`，FastAPI 会同时提供 React 单页应用和 `/api/v1`。Compose 端口只绑定 `127.0.0.1`；v0.1.0 只支持本机 HTTP，不具备公网、TLS 或高可用边界。连接器页上传 FIT 后，运动会持久出现在运动记录和 v3.4 共用详情中。
 
 需要验证或预置多用户隔离时，可由服务器管理员在容器内创建普通用户；该命令不开放 HTTP 注册：
 
 ```bash
 backend/scripts/compose.sh exec backend trainlab create-user --username peer-user
 ```
+
+## 账号运维
+
+重置指定用户密码会使用现有 Argon2 规则，并在同一事务中撤销该用户全部会话：
+
+```bash
+backend/scripts/compose.sh exec backend trainlab reset-password --username owner-user
+```
+
+只撤销会话而不改变密码：
+
+```bash
+backend/scripts/compose.sh exec backend trainlab revoke-sessions --username owner-user
+```
+
+自动化可使用 `--password-env`，但环境变量必须由受控 secret 注入，不能把明文密码放入参数、日志或仓库。CLI 成功、输入错误、未知用户和数据库失败分别使用退出码 0、2、3、4。进程内登录限流不会被数据库密码重置清除；已触发锁定时可安全重启 backend，详见 `docs/runbooks/local-development.md`。
 
 Compose 将数据库写入 `trainlab-db`，将私有 FIT 原文件写入独立的 `trainlab-private-files` 命名卷。应用只用服务端生成的用户/导入 UUID 存储键，不使用上传文件名拼路径。
 
@@ -40,6 +56,15 @@ backend/scripts/compose.sh exec backend trainlab reconcile-storage --apply
 ```
 
 默认宽限期为 60 分钟，由 `TRAINLAB_STORAGE_STAGING_GRACE_MINUTES` 配置。命令会按用户取得数据库行锁，避免删除合法的在途上传文件。
+
+可执行双卷备份和恢复入口：
+
+```bash
+python3 backend/scripts/backup_release.py --project trainlab --output backups/trainlab-v0.1.0
+python3 backend/scripts/restore_release.py --project trainlab --backup backups/trainlab-v0.1.0 --confirm RESTORE:trainlab
+```
+
+恢复是破坏性操作；工具会先校验 manifest、SHA-256、PostgreSQL dump 和 tar 安全边界，恢复后撤销所有旧会话。完整流程、加密保存要求和回滚策略见 `docs/runbooks/backup-restore.md`。
 
 停止服务并保留数据库与私有原文件：
 
@@ -75,6 +100,7 @@ npm --prefix frontend run dev
 ```bash
 backend/scripts/check.sh
 backend/scripts/compose.sh --profile test run --rm backend-test
+python3 backend/scripts/test_release_backup_tools.py
 npm --prefix frontend run e2e:fullstack
 ```
 
