@@ -1,1 +1,5 @@
-"""Schemas owned by the activity-metadata delivery unit."""
+from pydantic import BaseModel
+
+
+class ActivityNameUpdate(BaseModel):
+    name: str | None
