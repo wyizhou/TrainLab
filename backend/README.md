@@ -60,6 +60,8 @@ backend/scripts/compose.sh exec backend trainlab reconcile-storage --apply
 可执行双卷备份和恢复入口：
 
 ```bash
+mkdir -p backups
+chmod 700 backups
 python3 backend/scripts/backup_release.py --project trainlab --output backups/trainlab-v0.1.0
 python3 backend/scripts/restore_release.py --project trainlab --backup backups/trainlab-v0.1.0 --confirm RESTORE:trainlab
 ```
