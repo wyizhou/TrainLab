@@ -62,5 +62,5 @@
     "shared_docs": "docs",
     "external_design_input": "provided_per_task"
   },
-  "next_milestone": "define_next_user_scoped_import_source"
+  "next_milestone": "backend_v0.3_user_owned_data_lifecycle"
 }
