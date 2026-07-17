@@ -16,10 +16,10 @@ export function App() {
       {/* Standalone login page — no top-nav chrome (C-2). */}
       <Route path="/login" element={<LoginPage />} />
       <Route element={<RequireAuth />}>
+        <Route path="/activities/:id" element={<ActivityDetailPage />} />
         <Route element={<AppLayout />}>
           <Route path="/" element={<AnalysisPage />} />
           <Route path="/activities" element={<ActivitiesPage />} />
-          <Route path="/activities/:id" element={<ActivityDetailPage />} />
           <Route path="/health" element={<HealthPage />} />
           <Route path="/connectors" element={<ConnectorsPage />} />
           <Route path="/settings" element={<SettingsPage />} />

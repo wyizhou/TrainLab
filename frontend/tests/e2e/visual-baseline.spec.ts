@@ -865,6 +865,10 @@ for (const { before } of baseline.equivalence) {
   const [prefix, ...stateParts] = before.split('-')
   const viewport = VIEWPORTS.find((candidate) => candidate.prefix === prefix)
   const state = stateParts.join('-') as PrimaryState
+  // v3.4 rev 7 replaces the activity-detail geometry. Its seven profiles and
+  // four viewports have a dedicated baseline suite; every other v3.3 state
+  // continues to use the original exact contract below.
+  if (state === 'activity-detail-charts') continue
   test(`${before}: data-vc computed styles and geometry match the JSON contract`, async ({
     page,
   }) => {
@@ -885,6 +889,7 @@ for (const { before } of baseline.equivalence) {
 
 for (const viewport of VIEWPORTS.filter(({ name }) => name === 'mobile' || name === 'desktop')) {
   for (const state of INTERACTION_STATES) {
+    if (state === 'activity-detail-table') continue
     const screenshotState = `${viewport.prefix}-${state}`
     const directRenderState = baseline.render_states[screenshotState] ? screenshotState : undefined
     const equivalentDefault =
@@ -917,6 +922,7 @@ for (const viewport of VIEWPORTS.filter(({ name }) => name === 'mobile' || name 
 
 for (const viewport of VIEWPORTS) {
   for (const state of PRIMARY_STATES) {
+    if (state === 'activity-detail-charts') continue
     test(`${viewport.name}: ${state} matches the v3.3 full-page baseline`, async ({ page }) => {
       await page.setViewportSize(baseline.audited_viewports[viewport.name])
       await openPrimaryState(page, state)
@@ -927,6 +933,7 @@ for (const viewport of VIEWPORTS) {
 
 for (const viewport of VIEWPORTS.filter(({ name }) => name === 'mobile' || name === 'desktop')) {
   for (const state of INTERACTION_STATES) {
+    if (state === 'activity-detail-table') continue
     test(`${viewport.name}: ${state} matches the v3.3 interaction baseline`, async ({ page }) => {
       await page.setViewportSize(baseline.audited_viewports[viewport.name])
       await openInteractionState(page, state)

@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import { tickCountForWidth } from './chartTicks'
 import { TimeSeriesChart } from './TimeSeriesChart'
 
 describe('TimeSeriesChart', () => {
@@ -13,7 +14,7 @@ describe('TimeSeriesChart', () => {
       />,
     )
     expect(screen.getByTestId('ts-svg')).toBeInTheDocument()
-    expect(screen.getByTestId('ts-source')).toHaveTextContent('Y:bpm · X:时间 · heart_rate')
+    expect(screen.getByTestId('ts-source')).toHaveTextContent('X:经过时间 · Y:bpm · heart_rate')
   })
 
   it('draws three Y ticks (max / mid / min) via the formatter', () => {
@@ -55,6 +56,29 @@ describe('TimeSeriesChart', () => {
         timesSec={[0, 1]}
       />,
     )
-    expect(screen.getByTestId('ts-chart')).toHaveTextContent('无数据')
+    expect(screen.getByTestId('ts-chart')).toHaveTextContent('当前文件未提供可验证的海拔时序数据')
+  })
+
+  it('uses the v3.4 responsive X-axis tick formula', () => {
+    expect(tickCountForWidth(390)).toBe(4)
+    expect(tickCountForWidth(768)).toBe(9)
+    expect(tickCountForWidth(1280)).toBe(12)
+  })
+
+  it('renders distance labels and a linked selection marker', () => {
+    render(
+      <TimeSeriesChart
+        title="心率"
+        unit="bpm"
+        sourceField="record.heart_rate"
+        values={[120, 140, 160]}
+        timesSec={[0, 60, 120]}
+        distancesKm={[0, 0.5, 1]}
+        linkedProgress={0.5}
+      />,
+    )
+
+    expect(screen.getAllByTestId('ts-xtick')[0]).toHaveTextContent('km')
+    expect(document.querySelector('.ts-chart__selection')).not.toBeNull()
   })
 })

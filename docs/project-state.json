@@ -4,20 +4,25 @@
   "design_baseline": {
     "provider": "open-design",
     "project_id": "e7be4d5a-73a1-4237-a9ca-dff73980c8e9",
-    "revision": 6,
-    "version": "v3.3",
+    "revision": 7,
+    "version": "v3.4",
     "status": "implemented_and_verified",
-    "theme": "global-light-theme",
-    "entrypoint_sha256": "c560eb8d6af57de1cd62e11e493bbc601268b733b9bc464037fa2d870edde728",
-    "handoff_sha256": "82b0d04bd05674a052e4d1e10d728d6e9c9007243294f68a0a18779c6d565f4c",
+    "theme": "shared-activity-detail",
+    "entrypoint_sha256": "26699807860776b4a1daf797580d9ee90e2cc2508ed7de8efe7418828020aada",
+    "activity_detail_entrypoint_sha256": "9a12c0ebee444cc19c13463fa94f9a7d94fceacae357cbd363895f51e10e3e63",
+    "handoff_sha256": "6c2d034aeb0eb3e3d983a8509dd21c15106eca009f18a20f64fde029723c2bb4",
     "source_path_persisted": false
   },
   "implementation_baseline": {
-    "revision": 6,
-    "version": "v3.3",
+    "revision": 7,
+    "version": "v3.4",
     "status": "verified",
-    "geometry_inherited_from": "v3.2",
-    "typography_contract": "ordered-cross-platform-system-font-stack"
+    "geometry_inherited_from": "v3.3-except-activity-detail",
+    "typography_contract": "ordered-cross-platform-system-font-stack",
+    "activity_detail_profiles": 7,
+    "activity_detail_tabs": 5,
+    "activity_detail_viewports": [390, 768, 1280, 1536],
+    "visual_baseline": "frontend/tests/visual-baselines/v3.4/manifest.json"
   },
   "backend_baseline": {
     "version": "v0.1",
