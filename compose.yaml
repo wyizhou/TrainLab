@@ -29,6 +29,9 @@ services:
       TRAINLAB_SESSION_COOKIE_SECURE: "false"
       TRAINLAB_FRONTEND_DIST: /app/frontend-dist
       TRAINLAB_PRIVATE_STORAGE_ROOT: /app/backend/data/private
+      TRAINLAB_USER_STORAGE_MAX_BYTES: "5368709120"
+      TRAINLAB_USER_STORAGE_MAX_FILES: "10000"
+      TRAINLAB_STORAGE_STAGING_GRACE_MINUTES: "60"
     depends_on:
       db:
         condition: service_healthy
@@ -76,6 +79,9 @@ services:
       TRAINLAB_SESSION_COOKIE_SECURE: "false"
       TRAINLAB_FRONTEND_DIST: /tmp/trainlab-no-frontend
       TRAINLAB_PRIVATE_STORAGE_ROOT: /tmp/trainlab-test-private
+      TRAINLAB_USER_STORAGE_MAX_BYTES: "5368709120"
+      TRAINLAB_USER_STORAGE_MAX_FILES: "10000"
+      TRAINLAB_STORAGE_STAGING_GRACE_MINUTES: "60"
     depends_on:
       test-db:
         condition: service_healthy
