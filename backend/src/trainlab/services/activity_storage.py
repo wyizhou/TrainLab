@@ -194,6 +194,7 @@ class PrivateActivityStorage:
         root_descriptor: int | None = None
         user_descriptor: int | None = None
         staging_descriptor: int | None = None
+        final_link_created = False
         directory_flags = (
             os.O_RDONLY
             | getattr(os, "O_CLOEXEC", 0)
@@ -213,9 +214,15 @@ class PrivateActivityStorage:
                 dst_dir_fd=user_descriptor,
                 follow_symlinks=False,
             )
+            final_link_created = True
             os.unlink(staged.path.name, dir_fd=staging_descriptor)
             os.fsync(user_descriptor)
         except (OSError, RuntimeError):
+            if final_link_created and user_descriptor is not None:
+                with suppress(OSError):
+                    os.unlink(final_path.name, dir_fd=user_descriptor)
+                with suppress(OSError):
+                    os.fsync(user_descriptor)
             raise StorageError("private_storage_unavailable", "私有文件存储不可用") from None
         finally:
             for descriptor in (staging_descriptor, user_descriptor, root_descriptor):
