@@ -17,7 +17,7 @@ def test_health_and_ready_are_independent_checks(client: TestClient) -> None:
 
 
 def test_readiness_uses_the_single_alembic_head() -> None:
-    assert migration_head() == "0002_activity_import"
+    assert migration_head() == "0003_activity_data_lifecycle"
 
 
 def test_unknown_api_route_uses_json_error(client: TestClient) -> None:

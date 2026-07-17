@@ -19,10 +19,13 @@ def test_openapi_exposes_auth_and_the_user_owned_fit_activity_contract(
         "/api/v1/auth/session",
         "/api/v1/auth/logout",
         "/api/v1/imports/fit",
+        "/api/v1/imports",
+        "/api/v1/imports/{import_id}",
         "/api/v1/imports/{import_id}/retry",
         "/api/v1/activities",
         "/api/v1/activities/{activity_id}",
         "/api/v1/activities/{activity_id}/source",
+        "/api/v1/storage/usage",
     }
     assert "/api/v1/auth/register" not in paths
 
