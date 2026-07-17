@@ -40,9 +40,12 @@ from trainlab.services.activity_import import (
     ImportInternalError,
     ImportResult,
     ImportStateError,
+    StorageQuotaExceeded,
     register_fit_upload,
     replay_import,
 )
+from trainlab.services.activity_projection import effective_activity_title
+from trainlab.services.activity_states import PARSE_RETRYABLE_STATUSES, VISIBLE_ACTIVITY_STATUSES
 from trainlab.services.activity_storage import PrivateActivityStorage, StorageError
 
 router = APIRouter(tags=["activities"])
@@ -114,7 +117,7 @@ def _list_item(activity: Activity, imported: ActivityImport) -> ActivityListItem
         id=activity.id,
         date=local_date.isoformat(),
         type=_activity_type(activity.sport, activity.sub_sport),
-        name=activity.title,
+        name=effective_activity_title(activity, imported),
         distance_km=(activity.total_distance_m / 1000 if activity.total_distance_m > 0 else None),
         duration_sec=round(activity.total_timer_time_sec),
         avg_hr=activity.avg_hr,
@@ -164,14 +167,14 @@ def _decode_cursor(cursor: str) -> tuple[datetime, uuid.UUID]:
 
 
 def _import_response(result: ImportResult) -> FitImportResponse:
-    if result.model.status not in {"complete", "partial"} or result.activity is None:
+    if result.model.status not in VISIBLE_ACTIVITY_STATUSES or result.activity is None:
         raise ApiError(500, "import_state_invalid", "FIT 导入结果状态异常")
     return FitImportResponse(
         import_id=result.model.id,
         status=result.model.status,
         deduplicated=result.deduplicated,
         activity=_list_item(result.activity, result.model),
-        retry_available=result.model.status in {"failed", "partial"},
+        retry_available=result.model.status in PARSE_RETRYABLE_STATUSES,
     )
 
 
@@ -233,7 +236,11 @@ async def upload_fit(
             current.user.id,
             settings.fit_upload_max_bytes,
             settings.import_processing_stale_minutes,
+            settings.user_storage_max_bytes,
+            settings.user_storage_max_files,
         )
+    except StorageQuotaExceeded as exc:
+        raise ApiError(409, exc.code, exc.message, exc.details) from None
     except StorageError as exc:
         status = 503 if exc.code == "private_storage_unavailable" else 415
         if exc.code == "fit_file_too_large":
@@ -310,7 +317,7 @@ def list_activities(
         .where(
             Activity.user_id == current.user.id,
             ActivityImport.user_id == current.user.id,
-            ActivityImport.status.in_(("complete", "partial")),
+            ActivityImport.status.in_(VISIBLE_ACTIVITY_STATUSES),
         )
     )
     if profile is not None:
@@ -346,7 +353,7 @@ def _owned_activity(
             Activity.id == activity_id,
             Activity.user_id == user_id,
             ActivityImport.user_id == user_id,
-            ActivityImport.status.in_(("complete", "partial")),
+            ActivityImport.status.in_(VISIBLE_ACTIVITY_STATUSES),
         )
     ).one_or_none()
     if row is None:

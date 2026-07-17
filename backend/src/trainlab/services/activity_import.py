@@ -6,8 +6,8 @@ from pathlib import PurePosixPath
 
 from fastapi import UploadFile
 from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+from starlette.concurrency import run_in_threadpool
 
 from trainlab.db.base import utc_now
 from trainlab.db.models.activity import (
@@ -20,6 +20,7 @@ from trainlab.db.models.activity import (
     ActivitySegment,
     ActivitySession,
 )
+from trainlab.db.models.user import User
 from trainlab.importers.fit import (
     PARSER_NAME,
     PARSER_VERSION,
@@ -27,7 +28,16 @@ from trainlab.importers.fit import (
     ParsedFitActivity,
     parse_fit_file,
 )
+from trainlab.services.activity_states import (
+    DELETE_RECOVERABLE_STATUSES,
+    PARSE_RETRYABLE_STATUSES,
+    VISIBLE_ACTIVITY_STATUSES,
+)
 from trainlab.services.activity_storage import PrivateActivityStorage, StorageError
+from trainlab.services.storage_usage import storage_usage
+
+DEFAULT_USER_STORAGE_MAX_BYTES = 5 * 1024 * 1024 * 1024
+DEFAULT_USER_STORAGE_MAX_FILES = 10_000
 
 
 @dataclass(frozen=True)
@@ -52,6 +62,26 @@ class ImportInternalError(Exception):
         self.message = message
 
 
+class StorageQuotaExceeded(Exception):
+    def __init__(
+        self,
+        *,
+        used_bytes: int,
+        file_count: int,
+        max_bytes: int,
+        max_files: int,
+    ) -> None:
+        super().__init__("用户私有存储配额不足")
+        self.code = "storage_quota_exceeded"
+        self.message = "用户私有存储配额不足"
+        self.details = {
+            "usedBytes": used_bytes,
+            "fileCount": file_count,
+            "maxBytes": max_bytes,
+            "maxFiles": max_files,
+        }
+
+
 def _safe_rollback(db: Session) -> None:
     with suppress(Exception):
         db.rollback()
@@ -60,6 +90,22 @@ def _safe_rollback(db: Session) -> None:
 def _safe_remove(storage: PrivateActivityStorage, storage_key: str, user_id: uuid.UUID) -> None:
     with suppress(StorageError):
         storage.remove(storage_key, user_id)
+
+
+def _lock_user_and_cleanup_orphans(
+    db: Session,
+    storage: PrivateActivityStorage,
+    user_id: uuid.UUID,
+) -> None:
+    user = db.scalar(select(User).where(User.id == user_id).with_for_update())
+    if user is None:
+        raise ImportInternalError("import_registration_failed", "FIT 导入登记失败")
+    referenced_keys = set(
+        db.scalars(
+            select(ActivityImport.storage_key).where(ActivityImport.user_id == user_id)
+        ).all()
+    )
+    storage.cleanup_user_orphans(user_id, referenced_keys)
 
 
 def safe_original_filename(filename: str | None) -> str:
@@ -97,6 +143,12 @@ def _deduplicated_result(
     stale_minutes: int,
 ) -> ImportResult:
     activity = _activity_for_import(db, user_id, imported.id)
+    if imported.status in DELETE_RECOVERABLE_STATUSES:
+        raise ImportStateError(
+            "import_deleting",
+            "FIT 导入正在删除，不能上传相同文件或重新解析",
+            imported.id,
+        )
     if imported.status in {"pending", "processing"}:
         replayed = replay_import(db, storage, imported, stale_minutes)
         return ImportResult(
@@ -106,7 +158,7 @@ def _deduplicated_result(
         )
     if imported.status == "failed":
         return ImportResult(model=imported, activity=None, deduplicated=True)
-    if imported.status not in {"complete", "partial"} or activity is None:
+    if imported.status not in VISIBLE_ACTIVITY_STATUSES or activity is None:
         raise ImportStateError(
             "import_state_invalid",
             "已有 FIT 导入记录状态异常，无法复用",
@@ -282,22 +334,51 @@ def _replace_activity(
     return activity
 
 
+def _lock_owned_attempt(
+    db: Session,
+    user_id: uuid.UUID,
+    import_id: uuid.UUID,
+    processing_token: uuid.UUID,
+) -> ActivityImport:
+    locked = db.scalar(
+        select(ActivityImport)
+        .where(ActivityImport.id == import_id, ActivityImport.user_id == user_id)
+        .execution_options(populate_existing=True)
+        .with_for_update()
+    )
+    if (
+        locked is None
+        or locked.status != "processing"
+        or locked.processing_token != processing_token
+    ):
+        _safe_rollback(db)
+        raise ImportStateError(
+            "import_attempt_superseded",
+            "FIT 解析任务已被删除或新的解析任务取代",
+            import_id,
+        )
+    return locked
+
+
 def _mark_import_failed(
     db: Session,
-    import_model: ActivityImport,
+    user_id: uuid.UUID,
+    import_id: uuid.UUID,
+    processing_token: uuid.UUID,
     error_code: str,
     error_message: str,
     *,
     warning_count: int | None = None,
 ) -> ActivityImport:
-    db.refresh(import_model)
-    previous_activity = _activity_for_import(db, import_model.user_id, import_model.id)
+    import_model = _lock_owned_attempt(db, user_id, import_id, processing_token)
+    previous_activity = _activity_for_import(db, user_id, import_id)
     if previous_activity is not None:
         db.delete(previous_activity)
     import_model.status = "failed"
     import_model.error_code = error_code
     import_model.error_message = error_message
     import_model.completed_at = None
+    import_model.processing_token = None
     if warning_count is not None:
         import_model.warning_count = warning_count
     db.commit()
@@ -307,7 +388,9 @@ def _mark_import_failed(
 
 def _mark_import_failed_safely(
     db: Session,
-    import_model: ActivityImport,
+    user_id: uuid.UUID,
+    import_id: uuid.UUID,
+    processing_token: uuid.UUID,
     error_code: str,
     error_message: str,
     *,
@@ -316,11 +399,15 @@ def _mark_import_failed_safely(
     try:
         return _mark_import_failed(
             db,
-            import_model,
+            user_id,
+            import_id,
+            processing_token,
             error_code,
             error_message,
             warning_count=warning_count,
         )
+    except ImportStateError:
+        raise
     except Exception:
         _safe_rollback(db)
         raise ImportInternalError(
@@ -341,6 +428,7 @@ def replay_import(
                 ActivityImport.id == import_model.id,
                 ActivityImport.user_id == import_model.user_id,
             )
+            .execution_options(populate_existing=True)
             .with_for_update()
         )
     except Exception:
@@ -349,15 +437,20 @@ def replay_import(
     if locked is None:
         raise ImportStateError("import_not_found", "导入记录不存在")
     now = utc_now()
+    if locked.status in DELETE_RECOVERABLE_STATUSES:
+        _safe_rollback(db)
+        raise ImportStateError("import_deleting", "FIT 导入正在删除，不能重新解析", locked.id)
     if locked.status == "processing":
         stale_before = now - timedelta(minutes=stale_minutes)
         if locked.last_attempt_at is None or locked.last_attempt_at > stale_before:
             _safe_rollback(db)
             raise ImportStateError("import_in_progress", "FIT 导入仍在处理中", locked.id)
-    elif locked.status not in {"pending", "failed", "partial"}:
+    elif locked.status not in PARSE_RETRYABLE_STATUSES:
         _safe_rollback(db)
         raise ImportStateError("import_not_retryable", "当前导入状态不允许重试", locked.id)
     locked.status = "processing"
+    processing_token = uuid.uuid4()
+    locked.processing_token = processing_token
     locked.attempt_count += 1
     locked.last_attempt_at = now
     locked.error_code = None
@@ -375,7 +468,9 @@ def replay_import(
     except StorageError:
         import_model = _mark_import_failed_safely(
             db,
-            import_model,
+            import_model.user_id,
+            import_model.id,
+            processing_token,
             "raw_file_unavailable",
             "原始 FIT 文件不可用",
         )
@@ -385,7 +480,9 @@ def replay_import(
     except FitDecodeFailure as exc:
         import_model = _mark_import_failed_safely(
             db,
-            import_model,
+            import_model.user_id,
+            import_model.id,
+            processing_token,
             exc.code,
             exc.message,
             warning_count=0,
@@ -394,7 +491,9 @@ def replay_import(
     except Exception:
         _mark_import_failed_safely(
             db,
-            import_model,
+            import_model.user_id,
+            import_model.id,
+            processing_token,
             "fit_parse_failed",
             "FIT 解析器发生内部错误",
             warning_count=0,
@@ -405,14 +504,15 @@ def replay_import(
             opened.handle.close()
 
     try:
-        db.refresh(import_model)
-        activity = _replace_activity(db, import_model, parsed)
-        import_model.status = parsed.status
-        import_model.warning_count = parsed.warning_count
-        import_model.error_code = None
-        import_model.error_message = None
-        import_model.completed_at = utc_now()
-        import_model.replay_metadata = {
+        locked = _lock_owned_attempt(db, import_model.user_id, import_model.id, processing_token)
+        activity = _replace_activity(db, locked, parsed)
+        locked.status = parsed.status
+        locked.warning_count = parsed.warning_count
+        locked.error_code = None
+        locked.error_message = None
+        locked.completed_at = utc_now()
+        locked.processing_token = None
+        locked.replay_metadata = {
             "parser": PARSER_NAME,
             "parserVersion": PARSER_VERSION,
             "recordCount": len(parsed.records),
@@ -420,21 +520,24 @@ def replay_import(
             "segmentCount": len(parsed.segments),
         }
         db.commit()
-        db.refresh(import_model)
+        db.refresh(locked)
         db.refresh(activity)
-        return ImportResult(model=import_model, activity=activity, deduplicated=False)
+        return ImportResult(model=locked, activity=activity, deduplicated=False)
+    except ImportStateError:
+        _safe_rollback(db)
+        raise
     except Exception:
         _safe_rollback(db)
         try:
-            failed = db.get(ActivityImport, import_model.id)
-            if failed is not None:
-                _mark_import_failed_safely(
-                    db,
-                    failed,
-                    "fit_persistence_failed",
-                    "FIT 解析结果无法保存",
-                )
-        except ImportInternalError:
+            _mark_import_failed_safely(
+                db,
+                import_model.user_id,
+                import_model.id,
+                processing_token,
+                "fit_persistence_failed",
+                "FIT 解析结果无法保存",
+            )
+        except (ImportInternalError, ImportStateError):
             raise
         except Exception:
             _safe_rollback(db)
@@ -451,32 +554,75 @@ async def register_fit_upload(
     user_id: uuid.UUID,
     max_bytes: int,
     stale_minutes: int,
+    user_max_bytes: int = DEFAULT_USER_STORAGE_MAX_BYTES,
+    user_max_files: int = DEFAULT_USER_STORAGE_MAX_FILES,
 ) -> ImportResult:
     filename = validate_fit_upload(upload.filename, upload.content_type)
-    import_id = uuid.uuid4()
-    staged = await storage.stage(upload, user_id, import_id, max_bytes)
+    staged = None
+    promoted = False
     try:
+        await run_in_threadpool(_lock_user_and_cleanup_orphans, db, storage, user_id)
+        import_id = uuid.uuid4()
+        staged = await storage.stage_isolated(upload, user_id, import_id, max_bytes)
         existing = db.scalar(
             select(ActivityImport).where(
                 ActivityImport.user_id == user_id,
                 ActivityImport.sha256 == staged.sha256,
             )
         )
+    except (ImportInternalError, StorageError):
+        _safe_rollback(db)
+        if staged is not None:
+            with suppress(StorageError):
+                storage.discard_staged(staged, user_id)
+        raise
     except Exception:
         _safe_rollback(db)
-        _safe_remove(storage, staged.storage_key, user_id)
+        if staged is not None:
+            with suppress(StorageError):
+                storage.discard_staged(staged, user_id)
         raise ImportInternalError("import_registration_failed", "FIT 导入登记失败") from None
     if existing is not None:
-        _safe_remove(storage, staged.storage_key, user_id)
+        storage.discard_staged(staged, user_id)
+        staged = None
         try:
-            return _deduplicated_result(db, storage, user_id, existing, stale_minutes)
+            result = _deduplicated_result(db, storage, user_id, existing, stale_minutes)
+            if db.in_transaction():
+                db.commit()
+            return result
         except (ImportInternalError, ImportStateError, StorageError):
+            _safe_rollback(db)
             raise
         except Exception:
             _safe_rollback(db)
             raise ImportInternalError(
                 "import_state_unavailable", "FIT 导入状态暂时不可用"
             ) from None
+
+    try:
+        usage = storage_usage(db, user_id, user_max_bytes, user_max_files)
+    except Exception:
+        _safe_rollback(db)
+        with suppress(StorageError):
+            storage.discard_staged(staged, user_id)
+        raise ImportInternalError("import_registration_failed", "FIT 导入登记失败") from None
+    if (
+        usage.used_bytes + staged.size_bytes > user_max_bytes
+        or usage.file_count + 1 > user_max_files
+    ):
+        try:
+            storage.discard_staged(staged, user_id)
+        except StorageError:
+            _safe_rollback(db)
+            raise
+        staged = None
+        _safe_rollback(db)
+        raise StorageQuotaExceeded(
+            used_bytes=usage.used_bytes,
+            file_count=usage.file_count,
+            max_bytes=user_max_bytes,
+            max_files=user_max_files,
+        )
 
     model = ActivityImport(
         id=import_id,
@@ -494,35 +640,18 @@ async def register_fit_upload(
         warning_count=0,
         replay_metadata={"source": "fit_upload"},
     )
-    db.add(model)
     try:
+        storage.promote(staged, user_id)
+        promoted = True
+        db.add(model)
         db.commit()
-    except IntegrityError:
-        _safe_rollback(db)
-        _safe_remove(storage, staged.storage_key, user_id)
-        try:
-            duplicate = db.scalar(
-                select(ActivityImport).where(
-                    ActivityImport.user_id == user_id,
-                    ActivityImport.sha256 == staged.sha256,
-                )
-            )
-        except Exception:
-            raise ImportInternalError("import_registration_failed", "FIT 导入登记失败") from None
-        if duplicate is None:
-            raise ImportInternalError("import_registration_failed", "FIT 导入登记失败") from None
-        try:
-            return _deduplicated_result(db, storage, user_id, duplicate, stale_minutes)
-        except (ImportInternalError, ImportStateError, StorageError):
-            raise
-        except Exception:
-            _safe_rollback(db)
-            raise ImportInternalError(
-                "import_state_unavailable", "FIT 导入状态暂时不可用"
-            ) from None
     except Exception:
         _safe_rollback(db)
-        _safe_remove(storage, staged.storage_key, user_id)
+        if promoted:
+            _safe_remove(storage, staged.storage_key, user_id)
+        else:
+            with suppress(StorageError):
+                storage.discard_staged(staged, user_id)
         raise ImportInternalError("import_registration_failed", "FIT 导入登记失败") from None
     db.refresh(model)
-    return replay_import(db, storage, model, stale_minutes)
+    return await run_in_threadpool(replay_import, db, storage, model, stale_minutes)

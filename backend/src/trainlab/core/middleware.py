@@ -13,9 +13,11 @@ SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 
 
 def _is_private_activity_api(path: str) -> bool:
-    return path == "/api/v1/activities" or path.startswith(
-        ("/api/v1/activities/", "/api/v1/imports/")
-    )
+    return path in {
+        "/api/v1/activities",
+        "/api/v1/imports",
+        "/api/v1/storage/usage",
+    } or path.startswith(("/api/v1/activities/", "/api/v1/imports/"))
 
 
 async def request_context_middleware(

@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     private_storage_root: Path = Path("./data/private")
     fit_upload_max_bytes: int = 50 * 1024 * 1024
     import_processing_stale_minutes: int = 15
+    user_storage_max_bytes: int = 5 * 1024 * 1024 * 1024
+    user_storage_max_files: int = 10_000
+    storage_staging_grace_minutes: int = 60
     log_level: str = "INFO"
 
     @field_validator("public_origin", mode="after")
@@ -54,6 +57,12 @@ class Settings(BaseSettings):
             raise ValueError("fit_upload_max_bytes must be positive")
         if self.import_processing_stale_minutes < 1:
             raise ValueError("import_processing_stale_minutes must be positive")
+        if self.user_storage_max_bytes < 1:
+            raise ValueError("user_storage_max_bytes must be positive")
+        if self.user_storage_max_files < 1:
+            raise ValueError("user_storage_max_files must be positive")
+        if self.storage_staging_grace_minutes < 1:
+            raise ValueError("storage_staging_grace_minutes must be positive")
         return self
 
 

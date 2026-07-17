@@ -41,12 +41,23 @@ class ActivityImport(TimestampMixin, Base):
     error_code: Mapped[str | None] = mapped_column(String(80), nullable=True)
     error_message: Mapped[str | None] = mapped_column(String(240), nullable=True)
     warning_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    title_override: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    delete_requested_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    last_delete_attempt_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    delete_attempt_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    delete_error_code: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    processing_token: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     replay_metadata: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
 
     __table_args__ = (
         UniqueConstraint("user_id", "sha256", name="uq_activity_imports_user_sha256"),
         UniqueConstraint("id", "user_id", name="uq_activity_imports_id_user"),
         Index("ix_activity_imports_user_created", "user_id", "created_at"),
+        Index("ix_activity_imports_user_status_created", "user_id", "status", "created_at"),
     )
 
 

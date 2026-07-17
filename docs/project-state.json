@@ -25,14 +25,14 @@
     "visual_baseline": "frontend/tests/visual-baselines/v3.4/manifest.json"
   },
   "backend_baseline": {
-    "version": "v0.2",
+    "version": "v0.3",
     "status": "implemented_and_verified",
     "runtime": "python-3.12-fastapi",
     "database": "postgresql-17",
-    "migration_head": "0002_activity_import",
+    "migration_head": "0003_activity_data_lifecycle",
     "api_contract": {
       "version": "v1",
-      "openapi_sha256": "dd75c94e76f7ab98673d686ca92a6a821cf52105df89e73f3109af5fc66b5bb3"
+      "openapi_sha256": "e034418dfefbabaec0e206590d9e755efca7371b21623af70994f19a6e9c5713"
     },
     "scope": [
       "health-readiness",
@@ -42,16 +42,31 @@
       "user-owned-fit-upload",
       "private-source-storage",
       "fit-parse-and-replay",
-      "activity-list-detail-download"
+      "activity-list-detail-download",
+      "activity-title-override",
+      "import-lifecycle-and-recoverable-delete",
+      "per-user-private-storage-quota",
+      "orphan-storage-reconciliation"
     ],
     "business_apis": [
       "POST /api/v1/imports/fit",
+      "GET /api/v1/imports",
+      "DELETE /api/v1/imports/{importId}",
       "POST /api/v1/imports/{importId}/retry",
       "GET /api/v1/activities",
       "GET /api/v1/activities/{activityId}",
-      "GET /api/v1/activities/{activityId}/source"
+      "PATCH /api/v1/activities/{activityId}",
+      "DELETE /api/v1/activities/{activityId}",
+      "GET /api/v1/activities/{activityId}/source",
+      "GET /api/v1/storage/usage"
     ],
     "private_storage": "compose-named-volume",
+    "private_storage_quota": {
+      "default_max_bytes_per_user": 5368709120,
+      "default_max_files_per_user": 10000,
+      "default_orphan_grace_minutes": 60,
+      "reconcile_default": "dry-run"
+    },
     "fit_profiles": ["run", "hike", "strength", "lead", "boulder", "cycling", "generic"]
   },
   "repository_layout": {
@@ -62,5 +77,5 @@
     "shared_docs": "docs",
     "external_design_input": "provided_per_task"
   },
-  "next_milestone": "backend_v0.3_user_owned_data_lifecycle"
+  "next_milestone": "select_next_user_owned_import_source"
 }

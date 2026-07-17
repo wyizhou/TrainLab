@@ -19,3 +19,15 @@ def test_every_activity_business_table_has_an_explicit_user_owner() -> None:
         "activity_metric_definitions",
     }
     assert all("user_id" in table.columns for table in business_tables.values())
+
+
+def test_activity_import_has_lifecycle_and_attempt_fencing_columns() -> None:
+    columns = Base.metadata.tables["activity_imports"].columns
+    assert {
+        "title_override",
+        "delete_requested_at",
+        "last_delete_attempt_at",
+        "delete_attempt_count",
+        "delete_error_code",
+        "processing_token",
+    }.issubset(columns.keys())
