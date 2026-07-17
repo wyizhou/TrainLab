@@ -12,6 +12,12 @@ logger = logging.getLogger("trainlab.request")
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 
 
+def _is_private_activity_api(path: str) -> bool:
+    return path == "/api/v1/activities" or path.startswith(
+        ("/api/v1/activities/", "/api/v1/imports/")
+    )
+
+
 async def request_context_middleware(
     request: Request,
     call_next: Callable[[Request], Awaitable[Response]],
@@ -49,6 +55,8 @@ async def request_context_middleware(
     response.headers["X-Request-ID"] = request.state.request_id
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Referrer-Policy"] = "same-origin"
+    if _is_private_activity_api(request.url.path):
+        response.headers["Cache-Control"] = "private, no-store"
     logger.info(
         "request completed",
         extra={

@@ -38,3 +38,6 @@ htmlcov/
 TrainLab-交接包.md
 backups/
 *.dump
+
+# Private uploaded activity files
+backend/data/

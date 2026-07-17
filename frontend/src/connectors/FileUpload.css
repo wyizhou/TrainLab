@@ -106,6 +106,14 @@
   font-weight: 600;
 }
 
+.file-upload__empty {
+  margin: 0;
+  padding: var(--space-5);
+  color: var(--color-text-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
 .file-upload__row {
   display: flex;
   align-items: center;
@@ -142,6 +150,12 @@
   border: 1px solid var(--color-success-30);
   border-radius: var(--radius-pill);
   font-size: 11px;
+}
+
+.file-upload__stored--preview {
+  color: var(--color-text-muted);
+  background-color: transparent;
+  border-color: var(--color-border-input);
 }
 
 /* Mobile single-column stack (AC-013b-1, design_rev 2). The desktop 4-column

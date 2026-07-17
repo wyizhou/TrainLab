@@ -15,6 +15,9 @@ type ActivityCardListProps = {
   onToggle: (id: string) => void
   onDownload: (id: string) => void
   onOpen?: (id: string) => void
+  isOpenable?: (id: string) => boolean
+  isSelectable?: (id: string) => boolean
+  isDownloadable?: (id: string) => boolean
   children?: ReactNode
 }
 
@@ -31,6 +34,9 @@ export function ActivityCardList({
   onToggle,
   onDownload,
   onOpen,
+  isOpenable,
+  isSelectable,
+  isDownloadable,
   children,
 }: ActivityCardListProps) {
   return (
@@ -39,64 +45,73 @@ export function ActivityCardList({
       data-vc="activities-card-list"
       data-testid="activity-card-list"
     >
-      {activities.map((a) => (
-        <div
-          key={a.id}
-          className="activity-card"
-          data-vc="activity-card"
-          data-testid="activity-card"
-          onClick={() => onOpen?.(a.id)}
-        >
-          <div className="activity-card__top">
-            <input
-              type="checkbox"
-              className="activity-card__check"
-              aria-label={`选择 ${a.name}`}
-              checked={selectedIds.has(a.id)}
-              onChange={() => onToggle(a.id)}
-              onClick={(event) => event.stopPropagation()}
-            />
-            <span className={`activity-dot activity-dot--${TYPE_DOT_SLUG[a.type]}`} />
-            <span className="activity-card__name">{a.name}</span>
-            <button
-              type="button"
-              className="activity-card__download"
-              aria-label={`下载 ${a.name} 的 FIT`}
-              onClick={(event) => {
-                event.stopPropagation()
-                onDownload(a.id)
-              }}
-            >
-              FIT ↓
-            </button>
-          </div>
+      {activities.map((a) => {
+        const openable = onOpen !== undefined && (isOpenable?.(a.id) ?? true)
+        const selectable = isSelectable?.(a.id) ?? true
+        const downloadable = isDownloadable?.(a.id) ?? true
+        return (
+          <div
+            key={a.id}
+            className={openable ? 'activity-card' : 'activity-card activity-card--not-openable'}
+            data-vc="activity-card"
+            data-testid="activity-card"
+            onClick={openable ? () => onOpen(a.id) : undefined}
+          >
+            <div className="activity-card__top">
+              {selectable && (
+                <input
+                  type="checkbox"
+                  className="activity-card__check"
+                  aria-label={`选择 ${a.name}`}
+                  checked={selectedIds.has(a.id)}
+                  onChange={() => onToggle(a.id)}
+                  onClick={(event) => event.stopPropagation()}
+                />
+              )}
+              <span className={`activity-dot activity-dot--${TYPE_DOT_SLUG[a.type]}`} />
+              <span className="activity-card__name">{a.name}</span>
+              {downloadable && (
+                <button
+                  type="button"
+                  className="activity-card__download"
+                  aria-label={`下载 ${a.name} 的 FIT`}
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    onDownload(a.id)
+                  }}
+                >
+                  FIT ↓
+                </button>
+              )}
+            </div>
 
-          <dl className="activity-card__metrics" data-vc="activity-card-metrics">
-            <div>
-              <dt>距离</dt>
-              <dd className="num">{formatDistance(a.distanceKm)}</dd>
-            </div>
-            <div>
-              <dt>时长</dt>
-              <dd className="num">{formatDuration(a.durationSec)}</dd>
-            </div>
-            <div>
-              <dt>平均心率</dt>
-              <dd className="num">{a.avgHr} bpm</dd>
-            </div>
-            <div>
-              <dt>配速 / 功率</dt>
-              <dd className="num">{formatPaceOrPower(a)}</dd>
-            </div>
-          </dl>
+            <dl className="activity-card__metrics" data-vc="activity-card-metrics">
+              <div>
+                <dt>距离</dt>
+                <dd className="num">{formatDistance(a.distanceKm)}</dd>
+              </div>
+              <div>
+                <dt>时长</dt>
+                <dd className="num">{formatDuration(a.durationSec)}</dd>
+              </div>
+              <div>
+                <dt>平均心率</dt>
+                <dd className="num">{a.avgHr === null ? '—' : `${a.avgHr} bpm`}</dd>
+              </div>
+              <div>
+                <dt>配速 / 功率</dt>
+                <dd className="num">{formatPaceOrPower(a)}</dd>
+              </div>
+            </dl>
 
-          <div className="activity-card__foot">
-            <span className="activity-card__date num">{formatActivityDate(a.date)}</span>
-            <span className="activity-card__type">{a.type}</span>
-            <span className="activity-card__src">{a.source}</span>
+            <div className="activity-card__foot">
+              <span className="activity-card__date num">{formatActivityDate(a.date)}</span>
+              <span className="activity-card__type">{a.type}</span>
+              <span className="activity-card__src">{a.source}</span>
+            </div>
           </div>
-        </div>
-      ))}
+        )
+      })}
       {children}
     </div>
   )

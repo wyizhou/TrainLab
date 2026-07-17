@@ -84,6 +84,16 @@
   padding: var(--space-5);
 }
 
+.activity-detail-page__retry {
+  margin: var(--space-3) max(24px, calc((100% - 1192px) / 2));
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-on-accent);
+  background: var(--color-accent);
+  border: 0;
+  border-radius: var(--radius-input);
+  cursor: pointer;
+}
+
 @media (width < 640px) {
   .activity-detail-shell__topbar {
     gap: var(--space-2-5);

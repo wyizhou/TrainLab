@@ -25,22 +25,34 @@
     "visual_baseline": "frontend/tests/visual-baselines/v3.4/manifest.json"
   },
   "backend_baseline": {
-    "version": "v0.1",
+    "version": "v0.2",
     "status": "implemented_and_verified",
     "runtime": "python-3.12-fastapi",
     "database": "postgresql-17",
-    "migration_head": "0001_backend_foundation",
+    "migration_head": "0002_activity_import",
     "api_contract": {
       "version": "v1",
-      "openapi_sha256": "1af2e1c798b4ae8c5f97957b520b93e236fafdbdaee5fa789950ddc390eb7f9c"
+      "openapi_sha256": "dd75c94e76f7ab98673d686ca92a6a821cf52105df89e73f3109af5fc66b5bb3"
     },
     "scope": [
       "health-readiness",
       "owner-bootstrap",
       "cookie-session-auth",
-      "react-static-serving"
+      "react-static-serving",
+      "user-owned-fit-upload",
+      "private-source-storage",
+      "fit-parse-and-replay",
+      "activity-list-detail-download"
     ],
-    "business_apis": "not_implemented"
+    "business_apis": [
+      "POST /api/v1/imports/fit",
+      "POST /api/v1/imports/{importId}/retry",
+      "GET /api/v1/activities",
+      "GET /api/v1/activities/{activityId}",
+      "GET /api/v1/activities/{activityId}/source"
+    ],
+    "private_storage": "compose-named-volume",
+    "fit_profiles": ["run", "hike", "strength", "lead", "boulder", "cycling", "generic"]
   },
   "repository_layout": {
     "frontend": "frontend",
@@ -50,5 +62,5 @@
     "shared_docs": "docs",
     "external_design_input": "provided_per_task"
   },
-  "next_milestone": "define_first_user_scoped_business_vertical"
+  "next_milestone": "define_next_user_scoped_import_source"
 }

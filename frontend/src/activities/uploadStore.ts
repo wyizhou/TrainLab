@@ -1,8 +1,8 @@
-// Uploaded-activity store (contract C-13). FileUpload parses FIT/TCX/GPX files
-// on the 连接器 page and "入库" the results here; ActivitiesPage merges them into
-// the 运动记录 list. There is no global state library (see requirement 007) — this
-// is a tiny module-level observable consumed via useSyncExternalStore. Everything
-// stays front-end mock (G-mock): no network, ids are local (`upload-<n>`).
+// Session-scoped activity overlay (contract C-13), consumed via
+// useSyncExternalStore without a global state library. Local FIT/TCX/GPX preview
+// records created by addUploadedActivities use `upload-<n>` ids; authenticated
+// backend results merged by mergeImportedActivities retain their server UUIDs.
+// Both forms are cleared when the authenticated subject ends or changes.
 
 import { useSyncExternalStore } from 'react'
 import type { Activity } from './activityData'
@@ -26,11 +26,18 @@ export function addUploadedActivities(items: Omit<Activity, 'id'>[]): Activity[]
   return created
 }
 
+export function mergeImportedActivities(items: Activity[]): void {
+  if (items.length === 0) return
+  const incoming = new Set(items.map((item) => item.id))
+  uploaded = [...items, ...uploaded.filter((item) => !incoming.has(item.id))]
+  emit()
+}
+
 export function getUploadedActivities(): readonly Activity[] {
   return uploaded
 }
 
-// Test-only: clears the module-level state between cases.
+// Clears the session-scoped overlay on logout/subject change and between tests.
 export function resetUploadedActivities(): void {
   uploaded = []
   seq = 0
