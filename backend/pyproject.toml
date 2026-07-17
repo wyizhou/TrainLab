@@ -4,16 +4,18 @@ build-backend = "hatchling.build"
 
 [project]
 name = "trainlab-backend"
-version = "0.1.0"
-description = "TrainLab backend foundation"
+version = "0.2.0"
+description = "TrainLab user-owned activity import backend"
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
   "alembic>=1.14,<2",
   "fastapi>=0.115,<1",
+  "garmin-fit-sdk==21.208.0",
   "psycopg[binary]>=3.2,<4",
   "pwdlib[argon2]>=0.2,<1",
   "pydantic-settings>=2.7,<3",
+  "python-multipart>=0.0.20,<1",
   "sqlalchemy>=2.0.37,<3",
   "uvicorn[standard]>=0.34,<1",
 ]
@@ -59,7 +61,7 @@ plugins = ["pydantic.mypy"]
 files = ["src"]
 
 [[tool.mypy.overrides]]
-module = ["alembic.*"]
+module = ["alembic.*", "garmin_fit_sdk.*"]
 ignore_missing_imports = true
 
 [tool.coverage.run]

@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
 from trainlab.db.database import get_db
+from trainlab.db.migrations import migration_head
 from trainlab.main import create_app
 
 
@@ -13,6 +14,10 @@ def test_health_and_ready_are_independent_checks(client: TestClient) -> None:
     ready = client.get("/readyz")
     assert ready.status_code == 200
     assert ready.json() == {"status": "ready"}
+
+
+def test_readiness_uses_the_single_alembic_head() -> None:
+    assert migration_head() == "0002_activity_import"
 
 
 def test_unknown_api_route_uses_json_error(client: TestClient) -> None:

@@ -1,14 +1,22 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
+import { AuthTestProvider } from '../auth/AuthTestProvider'
 import { ConnectorsPage } from './ConnectorsPage'
+
+const renderPage = () =>
+  render(
+    <AuthTestProvider>
+      <ConnectorsPage />
+    </AuthTestProvider>,
+  )
 
 const cards = () => screen.getAllByTestId('connector-card')
 const cardByName = (name: string) => cards().find((c) => within(c).queryByText(name))!
 
 describe('ConnectorsPage demo initial state', () => {
   it('renders 中国区 = 同步失败(ETIMEDOUT) and 国际区 = 未连接', () => {
-    render(<ConnectorsPage />)
+    renderPage()
     expect(screen.getByTestId('page-connectors')).toBeInTheDocument()
     expect(cards()).toHaveLength(2)
 
@@ -24,7 +32,7 @@ describe('ConnectorsPage demo initial state', () => {
 
   it('retry-sync flips 中国区 to 已连接 and clears the error', async () => {
     const user = userEvent.setup()
-    render(<ConnectorsPage />)
+    renderPage()
 
     await user.click(within(cardByName('佳明 Connect 中国区')).getByTestId('connector-action'))
 
@@ -37,7 +45,7 @@ describe('ConnectorsPage demo initial state', () => {
 
   it('connect opens the auth modal; a login flips 国际区 to 已连接', async () => {
     const user = userEvent.setup()
-    render(<ConnectorsPage />)
+    renderPage()
 
     await user.click(within(cardByName('佳明 Connect 国际区')).getByTestId('connector-action'))
 
@@ -56,7 +64,7 @@ describe('ConnectorsPage demo initial state', () => {
 
   it('connecting 国际区 surfaces 2 conflict groups; resolving them clears the banner', async () => {
     const user = userEvent.setup()
-    render(<ConnectorsPage />)
+    renderPage()
 
     // Connect 国际区 (no 2FA) to trigger the double-account merge check.
     await user.click(within(cardByName('佳明 Connect 国际区')).getByTestId('connector-action'))
@@ -84,7 +92,7 @@ describe('ConnectorsPage demo initial state', () => {
 
   it('retry-sync surfaces a 同步成功 toast (AC-001c-4)', async () => {
     const user = userEvent.setup()
-    render(<ConnectorsPage />)
+    renderPage()
     expect(screen.queryByTestId('toast')).not.toBeInTheDocument()
 
     await user.click(within(cardByName('佳明 Connect 中国区')).getByTestId('connector-action'))
@@ -96,14 +104,14 @@ describe('ConnectorsPage demo initial state', () => {
 
   it('retry-syncing 中国区 does not raise a merge banner', async () => {
     const user = userEvent.setup()
-    render(<ConnectorsPage />)
+    renderPage()
     await user.click(within(cardByName('佳明 Connect 中国区')).getByTestId('connector-action'))
     expect(screen.queryByTestId('conflict-banner')).not.toBeInTheDocument()
   })
 
   it('changes the auto-sync interval', async () => {
     const user = userEvent.setup()
-    render(<ConnectorsPage />)
+    renderPage()
 
     const global = cardByName('佳明 Connect 国际区')
     const select = within(global).getByLabelText('自动同步') as HTMLSelectElement

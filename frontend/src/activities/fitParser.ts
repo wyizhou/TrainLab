@@ -41,6 +41,9 @@ export type FitSummary = {
   avgBodyYPIF: number | null // body Y peak impact force (g)
   workoutFeel: number | null // 自我评价 (0–100)
   workoutRpe: number | null // 自我评价 RPE (0–100, ÷10 = 1–10)
+  localStartTime?: string | null
+  utcOffsetMinutes?: number | null
+  extraMetrics?: Record<string, unknown>
 }
 
 // One per-second record row (design 3.2 逐秒数据表 / 降采样曲线).
@@ -56,6 +59,9 @@ export type FitRecordPoint = {
   temperatureC: number | null
   gctMs: number | null // stance time
   vertOscMm: number | null
+  positionLat?: number | null
+  positionLong?: number | null
+  extraMetrics?: Record<string, unknown>
 }
 
 export type FitLap = {
@@ -66,6 +72,7 @@ export type FitLap = {
   maxHr: number | null
   avgPaceSecPerKm: number | null
   avgPowerW: number | null
+  extraMetrics?: Record<string, unknown>
 }
 
 // A single HR-zone bar: seconds spent (FIT time_in_hr_zone) + label boundaries.
@@ -79,6 +86,44 @@ export type ParsedActivity = {
   records: FitRecordPoint[]
   laps: FitLap[]
   hrZoneSeconds: FitHrZoneTime[] // Z1..Z5, from session time_in_hr_zone
+  backend?: {
+    profile: 'run' | 'hike' | 'strength' | 'lead' | 'boulder' | 'cycling' | 'generic'
+    parseStatus: 'complete' | 'partial'
+    originalFileName: string
+    downloadAvailable: boolean
+    recordCount: number
+    recordsSampled: boolean
+    segments: Array<{
+      sequence: number
+      kind: string
+      label: string | null
+      startTime: string | null
+      durationSec: number | null
+      repetitions: number | null
+      weightKg: number | null
+      extraData: Record<string, unknown>
+    }>
+    devices: Array<{
+      id: string
+      role: string
+      manufacturer: string | null
+      product: string | null
+      displayName: string | null
+      transport: string | null
+      sourceType: string | null
+      softwareVersion: string | null
+      batteryStatus: string | null
+    }>
+    metricDefinitions: Array<{
+      id: string
+      deviceId: string | null
+      stableKey: string
+      messageName: string | null
+      fieldName: string | null
+      unit: string | null
+      valueType: string | null
+    }>
+  }
 }
 
 // The number of zones the chart shows (Z1..Z5). FIT stores 7 slots.

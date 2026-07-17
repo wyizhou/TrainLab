@@ -83,7 +83,7 @@ export function updateSettings(patch: (prev: Settings) => Settings): void {
   emit()
 }
 
-// Test-only: restores the baseline between cases.
+// Restores the baseline on logout/subject change and between tests.
 export function resetSettings(): void {
   current = defaultSettings()
   emit()

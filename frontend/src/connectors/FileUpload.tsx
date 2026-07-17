@@ -1,12 +1,21 @@
 import { useRef, useState, type ChangeEvent } from 'react'
-import { addUploadedActivities } from '../activities/uploadStore'
-import { ALLOWED_EXTENSIONS, formatFileSize, parseUploadFile, validateUpload } from './uploadImport'
+import { uploadFitFile, ActivityApiError } from '../activities/activityApi'
+import { addUploadedActivities, mergeImportedActivities } from '../activities/uploadStore'
+import { useAuth } from '../auth/AuthState'
+import {
+  ALLOWED_EXTENSIONS,
+  extensionOf,
+  formatFileSize,
+  parseUploadFile,
+  validateUpload,
+} from './uploadImport'
 import './FileUpload.css'
 
 // 文件上传 area on the 连接器 page (contract C-13). Multi-select FIT/TCX/GPX,
-// rejects >50MB or unsupported extensions with a message, lists the 已解析文件
-// (名称/大小/时间/已入库), and 入库 each parse into the shared upload store so it
-// surfaces in 运动记录 with source 「FIT上传」. All front-end mock (G-mock).
+// rejects >50MB or unsupported extensions with a message and lists the parsed
+// files. Server-authenticated builds persist FIT through the private backend;
+// TCX/GPX remain labeled session-local previews in the shared overlay. The
+// explicit design/demo build keeps its original local-only visual behavior.
 
 type ParsedEntry = {
   key: number
@@ -14,6 +23,7 @@ type ParsedEntry = {
   sizeLabel: string
   timeLabel: string
   demo?: boolean
+  localPreview?: boolean
 }
 
 type RejectedEntry = {
@@ -42,15 +52,20 @@ function formatFileTime(ms: number): string {
 }
 
 export function FileUpload() {
-  const [parsed, setParsed] = useState<ParsedEntry[]>([
-    {
-      key: -1,
-      fileName: '2026-07-06-evening-ride.fit',
-      sizeLabel: '1.2 MB',
-      timeLabel: '07-06 21:03',
-      demo: true,
-    },
-  ])
+  const { demoMode } = useAuth()
+  const [parsed, setParsed] = useState<ParsedEntry[]>(() =>
+    demoMode
+      ? [
+          {
+            key: -1,
+            fileName: '2026-07-06-evening-ride.fit',
+            sizeLabel: '1.2 MB',
+            timeLabel: '07-06 21:03',
+            demo: true,
+          },
+        ]
+      : [],
+  )
   const [rejected, setRejected] = useState<RejectedEntry[]>([])
   const keyRef = useRef(0)
 
@@ -63,21 +78,40 @@ export function FileUpload() {
         continue
       }
       try {
-        const bytes = await readFileBytes(file)
-        const record = parseUploadFile(file.name, bytes)
-        addUploadedActivities([record])
+        const extension = extensionOf(file.name)
+        if (extension === '.fit') {
+          if (demoMode) {
+            const bytes = await readFileBytes(file)
+            const record = parseUploadFile(file.name, bytes)
+            addUploadedActivities([record])
+          } else {
+            const result = await uploadFitFile(file)
+            mergeImportedActivities([result.activity])
+          }
+        } else {
+          // TCX/GPX remain the legacy local-only preview. This milestone only
+          // productizes FIT; these formats are not sent to the backend.
+          const bytes = await readFileBytes(file)
+          const record = parseUploadFile(file.name, bytes)
+          addUploadedActivities([record])
+        }
         setParsed((prev) => [
           {
             key,
             fileName: file.name,
             sizeLabel: formatFileSize(file.size),
             timeLabel: formatFileTime(file.lastModified),
+            localPreview: !demoMode && extension !== '.fit',
           },
           ...prev,
         ])
-      } catch {
+      } catch (error) {
         setRejected((prev) => [
-          { key, fileName: file.name, reason: '文件解析失败，可能已损坏' },
+          {
+            key,
+            fileName: file.name,
+            reason: error instanceof ActivityApiError ? error.message : '文件解析失败，可能已损坏',
+          },
           ...prev,
         ])
       }
@@ -110,8 +144,9 @@ export function FileUpload() {
           </span>
           <span className="file-upload__cue">点击选择或拖入文件(可多选)</span>
           <span className="file-upload__sub">
-            支持 FIT / TCX / GPX,单个文件 ≤ 50 MB ·
-            解析后入库到运动记录,来源标记为&quot;FIT上传&quot;
+            {demoMode
+              ? '支持 FIT / TCX / GPX,单个文件 ≤ 50 MB · 解析后入库到运动记录,来源标记为"FIT上传"'
+              : '支持 FIT / TCX / GPX,单个文件 ≤ 50 MB · FIT 持久化入库；TCX/GPX 仅本地预览'}
           </span>
         </label>
 
@@ -121,6 +156,11 @@ export function FileUpload() {
           data-testid="file-upload-parsed"
         >
           <div className="file-upload__parsed-title">已解析文件</div>
+          {parsed.length === 0 && (
+            <p className="file-upload__empty" data-testid="parsed-files-empty">
+              尚未解析任何文件
+            </p>
+          )}
           {parsed.map((e) => (
             <div
               key={e.key}
@@ -135,10 +175,16 @@ export function FileUpload() {
               <span className="file-upload__meta">{e.sizeLabel}</span>
               <span className="file-upload__meta">{e.timeLabel}</span>
               <span
-                className="file-upload__stored"
-                data-testid={e.demo ? undefined : 'parsed-stored'}
+                className={
+                  e.localPreview
+                    ? 'file-upload__stored file-upload__stored--preview'
+                    : 'file-upload__stored'
+                }
+                data-testid={
+                  e.demo ? undefined : e.localPreview ? 'parsed-preview' : 'parsed-stored'
+                }
               >
-                已入库
+                {e.localPreview ? '本地预览 · 未持久化' : '已入库'}
               </span>
             </div>
           ))}

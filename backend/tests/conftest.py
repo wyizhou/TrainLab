@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from trainlab.core.config import Settings
 from trainlab.core.security import hash_password, normalize_username
 from trainlab.db.database import create_database_engine
+from trainlab.db.models.activity import ActivityImport
 from trainlab.db.models.session import LoginSession
 from trainlab.db.models.user import User
 from trainlab.main import create_app
@@ -33,6 +34,7 @@ def settings(tmp_path_factory: pytest.TempPathFactory) -> Settings:
             "allowed_hosts": ["testserver", "localhost"],
             "session_cookie_secure": False,
             "frontend_dist": tmp_path_factory.mktemp("frontend-missing"),
+            "private_storage_root": tmp_path_factory.mktemp("private-storage"),
         }
     )
 
@@ -47,6 +49,7 @@ def engine(settings: Settings):  # type: ignore[no-untyped-def]
 @pytest.fixture(autouse=True)
 def clean_database(engine) -> Generator[None, None, None]:  # type: ignore[no-untyped-def]
     with Session(engine) as db:
+        db.execute(delete(ActivityImport))
         db.execute(delete(LoginSession))
         db.execute(delete(User))
         db.commit()
