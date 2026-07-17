@@ -59,6 +59,14 @@
   background-color: var(--color-activity-hover-row);
 }
 
+.activity-table__row--not-openable {
+  cursor: default;
+}
+
+.activity-table__row--not-openable:hover {
+  background-color: transparent;
+}
+
 .activity-table__check {
   accent-color: var(--color-accent);
   width: 15px;

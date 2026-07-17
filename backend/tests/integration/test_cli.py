@@ -3,7 +3,7 @@ import os
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from trainlab.cli import create_owner
+from trainlab.cli import create_owner, create_user
 from trainlab.db.models.user import User
 
 
@@ -20,6 +20,18 @@ def test_create_owner_is_idempotent_but_refuses_a_second_owner(engine) -> None: 
         owners = db.scalars(select(User).where(User.is_owner.is_(True))).all()
     assert len(owners) == 1
     assert owners[0].display_name == "Owner"
+
+
+def test_create_user_is_idempotent_and_cannot_replace_the_owner(engine) -> None:  # type: ignore[no-untyped-def]
+    assert create_owner("owner-user", "Owner", "correct-password") == 0
+    assert create_user("peer-user", "Peer", "correct-password") == 0
+    assert create_user("peer-user", "Peer", "correct-password") == 0
+    assert create_user("owner-user", "Owner", "correct-password") == 3
+    with Session(engine) as db:
+        peer = db.scalar(select(User).where(User.username_normalized == "peer-user"))
+    assert peer is not None
+    assert peer.display_name == "Peer"
+    assert peer.is_owner is False
 
 
 def test_create_owner_reports_database_failure(monkeypatch) -> None:  # type: ignore[no-untyped-def]

@@ -15,6 +15,9 @@ type ActivityTableProps = {
   onToggle: (id: string) => void
   onDownload: (id: string) => void
   onOpen?: (id: string) => void
+  isOpenable?: (id: string) => boolean
+  isSelectable?: (id: string) => boolean
+  isDownloadable?: (id: string) => boolean
   children?: ReactNode
 }
 
@@ -26,6 +29,9 @@ export function ActivityTable({
   onToggle,
   onDownload,
   onOpen,
+  isOpenable,
+  isSelectable,
+  isDownloadable,
   children,
 }: ActivityTableProps) {
   return (
@@ -52,47 +58,64 @@ export function ActivityTable({
           <span />
         </div>
 
-        {activities.map((a) => (
-          <div
-            key={a.id}
-            className="activity-table__row"
-            role="row"
-            data-vc="activity-table-row"
-            data-testid="activity-row"
-            onClick={() => onOpen?.(a.id)}
-          >
-            <input
-              type="checkbox"
-              className="activity-table__check"
-              aria-label={`选择 ${a.name}`}
-              checked={selectedIds.has(a.id)}
-              onChange={() => onToggle(a.id)}
-              onClick={(event) => event.stopPropagation()}
-            />
-            <span className="activity-table__date num">{formatActivityDate(a.date)}</span>
-            <span className="activity-table__type">
-              <span className={`activity-dot activity-dot--${TYPE_DOT_SLUG[a.type]}`} />
-              {a.type}
-            </span>
-            <span className="activity-table__name">{a.name}</span>
-            <span className="num">{formatDistance(a.distanceKm)}</span>
-            <span className="num">{formatDuration(a.durationSec)}</span>
-            <span className="num">{a.avgHr} bpm</span>
-            <span className="num">{formatPaceOrPower(a)}</span>
-            <span className="activity-table__src">{a.source}</span>
-            <button
-              type="button"
-              className="activity-table__download"
-              aria-label={`下载 ${a.name} 的 FIT`}
-              onClick={(event) => {
-                event.stopPropagation()
-                onDownload(a.id)
-              }}
+        {activities.map((a) => {
+          const openable = onOpen !== undefined && (isOpenable?.(a.id) ?? true)
+          const selectable = isSelectable?.(a.id) ?? true
+          const downloadable = isDownloadable?.(a.id) ?? true
+          return (
+            <div
+              key={a.id}
+              className={
+                openable
+                  ? 'activity-table__row'
+                  : 'activity-table__row activity-table__row--not-openable'
+              }
+              role="row"
+              data-vc="activity-table-row"
+              data-testid="activity-row"
+              onClick={openable ? () => onOpen(a.id) : undefined}
             >
-              FIT ↓
-            </button>
-          </div>
-        ))}
+              {selectable ? (
+                <input
+                  type="checkbox"
+                  className="activity-table__check"
+                  aria-label={`选择 ${a.name}`}
+                  checked={selectedIds.has(a.id)}
+                  onChange={() => onToggle(a.id)}
+                  onClick={(event) => event.stopPropagation()}
+                />
+              ) : (
+                <span aria-hidden="true" />
+              )}
+              <span className="activity-table__date num">{formatActivityDate(a.date)}</span>
+              <span className="activity-table__type">
+                <span className={`activity-dot activity-dot--${TYPE_DOT_SLUG[a.type]}`} />
+                {a.type}
+              </span>
+              <span className="activity-table__name">{a.name}</span>
+              <span className="num">{formatDistance(a.distanceKm)}</span>
+              <span className="num">{formatDuration(a.durationSec)}</span>
+              <span className="num">{a.avgHr === null ? '—' : `${a.avgHr} bpm`}</span>
+              <span className="num">{formatPaceOrPower(a)}</span>
+              <span className="activity-table__src">{a.source}</span>
+              {downloadable ? (
+                <button
+                  type="button"
+                  className="activity-table__download"
+                  aria-label={`下载 ${a.name} 的 FIT`}
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    onDownload(a.id)
+                  }}
+                >
+                  FIT ↓
+                </button>
+              ) : (
+                <span aria-hidden="true" />
+              )}
+            </div>
+          )
+        })}
         {children}
       </div>
     </div>

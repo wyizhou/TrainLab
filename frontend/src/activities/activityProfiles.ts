@@ -1010,7 +1010,7 @@ function runningProfile(activity: Activity, parsed: ParsedActivity | null): Acti
       { label: '平均配速', value: paceValue, unit: '/km' },
       {
         label: '平均 / 最大心率',
-        value: `${summary?.avgHr ?? activity.avgHr} / ${summary?.maxHr ?? '未提供'}`,
+        value: `${summary?.avgHr ?? activity.avgHr ?? '未提供'} / ${summary?.maxHr ?? '未提供'}`,
         unit: 'bpm',
       },
       {
@@ -1066,10 +1066,283 @@ function runningProfile(activity: Activity, parsed: ParsedActivity | null): Acti
   }
 }
 
+function backendProfile(activity: Activity, parsed: ParsedActivity): ActivityProfile {
+  const backend = parsed.backend!
+  const summary = parsed.summary
+  const id = backend.profile
+  const labels: Record<ActivityProfileId, [string, string]> = {
+    run: ['跑步', 'RUN'],
+    hike: ['徒步', 'HIKE'],
+    strength: ['力量', 'STRENGTH'],
+    lead: ['难度攀岩', 'LEAD'],
+    boulder: ['抱石', 'BOULDER'],
+    cycling: ['骑行', 'BIKE'],
+    generic: ['通用', 'GEN'],
+  }
+  const chartCandidates: Array<DetailChart | null> = [
+    chartFromRecords('heart_rate', '心率', 'bpm', 'record.heart_rate', parsed.records, (r) => r.hr),
+    chartFromRecords(
+      'altitude',
+      '海拔',
+      'm',
+      'record.enhanced_altitude',
+      parsed.records,
+      (r) => r.altitudeM,
+    ),
+    chartFromRecords('power', '功率', 'W', 'record.power', parsed.records, (r) => r.powerW),
+    chartFromRecords(
+      'cadence',
+      '步频 / 踏频',
+      'spm',
+      'record.cadence',
+      parsed.records,
+      (r) => r.cadenceSpm,
+    ),
+    chartFromRecords(
+      'stance_time',
+      '触地时间',
+      'ms',
+      'record.stance_time',
+      parsed.records,
+      (r) => r.gctMs,
+    ),
+    chartFromRecords(
+      'vertical_oscillation',
+      '垂直振幅',
+      'mm',
+      'record.vertical_oscillation',
+      parsed.records,
+      (r) => r.vertOscMm,
+    ),
+  ]
+  const charts = chartCandidates.filter(
+    (candidate): candidate is DetailChart =>
+      candidate !== null && candidate.values.some((v) => v !== null),
+  )
+  const summarySegments = backend.segments.filter(
+    (segment) => segment.extraData.sourceMessage === 'split_summary',
+  )
+  const concreteSegments = backend.segments.filter(
+    (segment) => segment.extraData.sourceMessage !== 'split_summary',
+  )
+  const strengthSets = concreteSegments.filter(
+    (segment) => segment.extraData.sourceMessage === 'set',
+  )
+  // Strength FITs may contain parallel set and split descriptions for the same
+  // workout. Prefer concrete set messages for training-group instances when
+  // available. Climbing and route profiles use concrete split messages. Every
+  // raw message remains available in backend.segments for audit/replay.
+  const instanceSegments =
+    id === 'strength' && strengthSets.length > 0 ? strengthSets : concreteSegments
+  const backendSegments: DetailSegment[] = instanceSegments.map((segment, index) => ({
+    id: `segment-${segment.sequence}`,
+    label: segment.label ?? `${segment.kind} ${index + 1}`,
+    duration: segment.durationSec === null ? '未提供' : clock(segment.durationSec),
+    progress: (index + 0.5) / Math.max(1, instanceSegments.length),
+    details: [
+      segment.kind,
+      segment.repetitions === null ? '次数未提供' : `${segment.repetitions} 次`,
+      segment.weightKg === null ? '重量未提供' : `${displayNumber(segment.weightKg)} kg`,
+    ],
+    kind: id === 'strength' ? 'exercise' : id === 'lead' || id === 'boulder' ? 'climb' : 'lap',
+  }))
+  const segments = backendSegments.length > 0 ? backendSegments : segmentsFromLaps(parsed.laps)
+  const activeSeconds = instanceSegments
+    .filter((segment) => !segment.kind.toLowerCase().includes('rest'))
+    .reduce((sum, segment) => sum + (segment.durationSec ?? 0), 0)
+  const restSeconds = instanceSegments
+    .filter((segment) => segment.kind.toLowerCase().includes('rest'))
+    .reduce((sum, segment) => sum + (segment.durationSec ?? 0), 0)
+  const composition =
+    activeSeconds + restSeconds > 0
+      ? [
+          {
+            label: id === 'boulder' ? '尝试' : id === 'lead' ? '攀爬' : '活动',
+            value: activeSeconds,
+          },
+          { label: '休息', value: restSeconds },
+        ]
+      : [
+          { label: '运动', value: summary.totalTimerTimeSec },
+          {
+            label: '暂停',
+            value: Math.max(0, summary.totalElapsedTimeSec - summary.totalTimerTimeSec),
+          },
+        ]
+  const gps = parsed.records.filter(
+    (record) => record.positionLat !== null && record.positionLong !== null,
+  )
+  const routePoints: Array<[number, number]> = (() => {
+    if (gps.length === 0) return []
+    const latitudes = gps.map((record) => record.positionLat!)
+    const longitudes = gps.map((record) => record.positionLong!)
+    const minLat = Math.min(...latitudes)
+    const maxLat = Math.max(...latitudes)
+    const minLong = Math.min(...longitudes)
+    const maxLong = Math.max(...longitudes)
+    const latRange = Math.max(maxLat - minLat, Number.EPSILON)
+    const longRange = Math.max(maxLong - minLong, Number.EPSILON)
+    return downsampleRecords(gps, 80).map((record) => [
+      16 + ((record.positionLong! - minLong) / longRange) * 272,
+      167 - ((record.positionLat! - minLat) / latRange) * 143,
+    ])
+  })()
+  let specialized: DetailSpecialized
+  if ((id === 'hike' || id === 'run' || id === 'cycling') && routePoints.length > 1) {
+    specialized = {
+      kind: 'route',
+      points: routePoints,
+      facts: [
+        ['定位点', `${gps.length} 条`],
+        ['总爬升', summary.totalAscentM === null ? '未提供' : `${summary.totalAscentM} m`],
+      ],
+    }
+  } else if (id === 'strength') {
+    specialized = {
+      kind: 'exercises',
+      rows: instanceSegments
+        .slice(0, 20)
+        .map((segment, index) => [
+          segment.label ?? `训练组 ${index + 1}`,
+          segment.kind,
+          segment.repetitions === null ? '未提供' : String(segment.repetitions),
+          segment.weightKg === null ? '重量未提供' : `${displayNumber(segment.weightKg)} kg`,
+        ]),
+    }
+  } else if (id === 'lead' || id === 'boulder') {
+    specialized = {
+      kind: 'attempts',
+      note:
+        id === 'lead'
+          ? '仅展示文件中可验证的攀爬与休息段；文件未提供等级时不生成路线等级。'
+          : '仅展示文件中可验证的尝试与休息段；不推断 V 级、成功率或失败原因。',
+    }
+  } else {
+    specialized = {
+      kind: 'metrics',
+      items: [
+        { label: '平均步频 / 踏频', value: displayNumber(summary.avgCadenceSpm), unit: 'spm' },
+        { label: '触地时间', value: displayNumber(summary.avgGctMs), unit: 'ms' },
+        { label: '垂直振幅', value: displayNumber(summary.avgVertOscMm), unit: 'mm' },
+      ],
+      note: '仅呈现 FIT 中存在的字段；未证明来源的指标不绑定具体设备。',
+    }
+  }
+  const devices: DetailDevice[] = backend.devices.map((device) => ({
+    kind:
+      device.role.includes('recording') || device.role.includes('watch')
+        ? 'watch'
+        : device.role.includes('unknown')
+          ? 'unknown'
+          : 'sensor',
+    role: device.role,
+    name:
+      [device.manufacturer, device.product, device.displayName].filter(Boolean).join(' · ') ||
+      '名称未记录',
+    protocol: device.transport ?? device.sourceType ?? '未知',
+    version: device.softwareVersion ?? '未记录',
+    battery: device.batteryStatus ?? '未记录',
+    provides: ['仅显示文件明确记录的设备身份；指标归属未证明'],
+  }))
+  const extraMetrics = summary.extraMetrics ?? {}
+  const extensionItems = backend.metricDefinitions.slice(0, 24).map((definition) => ({
+    label: definition.fieldName ?? definition.stableKey,
+    value:
+      definition.stableKey in extraMetrics
+        ? String(extraMetrics[definition.stableKey])
+        : '逐点数据',
+    unit: definition.unit ?? undefined,
+    source: definition.stableKey.startsWith('developer:') ? '开发者字段' : 'FIT 扩展字段',
+    help: definition.deviceId === null ? '设备来源未明确' : '设备关联已验证',
+  }))
+  const pace = summary.avgSpeedMps && summary.avgSpeedMps > 0 ? 1000 / summary.avgSpeedMps : null
+  const localTime = summary.localStartTime ?? summary.startTime
+  const offset = summary.utcOffsetMinutes
+  return {
+    id,
+    label: labels[id][0],
+    token: labels[id][1],
+    fileName: backend.originalFileName,
+    title: activity.name,
+    meta: `${localTime.slice(0, 16).replace('T', ' ')} · ${summary.sport} / ${summary.subSport}${offset === null || offset === undefined ? '' : ` · UTC${offset >= 0 ? '+' : ''}${offset / 60}`}`,
+    parseStatus: backend.parseStatus,
+    parseStatusLabel: backend.parseStatus === 'complete' ? '解析完整' : '部分字段未映射',
+    loadLabel:
+      summary.totalTrainingEffect === null
+        ? '训练效果未提供'
+        : `有氧训练效果 ${displayNumber(summary.totalTrainingEffect, 1)}`,
+    metrics: [
+      {
+        label: id === 'strength' || id === 'lead' || id === 'boulder' ? '分段 / 训练组' : '距离',
+        value:
+          id === 'strength' || id === 'lead' || id === 'boulder'
+            ? String(instanceSegments.length)
+            : displayNumber(summary.totalDistanceM / 1000),
+        unit: id === 'strength' || id === 'lead' || id === 'boulder' ? '段' : 'km',
+      },
+      { label: '运动时间', value: clock(summary.totalTimerTimeSec) },
+      {
+        label: '平均 / 最大心率',
+        value: `${summary.avgHr ?? '未提供'} / ${summary.maxHr ?? '未提供'}`,
+        unit: 'bpm',
+      },
+      {
+        label: id === 'cycling' ? '平均功率' : '平均配速',
+        value:
+          id === 'cycling'
+            ? displayNumber(summary.avgPowerW)
+            : pace === null
+              ? '未提供'
+              : `${Math.floor(pace / 60)}:${String(Math.round(pace % 60)).padStart(2, '0')}`,
+        unit: id === 'cycling' ? 'W' : '/km',
+      },
+      { label: '总爬升', value: displayNumber(summary.totalAscentM), unit: 'm' },
+      { label: '卡路里', value: displayNumber(summary.totalCalories), unit: 'kcal' },
+    ],
+    insight:
+      '此页面来自登录用户私有 FIT 文件；原生字段、开发者字段、设备身份和传输协议分别保存，不基于共现关系猜测指标来源。',
+    charts,
+    composition,
+    fields: [
+      ['record', `${backend.recordCount} 条${backend.recordsSampled ? '（当前视图已采样）' : ''}`],
+      ['lap', `${parsed.laps.length} 个`],
+      ['segment', `${instanceSegments.length} 个实例`],
+      ...(summarySegments.length
+        ? ([['split_summary', `${summarySegments.length} 个摘要`]] as Array<[string, string]>)
+        : []),
+      ['device_info', `${backend.devices.length} 个`],
+      ['developer_fields', `${backend.metricDefinitions.length} 个定义`],
+    ],
+    specializedTitle:
+      id === 'strength'
+        ? '训练组结构'
+        : id === 'lead' || id === 'boulder'
+          ? '攀爬结构'
+          : '专项数据',
+    specializedNote: routePoints.length > 1 ? 'GPS 轨迹仅对当前登录用户可见' : '按字段存在性启用',
+    specialized,
+    segments,
+    noLapsReason: parsed.laps.length ? undefined : '文件未提供可用圈；不会自动生成公里圈。',
+    noGpsReason: gps.length ? undefined : '文件未提供可用 GPS 定位；不显示空地图。',
+    devices,
+    extensionGroups: extensionItems.length
+      ? [{ id: 'imported-extensions', name: '扩展指标', items: extensionItems }]
+      : [],
+    rawRecords: downsampleRecords(parsed.records).map((record, index) => ({
+      index: index + 1,
+      heartRate: record.hr === null ? '未提供' : String(record.hr),
+      specialized: record.powerW === null ? '扩展字段按需显示' : `${record.powerW} W`,
+      completeness: record.hr === null ? '部分字段缺失' : '完整',
+    })),
+    downloadAvailable: backend.downloadAvailable,
+  }
+}
+
 export function buildActivityProfile(
   activity: Activity,
   parsed: ParsedActivity | null,
 ): ActivityProfile {
+  if (parsed?.backend) return backendProfile(activity, parsed)
   const id = profileIdFor(activity, parsed)
   return id === 'run' ? runningProfile(activity, parsed) : staticProfile(id)
 }

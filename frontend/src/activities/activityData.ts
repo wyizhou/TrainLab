@@ -15,11 +15,12 @@ export type Activity = {
   name: string
   distanceKm: number | null // null for strength sessions
   durationSec: number
-  avgHr: number
+  avgHr: number | null
   paceSecPerKm: number | null // run / trail
   pace100Sec: number | null // swim (seconds per 100m)
   powerW: number | null // ride
   source: ActivitySource
+  profile?: 'run' | 'hike' | 'strength' | 'lead' | 'boulder' | 'cycling' | 'generic'
 }
 
 // The list's first row is the real FIT-backed activity (contract C-8). Its
@@ -35,7 +36,19 @@ export const FIT_A0 = {
 } as const
 
 // The filter capsules; 全部 is the default (no filter). Order matches C-7.
-export const TYPE_FILTERS = ['全部', '跑步', '骑行', '游泳', '力量', '越野跑'] as const
+export const TYPE_FILTERS = [
+  '全部',
+  '跑步',
+  '骑行',
+  '游泳',
+  '力量',
+  '越野跑',
+  '徒步',
+  '难度攀岩',
+  '抱石',
+  '其他',
+] as const
+export const DEMO_TYPE_FILTERS = ['全部', '跑步', '骑行', '游泳', '力量', '越野跑'] as const
 export type TypeFilter = (typeof TYPE_FILTERS)[number]
 
 // Maps a type to a stable CSS class slug for its colour dot. The raw colours

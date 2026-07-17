@@ -109,4 +109,14 @@ describe('parseUploadFile', () => {
   it('throws on a corrupt payload', () => {
     expect(() => parseUploadFile('broken.gpx', enc('<gpx><trk'))).toThrow()
   })
+
+  it('keeps missing local XML heart rate as null instead of inventing zero bpm', () => {
+    const a = parseUploadFile(
+      'no-heart-rate.gpx',
+      enc(
+        '<gpx><trk><name>无心率</name><trkseg><trkpt lat="30" lon="104"><time>2026-01-01T00:00:00Z</time></trkpt><trkpt lat="30.001" lon="104.001"><time>2026-01-01T00:01:00Z</time></trkpt></trkseg></trk></gpx>',
+      ),
+    )
+    expect(a.avgHr).toBeNull()
+  })
 })

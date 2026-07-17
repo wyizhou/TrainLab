@@ -1,6 +1,6 @@
 # TrainLab
 
-TrainLab 是一个运动数据分析项目。前端覆盖 AI 分析、运动记录、FIT 详情、健康记录、佳明连接器、文件上传和设置页面；后端基础已提供真实账号登录、会话、数据库迁移和前后端一体化运行。运动业务、同步、上传和 AI 仍保持前端模拟。
+TrainLab 是一个运动数据分析项目。前端覆盖 AI 分析、运动记录、通用运动详情、健康记录、佳明连接器、文件上传和设置页面；后端已提供真实账号登录、用户归属的本地 FIT 上传与持久化、数据库迁移和前后端一体化运行。佳明在线同步、TCX/GPX 后端导入和 AI 仍保持模拟或未接入。
 
 项目最初用于实验 Claude Code 三角色开发 harness，目前已迁移为 Codex 三阶段开发模式。规划、实现、验收是每个任务的固定阶段；独立 Planner / Validator 是否介入由任务风险决定，主 Agent 负责实现和协调。
 
@@ -26,6 +26,7 @@ TrainLab 是一个运动数据分析项目。前端覆盖 AI 分析、运动记�
 
 - Python 3.12 + FastAPI
 - SQLAlchemy 2 + PostgreSQL 17 + Alembic
+- Garmin FIT SDK 与私有原文件存储
 - uv + Ruff + mypy + pytest
 - Docker Compose
 
@@ -49,7 +50,10 @@ npm --prefix frontend run test
 npm --prefix frontend run e2e
 npm --prefix frontend run build
 backend/scripts/check.sh
+npm --prefix frontend run e2e:fullstack
 ```
+
+Compose 使用独立命名卷保存 PostgreSQL 数据和私有 FIT 原文件；普通 `down` 会保留两者，`down -v` 会同时删除，使用前必须确认已备份。
 
 `npm --prefix frontend run e2e` 会执行完整的功能、样式、几何与截图契约。字体验收采用有序的跨平台字体栈：macOS、Windows 和 Linux 可以使用栈中各自可用的字体；文字内在宽度通过不重叠、固定间距、边界和无溢出关系验收，其他几何仍执行严格基线比较。
 

@@ -28,11 +28,14 @@ services:
       TRAINLAB_ALLOWED_HOSTS: '["localhost","127.0.0.1"]'
       TRAINLAB_SESSION_COOKIE_SECURE: "false"
       TRAINLAB_FRONTEND_DIST: /app/frontend-dist
+      TRAINLAB_PRIVATE_STORAGE_ROOT: /app/backend/data/private
     depends_on:
       db:
         condition: service_healthy
     ports:
       - "8000:8000"
+    volumes:
+      - trainlab-private-files:/app/backend/data/private
     healthcheck:
       test:
         [
@@ -72,6 +75,7 @@ services:
       TRAINLAB_ALLOWED_HOSTS: '["testserver","localhost"]'
       TRAINLAB_SESSION_COOKIE_SECURE: "false"
       TRAINLAB_FRONTEND_DIST: /tmp/trainlab-no-frontend
+      TRAINLAB_PRIVATE_STORAGE_ROOT: /tmp/trainlab-test-private
     depends_on:
       test-db:
         condition: service_healthy
@@ -84,3 +88,4 @@ services:
 
 volumes:
   trainlab-db:
+  trainlab-private-files:

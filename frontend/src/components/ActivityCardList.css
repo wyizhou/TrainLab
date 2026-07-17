@@ -20,6 +20,10 @@
   cursor: pointer;
 }
 
+.activity-card--not-openable {
+  cursor: default;
+}
+
 .activity-card__top {
   display: flex;
   align-items: center;
