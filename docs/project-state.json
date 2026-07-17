@@ -3,7 +3,7 @@
   "legacy_harness": "retired",
   "product_release": {
     "version": "v0.1.0",
-    "status": "verified_release_candidate_pending_independent_review",
+    "status": "validated_release_candidate_pending_pr_checks",
     "publication": "pending_pr_review_main_merge_tag_and_github_release",
     "release_plan": "docs/plans/first-release-v0.1.0.md",
     "release_notes": "docs/releases/v0.1.0.md",
