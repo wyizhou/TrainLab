@@ -129,7 +129,12 @@ def create_backup(destination: Path, project: str) -> Path:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output", required=True, type=Path, help="new backup directory")
+    parser.add_argument(
+        "--output",
+        required=True,
+        type=Path,
+        help="new backup directory; its parent directory must already exist",
+    )
     parser.add_argument(
         "--project",
         default=os.environ.get("COMPOSE_PROJECT_NAME", "trainlab"),

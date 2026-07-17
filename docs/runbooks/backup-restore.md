@@ -9,10 +9,14 @@ TrainLab 的完整用户数据分布在两个持久卷：PostgreSQL 保存账号
 从仓库根目录执行，并为每次备份使用一个尚不存在的新目录：
 
 ```bash
+mkdir -p backups
+chmod 700 backups
 python3 backend/scripts/backup_release.py \
   --project trainlab \
   --output backups/trainlab-v0.1.0-before-change
 ```
+
+父目录必须先存在；上面的两行会在全新 checkout 中创建它，并在写入任何敏感制品前把权限收紧为 `0700`。`--output` 指向的最终备份目录仍必须不存在，工具会自行以 `0700` 创建，避免覆盖旧恢复点。
 
 工具会：
 

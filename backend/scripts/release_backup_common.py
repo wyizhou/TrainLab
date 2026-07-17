@@ -135,7 +135,9 @@ def create_private_directory(path: Path) -> Path:
     try:
         path.mkdir(mode=0o700, parents=False, exist_ok=False)
     except OSError as exc:
-        raise ReleaseBackupError("Backup destination must be a new directory") from exc
+        raise ReleaseBackupError(
+            "Backup parent must exist and the destination must be a new directory"
+        ) from exc
     os.chmod(path, 0o700)
     return path.resolve()
 
