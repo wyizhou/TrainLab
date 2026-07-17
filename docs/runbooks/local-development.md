@@ -22,7 +22,16 @@ curl -i http://localhost:8000/readyz
 
 `healthz` 正常但 `readyz` 失败，通常代表数据库未启动、连接配置错误或迁移未完成。应用容器启动时会先自动运行 `alembic upgrade head`。
 
-FIT 导入问题先按请求返回的稳定 `code` 判断。`partial` 可以重试；`failed` 会保留原文件供重放；超过配置时限的 `processing` 可安全恢复；原文件丢失会落为 `failed/raw_file_unavailable`，不会永久卡在处理中。日志和工单中不得粘贴 GPS、健康数据、设备序列号、原文件或服务端存储路径。
+FIT 导入问题先按请求返回的稳定 `code` 判断。`partial` 可以重试；`failed` 会保留原文件供重放；超过配置时限的 `processing` 可安全恢复；原文件丢失会落为 `failed/raw_file_unavailable`，不会永久卡在处理中。`storage_quota_exceeded` 只表示当前用户已登记字节数或文件数达到配置上限；`delete_incomplete` 可通过重复同一 DELETE 恢复。日志和工单中不得粘贴 GPS、健康数据、设备序列号、原文件或服务端存储路径。
+
+查看和清理崩溃残留：
+
+```bash
+backend/scripts/compose.sh exec backend trainlab reconcile-storage
+backend/scripts/compose.sh exec backend trainlab reconcile-storage --apply
+```
+
+第一条只审计；第二条才会删除超过 `TRAINLAB_STORAGE_STAGING_GRACE_MINUTES` 且无数据库引用的生成文件。运行 `--apply` 前先备份数据库和私有卷，并确认没有正在执行的维护任务。命令按用户取得行锁，合法在途文件不会被清理。
 
 ## 数据库迁移
 

@@ -1,6 +1,6 @@
 # TrainLab
 
-TrainLab 是一个运动数据分析项目。前端覆盖 AI 分析、运动记录、通用运动详情、健康记录、佳明连接器、文件上传和设置页面；后端已提供真实账号登录、用户归属的本地 FIT 上传与持久化、数据库迁移和前后端一体化运行。佳明在线同步、TCX/GPX 后端导入和 AI 仍保持模拟或未接入。
+TrainLab 是一个运动数据分析项目。前端覆盖 AI 分析、运动记录、通用运动详情、健康记录、佳明连接器、文件上传和设置页面；后端已提供真实账号登录、用户归属的本地 FIT 上传与持久化、重命名、导入记录、可恢复删除、存储配额、数据库迁移和前后端一体化运行。佳明在线同步、TCX/GPX 后端导入和 AI 仍保持模拟或未接入。
 
 项目最初用于实验 Claude Code 三角色开发 harness，目前已迁移为 Codex 三阶段开发模式。规划、实现、验收是每个任务的固定阶段；独立 Planner / Validator 是否介入由任务风险决定，主 Agent 负责实现、集成和协调。大型任务在公共基础验收后，可将真正独立的交付单元分配到各自分支、worktree 和子 Agent。
 
@@ -54,6 +54,8 @@ npm --prefix frontend run e2e:fullstack
 ```
 
 Compose 使用独立命名卷保存 PostgreSQL 数据和私有 FIT 原文件；普通 `down` 会保留两者，`down -v` 会同时删除，使用前必须确认已备份。
+
+私有原文件默认按用户限制为 5 GiB、10,000 个；孤儿文件审计使用 `backend/scripts/compose.sh exec backend trainlab reconcile-storage`，该命令默认 dry-run。删除动作、`--apply` 清理和 `down -v` 都应先核对数据库与私有卷的同时间点备份。
 
 `npm --prefix frontend run e2e` 会执行完整的功能、样式、几何与截图契约。字体验收采用有序的跨平台字体栈：macOS、Windows 和 Linux 可以使用栈中各自可用的字体；文字内在宽度通过不重叠、固定间距、边界和无溢出关系验收，其他几何仍执行严格基线比较。
 
