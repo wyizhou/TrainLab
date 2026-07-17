@@ -2,7 +2,7 @@
 
 TrainLab 是一个运动数据分析项目。前端覆盖 AI 分析、运动记录、通用运动详情、健康记录、佳明连接器、文件上传和设置页面；后端已提供真实账号登录、用户归属的本地 FIT 上传与持久化、数据库迁移和前后端一体化运行。佳明在线同步、TCX/GPX 后端导入和 AI 仍保持模拟或未接入。
 
-项目最初用于实验 Claude Code 三角色开发 harness，目前已迁移为 Codex 三阶段开发模式。规划、实现、验收是每个任务的固定阶段；独立 Planner / Validator 是否介入由任务风险决定，主 Agent 负责实现和协调。
+项目最初用于实验 Claude Code 三角色开发 harness，目前已迁移为 Codex 三阶段开发模式。规划、实现、验收是每个任务的固定阶段；独立 Planner / Validator 是否介入由任务风险决定，主 Agent 负责实现、集成和协调。大型任务在公共基础验收后，可将真正独立的交付单元分配到各自分支、worktree 和子 Agent。
 
 ## 当前状态
 
@@ -65,6 +65,7 @@ Compose 使用独立命名卷保存 PostgreSQL 数据和私有 FIT 原文件；�
 - `backend/`：FastAPI 后端、数据库模型与迁移、测试和运行脚本。
 - `compose.yaml`：PostgreSQL、完整应用与隔离测试环境。
 - `docs/`：全项目状态、待办、工作流和历史契约。
+- `docs/plans/`：跨多轮大型里程碑的动态实施计划与交付单元。
 - `AGENTS.md`：对整个仓库生效的 Codex 项目规则。
 
 ## 页面
@@ -87,7 +88,7 @@ Compose 使用独立命名卷保存 PostgreSQL 数据和私有 FIT 原文件；�
 2. 实现：直接修改代码并同步测试。
 3. 验收：运行自动门禁，界面改动对照当前权威设计基线。
 
-小型任务由主 Agent 完成全部阶段；中型任务增加独立 Validator；大型或高风险任务增加前置独立 Planner，并在实现后由独立 Validator 复核。
+小型任务由主 Agent 完成全部阶段；中型任务增加独立 Validator；大型或高风险任务增加前置独立 Planner，并在实现后由独立 Validator 复核。大型任务若可证明单元之间的依赖和文件边界清晰，可使用受控的 worktree 并行实现；集成分支和最终交付仍由主 Agent 负责。
 
 完整规则见根 `AGENTS.md` 和 `docs/workflow/`。
 
