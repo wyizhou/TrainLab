@@ -1,6 +1,27 @@
 {
   "workflow": "codex-three-stage",
   "legacy_harness": "retired",
+  "product_release": {
+    "version": "v0.1.0",
+    "status": "validated_release_candidate_pending_pr_checks",
+    "publication": "pending_pr_review_main_merge_tag_and_github_release",
+    "release_plan": "docs/plans/first-release-v0.1.0.md",
+    "release_notes": "docs/releases/v0.1.0.md",
+    "runtime_boundary": "localhost-http-only",
+    "supported_scope": [
+      "local-login-session-logout",
+      "user-owned-fit-upload-list-detail-download",
+      "user-admin-password-reset-and-session-revocation-cli",
+      "stopped-writer-database-and-private-files-backup-restore",
+      "repeatable-compose-startup"
+    ],
+    "excluded_scope": [
+      "garmin-tcx-gpx-ai",
+      "new-lifecycle-ui",
+      "browser-password-or-session-management",
+      "public-internet-tls-ha"
+    ]
+  },
   "design_baseline": {
     "provider": "open-design",
     "project_id": "e7be4d5a-73a1-4237-a9ca-dff73980c8e9",

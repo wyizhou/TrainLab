@@ -74,7 +74,16 @@ def authenticate_user(
     current_time = now or datetime.now(UTC)
     if rate_limiter.is_blocked(source, username, current_time):
         return None
-    user = db.scalar(select(User).where(User.username_normalized == normalize_username(username)))
+    # Keep credential verification and session insertion in one serialized
+    # transaction. Administrative password reset/session revocation takes the
+    # same user-row lock, so it either runs before this login reads the hash or
+    # after this login has committed its session; it can never miss a session
+    # created from credentials verified before the command returned.
+    user = db.scalar(
+        select(User)
+        .where(User.username_normalized == normalize_username(username))
+        .with_for_update()
+    )
     if user is None:
         perform_dummy_password_check(password)
         rate_limiter.record_failure(settings, source, username, current_time)
