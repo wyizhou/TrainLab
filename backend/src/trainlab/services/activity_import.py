@@ -27,6 +27,11 @@ from trainlab.importers.fit import (
     ParsedFitActivity,
     parse_fit_file,
 )
+from trainlab.services.activity_states import (
+    DELETE_RECOVERABLE_STATUSES,
+    PARSE_RETRYABLE_STATUSES,
+    VISIBLE_ACTIVITY_STATUSES,
+)
 from trainlab.services.activity_storage import PrivateActivityStorage, StorageError
 
 
@@ -97,6 +102,12 @@ def _deduplicated_result(
     stale_minutes: int,
 ) -> ImportResult:
     activity = _activity_for_import(db, user_id, imported.id)
+    if imported.status in DELETE_RECOVERABLE_STATUSES:
+        raise ImportStateError(
+            "import_deleting",
+            "FIT 导入正在删除，不能上传相同文件或重新解析",
+            imported.id,
+        )
     if imported.status in {"pending", "processing"}:
         replayed = replay_import(db, storage, imported, stale_minutes)
         return ImportResult(
@@ -106,7 +117,7 @@ def _deduplicated_result(
         )
     if imported.status == "failed":
         return ImportResult(model=imported, activity=None, deduplicated=True)
-    if imported.status not in {"complete", "partial"} or activity is None:
+    if imported.status not in VISIBLE_ACTIVITY_STATUSES or activity is None:
         raise ImportStateError(
             "import_state_invalid",
             "已有 FIT 导入记录状态异常，无法复用",
@@ -282,22 +293,51 @@ def _replace_activity(
     return activity
 
 
+def _lock_owned_attempt(
+    db: Session,
+    user_id: uuid.UUID,
+    import_id: uuid.UUID,
+    processing_token: uuid.UUID,
+) -> ActivityImport:
+    locked = db.scalar(
+        select(ActivityImport)
+        .where(ActivityImport.id == import_id, ActivityImport.user_id == user_id)
+        .execution_options(populate_existing=True)
+        .with_for_update()
+    )
+    if (
+        locked is None
+        or locked.status != "processing"
+        or locked.processing_token != processing_token
+    ):
+        _safe_rollback(db)
+        raise ImportStateError(
+            "import_attempt_superseded",
+            "FIT 解析任务已被删除或新的解析任务取代",
+            import_id,
+        )
+    return locked
+
+
 def _mark_import_failed(
     db: Session,
-    import_model: ActivityImport,
+    user_id: uuid.UUID,
+    import_id: uuid.UUID,
+    processing_token: uuid.UUID,
     error_code: str,
     error_message: str,
     *,
     warning_count: int | None = None,
 ) -> ActivityImport:
-    db.refresh(import_model)
-    previous_activity = _activity_for_import(db, import_model.user_id, import_model.id)
+    import_model = _lock_owned_attempt(db, user_id, import_id, processing_token)
+    previous_activity = _activity_for_import(db, user_id, import_id)
     if previous_activity is not None:
         db.delete(previous_activity)
     import_model.status = "failed"
     import_model.error_code = error_code
     import_model.error_message = error_message
     import_model.completed_at = None
+    import_model.processing_token = None
     if warning_count is not None:
         import_model.warning_count = warning_count
     db.commit()
@@ -307,7 +347,9 @@ def _mark_import_failed(
 
 def _mark_import_failed_safely(
     db: Session,
-    import_model: ActivityImport,
+    user_id: uuid.UUID,
+    import_id: uuid.UUID,
+    processing_token: uuid.UUID,
     error_code: str,
     error_message: str,
     *,
@@ -316,11 +358,15 @@ def _mark_import_failed_safely(
     try:
         return _mark_import_failed(
             db,
-            import_model,
+            user_id,
+            import_id,
+            processing_token,
             error_code,
             error_message,
             warning_count=warning_count,
         )
+    except ImportStateError:
+        raise
     except Exception:
         _safe_rollback(db)
         raise ImportInternalError(
@@ -341,6 +387,7 @@ def replay_import(
                 ActivityImport.id == import_model.id,
                 ActivityImport.user_id == import_model.user_id,
             )
+            .execution_options(populate_existing=True)
             .with_for_update()
         )
     except Exception:
@@ -349,15 +396,20 @@ def replay_import(
     if locked is None:
         raise ImportStateError("import_not_found", "导入记录不存在")
     now = utc_now()
+    if locked.status in DELETE_RECOVERABLE_STATUSES:
+        _safe_rollback(db)
+        raise ImportStateError("import_deleting", "FIT 导入正在删除，不能重新解析", locked.id)
     if locked.status == "processing":
         stale_before = now - timedelta(minutes=stale_minutes)
         if locked.last_attempt_at is None or locked.last_attempt_at > stale_before:
             _safe_rollback(db)
             raise ImportStateError("import_in_progress", "FIT 导入仍在处理中", locked.id)
-    elif locked.status not in {"pending", "failed", "partial"}:
+    elif locked.status not in PARSE_RETRYABLE_STATUSES:
         _safe_rollback(db)
         raise ImportStateError("import_not_retryable", "当前导入状态不允许重试", locked.id)
     locked.status = "processing"
+    processing_token = uuid.uuid4()
+    locked.processing_token = processing_token
     locked.attempt_count += 1
     locked.last_attempt_at = now
     locked.error_code = None
@@ -375,7 +427,9 @@ def replay_import(
     except StorageError:
         import_model = _mark_import_failed_safely(
             db,
-            import_model,
+            import_model.user_id,
+            import_model.id,
+            processing_token,
             "raw_file_unavailable",
             "原始 FIT 文件不可用",
         )
@@ -385,7 +439,9 @@ def replay_import(
     except FitDecodeFailure as exc:
         import_model = _mark_import_failed_safely(
             db,
-            import_model,
+            import_model.user_id,
+            import_model.id,
+            processing_token,
             exc.code,
             exc.message,
             warning_count=0,
@@ -394,7 +450,9 @@ def replay_import(
     except Exception:
         _mark_import_failed_safely(
             db,
-            import_model,
+            import_model.user_id,
+            import_model.id,
+            processing_token,
             "fit_parse_failed",
             "FIT 解析器发生内部错误",
             warning_count=0,
@@ -405,14 +463,15 @@ def replay_import(
             opened.handle.close()
 
     try:
-        db.refresh(import_model)
-        activity = _replace_activity(db, import_model, parsed)
-        import_model.status = parsed.status
-        import_model.warning_count = parsed.warning_count
-        import_model.error_code = None
-        import_model.error_message = None
-        import_model.completed_at = utc_now()
-        import_model.replay_metadata = {
+        locked = _lock_owned_attempt(db, import_model.user_id, import_model.id, processing_token)
+        activity = _replace_activity(db, locked, parsed)
+        locked.status = parsed.status
+        locked.warning_count = parsed.warning_count
+        locked.error_code = None
+        locked.error_message = None
+        locked.completed_at = utc_now()
+        locked.processing_token = None
+        locked.replay_metadata = {
             "parser": PARSER_NAME,
             "parserVersion": PARSER_VERSION,
             "recordCount": len(parsed.records),
@@ -420,21 +479,24 @@ def replay_import(
             "segmentCount": len(parsed.segments),
         }
         db.commit()
-        db.refresh(import_model)
+        db.refresh(locked)
         db.refresh(activity)
-        return ImportResult(model=import_model, activity=activity, deduplicated=False)
+        return ImportResult(model=locked, activity=activity, deduplicated=False)
+    except ImportStateError:
+        _safe_rollback(db)
+        raise
     except Exception:
         _safe_rollback(db)
         try:
-            failed = db.get(ActivityImport, import_model.id)
-            if failed is not None:
-                _mark_import_failed_safely(
-                    db,
-                    failed,
-                    "fit_persistence_failed",
-                    "FIT 解析结果无法保存",
-                )
-        except ImportInternalError:
+            _mark_import_failed_safely(
+                db,
+                import_model.user_id,
+                import_model.id,
+                processing_token,
+                "fit_persistence_failed",
+                "FIT 解析结果无法保存",
+            )
+        except (ImportInternalError, ImportStateError):
             raise
         except Exception:
             _safe_rollback(db)
