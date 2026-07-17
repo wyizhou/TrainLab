@@ -101,7 +101,8 @@
 - [x] 将前端 Vite/Vitest/esbuild 升级到已修复版本，npm high/critical 和当前全部告警均为 0，业务 UI 与视觉基线不变。
 - [x] 将 standalone 备份安全测试、npm audit、Python 锁文件审计、账号运维烟测和双卷恢复演练纳入发布 CI。
 - [x] 完成本地发布候选门禁：后端、前端、完整 e2e、视觉回归、真实全栈、重复启动、密码恢复/会话撤销和双卷全毁恢复均通过。
-- [ ] 最终独立 Validator PASS 后创建 PR；GitHub checks 通过后由主协调任务合并、打 `v0.1.0` tag 并创建 Release。
+- [x] 最终独立 Validator 对完整候选给出 PASS，两个发布阻断问题均已修复并复验。
+- [ ] GitHub PR checks 通过后由主协调任务合并、打 `v0.1.0` tag 并创建 Release。
 
 ## 下一里程碑：选择下一条用户归属导入来源
 
