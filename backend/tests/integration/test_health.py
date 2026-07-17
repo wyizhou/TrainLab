@@ -1,8 +1,79 @@
+import os
+from pathlib import Path
+
 from fastapi.testclient import TestClient
 
 from trainlab.db.database import get_db
 from trainlab.db.migrations import migration_head
 from trainlab.main import create_app
+
+
+def test_private_storage_probe_is_removed_on_success(settings) -> None:  # type: ignore[no-untyped-def]
+    from trainlab.api.routes.health import _private_storage_ready
+
+    before = set(settings.private_storage_root.iterdir())
+    assert _private_storage_ready(settings.private_storage_root) is True
+    assert set(settings.private_storage_root.iterdir()) == before
+
+
+def test_readiness_rejects_missing_private_storage_without_leaking_path(
+    client: TestClient, tmp_path: Path
+) -> None:
+    missing = tmp_path / "private-storage-must-not-leak"
+    client.app.state.settings = client.app.state.settings.model_copy(
+        update={"private_storage_root": missing}
+    )
+
+    response = client.get("/readyz")
+
+    assert response.status_code == 503
+    assert response.json()["code"] == "private_storage_not_ready"
+    assert str(missing) not in response.text
+
+
+def test_private_storage_probe_rejects_symlinked_root(settings, tmp_path: Path) -> None:  # type: ignore[no-untyped-def]
+    from trainlab.api.routes.health import _private_storage_ready
+
+    link = tmp_path / "storage-link"
+    link.symlink_to(settings.private_storage_root, target_is_directory=True)
+
+    before = set(settings.private_storage_root.iterdir())
+    assert _private_storage_ready(link) is False
+    assert set(settings.private_storage_root.iterdir()) == before
+
+
+def test_private_storage_probe_failure_still_removes_probe(settings, monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    from trainlab.api.routes import health
+
+    real_fsync = os.fsync
+
+    def fail_probe_fsync(file_descriptor: int) -> None:
+        if file_descriptor >= 0:
+            raise OSError("synthetic write failure")
+        real_fsync(file_descriptor)
+
+    monkeypatch.setattr(health.os, "fsync", fail_probe_fsync)
+
+    before = set(settings.private_storage_root.iterdir())
+    assert health._private_storage_ready(settings.private_storage_root) is False
+    assert set(settings.private_storage_root.iterdir()) == before
+
+
+def test_private_storage_probe_rejects_unwritable_root(settings, monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    from trainlab.api.routes import health
+
+    real_open = os.open
+
+    def reject_probe(path, flags, mode=0o777, *, dir_fd=None):  # type: ignore[no-untyped-def]
+        if dir_fd is not None:
+            raise PermissionError("synthetic read-only storage")
+        return real_open(path, flags, mode)
+
+    monkeypatch.setattr(health.os, "open", reject_probe)
+
+    before = set(settings.private_storage_root.iterdir())
+    assert health._private_storage_ready(settings.private_storage_root) is False
+    assert set(settings.private_storage_root.iterdir()) == before
 
 
 def test_health_and_ready_are_independent_checks(client: TestClient) -> None:
