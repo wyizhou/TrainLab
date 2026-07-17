@@ -1,6 +1,6 @@
 # TrainLab Backend
 
-TrainLab 后端采用 Python 3.12、FastAPI、SQLAlchemy 2、PostgreSQL、Alembic 和 uv。当前实现主人账号、Cookie 会话，以及登录用户私有的本地 FIT 上传、解析、活动列表、通用详情和原文件下载。佳明在线同步、TCX/GPX 后端导入、AI、公开注册和后台队列不在当前范围。
+TrainLab 后端采用 Python 3.12、FastAPI、SQLAlchemy 2、PostgreSQL、Alembic 和 uv。当前实现主人账号、Cookie 会话，以及登录用户私有的本地 FIT 上传、解析、活动列表、通用详情、原文件下载、活动重命名、导入记录、可恢复删除和存储配额。佳明在线同步、TCX/GPX 后端导入、AI、公开注册和后台队列不在当前范围。
 
 ## 推荐：Docker Compose
 
@@ -22,13 +22,24 @@ backend/scripts/compose.sh exec backend trainlab create-user --username peer-use
 
 Compose 将数据库写入 `trainlab-db`，将私有 FIT 原文件写入独立的 `trainlab-private-files` 命名卷。应用只用服务端生成的用户/导入 UUID 存储键，不使用上传文件名拼路径。
 
+默认每个用户最多登记 5 GiB、10,000 个原文件，分别由 `TRAINLAB_USER_STORAGE_MAX_BYTES` 和 `TRAINLAB_USER_STORAGE_MAX_FILES` 调整；两者必须为正整数。单文件 50 MB 限制优先于用户配额。上传使用用户隔离的 `.staging` 临时目录、同用户数据库行锁和原子提升，重复 SHA-256 不重复计费。
+
 查看状态与日志：
 
 ```bash
 curl http://localhost:8000/healthz
 curl http://localhost:8000/readyz
 backend/scripts/compose.sh logs -f backend
+backend/scripts/compose.sh exec backend trainlab reconcile-storage
 ```
+
+`reconcile-storage` 默认只报告超过宽限期且没有数据库引用的生成文件数量和字节数，不输出路径。确认数据库与私有卷已经取得同一时间点备份后，才可显式清理：
+
+```bash
+backend/scripts/compose.sh exec backend trainlab reconcile-storage --apply
+```
+
+默认宽限期为 60 分钟，由 `TRAINLAB_STORAGE_STAGING_GRACE_MINUTES` 配置。命令会按用户取得数据库行锁，避免删除合法的在途上传文件。
 
 停止服务并保留数据库与私有原文件：
 
@@ -69,4 +80,4 @@ npm --prefix frontend run e2e:fullstack
 
 `check.sh` 在本机有 uv 时执行格式、静态检查、类型检查和测试；没有 uv 时自动使用 Compose 测试环境。测试数据库名必须以 `_test` 结尾，防止误清理开发或生产库。
 
-FIT 导入限制为单文件 50 MB；同一用户按 SHA-256 幂等，用户之间不共享导入记录。解析状态支持 `complete`、`partial`、`failed` 和安全重试；同文件重传可以恢复 pending/陈旧 processing，新鲜 processing 返回冲突，异常状态不会返回空活动的伪成功。私有存储读取同时校验 key 中的用户 UUID 与当前所有者。API 契约与运维说明见 `docs/api/` 和 `docs/runbooks/`。
+FIT 导入限制为单文件 50 MB；同一用户按 SHA-256 幂等，用户之间不共享导入记录。解析状态支持 `complete`、`partial`、`failed` 和安全重试；同文件重传可以恢复 pending/陈旧 processing，新鲜 processing 返回冲突，异常状态不会返回空活动的伪成功。删除会先进入可恢复状态，再幂等删除原文件并硬删数据库导入；失败可由同一 DELETE 重试。解析 attempt 通过 token 和行锁隔离，旧解析不能覆盖删除状态或复活活动。私有存储读取同时校验 key 中的用户 UUID 与当前所有者。API 契约与运维说明见 `docs/api/` 和 `docs/runbooks/`。

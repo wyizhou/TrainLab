@@ -654,4 +654,4 @@ async def register_fit_upload(
                 storage.discard_staged(staged, user_id)
         raise ImportInternalError("import_registration_failed", "FIT 导入登记失败") from None
     db.refresh(model)
-    return replay_import(db, storage, model, stale_minutes)
+    return await run_in_threadpool(replay_import, db, storage, model, stale_minutes)

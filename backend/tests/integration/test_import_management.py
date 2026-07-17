@@ -62,6 +62,9 @@ def _create_user(engine, username: str) -> User:  # type: ignore[no-untyped-def]
 def test_import_list_exposes_all_public_states_with_stable_cursor_and_safe_errors(
     client: TestClient, user: User, engine
 ) -> None:  # type: ignore[no-untyped-def]
+    unauthenticated = client.get("/api/v1/imports")
+    assert unauthenticated.status_code == 401
+    assert unauthenticated.headers["cache-control"] == "private, no-store"
     statuses = [
         "pending",
         "processing",
@@ -123,6 +126,7 @@ def test_import_list_exposes_all_public_states_with_stable_cursor_and_safe_error
         suffix = f"&cursor={cursor}" if cursor else ""
         response = client.get(f"/api/v1/imports?limit=3{suffix}", headers=headers)
         assert response.status_code == 200
+        assert response.headers["cache-control"] == "private, no-store"
         page = response.json()
         items.extend(page["items"])
         cursor = page["nextCursor"]

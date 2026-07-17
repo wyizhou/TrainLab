@@ -68,7 +68,9 @@ def _service_upload(
 def test_storage_usage_is_authenticated_and_counts_every_import_state(
     client: TestClient, user: User, engine
 ) -> None:  # type: ignore[no-untyped-def]
-    assert client.get("/api/v1/storage/usage").status_code == 401
+    unauthenticated = client.get("/api/v1/storage/usage")
+    assert unauthenticated.status_code == 401
+    assert unauthenticated.headers["cache-control"] == "private, no-store"
     with Session(engine) as db:
         for index, status in enumerate(["failed", "deleting", "delete_failed"]):
             import_id = uuid.uuid4()
@@ -121,6 +123,7 @@ def test_storage_usage_is_authenticated_and_counts_every_import_state(
 
     response = client.get("/api/v1/storage/usage", headers=_login(client, user))
     assert response.status_code == 200
+    assert response.headers["cache-control"] == "private, no-store"
     assert response.json() == {
         "usedBytes": 60,
         "fileCount": 3,
@@ -176,6 +179,40 @@ def test_byte_and_file_quota_reject_new_unique_file_but_duplicate_does_not_grow_
             len(db.scalars(select(ActivityImport).where(ActivityImport.user_id == user.id)).all())
             == 1
         )
+
+
+def test_http_upload_maps_user_quota_to_safe_conflict(
+    client: TestClient, user: User, settings
+) -> None:  # type: ignore[no-untyped-def]
+    original_settings = client.app.state.settings
+    client.app.state.settings = settings.model_copy(update={"user_storage_max_bytes": 1})
+    try:
+        response = client.post(
+            "/api/v1/imports/fit",
+            headers=_login(client, user),
+            files={
+                "file": (
+                    "activity.fit",
+                    FIT_FIXTURE.read_bytes(),
+                    "application/vnd.ant.fit",
+                )
+            },
+        )
+    finally:
+        client.app.state.settings = original_settings
+
+    assert response.status_code == 409
+    body = response.json()
+    assert body["code"] == "storage_quota_exceeded"
+    assert body["details"] == {
+        "usedBytes": 0,
+        "fileCount": 0,
+        "maxBytes": 1,
+        "maxFiles": 10_000,
+    }
+    assert str(settings.private_storage_root) not in response.text
+    with Session(client.app.state.engine) as db:
+        assert db.scalar(select(ActivityImport).where(ActivityImport.user_id == user.id)) is None
 
 
 def test_single_file_limit_wins_before_user_quota(user: User, engine, settings) -> None:  # type: ignore[no-untyped-def]

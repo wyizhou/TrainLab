@@ -40,6 +40,7 @@ from trainlab.services.activity_import import (
     ImportInternalError,
     ImportResult,
     ImportStateError,
+    StorageQuotaExceeded,
     register_fit_upload,
     replay_import,
 )
@@ -235,7 +236,11 @@ async def upload_fit(
             current.user.id,
             settings.fit_upload_max_bytes,
             settings.import_processing_stale_minutes,
+            settings.user_storage_max_bytes,
+            settings.user_storage_max_files,
         )
+    except StorageQuotaExceeded as exc:
+        raise ApiError(409, exc.code, exc.message, exc.details) from None
     except StorageError as exc:
         status = 503 if exc.code == "private_storage_unavailable" else 415
         if exc.code == "fit_file_too_large":
