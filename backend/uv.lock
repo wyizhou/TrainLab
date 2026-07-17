@@ -174,6 +174,15 @@ wheels = [
 ]
 
 [[package]]
+name = "garmin-fit-sdk"
+version = "21.208.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/3d/bb/e4ff8a3d0d60113bc1ca6602c9f1facfe18b9dc8182a8212549290f54d68/garmin_fit_sdk-21.208.0.tar.gz", hash = "sha256:f8ec08c409729650e0084720c65c35f871c53c63d40ed7c5607b4165e0d91143", size = 151316, upload-time = "2026-06-16T17:53:10.274Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/df/7e/120bd93c52ec17b1e4b3903dcafbb6e80ecf856c49f8861517193a354906/garmin_fit_sdk-21.208.0-py3-none-any.whl", hash = "sha256:82ea1ed322dd5d68d7484b71ca76f301ae4b837b98396a00819f4fc3672fddc0", size = 166821, upload-time = "2026-06-16T17:53:08.74Z" },
+]
+
+[[package]]
 name = "greenlet"
 version = "3.5.3"
 source = { registry = "https://pypi.org/simple" }
@@ -536,6 +545,15 @@ wheels = [
 ]
 
 [[package]]
+name = "python-multipart"
+version = "0.0.32"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/5b/42/55c32bb9b12693c092ad250a0e82edb5b31ddeda6eb772de5f308b3804ad/python_multipart-0.0.32.tar.gz", hash = "sha256:be54b7f3fa167bb83e4fcd936b887b708f4e57fe75911c02aebf53efaf8d938e", size = 46881, upload-time = "2026-06-04T16:18:58.647Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e1/04/e8135ebd1ad02c56ec633277529b2602ff99ff634be76cdba5744cf554fd/python_multipart-0.0.32-py3-none-any.whl", hash = "sha256:ff6d3f776f16878c894e52e107296ffc890e913c611b1a4ec6c44e2821fe2e23", size = 30042, upload-time = "2026-06-04T16:18:57.319Z" },
+]
+
+[[package]]
 name = "pyyaml"
 version = "6.0.3"
 source = { registry = "https://pypi.org/simple" }
@@ -613,14 +631,16 @@ wheels = [
 
 [[package]]
 name = "trainlab-backend"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "alembic" },
     { name = "fastapi" },
+    { name = "garmin-fit-sdk" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pwdlib", extra = ["argon2"] },
     { name = "pydantic-settings" },
+    { name = "python-multipart" },
     { name = "sqlalchemy" },
     { name = "uvicorn", extra = ["standard"] },
 ]
@@ -638,6 +658,7 @@ dev = [
 requires-dist = [
     { name = "alembic", specifier = ">=1.14,<2" },
     { name = "fastapi", specifier = ">=0.115,<1" },
+    { name = "garmin-fit-sdk", specifier = "==21.208.0" },
     { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.28,<1" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.14,<2" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2,<4" },
@@ -645,6 +666,7 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.7,<3" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3,<9" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=6,<8" },
+    { name = "python-multipart", specifier = ">=0.0.20,<1" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.9,<1" },
     { name = "sqlalchemy", specifier = ">=2.0.37,<3" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.34,<1" },

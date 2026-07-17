@@ -24,7 +24,7 @@ const ROWS: Activity[] = [
     name: '下肢力量',
     distanceKm: null,
     durationSec: 3300,
-    avgHr: 112,
+    avgHr: null,
     paceSecPerKm: null,
     pace100Sec: null,
     powerW: null,
@@ -51,9 +51,10 @@ describe('ActivityTable', () => {
     expect(run.getByText(`6'11"/km`)).toBeInTheDocument()
     expect(run.getByText('佳明CN')).toBeInTheDocument()
 
-    // Strength row: distance and pace/power collapse to "--".
+    // Strength row: distance, missing HR and pace/power collapse to "--".
     const strength = within(rows[1])
-    expect(strength.getAllByText('—')).toHaveLength(2)
+    expect(strength.getAllByText('—')).toHaveLength(3)
+    expect(strength.queryByText('0 bpm')).not.toBeInTheDocument()
   })
 
   it('reflects selection and fires the toggle / download callbacks', async () => {
@@ -97,5 +98,41 @@ describe('ActivityTable', () => {
 
     await user.click(screen.getByText('晨间轻松跑'))
     expect(onOpen).toHaveBeenCalledWith('a0')
+  })
+
+  it('makes a local preview row explicitly non-openable', async () => {
+    const onOpen = vi.fn()
+    render(
+      <ActivityTable
+        activities={[{ ...ROWS[0], id: 'upload-1', name: '本地预览' }]}
+        selectedIds={new Set()}
+        onToggle={() => {}}
+        onDownload={() => {}}
+        onOpen={onOpen}
+        isOpenable={() => false}
+      />,
+    )
+
+    const row = screen.getByTestId('activity-row')
+    expect(row).toHaveClass('activity-table__row--not-openable')
+    await userEvent.click(screen.getByText('本地预览'))
+    expect(onOpen).not.toHaveBeenCalled()
+  })
+
+  it('does not expose selection or FIT download controls for a local preview row', () => {
+    render(
+      <ActivityTable
+        activities={[{ ...ROWS[0], id: 'upload-1', name: '本地预览' }]}
+        selectedIds={new Set()}
+        onToggle={() => {}}
+        onDownload={() => {}}
+        isSelectable={() => false}
+        isDownloadable={() => false}
+      />,
+    )
+
+    expect(screen.queryByRole('checkbox', { name: '选择 本地预览' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '下载 本地预览 的 FIT' })).not.toBeInTheDocument()
+    expect(screen.queryByText('FIT ↓')).not.toBeInTheDocument()
   })
 })

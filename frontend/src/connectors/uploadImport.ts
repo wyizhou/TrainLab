@@ -54,7 +54,7 @@ type Normalized = {
   date: string // YYYY-MM-DD
   distanceKm: number | null
   durationSec: number
-  avgHr: number
+  avgHr: number | null
   avgSpeedMps: number | null
   avgPowerW: number | null
 }
@@ -114,7 +114,7 @@ function normalizeFit(summary: FitSummary, name: string): Normalized {
     date: isoToDate(summary.startTime),
     distanceKm: distanceM > 0 ? round2(distanceM / 1000) : null,
     durationSec: Math.round(summary.totalTimerTimeSec),
-    avgHr: summary.avgHr ?? 0,
+    avgHr: summary.avgHr,
     avgSpeedMps: summary.avgSpeedMps,
     avgPowerW: summary.avgPowerW,
   }
@@ -165,8 +165,8 @@ function childByLocal(el: Element, local: string): Element | null {
   return null
 }
 
-function mean(values: number[]): number {
-  if (values.length === 0) return 0
+function mean(values: number[]): number | null {
+  if (values.length === 0) return null
   return Math.round(values.reduce((sum, v) => sum + v, 0) / values.length)
 }
 

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ActivityTable } from '../components/ActivityTable'
 import { ActivityCardList } from '../components/ActivityCardList'
@@ -6,35 +6,79 @@ import { Pager, type PageSize } from '../components/Pager'
 import {
   fitFileName,
   generateActivities,
+  DEMO_TYPE_FILTERS,
   TYPE_FILTERS,
   type Activity,
   type TypeFilter,
 } from '../activities/activityData'
 import { useUploadedActivities } from '../activities/uploadStore'
+import {
+  downloadImportedActivity,
+  isImportedActivityId,
+  listImportedActivities,
+} from '../activities/activityApi'
 import { useBreakpoint } from '../hooks/useBreakpoint'
+import { useAuth } from '../auth/AuthState'
 import './ActivitiesPage.css'
 
-// Contract C-7: activity list with type filter, 20/50/100 paging, per-row and
-// batch FIT download (all simulated, G-mock). Detail navigation arrives in C-8.
-// Files imported on the 连接器 page (C-13) are prepended here as 「FIT上传」 rows.
+// Contract C-7: activity list with type filter and 20/50/100 paging. Persisted
+// UUID rows use real owner-only source downloads; design fixtures and batch
+// download remain simulated. Persisted and demo rows open the shared detail view.
 export function ActivitiesPage() {
   const navigate = useNavigate()
+  const auth = useAuth()
+  const authenticatedUserId = auth.user?.id ?? null
   // Only mobile swaps the desktop table for the card list (C-7 AC-007c-1: the
   // card list must be absent from the DOM on desktop, present on mobile — so it
   // is conditionally mounted, not merely display:none'd).
   const isMobile = useBreakpoint() === 'mobile'
-  // Generated once; the mock dataset is stable across renders.
-  const [generated] = useState<Activity[]>(generateActivities)
-  const uploaded = useUploadedActivities()
-  const activities = useMemo(
-    () => (uploaded.length > 0 ? [...uploaded, ...generated] : generated),
-    [uploaded, generated],
+  const generated = useMemo<Activity[]>(
+    () => (auth.demoMode ? generateActivities() : []),
+    [auth.demoMode],
   )
+  const [persisted, setPersisted] = useState<Activity[]>([])
+  const [listState, setListState] = useState<'loading' | 'ready' | 'error'>(
+    auth.demoMode ? 'ready' : 'loading',
+  )
+  const [loadAttempt, setLoadAttempt] = useState(0)
+  const uploaded = useUploadedActivities()
+  useEffect(() => {
+    if (auth.demoMode) return
+    setPersisted([])
+    if (auth.status !== 'authenticated' || authenticatedUserId === null) {
+      setListState('loading')
+      return
+    }
+    setListState('loading')
+    let alive = true
+    listImportedActivities()
+      .then((items) => {
+        if (alive) {
+          setPersisted(items)
+          setListState('ready')
+        }
+      })
+      .catch(() => {
+        if (alive) setListState('error')
+      })
+    return () => {
+      alive = false
+    }
+  }, [auth.demoMode, auth.status, authenticatedUserId, loadAttempt])
+  const activities = useMemo(() => {
+    const seen = new Set<string>()
+    return [...persisted, ...uploaded, ...generated].filter((activity) => {
+      if (seen.has(activity.id)) return false
+      seen.add(activity.id)
+      return true
+    })
+  }, [persisted, uploaded, generated])
   const [filter, setFilter] = useState<TypeFilter>('全部')
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState<PageSize>(20)
   const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set())
   const [downloadNote, setDownloadNote] = useState('')
+  const availableFilters = auth.demoMode ? DEMO_TYPE_FILTERS : TYPE_FILTERS
 
   const filtered = useMemo(
     () => (filter === '全部' ? activities : activities.filter((a) => a.type === filter)),
@@ -59,6 +103,7 @@ export function ActivitiesPage() {
   }
 
   const toggle = (id: string) => {
+    if (!canUseFitSource(id)) return
     setSelected((prev) => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
@@ -67,16 +112,37 @@ export function ActivitiesPage() {
     })
   }
 
-  // Downloads are front-end mocks: no real network / file write (G-mock).
+  // Persisted UUID rows download the private source; fixture and batch actions
+  // remain explicit design/demo simulations.
   const downloadOne = (id: string) => {
+    if (!canUseFitSource(id)) return
     const a = activities.find((item) => item.id === id)
-    if (a) setDownloadNote(`已开始下载 ${fitFileName(a)}（模拟）`)
+    if (!a) return
+    if (isImportedActivityId(id)) {
+      void downloadImportedActivity(id)
+        .then(() => setDownloadNote(`已开始下载 ${fitFileName(a)}`))
+        .catch(() => setDownloadNote('原始 FIT 下载失败'))
+      return
+    }
+    setDownloadNote(`已开始下载 ${fitFileName(a)}（模拟）`)
   }
 
   const downloadSelected = () => {
     if (selected.size === 0) return
     setDownloadNote(`已开始下载 ${selected.size} 个 FIT 文件（模拟）`)
   }
+
+  const openOne = (id: string) => {
+    if (canOpen(id)) navigate(`/activities/${id}`)
+  }
+
+  const canOpen = (id: string) =>
+    isImportedActivityId(id) || (auth.demoMode && generated.some((activity) => activity.id === id))
+
+  // Real authenticated sessions may contain TCX/GPX `upload-*` previews. They
+  // are session-only summaries, not persisted FIT sources, so they cannot enter
+  // selection or source-download flows. Demo keeps the established fixture UI.
+  const canUseFitSource = (id: string) => auth.demoMode || isImportedActivityId(id)
 
   return (
     <section className="page activities" data-vc="page-activities" data-testid="page-activities">
@@ -106,7 +172,7 @@ export function ActivitiesPage() {
         role="group"
         aria-label="类型筛选"
       >
-        {TYPE_FILTERS.map((type) => {
+        {availableFilters.map((type) => {
           const active = type === filter
           return (
             <button
@@ -125,17 +191,38 @@ export function ActivitiesPage() {
       </div>
 
       <div className="activities__panel">
+        {listState === 'loading' && (
+          <p className="activities__empty" data-testid="activities-loading">
+            正在加载运动记录…
+          </p>
+        )}
+        {listState === 'error' && (
+          <div className="activities__empty" data-testid="activities-load-error">
+            <p>运动记录暂时加载失败。</p>
+            <button type="button" onClick={() => setLoadAttempt((value) => value + 1)}>
+              重新加载
+            </button>
+          </div>
+        )}
+        {listState === 'ready' && activities.length === 0 && (
+          <p className="activities__empty" data-testid="activities-empty">
+            暂无运动记录。可前往连接器上传 FIT 文件。
+          </p>
+        )}
         {/* Mobile mounts the card list (data-vc anchor, absent on desktop);
             the table stays in the DOM at every width and hides via CSS on mobile
             (AC-007b-1 asserts its computed display=none there). Only one surface
             is visible per viewport (AC-007c-1). */}
-        {isMobile && (
+        {listState === 'ready' && activities.length > 0 && isMobile && (
           <ActivityCardList
             activities={pageSlice}
             selectedIds={selected}
             onToggle={toggle}
             onDownload={downloadOne}
-            onOpen={(id) => navigate(`/activities/${id}`)}
+            onOpen={openOne}
+            isOpenable={canOpen}
+            isSelectable={canUseFitSource}
+            isDownloadable={canUseFitSource}
           >
             <Pager
               total={filtered.length}
@@ -146,13 +233,16 @@ export function ActivitiesPage() {
             />
           </ActivityCardList>
         )}
-        {!isMobile && (
+        {listState === 'ready' && activities.length > 0 && !isMobile && (
           <ActivityTable
             activities={pageSlice}
             selectedIds={selected}
             onToggle={toggle}
             onDownload={downloadOne}
-            onOpen={(id) => navigate(`/activities/${id}`)}
+            onOpen={openOne}
+            isOpenable={canOpen}
+            isSelectable={canUseFitSource}
+            isDownloadable={canUseFitSource}
           >
             <Pager
               total={filtered.length}

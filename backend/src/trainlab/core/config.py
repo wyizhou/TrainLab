@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     login_failure_limit: int = 5
     login_lock_minutes: int = 15
     frontend_dist: Path = Path("../frontend/dist")
+    private_storage_root: Path = Path("./data/private")
+    fit_upload_max_bytes: int = 50 * 1024 * 1024
+    import_processing_stale_minutes: int = 15
     log_level: str = "INFO"
 
     @field_validator("public_origin", mode="after")
@@ -47,6 +50,10 @@ class Settings(BaseSettings):
             raise ValueError("session_ttl_days must be positive")
         if self.login_failure_limit < 1 or self.login_lock_minutes < 1:
             raise ValueError("login throttle settings must be positive")
+        if self.fit_upload_max_bytes < 1:
+            raise ValueError("fit_upload_max_bytes must be positive")
+        if self.import_processing_stale_minutes < 1:
+            raise ValueError("import_processing_stale_minutes must be positive")
         return self
 
 
