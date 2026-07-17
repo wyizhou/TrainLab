@@ -68,18 +68,16 @@ def safe_original_filename(filename: str | None) -> str:
     return (name or "activity.fit")[:255]
 
 
-def validate_fit_upload(filename: str | None, content_type: str | None) -> str:
+def validate_fit_upload(filename: str | None, _content_type: str | None) -> str:
     safe_name = safe_original_filename(filename)
     if not safe_name.lower().endswith(".fit"):
         raise StorageError("fit_format_required", "本轮仅支持 FIT 文件")
-    if content_type and content_type.lower() not in {
-        "application/octet-stream",
-        "application/vnd.ant.fit",
-        "application/fit",
-        "binary/octet-stream",
-    }:
-        raise StorageError("fit_content_type_invalid", "文件内容类型不是 FIT")
     return safe_name
+
+
+def safe_content_type(content_type: str | None) -> str | None:
+    normalized = (content_type or "").strip()
+    return normalized[:100] or None
 
 
 def _activity_for_import(db: Session, user_id: uuid.UUID, import_id: uuid.UUID) -> Activity | None:
@@ -485,7 +483,7 @@ async def register_fit_upload(
         user_id=user_id,
         source="fit_upload",
         original_filename=filename,
-        content_type=upload.content_type,
+        content_type=safe_content_type(upload.content_type),
         size_bytes=staged.size_bytes,
         sha256=staged.sha256,
         storage_key=staged.storage_key,

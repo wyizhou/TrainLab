@@ -530,6 +530,8 @@ def parse_fit_file(source: Path | BinaryIO, original_filename: str) -> ParsedFit
         raise FitDecodeFailure("fit_decode_failed", "FIT 文件无法解析") from exc
     if not isinstance(messages, dict):
         raise FitDecodeFailure("fit_decode_failed", "FIT 解码结果无效")
+    if any("crc" in str(error).casefold() for error in errors):
+        raise FitDecodeFailure("fit_crc_invalid", "FIT 文件完整性校验失败")
 
     sessions_raw = messages.get("session_mesgs", [])
     if not sessions_raw:
