@@ -43,7 +43,7 @@ backend/scripts/compose.sh exec -T -e TRAINLAB_NEW_PASSWORD backend \
 backend/scripts/compose.sh exec backend trainlab revoke-sessions --username owner-user
 ```
 
-重复撤销是幂等操作。密码重置和会话撤销在同一数据库事务中完成；任一步失败不会留下“新密码但旧会话仍有效”的部分状态。登录失败限流是 backend 进程内状态，若重置前已触发临时锁定，可在确认没有在途请求后运行 `backend/scripts/compose.sh restart backend` 清除该失败窗口；该操作保留数据库和私有卷。
+重复撤销是幂等操作。密码重置和会话撤销在同一数据库事务中完成；登录从凭据验证到会话插入持有同一用户行锁，因此管理命令要么先于登录读取凭据，要么在登录提交会话后再统一撤销，不会遗漏命令执行前已经验证、执行后才写入的会话。任一步失败不会留下“新密码但旧会话仍有效”的部分状态。登录失败限流是 backend 进程内状态，若重置前已触发临时锁定，可在确认没有在途请求后运行 `backend/scripts/compose.sh restart backend` 清除该失败窗口；该操作保留数据库和私有卷。
 
 FIT 导入问题先按请求返回的稳定 `code` 判断。`partial` 可以重试；`failed` 会保留原文件供重放；超过配置时限的 `processing` 可安全恢复；原文件丢失会落为 `failed/raw_file_unavailable`，不会永久卡在处理中。`storage_quota_exceeded` 只表示当前用户已登记字节数或文件数达到配置上限；`delete_incomplete` 可通过重复同一 DELETE 恢复。日志和工单中不得粘贴 GPS、健康数据、设备序列号、原文件或服务端存储路径。
 

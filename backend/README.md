@@ -34,7 +34,7 @@ backend/scripts/compose.sh exec backend trainlab reset-password --username owner
 backend/scripts/compose.sh exec backend trainlab revoke-sessions --username owner-user
 ```
 
-自动化可使用 `--password-env`，但环境变量必须由受控 secret 注入，不能把明文密码放入参数、日志或仓库。CLI 成功、输入错误、未知用户和数据库失败分别使用退出码 0、2、3、4。进程内登录限流不会被数据库密码重置清除；已触发锁定时可安全重启 backend，详见 `docs/runbooks/local-development.md`。
+自动化可使用 `--password-env`，但环境变量必须由受控 secret 注入，不能把明文密码放入参数、日志或仓库。CLI 成功、输入错误、未知用户和数据库失败分别使用退出码 0、2、3、4。登录的凭据验证与会话插入、密码重置和会话撤销均通过同一用户行锁串行化，管理命令不会遗漏已经验证但尚未提交的并发登录会话。进程内登录限流不会被数据库密码重置清除；已触发锁定时可安全重启 backend，详见 `docs/runbooks/local-development.md`。
 
 Compose 将数据库写入 `trainlab-db`，将私有 FIT 原文件写入独立的 `trainlab-private-files` 命名卷。应用只用服务端生成的用户/导入 UUID 存储键，不使用上传文件名拼路径。
 

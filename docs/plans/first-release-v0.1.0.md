@@ -213,7 +213,8 @@ npm --prefix frontend audit
 ## 9. 执行证据
 
 - F0 计划提交为 `c4ccfa6`；U1、U2、U3 分别由隔离 worktree 实现、独立复核并按顺序集成，集成提交为 `29c105d`、`f6d95f1`、`befd9cd`。
-- 后端空库迁移与 133 项 pytest 通过，覆盖率 89.79%；Ruff format/check、mypy 和 13 项备份安全测试通过。
+- 后端空库迁移与 135 项 pytest 通过，覆盖率 89.79%；Ruff format/check、mypy 和 13 项备份安全测试通过。
+- 最终审计发现并修复“并发登录验证旧密码后晚于管理命令插入 session”的竞态；登录和管理命令现在使用同一用户行锁形成顺序，2 项无 `sleep` 的 PostgreSQL 双事务测试及独立修复 Validator 均通过。
 - Python 运行时锁定依赖经 `pip-audit 2.10.1` 检查，未发现已知漏洞；npm 全依赖与生产依赖审计均为 0。
 - 前端 typecheck、lint、43 文件/240 项单测和 build 通过；184 项完整 e2e、126 项 Linux CI e2e、117 项 macOS 视觉回归通过。
 - 隔离 Compose 的 3 项真实全栈旅程、密码重置/会话撤销、重建持久化和 FIT 双卷全毁恢复演练通过；真实默认项目、实际 owner 和外部设计均未改动。
