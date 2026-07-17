@@ -116,7 +116,7 @@ def test_corrupt_fit_is_retained_as_failed_and_can_be_retried(
     headers = login(client, user.username)
     failed = client.post(
         "/api/v1/imports/fit",
-        files={"file": ("broken.fit", b"not a fit file", "application/vnd.ant.fit")},
+        files={"file": ("broken.fit", b"not a fit file", "application/x-browser-fit")},
         headers=headers,
     )
     assert failed.status_code == 422
@@ -146,6 +146,28 @@ def test_corrupt_fit_is_retained_as_failed_and_can_be_retried(
     )
     assert duplicate.status_code == 422
     assert duplicate.json()["details"]["importId"] == import_id
+
+
+def test_fit_with_invalid_crc_is_rejected_instead_of_persisted_as_partial(
+    client: TestClient, user: User, engine
+) -> None:  # type: ignore[no-untyped-def]
+    content = bytearray(FIT_FIXTURE.read_bytes())
+    content[-1] ^= 0x01
+    headers = login(client, user.username)
+    response = client.post(
+        "/api/v1/imports/fit",
+        files={"file": ("crc-corrupt.fit", bytes(content), "application/x-browser-fit")},
+        headers=headers,
+    )
+    assert response.status_code == 422
+    assert response.json()["code"] == "fit_import_failed"
+    assert response.json()["details"]["errorCode"] == "fit_crc_invalid"
+    with Session(engine) as db:
+        imported = db.get(ActivityImport, response.json()["details"]["importId"])
+        assert imported is not None
+        assert imported.status == "failed"
+        assert imported.error_code == "fit_crc_invalid"
+        assert db.scalar(select(func.count(Activity.id))) == 0
 
 
 def test_duplicate_upload_never_returns_a_null_activity_success(
@@ -401,15 +423,46 @@ def test_cross_user_symlink_cannot_be_downloaded_or_replayed(
     assert peer_path.read_bytes() == peer_payload
 
 
-def test_fit_endpoint_rejects_non_fit_before_storage(client: TestClient, user: User) -> None:
+@pytest.mark.parametrize(
+    ("filename", "content_type", "content"),
+    [
+        ("track.gpx", "application/gpx+xml", b"<gpx/>"),
+        ("workout.tcx", "application/vnd.garmin.tcx+xml", b"<TrainingCenterDatabase/>"),
+    ],
+)
+def test_fit_endpoint_rejects_non_fit_before_storage(
+    client: TestClient,
+    user: User,
+    filename: str,
+    content_type: str,
+    content: bytes,
+) -> None:
     headers = login(client, user.username)
     response = client.post(
         "/api/v1/imports/fit",
-        files={"file": ("track.gpx", b"<gpx/>", "application/gpx+xml")},
+        files={"file": (filename, content, content_type)},
         headers=headers,
     )
     assert response.status_code == 415
     assert response.json()["code"] == "fit_format_required"
+
+
+def test_fit_extension_uses_decoder_instead_of_untrusted_client_mime(
+    client: TestClient, user: User, engine
+) -> None:  # type: ignore[no-untyped-def]
+    headers = login(client, user.username)
+    browser_mime = "application/x-browser-fit-" + "x" * 120
+    valid = client.post(
+        "/api/v1/imports/fit",
+        files={"file": ("browser-upload.fit", FIT_FIXTURE.read_bytes(), browser_mime)},
+        headers=headers,
+    )
+    assert valid.status_code == 201
+    assert valid.json()["status"] == "complete"
+    with Session(engine) as db:
+        imported = db.get(ActivityImport, valid.json()["importId"])
+        assert imported is not None
+        assert imported.content_type == browser_mime[:100]
 
 
 def test_partial_import_can_retry_and_stale_processing_can_recover(
