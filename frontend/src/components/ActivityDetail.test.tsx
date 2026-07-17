@@ -1,5 +1,6 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { profileActivityById } from '../activities/activityProfiles'
 import { ActivityDetail } from './ActivityDetail'
 import type { Activity } from '../activities/activityData'
 import type { FitRecordPoint, ParsedActivity } from '../activities/fitParser'
@@ -102,55 +103,49 @@ function makeParsed(overrides: Partial<ParsedActivity['summary']> = {}): ParsedA
 }
 
 describe('ActivityDetail', () => {
-  it('annotates metric sections with FIT field names and shows raw training effects', () => {
+  it('renders the v3.4 overview with five tabs and six primary metrics', () => {
     render(<ActivityDetail activity={activity} parsed={makeParsed()} />)
-    expect(screen.getByText('avg_heart_rate / max_heart_rate')).toBeInTheDocument()
-    expect(screen.getByText('total_training_effect / training_load_peak')).toBeInTheDocument()
-    expect(screen.getByText('avg_power / max_power / normalized_power')).toBeInTheDocument()
-    // Training effect renders the raw stored value.
-    const section = screen
-      .getByText('total_training_effect / training_load_peak')
-      .closest('.metric-section')
-    expect(section).toHaveTextContent('2.7')
+    const tabs = screen.getByRole('navigation', { name: '详情视图' })
+    expect(tabs).toBeInTheDocument()
+    expect(within(tabs).getAllByRole('button')).toHaveLength(5)
+    expect(document.querySelectorAll('[data-vc="activity-summary-metric"]')).toHaveLength(6)
+    expect(screen.getByTestId('detail-panel-overview')).toHaveTextContent('DATA INSIGHT')
   })
 
-  it('renders the running set of 8 curves and toggles to the per-second table', async () => {
+  it('switches among all five profile panels', async () => {
     const user = userEvent.setup()
     render(<ActivityDetail activity={activity} parsed={makeParsed()} />)
 
-    // Default curve mode: 8 charts for a run.
-    const curve = screen.getByTestId('series-curve')
-    expect(within(curve).getAllByTestId('ts-chart')).toHaveLength(8)
-    expect(screen.queryByTestId('series-table')).not.toBeInTheDocument()
-
-    await user.click(screen.getByTestId('mode-table'))
-    expect(screen.getByTestId('series-table')).toBeInTheDocument()
-    expect(screen.getByTestId('record-table')).toBeInTheDocument()
-    expect(screen.queryByTestId('series-curve')).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '图表' }))
+    expect(screen.getByTestId('detail-panel-charts')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '分段 / 训练组' }))
+    expect(screen.getByTestId('detail-panel-segments')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '设备与指标' }))
+    expect(screen.getByTestId('detail-panel-devices')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '原始数据' }))
+    expect(screen.getByTestId('detail-panel-raw')).toBeInTheDocument()
   })
 
-  it('renders the HR-zone bars and the seven-column laps table', () => {
+  it('links a selected segment to its position in the chart', async () => {
+    const user = userEvent.setup()
     render(<ActivityDetail activity={activity} parsed={makeParsed()} />)
-    expect(screen.getAllByTestId('hr-zone-row')).toHaveLength(5)
-    const laps = screen.getByTestId('laps-table')
-    expect(laps).toHaveTextContent('平均功率')
-    expect(laps).toHaveTextContent('最大心率')
-    expect(screen.getAllByTestId('lap-row')).toHaveLength(2)
-    expect(laps).toHaveTextContent('244 W')
-    expect(laps).toHaveTextContent('132')
+    await user.click(screen.getByRole('button', { name: '分段 / 训练组' }))
+    await user.click(screen.getByRole('button', { name: /第 1 圈/ }))
+    expect(screen.getByTestId('detail-panel-charts')).toHaveTextContent('已联动选择分段')
+    expect(document.querySelector('[data-vc="activity-chart-linked-selection"]')).not.toBeNull()
   })
 
-  it('renders "--" for FIT fields the sample lacks', () => {
-    render(
-      <ActivityDetail
-        activity={{ ...activity, id: 'a1' }}
-        parsed={makeParsed({ maxPowerW: null })}
-      />,
+  it('filters device sources and keeps the first extension group open by default', async () => {
+    const user = userEvent.setup()
+    render(<ActivityDetail activity={activity} parsed={makeParsed()} />)
+    await user.click(screen.getByRole('button', { name: '设备与指标' }))
+    expect(screen.getByRole('button', { name: /跑步动态/ })).toHaveAttribute(
+      'aria-expanded',
+      'true',
     )
-    const section = screen
-      .getByText('avg_power / max_power / normalized_power')
-      .closest('.metric-section')
-    expect(section).toHaveTextContent('--')
+    await user.click(screen.getByRole('button', { name: '传感器' }))
+    expect(screen.getByText('Footpod / 跑姿传感器')).toBeInTheDocument()
+    expect(screen.queryByText('运动手表')).not.toBeInTheDocument()
   })
 
   it('fires the download callback with the activity id', async () => {
@@ -161,12 +156,13 @@ describe('ActivityDetail', () => {
     expect(onDownload).toHaveBeenCalledWith('a0')
   })
 
-  it('falls back to the list summary and empty notes without a parsed FIT', () => {
-    render(<ActivityDetail activity={activity} parsed={null} />)
-    // Basics still come from the list row.
-    const hr = screen.getByText('avg_heart_rate / max_heart_rate').closest('.metric-section')
-    expect(hr).toHaveTextContent('152 bpm')
-    expect(screen.getByText('该记录无逐秒原始数据')).toBeInTheDocument()
-    expect(screen.getByText('该记录无分段数据')).toBeInTheDocument()
+  it('does not invent FIT records for an unbound profile', async () => {
+    const user = userEvent.setup()
+    const generic = profileActivityById('profile-generic')!
+    render(<ActivityDetail activity={generic} parsed={null} />)
+    expect(screen.getByTestId('detail-download')).toBeDisabled()
+    await user.click(screen.getByRole('button', { name: '原始数据' }))
+    expect(screen.getByText('等待真实 FIT 数据')).toBeInTheDocument()
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })
 })

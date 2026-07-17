@@ -4,7 +4,8 @@
 // replaces it with the real FIT parse. Everything is deterministic (fixed seed
 // + fixed anchor date) so unit tests never depend on wall-clock time.
 
-export type ActivityType = '跑步' | '骑行' | '游泳' | '力量' | '越野跑'
+export type ActivityType =
+  '跑步' | '骑行' | '游泳' | '力量' | '越野跑' | '徒步' | '难度攀岩' | '抱石' | '其他'
 export type ActivitySource = '佳明CN' | '佳明国际' | 'FIT上传'
 
 export type Activity = {
@@ -45,6 +46,10 @@ export const TYPE_DOT_SLUG: Record<ActivityType, string> = {
   游泳: 'swim',
   力量: 'strength',
   越野跑: 'trail',
+  徒步: 'trail',
+  难度攀岩: 'strength',
+  抱石: 'strength',
+  其他: 'run',
 }
 
 // ---- deterministic generators -------------------------------------------------

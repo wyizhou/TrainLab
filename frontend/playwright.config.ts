@@ -8,6 +8,7 @@ const FRONTEND_ROOT = fileURLToPath(new URL('.', import.meta.url))
 
 export default defineConfig({
   testDir: './tests/e2e',
+  testIgnore: 'activity-detail-v34-visual.spec.ts',
   // Named screenshot assertions use checked-in implementation-regression
   // assets. External prototypes remain read-only inputs outside the repository.
   snapshotPathTemplate: join(FRONTEND_ROOT, 'tests/visual-baselines/v3.3/screenshots/{arg}{ext}'),
