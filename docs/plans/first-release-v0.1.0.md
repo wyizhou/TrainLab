@@ -1,6 +1,6 @@
 # TrainLab 首个正式版本 v0.1.0 发布计划
 
-- 状态：实现、本地完整门禁和最终独立 Validator 已完成，等待 PR 检查
+- 状态：已完成并发布
 - 产品版本：`v0.1.0`
 - 组件基线：前端 design v3.4 / design_rev 7；后端 v0.3 / 迁移 `0003_activity_data_lifecycle`
 - 工作方式：共享基础串行冻结，三个隔离单元并行实现和独立验收，最后由集成负责人统一收口
@@ -218,4 +218,4 @@ npm --prefix frontend audit
 - Python 运行时锁定依赖经 `pip-audit 2.10.1` 检查，未发现已知漏洞；npm 全依赖与生产依赖审计均为 0。
 - 前端 typecheck、lint、43 文件/240 项单测和 build 通过；184 项完整 e2e、126 项 Linux CI e2e、117 项 macOS 视觉回归通过。
 - 隔离 Compose 的 3 项真实全栈旅程、密码重置/会话撤销、重建持久化和 FIT 双卷全毁恢复演练通过；真实默认项目、实际 owner 和外部设计均未改动。
-- 最终独立 Validator 已对候选 `91b349c` 给出 PASS；PR checks、`main` 合并、tag 和 GitHub Release 必须以各自后续证据为准。
+- 最终独立 Validator 已对候选 `91b349c` 给出 PASS；[PR #11](https://github.com/wyizhou/TrainLab/pull/11) 的 5 项 checks 全部通过，合并提交为 `0361415`，`v0.1.0` tag 与正式 GitHub Release 均已创建。
