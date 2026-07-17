@@ -1,31 +1,106 @@
+.activity-detail-shell {
+  min-height: 100vh;
+  background-color: var(--color-bg);
+}
+
+.activity-detail-shell__topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  height: 58px;
+  padding: 0 var(--space-5-5);
+  background-color: var(--color-panel-nav);
+  border-bottom: 1px solid var(--color-border-panel);
+}
+
+.activity-detail-shell__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2-25);
+}
+
+.activity-detail-shell__brand > span {
+  display: grid;
+  width: 27px;
+  height: 27px;
+  color: var(--color-on-accent);
+  background-color: var(--color-accent);
+  border-radius: 7px;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.activity-detail-shell__version {
+  margin-left: auto;
+  padding: var(--space-1-75) var(--space-2-5);
+  color: var(--color-text-muted);
+  background-color: var(--color-panel);
+  border: 1px solid var(--color-border-panel);
+  border-radius: 999px;
+  font-size: 11px;
+}
+
 .activity-detail-page {
-  max-width: 1280px;
-  margin: 0 auto;
+  min-width: 0;
 }
 
 .activity-detail-page__back {
-  align-self: flex-start;
-  padding: var(--pad-detail-back);
-  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 var(--space-3);
   color: var(--color-text-muted);
-  border: 1px solid var(--color-border-input);
-  border-radius: var(--radius-input);
+  background-color: var(--color-panel);
+  border: 1px solid var(--color-border-panel);
+  border-radius: 8px;
+  font-size: 13px;
   text-decoration: none;
 }
 
 .activity-detail-page__back:hover {
-  text-decoration: underline;
+  color: var(--color-accent-text);
+  border-color: var(--color-accent);
 }
 
 .activity-detail-page__loading,
 .activity-detail-page__error,
 .activity-detail-page__missing,
 .activity-detail-page__note {
-  margin: 0;
-  font-size: 12px;
+  width: min(calc(100% - 48px), 1192px);
+  margin: var(--space-3) auto 0;
   color: var(--color-text-muted);
+  font-size: 12px;
 }
 
 .activity-detail-page__error {
   color: var(--color-danger);
+}
+
+.activity-detail-page__missing {
+  padding: var(--space-5);
+}
+
+@media (width < 640px) {
+  .activity-detail-shell__topbar {
+    gap: var(--space-2-5);
+    padding: 0 var(--space-3);
+  }
+
+  .activity-detail-shell__version {
+    display: none;
+  }
+
+  .activity-detail-page__back {
+    padding: 0 var(--space-2-25);
+  }
+
+  .activity-detail-page__loading,
+  .activity-detail-page__error,
+  .activity-detail-page__note {
+    width: calc(100% - 24px);
+  }
 }

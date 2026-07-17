@@ -85,12 +85,34 @@
   --radius-sleep-rem: 3px 3px 0 0;
 
   /* Spacing scale */
+  --space-0: 0;
+  --space-px: 1px;
+  --space-0-5: 2px;
+  --space-0-75: 3px;
   --space-1: 4px;
+  --space-1-25: 5px;
+  --space-1-5: 6px;
+  --space-1-75: 7px;
   --space-2: 8px;
+  --space-2-25: 9px;
+  --space-2-5: 10px;
+  --space-2-75: 11px;
   --space-3: 12px;
+  --space-3-25: 13px;
+  --space-3-5: 14px;
+  --space-3-75: 15px;
   --space-4: 16px;
+  --space-4-5: 18px;
+  --space-5x: 20px;
+  --space-5-5: 22px;
   --space-5: 24px;
+  --space-6-5: 26px;
   --space-6: 32px;
+  --space-8-5: 34px;
+  --space-12: 48px;
+  --space-17: 68px;
+  --space-negative-px: -1px;
+  --space-negative-1-5: -6px;
 
   /* Off-scale chrome paddings — named tokens (v3.1 表 (c)) so no bare spacing leaks
      outside this module (G-token 口径不放宽). */
