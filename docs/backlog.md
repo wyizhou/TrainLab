@@ -102,7 +102,7 @@
 - [x] 将 standalone 备份安全测试、npm audit、Python 锁文件审计、账号运维烟测和双卷恢复演练纳入发布 CI。
 - [x] 完成本地发布候选门禁：后端、前端、完整 e2e、视觉回归、真实全栈、重复启动、密码恢复/会话撤销和双卷全毁恢复均通过。
 - [x] 最终独立 Validator 对完整候选给出 PASS，两个发布阻断问题均已修复并复验。
-- [ ] GitHub PR checks 通过后由主协调任务合并、打 `v0.1.0` tag 并创建 Release。
+- [x] [PR #11](https://github.com/wyizhou/TrainLab/pull/11) 的 5 项 GitHub checks 全部通过；已合并到 `main`，并创建不可移动的 `v0.1.0` tag 和正式 GitHub Release。
 
 ## 下一里程碑：选择下一条用户归属导入来源
 
