@@ -64,6 +64,49 @@ def test_promotion_never_overwrites_an_existing_final_file(tmp_path) -> None:  #
     assert staged.path.read_bytes() == b"replacement"
 
 
+def test_promotion_removes_final_link_when_staging_unlink_fails(tmp_path, monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    storage = PrivateActivityStorage(tmp_path)
+    user_id = uuid.uuid4()
+    import_id = uuid.uuid4()
+    staged = asyncio.run(storage.stage_isolated(_upload(), user_id, import_id, 1024))
+    final_path = storage.path_for_key(staged.storage_key, user_id)
+    real_unlink = os.unlink
+
+    def fail_staging_unlink(path, *args, **kwargs):  # type: ignore[no-untyped-def]
+        if str(path).endswith(".fit.part"):
+            raise OSError("injected staging unlink failure")
+        return real_unlink(path, *args, **kwargs)
+
+    monkeypatch.setattr("trainlab.services.activity_storage.os.unlink", fail_staging_unlink)
+
+    with pytest.raises(StorageError) as caught:
+        storage.promote(staged, user_id)
+
+    assert caught.value.code == "private_storage_unavailable"
+    assert not final_path.exists()
+    assert staged.path.read_bytes() == b"private payload"
+
+
+def test_promotion_removes_final_link_when_directory_fsync_fails(tmp_path, monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    storage = PrivateActivityStorage(tmp_path)
+    user_id = uuid.uuid4()
+    import_id = uuid.uuid4()
+    staged = asyncio.run(storage.stage_isolated(_upload(), user_id, import_id, 1024))
+    final_path = storage.path_for_key(staged.storage_key, user_id)
+
+    def fail_fsync(_descriptor: int) -> None:
+        raise OSError("injected directory fsync failure")
+
+    monkeypatch.setattr("trainlab.services.activity_storage.os.fsync", fail_fsync)
+
+    with pytest.raises(StorageError) as caught:
+        storage.promote(staged, user_id)
+
+    assert caught.value.code == "private_storage_unavailable"
+    assert not final_path.exists()
+    assert not staged.path.exists()
+
+
 def test_generated_file_scan_exposes_no_absolute_path_and_tracks_mtime(tmp_path) -> None:  # type: ignore[no-untyped-def]
     storage = PrivateActivityStorage(tmp_path)
     user_id = uuid.uuid4()

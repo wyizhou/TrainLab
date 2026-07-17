@@ -7,6 +7,7 @@ from pathlib import PurePosixPath
 from fastapi import UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from starlette.concurrency import run_in_threadpool
 
 from trainlab.db.base import utc_now
 from trainlab.db.models.activity import (
@@ -89,6 +90,22 @@ def _safe_rollback(db: Session) -> None:
 def _safe_remove(storage: PrivateActivityStorage, storage_key: str, user_id: uuid.UUID) -> None:
     with suppress(StorageError):
         storage.remove(storage_key, user_id)
+
+
+def _lock_user_and_cleanup_orphans(
+    db: Session,
+    storage: PrivateActivityStorage,
+    user_id: uuid.UUID,
+) -> None:
+    user = db.scalar(select(User).where(User.id == user_id).with_for_update())
+    if user is None:
+        raise ImportInternalError("import_registration_failed", "FIT 导入登记失败")
+    referenced_keys = set(
+        db.scalars(
+            select(ActivityImport.storage_key).where(ActivityImport.user_id == user_id)
+        ).all()
+    )
+    storage.cleanup_user_orphans(user_id, referenced_keys)
 
 
 def safe_original_filename(filename: str | None) -> str:
@@ -544,15 +561,7 @@ async def register_fit_upload(
     staged = None
     promoted = False
     try:
-        user = db.scalar(select(User).where(User.id == user_id).with_for_update())
-        if user is None:
-            raise ImportInternalError("import_registration_failed", "FIT 导入登记失败")
-        referenced_keys = set(
-            db.scalars(
-                select(ActivityImport.storage_key).where(ActivityImport.user_id == user_id)
-            ).all()
-        )
-        storage.cleanup_user_orphans(user_id, referenced_keys)
+        await run_in_threadpool(_lock_user_and_cleanup_orphans, db, storage, user_id)
         import_id = uuid.uuid4()
         staged = await storage.stage_isolated(upload, user_id, import_id, max_bytes)
         existing = db.scalar(
@@ -590,12 +599,22 @@ async def register_fit_upload(
                 "import_state_unavailable", "FIT 导入状态暂时不可用"
             ) from None
 
-    usage = storage_usage(db, user_id, user_max_bytes, user_max_files)
+    try:
+        usage = storage_usage(db, user_id, user_max_bytes, user_max_files)
+    except Exception:
+        _safe_rollback(db)
+        with suppress(StorageError):
+            storage.discard_staged(staged, user_id)
+        raise ImportInternalError("import_registration_failed", "FIT 导入登记失败") from None
     if (
         usage.used_bytes + staged.size_bytes > user_max_bytes
         or usage.file_count + 1 > user_max_files
     ):
-        storage.discard_staged(staged, user_id)
+        try:
+            storage.discard_staged(staged, user_id)
+        except StorageError:
+            _safe_rollback(db)
+            raise
         staged = None
         _safe_rollback(db)
         raise StorageQuotaExceeded(

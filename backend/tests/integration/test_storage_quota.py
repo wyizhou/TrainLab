@@ -14,7 +14,11 @@ from sqlalchemy.orm import Session
 from trainlab.cli import build_parser, reconcile_private_storage
 from trainlab.db.models.activity import ActivityImport
 from trainlab.db.models.user import User
-from trainlab.services.activity_import import StorageQuotaExceeded, register_fit_upload
+from trainlab.services.activity_import import (
+    ImportInternalError,
+    StorageQuotaExceeded,
+    register_fit_upload,
+)
 from trainlab.services.activity_storage import PrivateActivityStorage, StorageError
 from trainlab.services.auth import LoginRateLimiter
 from trainlab.services.storage_usage import reconcile_storage
@@ -230,6 +234,68 @@ def test_two_concurrent_uploads_are_serialized_by_user_quota(user: User, engine,
         imports = db.scalars(select(ActivityImport).where(ActivityImport.user_id == user.id)).all()
         assert len(imports) == 1
         assert imports[0].size_bytes <= limit
+
+
+def test_storage_usage_failure_discards_staging_and_rolls_back(
+    user: User, engine, settings, monkeypatch
+) -> None:  # type: ignore[no-untyped-def]
+    storage = PrivateActivityStorage(settings.private_storage_root)
+
+    def fail_usage(*_args, **_kwargs):  # type: ignore[no-untyped-def]
+        raise RuntimeError("injected quota query failure")
+
+    monkeypatch.setattr("trainlab.services.activity_import.storage_usage", fail_usage)
+    with Session(engine) as db:
+        try:
+            _service_upload(db, storage, user.id, FIT_FIXTURE.read_bytes())
+        except ImportInternalError as exc:
+            assert exc.code == "import_registration_failed"
+        else:  # pragma: no cover - assertion boundary
+            raise AssertionError("quota query failure unexpectedly registered an import")
+        assert db.in_transaction() is False
+
+    assert storage.generated_files(user.id) == []
+    with Session(engine) as db:
+        assert db.scalar(select(ActivityImport).where(ActivityImport.user_id == user.id)) is None
+
+
+def test_same_user_large_http_uploads_do_not_deadlock_single_event_loop(
+    client: TestClient, user: User
+) -> None:
+    headers = _login(client, user)
+    fixture = FIT_FIXTURE.read_bytes()
+    payloads = [
+        fixture + (b"a" * (1024 * 1024 + 1)),
+        fixture + (b"b" * (1024 * 1024 + 1)),
+    ]
+    barrier = threading.Barrier(2)
+    statuses: list[int] = []
+    errors: list[BaseException] = []
+
+    def upload(payload: bytes) -> None:
+        try:
+            barrier.wait(timeout=5)
+            response = client.post(
+                "/api/v1/imports/fit",
+                headers=headers,
+                files={"file": ("activity.fit", payload, "application/vnd.ant.fit")},
+            )
+            statuses.append(response.status_code)
+        except BaseException as exc:  # pragma: no cover - surfaced below
+            errors.append(exc)
+
+    threads = [threading.Thread(target=upload, args=(payload,)) for payload in payloads]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=15)
+
+    assert not any(thread.is_alive() for thread in threads)
+    assert not errors
+    assert sorted(statuses) == [201, 201]
+    with Session(client.app.state.engine) as db:
+        imports = db.scalars(select(ActivityImport).where(ActivityImport.user_id == user.id)).all()
+        assert len(imports) == 2
 
 
 def test_next_upload_immediately_cleans_staging_and_promoted_orphans(
