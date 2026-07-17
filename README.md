@@ -1,11 +1,12 @@
 # TrainLab
 
-TrainLab 是一个运动数据分析项目。前端覆盖 AI 分析、运动记录、通用运动详情、健康记录、佳明连接器、文件上传和设置页面；后端已提供真实账号登录、用户归属的本地 FIT 上传与持久化、重命名、导入记录、可恢复删除、存储配额、数据库迁移和前后端一体化运行。佳明在线同步、TCX/GPX 后端导入和 AI 仍保持模拟或未接入。
+TrainLab 是一个运动数据分析项目。首个正式产品版本定为 `v0.1.0`：前端覆盖 AI 分析、运动记录、通用运动详情、健康记录、佳明连接器、文件上传和设置页面；后端提供真实账号登录、用户归属的本地 FIT 上传与持久化、重命名、导入记录、可恢复删除、存储配额、数据库迁移和前后端一体化运行。佳明在线同步、TCX/GPX 后端导入和 AI 仍保持模拟或未接入。
 
 项目最初用于实验 Claude Code 三角色开发 harness，目前已迁移为 Codex 三阶段开发模式。规划、实现、验收是每个任务的固定阶段；独立 Planner / Validator 是否介入由任务风险决定，主 Agent 负责实现、集成和协调。大型任务在公共基础验收后，可将真正独立的交付单元分配到各自分支、worktree 和子 Agent。
 
 ## 当前状态
 
+- 产品发布信息、范围和验证结果：`docs/releases/v0.1.0.md`。正式 tag/Release 只在发布 PR 合并并通过最终验收后创建；开发分支中的同名文档不等于已经发布。
 - 机器可读的当前实现基线、设计基线和下一里程碑：`docs/project-state.json`。
 - 当前阶段的功能要求、产品边界、已知差异和完成定义：`docs/backlog.md`。
 - 带日期的项目背景与交接快照：`项目交接文档.md`。
@@ -39,7 +40,7 @@ backend/scripts/compose.sh up --build -d db backend
 backend/scripts/compose.sh exec backend trainlab create-owner --username owner-user
 ```
 
-默认地址：`http://localhost:8000/`。初始化命令会安全地交互读取密码。前端单独开发仍可运行 `npm --prefix frontend run dev`，默认地址为 `http://localhost:5173/`。
+默认地址：`http://localhost:8000/`。Compose 只绑定 `127.0.0.1`，当前版本仅支持本机 HTTP，不支持公网、TLS 或高可用部署。初始化命令会安全地交互读取密码。前端单独开发仍可运行 `npm --prefix frontend run dev`，默认地址为 `http://localhost:5173/`。
 
 常用检查：
 
@@ -50,10 +51,13 @@ npm --prefix frontend run test
 npm --prefix frontend run e2e
 npm --prefix frontend run build
 backend/scripts/check.sh
+python3 backend/scripts/test_release_backup_tools.py
 npm --prefix frontend run e2e:fullstack
 ```
 
-Compose 使用独立命名卷保存 PostgreSQL 数据和私有 FIT 原文件；普通 `down` 会保留两者，`down -v` 会同时删除，使用前必须确认已备份。
+Compose 使用独立命名卷保存 PostgreSQL 数据和私有 FIT 原文件；普通 `down` 会保留两者，`down -v` 会同时删除，使用前必须确认已经通过 `backend/scripts/backup_release.py` 取得同停写点双卷备份。恢复、回滚和隔离演练见 `docs/runbooks/backup-restore.md`。
+
+本机忘记密码时使用 `trainlab reset-password --username <name>`；只需强制退出全部设备时使用 `trainlab revoke-sessions --username <name>`。两个命令只在服务器 CLI 提供，不新增浏览器找回密码或会话管理 UI，详细安全用法见 `docs/runbooks/local-development.md`。
 
 私有原文件默认按用户限制为 5 GiB、10,000 个；孤儿文件审计使用 `backend/scripts/compose.sh exec backend trainlab reconcile-storage`，该命令默认 dry-run。删除动作、`--apply` 清理和 `down -v` 都应先核对数据库与私有卷的同时间点备份。
 

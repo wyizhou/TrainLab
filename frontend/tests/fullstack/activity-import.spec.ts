@@ -6,6 +6,7 @@ const username = process.env.TRAINLAB_E2E_USERNAME ?? 'owner-user'
 const password = process.env.TRAINLAB_E2E_PASSWORD ?? 'correct-password'
 const peerUsername = process.env.TRAINLAB_E2E_PEER_USERNAME ?? 'peer-user'
 const peerPassword = process.env.TRAINLAB_E2E_PEER_PASSWORD ?? 'correct-password'
+const fullstackOrigin = process.env.TRAINLAB_FULLSTACK_URL ?? 'http://localhost:8000'
 const fitPath = fileURLToPath(new URL('../fixtures/614797758_ACTIVITY.fit', import.meta.url))
 
 async function login(
@@ -28,7 +29,7 @@ test('unauthenticated activity APIs reject private data access', async ({ reques
   expect(listing.status()).toBe(401)
 
   const upload = await request.post('/api/v1/imports/fit', {
-    headers: { Origin: 'http://localhost:8000' },
+    headers: { Origin: fullstackOrigin },
     multipart: {
       file: {
         name: 'unauthenticated.fit',
