@@ -30,7 +30,6 @@ ROOT_DIR = Path(__file__).resolve().parents[2]
 FIT_FIXTURE = ROOT_DIR / "frontend" / "tests" / "fixtures" / "614797758_ACTIVITY.fit"
 TEST_USERNAME = "release-owner"
 TEST_PASSWORD = "release-test-password"
-TRUSTED_ORIGIN = "http://localhost:8000"
 
 
 class DrillError(RuntimeError):
@@ -62,7 +61,7 @@ class ApiClient:
     ) -> bytes:
         headers: dict[str, str] = {}
         if method not in {"GET", "HEAD"}:
-            headers["Origin"] = TRUSTED_ORIGIN
+            headers["Origin"] = self.base_url
         if content_type is not None:
             headers["Content-Type"] = content_type
         if csrf:
