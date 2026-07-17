@@ -1,32 +1,35 @@
 .ts-chart {
-  padding: var(--pad-timeseries-card);
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  padding: var(--space-3-5) var(--space-4) var(--space-2);
   background-color: var(--color-panel);
   border: 1px solid var(--color-border-panel);
-  border-radius: var(--radius-panel);
+  border-radius: 12px;
+  box-shadow:
+    0 1px 2px rgb(23 32 51 / 0.04),
+    0 8px 24px rgb(23 32 51 / 0.035);
 }
 
 .ts-chart__head {
   display: flex;
   align-items: baseline;
-  flex-wrap: nowrap;
-  gap: var(--space-2);
+  gap: var(--space-2-5);
   min-width: 0;
-  margin: var(--margin-timeseries-head);
+  min-height: 38px;
 }
 
 .ts-chart__title {
   flex: none;
   font-size: 13px;
-  font-weight: 600;
-  line-height: 18px;
+  font-weight: 700;
 }
 
 .ts-chart__source {
   min-width: 0;
   overflow: hidden;
+  color: var(--color-text-muted);
   font-size: 11px;
-  color: var(--color-text-faint);
-  line-height: 15px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -34,7 +37,7 @@
 .ts-chart__svg {
   display: block;
   width: 100%;
-  height: auto;
+  height: 250px;
   max-width: 100%;
 }
 
@@ -49,12 +52,44 @@
   font-size: 9px;
 }
 
+.ts-chart__tick--x {
+  font-size: 8.5px;
+}
+
 .ts-chart__line {
   fill: none;
   stroke: var(--color-accent);
-  stroke-width: 2;
+  stroke-width: 2.25;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.ts-chart__crosshair {
+  stroke: var(--color-text-soft);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.ts-chart__selection {
+  stroke: var(--color-warn);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.ts-chart__tooltip {
+  position: absolute;
+  top: 58px;
+  right: 18px;
+  z-index: 2;
+  padding: var(--space-2) var(--space-2-5);
+  color: var(--color-panel);
+  background-color: var(--color-text);
+  border-radius: 7px;
+  box-shadow: 0 8px 24px rgb(15 23 42 / 0.22);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.5;
+  pointer-events: none;
 }
 
 .ts-chart--danger .ts-chart__line {
@@ -73,20 +108,33 @@
   stroke: var(--color-type-trail);
 }
 
-.ts-chart--swim .ts-chart__line {
-  stroke: var(--color-type-swim);
-}
-
-.ts-chart--rem .ts-chart__line {
-  stroke: var(--color-sleep-rem);
-}
-
-.ts-chart--soft .ts-chart__line {
-  stroke: var(--color-text-soft);
+.ts-chart--empty {
+  min-height: 220px;
 }
 
 .ts-chart__empty {
+  display: grid;
+  min-height: 150px;
   margin: 0;
-  font-size: 12px;
+  place-items: center;
   color: var(--color-text-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+@media (width < 640px) {
+  .ts-chart {
+    padding-right: var(--space-3);
+    padding-left: var(--space-3);
+  }
+
+  .ts-chart__head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--space-0-75);
+  }
+
+  .ts-chart__svg {
+    height: 220px;
+  }
 }

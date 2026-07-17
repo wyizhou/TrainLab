@@ -88,10 +88,9 @@ describe('ActivityDetailPage', () => {
   it('shows a loading state then the parsed FIT detail for the FIT-backed row', async () => {
     renderAt('/activities/a0', () => Promise.resolve(parsedStub()))
     expect(screen.getByTestId('detail-loading')).toBeInTheDocument()
-    // Once parsed, the FIT-only metric (calories) renders its value.
-    expect(await screen.findAllByText('344 kcal')).toHaveLength(2)
     await waitFor(() => expect(screen.queryByTestId('detail-loading')).not.toBeInTheDocument())
-    expect(screen.getByTestId('series-curve')).toBeInTheDocument()
+    expect(screen.getByTestId('detail-panel-overview')).toBeInTheDocument()
+    expect(screen.getByText('record.heart_rate')).toBeInTheDocument()
   })
 
   it('renders a mock activity from the summary without invoking the FIT loader', () => {
@@ -99,7 +98,15 @@ describe('ActivityDetailPage', () => {
     renderAt('/activities/a1', loadFit)
     expect(loadFit).not.toHaveBeenCalled()
     expect(screen.getByTestId('activity-detail')).toBeInTheDocument()
-    expect(screen.getByText('该记录无逐秒原始数据')).toBeInTheDocument()
+    expect(screen.getByTestId('activity-detail')).toHaveAttribute('data-profile', 'cycling')
+  })
+
+  it('resolves a stable hidden design profile without invoking the FIT loader', () => {
+    const loadFit = vi.fn(() => Promise.resolve(parsedStub()))
+    renderAt('/activities/profile-hike', loadFit)
+    expect(loadFit).not.toHaveBeenCalled()
+    expect(screen.getByTestId('activity-detail')).toHaveAttribute('data-profile', 'hike')
+    expect(screen.getByText('高海拔徒步')).toBeInTheDocument()
   })
 
   it('surfaces an error note when parsing fails', async () => {
