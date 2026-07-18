@@ -1,6 +1,6 @@
 # FIT 详情纠错实施基线
 
-- 状态：F0 共享契约已冻结，等待独立验收
+- 状态：实现、隔离真实样本验收与独立复核均已通过，等待 PR 检查
 - 起点：`b50274c6a3df55a2ceb82a7f0f6efe17842c4cdd`
 - 集成分支：`codex/fit-detail-corrections`
 - 工作方式：共享基础串行，隔离单元并行，按波次集成，独立终验
@@ -130,3 +130,14 @@ F0 共享契约
 最终至少运行后端 format/lint/mypy/pytest/coverage、OpenAPI 与隔离 Compose；前端 typecheck/lint/unit、专属 e2e、完整 e2e、视觉回归和 build。外部三份 FIT 仅在本机隔离环境只读导入验收，不复制进仓库。
 
 PR 合并前只生成迁移方案，不执行真实重解析。合并后必须先停止写入并取得 PostgreSQL 与私有文件卷同一停写点的双卷备份；校验 manifest/SHA 后，在新镜像上对三个已知 import 先运行无写入预检，再用一个 `--apply` 命令原子重解析；随后重建/重启、检查 readiness，并在浏览器复核身份、用户标题、力量 10/30/29、攀岩 5/21、等级证据状态、时间构成与下载 SHA。任一步失败立即保持停写并从双卷备份恢复，不用 Alembic downgrade 回滚用户数据。
+
+## 9. 实施与验收结果
+
+- F0、U1、U2、U3 和 U4 均从冻结基点在隔离分支/worktree 完成；每个功能单元先做定向测试和只读复核，再按 `U2 → U1 → U3 → U4` 合入集成分支。
+- U2 独立复核发现并关闭了活动修改锁顺序风险；最终统一为 `User → ActivityImport → Activity`，并用真实 PostgreSQL 双事务锁等待测试证明重解析、重命名、重放和删除不会死锁或复活旧投影。
+- U4 独立复核发现并关闭了无规范 set/split 时错误回退 lap 的问题；力量和攀岩现在保持解释性空态，不用其他消息补造实例。
+- 后端最终门禁：Ruff format/check、mypy 51 个源文件、空库 Alembic downgrade/upgrade、158 项 pytest、89.69% 覆盖率和 OpenAPI 契约全部通过。
+- 前端最终门禁：typecheck、lint、255 项 Vitest、137 项功能 e2e、117 项全局视觉、28 项 v3.4 详情视觉、3 项隔离全栈和 production build 全部通过。
+- 20 张 v3.4 详情截图只更新了有时间构成数据的 SVG 圆环区域；无数据的 cycling/generic 8 张保持原样。更新后的截图集合 SHA-256 为 `fa98daacc8da8b579a2fd44af419cdd8b2bb45c6b9c8dd131924d2ce4ea45d30`。
+- 三份外部样本在独立账号、独立数据库卷和独立私有文件卷中完成上传、API、页面、下载 SHA、三条批量原子重解析、标题覆盖/UUID 保留与重启后复验；验收后临时文件和双卷均已删除。
+- 唯一保留限制是攀岩等级证据门：字段 69–73 仍未被官方 profile 定义，当前正确产品行为是说明无法可靠映射，而不是显示 V1/V2、5.10a 或数字键。

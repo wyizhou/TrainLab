@@ -1,6 +1,6 @@
 # TrainLab Backend
 
-TrainLab 后端采用 Python 3.12、FastAPI、SQLAlchemy 2、PostgreSQL、Alembic 和 uv。组件基线为 v0.3，参与产品 `v0.1.0` 发布。当前实现主人账号、Cookie 会话，以及登录用户私有的本地 FIT 上传、解析、活动列表、通用详情、原文件下载、活动重命名、导入记录、可恢复删除和存储配额。佳明在线同步、TCX/GPX 后端导入、AI、公开注册和后台队列不在当前范围。
+TrainLab 后端采用 Python 3.12、FastAPI、SQLAlchemy 2、PostgreSQL、Alembic 和 uv。组件基线为 v0.3，参与产品 `v0.1.0` 发布。当前实现主人账号、Cookie 会话，以及登录用户私有的本地 FIT 上传、解析、活动列表、通用详情、原文件下载、活动重命名、导入记录、可恢复删除和存储配额。训练组/攀岩分段同时保留原始扩展字段和版本化 `semantic` 投影；无法证明的等级或设备语义保持不可用，不按数字值猜测。佳明在线同步、TCX/GPX 后端导入、AI、公开注册和后台队列不在当前范围。
 
 ## 推荐：Docker Compose
 
@@ -111,3 +111,20 @@ npm --prefix frontend run e2e:fullstack
 `check.sh` 在本机有 uv 时执行格式、静态检查、类型检查和测试；没有 uv 时自动使用 Compose 测试环境。测试数据库名必须以 `_test` 结尾，防止误清理开发或生产库。
 
 FIT 导入限制为单文件 50 MB；同一用户按 SHA-256 幂等，用户之间不共享导入记录。解析状态支持 `complete`、`partial`、`failed` 和安全重试；同文件重传可以恢复 pending/陈旧 processing，新鲜 processing 返回冲突，异常状态不会返回空活动的伪成功。删除会先进入可恢复状态，再幂等删除原文件并硬删数据库导入；失败可由同一 DELETE 重试。解析 attempt 通过 token 和行锁隔离，旧解析不能覆盖删除状态或复活活动。私有存储读取同时校验 key 中的用户 UUID 与当前所有者。API 契约与运维说明见 `docs/api/` 和 `docs/runbooks/`。
+
+已完成导入需要因解析器修复而重建投影时，使用仅限服务器管理员的 CLI；它不会新增普通用户 HTTP 入口：
+
+```bash
+backend/scripts/compose.sh exec -T backend trainlab reparse-fit \
+  --username <实际用户名> \
+  --import-id <导入 UUID> \
+  --import-id <另一导入 UUID>
+
+backend/scripts/compose.sh exec -T backend trainlab reparse-fit \
+  --username <实际用户名> \
+  --import-id <导入 UUID> \
+  --import-id <另一导入 UUID> \
+  --apply
+```
+
+第一条是零写入预检；第二条才在单一事务中原子替换整批投影。命令就地保留 Activity/Import UUID、用户归属、标题覆盖、原文件和存储 key；任一文件、所有权、SHA、并发状态或持久化检查失败会使整批回滚。含真实数据时必须先停止写入并取得数据库与私有 FIT 卷同一停写点的双卷备份，详见 `docs/runbooks/local-development.md`。

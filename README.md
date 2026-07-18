@@ -1,6 +1,6 @@
 # TrainLab
 
-TrainLab 是一个运动数据分析项目。首个正式产品版本定为 `v0.1.0`：前端覆盖 AI 分析、运动记录、通用运动详情、健康记录、佳明连接器、文件上传和设置页面；后端提供真实账号登录、用户归属的本地 FIT 上传与持久化、重命名、导入记录、可恢复删除、存储配额、数据库迁移和前后端一体化运行。佳明在线同步、TCX/GPX 后端导入和 AI 仍保持模拟或未接入。
+TrainLab 是一个运动数据分析项目。首个正式产品版本定为 `v0.1.0`：前端覆盖 AI 分析、运动记录、通用运动详情、健康记录、佳明连接器、文件上传和设置页面；后端提供真实账号登录、用户归属的本地 FIT 上传与持久化、重命名、导入记录、可恢复删除、存储配额、数据库迁移和前后端一体化运行。FIT 详情使用稳定的训练组/攀岩段语义投影，未知 profile 字段会被保留而不会被猜测。佳明在线同步、TCX/GPX 后端导入和 AI 仍保持模拟或未接入。
 
 项目最初用于实验 Claude Code 三角色开发 harness，目前已迁移为 Codex 三阶段开发模式。规划、实现、验收是每个任务的固定阶段；独立 Planner / Validator 是否介入由任务风险决定，主 Agent 负责实现、集成和协调。大型任务在公共基础验收后，可将真正独立的交付单元分配到各自分支、worktree 和子 Agent。
 
@@ -9,6 +9,7 @@ TrainLab 是一个运动数据分析项目。首个正式产品版本定为 `v0.
 - 产品发布信息、范围和验证结果：`docs/releases/v0.1.0.md`。正式 tag/Release 只在发布 PR 合并并通过最终验收后创建；开发分支中的同名文档不等于已经发布。
 - 机器可读的当前实现基线、设计基线和下一里程碑：`docs/project-state.json`。
 - 当前阶段的功能要求、产品边界、已知差异和完成定义：`docs/backlog.md`。
+- 真实 FIT 详情纠错、等级证据门和安全批量重解析：`docs/plans/fit-detail-corrections.md`。
 - 带日期的项目背景与交接快照：`项目交接文档.md`。
 
 动态状态不在 Agent 规则中重复维护，以免版本推进后留下互相冲突的信息。
@@ -62,6 +63,8 @@ Compose 使用独立命名卷保存 PostgreSQL 数据和私有 FIT 原文件；�
 本机忘记密码时使用 `trainlab reset-password --username <name>`；需要恢复固定开发凭据时使用 `set-development-owner`；只需强制退出全部设备时使用 `trainlab revoke-sessions --username <name>`。这些命令只在服务器 CLI 提供，不新增浏览器找回密码或会话管理 UI，详细安全用法见 `docs/runbooks/local-development.md`。
 
 私有原文件默认按用户限制为 5 GiB、10,000 个；孤儿文件审计使用 `backend/scripts/compose.sh exec backend trainlab reconcile-storage`，该命令默认 dry-run。删除动作、`--apply` 清理和 `down -v` 都应先核对数据库与私有卷的同时间点备份。
+
+已完成导入的解析投影需要因解析器修复而更新时，只能由本机管理员使用 `trainlab reparse-fit`。命令默认只预检；多条 `--import-id` 必须在一次 `--apply` 中原子处理。含真实数据的环境必须先停止写入并完成数据库与私有 FIT 卷的同停写点备份，完整步骤见 `docs/runbooks/local-development.md`。
 
 `npm --prefix frontend run e2e` 会执行完整的功能、样式、几何与截图契约。字体验收采用有序的跨平台字体栈：macOS、Windows 和 Linux 可以使用栈中各自可用的字体；文字内在宽度通过不重叠、固定间距、边界和无溢出关系验收，其他几何仍执行严格基线比较。
 

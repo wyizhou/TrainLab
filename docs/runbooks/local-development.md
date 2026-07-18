@@ -64,6 +64,82 @@ backend/scripts/compose.sh exec backend trainlab reconcile-storage --apply
 
 完整双卷备份、破坏性恢复和发布回滚命令见 `docs/runbooks/backup-restore.md`。不要手工只备份 PostgreSQL 后将其当作完整恢复点。
 
+## 已完成 FIT 的安全重解析
+
+`reparse-fit` 只用于解析器修复后的管理员维护，不提供普通用户 HTTP 入口。默认是零写入预检；多个 `--import-id` 在一次 `--apply` 中作为单一事务提交，任一失败会整批回滚。命令就地保留 Activity/Import UUID、用户归属、标题覆盖、原文件和存储 key。
+
+对现有三条力量/攀岩导入执行维护时，严格按以下顺序操作。PR 合并前不得执行；`<实际用户名>` 和 `<新备份目录>` 必须先替换，备份目录必须不存在。
+
+1. 先只读确认三条导入属于同一个用户，并记下返回的用户名：
+
+```bash
+backend/scripts/compose.sh exec -T db psql -At -U trainlab -d trainlab -c \
+  "SELECT u.username || '|' || count(*) FROM users u JOIN activity_imports i ON i.user_id = u.id WHERE i.id IN ('ffb6e829-6873-40e6-bf6f-ff11009b3833','a68b65ec-882d-44f6-8563-ade49901f879','87a824e1-f1bd-41ab-8407-199654c2bbf4') GROUP BY u.id, u.username;"
+```
+
+必须只有一行且计数为 `3`；否则停止，不执行后续命令。
+
+2. 创建并校验数据库 + 私有 FIT 卷的同一停写点备份。备份工具会暂时停止 backend，成功后恢复此前运行状态：
+
+```bash
+mkdir -p backups
+chmod 700 backups
+python3 backend/scripts/backup_release.py \
+  --project trainlab \
+  --output <新备份目录>
+
+PYTHONPATH=backend/scripts python3 -c \
+  'from pathlib import Path; from release_backup_common import validate_backup; validate_backup(Path("<新备份目录>"))'
+```
+
+3. 进入维护停写窗口，构建合并后的镜像并升级迁移；不启动 HTTP backend：
+
+```bash
+backend/scripts/compose.sh stop backend
+backend/scripts/compose.sh build backend
+backend/scripts/compose.sh run --rm --no-deps --entrypoint alembic backend upgrade head
+```
+
+4. 使用新镜像先预检整批三条导入。预检必须全部报告可处理，且不得修改数据库：
+
+```bash
+backend/scripts/compose.sh run --rm --no-deps --entrypoint trainlab backend reparse-fit \
+  --username <实际用户名> \
+  --import-id ffb6e829-6873-40e6-bf6f-ff11009b3833 \
+  --import-id a68b65ec-882d-44f6-8563-ade49901f879 \
+  --import-id 87a824e1-f1bd-41ab-8407-199654c2bbf4
+```
+
+5. 预检通过后，只运行一次带 `--apply` 的整批命令：
+
+```bash
+backend/scripts/compose.sh run --rm --no-deps --entrypoint trainlab backend reparse-fit \
+  --username <实际用户名> \
+  --import-id ffb6e829-6873-40e6-bf6f-ff11009b3833 \
+  --import-id a68b65ec-882d-44f6-8563-ade49901f879 \
+  --import-id 87a824e1-f1bd-41ab-8407-199654c2bbf4 \
+  --apply
+```
+
+6. 启动新 backend，等待 readiness，再用新浏览器会话复验：
+
+```bash
+backend/scripts/compose.sh up -d backend
+curl --fail --retry 30 --retry-delay 1 --retry-connrefused \
+  http://localhost:8000/readyz
+```
+
+浏览器必须确认：三条 Activity UUID 和用户标题未变；力量为 10 个动作、30 个 active set、29 个 rest；难度攀岩为 5 个 active/5 个 rest；抱石为 21 个 active/21 个 rest；等级显示“字段尚无可靠映射”且不出现 69–73；时间构成百分比、图例和 SVG 圆弧一致；三条原始 FIT 下载 SHA-256 与维护前一致。
+
+任一预检、apply、readiness 或浏览器检查失败时，保持 backend 停止，不尝试用 Alembic downgrade 回滚用户数据。使用第 2 步的同停写点备份恢复：
+
+```bash
+python3 backend/scripts/restore_release.py \
+  --project trainlab \
+  --backup <新备份目录> \
+  --confirm RESTORE:trainlab
+```
+
 ## 数据库迁移
 
 ```bash
