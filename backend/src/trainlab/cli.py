@@ -15,7 +15,9 @@ from trainlab.db.models.user import User
 from trainlab.services.activity_storage import PrivateActivityStorage, StorageError
 from trainlab.services.storage_usage import reconcile_storage
 from trainlab.services.user_admin import (
+    UsernameConflictError,
     UserNotFoundError,
+    configure_development_owner,
     reset_password_and_revoke_sessions,
     revoke_all_sessions,
 )
@@ -82,8 +84,8 @@ def create_user(username: str, display_name: str | None, password: str) -> int:
 
 
 def reset_password(username: str, password: str) -> int:
-    if len(username.strip()) <= 6:
-        print("账号必须大于 6 位", file=sys.stderr)
+    if not username.strip():
+        print("账号不能为空", file=sys.stderr)
         return 2
     if len(password) <= 6:
         print("密码必须大于 6 位", file=sys.stderr)
@@ -110,8 +112,8 @@ def reset_password(username: str, password: str) -> int:
 
 
 def revoke_sessions(username: str) -> int:
-    if len(username.strip()) <= 6:
-        print("账号必须大于 6 位", file=sys.stderr)
+    if not username.strip():
+        print("账号不能为空", file=sys.stderr)
         return 2
 
     engine: Engine | None = None
@@ -127,6 +129,37 @@ def revoke_sessions(username: str) -> int:
         return 3
     except Exception:
         print("会话撤销失败：请确认数据库已启动并完成迁移", file=sys.stderr)
+        return 4
+    finally:
+        if engine is not None:
+            with suppress(Exception):
+                engine.dispose()
+
+
+def set_development_owner(username: str, password: str) -> int:
+    if not username.strip():
+        print("账号不能为空", file=sys.stderr)
+        return 2
+    if not password:
+        print("密码不能为空", file=sys.stderr)
+        return 2
+
+    engine: Engine | None = None
+    try:
+        settings = get_settings()
+        if settings.environment != "development":
+            print("开发主人账号命令仅允许在 development 环境运行", file=sys.stderr)
+            return 3
+        engine = create_database_engine(settings.database_url)
+        with Session(engine) as db:
+            owner = configure_development_owner(db, username, password)
+        print(f"开发主人账号已配置为 {owner.username}，已有会话已撤销")
+        return 0
+    except UsernameConflictError:
+        print("目标用户名已被其他用户占用", file=sys.stderr)
+        return 3
+    except Exception:
+        print("开发主人账号配置失败：请确认数据库已启动并完成迁移", file=sys.stderr)
         return 4
     finally:
         if engine is not None:
@@ -184,6 +217,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     revoke = subparsers.add_parser("revoke-sessions", help="撤销指定用户的全部会话")
     revoke.add_argument("--username", required=True)
+    development_owner = subparsers.add_parser(
+        "set-development-owner",
+        help="创建或原子更新仅限本机开发环境的主人账号",
+    )
+    development_owner.add_argument("--username", required=True)
+    development_owner.add_argument(
+        "--password-env",
+        help="从指定环境变量读取开发密码（自动化场景）",
+    )
     reconcile = subparsers.add_parser("reconcile-storage", help="审计无数据库引用的私有存储文件")
     reconcile.add_argument(
         "--apply",
@@ -199,7 +241,12 @@ def main() -> None:
         raise SystemExit(reconcile_private_storage(apply=args.apply))
     if args.command == "revoke-sessions":
         raise SystemExit(revoke_sessions(args.username))
-    if args.command not in {"create-owner", "create-user", "reset-password"}:
+    if args.command not in {
+        "create-owner",
+        "create-user",
+        "reset-password",
+        "set-development-owner",
+    }:
         raise SystemExit(2)
     if args.password_env:
         password = os.environ.get(args.password_env)
@@ -214,6 +261,8 @@ def main() -> None:
             raise SystemExit(2)
     if args.command == "reset-password":
         raise SystemExit(reset_password(args.username, password))
+    if args.command == "set-development-owner":
+        raise SystemExit(set_development_owner(args.username, password))
     create = create_owner if args.command == "create-owner" else create_user
     raise SystemExit(create(args.username, args.display_name, password))
 

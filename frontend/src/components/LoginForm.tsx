@@ -1,8 +1,8 @@
 import { useCallback, useState, type FormEvent } from 'react'
 import './LoginForm.css'
 
-// Demo-only captcha: a 4-digit code shown on screen; the user must retype it.
-// No real authentication (contract C-2 explicitly excludes it).
+// UI-only captcha: the real backend validates credentials and sessions, while
+// this displayed 4-digit challenge remains a client-side interaction check.
 function generateCaptcha(): string {
   return String(Math.floor(1000 + Math.random() * 9000))
 }
@@ -26,12 +26,12 @@ export function LoginForm({ onAuthenticated }: LoginFormProps) {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (username.trim().length <= 6) {
-      setError('账号必须大于 6 位')
+    if (!username.trim()) {
+      setError('请输入账号')
       return
     }
-    if (password.length <= 6) {
-      setError('密码必须大于 6 位')
+    if (!password) {
+      setError('请输入密码')
       return
     }
     if (captcha !== captchaCode) {
@@ -121,7 +121,7 @@ export function LoginForm({ onAuthenticated }: LoginFormProps) {
           <button type="submit" className="login__submit" aria-label="登录" disabled={submitting}>
             {submitting ? '登录中…' : '登 录'}
           </button>
-          <p className="login__demo">账号和密码均需大于 6 位</p>
+          <p className="login__demo">开发默认账号见本地运行说明</p>
         </form>
       </div>
     </div>
