@@ -57,7 +57,7 @@
     "migration_head": "0003_activity_data_lifecycle",
     "api_contract": {
       "version": "v1",
-      "openapi_sha256": "f01e1377356ad22f926c5b530fb7df4739abcb0c36c57c32119f94491751bd6e"
+      "openapi_sha256": "e034418dfefbabaec0e206590d9e755efca7371b21623af70994f19a6e9c5713"
     },
     "scope": [
       "health-readiness",
