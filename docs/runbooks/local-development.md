@@ -4,10 +4,14 @@
 
 ```bash
 backend/scripts/compose.sh up --build -d db backend
-backend/scripts/compose.sh exec backend trainlab create-owner --username owner-user
+TRAINLAB_DEV_PASSWORD=123456 backend/scripts/compose.sh exec -T \
+  -e TRAINLAB_DEV_PASSWORD backend trainlab set-development-owner \
+  --username admin --password-env TRAINLAB_DEV_PASSWORD
 ```
 
-输入大于 6 位的密码后打开 `http://localhost:8000/`。Compose 只把应用绑定到 `127.0.0.1:8000`；这是本机 HTTP，不具备公网暴露、TLS 或高可用边界。重复以相同用户名初始化是幂等操作；若已有主人账号，系统会拒绝创建第二个。
+本手册是开发默认凭据规则与安全边界的权威来源：账号 `admin`，密码 `123456`。验证码输入登录页右侧显示的 4 位数字。这是一组公开、弱、仅供本机开发使用的凭据，禁止用于 `production`、公网、共享主机或任何可被其他设备访问的环境；不得复制到生产 secret、镜像或日志中。
+
+`set-development-owner` 仅在 `TRAINLAB_ENVIRONMENT=development` 时可运行。全新数据库会创建唯一 owner；已有数据库会保留原 owner UUID、活动、导入记录和私有文件归属，在同一事务中更新用户名和 Argon2 密码哈希并撤销全部旧会话。目标用户名被其他用户占用或事务失败时会完整回滚。命令可重复运行以恢复开发默认凭据，不会创建第二个 owner。Compose 只把应用绑定到 `127.0.0.1:8000`；这是本机 HTTP，不具备公网暴露、TLS 或高可用边界。
 
 首次上传 FIT 时 Compose 会创建两个持久卷：`trainlab-db` 保存数据库，`trainlab-private-files` 保存私有原文件。容器重建不会删除卷；上传后可重建 `backend` 容器，再刷新运动记录验证数据和下载仍可用。
 
@@ -27,23 +31,25 @@ curl -i http://localhost:8000/readyz
 忘记本地登录密码时，在服务器终端重置指定用户；默认使用隐藏交互输入，并同时撤销该用户全部既有会话：
 
 ```bash
-backend/scripts/compose.sh exec backend trainlab reset-password --username owner-user
+backend/scripts/compose.sh exec backend trainlab reset-password --username admin
 ```
 
 自动化场景可由受控环境变量传入，不要把明文密码写在命令参数、脚本、日志或 Git 中：
 
 ```bash
 backend/scripts/compose.sh exec -T -e TRAINLAB_NEW_PASSWORD backend \
-  trainlab reset-password --username owner-user --password-env TRAINLAB_NEW_PASSWORD
+  trainlab reset-password --username admin --password-env TRAINLAB_NEW_PASSWORD
 ```
 
 只撤销全部会话而不修改密码：
 
 ```bash
-backend/scripts/compose.sh exec backend trainlab revoke-sessions --username owner-user
+backend/scripts/compose.sh exec backend trainlab revoke-sessions --username admin
 ```
 
-重复撤销是幂等操作。密码重置和会话撤销在同一数据库事务中完成；登录从凭据验证到会话插入持有同一用户行锁，因此管理命令要么先于登录读取凭据，要么在登录提交会话后再统一撤销，不会遗漏命令执行前已经验证、执行后才写入的会话。任一步失败不会留下“新密码但旧会话仍有效”的部分状态。登录失败限流是 backend 进程内状态，若重置前已触发临时锁定，可在确认没有在途请求后运行 `backend/scripts/compose.sh restart backend` 清除该失败窗口；该操作保留数据库和私有卷。
+重复撤销是幂等操作。标准 `create-owner`、`create-user` 和 `reset-password` 仍执行大于 6 位的密码策略；只有显式的开发命令允许恢复上述固定弱凭据，且非 development 环境会拒绝。密码重置和会话撤销在同一数据库事务中完成；登录从凭据验证到会话插入持有同一用户行锁，因此管理命令要么先于登录读取凭据，要么在登录提交会话后再统一撤销，不会遗漏命令执行前已经验证、执行后才写入的会话。任一步失败不会留下“新密码但旧会话仍有效”的部分状态。登录失败限流是 backend 进程内状态，若重置前已触发临时锁定，可在确认没有在途请求后运行 `backend/scripts/compose.sh restart backend` 清除该失败窗口；该操作保留数据库和私有卷。
+
+恢复旧备份会同时恢复备份时的用户名和密码哈希。恢复完成后如需继续本机开发，应重新运行本节开头的 `set-development-owner` 命令，再用 `admin / 123456` 登录。
 
 FIT 导入问题先按请求返回的稳定 `code` 判断。`partial` 可以重试；`failed` 会保留原文件供重放；超过配置时限的 `processing` 可安全恢复；原文件丢失会落为 `failed/raw_file_unavailable`，不会永久卡在处理中。`storage_quota_exceeded` 只表示当前用户已登记字节数或文件数达到配置上限；`delete_incomplete` 可通过重复同一 DELETE 恢复。日志和工单中不得粘贴 GPS、健康数据、设备序列号、原文件或服务端存储路径。
 

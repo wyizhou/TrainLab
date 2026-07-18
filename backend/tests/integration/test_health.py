@@ -132,7 +132,7 @@ def test_validation_error_does_not_echo_password(
 ) -> None:
     response = client.post(
         "/api/v1/auth/login",
-        json={"username": "owner-user", "password": "secret"},
+        json={"username": "", "password": "secret"},
         headers=origin_headers,
     )
     assert response.status_code == 422

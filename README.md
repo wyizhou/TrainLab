@@ -37,10 +37,12 @@ TrainLab 是一个运动数据分析项目。首个正式产品版本定为 `v0.
 
 ```bash
 backend/scripts/compose.sh up --build -d db backend
-backend/scripts/compose.sh exec backend trainlab create-owner --username owner-user
+TRAINLAB_DEV_PASSWORD=123456 backend/scripts/compose.sh exec -T \
+  -e TRAINLAB_DEV_PASSWORD backend trainlab set-development-owner \
+  --username admin --password-env TRAINLAB_DEV_PASSWORD
 ```
 
-默认地址：`http://localhost:8000/`。Compose 只绑定 `127.0.0.1`，当前版本仅支持本机 HTTP，不支持公网、TLS 或高可用部署。初始化命令会安全地交互读取密码。前端单独开发仍可运行 `npm --prefix frontend run dev`，默认地址为 `http://localhost:5173/`。
+开发期间的固定本机登录凭据为 `admin / 123456`，验证码输入登录页显示的 4 位数字。该凭据公开且强度很低，只允许用于 Compose 的 `development` 环境；生产或可被其他设备访问的环境禁止使用。完整规则、恢复旧备份后的重新配置命令和安全边界见 `docs/runbooks/local-development.md`。默认地址：`http://localhost:8000/`。Compose 只绑定 `127.0.0.1`，当前版本仅支持本机 HTTP，不支持公网、TLS 或高可用部署。前端单独开发仍可运行 `npm --prefix frontend run dev`，默认地址为 `http://localhost:5173/`。
 
 常用检查：
 
@@ -57,7 +59,7 @@ npm --prefix frontend run e2e:fullstack
 
 Compose 使用独立命名卷保存 PostgreSQL 数据和私有 FIT 原文件；普通 `down` 会保留两者，`down -v` 会同时删除，使用前必须确认已经通过 `backend/scripts/backup_release.py` 取得同停写点双卷备份。恢复、回滚和隔离演练见 `docs/runbooks/backup-restore.md`。
 
-本机忘记密码时使用 `trainlab reset-password --username <name>`；只需强制退出全部设备时使用 `trainlab revoke-sessions --username <name>`。两个命令只在服务器 CLI 提供，不新增浏览器找回密码或会话管理 UI，详细安全用法见 `docs/runbooks/local-development.md`。
+本机忘记密码时使用 `trainlab reset-password --username <name>`；需要恢复固定开发凭据时使用 `set-development-owner`；只需强制退出全部设备时使用 `trainlab revoke-sessions --username <name>`。这些命令只在服务器 CLI 提供，不新增浏览器找回密码或会话管理 UI，详细安全用法见 `docs/runbooks/local-development.md`。
 
 私有原文件默认按用户限制为 5 GiB、10,000 个；孤儿文件审计使用 `backend/scripts/compose.sh exec backend trainlab reconcile-storage`，该命令默认 dry-run。删除动作、`--apply` 清理和 `down -v` 都应先核对数据库与私有卷的同时间点备份。
 

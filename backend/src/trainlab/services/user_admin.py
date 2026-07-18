@@ -12,6 +12,10 @@ class UserNotFoundError(Exception):
     """Raised when an administrative command targets an unknown user."""
 
 
+class UsernameConflictError(Exception):
+    """Raised when an administrative rename targets an existing username."""
+
+
 def _locked_user(db: Session, username: str) -> User:
     user = db.scalar(
         select(User)
@@ -65,6 +69,52 @@ def revoke_all_sessions(
         user = _locked_user(db, username)
         _revoke_active_sessions(db, user, now or datetime.now(UTC))
         db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
+
+def configure_development_owner(
+    db: Session,
+    username: str,
+    password: str,
+    *,
+    now: datetime | None = None,
+) -> User:
+    """Create or atomically reconfigure the sole local-development owner."""
+
+    try:
+        normalized = normalize_username(username)
+        owner = db.scalar(select(User).where(User.is_owner.is_(True)).with_for_update())
+        conflicting = db.scalar(
+            select(User).where(User.username_normalized == normalized).with_for_update()
+        )
+        if conflicting is not None and (owner is None or conflicting.id != owner.id):
+            raise UsernameConflictError
+
+        if owner is None:
+            owner = User(
+                username=username.strip(),
+                username_normalized=normalized,
+                display_name=username.strip(),
+                password_hash=hash_password(password),
+                is_owner=True,
+                is_active=True,
+            )
+            db.add(owner)
+        else:
+            previous_username = owner.username
+            owner.username = username.strip()
+            owner.username_normalized = normalized
+            owner.is_active = True
+            if owner.display_name == previous_username:
+                owner.display_name = owner.username
+            owner.password_hash = hash_password(password)
+            _revoke_active_sessions(db, owner, now or datetime.now(UTC))
+
+        db.commit()
+        db.refresh(owner)
+        return owner
     except Exception:
         db.rollback()
         raise
