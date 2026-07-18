@@ -21,6 +21,7 @@ from release_backup_common import (
     MANIFEST_FILE,
     MIGRATION_HEAD,
     PRIVATE_FILES_FILE,
+    PRODUCT_VERSION,
     ReleaseBackupError,
     validate_backup,
     validate_project_name,
@@ -62,7 +63,7 @@ class ManifestSafetyTests(unittest.TestCase):
 
             self.assertEqual(validated.database.name, DATABASE_FILE)
             self.assertEqual(validated.private_files.name, PRIVATE_FILES_FILE)
-            self.assertEqual(manifest["productVersion"], "v0.1.0")
+            self.assertEqual(manifest["productVersion"], PRODUCT_VERSION)
             self.assertEqual(manifest["migrationHead"], MIGRATION_HEAD)
             self.assertEqual(
                 set(manifest),
@@ -75,6 +76,20 @@ class ManifestSafetyTests(unittest.TestCase):
             self.assertEqual(stat.S_IMODE(root.stat().st_mode), 0o700)
             for filename in (DATABASE_FILE, PRIVATE_FILES_FILE, MANIFEST_FILE):
                 self.assertEqual(stat.S_IMODE((root / filename).stat().st_mode), 0o600)
+
+    def test_v010_backup_remains_supported_and_unknown_version_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = make_backup(Path(temporary) / "backup")
+            manifest_path = root / MANIFEST_FILE
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["productVersion"] = "v0.1.0"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            validate_backup(root)
+
+            manifest["productVersion"] = "v0.2.0"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            with self.assertRaisesRegex(ReleaseBackupError, "product version"):
+                validate_backup(root)
 
     def test_checksum_corruption_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

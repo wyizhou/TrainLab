@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Shared, dependency-free safety primitives for the v0.1.0 release backup tools."""
+"""Shared, dependency-free safety primitives for TrainLab release backup tools."""
 
 from __future__ import annotations
 
@@ -16,7 +16,8 @@ from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO
 
-PRODUCT_VERSION = "v0.1.0"
+PRODUCT_VERSION = "v0.1.1"
+SUPPORTED_PRODUCT_VERSIONS = frozenset({"v0.1.0", PRODUCT_VERSION})
 MIGRATION_HEAD = "0003_activity_data_lifecycle"
 MANIFEST_SCHEMA_VERSION = 1
 DATABASE_FILE = "database.dump"
@@ -247,7 +248,7 @@ def validate_backup(directory: Path) -> ValidatedBackup:
         raise ReleaseBackupError("Manifest schema is invalid")
     if manifest["schemaVersion"] != MANIFEST_SCHEMA_VERSION:
         raise ReleaseBackupError("Manifest schema version is unsupported")
-    if manifest["productVersion"] != PRODUCT_VERSION:
+    if manifest["productVersion"] not in SUPPORTED_PRODUCT_VERSIONS:
         raise ReleaseBackupError("Backup product version is unsupported")
     if manifest["migrationHead"] != MIGRATION_HEAD:
         raise ReleaseBackupError("Backup migration head is unsupported")
