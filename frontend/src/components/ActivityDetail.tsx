@@ -49,22 +49,67 @@ function Composition({ profile }: { profile: ActivityProfile }) {
   if (profile.composition.length === 0) {
     return <p className="detail-card__note">当前没有可验证的时间构成数据。</p>
   }
-  const total = profile.composition.reduce((sum, item) => sum + item.value, 0) || 1
-  const firstPercent = (profile.composition[0].value / total) * 100
+
+  const size = 104
+  const radius = 40
+  const circumference = 2 * Math.PI * radius
+  const values = profile.composition.map((item) =>
+    Number.isFinite(item.value) ? Math.max(0, item.value) : 0,
+  )
+  const total = values.reduce((sum, value) => sum + value, 0)
+
+  if (total === 0) {
+    return <p className="detail-card__note">当前没有可验证的时间构成数据。</p>
+  }
+
+  let elapsed = 0
+  const segments = profile.composition.map((item, index) => {
+    const percentage = (values[index] / total) * 100
+    const arcLength = (percentage / 100) * circumference
+    const segment = {
+      ...item,
+      arcLength,
+      dashOffset: -elapsed,
+      percentage,
+    }
+    elapsed += arcLength
+    return segment
+  })
+  const accessibleName = `时间构成：${segments
+    .map((item) => `${item.label} ${Math.round(item.percentage)}%`)
+    .join('，')}`
+
   return (
     <div className="detail-composition">
-      <div
+      <svg
         className="detail-composition__ring"
-        style={{
-          background: `conic-gradient(var(--color-accent) 0 ${firstPercent}%, var(--color-border-panel) ${firstPercent}% 100%)`,
-        }}
-      />
+        viewBox={`0 0 ${size} ${size}`}
+        role="img"
+        aria-label={accessibleName}
+        data-testid="detail-composition-ring"
+      >
+        {segments.map((item, index) => (
+          <circle
+            className={`detail-composition__segment detail-composition__segment--${index}`}
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            strokeDasharray={`${item.arcLength} ${circumference - item.arcLength}`}
+            strokeDashoffset={item.dashOffset}
+            strokeWidth="20"
+            transform={`rotate(-90 ${size / 2} ${size / 2})`}
+            data-percentage={item.percentage}
+            key={item.label}
+          />
+        ))}
+      </svg>
       <div className="detail-composition__legend">
-        {profile.composition.map((item, index) => (
+        {segments.map((item, index) => (
           <div className="detail-composition__row" key={item.label}>
             <span className={`detail-composition__swatch detail-composition__swatch--${index}`} />
             <span>{item.label}</span>
-            <strong className="num">{Math.round((item.value / total) * 100)}%</strong>
+            <strong className="num">{Math.round(item.percentage)}%</strong>
           </div>
         ))}
       </div>

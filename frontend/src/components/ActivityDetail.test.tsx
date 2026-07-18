@@ -161,8 +161,77 @@ describe('ActivityDetail', () => {
     const generic = profileActivityById('profile-generic')!
     render(<ActivityDetail activity={generic} parsed={null} />)
     expect(screen.getByTestId('detail-download')).toBeDisabled()
+    expect(screen.getByText('当前没有可验证的时间构成数据。')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: '原始数据' }))
     expect(screen.getByText('等待真实 FIT 数据')).toBeInTheDocument()
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
+  })
+
+  it('renders time composition as accessible SVG geometry from the same percentages', () => {
+    render(
+      <ActivityDetail
+        activity={activity}
+        parsed={makeParsed({ totalTimerTimeSec: 39, totalElapsedTimeSec: 100 })}
+      />,
+    )
+
+    const ring = screen.getByRole('img', { name: '时间构成：跑动 39%，暂停 61%' })
+    expect(ring).toHaveAttribute('viewBox', '0 0 104 104')
+    const segments = ring.querySelectorAll('circle')
+    expect(segments).toHaveLength(2)
+    expect(segments[0]).toHaveAttribute('data-percentage', '39')
+    expect(segments[1]).toHaveAttribute('data-percentage', '61')
+
+    const [activeArc, activeRemainder] = segments[0]
+      .getAttribute('stroke-dasharray')!
+      .split(' ')
+      .map(Number)
+    expect(activeArc / (activeArc + activeRemainder)).toBeCloseTo(0.39, 8)
+    expect(screen.getByText('39%')).toBeInTheDocument()
+    expect(screen.getByText('61%')).toBeInTheDocument()
+  })
+
+  it.each([
+    [0, 100, '时间构成：跑动 0%，暂停 100%', [0, 100]],
+    [50, 100, '时间构成：跑动 50%，暂停 50%', [50, 50]],
+    [100, 100, '时间构成：跑动 100%，暂停 0%', [100, 0]],
+  ] as const)(
+    'keeps SVG arcs and legend aligned for %i/%i composition',
+    (timerSeconds, elapsedSeconds, name, percentages) => {
+      render(
+        <ActivityDetail
+          activity={activity}
+          parsed={makeParsed({
+            totalTimerTimeSec: timerSeconds,
+            totalElapsedTimeSec: elapsedSeconds,
+          })}
+        />,
+      )
+
+      const ring = screen.getByRole('img', { name })
+      const segments = ring.querySelectorAll('circle')
+      expect(segments).toHaveLength(2)
+      expect(Array.from(segments, (segment) => Number(segment.dataset.percentage))).toEqual(
+        percentages,
+      )
+      expect(
+        Array.from(segments, (segment) => {
+          const [arc, remainder] = segment.getAttribute('stroke-dasharray')!.split(' ').map(Number)
+          return Math.round((arc / (arc + remainder)) * 100)
+        }),
+      ).toEqual(percentages)
+    },
+  )
+
+  it('uses the explanatory empty state when the composition total is zero', () => {
+    render(
+      <ActivityDetail
+        activity={activity}
+        parsed={makeParsed({ totalTimerTimeSec: 0, totalElapsedTimeSec: 0 })}
+      />,
+    )
+
+    expect(screen.queryByTestId('detail-composition-ring')).not.toBeInTheDocument()
+    expect(screen.getByText('当前没有可验证的时间构成数据。')).toBeInTheDocument()
   })
 })
