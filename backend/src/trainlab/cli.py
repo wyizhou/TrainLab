@@ -2,6 +2,7 @@ import argparse
 import getpass
 import os
 import sys
+import uuid
 from contextlib import suppress
 
 from sqlalchemy import Engine, select
@@ -12,6 +13,7 @@ from trainlab.core.config import get_settings
 from trainlab.core.security import hash_password, normalize_username
 from trainlab.db.database import create_database_engine
 from trainlab.db.models.user import User
+from trainlab.services.activity_reparse import ActivityReparseError, reparse_fit_imports
 from trainlab.services.activity_storage import PrivateActivityStorage, StorageError
 from trainlab.services.storage_usage import reconcile_storage
 from trainlab.services.user_admin import (
@@ -192,6 +194,43 @@ def reconcile_private_storage(*, apply: bool) -> int:
         engine.dispose()
 
 
+def reparse_fit(username: str, import_ids: list[uuid.UUID], *, apply: bool) -> int:
+    if len(username.strip()) <= 6:
+        print("账号必须大于 6 位", file=sys.stderr)
+        return 2
+    engine: Engine | None = None
+    try:
+        settings = get_settings()
+        engine = create_database_engine(settings.database_url)
+        with Session(engine) as db:
+            report = reparse_fit_imports(
+                db,
+                PrivateActivityStorage(settings.private_storage_root),
+                username,
+                import_ids,
+                apply=apply,
+            )
+        mode = "apply" if report.applied else "dry-run"
+        print(f"mode={mode} imports={len(report.items)}")
+        for item in report.items:
+            print(
+                f"import_id={item.import_id} activity_id={item.activity_id} "
+                f"status={item.status} records={item.record_count} "
+                f"laps={item.lap_count} segments={item.segment_count}"
+            )
+        return 0
+    except ActivityReparseError as exc:
+        print(f"FIT 完整重解析未执行 code={exc.code}", file=sys.stderr)
+        return 3 if exc.code in {"user_not_found", "import_not_found"} else 4
+    except Exception:
+        print("FIT 完整重解析失败：请确认数据库、迁移和私有存储可用", file=sys.stderr)
+        return 4
+    finally:
+        if engine is not None:
+            with suppress(Exception):
+                engine.dispose()
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="trainlab")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -232,6 +271,20 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="删除超过宽限期的孤儿文件；省略时仅审计",
     )
+    reparse = subparsers.add_parser("reparse-fit", help="预检或原子重建指定用户的 FIT 活动投影")
+    reparse.add_argument("--username", required=True)
+    reparse.add_argument(
+        "--import-id",
+        action="append",
+        type=uuid.UUID,
+        required=True,
+        dest="import_ids",
+    )
+    reparse.add_argument(
+        "--apply",
+        action="store_true",
+        help="原子替换投影；省略时仅预检",
+    )
     return parser
 
 
@@ -239,6 +292,8 @@ def main() -> None:
     args = build_parser().parse_args()
     if args.command == "reconcile-storage":
         raise SystemExit(reconcile_private_storage(apply=args.apply))
+    if args.command == "reparse-fit":
+        raise SystemExit(reparse_fit(args.username, args.import_ids, apply=args.apply))
     if args.command == "revoke-sessions":
         raise SystemExit(revoke_sessions(args.username))
     if args.command not in {

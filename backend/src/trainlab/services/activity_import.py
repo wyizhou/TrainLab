@@ -5,7 +5,7 @@ from datetime import timedelta
 from pathlib import PurePosixPath
 
 from fastapi import UploadFile
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
@@ -167,56 +167,51 @@ def _deduplicated_result(
     return ImportResult(model=imported, activity=activity, deduplicated=True)
 
 
-def _replace_activity(
+def _update_activity_fields(activity: Activity, parsed: ParsedFitActivity) -> None:
+    for field_name in (
+        "title",
+        "sport",
+        "sub_sport",
+        "profile",
+        "start_time_utc",
+        "local_start_time",
+        "utc_offset_minutes",
+        "total_timer_time_sec",
+        "total_elapsed_time_sec",
+        "total_distance_m",
+        "avg_hr",
+        "max_hr",
+        "total_calories",
+        "avg_power_w",
+        "max_power_w",
+        "normalized_power_w",
+        "total_ascent_m",
+        "total_descent_m",
+        "avg_speed_mps",
+        "max_speed_mps",
+        "avg_cadence_spm",
+        "total_training_effect",
+        "total_anaerobic_training_effect",
+        "avg_temperature_c",
+        "max_temperature_c",
+        "min_temperature_c",
+        "avg_gct_ms",
+        "avg_vert_osc_mm",
+        "avg_vertical_ratio",
+        "avg_step_length_mm",
+        "workout_feel",
+        "workout_rpe",
+        "extra_metrics",
+    ):
+        setattr(activity, field_name, getattr(parsed, field_name))
+
+
+def _add_activity_children(
     db: Session,
     import_model: ActivityImport,
+    activity: Activity,
     parsed: ParsedFitActivity,
-) -> Activity:
-    existing = _activity_for_import(db, import_model.user_id, import_model.id)
-    if existing is not None:
-        db.delete(existing)
-        db.flush()
-
-    activity = Activity(
-        user_id=import_model.user_id,
-        source_import_id=import_model.id,
-        title=parsed.title,
-        sport=parsed.sport,
-        sub_sport=parsed.sub_sport,
-        profile=parsed.profile,
-        start_time_utc=parsed.start_time_utc,
-        local_start_time=parsed.local_start_time,
-        utc_offset_minutes=parsed.utc_offset_minutes,
-        total_timer_time_sec=parsed.total_timer_time_sec,
-        total_elapsed_time_sec=parsed.total_elapsed_time_sec,
-        total_distance_m=parsed.total_distance_m,
-        avg_hr=parsed.avg_hr,
-        max_hr=parsed.max_hr,
-        total_calories=parsed.total_calories,
-        avg_power_w=parsed.avg_power_w,
-        max_power_w=parsed.max_power_w,
-        normalized_power_w=parsed.normalized_power_w,
-        total_ascent_m=parsed.total_ascent_m,
-        total_descent_m=parsed.total_descent_m,
-        avg_speed_mps=parsed.avg_speed_mps,
-        max_speed_mps=parsed.max_speed_mps,
-        avg_cadence_spm=parsed.avg_cadence_spm,
-        total_training_effect=parsed.total_training_effect,
-        total_anaerobic_training_effect=parsed.total_anaerobic_training_effect,
-        avg_temperature_c=parsed.avg_temperature_c,
-        max_temperature_c=parsed.max_temperature_c,
-        min_temperature_c=parsed.min_temperature_c,
-        avg_gct_ms=parsed.avg_gct_ms,
-        avg_vert_osc_mm=parsed.avg_vert_osc_mm,
-        avg_vertical_ratio=parsed.avg_vertical_ratio,
-        avg_step_length_mm=parsed.avg_step_length_mm,
-        workout_feel=parsed.workout_feel,
-        workout_rpe=parsed.workout_rpe,
-        extra_metrics=parsed.extra_metrics,
-    )
-    db.add(activity)
-    db.flush()
-
+) -> None:
     db.add_all(
         [
             ActivitySession(
@@ -285,7 +280,7 @@ def _replace_activity(
                 duration_sec=item.duration_sec,
                 repetitions=item.repetitions,
                 weight_kg=item.weight_kg,
-                extra_data=item.extra_data,
+                extra_data={**item.extra_data, "_trainlabSemantic": item.semantic},
             )
             for item in parsed.segments
         ]
@@ -331,7 +326,62 @@ def _replace_activity(
             for item in parsed.metric_definitions
         ]
     )
+
+
+def _replace_activity(
+    db: Session,
+    import_model: ActivityImport,
+    parsed: ParsedFitActivity,
+) -> Activity:
+    existing = _activity_for_import(db, import_model.user_id, import_model.id)
+    if existing is not None:
+        db.delete(existing)
+        db.flush()
+
+    activity = Activity(
+        user_id=import_model.user_id,
+        source_import_id=import_model.id,
+        title=parsed.title,
+        sport=parsed.sport,
+        sub_sport=parsed.sub_sport,
+        profile=parsed.profile,
+        start_time_utc=parsed.start_time_utc,
+        total_timer_time_sec=parsed.total_timer_time_sec,
+        total_elapsed_time_sec=parsed.total_elapsed_time_sec,
+        total_distance_m=parsed.total_distance_m,
+    )
+    _update_activity_fields(activity, parsed)
+    db.add(activity)
+    db.flush()
+    _add_activity_children(db, import_model, activity, parsed)
     return activity
+
+
+def replace_activity_projection_in_place(
+    db: Session,
+    import_model: ActivityImport,
+    activity: Activity,
+    parsed: ParsedFitActivity,
+) -> None:
+    if activity.user_id != import_model.user_id or activity.source_import_id != import_model.id:
+        raise ImportStateError("import_activity_mismatch", "FIT 导入与活动投影不匹配")
+    for model in (
+        ActivityMetricDefinition,
+        ActivityDevice,
+        ActivitySegment,
+        ActivityLap,
+        ActivityRecord,
+        ActivitySession,
+    ):
+        db.execute(
+            delete(model).where(
+                model.activity_id == activity.id,
+                model.user_id == import_model.user_id,
+            )
+        )
+    db.flush()
+    _update_activity_fields(activity, parsed)
+    _add_activity_children(db, import_model, activity, parsed)
 
 
 def _lock_owned_attempt(
