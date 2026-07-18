@@ -77,4 +77,27 @@ describe('ImportRecordList', () => {
     await waitFor(() => expect(loadPage).toHaveBeenLastCalledWith())
     expect(within(tableRow).queryByRole('button', { name: '重新处理' })).not.toBeInTheDocument()
   })
+
+  it('shows a spinner and prevents duplicate cursor loads while loading more', async () => {
+    let finish: (page: { items: typeof demoImportFirstPage; nextCursor: null }) => void = () => {}
+    const more = new Promise<{ items: typeof demoImportFirstPage; nextCursor: null }>((resolve) => {
+      finish = resolve
+    })
+    const loadPage = vi
+      .fn()
+      .mockResolvedValueOnce({ items: demoImportFirstPage.slice(0, 1), nextCursor: 'opaque' })
+      .mockReturnValueOnce(more)
+    render(<ImportRecordList demoMode={false} loadPage={loadPage} />)
+    await screen.findAllByTestId('import-record-row')
+    await userEvent.click(screen.getByRole('button', { name: '加载更多' }))
+    const loading = screen.getByRole('button', { name: '加载中…' })
+    expect(loading).toBeDisabled()
+    expect(loading.querySelector('.import-records__spinner')).toBeInTheDocument()
+    await userEvent.click(loading)
+    expect(loadPage).toHaveBeenCalledTimes(2)
+    finish({ items: demoImportFirstPage, nextCursor: null })
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: '加载中…' })).not.toBeInTheDocument(),
+    )
+  })
 })

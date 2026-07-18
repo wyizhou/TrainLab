@@ -39,6 +39,7 @@
   --color-success: #16805d;
   --color-warn: #a66b0a;
   --color-danger: #c24141;
+  --color-danger-06: rgb(194 65 65 / 0.06);
   --color-success-12: rgb(22 128 93 / 0.12);
   --color-success-35: rgb(22 128 93 / 0.35);
   --color-danger-10: rgb(194 65 65 / 0.1);
@@ -78,6 +79,7 @@
   --radius-zone: 4px;
   --radius-sm: 6px;
   --radius-input: 8px;
+  --radius-note: 9px;
   --radius-md: 10px;
   --radius-panel: 12px;
   --radius-lg: 14px;

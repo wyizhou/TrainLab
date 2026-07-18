@@ -20,8 +20,21 @@ for (const viewport of VIEWPORTS) {
 
     await page.locator('[data-vc="activity-more-button"]').first().click()
     await page.getByRole('menuitem', { name: '重命名' }).click()
+    const renameInput = page.getByLabel('运动名称')
+    await expect(renameInput).toBeFocused()
+    await expect
+      .poll(() =>
+        renameInput.evaluate(
+          (input) =>
+            input instanceof HTMLInputElement &&
+            input.selectionStart === 0 &&
+            input.selectionEnd === input.value.length,
+        ),
+      )
+      .toBe(true)
     await expect(page).toHaveScreenshot(`${viewport.width}-activity-dialog.png`, {
       animations: 'disabled',
+      caret: 'hide',
     })
 
     await page.goto('/connectors')

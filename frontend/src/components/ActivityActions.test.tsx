@@ -38,11 +38,13 @@ describe('ActivityActions', () => {
     trigger.focus()
     await user.keyboard('{Enter}')
     expect(await screen.findByRole('menu')).toHaveAttribute('data-vc', 'activity-actions-menu')
-    expect(screen.getByRole('menuitem', { name: '重命名' })).toHaveFocus()
+    const focusedItem = screen.getByRole('menuitem', { name: '重命名' })
+    expect(focusedItem).toHaveFocus()
     await user.click(screen.getByRole('menuitem', { name: '重命名' }))
     const input = screen.getByLabelText('运动名称')
     await user.clear(input)
     await user.type(input, '  新标题  ')
+    expect(screen.getByText('7/255')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: '保存名称' }))
     await waitFor(() => expect(callbacks.onRename).toHaveBeenCalledWith(activity, '新标题'))
     await waitFor(() => expect(trigger).toHaveFocus())
@@ -52,7 +54,8 @@ describe('ActivityActions', () => {
     const user = userEvent.setup()
     render(<ActivityActions {...props()} downloadAvailable={false} />)
     await user.click(screen.getByRole('button', { name: '打开运动操作菜单' }))
-    expect(screen.getByRole('menuitem', { name: '原始 FIT 不可用' })).toBeDisabled()
+    const unavailable = screen.getByRole('menuitem', { name: '原始 FIT 不可用' })
+    expect(unavailable).toBeDisabled()
     await user.click(screen.getByRole('menuitem', { name: '重命名' }))
     const input = screen.getByLabelText('运动名称')
     await user.clear(input)
@@ -98,10 +101,46 @@ describe('ActivityActions', () => {
     await user.type(screen.getByLabelText('运动名称'), '一次提交')
     const submit = screen.getByRole('button', { name: '保存名称' })
     await user.click(submit)
-    expect(screen.getByRole('button', { name: '保存中…' })).toBeDisabled()
-    fireEvent.click(screen.getByRole('button', { name: '保存中…' }))
+    expect(screen.getByRole('button', { name: '提交中…' })).toBeDisabled()
+    fireEvent.click(screen.getByRole('button', { name: '提交中…' }))
     expect(callbacks.onRename).toHaveBeenCalledTimes(1)
     finish({ ...activity, name: '一次提交' })
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+  })
+
+  it('renders the contracted rename, restore and delete dialog content and geometry', async () => {
+    const user = userEvent.setup()
+    render(<ActivityActions {...props()} />)
+    const openMode = async (name: '重命名' | '恢复解析标题' | '删除运动') => {
+      await user.click(screen.getByRole('button', { name: '打开运动操作菜单' }))
+      await user.click(screen.getByRole('menuitem', { name }))
+    }
+
+    await openMode('重命名')
+    expect(screen.getByRole('heading', { name: '重命名运动' })).toHaveClass(
+      'activity-dialog__title',
+    )
+    expect(screen.getByText('当前名称：晨间跑')).toHaveClass('activity-dialog__subtitle')
+    expect(screen.getByText('保存时自动忽略首尾空格 · 1–255 个字符')).toBeInTheDocument()
+    expect(screen.getByText('3/255')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '取消' }).parentElement).toHaveClass(
+      'activity-dialog__actions',
+    )
+    await user.click(screen.getByRole('button', { name: '取消' }))
+
+    await openMode('恢复解析标题')
+    expect(screen.getByText('将移除当前活动的自定义名称。')).toBeInTheDocument()
+    const restoreNote = screen.getByText(/服务端实际返回的解析标题/)
+    expect(restoreNote).toHaveTextContent('不会提前返回恢复后的名称')
+    expect(restoreNote).toHaveClass('activity-dialog__note')
+    await user.click(screen.getByRole('button', { name: '取消' }))
+
+    await openMode('删除运动')
+    expect(screen.getByText('确认删除当前活动及其关联数据。')).toBeInTheDocument()
+    expect(screen.getByText('此操作不可撤销').tagName).toBe('STRONG')
+    const deleteNote = screen.getByText(/名为“晨间跑”/)
+    expect(deleteNote).toHaveClass('activity-dialog__note--danger')
+    expect(deleteNote).toHaveTextContent('当前活动、对应导入记录和私有原文件将一起删除')
+    expect(deleteNote).toHaveTextContent('导入仍在进行或删除未完成')
   })
 })
