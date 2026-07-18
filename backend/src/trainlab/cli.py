@@ -84,8 +84,8 @@ def create_user(username: str, display_name: str | None, password: str) -> int:
 
 
 def reset_password(username: str, password: str) -> int:
-    if not username.strip():
-        print("账号不能为空", file=sys.stderr)
+    if len(username.strip()) <= 6:
+        print("账号必须大于 6 位", file=sys.stderr)
         return 2
     if len(password) <= 6:
         print("密码必须大于 6 位", file=sys.stderr)
@@ -112,8 +112,8 @@ def reset_password(username: str, password: str) -> int:
 
 
 def revoke_sessions(username: str) -> int:
-    if not username.strip():
-        print("账号不能为空", file=sys.stderr)
+    if len(username.strip()) <= 6:
+        print("账号必须大于 6 位", file=sys.stderr)
         return 2
 
     engine: Engine | None = None
@@ -137,11 +137,11 @@ def revoke_sessions(username: str) -> int:
 
 
 def set_development_owner(username: str, password: str) -> int:
-    if not username.strip():
-        print("账号不能为空", file=sys.stderr)
+    if len(username.strip()) <= 6:
+        print("账号必须大于 6 位", file=sys.stderr)
         return 2
-    if not password:
-        print("密码不能为空", file=sys.stderr)
+    if len(password) <= 6:
+        print("密码必须大于 6 位", file=sys.stderr)
         return 2
 
     engine: Engine | None = None
@@ -152,8 +152,8 @@ def set_development_owner(username: str, password: str) -> int:
             return 3
         engine = create_database_engine(settings.database_url)
         with Session(engine) as db:
-            owner = configure_development_owner(db, username, password)
-        print(f"开发主人账号已配置为 {owner.username}，已有会话已撤销")
+            configure_development_owner(db, username, password)
+        print("开发主人账号已配置，已有会话已撤销")
         return 0
     except UsernameConflictError:
         print("目标用户名已被其他用户占用", file=sys.stderr)
