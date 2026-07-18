@@ -9,10 +9,12 @@ TrainLab 后端采用 Python 3.12、FastAPI、SQLAlchemy 2、PostgreSQL、Alembi
 ```bash
 cp backend/.env.example backend/.env
 backend/scripts/compose.sh up --build -d db backend
-backend/scripts/compose.sh exec backend trainlab create-owner --username owner-user
+TRAINLAB_DEV_PASSWORD=123456 backend/scripts/compose.sh exec -T \
+  -e TRAINLAB_DEV_PASSWORD backend trainlab set-development-owner \
+  --username admin --password-env TRAINLAB_DEV_PASSWORD
 ```
 
-命令会交互式读取密码，不写入 shell 历史。账号和密码都必须大于 6 位。随后访问 `http://localhost:8000/`，FastAPI 会同时提供 React 单页应用和 `/api/v1`。Compose 端口只绑定 `127.0.0.1`；v0.1.0 只支持本机 HTTP，不具备公网、TLS 或高可用边界。连接器页上传 FIT 后，运动会持久出现在运动记录和 v3.4 共用详情中。
+开发期间的固定本机凭据为 `admin / 123456`。`set-development-owner` 只允许在 `TRAINLAB_ENVIRONMENT=development` 时运行；它会创建唯一 owner，或保留现有 owner UUID 和数据归属并原子更新用户名、Argon2 密码哈希及全部会话。该公开弱凭据禁止用于生产或可被其他设备访问的环境，完整规则见 `docs/runbooks/local-development.md`。随后访问 `http://localhost:8000/`，FastAPI 会同时提供 React 单页应用和 `/api/v1`。Compose 端口只绑定 `127.0.0.1`；v0.1.0 只支持本机 HTTP，不具备公网、TLS 或高可用边界。连接器页上传 FIT 后，运动会持久出现在运动记录和 v3.4 共用详情中。
 
 需要验证或预置多用户隔离时，可由服务器管理员在容器内创建普通用户；该命令不开放 HTTP 注册：
 
@@ -25,13 +27,13 @@ backend/scripts/compose.sh exec backend trainlab create-user --username peer-use
 重置指定用户密码会使用现有 Argon2 规则，并在同一事务中撤销该用户全部会话：
 
 ```bash
-backend/scripts/compose.sh exec backend trainlab reset-password --username owner-user
+backend/scripts/compose.sh exec backend trainlab reset-password --username admin
 ```
 
 只撤销会话而不改变密码：
 
 ```bash
-backend/scripts/compose.sh exec backend trainlab revoke-sessions --username owner-user
+backend/scripts/compose.sh exec backend trainlab revoke-sessions --username admin
 ```
 
 自动化可使用 `--password-env`，但环境变量必须由受控 secret 注入，不能把明文密码放入参数、日志或仓库。CLI 成功、输入错误、未知用户和数据库失败分别使用退出码 0、2、3、4。登录的凭据验证与会话插入、密码重置和会话撤销均通过同一用户行锁串行化，管理命令不会遗漏已经验证但尚未提交的并发登录会话。进程内登录限流不会被数据库密码重置清除；已触发锁定时可安全重启 backend，详见 `docs/runbooks/local-development.md`。
@@ -84,7 +86,7 @@ backend/scripts/compose.sh down
 cd backend
 uv sync --frozen --extra dev
 uv run alembic upgrade head
-uv run trainlab create-owner --username owner-user
+uv run trainlab set-development-owner --username admin
 uv run uvicorn trainlab.main:app --reload --port 8000
 ```
 

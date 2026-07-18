@@ -14,6 +14,7 @@ from trainlab.cli import (
     main,
     reset_password,
     revoke_sessions,
+    set_development_owner,
 )
 from trainlab.core.security import verify_password
 from trainlab.db.models.session import LoginSession
@@ -45,6 +46,9 @@ def _run_cli(monkeypatch, *args: str) -> int:  # type: ignore[no-untyped-def]
 def test_create_owner_validates_lengths_without_touching_database() -> None:
     assert create_owner("short", None, "correct-password") == 2
     assert create_owner("owner-user", None, "short") == 2
+    # The public development default is intentionally available only through
+    # set-development-owner; standard account creation keeps its strong policy.
+    assert create_owner("admin", None, "123456") == 2
 
 
 def test_create_owner_is_idempotent_but_refuses_a_second_owner(engine) -> None:  # type: ignore[no-untyped-def]
@@ -168,8 +172,8 @@ def test_reset_password_interactive_input_is_hidden_and_must_match(
     [
         (("reset-password", "--username", "unknown-user", "--password-env", "MISSING"), 2),
         (("reset-password", "--username", "unknown-user"), 3),
-        (("reset-password", "--username", "short", "--password-env", "PASSWORD"), 2),
-        (("revoke-sessions", "--username", "short"), 2),
+        (("reset-password", "--username", "short", "--password-env", "PASSWORD"), 3),
+        (("revoke-sessions", "--username", "short"), 3),
         (("revoke-sessions", "--username", "unknown-user"), 3),
     ],
 )
@@ -202,6 +206,175 @@ def test_reset_password_rejects_short_password_without_changing_hash(
         stored = db.scalar(select(User.password_hash).where(User.id == user.id))
     assert stored is not None
     assert verify_password("correct-password", stored)
+
+
+def test_development_owner_command_is_rejected_outside_development(
+    engine,
+    user,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    assert set_development_owner("admin", "123456") == 3
+    captured = capsys.readouterr()
+    assert "123456" not in captured.out + captured.err
+    with Session(engine) as db:
+        unchanged = db.get(User, user.id)
+    assert unchanged is not None
+    assert unchanged.username == "owner-user"
+    assert verify_password("correct-password", unchanged.password_hash)
+
+
+def test_development_owner_command_creates_the_first_owner(
+    engine,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    from trainlab.core.config import get_settings
+
+    monkeypatch.setenv("TRAINLAB_ENVIRONMENT", "development")
+    get_settings.cache_clear()
+    try:
+        assert set_development_owner("admin", "123456") == 0
+    finally:
+        monkeypatch.setenv("TRAINLAB_ENVIRONMENT", "test")
+        get_settings.cache_clear()
+
+    captured = capsys.readouterr()
+    assert "123456" not in captured.out + captured.err
+    with Session(engine) as db:
+        owner = db.scalar(select(User).where(User.is_owner.is_(True)))
+    assert owner is not None
+    assert owner.username == "admin"
+    assert owner.display_name == "admin"
+    assert verify_password("123456", owner.password_hash)
+
+
+def test_development_owner_command_preserves_identity_and_revokes_sessions(
+    settings,
+    engine,
+    user,
+    origin_headers: dict[str, str],
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    from trainlab.core.config import get_settings
+
+    peer = create_test_user(engine, "peer-user")
+    with TestClient(create_app(settings), client=("development-owner", 50008)) as old_client:
+        assert _login(old_client, origin_headers).status_code == 200
+
+        monkeypatch.setenv("TRAINLAB_ENVIRONMENT", "development")
+        get_settings.cache_clear()
+        try:
+            assert set_development_owner("admin", "123456") == 0
+        finally:
+            monkeypatch.setenv("TRAINLAB_ENVIRONMENT", "test")
+            get_settings.cache_clear()
+
+        assert old_client.get("/api/v1/auth/session").status_code == 401
+
+    with Session(engine) as db:
+        owner = db.scalar(select(User).where(User.is_owner.is_(True)))
+        unchanged_peer = db.get(User, peer.id)
+    assert owner is not None
+    assert owner.id == user.id
+    assert owner.username == "admin"
+    assert owner.display_name == "admin"
+    assert owner.is_active is True
+    assert verify_password("123456", owner.password_hash)
+    assert unchanged_peer is not None
+    assert unchanged_peer.username == "peer-user"
+
+    with TestClient(create_app(settings), client=("development-owner-login", 50009)) as client:
+        assert _login(client, origin_headers).status_code == 401
+        assert (
+            _login(client, origin_headers, username="admin", password="123456").status_code == 200
+        )
+
+    captured = capsys.readouterr()
+    assert "123456" not in captured.out + captured.err
+
+
+def test_development_owner_command_reactivates_the_existing_owner(
+    engine,
+    user,
+    monkeypatch,
+) -> None:  # type: ignore[no-untyped-def]
+    from trainlab.core.config import get_settings
+
+    with Session(engine) as db:
+        stored_owner = db.get(User, user.id)
+        assert stored_owner is not None
+        stored_owner.is_active = False
+        db.commit()
+
+    monkeypatch.setenv("TRAINLAB_ENVIRONMENT", "development")
+    get_settings.cache_clear()
+    try:
+        assert set_development_owner("admin", "123456") == 0
+    finally:
+        monkeypatch.setenv("TRAINLAB_ENVIRONMENT", "test")
+        get_settings.cache_clear()
+
+    with Session(engine) as db:
+        owner = db.get(User, user.id)
+    assert owner is not None
+    assert owner.is_active is True
+
+
+def test_development_owner_command_rolls_back_on_username_conflict(
+    engine,
+    user,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    from trainlab.core.config import get_settings
+
+    create_test_user(engine, "admin", password="different-password")
+    monkeypatch.setenv("TRAINLAB_ENVIRONMENT", "development")
+    get_settings.cache_clear()
+    try:
+        assert set_development_owner("admin", "123456") == 3
+    finally:
+        monkeypatch.setenv("TRAINLAB_ENVIRONMENT", "test")
+        get_settings.cache_clear()
+
+    captured = capsys.readouterr()
+    assert "123456" not in captured.out + captured.err
+    with Session(engine) as db:
+        owner = db.get(User, user.id)
+    assert owner is not None
+    assert owner.username == "owner-user"
+    assert verify_password("correct-password", owner.password_hash)
+
+
+def test_development_owner_command_rolls_back_on_commit_failure(
+    engine,
+    user,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    from trainlab.core.config import get_settings
+
+    def fail_commit(db: Session) -> None:
+        db.flush()
+        raise SQLAlchemyError("commit failed")
+
+    monkeypatch.setenv("TRAINLAB_ENVIRONMENT", "development")
+    monkeypatch.setattr(Session, "commit", fail_commit)
+    get_settings.cache_clear()
+    try:
+        assert set_development_owner("admin", "123456") == 4
+    finally:
+        monkeypatch.setenv("TRAINLAB_ENVIRONMENT", "test")
+        get_settings.cache_clear()
+
+    captured = capsys.readouterr()
+    assert "123456" not in captured.out + captured.err
+    with Session(engine) as db:
+        owner = db.get(User, user.id)
+    assert owner is not None
+    assert owner.username == "owner-user"
+    assert verify_password("correct-password", owner.password_hash)
 
 
 def test_reset_password_rolls_back_hash_when_session_revocation_fails(

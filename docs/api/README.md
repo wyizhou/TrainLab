@@ -26,7 +26,7 @@ TrainLab 的真实后端接口统一使用 `/api/v1` 前缀。当前开放登录
 登录请求：
 
 ```json
-{ "username": "owner-user", "password": "correct-password" }
+{ "username": "admin", "password": "123456" }
 ```
 
 登录和会话响应：
@@ -35,8 +35,8 @@ TrainLab 的真实后端接口统一使用 `/api/v1` 前缀。当前开放登录
 {
   "user": {
     "id": "00000000-0000-0000-0000-000000000000",
-    "username": "owner-user",
-    "displayName": "Owner",
+    "username": "admin",
+    "displayName": "admin",
     "isOwner": true
   },
   "expiresAt": "2026-08-15T00:00:00Z"
