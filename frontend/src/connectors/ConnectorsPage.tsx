@@ -7,6 +7,8 @@ import { FileUpload } from './FileUpload'
 import { Toast } from '../components/Toast'
 import { demoConflictGroups, type ConflictGroup } from './conflictData'
 import { demoConnectors, type AutoSyncInterval, type Connector } from './connectorData'
+import { ImportRecordList } from '../data-management/ImportRecordList'
+import { useAuth } from '../auth/AuthState'
 import './ConnectorsPage.css'
 
 // 连接器 page (contract C-10 + C-11 + C-12). Renders the connector state cards
@@ -32,6 +34,7 @@ function markConnected(c: Connector): Connector {
 }
 
 export function ConnectorsPage() {
+  const auth = useAuth()
   const [connectors, setConnectors] = useState<Connector[]>(demoConnectors)
   // id of the connector currently being authorized, or null when closed.
   const [authForId, setAuthForId] = useState<string | null>(null)
@@ -40,6 +43,7 @@ export function ConnectorsPage() {
   const [showConflictModal, setShowConflictModal] = useState(false)
   // Transient sync-success notice (AC-001c-4); auto-dismisses on a timer.
   const [toast, setToast] = useState<string | null>(null)
+  const [importRefreshKey, setImportRefreshKey] = useState(0)
 
   useEffect(() => {
     if (!toast) return
@@ -103,7 +107,8 @@ export function ConnectorsPage() {
         ))}
       </div>
 
-      <FileUpload />
+      <FileUpload onFitPersisted={() => setImportRefreshKey((value) => value + 1)} />
+      <ImportRecordList demoMode={auth.demoMode} refreshKey={importRefreshKey} />
 
       {authConnector && (
         <ConnectorAuthModal

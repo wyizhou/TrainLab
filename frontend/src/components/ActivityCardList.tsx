@@ -18,6 +18,7 @@ type ActivityCardListProps = {
   isOpenable?: (id: string) => boolean
   isSelectable?: (id: string) => boolean
   isDownloadable?: (id: string) => boolean
+  renderActions?: (activity: Activity) => ReactNode
   children?: ReactNode
 }
 
@@ -37,6 +38,7 @@ export function ActivityCardList({
   isOpenable,
   isSelectable,
   isDownloadable,
+  renderActions,
   children,
 }: ActivityCardListProps) {
   return (
@@ -70,7 +72,9 @@ export function ActivityCardList({
               )}
               <span className={`activity-dot activity-dot--${TYPE_DOT_SLUG[a.type]}`} />
               <span className="activity-card__name">{a.name}</span>
-              {downloadable && (
+              {renderActions ? (
+                renderActions(a)
+              ) : downloadable ? (
                 <button
                   type="button"
                   className="activity-card__download"
@@ -82,7 +86,7 @@ export function ActivityCardList({
                 >
                   FIT ↓
                 </button>
-              )}
+              ) : null}
             </div>
 
             <dl className="activity-card__metrics" data-vc="activity-card-metrics">

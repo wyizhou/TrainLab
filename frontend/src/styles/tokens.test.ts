@@ -9,6 +9,7 @@ describe('design tokens', () => {
     expect(color.accent).toBe('#2F7FC4')
     expect(color.onAccent).toBe('#FFFFFF')
     expect(color.text).toBe('#172033')
+    expect(color.danger06).toBe('rgba(194, 65, 65, 0.06)')
   })
 
   it('pins the global-chrome tokens (AC-001c-*)', () => {
@@ -22,6 +23,7 @@ describe('design tokens', () => {
 
   it('exposes radius and spacing scales', () => {
     expect(radius.input).toBe('8px')
+    expect(radius.note).toBe('9px')
     expect(radius.pill).toBe('99px')
     expect(space[3]).toBe('12px')
   })

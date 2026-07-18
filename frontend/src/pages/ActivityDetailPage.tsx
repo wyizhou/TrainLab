@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ActivityDetail } from '../components/ActivityDetail'
 import {
   fitFileName,
@@ -12,10 +12,14 @@ import { loadRealFitActivity } from '../activities/fitAsset'
 import { type ParsedActivity } from '../activities/fitParser'
 import {
   ActivityApiError,
+  deleteImportedActivity,
   downloadImportedActivity,
   isImportedActivityId,
   loadImportedActivity,
+  updateImportedActivityName,
 } from '../activities/activityApi'
+import { ActivityActions } from '../components/ActivityActions'
+import { Toast } from '../components/Toast'
 import './ActivityDetailPage.css'
 import { useAuth } from '../auth/AuthState'
 
@@ -30,6 +34,7 @@ type LoadState = 'idle' | 'loading' | 'ready' | 'error' | 'not-found'
 // FIT for the FIT-backed row (async), and renders the annotated detail view.
 export function ActivityDetailPage({ loadFit = loadRealFitActivity }: ActivityDetailPageProps) {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const auth = useAuth()
   const localActivity = useMemo<Activity | undefined>(
     () =>
@@ -41,17 +46,21 @@ export function ActivityDetailPage({ loadFit = loadRealFitActivity }: ActivityDe
 
   const imported = id !== undefined && isImportedActivityId(id)
   const [importedActivity, setImportedActivity] = useState<Activity | undefined>()
+  const [localOverride, setLocalOverride] = useState<Activity | undefined>()
   const [requestedImportId, setRequestedImportId] = useState<string | null>(null)
-  const activity = localActivity ?? (requestedImportId === id ? importedActivity : undefined)
+  const activity =
+    localOverride ?? localActivity ?? (requestedImportId === id ? importedActivity : undefined)
   const isFit = localActivity?.id === FIT_ACTIVITY_ID
   const [parsed, setParsed] = useState<ParsedActivity | null>(null)
   const [state, setState] = useState<LoadState>(imported ? 'loading' : 'idle')
   const [attempt, setAttempt] = useState(0)
   const [downloadNote, setDownloadNote] = useState('')
+  const [toast, setToast] = useState('')
   const routeState = imported && requestedImportId !== id ? 'loading' : state
   const visibleParsed = imported && requestedImportId !== id ? null : parsed
 
   useEffect(() => {
+    setLocalOverride(undefined)
     if (imported && id) {
       let alive = true
       setRequestedImportId(id)
@@ -100,19 +109,48 @@ export function ActivityDetailPage({ loadFit = loadRealFitActivity }: ActivityDe
     }
   }, [attempt, id, imported, isFit, loadFit])
 
-  const download = (activityId: string) => {
+  useEffect(() => {
+    if (!toast) return
+    const timer = window.setTimeout(() => setToast(''), 2800)
+    return () => window.clearTimeout(timer)
+  }, [toast])
+
+  const download = async (activityId: string) => {
     if (isImportedActivityId(activityId)) {
-      void downloadImportedActivity(activityId)
-        .then(() =>
-          setDownloadNote(
-            `已开始下载 ${visibleParsed?.backend?.originalFileName ?? 'activity.fit'}`,
-          ),
-        )
-        .catch(() => setDownloadNote('原始 FIT 下载失败'))
+      await downloadImportedActivity(activityId)
+      setDownloadNote(`已开始下载 ${visibleParsed?.backend?.originalFileName ?? 'activity.fit'}`)
       return
     }
     const a = activity && activity.id === activityId ? activity : undefined
     if (a) setDownloadNote(`已开始下载 ${fitFileName(a)}（模拟）`)
+  }
+
+  const replaceActivity = (updated: Activity) => {
+    if (isImportedActivityId(updated.id)) setImportedActivity(updated)
+    else setLocalOverride(updated)
+    return updated
+  }
+
+  const renameActivity = async (current: Activity, name: string) =>
+    replaceActivity(
+      isImportedActivityId(current.id)
+        ? await updateImportedActivityName(current.id, name)
+        : { ...current, name },
+    )
+
+  const restoreActivity = async (current: Activity) =>
+    replaceActivity(
+      isImportedActivityId(current.id)
+        ? await updateImportedActivityName(current.id, null)
+        : (localActivity ?? current),
+    )
+
+  const removeActivity = async (current: Activity) => {
+    if (isImportedActivityId(current.id)) await deleteImportedActivity(current.id)
+    navigate('/activities', {
+      replace: true,
+      state: { activityFeedback: '运动、导入记录和原始文件已删除' },
+    })
   }
 
   if (!activity && imported && routeState === 'error') {
@@ -187,7 +225,7 @@ export function ActivityDetailPage({ loadFit = loadRealFitActivity }: ActivityDe
           <span>TL</span>
           <strong>TrainLab</strong>
         </div>
-        <span className="activity-detail-shell__version num">v3.4 · DESIGN REV 7</span>
+        <span className="activity-detail-shell__version num">v3.5 · DESIGN REV 8</span>
       </header>
       <main className="activity-detail-page" data-testid="page-activity-detail">
         {routeState === 'loading' && (
@@ -200,7 +238,23 @@ export function ActivityDetailPage({ loadFit = loadRealFitActivity }: ActivityDe
             FIT 解析失败；已解析摘要仍可使用，请在“原始数据”中重试。
           </p>
         )}
-        <ActivityDetail activity={activity} parsed={visibleParsed} onDownload={download} />
+        <ActivityDetail
+          activity={activity}
+          parsed={visibleParsed}
+          onDownload={download}
+          managementAction={(downloadAvailable) => (
+            <ActivityActions
+              activity={activity}
+              detail
+              onRename={renameActivity}
+              onRestore={restoreActivity}
+              onDelete={removeActivity}
+              onDownload={(item) => download(item.id)}
+              onFeedback={setToast}
+              downloadAvailable={downloadAvailable}
+            />
+          )}
+        />
         {downloadNote && (
           <p
             className="activity-detail-page__note num"
@@ -210,6 +264,7 @@ export function ActivityDetailPage({ loadFit = loadRealFitActivity }: ActivityDe
             {downloadNote}
           </p>
         )}
+        {toast && <Toast message={toast} />}
       </main>
     </div>
   )

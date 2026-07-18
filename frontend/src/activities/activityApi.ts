@@ -68,7 +68,7 @@ function cookieValue(name: string): string | null {
   return item ? decodeURIComponent(item.slice(prefix.length)) : null
 }
 
-async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
+export async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers)
   headers.set('Accept', 'application/json')
   if (init.method && !['GET', 'HEAD'].includes(init.method.toUpperCase())) {
@@ -76,7 +76,7 @@ async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
     if (csrf) headers.set('X-CSRF-Token', csrf)
   }
   const response = await fetch(path, { ...init, headers, credentials: 'same-origin' })
-  const payload = (await response.json().catch(() => null)) as
+  const payload = (response.status === 204 ? null : await response.json().catch(() => null)) as
     ({ code?: string; message?: string; details?: Record<string, unknown> } & Partial<T>) | null
   if (!response.ok) {
     if (response.status === 401) reportSessionInvalidated()
@@ -87,7 +87,23 @@ async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
       payload?.details ?? null,
     )
   }
+  if (response.status === 204) return undefined as T
   return payload as T
+}
+
+export function updateImportedActivityName(
+  activityId: string,
+  name: string | null,
+): Promise<Activity> {
+  return apiRequest<Activity>(`/api/v1/activities/${activityId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  })
+}
+
+export function deleteImportedActivity(activityId: string): Promise<void> {
+  return apiRequest<void>(`/api/v1/activities/${activityId}`, { method: 'DELETE' })
 }
 
 export async function listImportedActivities(): Promise<Activity[]> {

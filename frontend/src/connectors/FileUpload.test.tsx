@@ -34,7 +34,7 @@ const TCX = `<TrainingCenterDatabase>
   </Activity></Activities>
 </TrainingCenterDatabase>`
 
-function renderUpload(demoMode = false) {
+function renderUpload(demoMode = false, onFitPersisted?: () => void) {
   const auth: AuthContextValue = {
     status: 'authenticated',
     user: demoUser,
@@ -44,7 +44,7 @@ function renderUpload(demoMode = false) {
   }
   return render(
     <AuthContext.Provider value={auth}>
-      <FileUpload />
+      <FileUpload onFitPersisted={onFitPersisted} />
     </AuthContext.Provider>,
   )
 }
@@ -232,6 +232,30 @@ describe('FileUpload', () => {
     expect(within(row).getByTestId('parsed-preview')).toHaveTextContent('本地预览 · 未持久化')
     expect(getUploadedActivities()[0].id).toMatch(/^upload-/)
     expect(vi.mocked(fetch)).not.toHaveBeenCalled()
+  })
+
+  it('refreshes import history only after a real FIT is persisted successfully', async () => {
+    const onFitPersisted = vi.fn()
+    renderUpload(false, onFitPersisted)
+
+    await upload(fitFile('persisted.fit'))
+    await waitFor(() => expect(onFitPersisted).toHaveBeenCalledTimes(1))
+
+    await upload(new File([GPX], 'preview.gpx'))
+    await upload(new File([TCX], 'preview.tcx'))
+    await waitFor(() => expect(screen.getAllByTestId('parsed-preview')).toHaveLength(2))
+    expect(onFitPersisted).toHaveBeenCalledTimes(1)
+
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response(JSON.stringify({ code: 'fit_parse_failed', message: 'safe failure' }), {
+        status: 422,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    )
+    await upload(fitFile('failed.fit'))
+    await screen.findByText('failed.fit')
+    expect(screen.getByTestId('file-upload-errors')).toHaveTextContent('safe failure')
+    expect(onFitPersisted).toHaveBeenCalledTimes(1)
   })
 })
 

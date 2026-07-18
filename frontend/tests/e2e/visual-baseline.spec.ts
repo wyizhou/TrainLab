@@ -869,12 +869,30 @@ for (const { before } of baseline.equivalence) {
   // four viewports have a dedicated baseline suite; every other v3.3 state
   // continues to use the original exact contract below.
   if (state === 'activity-detail-charts') continue
+  // v3.5 adds the mobile activity-card management trigger. Only this exact
+  // 390px state moved to the v3.5 four-viewport data-management suite; the
+  // historical v3.3 contract and assets remain unchanged for every other state.
+  if (prefix === '390' && state === 'activities-list') continue
   test(`${before}: data-vc computed styles and geometry match the JSON contract`, async ({
     page,
   }) => {
     expect(viewport, `${before}: unknown audited viewport`).toBeDefined()
     await page.setViewportSize(baseline.audited_viewports[viewport!.name])
     await openPrimaryState(page, state)
+    // Preserve the complete historical geometry contract for the original
+    // page surface. v3.5 additions are removed only inside this old-contract
+    // assertion; their live geometry is covered by the v3.5 four-viewport suite.
+    if (state === 'connectors-default' || state === 'settings-default') {
+      await page.evaluate(
+        (selector) => {
+          const addition = document.querySelector(selector)
+          addition?.parentNode?.removeChild(addition)
+        },
+        state === 'connectors-default'
+          ? '[data-vc="import-records"]'
+          : '[data-vc="settings-data-storage"]',
+      )
+    }
     const anchoredState = baseline.equivalence.find(({ before: name }) => name === before)!.after
     const contentWidth = baseline.render_states[anchoredState].document.bodyWidth
     if (contentWidth !== baseline.audited_viewports[viewport!.name].width) {
@@ -923,6 +941,9 @@ for (const viewport of VIEWPORTS.filter(({ name }) => name === 'mobile' || name 
 for (const viewport of VIEWPORTS) {
   for (const state of PRIMARY_STATES) {
     if (state === 'activity-detail-charts') continue
+    // The v3.5 mobile activities baseline intentionally replaces this single
+    // bitmap after adding card actions. Do not rewrite the historical v3.3 PNG.
+    if (viewport.name === 'mobile' && state === 'activities-list') continue
     test(`${viewport.name}: ${state} matches the v3.3 full-page baseline`, async ({ page }) => {
       await page.setViewportSize(baseline.audited_viewports[viewport.name])
       await openPrimaryState(page, state)

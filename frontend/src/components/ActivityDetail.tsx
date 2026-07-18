@@ -15,6 +15,7 @@ type ActivityDetailProps = {
   parsed: ParsedActivity | null
   onDownload?: (id: string) => void
   backAction?: ReactNode
+  managementAction?: (downloadAvailable: boolean) => ReactNode
 }
 
 type DetailTab = 'overview' | 'charts' | 'segments' | 'devices' | 'raw'
@@ -679,7 +680,13 @@ function RawPanel({ profile }: { profile: ActivityProfile }) {
   )
 }
 
-export function ActivityDetail({ activity, parsed, onDownload, backAction }: ActivityDetailProps) {
+export function ActivityDetail({
+  activity,
+  parsed,
+  onDownload,
+  backAction,
+  managementAction,
+}: ActivityDetailProps) {
   const profile = useMemo(() => buildActivityProfile(activity, parsed), [activity, parsed])
   const [activeTab, setActiveTab] = useState<DetailTab>('overview')
   const [activeChart, setActiveChart] = useState(profile.charts[0]?.id ?? '')
@@ -713,16 +720,20 @@ export function ActivityDetail({ activity, parsed, onDownload, backAction }: Act
           >
             {profile.parseStatusLabel}
           </span>
-          <button
-            type="button"
-            className="activity-detail__download"
-            data-vc="activity-fit-download"
-            data-testid="detail-download"
-            disabled={!profile.downloadAvailable}
-            onClick={() => profile.downloadAvailable && onDownload?.(activity.id)}
-          >
-            {profile.downloadAvailable ? '下载原始 FIT' : '未绑定 FIT'}
-          </button>
+          {managementAction ? (
+            managementAction(profile.downloadAvailable)
+          ) : (
+            <button
+              type="button"
+              className="activity-detail__download"
+              data-vc="activity-fit-download"
+              data-testid="detail-download"
+              disabled={!profile.downloadAvailable}
+              onClick={() => profile.downloadAvailable && onDownload?.(activity.id)}
+            >
+              {profile.downloadAvailable ? '下载原始 FIT' : '未绑定 FIT'}
+            </button>
+          )}
         </div>
       </header>
       <nav className="activity-detail__tabs" aria-label="详情视图" data-vc="activity-detail-tabs">
