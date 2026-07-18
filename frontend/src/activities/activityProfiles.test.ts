@@ -423,4 +423,48 @@ describe('activity profile resolver', () => {
     expect(profile.segments).toHaveLength(0)
     expect(profile.fields).toContainEqual(['segment', '0 个实例'])
   })
+
+  it.each([
+    ['strength', 'split', '文件未提供可验证的 set 训练组'],
+    ['lead', 'set', '文件未提供可验证的 split'],
+    ['boulder', 'set', '文件未提供可验证的 split'],
+  ] as const)(
+    'does not turn a lap into a %s instance when canonical segments are absent',
+    (profileId, nonCanonicalSource, explanation) => {
+      const parsed = importedParsed(profileId, [
+        {
+          sequence: 0,
+          kind: 'active',
+          label: '非规范分段',
+          startTime: null,
+          durationSec: 999,
+          repetitions: 999,
+          weightKg: 999,
+          extraData: { sourceMessage: nonCanonicalSource },
+          semantic: { schemaVersion: 1, sourceMessage: nonCanonicalSource },
+        },
+      ])
+      parsed.laps = [
+        {
+          index: 0,
+          distanceM: 100,
+          durationSec: 60,
+          avgHr: 120,
+          maxHr: 140,
+          avgPaceSecPerKm: 600,
+          avgPowerW: null,
+        },
+      ]
+
+      const profile = buildActivityProfile(importedActivity(profileId), parsed)
+
+      expect(profile.segments).toHaveLength(0)
+      expect(profile.composition).toEqual([
+        { label: '运动', value: 120 },
+        { label: '暂停', value: 60 },
+      ])
+      expect(profile.noLapsReason).toContain(explanation)
+      expect(profile.fields).toContainEqual(['segment', '0 个实例'])
+    },
+  )
 })

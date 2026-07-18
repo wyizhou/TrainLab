@@ -1234,7 +1234,13 @@ function backendProfile(activity: Activity, parsed: ParsedActivity): ActivityPro
       kind: id === 'strength' ? 'exercise' : id === 'lead' || id === 'boulder' ? 'climb' : 'lap',
     }
   })
-  const segments = backendSegments.length > 0 ? backendSegments : segmentsFromLaps(parsed.laps)
+  const supportsLapFallback = id !== 'strength' && id !== 'lead' && id !== 'boulder'
+  const segments =
+    backendSegments.length > 0
+      ? backendSegments
+      : supportsLapFallback
+        ? segmentsFromLaps(parsed.laps)
+        : []
   const activeSeconds = instanceSegments
     .filter((segment) => !isRestSegment(segment.kind))
     .reduce((sum, segment) => sum + (segment.durationSec ?? 0), 0)
