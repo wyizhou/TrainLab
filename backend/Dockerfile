@@ -31,6 +31,7 @@ ENTRYPOINT ["/app/entrypoint.sh"]
 FROM backend-base AS test
 RUN uv sync --frozen --extra dev
 COPY backend/tests ./tests
+COPY data /app/data
 COPY frontend/tests/fixtures/614797758_ACTIVITY.fit /app/frontend/tests/fixtures/614797758_ACTIVITY.fit
 COPY docs/api/openapi.json /app/docs/api/openapi.json
 CMD ["pytest"]
