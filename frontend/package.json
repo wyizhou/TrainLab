@@ -15,6 +15,7 @@
     "e2e:ci": "playwright test --config playwright.ci.config.ts",
     "e2e:visual": "playwright test --config playwright.visual.config.ts",
     "e2e:v34": "playwright test --config playwright.v34.config.ts",
+    "e2e:v35": "playwright test --config playwright.v35.config.ts",
     "e2e:fullstack": "playwright test --config playwright.fullstack.config.ts"
   },
   "dependencies": {

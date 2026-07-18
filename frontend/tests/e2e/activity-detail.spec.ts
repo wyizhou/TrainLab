@@ -105,7 +105,9 @@ test('profiles without bound FIT data explain absence instead of fabricating row
   page,
 }) => {
   await openProfile(page, 'profile-generic', 'generic')
-  await expect(page.getByTestId('detail-download')).toBeDisabled()
+  await page.locator('[data-vc="activity-detail-more"]').click()
+  await expect(page.getByRole('menuitem', { name: '原始 FIT 不可用' })).toBeDisabled()
+  await page.keyboard.press('Escape')
   await page.getByRole('button', { name: '分段 / 训练组' }).click()
   await expect(page.getByText('当前没有可验证的分段数据')).toBeVisible()
   await page.getByRole('button', { name: '原始数据' }).click()
