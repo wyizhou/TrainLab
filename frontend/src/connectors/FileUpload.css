@@ -31,6 +31,12 @@
   border-color: var(--color-accent);
 }
 
+.file-upload__drop--dragging {
+  color: var(--color-accent-text);
+  background-color: var(--color-accent-07);
+  border-color: var(--color-accent);
+}
+
 /* Visually hidden but still focusable/clickable via the wrapping label. */
 .file-upload__input {
   position: absolute;

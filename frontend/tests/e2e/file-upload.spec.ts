@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
 // Baseline mobile viewport (contract G-resp): 390 wide.
@@ -7,6 +8,42 @@ const MOBILE = { width: 390, height: 844 }
 // A real FIT so the 已解析文件 list renders a data row to measure (same fixture
 // the FileUpload unit test parses).
 const FIT_FIXTURE = fileURLToPath(new URL('../fixtures/614797758_ACTIVITY.fit', import.meta.url))
+
+test('file upload: DataTransfer drop ingests multiple files and restores the dropzone', async ({
+  page,
+}) => {
+  await page.goto('/connectors')
+  const zone = page.getByTestId('file-upload-dropzone')
+  const fitBase64 = readFileSync(FIT_FIXTURE).toString('base64')
+  const dataTransfer = await page.evaluateHandle(
+    ({ encodedFit }) => {
+      const transfer = new DataTransfer()
+      const fitBytes = Uint8Array.from(atob(encodedFit), (character) => character.charCodeAt(0))
+      transfer.items.add(new File([fitBytes], 'dropped-run.fit'))
+      transfer.items.add(
+        new File(
+          [
+            '<gpx><trk><name>Dropped route</name><trkseg><trkpt lat="30" lon="104"><time>2026-01-01T00:00:00Z</time></trkpt><trkpt lat="30.001" lon="104.001"><time>2026-01-01T00:01:00Z</time></trkpt></trkseg></trk></gpx>',
+          ],
+          'dropped-route.gpx',
+        ),
+      )
+      return transfer
+    },
+    { encodedFit: fitBase64 },
+  )
+
+  await zone.dispatchEvent('dragenter', { dataTransfer })
+  await expect(zone).toHaveAttribute('data-drag-active', 'true')
+  await zone.dispatchEvent('dragover', { dataTransfer })
+  await zone.dispatchEvent('drop', { dataTransfer })
+
+  await expect(page.getByTestId('parsed-file')).toHaveCount(2)
+  await expect(page.getByText('dropped-run.fit')).toBeVisible()
+  await expect(page.getByText('dropped-route.gpx')).toBeVisible()
+  await expect(zone).toHaveAttribute('data-drag-active', 'false')
+  expect(new URL(page.url()).pathname).toBe('/connectors')
+})
 
 // AC-013b-1 (C-13): on mobile the 文件上传 area and the 已解析文件 list stack into a
 // single column and the page does not overflow horizontally.

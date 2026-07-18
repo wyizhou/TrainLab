@@ -125,7 +125,23 @@ describe('activity API', () => {
               recordCount: 1890,
               recordsSampled: true,
               laps: [],
-              segments: [],
+              segments: [
+                {
+                  sequence: 0,
+                  kind: 'active',
+                  label: '合成动作',
+                  startTime: null,
+                  durationSec: 30,
+                  repetitions: 8,
+                  weightKg: 20,
+                  extraData: { sourceMessage: 'set' },
+                  semantic: {
+                    schemaVersion: 1,
+                    sourceMessage: 'set',
+                    exercise: { stepIndex: 0, name: '合成动作' },
+                  },
+                },
+              ],
               devices: [],
               metricDefinitions: [],
               parseStatus: 'complete',
@@ -143,6 +159,11 @@ describe('activity API', () => {
       originalFileName: 'run.fit',
       recordCount: 1890,
       recordsSampled: true,
+    })
+    expect(result.parsed.backend?.segments[0].semantic).toEqual({
+      schemaVersion: 1,
+      sourceMessage: 'set',
+      exercise: { stepIndex: 0, name: '合成动作' },
     })
     expect(result.parsed.summary.localStartTime).toBe('2026-07-09T06:41:56')
     expect(result.parsed.hrZoneSeconds).toEqual([

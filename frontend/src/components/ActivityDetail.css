@@ -341,17 +341,27 @@
 }
 
 .detail-composition__ring {
+  display: block;
+  flex: 0 0 104px;
   width: 104px;
   height: 104px;
-  border: 20px solid transparent;
-  border-radius: 50%;
-  mask: radial-gradient(circle, transparent 44%, #000 45%);
+  overflow: visible;
+}
+
+.detail-composition__segment {
+  stroke: var(--color-border-panel);
+  stroke-linecap: butt;
+}
+
+.detail-composition__segment--0 {
+  stroke: var(--color-accent);
 }
 
 .detail-composition__legend {
   display: grid;
   flex: 1;
   gap: var(--space-2-5);
+  min-width: 0;
 }
 
 .detail-composition__row {
