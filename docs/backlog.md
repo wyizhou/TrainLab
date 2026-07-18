@@ -117,16 +117,16 @@
 - [x] 提供仅限本机管理员的批量 `reparse-fit` CLI：默认 dry-run，整批预解析后在单一事务中就地替换投影，保留活动/导入 UUID、用户归属、标题覆盖和原文件。
 - [x] 三份外部样本只在隔离双卷中验收，未写入仓库或默认服务；力量 10 动作和 30/29、难度 5/5、抱石 21/21、下载 SHA、批量重解析和重启后浏览器复验均通过。
 
-## 发布候选：产品 v0.1.1
+## 已完成里程碑：产品 v0.1.1 正式发布
 
-详细范围、版本兼容和发布门禁见 `docs/plans/release-v0.1.1.md`；候选说明见 `docs/releases/v0.1.1.md`。
+详细范围、版本兼容和发布门禁见 `docs/plans/release-v0.1.1.md`；正式发布说明见 `docs/releases/v0.1.1.md`。
 
 - [x] 收纳 `v0.1.0` 之后已经验收的开发默认凭据统一和真实 FIT 详情纠错，不新增产品功能。
 - [x] 产品/前端版本升为 `0.1.1`，后端组件与 OpenAPI 升为 `0.3.1`，数据库迁移头保持 `0003_activity_data_lifecycle`。
 - [x] 新备份标记 `v0.1.1`，恢复工具继续明确接受迁移头相同的 `v0.1.0` 备份并拒绝未知版本。
-- [ ] 发布候选 PR 的本地门禁、独立 Validator 和 GitHub checks 全部通过。
-- [ ] 候选合并后从精确 `main` 提交创建不可移动的 `v0.1.1` tag 和 GitHub Release。
-- [ ] 后置发布状态 PR 记录真实提交、tag、Release URL 和最终证据。
+- [x] 发布候选完成本地门禁和独立 Validator；[PR #16](https://github.com/wyizhou/TrainLab/pull/16) 的五项 GitHub checks 全部通过。
+- [x] 候选合并为 `ed8b42b85bc3e6b167e6718e61568f95fcaf7d1b`，annotated tag `v0.1.1` 精确指向该提交，正式 [GitHub Release](https://github.com/wyizhou/TrainLab/releases/tag/v0.1.1) 已发布。
+- [x] 后置发布状态 PR 记录真实提交、tag、Release URL 和最终证据。
 
 ## 下一里程碑：数据管理界面
 

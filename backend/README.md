@@ -1,6 +1,6 @@
 # TrainLab Backend
 
-TrainLab 后端采用 Python 3.12、FastAPI、SQLAlchemy 2、PostgreSQL、Alembic 和 uv。当前组件版本为 `0.3.1`，参与产品 `v0.1.1` 发布候选。当前实现主人账号、Cookie 会话，以及登录用户私有的本地 FIT 上传、解析、活动列表、通用详情、原文件下载、活动重命名、导入记录、可恢复删除和存储配额。训练组/攀岩分段同时保留原始扩展字段和版本化 `semantic` 投影；无法证明的等级或设备语义保持不可用，不按数字值猜测。佳明在线同步、TCX/GPX 后端导入、AI、公开注册和后台队列不在当前范围。
+TrainLab 后端采用 Python 3.12、FastAPI、SQLAlchemy 2、PostgreSQL、Alembic 和 uv。当前组件版本为 `0.3.1`，随产品 `v0.1.1` 正式发布。当前实现主人账号、Cookie 会话，以及登录用户私有的本地 FIT 上传、解析、活动列表、通用详情、原文件下载、活动重命名、导入记录、可恢复删除和存储配额。训练组/攀岩分段同时保留原始扩展字段和版本化 `semantic` 投影；无法证明的等级或设备语义保持不可用，不按数字值猜测。佳明在线同步、TCX/GPX 后端导入、AI、公开注册和后台队列不在当前范围。
 
 ## 推荐：Docker Compose
 
