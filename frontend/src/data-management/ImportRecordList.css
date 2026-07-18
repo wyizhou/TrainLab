@@ -186,6 +186,29 @@
   flex-wrap: wrap;
 }
 
+.import-records__more button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+}
+
+.import-records__spinner {
+  width: 12px;
+  height: 12px;
+  margin-right: var(--space-1-5);
+  border: 2px solid currentcolor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: import-record-spin 700ms linear infinite;
+}
+
+@keyframes import-record-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (width < 640px) {
   .import-records__head {
     align-items: stretch;

@@ -24,9 +24,15 @@ type ActivityActionsProps = {
 }
 
 const MODE_COPY: Record<ActivityManagementMode, { title: string; submit: string; busy: string }> = {
-  rename: { title: '重命名运动', submit: '保存名称', busy: '保存中…' },
-  restore: { title: '恢复解析标题', submit: '确认恢复', busy: '恢复中…' },
-  delete: { title: '删除运动', submit: '确认删除', busy: '删除中…' },
+  rename: { title: '重命名运动', submit: '保存名称', busy: '提交中…' },
+  restore: { title: '恢复解析标题', submit: '确认恢复', busy: '提交中…' },
+  delete: { title: '删除运动', submit: '确认删除', busy: '提交中…' },
+}
+
+function dialogSubtitle(mode: ActivityManagementMode, activity: Activity): string {
+  if (mode === 'rename') return `当前名称：${activity.name}`
+  if (mode === 'restore') return '将移除当前活动的自定义名称。'
+  return '确认删除当前活动及其关联数据。'
 }
 
 function safeActionError(error: unknown, mode: ActivityManagementMode): string {
@@ -296,7 +302,10 @@ export function ActivityActions({
             tabIndex={-1}
             onKeyDown={dialogKeyDown}
           >
-            <h2 id={titleId}>{MODE_COPY[mode].title}</h2>
+            <h2 className="activity-dialog__title" id={titleId}>
+              {MODE_COPY[mode].title}
+            </h2>
+            <p className="activity-dialog__subtitle">{dialogSubtitle(mode, activity)}</p>
             {mode === 'rename' && (
               <label className="activity-dialog__field">
                 <span>运动名称</span>
@@ -309,17 +318,23 @@ export function ActivityActions({
                   onChange={(event) => setInput(event.target.value)}
                   onKeyDown={(event) => event.key === 'Enter' && void submit()}
                 />
-                <small className="num">{input.trim().length} / 255</small>
+                <small className="activity-dialog__help">
+                  <span>保存时自动忽略首尾空格 · 1–255 个字符</span>
+                  <span className="num">{input.length}/255</span>
+                </small>
               </label>
             )}
             {mode === 'restore' && (
-              <p>
-                将移除“{activity.name}
-                ”的自定义名称，并使用服务端重新返回的解析标题。提交前不会预览恢复后的名称。
-              </p>
+              <div className="activity-dialog__note">
+                此操作会移除自定义名称，并使用服务端实际返回的解析标题。当前接口不会提前返回恢复后的名称，因此这里不显示名称预览。
+              </div>
             )}
             {mode === 'delete' && (
-              <p>将永久删除“{activity.name}”、对应导入记录和私有原始文件。此操作不可撤销。</p>
+              <div className="activity-dialog__note activity-dialog__note--danger">
+                <strong>此操作不可撤销</strong>
+                名为“{activity.name}
+                ”的当前活动、对应导入记录和私有原文件将一起删除。若导入仍在进行或删除未完成，记录会保留并显示可理解的重试提示。
+              </div>
             )}
             {error && (
               <p className="activity-dialog__error" role="alert">

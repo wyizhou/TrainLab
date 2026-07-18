@@ -333,11 +333,16 @@ export function ImportRecordList({
                 disabled={loadMoreState === 'loading'}
                 onClick={() => void loadMore()}
               >
-                {loadMoreState === 'loading'
-                  ? '加载中…'
-                  : loadMoreState === 'error'
-                    ? '重试加载更多'
-                    : '加载更多'}
+                {loadMoreState === 'loading' ? (
+                  <>
+                    <span className="import-records__spinner" aria-hidden="true" />
+                    加载中…
+                  </>
+                ) : loadMoreState === 'error' ? (
+                  '重试加载更多'
+                ) : (
+                  '加载更多'
+                )}
               </button>
               {loadMoreState === 'error' && (
                 <span role="alert">更多记录加载失败，现有记录已保留。</span>

@@ -49,18 +49,28 @@
   cursor: pointer;
 }
 
-.activity-actions__menu button:hover,
-.activity-actions__menu button:focus-visible {
+.activity-actions__menu button:not(:disabled):hover,
+.activity-actions__menu button:not(:disabled):focus-visible {
   color: var(--color-text);
   background: var(--color-upload-deep);
+}
+
+.activity-actions__menu button:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.activity-actions__menu button:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
 }
 
 .activity-actions__menu .activity-actions__danger {
   color: var(--color-danger);
 }
 
-.activity-actions__menu .activity-actions__danger:hover,
-.activity-actions__menu .activity-actions__danger:focus-visible {
+.activity-actions__menu .activity-actions__danger:not(:disabled):hover,
+.activity-actions__menu .activity-actions__danger:not(:disabled):focus-visible {
   color: var(--color-danger);
   background: var(--color-danger-08);
 }
@@ -70,8 +80,8 @@
   inset: 0;
   z-index: 80;
   display: grid;
-  padding: var(--space-5);
-  background: var(--color-dialog-scrim);
+  padding: var(--space-5x);
+  background: var(--color-scrim);
   place-items: center;
 }
 
@@ -87,27 +97,50 @@
 }
 
 .activity-dialog h2 {
-  margin: 0 0 var(--space-3);
-  font-size: 19px;
+  margin: 0 0 var(--space-1);
+  font-size: 16px;
 }
 
-.activity-dialog p {
+.activity-dialog .activity-dialog__subtitle {
+  margin: 0 0 calc(var(--space-4) + var(--space-px));
+  color: var(--color-text-faint);
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.activity-dialog__note {
   margin: 0;
+  padding: var(--space-3-25) var(--space-3-5);
   color: var(--color-text-muted);
-  font-size: 13px;
+  background: var(--color-panel-deep);
+  border: 1px solid var(--color-border-weak);
+  border-radius: var(--radius-note);
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.activity-dialog__note--danger {
+  background: var(--color-danger-06);
+  border-color: var(--color-danger-40);
   line-height: 1.7;
+}
+
+.activity-dialog__note--danger strong {
+  display: block;
+  margin-bottom: var(--space-1);
+  color: var(--color-danger);
 }
 
 .activity-dialog__field {
   display: grid;
-  gap: var(--space-1-5);
+  gap: var(--space-1-75);
   color: var(--color-text-muted);
   font-size: 12px;
 }
 
 .activity-dialog__field input {
   width: 100%;
-  padding: var(--space-2-5) var(--space-3);
+  padding: var(--space-2-75) var(--space-3);
   color: var(--color-text);
   background: var(--color-panel-deep);
   border: 1px solid var(--color-border-input);
@@ -115,32 +148,39 @@
   font-size: 14px;
 }
 
-.activity-dialog__field small {
-  justify-self: end;
+.activity-dialog__help {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2-5);
   color: var(--color-text-faint);
+  font-size: 11px;
 }
 
 .activity-dialog .activity-dialog__error {
   margin-top: var(--space-3);
-  padding: var(--space-2-5) var(--space-3);
   color: var(--color-danger);
-  background: var(--color-danger-07);
-  border: 1px solid var(--color-danger-35);
-  border-radius: var(--radius-input);
+  font-size: 12px;
+  line-height: 1.55;
 }
 
 .activity-dialog__actions {
   display: grid;
   grid-template-columns: 1fr 2fr;
   gap: var(--space-2-5);
-  margin-top: var(--space-5x);
+  margin-top: var(--space-4-5);
 }
 
 .activity-dialog__actions button {
   min-height: 42px;
   border-radius: var(--radius-input);
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 400;
   cursor: pointer;
+}
+
+.activity-dialog__actions button:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
 }
 
 .activity-dialog__cancel {
@@ -149,10 +189,11 @@
   border: 1px solid var(--color-border-input);
 }
 
-.activity-dialog__submit {
+.activity-dialog__actions .activity-dialog__submit {
   color: var(--color-on-accent);
   background: var(--color-accent);
   border: 1px solid var(--color-accent);
+  font-weight: 700;
 }
 
 .activity-dialog__submit--danger {
@@ -205,6 +246,7 @@
     width: 100%;
     height: 100%;
     padding: var(--pad-modal-mobile);
+    overflow-y: auto;
     border: 0;
     border-radius: 0;
     box-shadow: none;

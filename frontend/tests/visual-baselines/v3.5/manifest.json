@@ -24,7 +24,7 @@
     "import_records": "The complete import-record component is captured after cursor append. Capture-only code increases viewport height and hides app chrome; production layout is unchanged."
   },
   "screenshot_count": 20,
-  "screenshot_set_sha256": "9f950fb01dfd4305497129693aed2775fec4b54e180c12f8d8e79384f4bdf9e1",
+  "screenshot_set_sha256": "ec869dac1fc0a4878467f222cd6a5a19e384498753d7172bcb5b5cc422fb59ac",
   "screenshots": [
     {
       "file": "390-activities-management.png",
@@ -32,7 +32,7 @@
     },
     {
       "file": "390-activity-dialog.png",
-      "sha256": "7cbe80a318ac9ee0631695c00fd8c97bbada4657426fb954de149c7cc8349b60"
+      "sha256": "672b9da4f186bb39683999f2f53a137f21ed64ec833e4378a8d77b59c0dc4b27"
     },
     {
       "file": "390-import-records.png",
@@ -52,7 +52,7 @@
     },
     {
       "file": "768-activity-dialog.png",
-      "sha256": "54e0cf9804877a0f319123ed5a9eba8dc4b8fadf6cc0cb2bfde0cd17f56eab92"
+      "sha256": "9fd7845a00080bfac6ef6e2447b7834ad63f981c23320da485f3b25b5e063275"
     },
     {
       "file": "768-import-records.png",
@@ -72,7 +72,7 @@
     },
     {
       "file": "1280-activity-dialog.png",
-      "sha256": "4dba23f485c5473f44d1bd86b1ed51c3d74a2a80941ebd2c03014bcabde123f2"
+      "sha256": "7d3a4a16098d5d31425757bc1300fec9491f235a9e3294f6cc4461da9b358de4"
     },
     {
       "file": "1280-import-records.png",
@@ -92,7 +92,7 @@
     },
     {
       "file": "1536-activity-dialog.png",
-      "sha256": "64b98aa13e735c665c4ed7ec70b3b068f6d6ecc92dae7c55813c76ff7ec94f26"
+      "sha256": "6f769736d1fb00e450789a690f6621e70fa1cc067d9b6349b3d286359bd6caee"
     },
     {
       "file": "1536-import-records.png",
