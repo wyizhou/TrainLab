@@ -102,6 +102,32 @@ class ActivityLapResponse(BaseModel):
     extra_metrics: dict[str, Any] = Field(serialization_alias="extraMetrics")
 
 
+class ActivitySegmentExerciseSemantic(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    step_index: int = Field(alias="stepIndex")
+    name: str
+
+
+class ActivitySegmentClimbSemantic(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    grade_status: Literal["available", "unavailable"] = Field(alias="gradeStatus")
+    grade_reason: Literal["unknown_profile_field"] | None = Field(default=None, alias="gradeReason")
+    grade_system: Literal["v_scale", "yds"] | None = Field(default=None, alias="gradeSystem")
+    grade: str | None = None
+    outcome: Literal["complete", "attempt", "unknown"] | None = None
+
+
+class ActivitySegmentSemantic(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    schema_version: Literal[1] = Field(alias="schemaVersion")
+    source_message: Literal["set", "split", "split_summary"] = Field(alias="sourceMessage")
+    exercise: ActivitySegmentExerciseSemantic | None = None
+    climb: ActivitySegmentClimbSemantic | None = None
+
+
 class ActivitySegmentResponse(BaseModel):
     sequence: int
     kind: str
@@ -111,6 +137,7 @@ class ActivitySegmentResponse(BaseModel):
     repetitions: float | None
     weight_kg: float | None = Field(serialization_alias="weightKg")
     extra_data: dict[str, Any] = Field(serialization_alias="extraData")
+    semantic: ActivitySegmentSemantic | None = None
 
 
 class ActivityDeviceResponse(BaseModel):

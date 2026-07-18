@@ -88,6 +88,8 @@ def test_authenticated_fit_upload_is_persistent_idempotent_and_downloadable(
     assert detail_payload["recordCount"] == 1890
     assert len(detail_payload["laps"]) == 8
     assert detail_payload["devices"]
+    assert all(item["semantic"]["schemaVersion"] == 1 for item in detail_payload["segments"])
+    assert all("_trainlabSemantic" not in item["extraData"] for item in detail_payload["segments"])
     assert all(item["deviceId"] is None for item in detail_payload["metricDefinitions"])
     assert detail_payload["summary"]["extraMetrics"][
         "native:time_in_zone:session:time_in_hr_zone"

@@ -540,7 +540,12 @@ def activity_detail(
                 duration_sec=item.duration_sec,
                 repetitions=item.repetitions,
                 weight_kg=item.weight_kg,
-                extra_data=item.extra_data,
+                extra_data={
+                    key: value
+                    for key, value in item.extra_data.items()
+                    if key != "_trainlabSemantic"
+                },
+                semantic=item.extra_data.get("_trainlabSemantic"),
             )
             for item in segments
         ],

@@ -1,6 +1,7 @@
 import hashlib
 import math
 import os
+import unicodedata
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -71,6 +72,7 @@ class ParsedSegment:
     repetitions: float | None
     weight_kg: float | None
     extra_data: dict[str, Any]
+    semantic: dict[str, Any]
 
 
 @dataclass(frozen=True)
@@ -160,10 +162,66 @@ def _integer(value: Any) -> int | None:
 
 
 def _text(value: Any) -> str | None:
-    if value is None:
+    if isinstance(value, str):
+        text = value
+    elif isinstance(value, bytes | bytearray):
+        try:
+            text = bytes(value).decode("utf-8", errors="strict")
+        except UnicodeDecodeError:
+            return None
+    else:
         return None
-    text = str(value).strip()
-    return text or None
+    normalized = unicodedata.normalize("NFC", text)
+    without_controls = "".join(
+        " " if character.isspace() else character
+        for character in normalized
+        if character.isspace() or not unicodedata.category(character).startswith("C")
+    )
+    collapsed = " ".join(without_controls.split())
+    return collapsed[:255] or None
+
+
+def _identity_value(value: Any) -> Any:
+    """Return a stable equality key without presenting raw enums as human text."""
+    if isinstance(value, bool | int | str) or value is None:
+        return value
+    if isinstance(value, float):
+        return value if math.isfinite(value) else None
+    if isinstance(value, bytes | bytearray):
+        return ("bytes", bytes(value).hex())
+    if isinstance(value, list | tuple):
+        return tuple(_identity_value(item) for item in value)
+    if isinstance(value, dict):
+        return tuple(sorted((str(key), _identity_value(item)) for key, item in value.items()))
+    return None
+
+
+def _exercise_identity(message: dict[Any, Any]) -> tuple[Any, Any] | None:
+    category = _identity_value(message.get("exercise_category"))
+    name = _identity_value(message.get("exercise_name"))
+    if category is None and name is None:
+        return None
+    return category, name
+
+
+def _numeric_status_text(value: Any) -> str | None:
+    text = _text(value)
+    if text is not None:
+        return text
+    number = _number(value)
+    if number is None:
+        return None
+    return str(int(number)) if number.is_integer() else str(number)
+
+
+def _workout_step_name(value: Any) -> str | None:
+    """Decode the SDK's known repeated-string shape without stringifying the array."""
+    direct = _text(value)
+    if direct is not None:
+        return direct
+    if isinstance(value, list | tuple) and value:
+        return _text(value[0])
+    return None
 
 
 def _datetime(value: Any) -> datetime | None:
@@ -425,7 +483,7 @@ def _devices_from_snapshots(raw_messages: list[dict[str, Any]]) -> list[ParsedDe
                 source_type=source_type,
                 software_version=_text(merged_device.get("software_version")),
                 battery_status=_text(merged_device.get("battery_status"))
-                or _text(merged_device.get("battery_level")),
+                or _numeric_status_text(merged_device.get("battery_level")),
                 serial_number_hash=serial_hash,
                 raw_metadata=metadata,
             )
@@ -516,6 +574,97 @@ LAP_FIELDS = {
 def _safe_filename_stem(filename: str) -> str:
     stem = Path(filename).stem.strip()
     return stem[:255] if stem else "FIT 活动"
+
+
+def parse_fit_segments(messages: dict[str, Any]) -> list[ParsedSegment]:
+    title_by_identity: dict[tuple[Any, Any], str] = {}
+    for item in messages.get("exercise_title_mesgs", []):
+        identity = _exercise_identity(item)
+        title = _workout_step_name(item.get("wkt_step_name")) or _text(item.get("exercise_name"))
+        if identity is not None and title is not None:
+            title_by_identity[identity] = title
+
+    step_identity_by_index: dict[int, tuple[Any, Any]] = {}
+    for item in messages.get("workout_step_mesgs", []):
+        step_index = _integer(item.get("message_index"))
+        identity = _exercise_identity(item)
+        if step_index is not None and identity is not None:
+            step_identity_by_index[step_index] = identity
+
+    segments: list[ParsedSegment] = []
+    segment_sources = (
+        ("set", messages.get("set_mesgs", [])),
+        ("split", messages.get("split_mesgs", [])),
+        ("split_summary", messages.get("split_summary_mesgs", [])),
+    )
+    for source_name, source_messages in segment_sources:
+        for raw in source_messages:
+            kind = _text(raw.get("set_type")) or _text(raw.get("split_type")) or source_name
+            normalized_kind = kind.casefold()
+            weight = _number(raw.get("weight"))
+            if weight is not None and weight > 1000:
+                weight /= 1000
+
+            semantic: dict[str, Any] = {
+                "schemaVersion": 1,
+                "sourceMessage": source_name,
+            }
+            label: str | None = None
+            if source_name == "set":
+                if "rest" in normalized_kind:
+                    label = "休息"
+                else:
+                    step_index = _integer(raw.get("wkt_step_index"))
+                    identity = (
+                        step_identity_by_index.get(step_index) if step_index is not None else None
+                    )
+                    exercise_name = (
+                        title_by_identity.get(identity) if identity is not None else None
+                    )
+                    if exercise_name is not None and step_index is not None:
+                        label = exercise_name
+                        semantic["exercise"] = {
+                            "stepIndex": step_index,
+                            "name": exercise_name,
+                        }
+            else:
+                label = _text(raw.get("name"))
+                if source_name == "split" and normalized_kind == "climb_active":
+                    semantic["climb"] = {
+                        "gradeStatus": "unavailable",
+                        "gradeReason": "unknown_profile_field",
+                    }
+
+            excluded = {
+                "serial_number",
+                "notes",
+                "url",
+                "position_lat",
+                "position_long",
+            }
+            extra = {
+                str(key): _json_value(value)
+                for key, value in raw.items()
+                if str(key) not in excluded
+            }
+            # Persist every FIT message family for replay/audit, while keeping the
+            # stable business projection separate from the raw extension fields.
+            extra["sourceMessage"] = source_name
+            segments.append(
+                ParsedSegment(
+                    sequence=len(segments),
+                    kind=kind,
+                    label=label,
+                    start_time_utc=_datetime(raw.get("start_time")),
+                    duration_sec=_number(raw.get("total_timer_time"))
+                    or _number(raw.get("duration")),
+                    repetitions=_number(raw.get("repetitions")),
+                    weight_kg=weight,
+                    extra_data=extra,
+                    semantic=semantic,
+                )
+            )
+    return segments
 
 
 def parse_fit_file(source: Path | BinaryIO, original_filename: str) -> ParsedFitActivity:
@@ -624,53 +773,7 @@ def parse_fit_file(source: Path | BinaryIO, original_filename: str) -> ParsedFit
             )
         )
 
-    title_by_index = {
-        _integer(item.get("message_index")): _text(item.get("exercise_name"))
-        or _text(item.get("wkt_step_name"))
-        for item in messages.get("exercise_title_mesgs", [])
-    }
-    segments: list[ParsedSegment] = []
-    segment_sources = (
-        ("set", messages.get("set_mesgs", [])),
-        ("split", messages.get("split_mesgs", [])),
-        ("split_summary", messages.get("split_summary_mesgs", [])),
-    )
-    for source_name, source_messages in segment_sources:
-        for raw in source_messages:
-            message_index = _integer(raw.get("message_index"))
-            kind = _text(raw.get("set_type")) or _text(raw.get("split_type")) or source_name
-            weight = _number(raw.get("weight"))
-            if weight is not None and weight > 1000:
-                weight /= 1000
-            label = (
-                title_by_index.get(message_index)
-                or _text(raw.get("exercise_category"))
-                or _text(raw.get("category"))
-                or _text(raw.get("name"))
-            )
-            excluded = {"serial_number", "notes", "url", "position_lat", "position_long"}
-            extra = {
-                str(key): _json_value(value)
-                for key, value in raw.items()
-                if str(key) not in excluded
-            }
-            # set, split and split_summary are distinct FIT message families.
-            # Persist all of them for lossless replay, but make the provenance
-            # explicit so consumers never count a summary as an instance.
-            extra["sourceMessage"] = source_name
-            segments.append(
-                ParsedSegment(
-                    sequence=len(segments),
-                    kind=kind,
-                    label=label,
-                    start_time_utc=_datetime(raw.get("start_time")),
-                    duration_sec=_number(raw.get("total_timer_time"))
-                    or _number(raw.get("duration")),
-                    repetitions=_number(raw.get("repetitions")),
-                    weight_kg=weight,
-                    extra_data=extra,
-                )
-            )
+    segments = parse_fit_segments(messages)
 
     devices = _devices_from_snapshots(messages.get("device_info_mesgs", []))
 
