@@ -3,6 +3,8 @@ import { SysPrompt } from '../components/SysPrompt'
 import { SYSTEM_PROMPT } from '../analysis/systemPrompt'
 import { DEFAULT_AI_BASE_URL, useSettings, updateSettings, type UnitSystem } from './settingsStore'
 import './SettingsPage.css'
+import { StorageQuotaCard } from '../data-management/StorageQuotaCard'
+import { useOptionalAuth } from '../auth/AuthState'
 
 // 设置 page (contract C-14, 返工 design_rev 2). Four groups: 账户信息 / 单位制 /
 // 区间设定 / AI 接口. Everything is front-end mock (G-mock) — 测试连接 probes
@@ -15,6 +17,7 @@ import './SettingsPage.css'
 // half-typed field never lands in the store.
 
 export function SettingsPage() {
+  const auth = useOptionalAuth()
   const settings = useSettings()
 
   // 账户信息 — new password ×2, validated on save.
@@ -84,6 +87,8 @@ export function SettingsPage() {
       <div className="settings__head">
         <h1 data-vc="page-title">设置</h1>
       </div>
+
+      <StorageQuotaCard demoMode={auth?.demoMode ?? true} />
 
       {/* 账户信息 */}
       <section className="settings__group" data-testid="settings-account" data-vc="settings-group">

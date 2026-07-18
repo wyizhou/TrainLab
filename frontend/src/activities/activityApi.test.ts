@@ -3,6 +3,8 @@ import {
   isImportedActivityId,
   listImportedActivities,
   loadImportedActivity,
+  deleteImportedActivity,
+  updateImportedActivityName,
   uploadFitFile,
 } from './activityApi'
 import {
@@ -74,6 +76,29 @@ describe('activity API', () => {
 
     const result = await uploadFitFile(new File([new Uint8Array([1])], 'run.fit'))
     expect(result.activity).toEqual(activity)
+  })
+
+  it('sends string and null activity names and accepts a 204 delete without JSON', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ ...activity, name: '新名称' }), {
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(activity), { headers: { 'Content-Type': 'application/json' } }),
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await updateImportedActivityName(activity.id, '新名称')
+    await updateImportedActivityName(activity.id, null)
+    await expect(deleteImportedActivity(activity.id)).resolves.toBeUndefined()
+
+    expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body))).toEqual({ name: '新名称' })
+    expect(JSON.parse(String(fetchMock.mock.calls[1][1]?.body))).toEqual({ name: null })
+    expect(fetchMock.mock.calls[2][1]).toMatchObject({ method: 'DELETE' })
   })
 
   it('maps the owner detail payload into the shared ParsedActivity shape', async () => {

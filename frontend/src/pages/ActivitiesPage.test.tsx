@@ -117,7 +117,7 @@ describe('ActivitiesPage', () => {
     expect(screen.queryByText('晨间轻松跑')).not.toBeInTheDocument()
     expect(document.querySelector('.activities__count')).toHaveTextContent('共 1 条')
     expect(screen.getByRole('checkbox', { name: '选择 真实账号徒步' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '下载 真实账号徒步 的 FIT' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '打开运动操作菜单' })).toBeInTheDocument()
   })
 
   it('keeps a real-session local preview out of FIT selection and download flows', async () => {
@@ -199,14 +199,13 @@ describe('ActivitiesPage', () => {
     expect(screen.getByTestId('batch-download')).toHaveTextContent('(1)')
   })
 
-  it('downloads a single row FIT via its row button', async () => {
+  it('downloads a single row FIT via its activity menu', async () => {
     const user = userEvent.setup()
     renderPage()
 
-    // The page renders both the desktop table and the mobile card list, so the
-    // download button exists twice; scope to the table surface for this assert.
     const table = within(screen.getByTestId('activity-table'))
-    await user.click(table.getByRole('button', { name: '下载 晨间轻松跑 的 FIT' }))
+    await user.click(table.getAllByRole('button', { name: '打开运动操作菜单' })[0])
+    await user.click(screen.getByRole('menuitem', { name: '下载原始 FIT' }))
     // a0 → 2026-07-09_a0.fit (see fitFileName); download is a mock (G-mock).
     expect(screen.getByTestId('download-status')).toHaveTextContent(
       '已开始下载 2026-07-09_a0.fit（模拟）',

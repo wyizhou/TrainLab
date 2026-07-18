@@ -18,6 +18,7 @@ type ActivityTableProps = {
   isOpenable?: (id: string) => boolean
   isSelectable?: (id: string) => boolean
   isDownloadable?: (id: string) => boolean
+  renderActions?: (activity: Activity) => ReactNode
   children?: ReactNode
 }
 
@@ -32,6 +33,7 @@ export function ActivityTable({
   isOpenable,
   isSelectable,
   isDownloadable,
+  renderActions,
   children,
 }: ActivityTableProps) {
   return (
@@ -98,7 +100,9 @@ export function ActivityTable({
               <span className="num">{a.avgHr === null ? '—' : `${a.avgHr} bpm`}</span>
               <span className="num">{formatPaceOrPower(a)}</span>
               <span className="activity-table__src">{a.source}</span>
-              {downloadable ? (
+              {renderActions ? (
+                renderActions(a)
+              ) : downloadable ? (
                 <button
                   type="button"
                   className="activity-table__download"
