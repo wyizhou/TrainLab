@@ -3,8 +3,16 @@
   "legacy_harness": "retired",
   "product_release": {
     "version": "v0.1.1",
-    "status": "release_candidate",
-    "publication": "pending_candidate_pr",
+    "status": "released",
+    "publication": "github_release_published",
+    "published_at": "2026-07-18T06:28:42Z",
+    "release_pr": {
+      "number": 16,
+      "url": "https://github.com/wyizhou/TrainLab/pull/16"
+    },
+    "release_commit": "ed8b42b85bc3e6b167e6718e61568f95fcaf7d1b",
+    "tag": "v0.1.1",
+    "release_url": "https://github.com/wyizhou/TrainLab/releases/tag/v0.1.1",
     "previous_release": "v0.1.0",
     "release_plan": "docs/plans/release-v0.1.1.md",
     "release_notes": "docs/releases/v0.1.1.md",
