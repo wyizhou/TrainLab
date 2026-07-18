@@ -747,6 +747,95 @@
         "title": "ActivityRecordResponse",
         "type": "object"
       },
+      "ActivitySegmentClimbSemantic": {
+        "properties": {
+          "grade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade"
+          },
+          "gradeReason": {
+            "anyOf": [
+              {
+                "const": "unknown_profile_field",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gradereason"
+          },
+          "gradeStatus": {
+            "enum": [
+              "available",
+              "unavailable"
+            ],
+            "title": "Gradestatus",
+            "type": "string"
+          },
+          "gradeSystem": {
+            "anyOf": [
+              {
+                "enum": [
+                  "v_scale",
+                  "yds"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gradesystem"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "enum": [
+                  "complete",
+                  "attempt",
+                  "unknown"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outcome"
+          }
+        },
+        "required": [
+          "gradeStatus"
+        ],
+        "title": "ActivitySegmentClimbSemantic",
+        "type": "object"
+      },
+      "ActivitySegmentExerciseSemantic": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "stepIndex": {
+            "title": "Stepindex",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "stepIndex",
+          "name"
+        ],
+        "title": "ActivitySegmentExerciseSemantic",
+        "type": "object"
+      },
       "ActivitySegmentResponse": {
         "properties": {
           "durationSec": {
@@ -791,6 +880,16 @@
             ],
             "title": "Repetitions"
           },
+          "semantic": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ActivitySegmentSemantic"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "sequence": {
             "title": "Sequence",
             "type": "integer"
@@ -830,6 +929,50 @@
           "extraData"
         ],
         "title": "ActivitySegmentResponse",
+        "type": "object"
+      },
+      "ActivitySegmentSemantic": {
+        "properties": {
+          "climb": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ActivitySegmentClimbSemantic"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "exercise": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ActivitySegmentExerciseSemantic"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "schemaVersion": {
+            "const": 1,
+            "title": "Schemaversion",
+            "type": "integer"
+          },
+          "sourceMessage": {
+            "enum": [
+              "set",
+              "split",
+              "split_summary"
+            ],
+            "title": "Sourcemessage",
+            "type": "string"
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "sourceMessage"
+        ],
+        "title": "ActivitySegmentSemantic",
         "type": "object"
       },
       "ActivitySessionResponse": {
