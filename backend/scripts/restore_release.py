@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate and destructively restore a v0.1.0 stopped-writer release backup."""
+"""Validate and destructively restore a compatible stopped-writer release backup."""
 
 from __future__ import annotations
 

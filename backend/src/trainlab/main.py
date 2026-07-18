@@ -26,7 +26,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app = FastAPI(
         title="TrainLab API",
-        version="0.3.0",
+        version="0.3.1",
         docs_url="/api/v1/docs",
         redoc_url=None,
         openapi_url="/api/v1/openapi.json",
