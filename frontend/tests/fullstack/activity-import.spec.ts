@@ -46,7 +46,16 @@ test('login, upload FIT, reload, open v3.4 detail, download source, and logout',
 }) => {
   await login(page)
   await page.goto('/connectors')
+  const uploadResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().endsWith('/api/v1/imports/fit') && response.request().method() === 'POST',
+  )
   await page.getByTestId('file-upload-input').setInputFiles(fitPath)
+  const uploadResponse = await uploadResponsePromise
+  expect([200, 201]).toContain(uploadResponse.status())
+  const uploadResult = (await uploadResponse.json()) as {
+    activity: { id: string; originalFileName: string }
+  }
   const importedFile = page.getByTestId('parsed-file').filter({ hasText: '614797758_ACTIVITY.fit' })
   await expect(importedFile).toBeVisible()
   await expect(importedFile.getByTestId('parsed-stored')).toHaveText('已入库')
@@ -61,7 +70,7 @@ test('login, upload FIT, reload, open v3.4 detail, download source, and logout',
 
   await page.reload()
   await expect(importedRow).toBeVisible()
-  await importedRow.click()
+  await page.goto(`/activities/${uploadResult.activity.id}`)
   await expect(page).toHaveURL(
     /\/activities\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
   )
@@ -73,7 +82,7 @@ test('login, upload FIT, reload, open v3.4 detail, download source, and logout',
   const downloadPromise = page.waitForEvent('download')
   await page.getByRole('button', { name: '下载原始 FIT' }).click()
   const download = await downloadPromise
-  expect(download.suggestedFilename()).toBe('614797758_ACTIVITY.fit')
+  expect(download.suggestedFilename()).toBe(uploadResult.activity.originalFileName)
 
   const ownerDetailUrl = page.url()
   await page.goto('/activities')

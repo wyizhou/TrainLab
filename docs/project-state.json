@@ -2,15 +2,12 @@
   "workflow": "codex-three-stage",
   "legacy_harness": "retired",
   "product_release": {
-    "version": "v0.1.0",
-    "status": "released",
-    "publication": "github_release_published",
-    "published_at": "2026-07-17",
-    "merge_commit": "0361415aec3a397f904c523e3d63d3da10856499",
-    "tag": "v0.1.0",
-    "release_url": "https://github.com/wyizhou/TrainLab/releases/tag/v0.1.0",
-    "release_plan": "docs/plans/first-release-v0.1.0.md",
-    "release_notes": "docs/releases/v0.1.0.md",
+    "version": "v0.1.1",
+    "status": "release_candidate",
+    "publication": "pending_candidate_pr",
+    "previous_release": "v0.1.0",
+    "release_plan": "docs/plans/release-v0.1.1.md",
+    "release_notes": "docs/releases/v0.1.1.md",
     "runtime_boundary": "localhost-http-only",
     "supported_scope": [
       "local-login-session-logout",
@@ -52,14 +49,14 @@
     "time_composition_renderer": "accessible-svg-circle"
   },
   "backend_baseline": {
-    "version": "v0.3",
+    "version": "v0.3.1",
     "status": "implemented_and_verified",
     "runtime": "python-3.12-fastapi",
     "database": "postgresql-17",
     "migration_head": "0003_activity_data_lifecycle",
     "api_contract": {
       "version": "v1",
-      "openapi_sha256": "912e6091c38e45033d952c665ebdf957679db97274a0a498c3967cf4c650f120"
+      "openapi_sha256": "aa1e03529a87dacf86092e692eb8a442a7050a7fc085a4b10dd48b014fd5386f"
     },
     "scope": [
       "health-readiness",
@@ -118,5 +115,5 @@
     "shared_docs": "docs",
     "external_design_input": "provided_per_task"
   },
-  "next_milestone": "select_next_user_owned_import_source"
+  "next_milestone": "design-and-implement-data-management-ui"
 }
