@@ -51,7 +51,7 @@ function formatFileTime(ms: number): string {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
 }
 
-export function FileUpload() {
+export function FileUpload({ onFitPersisted }: { onFitPersisted?: () => void } = {}) {
   const { demoMode } = useAuth()
   const [parsed, setParsed] = useState<ParsedEntry[]>(() =>
     demoMode
@@ -89,6 +89,7 @@ export function FileUpload() {
           } else {
             const result = await uploadFitFile(file)
             mergeImportedActivities([result.activity])
+            onFitPersisted?.()
           }
         } else {
           // TCX/GPX remain the legacy local-only preview. This milestone only

@@ -25,3 +25,7 @@ export function useAuth(): AuthContextValue {
   if (auth === undefined) throw new Error('useAuth must be used inside AuthProvider')
   return auth
 }
+
+export function useOptionalAuth(): AuthContextValue | undefined {
+  return useContext(AuthContext)
+}

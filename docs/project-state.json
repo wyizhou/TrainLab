@@ -34,26 +34,35 @@
   "design_baseline": {
     "provider": "open-design",
     "project_id": "e7be4d5a-73a1-4237-a9ca-dff73980c8e9",
-    "revision": 7,
-    "version": "v3.4",
+    "revision": 8,
+    "version": "v3.5",
     "status": "implemented_and_verified",
-    "theme": "shared-activity-detail",
-    "entrypoint_sha256": "26699807860776b4a1daf797580d9ee90e2cc2508ed7de8efe7418828020aada",
-    "activity_detail_entrypoint_sha256": "9a12c0ebee444cc19c13463fa94f9a7d94fceacae357cbd363895f51e10e3e63",
-    "handoff_sha256": "6c2d034aeb0eb3e3d983a8509dd21c15106eca009f18a20f64fde029723c2bb4",
+    "theme": "user-data-management",
+    "entrypoint_sha256": "1ea2a7fb5d4cf6d68b6a5a1f2140540c1801597a92a6274180593bd3f37b48f3",
+    "artifact_sha256": "760286955110e6000e9147c60c2a1f67ce098a756b5a5c5548bb6ad941240761",
+    "handoff_sha256": "a279eb74587fbababe141774abd74233eae310d59271dfdacc388f63a9cc056a",
+    "brand_sha256": "acfb1898ea666fc3e09d575e55030abe2a3079f02370b5502597d7af0e204063",
     "source_path_persisted": false
   },
   "implementation_baseline": {
-    "revision": 7,
-    "version": "v3.4",
+    "revision": 8,
+    "version": "v3.5",
     "status": "verified",
-    "geometry_inherited_from": "v3.3-except-activity-detail",
+    "geometry_inherited_from": "v3.4-except-data-management",
     "typography_contract": "ordered-cross-platform-system-font-stack",
     "activity_detail_profiles": 7,
     "activity_detail_tabs": 5,
     "activity_detail_viewports": [390, 768, 1280, 1536],
-    "visual_baseline": "frontend/tests/visual-baselines/v3.4/manifest.json",
-    "visual_baseline_screenshot_set_sha256": "fa98daacc8da8b579a2fd44af419cdd8b2bb45c6b9c8dd131924d2ce4ea45d30",
+    "data_management_surfaces": [
+      "activity-list-and-detail-actions",
+      "fit-import-lifecycle-records",
+      "per-user-storage-usage"
+    ],
+    "data_management_viewports": [390, 768, 1280, 1536],
+    "visual_baseline": "frontend/tests/visual-baselines/v3.5/manifest.json",
+    "visual_baseline_screenshot_count": 20,
+    "visual_baseline_screenshot_set_sha256": "01a3e842a7f83dec35bae94ac7d5245825b73512d3d22ddc6b2b22c5352f9d83",
+    "previous_visual_baseline": "frontend/tests/visual-baselines/v3.4/manifest.json",
     "time_composition_renderer": "accessible-svg-circle"
   },
   "backend_baseline": {
@@ -113,15 +122,25 @@
     "semantic_schema_version": 1,
     "climbing_grade_status": "unavailable_until-profile-field-evidence-exists",
     "safe_reparse": "local-admin-cli-dry-run-by-default-and-batch-atomic",
-    "external_sample_data_persisted": false
+    "authorized_real_fit_regression_assets_persisted": true
+  },
+  "data_management_milestone": {
+    "status": "implemented_and_verified",
+    "plan": "docs/plans/data-management-v3.5.md",
+    "backend_api_changes": false,
+    "database_migration_changes": false,
+    "real_fit_assets": 5,
+    "real_fit_fullstack_lifecycle": "upload-import-record-storage-rename-restore-download-isolation-delete-cleanup",
+    "independent_validation": "pass"
   },
   "repository_layout": {
     "frontend": "frontend",
     "frontend_styles": "frontend/src/styles",
     "visual_test_assets": "frontend/tests/visual-baselines",
+    "authorized_real_fit_test_assets": "data",
     "backend": "backend",
     "shared_docs": "docs",
     "external_design_input": "provided_per_task"
   },
-  "next_milestone": "design-and-implement-data-management-ui"
+  "next_milestone": "plan-and-implement-garmin-cn-connect"
 }
