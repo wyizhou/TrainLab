@@ -1,4 +1,4 @@
-# v0.1.0 数据库与私有 FIT 备份恢复
+# TrainLab 数据库与私有 FIT 备份恢复
 
 TrainLab 的完整用户数据分布在两个持久卷：PostgreSQL 保存账号、会话、活动和解析结果，`trainlab-private-files` 保存可重放的私有 FIT 原文件。只备份其中一个不能形成可恢复版本。
 
@@ -13,7 +13,7 @@ mkdir -p backups
 chmod 700 backups
 python3 backend/scripts/backup_release.py \
   --project trainlab \
-  --output backups/trainlab-v0.1.0-before-change
+  --output backups/trainlab-before-change
 ```
 
 父目录必须先存在；上面的两行会在全新 checkout 中创建它，并在写入任何敏感制品前把权限收紧为 `0700`。`--output` 指向的最终备份目录仍必须不存在，工具会自行以 `0700` 创建，避免覆盖旧恢复点。
@@ -37,11 +37,11 @@ python3 backend/scripts/backup_release.py \
 ```bash
 python3 backend/scripts/restore_release.py \
   --project trainlab \
-  --backup backups/trainlab-v0.1.0-before-change \
+  --backup backups/trainlab-before-change \
   --confirm RESTORE:trainlab
 ```
 
-工具在停止或写入任何服务前完成：manifest 严格 schema、产品版本、迁移头、相对文件名、普通单链接文件、尺寸、SHA-256、tar 路径穿越/链接/特殊文件/重复项，以及 PostgreSQL custom dump 预检。任一校验失败都不会开始破坏性恢复。
+工具在停止或写入任何服务前完成：manifest 严格 schema、受支持的产品版本、迁移头、相对文件名、普通单链接文件、尺寸、SHA-256、tar 路径穿越/链接/特殊文件/重复项，以及 PostgreSQL custom dump 预检。`v0.1.1` 继续接受迁移头同为 `0003_activity_data_lifecycle` 的 `v0.1.0` 备份；未知产品版本或其他迁移头一律拒绝。任一校验失败都不会开始破坏性恢复。
 
 确认和预检通过后，工具按以下顺序执行：停止 backend → 恢复数据库 → 清空并恢复私有卷 → `alembic upgrade head` → 核对迁移头 → 删除全部已有登录会话 → 启动并等待 backend ready。恢复失败会让 backend 保持停止，避免对外提供数据库与私有卷不一致的服务；修正原因后可用同一已验证备份重新执行。
 
