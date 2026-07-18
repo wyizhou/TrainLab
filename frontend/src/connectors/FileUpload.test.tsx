@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { render, screen, within } from '@testing-library/react'
+import { createEvent, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -21,6 +21,18 @@ const fitFile = (name = '晨间轻松跑.fit') =>
   })
 
 const input = () => screen.getByTestId('file-upload-input')
+const dropzone = () => screen.getByTestId('file-upload-dropzone')
+
+const GPX = `<gpx><trk><name>本地路线</name><trkseg>
+  <trkpt lat="30" lon="104"><time>2026-01-01T00:00:00Z</time></trkpt>
+  <trkpt lat="30.001" lon="104.001"><time>2026-01-01T00:01:00Z</time></trkpt>
+</trkseg></trk></gpx>`
+
+const TCX = `<TrainingCenterDatabase>
+  <Activities><Activity Sport="Running"><Id>2026-01-02T00:00:00Z</Id>
+    <Lap><TotalTimeSeconds>60</TotalTimeSeconds><DistanceMeters>200</DistanceMeters></Lap>
+  </Activity></Activities>
+</TrainingCenterDatabase>`
 
 function renderUpload(demoMode = false) {
   const auth: AuthContextValue = {
@@ -40,6 +52,8 @@ function renderUpload(demoMode = false) {
 // applyAccept:false so oversize/bad-extension files still reach onChange (the
 // component, not the browser dialog, owns the reject logic under test).
 const upload = (file: File) => userEvent.upload(input(), file, { applyAccept: false })
+const drop = (...files: File[]) =>
+  fireEvent.drop(dropzone(), { dataTransfer: { files, dropEffect: 'none' } })
 
 beforeEach(() => {
   resetUploadedActivities()
@@ -84,6 +98,83 @@ afterEach(() => {
 })
 
 describe('FileUpload', () => {
+  it('routes a dropped FIT through the same authenticated backend ingest path', async () => {
+    renderUpload(false)
+
+    drop(fitFile('拖入跑步.fit'))
+
+    const row = await screen.findByTestId('parsed-file')
+    expect(row).toHaveTextContent('拖入跑步.fit')
+    expect(row).toHaveTextContent('已入库')
+    expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1)
+    expect(String(vi.mocked(fetch).mock.calls[0][0])).toContain('/api/v1/imports/fit')
+  })
+
+  it('handles multiple dropped files independently, including local previews and rejects', async () => {
+    renderUpload(false)
+    const huge = new File([new Uint8Array(8)], 'huge.fit')
+    Object.defineProperty(huge, 'size', { value: MAX_UPLOAD_BYTES + 1 })
+
+    drop(
+      new File([GPX], 'route.gpx'),
+      new File([TCX], 'workout.tcx'),
+      huge,
+      new File(['not supported'], 'notes.txt'),
+    )
+
+    await waitFor(() => expect(screen.getAllByTestId('parsed-file')).toHaveLength(2))
+    expect(screen.getAllByTestId('parsed-preview')).toHaveLength(2)
+    const errors = screen.getAllByTestId('file-upload-error')
+    expect(errors).toHaveLength(2)
+    expect(screen.getByText(/50MB/)).toBeInTheDocument()
+    expect(screen.getByText(/不支持的格式/)).toBeInTheDocument()
+    expect(vi.mocked(fetch)).not.toHaveBeenCalled()
+  })
+
+  it('keeps nested drag transitions stable, prevents browser navigation, and clears on drop', () => {
+    renderUpload(false)
+    const zone = dropzone()
+    const cue = within(zone).getByText('点击选择或拖入文件(可多选)')
+    const transfer = { files: [], dropEffect: 'none' }
+
+    const over = createEvent.dragOver(zone, { dataTransfer: transfer })
+    fireEvent(zone, over)
+    expect(over.defaultPrevented).toBe(true)
+    expect(zone).toHaveAttribute('data-drag-active', 'true')
+
+    const enter = createEvent.dragEnter(zone, { dataTransfer: transfer })
+    fireEvent(zone, enter)
+    expect(enter.defaultPrevented).toBe(true)
+    fireEvent.dragEnter(cue, { dataTransfer: transfer })
+    expect(zone).toHaveAttribute('data-drag-active', 'true')
+
+    const childLeave = createEvent.dragLeave(cue, { dataTransfer: transfer })
+    fireEvent(cue, childLeave)
+    expect(zone).toHaveAttribute('data-drag-active', 'true')
+    fireEvent.dragLeave(zone, { dataTransfer: transfer })
+    expect(zone).toHaveAttribute('data-drag-active', 'false')
+
+    fireEvent.dragEnter(zone, { dataTransfer: transfer })
+    const dropped = createEvent.drop(zone, { dataTransfer: transfer })
+    fireEvent(zone, dropped)
+    expect(dropped.defaultPrevented).toBe(true)
+    expect(zone).toHaveAttribute('data-drag-active', 'false')
+    expect(screen.queryByTestId('parsed-file')).not.toBeInTheDocument()
+  })
+
+  it('lets the backend deduplicate a repeated dropped FIT without duplicating the activity store', async () => {
+    renderUpload(false)
+    const file = fitFile('重复.fit')
+
+    drop(file)
+    await screen.findByTestId('parsed-file')
+    drop(file)
+    await waitFor(() => expect(screen.getAllByTestId('parsed-file')).toHaveLength(2))
+
+    expect(vi.mocked(fetch)).toHaveBeenCalledTimes(2)
+    expect(getUploadedActivities()).toHaveLength(1)
+  })
+
   it('rejects a file over 50MB and does not 入库 it', async () => {
     renderUpload()
     const huge = new File([new Uint8Array(8)], 'huge.fit')
@@ -134,12 +225,7 @@ describe('FileUpload', () => {
 
   it('labels TCX/GPX as non-persistent local preview in real mode', async () => {
     renderUpload(false)
-    const gpx = new File(
-      [
-        '<gpx><trk><name>本地路线</name><trkseg><trkpt lat="30" lon="104"><time>2026-01-01T00:00:00Z</time></trkpt><trkpt lat="30.001" lon="104.001"><time>2026-01-01T00:01:00Z</time></trkpt></trkseg></trk></gpx>',
-      ],
-      'local-route.gpx',
-    )
+    const gpx = new File([GPX], 'local-route.gpx')
     await upload(gpx)
 
     const row = await screen.findByTestId('parsed-file')

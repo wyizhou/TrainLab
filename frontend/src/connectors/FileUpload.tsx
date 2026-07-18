@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent } from 'react'
+import { useRef, useState, type ChangeEvent, type DragEvent } from 'react'
 import { uploadFitFile, ActivityApiError } from '../activities/activityApi'
 import { addUploadedActivities, mergeImportedActivities } from '../activities/uploadStore'
 import { useAuth } from '../auth/AuthState'
@@ -67,7 +67,9 @@ export function FileUpload() {
       : [],
   )
   const [rejected, setRejected] = useState<RejectedEntry[]>([])
+  const [dragActive, setDragActive] = useState(false)
   const keyRef = useRef(0)
+  const dragDepthRef = useRef(0)
 
   const ingest = async (files: FileList) => {
     for (const file of Array.from(files)) {
@@ -125,12 +127,52 @@ export function FileUpload() {
     event.target.value = ''
   }
 
+  const onDragEnter = (event: DragEvent<HTMLLabelElement>) => {
+    event.preventDefault()
+    event.stopPropagation()
+    dragDepthRef.current += 1
+    setDragActive(true)
+  }
+
+  const onDragOver = (event: DragEvent<HTMLLabelElement>) => {
+    event.preventDefault()
+    event.stopPropagation()
+    event.dataTransfer.dropEffect = 'copy'
+    setDragActive(true)
+  }
+
+  const onDragLeave = (event: DragEvent<HTMLLabelElement>) => {
+    event.preventDefault()
+    event.stopPropagation()
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1)
+    if (dragDepthRef.current === 0) setDragActive(false)
+  }
+
+  const onDrop = (event: DragEvent<HTMLLabelElement>) => {
+    event.preventDefault()
+    event.stopPropagation()
+    dragDepthRef.current = 0
+    setDragActive(false)
+    if (event.dataTransfer.files.length > 0) void ingest(event.dataTransfer.files)
+  }
+
   return (
     <section className="file-upload" data-testid="file-upload">
       <h2 className="file-upload__title">文件上传</h2>
 
       <div className="file-upload__grid" data-vc="upload-grid">
-        <label className="file-upload__drop" data-vc="upload-dropzone">
+        <label
+          className={
+            dragActive ? 'file-upload__drop file-upload__drop--dragging' : 'file-upload__drop'
+          }
+          data-drag-active={dragActive ? 'true' : 'false'}
+          data-vc="upload-dropzone"
+          data-testid="file-upload-dropzone"
+          onDragEnter={onDragEnter}
+          onDragOver={onDragOver}
+          onDragLeave={onDragLeave}
+          onDrop={onDrop}
+        >
           <input
             type="file"
             className="file-upload__input"
