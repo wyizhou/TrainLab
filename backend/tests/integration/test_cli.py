@@ -1,5 +1,6 @@
 import os
 import sys
+import uuid
 
 import pytest
 from fastapi.testclient import TestClient
@@ -12,6 +13,7 @@ from trainlab.cli import (
     create_owner,
     create_user,
     main,
+    reparse_fit,
     reset_password,
     revoke_sessions,
     set_development_owner,
@@ -20,6 +22,11 @@ from trainlab.core.security import verify_password
 from trainlab.db.models.session import LoginSession
 from trainlab.db.models.user import User
 from trainlab.main import create_app
+from trainlab.services.activity_reparse import (
+    ActivityReparseError,
+    ReparseItemReport,
+    ReparseReport,
+)
 
 
 def _login(
@@ -41,6 +48,86 @@ def _run_cli(monkeypatch, *args: str) -> int:  # type: ignore[no-untyped-def]
     with pytest.raises(SystemExit) as raised:
         main()
     return int(raised.value.code)
+
+
+def test_reparse_cli_defaults_to_dry_run_and_keeps_output_private(
+    engine, monkeypatch, capsys
+) -> None:  # type: ignore[no-untyped-def]
+    import_ids = [uuid.uuid4(), uuid.uuid4()]
+    activity_ids = [uuid.uuid4(), uuid.uuid4()]
+
+    def fake_reparse(_db, _storage, username, selected, *, apply):  # type: ignore[no-untyped-def]
+        assert username == "owner-user"
+        assert selected == import_ids
+        assert apply is False
+        return ReparseReport(
+            applied=False,
+            items=tuple(
+                ReparseItemReport(
+                    import_id=import_id,
+                    activity_id=activity_id,
+                    status="ready",
+                    record_count=index,
+                    lap_count=0,
+                    segment_count=index + 1,
+                )
+                for index, (import_id, activity_id) in enumerate(
+                    zip(import_ids, activity_ids, strict=True), start=1
+                )
+            ),
+        )
+
+    monkeypatch.setattr("trainlab.cli.reparse_fit_imports", fake_reparse)
+    assert reparse_fit("owner-user", import_ids, apply=False) == 0
+    output = capsys.readouterr().out
+    assert "mode=dry-run imports=2" in output
+    assert all(str(value) in output for value in (*import_ids, *activity_ids))
+    assert "private.fit" not in output
+    assert "/private/" not in output
+
+
+def test_reparse_cli_never_echoes_domain_exception_details(monkeypatch, capsys) -> None:
+    private_detail = "secret-title /private/user/file.fit"
+
+    def fail(*_args, **_kwargs):  # type: ignore[no-untyped-def]
+        raise ActivityReparseError("raw_file_unavailable", private_detail)
+
+    monkeypatch.setattr("trainlab.cli.reparse_fit_imports", fail)
+    assert reparse_fit("owner-user", [uuid.uuid4()], apply=True) == 4
+    captured = capsys.readouterr()
+    assert private_detail not in captured.out + captured.err
+    assert "raw_file_unavailable" in captured.err
+
+
+def test_reparse_cli_parser_accepts_repeated_ids_and_defaults_without_apply(
+    monkeypatch,
+) -> None:  # type: ignore[no-untyped-def]
+    import_ids = [uuid.uuid4(), uuid.uuid4()]
+    captured: dict[str, object] = {}
+
+    def fake_reparse(username: str, selected: list[uuid.UUID], *, apply: bool) -> int:
+        captured.update(username=username, selected=selected, apply=apply)
+        return 0
+
+    monkeypatch.setattr("trainlab.cli.reparse_fit", fake_reparse)
+    assert (
+        _run_cli(
+            monkeypatch,
+            "reparse-fit",
+            "--username",
+            "owner-user",
+            "--import-id",
+            str(import_ids[0]),
+            "--import-id",
+            str(import_ids[1]),
+        )
+        == 0
+    )
+    assert captured == {
+        "username": "owner-user",
+        "selected": import_ids,
+        "apply": False,
+    }
 
 
 def test_create_owner_validates_lengths_without_touching_database() -> None:

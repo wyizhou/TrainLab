@@ -47,7 +47,9 @@
     "activity_detail_profiles": 7,
     "activity_detail_tabs": 5,
     "activity_detail_viewports": [390, 768, 1280, 1536],
-    "visual_baseline": "frontend/tests/visual-baselines/v3.4/manifest.json"
+    "visual_baseline": "frontend/tests/visual-baselines/v3.4/manifest.json",
+    "visual_baseline_screenshot_set_sha256": "fa98daacc8da8b579a2fd44af419cdd8b2bb45c6b9c8dd131924d2ce4ea45d30",
+    "time_composition_renderer": "accessible-svg-circle"
   },
   "backend_baseline": {
     "version": "v0.3",
@@ -57,7 +59,7 @@
     "migration_head": "0003_activity_data_lifecycle",
     "api_contract": {
       "version": "v1",
-      "openapi_sha256": "e034418dfefbabaec0e206590d9e755efca7371b21623af70994f19a6e9c5713"
+      "openapi_sha256": "912e6091c38e45033d952c665ebdf957679db97274a0a498c3967cf4c650f120"
     },
     "scope": [
       "health-readiness",
@@ -67,6 +69,8 @@
       "user-owned-fit-upload",
       "private-source-storage",
       "fit-parse-and-replay",
+      "admin-batch-fit-reparse",
+      "fit-segment-semantic-v1",
       "activity-list-detail-download",
       "activity-title-override",
       "import-lifecycle-and-recoverable-delete",
@@ -93,6 +97,18 @@
       "reconcile_default": "dry-run"
     },
     "fit_profiles": ["run", "hike", "strength", "lead", "boulder", "cycling", "generic"]
+  },
+  "fit_detail_corrections": {
+    "status": "implemented_and_verified",
+    "plan": "docs/plans/fit-detail-corrections.md",
+    "upload_drop": "single-and-multiple-files-share-the-existing-ingest-path",
+    "strength_instances": "set-only",
+    "climbing_instances": "split-only",
+    "summary_messages_counted_as_instances": false,
+    "semantic_schema_version": 1,
+    "climbing_grade_status": "unavailable_until-profile-field-evidence-exists",
+    "safe_reparse": "local-admin-cli-dry-run-by-default-and-batch-atomic",
+    "external_sample_data_persisted": false
   },
   "repository_layout": {
     "frontend": "frontend",

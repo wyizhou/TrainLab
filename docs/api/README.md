@@ -47,6 +47,10 @@ TrainLab 的真实后端接口统一使用 `/api/v1` 前缀。当前开放登录
 
 FIT 上传成功只返回 `complete` 或 `partial`，且 `activity` 必定存在。同一用户上传相同 SHA-256 的已完成文件返回 `200` 幂等结果；`pending` 或陈旧 `processing` 由同文件重传安全接管，只有新鲜 `processing` 返回 `409 import_in_progress`；失败记录返回可重试的 `422 fit_import_failed`。活动详情会保留圈、采样、训练组/攀岩分段、设备快照合并结果和未知扩展指标；无法证明的设备—指标关系保持 `null`。
 
+每个训练组/攀岩段在原 `extraData` 外提供可选的版本化 `semantic` 投影。版本 1 的 `sourceMessage` 只允许 `set`、`split` 或 `split_summary`；力量动作可提供已清洗的 `exercise.stepIndex/name`，攀岩 active 段提供 `climb.gradeStatus`。只有 `gradeStatus=available` 且有已证明的 `gradeSystem/grade` 时客户端才显示等级；当前 Garmin profile 未定义的 split 字段 69–73 保留在原始数据中，API 明确返回 `unavailable/unknown_profile_field`，客户端不得显示数字键或猜测等级。
+
+已完成导入的批量重解析只通过本机管理员 CLI `trainlab reparse-fit` 提供，默认 dry-run，不新增 HTTP 端点。整批在一个数据库事务中就地替换投影并保留资源 UUID、归属、标题覆盖和原文件；详见 `docs/runbooks/local-development.md`。
+
 用户配额默认 5 GiB、10,000 个文件。超过任一上限返回 `409 storage_quota_exceeded`，`details` 只包含当前用量和上限；重复上传不增加用量。活动名称覆盖与解析标题分别保存，`PATCH` 的 `name: null` 会恢复解析标题。两个 DELETE 均对不存在或跨用户对象返回 `204`，避免泄露对象是否存在；新鲜解析中的导入返回 `409 import_in_progress`，文件或数据库中途失败可以重复 DELETE 恢复。
 
 列表游标为不透明字符串，调用方不得解析或构造；时间排序使用 UTC 开始时间与 UUID 稳定排序，显示日期优先使用 FIT 明确记录的本地时间。跨用户访问按资源不存在处理，返回 `404`，避免泄露对象是否存在。

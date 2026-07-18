@@ -232,6 +232,40 @@ function displayNumber(value: number | null | undefined, digits = 2): string {
   return value.toFixed(digits).replace(/\.?0+$/, '')
 }
 
+function safeHumanText(value: unknown): string | null {
+  if (typeof value !== 'string') return null
+  const withoutControls = [...value.normalize('NFC')]
+    .map((character) => {
+      const code = character.codePointAt(0) ?? 0
+      return code <= 31 || (code >= 127 && code <= 159) ? ' ' : character
+    })
+    .join('')
+  const normalized = withoutControls.replace(/\s+/g, ' ').trim()
+  if (!normalized || normalized.length > 255) return null
+  if (/^[+-]?\d+(?:\.\d+)?$/.test(normalized)) return null
+  if (normalized.startsWith('[') || normalized.startsWith('{')) return null
+  return normalized
+}
+
+function isRestSegment(kind: string): boolean {
+  return kind.toLowerCase().includes('rest')
+}
+
+function explicitlyBodyweight(extraData: Record<string, unknown>): boolean {
+  if (extraData.bodyweight === true || extraData.bodyWeight === true) return true
+  const explicitKind = [
+    extraData.weight_type,
+    extraData.weightType,
+    extraData.load_type,
+    extraData.loadType,
+    extraData.resistance_type,
+    extraData.resistanceType,
+  ].find((value): value is string => typeof value === 'string')
+  return explicitKind
+    ? ['bodyweight', 'body_weight', 'self_weight'].includes(explicitKind.toLowerCase())
+    : false
+}
+
 function chartFromRecords(
   id: string,
   label: string,
@@ -1119,39 +1153,99 @@ function backendProfile(activity: Activity, parsed: ParsedActivity): ActivityPro
     (candidate): candidate is DetailChart =>
       candidate !== null && candidate.values.some((v) => v !== null),
   )
+  const sourceMessage = (segment: (typeof backend.segments)[number]) => {
+    const semanticSource = segment.semantic?.sourceMessage
+    if (semanticSource) return semanticSource
+    const legacySource = segment.extraData.sourceMessage
+    return legacySource === 'set' || legacySource === 'split' || legacySource === 'split_summary'
+      ? legacySource
+      : null
+  }
   const summarySegments = backend.segments.filter(
-    (segment) => segment.extraData.sourceMessage === 'split_summary',
+    (segment) => sourceMessage(segment) === 'split_summary',
   )
-  const concreteSegments = backend.segments.filter(
-    (segment) => segment.extraData.sourceMessage !== 'split_summary',
-  )
-  const strengthSets = concreteSegments.filter(
-    (segment) => segment.extraData.sourceMessage === 'set',
-  )
-  // Strength FITs may contain parallel set and split descriptions for the same
-  // workout. Prefer concrete set messages for training-group instances when
-  // available. Climbing and route profiles use concrete split messages. Every
-  // raw message remains available in backend.segments for audit/replay.
-  const instanceSegments =
-    id === 'strength' && strengthSets.length > 0 ? strengthSets : concreteSegments
-  const backendSegments: DetailSegment[] = instanceSegments.map((segment, index) => ({
-    id: `segment-${segment.sequence}`,
-    label: segment.label ?? `${segment.kind} ${index + 1}`,
-    duration: segment.durationSec === null ? '未提供' : clock(segment.durationSec),
-    progress: (index + 0.5) / Math.max(1, instanceSegments.length),
-    details: [
+  // The stable semantic projection is authoritative: strength instances are
+  // set messages and climbing instances are split messages. Parallel summary
+  // families remain auditable but never enter counts or time composition.
+  const instanceSegments = backend.segments.filter((segment) => {
+    const source = sourceMessage(segment)
+    if (id === 'strength') return source === 'set'
+    if (id === 'lead' || id === 'boulder') return source === 'split'
+    return source !== 'split_summary'
+  })
+  let strengthActiveIndex = 0
+  let climbActiveIndex = 0
+  let restIndex = 0
+  const backendSegments: DetailSegment[] = instanceSegments.map((segment, index) => {
+    const rest = isRestSegment(segment.kind)
+    let label = safeHumanText(segment.label) ?? `${segment.kind} ${index + 1}`
+    let details = [
       segment.kind,
-      segment.repetitions === null ? '次数未提供' : `${segment.repetitions} 次`,
+      segment.repetitions === null ? '次数未提供' : `${displayNumber(segment.repetitions)} 次`,
       segment.weightKg === null ? '重量未提供' : `${displayNumber(segment.weightKg)} kg`,
-    ],
-    kind: id === 'strength' ? 'exercise' : id === 'lead' || id === 'boulder' ? 'climb' : 'lap',
-  }))
-  const segments = backendSegments.length > 0 ? backendSegments : segmentsFromLaps(parsed.laps)
+    ]
+    if (id === 'strength') {
+      if (rest) {
+        restIndex += 1
+        label = `休息 ${restIndex}`
+        details = ['休息段', '不计入动作与有效组']
+      } else {
+        strengthActiveIndex += 1
+        label = safeHumanText(segment.semantic?.exercise?.name) ?? '动作名称未提供'
+        const weight = explicitlyBodyweight(segment.extraData)
+          ? '自重（文件明确记录）'
+          : segment.weightKg === null
+            ? '重量未提供'
+            : segment.weightKg === 0
+              ? '0 kg（文件明确记录）'
+              : `${displayNumber(segment.weightKg)} kg`
+        details = [
+          `有效组 ${strengthActiveIndex}`,
+          segment.repetitions === null ? '次数未提供' : `${displayNumber(segment.repetitions)} 次`,
+          weight,
+        ]
+      }
+    } else if (id === 'lead' || id === 'boulder') {
+      if (rest) {
+        restIndex += 1
+        label = `休息 ${restIndex}`
+        details = ['休息段', '不生成路线等级']
+      } else {
+        climbActiveIndex += 1
+        label = `${id === 'lead' ? '攀爬' : '尝试'} ${climbActiveIndex}`
+        const climb = segment.semantic?.climb
+        const grade =
+          climb?.gradeStatus === 'available' &&
+          (climb.gradeSystem === 'v_scale' || climb.gradeSystem === 'yds')
+            ? safeHumanText(climb.grade)
+            : null
+        const gradeDetail = grade !== null ? `等级 ${grade}` : '等级暂不可用：文件字段尚无可靠映射'
+        const outcome =
+          climb?.outcome === 'complete' ? '已完成' : climb?.outcome === 'attempt' ? '尝试' : null
+        details = [gradeDetail, ...(outcome ? [outcome] : [])]
+      }
+    }
+    return {
+      id: `segment-${segment.sequence}`,
+      label,
+      duration: segment.durationSec === null ? '未提供' : clock(segment.durationSec),
+      progress: (index + 0.5) / Math.max(1, instanceSegments.length),
+      details,
+      kind: id === 'strength' ? 'exercise' : id === 'lead' || id === 'boulder' ? 'climb' : 'lap',
+    }
+  })
+  const supportsLapFallback = id !== 'strength' && id !== 'lead' && id !== 'boulder'
+  const segments =
+    backendSegments.length > 0
+      ? backendSegments
+      : supportsLapFallback
+        ? segmentsFromLaps(parsed.laps)
+        : []
   const activeSeconds = instanceSegments
-    .filter((segment) => !segment.kind.toLowerCase().includes('rest'))
+    .filter((segment) => !isRestSegment(segment.kind))
     .reduce((sum, segment) => sum + (segment.durationSec ?? 0), 0)
   const restSeconds = instanceSegments
-    .filter((segment) => segment.kind.toLowerCase().includes('rest'))
+    .filter((segment) => isRestSegment(segment.kind))
     .reduce((sum, segment) => sum + (segment.durationSec ?? 0), 0)
   const composition =
     activeSeconds + restSeconds > 0
@@ -1188,6 +1282,79 @@ function backendProfile(activity: Activity, parsed: ParsedActivity): ActivityPro
     ])
   })()
   let specialized: DetailSpecialized
+  const strengthAggregates = new Map<
+    string,
+    {
+      groups: number
+      repetitions: number
+      missingRepetitionGroups: number
+      volumeKg: number
+      volumeGroups: number
+      bodyweightGroups: number
+      zeroWeightGroups: number
+      missingWeightGroups: number
+    }
+  >()
+  for (const segment of id === 'strength'
+    ? instanceSegments.filter((candidate) => !isRestSegment(candidate.kind))
+    : []) {
+    const name = safeHumanText(segment.semantic?.exercise?.name) ?? '动作名称未提供'
+    const aggregate = strengthAggregates.get(name) ?? {
+      groups: 0,
+      repetitions: 0,
+      missingRepetitionGroups: 0,
+      volumeKg: 0,
+      volumeGroups: 0,
+      bodyweightGroups: 0,
+      zeroWeightGroups: 0,
+      missingWeightGroups: 0,
+    }
+    aggregate.groups += 1
+    const repetitions =
+      segment.repetitions !== null &&
+      Number.isFinite(segment.repetitions) &&
+      segment.repetitions >= 0
+        ? segment.repetitions
+        : null
+    if (repetitions === null) aggregate.missingRepetitionGroups += 1
+    else aggregate.repetitions += repetitions
+    if (explicitlyBodyweight(segment.extraData)) {
+      aggregate.bodyweightGroups += 1
+    } else if (
+      segment.weightKg === null ||
+      !Number.isFinite(segment.weightKg) ||
+      segment.weightKg < 0
+    ) {
+      aggregate.missingWeightGroups += 1
+    } else {
+      if (segment.weightKg === 0) aggregate.zeroWeightGroups += 1
+      if (repetitions !== null) {
+        aggregate.volumeKg += segment.weightKg * repetitions
+        aggregate.volumeGroups += 1
+      }
+    }
+    strengthAggregates.set(name, aggregate)
+  }
+  const strengthActiveGroups = [...strengthAggregates.values()].reduce(
+    (sum, aggregate) => sum + aggregate.groups,
+    0,
+  )
+  const strengthRepetitions = [...strengthAggregates.values()].reduce(
+    (sum, aggregate) => sum + aggregate.repetitions,
+    0,
+  )
+  const strengthRepetitionGroups = [...strengthAggregates.values()].reduce(
+    (sum, aggregate) => sum + aggregate.groups - aggregate.missingRepetitionGroups,
+    0,
+  )
+  const strengthVolumeKg = [...strengthAggregates.values()].reduce(
+    (sum, aggregate) => sum + aggregate.volumeKg,
+    0,
+  )
+  const strengthVolumeGroups = [...strengthAggregates.values()].reduce(
+    (sum, aggregate) => sum + aggregate.volumeGroups,
+    0,
+  )
   if ((id === 'hike' || id === 'run' || id === 'cycling') && routePoints.length > 1) {
     specialized = {
       kind: 'route',
@@ -1200,22 +1367,34 @@ function backendProfile(activity: Activity, parsed: ParsedActivity): ActivityPro
   } else if (id === 'strength') {
     specialized = {
       kind: 'exercises',
-      rows: instanceSegments
-        .slice(0, 20)
-        .map((segment, index) => [
-          segment.label ?? `训练组 ${index + 1}`,
-          segment.kind,
-          segment.repetitions === null ? '未提供' : String(segment.repetitions),
-          segment.weightKg === null ? '重量未提供' : `${displayNumber(segment.weightKg)} kg`,
-        ]),
+      rows: [...strengthAggregates.entries()].map(([name, aggregate]) => {
+        const knownRepetitionGroups = aggregate.groups - aggregate.missingRepetitionGroups
+        const repetitionText =
+          knownRepetitionGroups === 0
+            ? '次数未提供'
+            : `${displayNumber(aggregate.repetitions)} 次${
+                aggregate.missingRepetitionGroups
+                  ? `（${aggregate.missingRepetitionGroups} 组未提供）`
+                  : ''
+              }`
+        const volumeParts = [
+          aggregate.volumeGroups
+            ? `${displayNumber(aggregate.volumeKg, 1)} kg · ${aggregate.volumeGroups} 组可计算`
+            : '容量不可计算',
+          aggregate.bodyweightGroups ? `${aggregate.bodyweightGroups} 组自重` : '',
+          aggregate.zeroWeightGroups ? `${aggregate.zeroWeightGroups} 组明确 0 kg` : '',
+          aggregate.missingWeightGroups ? `${aggregate.missingWeightGroups} 组重量未提供` : '',
+        ].filter(Boolean)
+        return [name, `${aggregate.groups} 组`, repetitionText, volumeParts.join(' · ')]
+      }),
     }
   } else if (id === 'lead' || id === 'boulder') {
     specialized = {
       kind: 'attempts',
       note:
         id === 'lead'
-          ? '仅展示文件中可验证的攀爬与休息段；文件未提供等级时不生成路线等级。'
-          : '仅展示文件中可验证的尝试与休息段；不推断 V 级、成功率或失败原因。',
+          ? '仅展示文件中可验证的攀爬与休息段；文件包含尚未获得可靠映射的等级字段，不猜测路线等级。'
+          : '仅展示文件中可验证的尝试与休息段；文件包含尚未获得可靠映射的等级字段，不猜测 V 级、成功率或失败原因。',
     }
   } else {
     specialized = {
@@ -1271,34 +1450,62 @@ function backendProfile(activity: Activity, parsed: ParsedActivity): ActivityPro
       summary.totalTrainingEffect === null
         ? '训练效果未提供'
         : `有氧训练效果 ${displayNumber(summary.totalTrainingEffect, 1)}`,
-    metrics: [
-      {
-        label: id === 'strength' || id === 'lead' || id === 'boulder' ? '分段 / 训练组' : '距离',
-        value:
-          id === 'strength' || id === 'lead' || id === 'boulder'
-            ? String(instanceSegments.length)
-            : displayNumber(summary.totalDistanceM / 1000),
-        unit: id === 'strength' || id === 'lead' || id === 'boulder' ? '段' : 'km',
-      },
-      { label: '运动时间', value: clock(summary.totalTimerTimeSec) },
-      {
-        label: '平均 / 最大心率',
-        value: `${summary.avgHr ?? '未提供'} / ${summary.maxHr ?? '未提供'}`,
-        unit: 'bpm',
-      },
-      {
-        label: id === 'cycling' ? '平均功率' : '平均配速',
-        value:
-          id === 'cycling'
-            ? displayNumber(summary.avgPowerW)
-            : pace === null
-              ? '未提供'
-              : `${Math.floor(pace / 60)}:${String(Math.round(pace % 60)).padStart(2, '0')}`,
-        unit: id === 'cycling' ? 'W' : '/km',
-      },
-      { label: '总爬升', value: displayNumber(summary.totalAscentM), unit: 'm' },
-      { label: '卡路里', value: displayNumber(summary.totalCalories), unit: 'kcal' },
-    ],
+    metrics:
+      id === 'strength'
+        ? [
+            { label: '动作数', value: String(strengthAggregates.size), unit: '项' },
+            { label: '有效组', value: String(strengthActiveGroups), unit: '组' },
+            {
+              label: '总次数',
+              value:
+                strengthRepetitionGroups === 0
+                  ? '未提供'
+                  : `${displayNumber(strengthRepetitions)}${strengthRepetitionGroups < strengthActiveGroups ? '（部分）' : ''}`,
+              unit: strengthRepetitionGroups === 0 ? undefined : '次',
+            },
+            {
+              label: '训练容量',
+              value:
+                strengthVolumeGroups === 0
+                  ? '不可计算'
+                  : `${displayNumber(strengthVolumeKg, 1)}${strengthVolumeGroups < strengthActiveGroups ? '（部分）' : ''}`,
+              unit: strengthVolumeGroups === 0 ? undefined : 'kg',
+            },
+            { label: '运动时间', value: clock(summary.totalTimerTimeSec) },
+            {
+              label: '平均 / 最大心率',
+              value: `${summary.avgHr ?? '未提供'} / ${summary.maxHr ?? '未提供'}`,
+              unit: 'bpm',
+            },
+          ]
+        : [
+            {
+              label: id === 'lead' || id === 'boulder' ? '攀爬 / 休息' : '距离',
+              value:
+                id === 'lead' || id === 'boulder'
+                  ? `${instanceSegments.filter((segment) => !isRestSegment(segment.kind)).length} / ${instanceSegments.filter((segment) => isRestSegment(segment.kind)).length}`
+                  : displayNumber(summary.totalDistanceM / 1000),
+              unit: id === 'lead' || id === 'boulder' ? '段' : 'km',
+            },
+            { label: '运动时间', value: clock(summary.totalTimerTimeSec) },
+            {
+              label: '平均 / 最大心率',
+              value: `${summary.avgHr ?? '未提供'} / ${summary.maxHr ?? '未提供'}`,
+              unit: 'bpm',
+            },
+            {
+              label: id === 'cycling' ? '平均功率' : '平均配速',
+              value:
+                id === 'cycling'
+                  ? displayNumber(summary.avgPowerW)
+                  : pace === null
+                    ? '未提供'
+                    : `${Math.floor(pace / 60)}:${String(Math.round(pace % 60)).padStart(2, '0')}`,
+              unit: id === 'cycling' ? 'W' : '/km',
+            },
+            { label: '总爬升', value: displayNumber(summary.totalAscentM), unit: 'm' },
+            { label: '卡路里', value: displayNumber(summary.totalCalories), unit: 'kcal' },
+          ],
     insight:
       '此页面来自登录用户私有 FIT 文件；原生字段、开发者字段、设备身份和传输协议分别保存，不基于共现关系猜测指标来源。',
     charts,
@@ -1319,10 +1526,24 @@ function backendProfile(activity: Activity, parsed: ParsedActivity): ActivityPro
         : id === 'lead' || id === 'boulder'
           ? '攀爬结构'
           : '专项数据',
-    specializedNote: routePoints.length > 1 ? 'GPS 轨迹仅对当前登录用户可见' : '按字段存在性启用',
+    specializedNote:
+      id === 'strength'
+        ? '仅聚合 FIT set 的有效训练组；休息和并行 split 不进入动作表。'
+        : id === 'lead' || id === 'boulder'
+          ? '仅使用 split 实例；等级只在字段映射获得可靠证据后显示。'
+          : routePoints.length > 1
+            ? 'GPS 轨迹仅对当前登录用户可见'
+            : '按字段存在性启用',
     specialized,
     segments,
-    noLapsReason: parsed.laps.length ? undefined : '文件未提供可用圈；不会自动生成公里圈。',
+    noLapsReason:
+      id === 'strength'
+        ? '文件未提供可验证的 set 训练组；不会用 split 或摘要补造。'
+        : id === 'lead' || id === 'boulder'
+          ? '文件未提供可验证的 split；不会用 split_summary 补造。'
+          : parsed.laps.length
+            ? undefined
+            : '文件未提供可用圈；不会自动生成公里圈。',
     noGpsReason: gps.length ? undefined : '文件未提供可用 GPS 定位；不显示空地图。',
     devices,
     extensionGroups: extensionItems.length

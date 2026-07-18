@@ -81,6 +81,22 @@ export type FitHrZoneTime = {
   seconds: number
 }
 
+export type ActivitySegmentSemantic = {
+  schemaVersion: 1
+  sourceMessage: 'set' | 'split' | 'split_summary'
+  exercise?: {
+    stepIndex: number
+    name: string
+  } | null
+  climb?: {
+    gradeStatus: 'available' | 'unavailable'
+    gradeReason?: 'unknown_profile_field' | null
+    gradeSystem?: 'v_scale' | 'yds' | null
+    grade?: string | null
+    outcome?: 'complete' | 'attempt' | 'unknown' | null
+  } | null
+}
+
 export type ParsedActivity = {
   summary: FitSummary
   records: FitRecordPoint[]
@@ -102,6 +118,7 @@ export type ParsedActivity = {
       repetitions: number | null
       weightKg: number | null
       extraData: Record<string, unknown>
+      semantic?: ActivitySegmentSemantic | null
     }>
     devices: Array<{
       id: string

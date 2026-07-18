@@ -92,7 +92,7 @@ function importedParsed(profile: ImportedProfile, segments: ImportedSegment[]): 
 
 function splitPairs(count: number): ImportedSegment[] {
   const segments = Array.from({ length: count }, (_, index) =>
-    (['climb_active', 'rest'] as const).map((kind, offset) => ({
+    (['climb_active', 'rest'] as const).map((kind, offset): ImportedSegment => ({
       sequence: index * 2 + offset,
       kind,
       label: null,
@@ -101,11 +101,23 @@ function splitPairs(count: number): ImportedSegment[] {
       repetitions: null,
       weightKg: null,
       extraData: { sourceMessage: 'split' },
+      semantic: {
+        schemaVersion: 1,
+        sourceMessage: 'split',
+        ...(kind === 'climb_active'
+          ? {
+              climb: {
+                gradeStatus: 'unavailable' as const,
+                gradeReason: 'unknown_profile_field' as const,
+              },
+            }
+          : {}),
+      },
     })),
   ).flat()
   return [
     ...segments,
-    ...Array.from({ length: 2 }, (_, index) => ({
+    ...Array.from({ length: 2 }, (_, index): ImportedSegment => ({
       sequence: segments.length + index,
       kind: 'split_summary',
       label: null,
@@ -114,8 +126,72 @@ function splitPairs(count: number): ImportedSegment[] {
       repetitions: null,
       weightKg: null,
       extraData: { sourceMessage: 'split_summary' },
+      semantic: { schemaVersion: 1, sourceMessage: 'split_summary' as const },
     })),
   ]
+}
+
+function strengthContractSegments(): ImportedSegment[] {
+  const names = Array.from({ length: 10 }, (_, index) => `合成动作${index + 1}`)
+  const sets: ImportedSegment[] = []
+  for (let group = 0; group < 30; group += 1) {
+    const actionIndex = group % names.length
+    sets.push({
+      sequence: sets.length,
+      kind: 'active',
+      label: actionIndex === 0 ? "['dirty', 'array']" : String(20 + actionIndex),
+      startTime: null,
+      durationSec: 1393.485 / 30,
+      repetitions: 5 + actionIndex,
+      weightKg:
+        actionIndex === 0 || actionIndex === 2 ? null : actionIndex === 1 ? 0 : 10 + actionIndex,
+      extraData: {
+        sourceMessage: 'set',
+        ...(actionIndex === 0 ? { weight_type: 'body_weight' } : {}),
+      },
+      semantic: {
+        schemaVersion: 1,
+        sourceMessage: 'set',
+        exercise: { stepIndex: actionIndex, name: names[actionIndex] },
+      },
+    })
+    if (group < 29) {
+      sets.push({
+        sequence: sets.length,
+        kind: 'rest',
+        label: '23',
+        startTime: null,
+        durationSec: 2171.271 / 29,
+        repetitions: null,
+        weightKg: null,
+        extraData: { sourceMessage: 'set' },
+        semantic: { schemaVersion: 1, sourceMessage: 'set' },
+      })
+    }
+  }
+  const parallel = Array.from({ length: 58 }, (_, index): ImportedSegment => ({
+    sequence: sets.length + index,
+    kind: index % 2 ? 'rest' : 'active',
+    label: '不应重复',
+    startTime: null,
+    durationSec: 999,
+    repetitions: 999,
+    weightKg: 999,
+    extraData: { sourceMessage: 'split' },
+    semantic: { schemaVersion: 1, sourceMessage: 'split' },
+  }))
+  const summaries = Array.from({ length: 4 }, (_, index): ImportedSegment => ({
+    sequence: sets.length + parallel.length + index,
+    kind: 'split_summary',
+    label: null,
+    startTime: null,
+    durationSec: 999,
+    repetitions: null,
+    weightKg: null,
+    extraData: { sourceMessage: 'split_summary' },
+    semantic: { schemaVersion: 1, sourceMessage: 'split_summary' },
+  }))
+  return [...sets, ...parallel, ...summaries]
 }
 
 describe('activity profile resolver', () => {
@@ -211,10 +287,24 @@ describe('activity profile resolver', () => {
       { label: profileId === 'boulder' ? '尝试' : '攀爬', value: pairCount * 30 },
       { label: '休息', value: pairCount * 30 },
     ])
-    expect(profile.metrics.find((item) => item.label === '分段 / 训练组')?.value).toBe(
-      String(pairCount * 2),
+    expect(profile.metrics.find((item) => item.label === '攀爬 / 休息')?.value).toBe(
+      `${pairCount} / ${pairCount}`,
     )
     expect(profile.fields).toContainEqual(['split_summary', '2 个摘要'])
+    expect(
+      profile.segments.filter(
+        (segment) => segment.label.startsWith('攀爬') || segment.label.startsWith('尝试'),
+      ),
+    ).toHaveLength(pairCount)
+    expect(profile.segments.filter((segment) => segment.label.startsWith('休息'))).toHaveLength(
+      pairCount,
+    )
+    for (const segment of profile.segments.filter(
+      (candidate) => !candidate.label.startsWith('休息'),
+    )) {
+      expect(segment.details).toContain('等级暂不可用：文件字段尚无可靠映射')
+      expect(segment.details.join(' ')).not.toMatch(/(?:^|\s)(?:69|70|71|72|73)(?:\s|$)/)
+    }
   })
 
   it('uses FIT set messages for strength groups without duplicating parallel splits', () => {
@@ -227,6 +317,7 @@ describe('activity profile resolver', () => {
       repetitions: 8,
       weightKg: 20,
       extraData: { sourceMessage },
+      semantic: { schemaVersion: 1 as const, sourceMessage },
     })
     const messages = [
       make(0, 'set'),
@@ -240,12 +331,140 @@ describe('activity profile resolver', () => {
       importedParsed('strength', messages),
     )
     expect(profile.segments).toHaveLength(2)
-    expect(profile.metrics.find((item) => item.label === '分段 / 训练组')?.value).toBe('2')
+    expect(profile.metrics.find((item) => item.label === '有效组')?.value).toBe('1')
     expect(profile.specialized).toMatchObject({
       kind: 'exercises',
       rows: expect.arrayContaining([]),
     })
     if (profile.specialized.kind !== 'exercises') throw new Error('expected exercises profile')
-    expect(profile.specialized.rows).toHaveLength(2)
+    expect(profile.specialized.rows).toHaveLength(1)
+    expect(profile.specialized.rows[0][0]).toBe('动作名称未提供')
   })
+
+  it('aggregates 10 normalized strength actions from 30 active and 29 rest sets only', () => {
+    const profile = buildActivityProfile(
+      importedActivity('strength'),
+      importedParsed('strength', strengthContractSegments()),
+    )
+    const activeSeconds = profile.composition.find((item) => item.label === '活动')?.value
+    const restSeconds = profile.composition.find((item) => item.label === '休息')?.value
+
+    expect(profile.segments).toHaveLength(59)
+    expect(profile.segments.filter((segment) => segment.label.startsWith('休息'))).toHaveLength(29)
+    expect(activeSeconds).toBeCloseTo(1393.485, 6)
+    expect(restSeconds).toBeCloseTo(2171.271, 6)
+    expect(profile.metrics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ label: '动作数', value: '10' }),
+        expect.objectContaining({ label: '有效组', value: '30' }),
+        expect.objectContaining({ label: '总次数', value: '285' }),
+        expect.objectContaining({ label: '训练容量', value: '3780（部分）' }),
+      ]),
+    )
+    expect(profile.fields).toContainEqual(['segment', '59 个实例'])
+    expect(profile.fields).toContainEqual(['split_summary', '4 个摘要'])
+    expect(profile.specialized.kind).toBe('exercises')
+    if (profile.specialized.kind !== 'exercises') throw new Error('expected exercises profile')
+    expect(profile.specialized.rows).toHaveLength(10)
+    expect(profile.specialized.rows.map((row) => row[0])).toEqual(
+      Array.from({ length: 10 }, (_, index) => `合成动作${index + 1}`),
+    )
+    expect(profile.specialized.rows[0][3]).toContain('3 组自重')
+    expect(profile.specialized.rows[1][3]).toContain('3 组明确 0 kg')
+    expect(profile.specialized.rows[2][3]).toContain('3 组重量未提供')
+    expect(JSON.stringify(profile)).not.toContain("['dirty', 'array']")
+    expect(JSON.stringify(profile)).not.toContain('不应重复')
+  })
+
+  it('shows a normalized climb grade only when the semantic projection marks it available', () => {
+    const messages = splitPairs(1)
+    messages[0] = {
+      ...messages[0],
+      extraData: { sourceMessage: 'split', 69: 999 },
+      semantic: {
+        schemaVersion: 1,
+        sourceMessage: 'split',
+        climb: {
+          gradeStatus: 'available',
+          gradeSystem: 'v_scale',
+          grade: 'V2',
+          outcome: 'complete',
+        },
+      },
+    }
+    const profile = buildActivityProfile(
+      importedActivity('boulder'),
+      importedParsed('boulder', messages),
+    )
+
+    expect(profile.segments[0].details).toEqual(['等级 V2', '已完成'])
+    expect(JSON.stringify(profile)).not.toContain('999')
+  })
+
+  it('prefers semantic source messages and never falls back to split strength instances', () => {
+    const splitOnly: ImportedSegment[] = [
+      {
+        sequence: 0,
+        kind: 'active',
+        label: '不应成为训练组',
+        startTime: null,
+        durationSec: 30,
+        repetitions: 8,
+        weightKg: 20,
+        extraData: { sourceMessage: 'set' },
+        semantic: { schemaVersion: 1, sourceMessage: 'split' },
+      },
+    ]
+
+    const profile = buildActivityProfile(
+      importedActivity('strength'),
+      importedParsed('strength', splitOnly),
+    )
+    expect(profile.segments).toHaveLength(0)
+    expect(profile.fields).toContainEqual(['segment', '0 个实例'])
+  })
+
+  it.each([
+    ['strength', 'split', '文件未提供可验证的 set 训练组'],
+    ['lead', 'set', '文件未提供可验证的 split'],
+    ['boulder', 'set', '文件未提供可验证的 split'],
+  ] as const)(
+    'does not turn a lap into a %s instance when canonical segments are absent',
+    (profileId, nonCanonicalSource, explanation) => {
+      const parsed = importedParsed(profileId, [
+        {
+          sequence: 0,
+          kind: 'active',
+          label: '非规范分段',
+          startTime: null,
+          durationSec: 999,
+          repetitions: 999,
+          weightKg: 999,
+          extraData: { sourceMessage: nonCanonicalSource },
+          semantic: { schemaVersion: 1, sourceMessage: nonCanonicalSource },
+        },
+      ])
+      parsed.laps = [
+        {
+          index: 0,
+          distanceM: 100,
+          durationSec: 60,
+          avgHr: 120,
+          maxHr: 140,
+          avgPaceSecPerKm: 600,
+          avgPowerW: null,
+        },
+      ]
+
+      const profile = buildActivityProfile(importedActivity(profileId), parsed)
+
+      expect(profile.segments).toHaveLength(0)
+      expect(profile.composition).toEqual([
+        { label: '运动', value: 120 },
+        { label: '暂停', value: 60 },
+      ])
+      expect(profile.noLapsReason).toContain(explanation)
+      expect(profile.fields).toContainEqual(['segment', '0 个实例'])
+    },
+  )
 })

@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "description": "Synthetic, de-identified FIT message dictionaries for strength and climbing semantic tests.",
+  "strength": {
+    "exercise_title_mesgs": [
+      {
+        "message_index": 0,
+        "exercise_category": "synthetic_category_a",
+        "exercise_name": 23,
+        "wkt_step_name": "合成动作甲"
+      },
+      {
+        "message_index": 1,
+        "exercise_category": "synthetic_category_b",
+        "exercise_name": 38,
+        "wkt_step_name": "合成动作乙"
+      }
+    ],
+    "workout_step_mesgs": [
+      {
+        "message_index": 0,
+        "exercise_category": "synthetic_category_a",
+        "exercise_name": 23
+      },
+      {
+        "message_index": 1,
+        "intensity": "rest"
+      },
+      {
+        "message_index": 7,
+        "exercise_category": "synthetic_category_b",
+        "exercise_name": 38
+      }
+    ],
+    "set_mesgs": [
+      {
+        "message_index": 40,
+        "wkt_step_index": 0,
+        "set_type": "active",
+        "category": ["synthetic_enum", "synthetic_enum"],
+        "duration": 30.5,
+        "repetitions": 6,
+        "weight": 27000
+      },
+      {
+        "message_index": 41,
+        "wkt_step_index": 1,
+        "set_type": "rest",
+        "duration": 20.25
+      },
+      {
+        "message_index": 42,
+        "wkt_step_index": 7,
+        "set_type": "active",
+        "duration": 18.75,
+        "repetitions": 3,
+        "weight": 0
+      }
+    ],
+    "split_mesgs": [
+      {
+        "message_index": 50,
+        "split_type": "interval_active",
+        "duration": 30.5
+      },
+      {
+        "message_index": 51,
+        "split_type": "interval_rest",
+        "duration": 20.25
+      }
+    ],
+    "split_summary_mesgs": [
+      {
+        "message_index": 60,
+        "split_type": "summary",
+        "duration": 69.5
+      }
+    ]
+  },
+  "climbing": {
+    "split_mesgs": [
+      {
+        "message_index": 0,
+        "split_type": "climb_active",
+        "duration": 30.0,
+        "69": 8,
+        "70": 1,
+        "71": 3,
+        "72": 0,
+        "73": 1
+      },
+      {
+        "message_index": 1,
+        "split_type": "climb_rest",
+        "duration": 15.0
+      }
+    ],
+    "split_summary_mesgs": [
+      {
+        "message_index": 2,
+        "split_type": "summary",
+        "duration": 45.0
+      }
+    ]
+  },
+  "expectedInvariant": {
+    "strengthInstancesComeOnlyFrom": "set",
+    "strengthTitleJoin": "set.wkt_step_index -> workout_step.message_index -> exercise identity -> exercise_title.wkt_step_name",
+    "climbingInstancesComeOnlyFrom": "split",
+    "summaryMessagesAreNeverInstances": true,
+    "unknownNumericFieldsRemainReplayable": true,
+    "unknownNumericFieldsAreNotGradesWithoutEvidence": true,
+    "unknownClimbGradeStatus": "unavailable",
+    "unknownClimbGradeReason": "unknown_profile_field"
+  }
+}
