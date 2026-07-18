@@ -1471,13 +1471,13 @@
         "properties": {
           "password": {
             "maxLength": 512,
-            "minLength": 7,
+            "minLength": 1,
             "title": "Password",
             "type": "string"
           },
           "username": {
             "maxLength": 100,
-            "minLength": 7,
+            "minLength": 1,
             "title": "Username",
             "type": "string"
           }

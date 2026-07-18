@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
-const username = process.env.TRAINLAB_E2E_USERNAME ?? 'owner-user'
-const password = process.env.TRAINLAB_E2E_PASSWORD ?? 'correct-password'
+const username = process.env.TRAINLAB_E2E_USERNAME ?? 'admin'
+const password = process.env.TRAINLAB_E2E_PASSWORD ?? '123456'
 
 async function fillCaptcha(page: import('@playwright/test').Page) {
   const code = (await page.getByTestId('captcha-code').textContent())?.trim() ?? ''
