@@ -22,9 +22,9 @@ backend/scripts/compose.sh --profile test run --build --rm backend-test
 
 ```bash
 backend/scripts/compose.sh up --build -d db backend
-TRAINLAB_DEV_PASSWORD=123456 backend/scripts/compose.sh exec -T \
+TRAINLAB_DEV_PASSWORD=useradmin backend/scripts/compose.sh exec -T \
   -e TRAINLAB_DEV_PASSWORD backend trainlab set-development-owner \
-  --username admin --password-env TRAINLAB_DEV_PASSWORD
+  --username useradmin --password-env TRAINLAB_DEV_PASSWORD
 TRAINLAB_PEER_PASSWORD=correct-password backend/scripts/compose.sh exec -T \
   -e TRAINLAB_PEER_PASSWORD backend trainlab create-user \
   --username peer-user --display-name Peer --password-env TRAINLAB_PEER_PASSWORD

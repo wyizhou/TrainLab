@@ -8,8 +8,8 @@ afterEach(() => {
 })
 
 async function fillValidCredentials(user: ReturnType<typeof userEvent.setup>) {
-  await user.type(screen.getByLabelText('用户名'), 'admin')
-  await user.type(screen.getByLabelText('密码'), '123456')
+  await user.type(screen.getByLabelText('用户名'), 'useradmin')
+  await user.type(screen.getByLabelText('密码'), 'useradmin')
   const code = screen.getByTestId('captcha-code').textContent ?? ''
   await user.type(screen.getByLabelText('验证码'), code)
   return code
@@ -23,7 +23,7 @@ describe('LoginForm', () => {
     expect(screen.getByLabelText('验证码')).toBeInTheDocument()
     expect(screen.getByTestId('captcha-code')).toHaveTextContent(/^\d{4}$/)
     expect(screen.getByRole('button', { name: '登录' })).toBeInTheDocument()
-    expect(screen.getByText('开发默认账号见本地运行说明')).toBeInTheDocument()
+    expect(screen.getByText('账号和密码均需大于 6 位')).toBeInTheDocument()
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
@@ -38,22 +38,24 @@ describe('LoginForm', () => {
     expect(screen.getByTestId('captcha-code')).toHaveTextContent('5500')
   })
 
-  it('rejects an empty username without authenticating', async () => {
+  it('rejects a username with no more than 6 characters', async () => {
     const user = userEvent.setup()
     const onAuthenticated = vi.fn()
     render(<LoginForm onAuthenticated={onAuthenticated} />)
+    await user.type(screen.getByLabelText('用户名'), '123456')
     await user.click(screen.getByRole('button', { name: '登录' }))
-    expect(screen.getByRole('alert')).toHaveTextContent('请输入账号')
+    expect(screen.getByRole('alert')).toHaveTextContent('账号必须大于 6 位')
     expect(onAuthenticated).not.toHaveBeenCalled()
   })
 
-  it('rejects an empty password', async () => {
+  it('rejects a password with no more than 6 characters', async () => {
     const user = userEvent.setup()
     const onAuthenticated = vi.fn()
     render(<LoginForm onAuthenticated={onAuthenticated} />)
-    await user.type(screen.getByLabelText('用户名'), 'admin')
+    await user.type(screen.getByLabelText('用户名'), 'useradmin')
+    await user.type(screen.getByLabelText('密码'), '123456')
     await user.click(screen.getByRole('button', { name: '登录' }))
-    expect(screen.getByRole('alert')).toHaveTextContent('请输入密码')
+    expect(screen.getByRole('alert')).toHaveTextContent('密码必须大于 6 位')
     expect(onAuthenticated).not.toHaveBeenCalled()
   })
 
@@ -61,8 +63,8 @@ describe('LoginForm', () => {
     const user = userEvent.setup()
     const onAuthenticated = vi.fn()
     render(<LoginForm onAuthenticated={onAuthenticated} />)
-    await user.type(screen.getByLabelText('用户名'), 'admin')
-    await user.type(screen.getByLabelText('密码'), '123456')
+    await user.type(screen.getByLabelText('用户名'), 'useradmin')
+    await user.type(screen.getByLabelText('密码'), 'useradmin')
     await user.type(screen.getByLabelText('验证码'), '0000') // code is always 1000-9999
     await user.click(screen.getByRole('button', { name: '登录' }))
     expect(screen.getByRole('alert')).toHaveTextContent('验证码错误')
@@ -77,7 +79,7 @@ describe('LoginForm', () => {
     await user.click(screen.getByRole('button', { name: '登录' }))
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     expect(onAuthenticated).toHaveBeenCalledOnce()
-    expect(onAuthenticated).toHaveBeenCalledWith('admin', '123456')
+    expect(onAuthenticated).toHaveBeenCalledWith('useradmin', 'useradmin')
   })
 
   it('submits on Enter within the form', async () => {

@@ -5,8 +5,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class LoginRequest(BaseModel):
-    username: str = Field(min_length=1, max_length=100)
-    password: str = Field(min_length=1, max_length=512)
+    username: str = Field(min_length=7, max_length=100)
+    password: str = Field(min_length=7, max_length=512)
 
 
 class UserResponse(BaseModel):

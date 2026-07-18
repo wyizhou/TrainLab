@@ -132,8 +132,9 @@ def test_validation_error_does_not_echo_password(
 ) -> None:
     response = client.post(
         "/api/v1/auth/login",
-        json={"username": "", "password": "secret"},
+        json={"username": "short1", "password": "secret"},
         headers=origin_headers,
     )
     assert response.status_code == 422
+    assert "short1" not in response.text
     assert "secret" not in response.text
