@@ -130,10 +130,10 @@ jobs:
           http://localhost:8000/readyz
       - name: Initialize the owner
         env:
-          TRAINLAB_OWNER_PASSWORD: "123456"
+          TRAINLAB_OWNER_PASSWORD: useradmin
         run: >-
           backend/scripts/compose.sh exec -T -e TRAINLAB_OWNER_PASSWORD backend
-          trainlab set-development-owner --username admin --password-env TRAINLAB_OWNER_PASSWORD
+          trainlab set-development-owner --username useradmin --password-env TRAINLAB_OWNER_PASSWORD
       - name: Initialize the cross-user test account
         env:
           TRAINLAB_PEER_PASSWORD: correct-password
@@ -146,11 +146,11 @@ jobs:
         env:
           TRAINLAB_RESET_PASSWORD: release-reset-password
         run: |
-          backend/scripts/compose.sh exec -T -e TRAINLAB_RESET_PASSWORD backend trainlab reset-password --username admin --password-env TRAINLAB_RESET_PASSWORD
-          old_status=$(curl --silent --output /dev/null --write-out '%{http_code}' -H 'Origin: http://localhost:8000' -H 'Content-Type: application/json' --data '{"username":"admin","password":"123456"}' http://localhost:8000/api/v1/auth/login)
+          backend/scripts/compose.sh exec -T -e TRAINLAB_RESET_PASSWORD backend trainlab reset-password --username useradmin --password-env TRAINLAB_RESET_PASSWORD
+          old_status=$(curl --silent --output /dev/null --write-out '%{http_code}' -H 'Origin: http://localhost:8000' -H 'Content-Type: application/json' --data '{"username":"useradmin","password":"useradmin"}' http://localhost:8000/api/v1/auth/login)
           test "$old_status" = "401"
-          curl --fail --silent --output /dev/null --cookie-jar /tmp/trainlab-release-cookies -H 'Origin: http://localhost:8000' -H 'Content-Type: application/json' --data "{\"username\":\"admin\",\"password\":\"${TRAINLAB_RESET_PASSWORD}\"}" http://localhost:8000/api/v1/auth/login
-          backend/scripts/compose.sh exec -T backend trainlab revoke-sessions --username admin
+          curl --fail --silent --output /dev/null --cookie-jar /tmp/trainlab-release-cookies -H 'Origin: http://localhost:8000' -H 'Content-Type: application/json' --data "{\"username\":\"useradmin\",\"password\":\"${TRAINLAB_RESET_PASSWORD}\"}" http://localhost:8000/api/v1/auth/login
+          backend/scripts/compose.sh exec -T backend trainlab revoke-sessions --username useradmin
           revoked_status=$(curl --silent --output /dev/null --write-out '%{http_code}' --cookie /tmp/trainlab-release-cookies http://localhost:8000/api/v1/auth/session)
           test "$revoked_status" = "401"
       - name: Show logs after failure
