@@ -1,6 +1,6 @@
 # TrainLab v0.1.1 发布计划
 
-- 状态：发布候选准备中
+- 状态：已完成并正式发布（2026-07-18）
 - 产品/前端版本：`v0.1.1` / package `0.1.1`
 - 后端组件版本：`0.3.1`
 - 设计基线：v3.4 / design_rev 7
@@ -61,3 +61,9 @@
 任一门禁失败、旧备份不再兼容、OpenAPI/版本不一致、PR 冲突、GitHub checks 失败、tag 已存在但指向其他提交、发布权限不足或主分支不是最新，都必须停止，不能强推、移动 tag 或把候选写成已发布。
 
 候选代码合并后但 tag 前发现问题，使用新的修复 PR；不得重写 `main`。tag/Release 创建后发现问题，保留不可移动 tag，发布新的补丁版本。含用户数据的运行环境回滚继续使用同停写点双卷备份，不使用 Alembic downgrade。
+
+## 8. 完成证据
+
+- 候选提交 `0007dca05afbfbe19bd2e6a68a944f74361f4d62` 通过本地完整门禁和独立 Validator，无 P0/P1/P2。
+- [PR #16](https://github.com/wyizhou/TrainLab/pull/16) 的 backend、frontend、frontend-visual、fullstack 和 image 五项检查全部成功，并合并为 `ed8b42b85bc3e6b167e6718e61568f95fcaf7d1b`。
+- annotated tag `v0.1.1` 精确指向上述合并提交；[GitHub Release v0.1.1](https://github.com/wyizhou/TrainLab/releases/tag/v0.1.1) 已于 2026-07-18 发布，非草稿、非预发布。
