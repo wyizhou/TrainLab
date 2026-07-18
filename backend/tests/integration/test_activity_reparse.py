@@ -1,17 +1,22 @@
 import hashlib
+import threading
+import time
 import uuid
 from dataclasses import replace
 from pathlib import Path
 
 import pytest
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from trainlab.db.models.activity import Activity, ActivityImport, ActivitySegment
 from trainlab.db.models.user import User
 from trainlab.importers.fit import parse_fit_file
+from trainlab.services.activity_import import ImportStateError, replay_import
+from trainlab.services.activity_metadata import update_activity_name
 from trainlab.services.activity_reparse import ActivityReparseError, reparse_fit_imports
 from trainlab.services.activity_storage import PrivateActivityStorage
+from trainlab.services.import_management import DeleteTarget, delete_user_import
 
 FIT_FIXTURE = (
     Path(__file__).parents[3] / "frontend" / "tests" / "fixtures" / "614797758_ACTIVITY.fit"
@@ -67,6 +72,58 @@ def _seed_import(
         db.add(activity)
         db.commit()
         return imported.id, activity.id
+
+
+def _wait_for_postgres_lock(engine, pid: int, done: threading.Event) -> None:  # type: ignore[no-untyped-def]
+    deadline = time.monotonic() + 10
+    with engine.connect() as observer:
+        while time.monotonic() < deadline:
+            wait_type = observer.scalar(
+                text("SELECT wait_event_type FROM pg_stat_activity WHERE pid = :pid"),
+                {"pid": pid},
+            )
+            if wait_type == "Lock":
+                return
+            if done.is_set():
+                raise AssertionError("contending transaction completed before waiting on a lock")
+    raise AssertionError("contending transaction did not enter a PostgreSQL lock wait")
+
+
+def _start_reparse_holding_projection_locks(
+    engine,  # type: ignore[no-untyped-def]
+    storage: PrivateActivityStorage,
+    user: User,
+    import_id: uuid.UUID,
+    monkeypatch: pytest.MonkeyPatch,
+) -> tuple[threading.Thread, threading.Event, list[BaseException]]:
+    from trainlab.services.activity_import import replace_activity_projection_in_place
+
+    locks_held = threading.Event()
+    release = threading.Event()
+    errors: list[BaseException] = []
+
+    def hold_locks(db, imported, activity, parsed):  # type: ignore[no-untyped-def]
+        locks_held.set()
+        if not release.wait(timeout=10):
+            raise AssertionError("test did not release reparse transaction")
+        replace_activity_projection_in_place(db, imported, activity, parsed)
+
+    monkeypatch.setattr(
+        "trainlab.services.activity_reparse.replace_activity_projection_in_place",
+        hold_locks,
+    )
+
+    def run_reparse() -> None:
+        try:
+            with Session(engine) as db:
+                reparse_fit_imports(db, storage, user.username, [import_id], apply=True)
+        except BaseException as exc:  # pragma: no cover - surfaced by assertion
+            errors.append(exc)
+
+    thread = threading.Thread(target=run_reparse)
+    thread.start()
+    assert locks_held.wait(timeout=10)
+    return thread, release, errors
 
 
 def test_complete_reparse_defaults_to_dry_run_then_preserves_identity_and_override(
@@ -294,6 +351,168 @@ def test_reparse_fences_concurrent_rename_delete_and_retry(
         else:
             assert imported.status == "processing"
             assert imported.processing_token is not None
+
+
+def test_real_rename_waits_for_reparse_import_then_activity_locks(
+    engine, settings, user: User, monkeypatch: pytest.MonkeyPatch
+) -> None:  # type: ignore[no-untyped-def]
+    storage = PrivateActivityStorage(settings.private_storage_root)
+    import_id, activity_id = _seed_import(
+        engine,
+        storage,
+        user,
+        FIT_FIXTURE.read_bytes(),
+        title_override="Before reparse",
+    )
+    reparse_thread, release, reparse_errors = _start_reparse_holding_projection_locks(
+        engine, storage, user, import_id, monkeypatch
+    )
+    contender_done = threading.Event()
+    pid_ready = threading.Event()
+    contender_pid: list[int] = []
+    contender_errors: list[BaseException] = []
+
+    def rename() -> None:
+        try:
+            with Session(engine) as db:
+                contender_pid.append(int(db.scalar(text("SELECT pg_backend_pid()"))))
+                pid_ready.set()
+                update_activity_name(db, user.id, activity_id, "After reparse")
+        except BaseException as exc:  # pragma: no cover - surfaced by assertion
+            contender_errors.append(exc)
+        finally:
+            contender_done.set()
+
+    contender = threading.Thread(target=rename)
+    contender.start()
+    assert pid_ready.wait(timeout=10)
+    _wait_for_postgres_lock(engine, contender_pid[0], contender_done)
+    release.set()
+    contender.join(timeout=10)
+    reparse_thread.join(timeout=10)
+
+    assert not contender.is_alive()
+    assert not reparse_thread.is_alive()
+    assert not contender_errors
+    assert not reparse_errors
+    with Session(engine) as db:
+        imported = db.get(ActivityImport, import_id)
+        activity = db.get(Activity, activity_id)
+        assert imported is not None and activity is not None
+        assert imported.title_override == "After reparse"
+        assert activity.id == activity_id
+        assert activity.source_import_id == import_id
+
+
+def test_real_delete_waits_for_reparse_then_safely_removes_import(
+    engine, settings, user: User, monkeypatch: pytest.MonkeyPatch
+) -> None:  # type: ignore[no-untyped-def]
+    storage = PrivateActivityStorage(settings.private_storage_root)
+    import_id, activity_id = _seed_import(engine, storage, user, FIT_FIXTURE.read_bytes())
+    reparse_thread, release, reparse_errors = _start_reparse_holding_projection_locks(
+        engine, storage, user, import_id, monkeypatch
+    )
+    contender_done = threading.Event()
+    pid_ready = threading.Event()
+    contender_pid: list[int] = []
+    contender_errors: list[BaseException] = []
+
+    def delete_import() -> None:
+        try:
+            with Session(engine) as db:
+                contender_pid.append(int(db.scalar(text("SELECT pg_backend_pid()"))))
+                pid_ready.set()
+                delete_user_import(
+                    db,
+                    storage,
+                    user.id,
+                    DeleteTarget(import_id=import_id),
+                    stale_minutes=15,
+                )
+        except BaseException as exc:  # pragma: no cover - surfaced by assertion
+            contender_errors.append(exc)
+        finally:
+            contender_done.set()
+
+    contender = threading.Thread(target=delete_import)
+    contender.start()
+    assert pid_ready.wait(timeout=10)
+    _wait_for_postgres_lock(engine, contender_pid[0], contender_done)
+    release.set()
+    contender.join(timeout=10)
+    reparse_thread.join(timeout=10)
+
+    assert not contender.is_alive()
+    assert not reparse_thread.is_alive()
+    assert not contender_errors
+    assert not reparse_errors
+    with Session(engine) as db:
+        assert db.get(ActivityImport, import_id) is None
+        assert db.get(Activity, activity_id) is None
+
+
+def test_real_replay_waits_for_reparse_then_rejects_completed_import(
+    engine, settings, user: User, monkeypatch: pytest.MonkeyPatch
+) -> None:  # type: ignore[no-untyped-def]
+    storage = PrivateActivityStorage(settings.private_storage_root)
+    import_id, activity_id = _seed_import(
+        engine,
+        storage,
+        user,
+        FIT_FIXTURE.read_bytes(),
+        title_override="Persistent title",
+    )
+    with Session(engine) as db:
+        imported = db.get(ActivityImport, import_id)
+        assert imported is not None
+        imported.status = "partial"
+        db.commit()
+    reparse_thread, release, reparse_errors = _start_reparse_holding_projection_locks(
+        engine, storage, user, import_id, monkeypatch
+    )
+    contender_done = threading.Event()
+    pid_ready = threading.Event()
+    contender_pid: list[int] = []
+    replay_codes: list[str] = []
+    contender_errors: list[BaseException] = []
+
+    def replay() -> None:
+        try:
+            with Session(engine) as db:
+                imported = db.get(ActivityImport, import_id)
+                assert imported is not None
+                contender_pid.append(int(db.scalar(text("SELECT pg_backend_pid()"))))
+                pid_ready.set()
+                replay_import(db, storage, imported, stale_minutes=15)
+        except ImportStateError as exc:
+            replay_codes.append(exc.code)
+        except BaseException as exc:  # pragma: no cover - surfaced by assertion
+            contender_errors.append(exc)
+        finally:
+            contender_done.set()
+
+    contender = threading.Thread(target=replay)
+    contender.start()
+    assert pid_ready.wait(timeout=10)
+    _wait_for_postgres_lock(engine, contender_pid[0], contender_done)
+    release.set()
+    contender.join(timeout=10)
+    reparse_thread.join(timeout=10)
+
+    assert not contender.is_alive()
+    assert not reparse_thread.is_alive()
+    assert not contender_errors
+    assert not reparse_errors
+    assert replay_codes == ["import_not_retryable"]
+    with Session(engine) as db:
+        imported = db.get(ActivityImport, import_id)
+        activity = db.get(Activity, activity_id)
+        assert imported is not None and activity is not None
+        assert imported.status == "complete"
+        assert imported.processing_token is None
+        assert imported.title_override == "Persistent title"
+        assert activity.id == activity_id
+        assert activity.source_import_id == import_id
 
 
 def test_reparse_rejects_cross_user_and_raw_file_mismatch(engine, settings, user: User) -> None:  # type: ignore[no-untyped-def]

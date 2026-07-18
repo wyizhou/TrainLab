@@ -19,6 +19,7 @@ from trainlab.importers.fit import (
     parse_fit_file,
 )
 from trainlab.services.activity_import import replace_activity_projection_in_place
+from trainlab.services.activity_locking import lock_activity_owner
 from trainlab.services.activity_storage import PrivateActivityStorage, StorageError
 
 REPARSEABLE_STATUSES = frozenset({"complete", "partial"})
@@ -207,6 +208,8 @@ def reparse_fit_imports(
 
         ordered_ids = [item.snapshot.import_id for item in prepared]
         expected_user_id = prepared[0].snapshot.user_id
+        if lock_activity_owner(db, expected_user_id) is None:
+            raise ActivityReparseError("import_changed_concurrently", "导入记录在预检后发生变化")
         locked_imports = db.scalars(
             select(ActivityImport)
             .where(

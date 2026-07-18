@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from trainlab.db.models.activity import Activity, ActivityImport
+from trainlab.services.activity_locking import lock_activity_owner
 from trainlab.services.activity_states import VISIBLE_ACTIVITY_STATUSES
 
 
@@ -32,21 +33,35 @@ def update_activity_name(
     activity_id: uuid.UUID,
     name: str | None,
 ) -> tuple[Activity, ActivityImport]:
-    row = db.execute(
-        select(Activity, ActivityImport)
-        .join(ActivityImport, ActivityImport.id == Activity.source_import_id)
+    if lock_activity_owner(db, user_id) is None:
+        raise ActivityMetadataError("not_found", "运动记录不存在")
+    imported = db.scalar(
+        select(ActivityImport)
+        .join(Activity, Activity.source_import_id == ActivityImport.id)
         .where(
             Activity.id == activity_id,
             Activity.user_id == user_id,
             ActivityImport.user_id == user_id,
             ActivityImport.status.in_(VISIBLE_ACTIVITY_STATUSES),
         )
-        .with_for_update()
-    ).one_or_none()
-    if row is None:
+        .execution_options(populate_existing=True)
+        .with_for_update(of=ActivityImport)
+    )
+    if imported is None:
         raise ActivityMetadataError("not_found", "运动记录不存在")
-
-    activity, imported = row
+    activity = db.scalar(
+        select(Activity)
+        .where(
+            Activity.id == activity_id,
+            Activity.user_id == user_id,
+            Activity.source_import_id == imported.id,
+        )
+        .execution_options(populate_existing=True)
+        .with_for_update()
+    )
+    if activity is None:
+        db.rollback()
+        raise ActivityMetadataError("not_found", "运动记录不存在")
     imported.title_override = normalize_activity_name(name)
     db.commit()
     db.refresh(activity)
