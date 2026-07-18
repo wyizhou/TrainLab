@@ -9,8 +9,8 @@ from sqlalchemy.orm import Session
 
 from trainlab.db.base import utc_now
 from trainlab.db.models.activity import Activity, ActivityImport
-from trainlab.db.models.user import User
 from trainlab.schemas.import_management import ImportListItem, ImportListPage
+from trainlab.services.activity_locking import lock_activity_owner
 from trainlab.services.activity_states import (
     DELETE_RECOVERABLE_STATUSES,
     PARSE_RETRYABLE_STATUSES,
@@ -122,7 +122,7 @@ def list_user_imports(
 
 
 def _lock_user(db: Session, user_id: uuid.UUID) -> None:
-    user = db.scalar(select(User).where(User.id == user_id).with_for_update())
+    user = lock_activity_owner(db, user_id)
     if user is None:
         raise ImportManagementError("not_found", "资源不存在")
 

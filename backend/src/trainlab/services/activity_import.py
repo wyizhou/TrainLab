@@ -20,7 +20,6 @@ from trainlab.db.models.activity import (
     ActivitySegment,
     ActivitySession,
 )
-from trainlab.db.models.user import User
 from trainlab.importers.fit import (
     PARSER_NAME,
     PARSER_VERSION,
@@ -28,6 +27,7 @@ from trainlab.importers.fit import (
     ParsedFitActivity,
     parse_fit_file,
 )
+from trainlab.services.activity_locking import lock_activity_owner
 from trainlab.services.activity_states import (
     DELETE_RECOVERABLE_STATUSES,
     PARSE_RETRYABLE_STATUSES,
@@ -97,7 +97,7 @@ def _lock_user_and_cleanup_orphans(
     storage: PrivateActivityStorage,
     user_id: uuid.UUID,
 ) -> None:
-    user = db.scalar(select(User).where(User.id == user_id).with_for_update())
+    user = lock_activity_owner(db, user_id)
     if user is None:
         raise ImportInternalError("import_registration_failed", "FIT 导入登记失败")
     referenced_keys = set(
@@ -390,6 +390,7 @@ def _lock_owned_attempt(
     import_id: uuid.UUID,
     processing_token: uuid.UUID,
 ) -> ActivityImport:
+    owner = lock_activity_owner(db, user_id)
     locked = db.scalar(
         select(ActivityImport)
         .where(ActivityImport.id == import_id, ActivityImport.user_id == user_id)
@@ -397,7 +398,8 @@ def _lock_owned_attempt(
         .with_for_update()
     )
     if (
-        locked is None
+        owner is None
+        or locked is None
         or locked.status != "processing"
         or locked.processing_token != processing_token
     ):
@@ -472,6 +474,7 @@ def replay_import(
     stale_minutes: int,
 ) -> ImportResult:
     try:
+        owner = lock_activity_owner(db, import_model.user_id)
         locked = db.scalar(
             select(ActivityImport)
             .where(
@@ -484,7 +487,7 @@ def replay_import(
     except Exception:
         _safe_rollback(db)
         raise ImportInternalError("import_state_unavailable", "FIT 导入状态暂时不可用") from None
-    if locked is None:
+    if owner is None or locked is None:
         raise ImportStateError("import_not_found", "导入记录不存在")
     now = utc_now()
     if locked.status in DELETE_RECOVERABLE_STATUSES:
