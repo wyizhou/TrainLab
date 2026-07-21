@@ -1,1 +1,0 @@
-"""Frontend static-serving helpers."""

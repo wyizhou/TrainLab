@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>com.trainlab.ingest</string>
+  <key>ProgramArguments</key><array><string>@PROJECT_ROOT@/.venv/bin/python</string><string>@PROJECT_ROOT@/scripts/ingest_daemon.py</string></array>
+  <key>WorkingDirectory</key><string>@PROJECT_ROOT@</string>
+  <key>EnvironmentVariables</key><dict><key>TRAINLAB_CONFIG</key><string>@PROJECT_ROOT@/config/trainlab.production.yaml</string></dict>
+  <key>RunAtLoad</key><true/><key>KeepAlive</key><true/><key>ThrottleInterval</key><integer>10</integer>
+  <key>StandardOutPath</key><string>@PROJECT_ROOT@/logs/ingest.out.log</string>
+  <key>StandardErrorPath</key><string>@PROJECT_ROOT@/logs/ingest.err.log</string>
+</dict></plist>

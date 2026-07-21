@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trainlab.local/schemas/runtime-result-v1.json",
+  "title": "TrainLab runtime result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run_id", "status", "mail", "report_audit", "processed_feedback", "fact_updates", "compression_summaries", "warnings"],
+  "properties": {
+    "schema_version": {"type": "integer", "const": 1},
+    "run_id": {"type": "string"},
+    "status": {"type": "string", "enum": ["sent", "already_sent", "failed"]},
+    "mail": {
+      "type": "object",
+      "required": ["message_id", "thread_id", "label", "recipient"],
+      "properties": {
+        "message_id": {"type": ["string", "null"]},
+        "thread_id": {"type": ["string", "null"]},
+        "label": {"type": "string", "const": "TrainLab"},
+        "recipient": {"type": "string", "const": "self"}
+      },
+      "additionalProperties": false
+    },
+    "report_audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["primary_training", "primary_training_count", "running_plan", "climbing_text", "strength_items", "strength_stop_conditions", "technical_review_activity_ids", "heart_rate_target_used", "body_in_stdout"],
+      "properties": {
+        "primary_training": {"type": ["string", "null"], "enum": ["running", "climbing", "strength_training", "rest", null]},
+        "primary_training_count": {"type": "integer", "minimum": 0, "maximum": 1},
+        "running_plan": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "course_type": {"type": "string"},
+            "target_zone": {"type": ["string", "null"], "enum": ["zone_1", "zone_2", "zone_3", "zone_4", "zone_5", null]},
+            "prescribed_rpe": {"type": ["number", "null"], "minimum": 0, "maximum": 10},
+            "work_intervals": {
+              "type": ["object", "null"],
+              "additionalProperties": false,
+              "required": ["repetitions", "work_seconds", "recovery_seconds", "recovery_zone", "total_work_seconds"],
+              "properties": {
+                "repetitions": {"type": "integer", "minimum": 1},
+                "work_seconds": {"type": "integer", "minimum": 1},
+                "recovery_seconds": {"type": "integer", "minimum": 0},
+                "recovery_zone": {"type": "string", "enum": ["zone_1", "zone_2"]},
+                "total_work_seconds": {"type": "integer", "minimum": 1}
+              }
+            },
+            "warmup": {"type": "string"},
+            "main_set": {"type": "string"},
+            "cooldown": {"type": "string"},
+            "total_volume": {"type": "string"},
+            "planned_duration_minutes": {"type": "number", "exclusiveMinimum": 0, "maximum": 300},
+            "heart_rate_target": {"type": ["string", "null"]},
+            "effort": {"type": "string"},
+            "stop_conditions": {"type": "string"}
+          },
+          "required": ["course_type", "target_zone", "prescribed_rpe", "work_intervals", "warmup", "main_set", "cooldown", "total_volume", "planned_duration_minutes", "heart_rate_target", "effort", "stop_conditions"]
+        },
+        "climbing_text": {"type": ["string", "null"], "pattern": "^今日攀岩"},
+        "strength_items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["exercise", "youtube_url", "youtube_kind"],
+            "properties": {
+              "exercise": {"type": "string"},
+              "youtube_url": {"type": "string", "pattern": "^https://(www\\.)?youtube\\.com/"},
+              "youtube_kind": {"type": "string", "enum": ["video", "search"]}
+            }
+          }
+        },
+        "strength_stop_conditions": {"type": ["string", "null"]},
+        "technical_review_activity_ids": {"type": "array", "items": {"type": "integer"}},
+        "heart_rate_target_used": {"type": "boolean"},
+        "body_in_stdout": {"type": "boolean", "const": false}
+      }
+    },
+    "processed_feedback": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["feedback_id", "gmail_message_id", "gmail_thread_id", "received_at_utc", "reply_local_date", "body_text", "subject", "categories", "original_text", "scope"],
+        "properties": {
+          "feedback_id": {"type": ["integer", "null"]},
+          "gmail_message_id": {"type": "string"},
+          "gmail_thread_id": {"type": "string"},
+          "received_at_utc": {"type": "string"},
+          "reply_local_date": {"type": "string"},
+          "body_text": {"type": "string"},
+          "subject": {"type": ["string", "null"]},
+          "categories": {"type": "array", "items": {"type": "string"}},
+          "original_text": {"type": "string"},
+          "scope": {"type": "string", "enum": ["temporary", "long_term"]}
+        }
+      }
+    },
+    "fact_updates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["fact_type", "fact_key", "value", "scope", "effective_local_date", "expires_local_date", "source_feedback_id", "source_gmail_message_id"],
+        "properties": {
+          "fact_type": {"type": "string"},
+          "fact_key": {"type": "string"},
+          "value": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["report", "red_flag"],
+            "properties": {
+              "report": {"type": "string"},
+              "red_flag": {"type": "boolean"}
+            }
+          },
+          "scope": {"type": "string", "enum": ["temporary", "long_term"]},
+          "effective_local_date": {"type": "string"},
+          "expires_local_date": {"type": ["string", "null"]},
+          "source_feedback_id": {"type": ["integer", "null"]},
+          "source_gmail_message_id": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "compression_summaries": {"type": "array", "items": {"type": "string"}},
+    "warnings": {"type": "array", "items": {"type": "string"}}
+  }
+}

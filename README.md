@@ -1,113 +1,64 @@
 # TrainLab
 
-TrainLab 是一个运动数据分析项目。当前正式产品版本为 `v0.1.1`：前端覆盖 AI 分析、运动记录、通用运动详情、健康记录、佳明连接器、文件上传和设置页面；后端提供真实账号登录、用户归属的本地 FIT 上传与持久化、重命名、导入记录、可恢复删除、存储配额、数据库迁移和前后端一体化运行。FIT 详情使用稳定的训练组/攀岩段语义投影，未知 profile 字段会被保留而不会被猜测。佳明在线同步和 AI 仍保持模拟或未接入。
+TrainLab 是一个本地优先、双阶段 Agent Harness：开发阶段负责同步、
+导入、回归与生产验收；运行阶段只接收经过 Schema 限界的七天上下文，并通过
+Gmail 向已认证账号本人发送带内联样式的中文训练邮件。
 
-项目最初用于实验 Claude Code 三角色开发 harness，目前已迁移为 Codex 三阶段开发模式。规划、实现、验收是每个任务的固定阶段；独立 Planner / Validator 是否介入由任务风险决定，主 Agent 负责实现、集成和协调。大型任务在公共基础验收后，可将真正独立的交付单元分配到各自分支、worktree 和子 Agent。
+当前生产运行器仅为 Codex，使用不指定模型名称的 `codex exec --ephemeral`，并在
+临时目录中进行无状态运行。失败后系统先按 run-id 查询 Gmail：若已经发送则补记
+回执，若没有发送则记录失败，不调用其他模型。
 
-## 当前状态
+## 固定数据路径
 
-- 当前产品发布信息、范围和验证结果：`docs/releases/v0.1.1.md`；正式发布见 [GitHub Release v0.1.1](https://github.com/wyizhou/TrainLab/releases/tag/v0.1.1)。上一正式版本保留在 `docs/releases/v0.1.0.md`。
-- 机器可读的当前实现基线、设计基线和下一里程碑：`docs/project-state.json`。
-- 当前阶段的功能要求、产品边界、已知差异和完成定义：`docs/backlog.md`。
-- 真实 FIT 详情纠错、等级证据门和安全批量重解析：`docs/plans/fit-detail-corrections.md`。
-- 带日期的项目背景与交接快照：`项目交接文档.md`。
+- 健康表：`source/Health.xlsx`
+- 运动文件：`source/HealthFit/*.fit`
+- SQLite：`data.db`
 
-动态状态不在 Agent 规则中重复维护，以免版本推进后留下互相冲突的信息。
+Excel 指标和 FIT 传感器均采用通用键值模型。文件内容 SHA-256、FIT session UUID/
+后备指纹和 Excel 自然键共同保证增量导入与重命名去重；原始证据不会被覆盖。
 
-## 技术栈
+## 本地开发与诊断
 
-前端：
-
-- React 18 + TypeScript + Vite
-- Vitest + Testing Library
-- Playwright
-- ESLint + Prettier + Stylelint
-- Garmin FIT SDK
-
-后端：
-
-- Python 3.12 + FastAPI
-- SQLAlchemy 2 + PostgreSQL 17 + Alembic
-- Garmin FIT SDK 与私有原文件存储
-- uv + Ruff + mypy + pytest
-- Docker Compose
-
-## 本地运行
-
-完整产品推荐使用 Docker Compose：
-
-```bash
-backend/scripts/compose.sh up --build -d db backend
-TRAINLAB_DEV_PASSWORD=useradmin backend/scripts/compose.sh exec -T \
-  -e TRAINLAB_DEV_PASSWORD backend trainlab set-development-owner \
-  --username useradmin --password-env TRAINLAB_DEV_PASSWORD
+```sh
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.lock
+.venv/bin/python -m pip install -e .
+.venv/bin/trainlab ingest
+.venv/bin/trainlab prepare --slot morning
+.venv/bin/trainlab run --slot morning
+.venv/bin/pytest
 ```
 
-开发期间的固定本机登录凭据为 `useradmin / useradmin`，验证码输入登录页显示的 4 位数字。账号和密码均严格执行大于 6 位规则；该公开凭据只允许用于 Compose 的 `development` 环境，生产或可被其他设备访问的环境禁止使用。完整规则、恢复旧备份后的重新配置命令和安全边界见 `docs/runbooks/local-development.md`。默认地址：`http://localhost:8000/`。Compose 只绑定 `127.0.0.1`，当前版本仅支持本机 HTTP，不支持公网、TLS 或高可用部署。前端单独开发仍可运行 `npm --prefix frontend run dev`，默认地址为 `http://localhost:5173/`。
+默认 `mail.mode: fake`，测试邮件保存在忽略提交的 `state/fake_gmail.json`。即使没有
+新数据也会生成邮件；命令行只输出内部 JSON 回执，不输出报告正文。
 
-常用检查：
+公共命令为 `trainlab doctor|sync|ingest|prepare|run|watchdog`；`scheduler`、
+`deploy` 和 `finalize-production` 用于运维及生产切换。
 
-```bash
-npm --prefix frontend run typecheck
-npm --prefix frontend run lint
-npm --prefix frontend run test
-npm --prefix frontend run e2e
-npm --prefix frontend run build
-backend/scripts/check.sh
-python3 backend/scripts/test_release_backup_tools.py
-npm --prefix frontend run e2e:fullstack
-```
+## 生产状态与部署门
 
-Compose 使用独立命名卷保存 PostgreSQL 数据和私有 FIT 原文件；普通 `down` 会保留两者，`down -v` 会同时删除，使用前必须确认已经通过 `backend/scripts/backup_release.py` 取得同停写点双卷备份。恢复、回滚和隔离演练见 `docs/runbooks/backup-restore.md`。
+生产调度默认关闭。必须先完成以下项目，`trainlab doctor` 才会通过：
 
-本机忘记密码时使用 `trainlab reset-password --username <name>`；需要恢复固定开发凭据时使用 `set-development-owner`；只需强制退出全部设备时使用 `trainlab revoke-sessions --username <name>`。这些命令只在服务器 CLI 提供，不新增浏览器找回密码或会话管理 UI，详细安全用法见 `docs/runbooks/local-development.md`。
+1. 按 `references/rclone_setup.md` 安装锁定版本 rclone 并填写远端目录。
+2. 按实际情况填写 `config/profile.yaml`；其中没有固定训练时间，系统不会指定几点训练。
+   心率 Zone 与进阶门槛不属于个人参数，统一保存在 `config/running_policy.yaml`，详见
+   `references/heart_rate_zone_policy.zh-CN.md`。全部跑步编排、恢复、攀岩、力量和
+   反馈默认策略汇总见 `references/default_strategy_summary.zh-CN.md`。力量建议采用
+   不依赖历史的动作模式，只给有益于跑步和攀岩的动作及已检查链接，不输出组次或公斤数。
+3. 按 `references/gmail_mcp_setup.md` 为 Codex 和确定性 watchdog 客户端绑定
+   TrainLab 受限 Gmail MCP 五项能力；运行代理不暴露通用 Gmail 工具。
+4. 将 `mail.mode` 改为 `mcp`，将 `production.enabled` 改为 `true`。
+5. 完成 Codex 真实 self-send/搜索/标签测试和 watchdog 故障—恢复测试，
+   将证据写入 `state/production_acceptance.json`。
+6. 执行 `trainlab finalize-production`。只有此命令会把开发 Harness 标为过期并移入
+   `archive/`；随后 `trainlab deploy --enable` 才允许启用 launchd/systemd 定时器。
 
-私有原文件默认按用户限制为 5 GiB、10,000 个；孤儿文件审计使用 `backend/scripts/compose.sh exec backend trainlab reconcile-storage`，该命令默认 dry-run。删除动作、`--apply` 清理和 `down -v` 都应先核对数据库与私有卷的同时间点备份。
+当前生产验收已在 Ubuntu Linux 环境完成，开发 Harness 已标记过期并归档。运行入口
+只加载共享 Harness 与运行 Harness；`archive/` 不会进入定时分析上下文。生产运行器
+当前仅启用 Codex，其他运行器以后需要按自身行为单独验收。
 
-已完成导入的解析投影需要因解析器修复而更新时，只能由本机管理员使用 `trainlab reparse-fit`。命令默认只预检；多条 `--import-id` 必须在一次 `--apply` 中原子处理。含真实数据的环境必须先停止写入并完成数据库与私有 FIT 卷的同停写点备份，完整步骤见 `docs/runbooks/local-development.md`。
-
-`npm --prefix frontend run e2e` 会执行完整的功能、样式、几何与截图契约。字体验收采用有序的跨平台字体栈：macOS、Windows 和 Linux 可以使用栈中各自可用的字体；文字内在宽度通过不重叠、固定间距、边界和无溢出关系验收，其他几何仍执行严格基线比较。
-
-## 仓库结构
-
-- `frontend/`：当前 React 前端工程，包含依赖、源码、测试和构建配置。
-- `frontend/src/styles/`：集中维护的前端样式和设计 token。
-- `frontend/tests/visual-baselines/`：实现侧自包含的视觉回归测试资产。
-- `backend/`：FastAPI 后端、数据库模型与迁移、测试和运行脚本。
-- `compose.yaml`：PostgreSQL、完整应用与隔离测试环境。
-- `docs/`：全项目状态、待办、工作流和历史契约。
-- `docs/plans/`：跨多轮大型里程碑的动态实施计划与交付单元。
-- `AGENTS.md`：对整个仓库生效的 Codex 项目规则。
-
-## 页面
-
-以下路由由 `frontend/` 提供：
-
-- `/login`：登录页
-- `/`：分析
-- `/activities`：运动记录
-- `/activities/:id`：运动详情
-- `/health`：健康记录
-- `/connectors`：连接器与文件上传
-- `/settings`：设置
-
-## 开发工作流
-
-项目采用同一任务内的三阶段流程：
-
-1. 规划：明确范围、非范围和验收标准。
-2. 实现：直接修改代码并同步测试。
-3. 验收：运行自动门禁，界面改动对照当前权威设计基线。
-
-小型任务由主 Agent 完成全部阶段；中型任务增加独立 Validator；大型或高风险任务增加前置独立 Planner，并在实现后由独立 Validator 复核。大型任务若可证明单元之间的依赖和文件边界清晰，可使用受控的 worktree 并行实现；集成分支和最终交付仍由主 Agent 负责。
-
-完整规则见根 `AGENTS.md` 和 `docs/workflow/`。
-
-## 设计与历史
-
-- 当前设计来源：由用户在每个 UI 任务中提供仓库外的只读原型路径；`docs/project-state.json` 只保存可迁移的版本、修订号和摘要，不保存本机绝对路径。
-- 视觉回归资产：`frontend/tests/visual-baselines/` 用于检测实现漂移，不替代外部设计来源，也不能为了让测试通过而随意更新。
-- 字体回归：批准字体栈的声明顺序、字号、字重、行高、单行约束与结构关系属于视觉契约；不同系统字体的自然字宽不要求伪装成同一个字体的像素宽度。
-- rev 4 历史功能与验收基线：`docs/contract/contract.md`
-- 旧 Claude Code harness 历史：`docs/archive/harness/`
-- 中文项目交接：`项目交接文档.md`
+Google Drive OAuth 首次配置、候选验证和回滚流程见
+`docs/runbooks/google-drive-bootstrap.md`；Gmail 生产绑定及验收流程见
+`docs/runbooks/gmail-production.md`。Linux 实测兼容经验见
+`docs/runbooks/linux-production-observations.md`；该文档只记录特定版本的观察结果，
+不是未来模型或运行器的强制配置。所有手册均禁止记录任何凭据值。

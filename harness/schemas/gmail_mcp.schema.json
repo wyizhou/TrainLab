@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["schema_version", "configured", "server_name", "provider", "authenticated_self", "credentials", "transport", "capabilities", "requirements"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "configured": {"type": "boolean"},
+    "server_name": {"const": "gmail"},
+    "provider": {"const": "trainlab_gmail_v1"},
+    "authenticated_self": {"type": "string"},
+    "credentials": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["oauth_client_path", "token_path"],
+      "properties": {
+        "oauth_client_path": {"type": "string", "minLength": 1},
+        "token_path": {"type": "string", "minLength": 1}
+      }
+    },
+    "transport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "command", "args", "env", "timeout_seconds"],
+      "properties": {
+        "type": {"const": "stdio"},
+        "command": {"type": "string", "minLength": 1},
+        "args": {"type": "array", "items": {"type": "string"}},
+        "env": {"type": "object", "additionalProperties": {"type": ["string", "number", "boolean"]}},
+        "timeout_seconds": {"type": "integer", "minimum": 5, "maximum": 120}
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "required": ["get_self", "search", "read_thread", "send_html_self", "create_or_apply_label"],
+      "additionalProperties": false,
+      "properties": {
+        "get_self": {"$ref": "#/$defs/capability"},
+        "search": {"$ref": "#/$defs/capability"},
+        "read_thread": {"$ref": "#/$defs/capability"},
+        "send_html_self": {"$ref": "#/$defs/capability"},
+        "create_or_apply_label": {"$ref": "#/$defs/capability"}
+      }
+    },
+    "requirements": {
+      "type": "object",
+      "required": ["authenticated_self_only", "html_and_plain_text", "label", "idempotency_search_by_run_id"],
+      "properties": {
+        "authenticated_self_only": {"const": true},
+        "html_and_plain_text": {"const": true},
+        "label": {"const": "TrainLab"},
+        "idempotency_search_by_run_id": {"const": true}
+      }
+    }
+  },
+  "$defs": {"capability": {"type": "object", "required": ["tool", "arguments"], "properties": {"tool": {"type": "string", "minLength": 1}, "arguments": {"type": "object"}, "result_path": {"type": ["string", "null"]}}}}
+}

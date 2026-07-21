@@ -1,43 +1,32 @@
-# Dependencies
-node_modules/
-
-# Build / test output
-dist/
-coverage/
-playwright-report/
-test-results/
-.vite/
-
-# Logs / caches
-*.log
-npm-debug.log*
-.eslintcache
-
-# Env / secrets
-.env
-.env.*
-!.env.example
-!**/.env.example
-.envrc
-
-# Python
+.DS_Store
+.venv/
 __pycache__/
 *.py[cod]
 .pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.coverage
-htmlcov/
-.venv/
+*.egg-info/
+build/
+dist/
 
-# Editor / OS
-.DS_Store
-*.local
+# Personal health data and runtime-only files are excluded from normal commits.
+# A deliberately sanitized snapshot can still be added explicitly with git -f.
+source/
+test_data/
+data.db
+data.db-wal
+data.db-shm
+data.db-journal
+state/*
+!state/.gitkeep
+logs/*
+!logs/.gitkeep
+*.lock
+!requirements.lock
 
-# One-off generated handoff package
-TrainLab-交接包.md
-backups/
-*.dump
-
-# Private uploaded activity files
-backend/data/
+# Credentials must never enter repository history.
+.env
+.env.*
+config/gmail_mcp.yaml
+config/trainlab.production.yaml
+config/rclone.conf
+credentials.json
+token.json
