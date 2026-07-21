@@ -1,0 +1,11 @@
+[Unit]
+Description=Check TrainLab daemons every minute
+
+[Timer]
+OnCalendar=*-*-* *:*:00
+AccuracySec=1s
+Persistent=false
+Unit=trainlab-watchdog.service
+
+[Install]
+WantedBy=timers.target

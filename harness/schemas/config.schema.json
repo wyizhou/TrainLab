@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["schema_version", "timezone", "paths", "sqlite", "sync", "ingest", "schedule", "runner", "mail", "context", "watchdog", "production"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "timezone": {"const": "Asia/Singapore"},
+    "paths": {
+      "type": "object",
+      "required": ["database", "health_workbook", "fit_directory", "state_directory", "log_directory"],
+      "properties": {
+        "database": {"const": "data.db"},
+        "health_workbook": {"const": "source/Health.xlsx"},
+        "fit_directory": {"const": "source/HealthFit"},
+        "state_directory": {"type": "string"},
+        "log_directory": {"type": "string"}
+      }
+    },
+    "sqlite": {"type": "object", "required": ["journal_mode", "busy_timeout_ms"]},
+    "sync": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["executable", "required_version", "remote_path", "poll_seconds", "checksum", "update", "required_scope", "require_custom_client_id", "google_sheet", "fit"],
+      "properties": {
+        "executable": {"const": "rclone"},
+        "required_version": {"const": "1.74.4"},
+        "remote_path": {"type": "string", "minLength": 1},
+        "poll_seconds": {"type": "integer", "minimum": 60},
+        "checksum": {"const": true},
+        "update": {"const": true},
+        "required_scope": {"const": "drive.readonly"},
+        "require_custom_client_id": {"const": true},
+        "google_sheet": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["remote_file", "export_format"],
+          "properties": {
+            "remote_file": {"const": "Health Metrics_v5.xlsx"},
+            "export_format": {"const": "xlsx"}
+          }
+        },
+        "fit": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["remote_directory"],
+          "properties": {"remote_directory": {"const": "HealthFit"}}
+        }
+      }
+    },
+    "ingest": {"type": "object", "required": ["poll_seconds", "stability_seconds", "parser_version"]},
+    "schedule": {
+      "type": "object",
+      "required": ["morning", "evening", "missed_run_policy"],
+      "properties": {"morning": {"const": "09:00"}, "evening": {"const": "20:00"}, "missed_run_policy": {"const": "skip"}}
+    },
+    "runner": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["primary", "codex_executable", "codex_home", "reasoning_effort", "timeout_seconds"],
+      "properties": {
+        "primary": {"const": "codex"},
+        "codex_executable": {"type": "string", "minLength": 1},
+        "codex_home": {"type": "string", "minLength": 1},
+        "reasoning_effort": {"type": "string", "enum": ["low", "medium", "high"]},
+        "timeout_seconds": {"type": "integer", "minimum": 60}
+      }
+    },
+    "mail": {"type": "object", "required": ["mode", "label", "recipient", "gmail_config"], "properties": {"mode": {"enum": ["fake", "mcp"]}, "label": {"const": "TrainLab"}, "recipient": {"const": "self"}}},
+    "context": {"type": "object", "required": ["rolling_days", "details_per_sport", "weekly_summaries", "monthly_summaries"]},
+    "watchdog": {"type": "object", "required": ["check_seconds", "heartbeat_max_age_seconds", "retry_count", "retry_delay_seconds", "services"]},
+    "production": {"type": "object", "required": ["enabled"]}
+  }
+}

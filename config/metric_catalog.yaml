@@ -1,0 +1,56 @@
+schema_version: 1
+metrics:
+  "Daily Metrics.Active Energy": {key: energy.active, unit: kcal}
+  "Daily Metrics.Resting Energy": {key: energy.resting, unit: kcal}
+  "Daily Metrics.Resting": {key: heart_rate.resting, unit: bpm}
+  "Daily Metrics.HRV": {key: hrv.daily, unit: ms}
+  "Daily Metrics.Steps": {key: steps, unit: count}
+  "Daily Metrics.VO₂ max": {key: vo2_max, unit: "ml/kg/min"}
+  "Daily Metrics.Exercise Minutes": {key: exercise_minutes, unit: min}
+  "Daily Metrics.Stand Hours": {key: stand_hours, unit: h}
+  "Weight.Weight": {key: body.weight, unit: kg}
+  "Weight.Fat": {key: body.fat, unit: percent}
+  "Weight.BMI": {key: body.bmi, unit: null, unitless: true}
+  "Sleep.Main": {key: sleep.main, unit: null, unitless: true}
+  "Sleep.InBed": {key: sleep.in_bed, unit: s}
+  "Sleep.Asleep": {key: sleep.asleep, unit: s}
+  "Sleep.Awake": {key: sleep.awake, unit: s}
+  "Sleep.REM": {key: sleep.rem, unit: s}
+  "Sleep.Core": {key: sleep.core, unit: s}
+  "Sleep.Deep": {key: sleep.deep, unit: s}
+  "Sleep.Wake Count": {key: sleep.wake_count, unit: count}
+  "Sleep.Fall Asleep": {key: sleep.fall_asleep, unit: s}
+  "Sleep.Efficiency": {key: sleep.efficiency, unit: ratio}
+  "Sleep.Avg. Respiration Rate": {key: respiration.average, unit: br/min}
+  "Sleep.Min. Respiration Rate": {key: respiration.minimum, unit: br/min}
+  "Sleep.Max. Respiration Rate": {key: respiration.maximum, unit: br/min}
+  "Sleep.Wrist Temperature": {key: wrist_temperature, unit: C}
+  "Sleep.Avg. SpO2": {key: spo2.average, unit: ratio}
+  "Sleep.Low SpO2": {key: spo2.minimum, unit: ratio}
+  "Sleep.High SpO2": {key: spo2.maximum, unit: ratio}
+  "Sleep.Low HRV": {key: hrv.sleep_minimum, unit: ms}
+  "Sleep.High HRV": {key: hrv.sleep_maximum, unit: ms}
+  "Sleep.Avg. HRV": {key: hrv.sleep_average, unit: ms}
+  "Nutrition.Water": {key: nutrition.water, unit: L}
+  "Nutrition.Dietary Energy": {key: nutrition.energy, unit: kcal}
+  "Nutrition.Total Fat": {key: nutrition.fat, unit: g}
+  "Nutrition.Protein": {key: nutrition.protein, unit: g}
+  "Nutrition.Carbohydrates": {key: nutrition.carbohydrates, unit: g}
+  "Mindfulness.Duration": {key: mindfulness.duration, unit: s}
+  "Mindfulness.SDNN": {key: mindfulness.sdnn, unit: ms}
+  "Mindfulness.rMSSD": {key: mindfulness.rmssd, unit: ms}
+  "Mindfulness.NN50": {key: mindfulness.nn50, unit: count}
+  "Mindfulness.pNN50": {key: mindfulness.pnn50, unit: percent}
+  "Mindfulness.Baevsky": {key: mindfulness.baevsky, unit: null, unitless: true}
+  "Mindfulness.Avg. HRV": {key: mindfulness.hrv_average, unit: ms}
+  "Blood Sugar.Lowest": {key: blood_glucose.minimum, unit: null}
+  "Blood Sugar.Highest": {key: blood_glucose.maximum, unit: null}
+  "Blood Sugar.Average": {key: blood_glucose.average, unit: null}
+  "Blood Sugar.Blood Glucose": {key: blood_glucose.value, unit: null}
+  "Blood Sugar.Meal Time": {key: blood_glucose.meal_time, unit: null, unitless: true}
+  "Blood Sugar.Insulin Delivery": {key: insulin.delivery, unit: null}
+  "Blood Sugar.Purpose": {key: blood_glucose.purpose, unit: null, unitless: true}
+  "Blood Pressure.Systolic": {key: blood_pressure.systolic, unit: mmHg}
+  "Blood Pressure.Diastolic": {key: blood_pressure.diastolic, unit: mmHg}
+  "Womens Health.Start of Cycle": {key: cycle.start, unit: null, unitless: true}
+  "Womens Health.Menstruation": {key: cycle.menstruation, unit: null, unitless: true}

@@ -1,0 +1,15 @@
+[Unit]
+Description=TrainLab Google Drive sync daemon
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=@PROJECT_ROOT@
+ExecStart=@PROJECT_ROOT@/.venv/bin/python @PROJECT_ROOT@/scripts/drive_sync_daemon.py
+Restart=always
+RestartSec=10
+Environment=PYTHONUNBUFFERED=1
+Environment=TRAINLAB_CONFIG=@PROJECT_ROOT@/config/trainlab.production.yaml
+
+[Install]
+WantedBy=default.target

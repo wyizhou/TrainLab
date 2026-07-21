@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trainlab.local/schemas/strength-policy-v2.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "enabled", "mode", "description", "goal", "structure", "history_dependency", "session_structure", "output", "recovery"],
+  "properties": {
+    "schema_version": {"const": 2},
+    "enabled": {"const": true},
+    "mode": {"const": "movement_only"},
+    "description": {"type": "string", "minLength": 1},
+    "goal": {"const": "running_and_climbing_support"},
+    "structure": {"const": "full_body"},
+    "history_dependency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["activity_history_required", "exercise_history_required", "weight_history_required", "e1rm_used"],
+      "properties": {
+        "activity_history_required": {"const": false},
+        "exercise_history_required": {"const": false},
+        "weight_history_required": {"const": false},
+        "e1rm_used": {"const": false}
+      }
+    },
+    "session_structure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum_exercises", "maximum_exercises", "required_movement_groups"],
+      "properties": {
+        "minimum_exercises": {"type": "integer", "minimum": 1, "maximum": 8},
+        "maximum_exercises": {"type": "integer", "minimum": 1, "maximum": 8},
+        "required_movement_groups": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"enum": ["squat", "single_leg", "hinge", "pull", "push", "anti_rotation"]},
+            "uniqueItems": true
+          }
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required_fields", "forbidden_fields", "use_host_resolved_youtube_only", "form_assessment_without_video_or_movement_sensor"],
+      "properties": {
+        "required_fields": {
+          "type": "array",
+          "prefixItems": [{"const": "exercise"}, {"const": "youtube_url"}, {"const": "youtube_kind"}],
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "forbidden_fields": {
+          "type": "array",
+          "items": {"enum": ["sets", "repetitions", "weight_kg", "percent_1rm", "set_rpe", "rest_seconds"]},
+          "minItems": 6,
+          "maxItems": 6,
+          "uniqueItems": true
+        },
+        "use_host_resolved_youtube_only": {"const": true},
+        "form_assessment_without_video_or_movement_sensor": {"const": false}
+      }
+    },
+    "recovery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["avoid_same_day_as_running_quality_or_long_run", "avoid_when_forearm_back_or_shoulder_recovery_is_poor", "pain_or_acute_injury_stops_recommendation"],
+      "properties": {
+        "avoid_same_day_as_running_quality_or_long_run": {"const": true},
+        "avoid_when_forearm_back_or_shoulder_recovery_is_poor": {"const": true},
+        "pain_or_acute_injury_stops_recommendation": {"const": true}
+      }
+    }
+  }
+}

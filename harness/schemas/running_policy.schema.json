@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "heart_rate_method",
+    "cardio_rpe",
+    "heart_rate_zones",
+    "zone_guidance",
+    "zone_4_unlock",
+    "quality_session_frequency",
+    "zone_5_prescription",
+    "zone_5_relock"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "heart_rate_method": {"const": "heart_rate_reserve"},
+    "cardio_rpe": {"type": "object"},
+    "heart_rate_zones": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["basis", "bpm_boundary_rounding", "adjacent_zone_upper_bound", "zone_1", "zone_2", "zone_3", "zone_4", "zone_5"],
+      "properties": {
+        "basis": {"const": "heart_rate_reserve"},
+        "bpm_boundary_rounding": {"const": "ceil"},
+        "adjacent_zone_upper_bound": {"const": "next_zone_lower_bound_minus_one"},
+        "zone_1": {"const": {"minimum_percent": 0, "maximum_percent_exclusive": 60}},
+        "zone_2": {"const": {"minimum_percent": 60, "maximum_percent_exclusive": 70}},
+        "zone_3": {"const": {"minimum_percent": 70, "maximum_percent_exclusive": 80}},
+        "zone_4": {"const": {"minimum_percent": 80, "maximum_percent_exclusive": 90}},
+        "zone_5": {"const": {"minimum_percent": 90, "maximum_percent_inclusive": 100}}
+      }
+    },
+    "zone_guidance": {
+      "type": "object",
+      "required": ["zone_1", "zone_2", "zone_3", "zone_4", "zone_5"],
+      "additionalProperties": false,
+      "properties": {
+        "zone_1": {"$ref": "#/$defs/guidance"},
+        "zone_2": {"$ref": "#/$defs/guidance"},
+        "zone_3": {"$ref": "#/$defs/guidance"},
+        "zone_4": {"$ref": "#/$defs/guidance"},
+        "zone_5": {"$ref": "#/$defs/guidance"}
+      }
+    },
+    "zone_4_unlock": {
+      "type": "object",
+      "required": [
+        "zone_5_required_successful_zone_4_sessions",
+        "zone_5_minimum_hours_between_zone_4_sessions",
+        "zone_4_success_safety_gate",
+        "zone_4_success_completion_gate",
+        "zone_4_success_intensity_gate",
+        "zone_4_success_perceived_exertion_gate",
+        "zone_4_success_observation_gate",
+        "qualifying_zone_4_session"
+      ]
+    },
+    "quality_session_frequency": {"type": "object"},
+    "zone_5_prescription": {"type": "object"},
+    "zone_5_relock": {"type": "object"}
+  },
+  "$defs": {
+    "guidance": {
+      "type": "object",
+      "required": ["prescription_percent", "rpe", "talk_test", "purposes"],
+      "properties": {
+        "prescription_percent": {
+          "type": "object",
+          "required": ["minimum", "maximum"],
+          "properties": {
+            "minimum": {"type": "number", "minimum": 0, "maximum": 100},
+            "maximum": {"type": "number", "minimum": 0, "maximum": 100}
+          }
+        },
+        "rpe": {"type": "object"},
+        "talk_test": {"type": "string"},
+        "purposes": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}
