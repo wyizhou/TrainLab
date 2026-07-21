@@ -1,0 +1,9 @@
+[Unit]
+Description=TrainLab daemon watchdog
+After=trainlab-drive-sync.service trainlab-ingest.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=@PROJECT_ROOT@
+ExecStart=@PROJECT_ROOT@/.venv/bin/python @PROJECT_ROOT@/scripts/watchdog.py
+Environment=TRAINLAB_CONFIG=@PROJECT_ROOT@/config/trainlab.production.yaml

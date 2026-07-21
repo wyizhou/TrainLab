@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trainlab.local/schemas/runtime-input-v1.json",
+  "title": "TrainLab runtime input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run", "profile", "data_freshness", "health", "sleep", "activities", "feedback", "history", "compression", "exercise_catalog", "policy"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "run": {
+      "type": "object",
+      "required": ["run_id", "slot", "as_of", "timezone", "window_start", "window_end", "plan_date"],
+      "properties": {
+        "run_id": {"type": "string", "minLength": 8},
+        "slot": {"enum": ["morning", "evening"]},
+        "as_of": {"type": "string", "format": "date-time"},
+        "timezone": {"const": "Asia/Singapore"},
+        "window_start": {"type": "string", "format": "date-time"},
+        "window_end": {"type": "string", "format": "date-time"},
+        "plan_date": {"type": "string", "format": "date"}
+      },
+      "additionalProperties": true
+    },
+    "profile": {"type": "object"},
+    "data_freshness": {"type": "object"},
+    "health": {"type": "array", "items": {"type": "object"}},
+    "sleep": {"type": "array", "items": {"type": "object"}},
+    "activities": {
+      "type": "object",
+      "required": ["summaries", "details"],
+      "properties": {
+        "summaries": {"type": "array", "items": {"type": "object"}},
+        "details": {
+          "type": "object",
+          "properties": {
+            "running": {"type": "array", "maxItems": 2},
+            "climbing": {"type": "array", "maxItems": 2},
+            "strength_training": {"type": "array", "maxItems": 2}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "feedback": {"type": "object"},
+    "history": {
+      "type": "object",
+      "required": ["weekly", "monthly"],
+      "properties": {
+        "weekly": {"type": "array", "maxItems": 8},
+        "monthly": {"type": "array", "maxItems": 12}
+      },
+      "additionalProperties": false
+    },
+    "compression": {"type": "object"},
+    "exercise_catalog": {"type": "array", "items": {"type": "object"}},
+    "policy": {"type": "object"}
+  }
+}

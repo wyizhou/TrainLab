@@ -1,0 +1,45 @@
+schema_version: 1
+configured: false
+server_name: gmail
+provider: trainlab_gmail_v1
+authenticated_self: ""
+credentials:
+  oauth_client_path: ~/.gmail-mcp/gcp-oauth.keys.json
+  token_path: ~/.gmail-mcp/credentials.json
+transport:
+  type: stdio
+  command: .venv/bin/python
+  args: [-m, trainlab.gmail_mcp_server, --config, config/gmail_mcp.yaml]
+  env: {}
+  timeout_seconds: 30
+capabilities:
+  get_self:
+    tool: get_self
+    arguments: {}
+    result_path: email
+  search:
+    tool: search_messages
+    arguments: {query: 'subject:"{run_id}"', max_results: 10}
+    result_path: matches
+  read_thread:
+    tool: read_thread
+    arguments: {thread_id: "{thread_id}"}
+    result_path: null
+  send_html_self:
+    tool: send_html_self
+    arguments:
+      run_id: "{run_id}"
+      subject: "{subject}"
+      plain_text: "{plain_text}"
+      html: "{html}"
+      thread_id: "{thread_id}"
+    result_path: null
+  create_or_apply_label:
+    tool: create_or_apply_label
+    arguments: {label: "{label}", message_id: "{message_id}", thread_id: "{thread_id}"}
+    result_path: null
+requirements:
+  authenticated_self_only: true
+  html_and_plain_text: true
+  label: TrainLab
+  idempotency_search_by_run_id: true

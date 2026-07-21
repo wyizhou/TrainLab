@@ -1,0 +1,8 @@
+[Unit]
+Description=TrainLab Singapore-time scheduler check
+
+[Service]
+Type=oneshot
+WorkingDirectory=@PROJECT_ROOT@
+ExecStart=@PROJECT_ROOT@/.venv/bin/python @PROJECT_ROOT@/scripts/scheduler.py
+Environment=TRAINLAB_CONFIG=@PROJECT_ROOT@/config/trainlab.production.yaml
