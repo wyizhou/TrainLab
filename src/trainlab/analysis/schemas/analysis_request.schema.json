@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "trainlab.analysis.request.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "mode", "subject_id", "invocation_id", "run_key", "summary_local_date", "advice_local_date", "as_of_local_date", "plan_id", "reason_event_id", "effective_local_date", "artifact_id", "delivery_id", "regeneration_reason_code", "requested_at_utc"],
+  "properties": {
+    "schema_version": {"const": "1"},
+    "mode": {"enum": ["daily", "weekly", "revise_plan", "regenerate", "retry_delivery", "reconcile_delivery", "status"]},
+    "subject_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$"},
+    "invocation_id": {"type": ["string", "null"], "pattern": "^[A-Za-z0-9][A-Za-z0-9:_-]{0,127}$"},
+    "run_key": {"type": ["string", "null"], "pattern": "^analysis:[A-Za-z0-9][A-Za-z0-9_-]{0,127}:[a-z_]+:.+$"},
+    "summary_local_date": {"type": ["string", "null"], "format": "date"},
+    "advice_local_date": {"type": ["string", "null"], "format": "date"},
+    "as_of_local_date": {"type": ["string", "null"], "format": "date"},
+    "plan_id": {"type": ["string", "null"], "pattern": "^[A-Za-z0-9][A-Za-z0-9:_-]{0,127}$"},
+    "reason_event_id": {"type": ["string", "null"], "pattern": "^[A-Za-z0-9][A-Za-z0-9:_-]{0,127}$"},
+    "effective_local_date": {"type": ["string", "null"], "format": "date"},
+    "artifact_id": {"type": ["string", "null"], "pattern": "^[A-Za-z0-9][A-Za-z0-9:_-]{0,127}$"},
+    "delivery_id": {"type": ["string", "null"], "pattern": "^[A-Za-z0-9][A-Za-z0-9:_-]{0,127}$"},
+    "regeneration_reason_code": {"type": ["string", "null"], "pattern": "^[a-z][a-z0-9_]{0,63}$"},
+    "requested_at_utc": {"type": "string", "format": "date-time", "pattern": "Z$"}
+  },
+  "allOf": [
+    {"if": {"properties": {"mode": {"const": "daily"}}}, "then": {"properties": {"invocation_id": {"type": "string"}, "run_key": {"type": "null"}, "as_of_local_date": {"type": "null"}, "plan_id": {"type": "null"}, "reason_event_id": {"type": "null"}, "effective_local_date": {"type": "null"}, "artifact_id": {"type": "null"}, "delivery_id": {"type": "null"}, "regeneration_reason_code": {"type": "null"}}}},
+    {"if": {"properties": {"mode": {"const": "weekly"}}}, "then": {"properties": {"invocation_id": {"type": "string"}, "run_key": {"type": "null"}, "summary_local_date": {"type": "null"}, "advice_local_date": {"type": "null"}, "plan_id": {"type": "null"}, "reason_event_id": {"type": "null"}, "effective_local_date": {"type": "null"}, "artifact_id": {"type": "null"}, "delivery_id": {"type": "null"}, "regeneration_reason_code": {"type": "null"}}}},
+    {"if": {"properties": {"mode": {"const": "revise_plan"}}}, "then": {"properties": {"invocation_id": {"type": "string"}, "run_key": {"type": "null"}, "plan_id": {"type": "string"}, "reason_event_id": {"type": "string"}, "summary_local_date": {"type": "null"}, "advice_local_date": {"type": "null"}, "as_of_local_date": {"type": "null"}, "artifact_id": {"type": "null"}, "delivery_id": {"type": "null"}, "regeneration_reason_code": {"type": "null"}}}},
+    {"if": {"properties": {"mode": {"const": "regenerate"}}}, "then": {"properties": {"invocation_id": {"type": "string"}, "run_key": {"type": "null"}, "artifact_id": {"type": "string"}, "regeneration_reason_code": {"type": "string"}, "summary_local_date": {"type": "null"}, "advice_local_date": {"type": "null"}, "as_of_local_date": {"type": "null"}, "plan_id": {"type": "null"}, "reason_event_id": {"type": "null"}, "effective_local_date": {"type": "null"}, "delivery_id": {"type": "null"}}}},
+    {"if": {"properties": {"mode": {"const": "retry_delivery"}}}, "then": {"properties": {"invocation_id": {"type": "string"}, "run_key": {"type": "null"}, "delivery_id": {"type": "string"}, "summary_local_date": {"type": "null"}, "advice_local_date": {"type": "null"}, "as_of_local_date": {"type": "null"}, "plan_id": {"type": "null"}, "reason_event_id": {"type": "null"}, "effective_local_date": {"type": "null"}, "artifact_id": {"type": "null"}, "regeneration_reason_code": {"type": "null"}}}},
+    {"if": {"properties": {"mode": {"const": "reconcile_delivery"}}}, "then": {"properties": {"invocation_id": {"type": "string"}, "run_key": {"type": "null"}, "delivery_id": {"type": "string"}, "summary_local_date": {"type": "null"}, "advice_local_date": {"type": "null"}, "as_of_local_date": {"type": "null"}, "plan_id": {"type": "null"}, "reason_event_id": {"type": "null"}, "effective_local_date": {"type": "null"}, "artifact_id": {"type": "null"}, "regeneration_reason_code": {"type": "null"}}}},
+    {"if": {"properties": {"mode": {"const": "status"}}}, "then": {"properties": {"invocation_id": {"type": "null"}, "summary_local_date": {"type": "null"}, "advice_local_date": {"type": "null"}, "as_of_local_date": {"type": "null"}, "plan_id": {"type": "null"}, "reason_event_id": {"type": "null"}, "effective_local_date": {"type": "null"}, "artifact_id": {"type": "null"}, "delivery_id": {"type": "null"}, "regeneration_reason_code": {"type": "null"}}}}
+  ]
+}

@@ -1,0 +1,348 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trainlab.local/schemas/training_safety_result.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "policy_version",
+    "policy_sha256",
+    "status",
+    "safety_state",
+    "professional_evaluation_recommended",
+    "primary_items",
+    "zone_selection",
+    "substitution_assessment",
+    "reasons",
+    "warnings",
+    "input_revision_ids",
+    "constraints"
+  ],
+  "properties": {
+    "schema_version": {"const": "1"},
+    "policy_version": {"type": "string", "minLength": 1, "maxLength": 64},
+    "policy_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "status": {"enum": ["accepted", "modified_for_safety", "rejected"]},
+    "safety_state": {"enum": ["normal", "warning", "suspended", "blocked"]},
+    "professional_evaluation_recommended": {"type": "boolean"},
+    "primary_items": {
+      "type": "array",
+      "maxItems": 1,
+      "items": {"$ref": "#/$defs/primary_item"}
+    },
+    "zone_selection": {"$ref": "#/$defs/zone_selection"},
+    "substitution_assessment": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/substitution_assessment"}
+      ]
+    },
+    "reasons": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": {"$ref": "#/$defs/reason"}
+    },
+    "warnings": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {"$ref": "#/$defs/reason"}
+    },
+    "input_revision_ids": {
+      "type": "array",
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 160}
+    },
+    "constraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "maximum_primary_items",
+        "clock_time_forbidden",
+        "medical_diagnosis_forbidden",
+        "all_out_forbidden"
+      ],
+      "properties": {
+        "maximum_primary_items": {"const": 1},
+        "clock_time_forbidden": {"const": true},
+        "medical_diagnosis_forbidden": {"const": true},
+        "all_out_forbidden": {"const": true}
+      }
+    }
+  },
+  "$defs": {
+    "token": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,95}$"},
+    "bpm_range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum_bpm", "maximum_bpm"],
+      "properties": {
+        "minimum_bpm": {"type": "integer", "minimum": 30, "maximum": 250},
+        "maximum_bpm": {"type": "integer", "minimum": 30, "maximum": 250}
+      }
+    },
+    "zone_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["zone", "minimum_bpm", "maximum_bpm"],
+      "properties": {
+        "zone": {"type": "integer", "minimum": 1, "maximum": 5},
+        "minimum_bpm": {"type": "integer", "minimum": 30, "maximum": 250},
+        "maximum_bpm": {"type": "integer", "minimum": 30, "maximum": 250}
+      }
+    },
+    "reason": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "source_revision_ids"],
+      "properties": {
+        "code": {"type": "string", "pattern": "^[a-z0-9_]{1,96}$"},
+        "severity": {"enum": ["info", "warning", "block"]},
+        "source_revision_ids": {
+          "type": "array",
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 160}
+        }
+      }
+    },
+    "zone_selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "exact_bpm_allowed",
+        "source_kind",
+        "source_revision_id",
+        "source_revision_ids",
+        "zones"
+      ],
+      "properties": {
+        "exact_bpm_allowed": {"type": "boolean"},
+        "source_kind": {
+          "enum": [
+            "garmin_sport_zones",
+            "user_zones",
+            "hrr",
+            "rpe_talk_test",
+            "not_applicable"
+          ]
+        },
+        "source_revision_id": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "string", "minLength": 1, "maxLength": 160}
+          ]
+        },
+        "source_revision_ids": {
+          "type": "array",
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 160}
+        },
+        "zones": {
+          "oneOf": [
+            {"type": "null"},
+            {
+              "type": "array",
+              "minItems": 5,
+              "maxItems": 5,
+              "items": {"$ref": "#/$defs/zone_boundary"}
+            }
+          ]
+        }
+      }
+    },
+    "interval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["work_seconds", "recovery_seconds", "repetitions", "target_zone"],
+      "properties": {
+        "work_seconds": {"type": "integer", "minimum": 15, "maximum": 1800},
+        "recovery_seconds": {"type": "integer", "minimum": 15, "maximum": 1800},
+        "repetitions": {"type": "integer", "minimum": 1, "maximum": 20},
+        "target_zone": {"type": "integer", "minimum": 1, "maximum": 5}
+      }
+    },
+    "running_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "activity_kind",
+        "course_type",
+        "warmup",
+        "main_set",
+        "cooldown",
+        "planned_duration_minutes",
+        "total_volume",
+        "zone_source_kind",
+        "zone_source_revision_id",
+        "zone_source_revision_ids",
+        "target_zone",
+        "target_bpm_range",
+        "prescribed_rpe",
+        "talk_test",
+        "work_intervals",
+        "stop_conditions",
+        "rationale"
+      ],
+      "properties": {
+        "activity_kind": {"const": "running"},
+        "course_type": {"enum": ["easy", "steady", "long_easy", "intervals"]},
+        "warmup": {"$ref": "#/$defs/token"},
+        "main_set": {"$ref": "#/$defs/token"},
+        "cooldown": {"$ref": "#/$defs/token"},
+        "planned_duration_minutes": {"type": "integer", "minimum": 10, "maximum": 240},
+        "total_volume": {"$ref": "#/$defs/token"},
+        "zone_source_kind": {"enum": ["garmin_sport_zones", "user_zones", "hrr", "rpe_talk_test"]},
+        "zone_source_revision_id": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "string", "minLength": 1, "maxLength": 160}
+          ]
+        },
+        "zone_source_revision_ids": {
+          "type": "array",
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 160}
+        },
+        "target_zone": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "integer", "minimum": 1, "maximum": 5}
+          ]
+        },
+        "target_bpm_range": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/bpm_range"}
+          ]
+        },
+        "prescribed_rpe": {"type": "number", "minimum": 1, "maximum": 9},
+        "talk_test": {"$ref": "#/$defs/token"},
+        "work_intervals": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {"$ref": "#/$defs/interval"}
+        },
+        "stop_conditions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "acute_pain",
+              "chest_pain",
+              "fainting_or_dizziness",
+              "unusual_shortness_of_breath"
+            ]
+          }
+        },
+        "rationale": {"$ref": "#/$defs/token"}
+      }
+    },
+    "climbing_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["activity_kind", "rationale"],
+      "properties": {
+        "activity_kind": {"const": "climbing"},
+        "rationale": {"$ref": "#/$defs/token"}
+      }
+    },
+    "movement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["exercise_key", "movement_kind"],
+      "properties": {
+        "exercise_key": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"},
+        "movement_kind": {"enum": ["squat", "hinge", "push", "pull", "carry", "core"]}
+      }
+    },
+    "strength_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["activity_kind", "rationale", "movements", "stop_conditions"],
+      "properties": {
+        "activity_kind": {"const": "strength"},
+        "rationale": {"$ref": "#/$defs/token"},
+        "movements": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 12,
+          "items": {"$ref": "#/$defs/movement"}
+        },
+        "stop_conditions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "uniqueItems": true,
+          "items": {"enum": ["acute_pain", "acute_discomfort"]}
+        }
+      }
+    },
+    "rest_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "activity_kind",
+        "evidence",
+        "uncertainty",
+        "daily_activity_allowed",
+        "recovery_signals",
+        "seek_professional_help_if"
+      ],
+      "properties": {
+        "activity_kind": {"const": "rest"},
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {"$ref": "#/$defs/token"}
+        },
+        "uncertainty": {"$ref": "#/$defs/token"},
+        "daily_activity_allowed": {"type": "boolean"},
+        "recovery_signals": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {"$ref": "#/$defs/token"}
+        },
+        "seek_professional_help_if": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {"$ref": "#/$defs/token"}
+        }
+      }
+    },
+    "primary_item": {
+      "oneOf": [
+        {"$ref": "#/$defs/running_item"},
+        {"$ref": "#/$defs/climbing_item"},
+        {"$ref": "#/$defs/strength_item"},
+        {"$ref": "#/$defs/rest_item"}
+      ]
+    },
+    "substitution_assessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "planned_activity_kind",
+        "actual_activity_kind",
+        "duration_ratio",
+        "source_revision_id"
+      ],
+      "properties": {
+        "status": {"enum": ["consistent_with_substitution", "conflicts_with_exact_activity_evidence"]},
+        "planned_activity_kind": {"enum": ["running", "climbing", "strength", "rest"]},
+        "actual_activity_kind": {"enum": ["running", "climbing", "strength", "rest"]},
+        "duration_ratio": {"type": "number", "exclusiveMinimum": 0, "maximum": 1440},
+        "source_revision_id": {"type": "string", "minLength": 1, "maxLength": 160}
+      }
+    }
+  }
+}

@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import getpass
 from datetime import datetime
 from typing import Any
 
@@ -17,10 +18,50 @@ from .scheduler import scheduler_daemon, scheduler_once
 from .sync import drive_sync_daemon, sync_once
 from .util import json_dumps
 from .watchdog import watchdog_daemon, watchdog_once
+from .foundation import main as foundation_main
+from .foundation import FoundationConfig
+from .garmin import GarminCollectionTool, SyncRequest
+from .garmin_config import load_garmin_config
+from .garmin_client import GarminConnectTransport, TokenStore
+from .util import project_root
 
 
 def _datetime(value: str | None) -> datetime | None:
     return datetime.fromisoformat(value) if value else None
+
+
+_GARMIN_EXIT = {"succeeded": 0, "partial": 10, "deferred": 11, "lock_busy": 12, "auth_required": 20, "failed": 21}
+
+
+def _garmin_failed_receipt(mode: str, code: str):
+    from .garmin import SyncReceipt
+    safe_mode = mode if mode in {"auth", "full", "incremental", "snapshot", "repair", "audit", "status"} else "status"
+    return SyncReceipt(mode=safe_mode, status="failed", requested_range={"from": None, "through": None}, effective_range={"from": None, "through": None}, completed_at_utc=datetime.now().astimezone().isoformat(), errors=[{"code": code, "resource": "cli", "logical_object_key": "garmin:cli", "summary": "request rejected"}])
+
+
+def garmin_cli_execute(args: Any, *, transport_factory=GarminConnectTransport, stdin=sys.stdin, stderr=sys.stderr):
+    """CLI adapter: exactly one receipt is returned; stdout printing stays in main."""
+    mode = args.garmin_sync_mode if args.garmin_mode == "sync" else args.garmin_mode
+    try:
+        foundation = FoundationConfig.load(project_root())
+        config = load_garmin_config(project_root(), foundation)
+        request = SyncRequest(mode=mode, health_from_local_date=getattr(args, "health_from", None), through_local_date=getattr(args, "through", None), snapshot_local_date=getattr(args, "date", None), resource_kinds=tuple(getattr(args, "resource", [])), activity_ids=tuple(getattr(args, "activity_id", [])), repair_strategy=getattr(args, "strategy", None), invocation_id=args.invocation_id)
+        # status deliberately has no provider construction, token check, or login.
+        if mode == "status": return GarminCollectionTool(config).execute(request)
+        store = TokenStore(foundation.state_root / "secrets" / "garmin")
+        if mode == "auth":
+            if not stdin.isatty(): return _garmin_failed_receipt(mode, "auth_requires_tty")
+            print("Garmin email:", file=stderr, flush=True); email=stdin.readline().rstrip("\n")
+            print("Garmin password:", file=stderr, flush=True); password=getpass.getpass("", stream=stderr)
+            def mfa() -> str:
+                print("Garmin MFA:", file=stderr, flush=True); return getpass.getpass("", stream=stderr)
+            transport=transport_factory(email,password,store,region=config.region,mfa=mfa)
+        else: transport=transport_factory(None,None,store,region=config.region)
+        return GarminCollectionTool(config, transport).execute(request)
+    except ValueError as exc:
+        return _garmin_failed_receipt(mode, "invalid_request" if "request" in str(exc) or "mode" in str(exc) else "invalid_configuration")
+    except Exception:
+        return _garmin_failed_receipt(mode, "cli_initialization_failed")
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -49,11 +90,43 @@ def _parser() -> argparse.ArgumentParser:
     deploy.add_argument("--enable", action="store_true")
     subparsers.add_parser("finalize-production")
     subparsers.add_parser("status")
+    foundation = subparsers.add_parser("foundation")
+    foundation.add_argument("--invocation-id")
+    foundation_sub = foundation.add_subparsers(dest="foundation_mode", required=True)
+    foundation_sub.add_parser("init")
+    foundation_sub.add_parser("status")
+    foundation_sub.add_parser("verify")
+    foundation_migrate = foundation_sub.add_parser("migrate")
+    foundation_migrate.add_argument("--target-version", type=int, required=True)
+    garmin = subparsers.add_parser("garmin")
+    garmin.add_argument("--invocation-id")
+    garmin_sub = garmin.add_subparsers(dest="garmin_mode", required=True)
+    garmin_sub.add_parser("auth")
+    sync_garmin = garmin_sub.add_parser("sync")
+    sync_sub = sync_garmin.add_subparsers(dest="garmin_sync_mode", required=True)
+    full = sync_sub.add_parser("full"); full.add_argument("--health-from"); full.add_argument("--through")
+    incremental = sync_sub.add_parser("incremental"); incremental.add_argument("--through")
+    snapshot = sync_sub.add_parser("snapshot"); snapshot.add_argument("--date")
+    repair = garmin_sub.add_parser("repair"); repair.add_argument("--from", dest="health_from"); repair.add_argument("--through"); repair.add_argument("--resource", action="append", default=[]); repair.add_argument("--activity-id", action="append", default=[]); repair.add_argument("--strategy", choices=["auto","refetch","reparse","reconcile"], default="auto")
+    audit = garmin_sub.add_parser("audit"); audit.add_argument("--from", dest="health_from"); audit.add_argument("--through")
+    garmin_sub.add_parser("status")
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
+    if args.command == "foundation":
+        forwarded = []
+        if args.invocation_id:
+            forwarded.extend(["--invocation-id", args.invocation_id])
+        forwarded.append(args.foundation_mode)
+        if args.foundation_mode == "migrate":
+            forwarded.extend(["--target-version", str(args.target_version)])
+        return foundation_main(forwarded)
+    if args.command == "garmin":
+        receipt = garmin_cli_execute(args)
+        print(receipt.json())
+        return _GARMIN_EXIT[receipt.status]
     settings = load_settings()
     connection = connect(settings.database_path, busy_timeout_ms=int(settings.values["sqlite"].get("busy_timeout_ms", 10_000)))
     migrate(connection)

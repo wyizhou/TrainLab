@@ -1,0 +1,281 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trainlab.local/schemas/analysis_input.schema.json",
+  "title": "TrainLab analysis input v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run",
+    "subject",
+    "target_periods",
+    "quality_gate",
+    "coverage",
+    "gaps",
+    "health",
+    "sleep",
+    "physiology",
+    "activities",
+    "technical_samples",
+    "deterministic_features",
+    "current_plan",
+    "plan_adherence",
+    "prior_artifacts",
+    "user_facts",
+    "policies",
+    "input_manifest",
+    "context_limits"
+  ],
+  "properties": {
+    "schema_version": {"const": "1"},
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["run_key", "route", "source_route", "as_of_utc"],
+      "properties": {
+        "run_key": {"type": "string", "minLength": 1, "maxLength": 256},
+        "route": {"enum": ["daily", "weekly", "revise_plan", "regenerate"]},
+        "source_route": {"enum": ["daily", "weekly", "revise_plan"]},
+        "as_of_utc": {"type": "string", "format": "date-time"}
+      }
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["subject_id", "timezone", "provider", "identity_kind", "verified"],
+      "properties": {
+        "subject_id": {"type": "integer", "minimum": 1},
+        "timezone": {"const": "Asia/Singapore"},
+        "provider": {"const": "garmin"},
+        "identity_kind": {"const": "account"},
+        "verified": {"const": true}
+      }
+    },
+    "target_periods": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["summary", "advice", "review", "plan", "baseline", "effective_local_date"],
+      "properties": {
+        "summary": {"$ref": "#/$defs/nullable_period"},
+        "advice": {"$ref": "#/$defs/nullable_period"},
+        "review": {"$ref": "#/$defs/nullable_period"},
+        "plan": {"$ref": "#/$defs/nullable_period"},
+        "baseline": {"$ref": "#/$defs/period"},
+        "effective_local_date": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "string", "format": "date"}
+          ]
+        }
+      }
+    },
+    "quality_gate": {"$ref": "#/$defs/context_item"},
+    "coverage": {"$ref": "#/$defs/context_items"},
+    "gaps": {"$ref": "#/$defs/context_items"},
+    "health": {"$ref": "#/$defs/context_items"},
+    "sleep": {"$ref": "#/$defs/context_items"},
+    "physiology": {"$ref": "#/$defs/context_items"},
+    "activities": {"$ref": "#/$defs/context_items"},
+    "technical_samples": {"$ref": "#/$defs/context_items"},
+    "deterministic_features": {"$ref": "#/$defs/context_items"},
+    "current_plan": {"$ref": "#/$defs/context_items"},
+    "plan_adherence": {"$ref": "#/$defs/context_items"},
+    "prior_artifacts": {"$ref": "#/$defs/context_items"},
+    "user_facts": {"$ref": "#/$defs/context_items"},
+    "policies": {"$ref": "#/$defs/context_items"},
+    "input_manifest": {
+      "type": "array",
+      "maxItems": 4000,
+      "items": {"$ref": "#/$defs/manifest_item"}
+    },
+    "context_limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_utf8_bytes",
+        "pruning_policy_version",
+        "applied_pruning_stages",
+        "omission_count",
+        "omissions"
+      ],
+      "properties": {
+        "max_utf8_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000
+        },
+        "pruning_policy_version": {"type": "string", "minLength": 1, "maxLength": 64},
+        "applied_pruning_stages": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "integer", "minimum": 1, "maximum": 4}
+        },
+        "omission_count": {"type": "integer", "minimum": 0, "maximum": 4000},
+        "omissions": {
+          "type": "array",
+          "maxItems": 4000,
+          "items": {"$ref": "#/$defs/omission"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "period": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start_local_date", "end_local_date"],
+      "properties": {
+        "start_local_date": {"type": "string", "format": "date"},
+        "end_local_date": {"type": "string", "format": "date"}
+      }
+    },
+    "nullable_period": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/period"}
+      ]
+    },
+    "context_items": {
+      "type": "array",
+      "maxItems": 4000,
+      "items": {"$ref": "#/$defs/context_item"}
+    },
+    "context_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ordinal", "content"],
+      "properties": {
+        "ordinal": {"type": "integer", "minimum": 0, "maximum": 3999},
+        "content": {
+          "type": "object",
+          "maxProperties": 128,
+          "additionalProperties": {"$ref": "#/$defs/json_value"}
+        }
+      }
+    },
+    "manifest_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "input_role",
+        "source_entity_type",
+        "source_entity_id",
+        "source_revision_id",
+        "source_window",
+        "trust_class",
+        "value_origin",
+        "input_sha256",
+        "ordinal"
+      ],
+      "properties": {
+        "input_role": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+        },
+        "source_entity_type": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+        },
+        "source_entity_id": {"type": "string", "minLength": 1, "maxLength": 192},
+        "source_revision_id": {"type": "string", "minLength": 1, "maxLength": 192},
+        "source_window": {"$ref": "#/$defs/period"},
+        "trust_class": {
+          "enum": [
+            "provider_fact",
+            "provider_derived",
+            "provider_predicted",
+            "user_asserted",
+            "derived_statistic",
+            "prior_model_output",
+            "unknown"
+          ]
+        },
+        "value_origin": {
+          "enum": [
+            "provider_fact",
+            "provider_derived",
+            "provider_predicted",
+            "user_asserted",
+            "derived_statistic",
+            "prior_model_output",
+            "unknown"
+          ]
+        },
+        "input_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "ordinal": {"type": "integer", "minimum": 0, "maximum": 3999}
+      }
+    },
+    "omission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stage",
+        "reason_code",
+        "input_role",
+        "source_entity_type",
+        "source_entity_id",
+        "source_revision_id",
+        "original_ordinal",
+        "before_sha256",
+        "after_sha256",
+        "removed_fields"
+      ],
+      "properties": {
+        "stage": {"type": "integer", "minimum": 1, "maximum": 4},
+        "reason_code": {
+          "enum": [
+            "optional_activity_extras",
+            "old_activity_details",
+            "old_daily_history",
+            "optional_provider_display"
+          ]
+        },
+        "input_role": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+        },
+        "source_entity_type": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+        },
+        "source_entity_id": {"type": "string", "minLength": 1, "maxLength": 192},
+        "source_revision_id": {"type": "string", "minLength": 1, "maxLength": 192},
+        "original_ordinal": {"type": "integer", "minimum": 0, "maximum": 3999},
+        "before_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "after_sha256": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+          ]
+        },
+        "removed_fields": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{0,95}$"
+          }
+        }
+      }
+    },
+    "json_value": {
+      "oneOf": [
+        {"type": "null"},
+        {"type": "boolean"},
+        {"type": "integer"},
+        {"type": "number", "not": {"type": "integer"}},
+        {"type": "string", "maxLength": 200000},
+        {
+          "type": "array",
+          "maxItems": 4000,
+          "items": {"$ref": "#/$defs/json_value"}
+        },
+        {
+          "type": "object",
+          "maxProperties": 256,
+          "additionalProperties": {"$ref": "#/$defs/json_value"}
+        }
+      ]
+    }
+  }
+}

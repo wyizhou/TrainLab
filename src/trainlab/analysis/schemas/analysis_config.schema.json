@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "trainlab.analysis.config.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["analysis"],
+  "properties": {
+    "analysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["timezone", "harness_root", "input_schema", "output_schema", "max_context_bytes", "daily_baseline_days", "weekly_baseline_days", "max_recent_daily_artifacts", "codex_timeout_seconds", "delivery_timeout_seconds", "lock_path", "temp_root"],
+      "properties": {
+        "timezone": {"const": "Asia/Singapore"},
+        "harness_root": {"const": "harness"},
+        "input_schema": {"const": "harness/schemas/analysis_input.schema.json"},
+        "output_schema": {"const": "harness/schemas/analysis_result.schema.json"},
+        "max_context_bytes": {"type": "integer", "minimum": 1, "maximum": 1000000},
+        "daily_baseline_days": {"type": "integer", "minimum": 1, "maximum": 365},
+        "weekly_baseline_days": {"type": "integer", "minimum": 1, "maximum": 365},
+        "max_recent_daily_artifacts": {"type": "integer", "minimum": 0, "maximum": 365},
+        "codex_timeout_seconds": {"type": "integer", "minimum": 1, "maximum": 600},
+        "delivery_timeout_seconds": {"type": "integer", "minimum": 1, "maximum": 180},
+        "lock_path": {"const": "state/locks/analysis.lock"},
+        "temp_root": {"const": "state/tmp/analysis"}
+      }
+    }
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "schema_version": "1",
+  "contract_hashes": {
+    "01-data-foundation.md": "9bf0a91e61bda47c9dba971c731ca6ec79e064b7f0ea4eb8124a5a216d67e396",
+    "02-data-collection.md": "afdffa6268d64403d170906ee6a42d10f873a75b1615b806d893982aea86db14",
+    "03-data-analysis.md": "4a9b3f1ffb92ba1ad4f56e68380344007e48a43e03a3e0f746399c50da794eb8",
+    "04-mail-agent.md": "47175280f917dee55d2aa5f663f0705da8ec7baf463eae5933ea391c0770be94",
+    "05-orchestration-monitoring.md": "5b1d5abf15689cec2507bd20e36aa83fe49626dd82247a4c0a1b91cc266ce804"
+  },
+  "owner": "orchestration",
+  "layer_owners": {
+    "foundation": "foundation",
+    "garmin": "garmin_collection",
+    "analysis": "analysis",
+    "mail": "mail_agent",
+    "orchestration": "orchestration"
+  },
+  "owned_tables": [
+    "scheduler_jobs",
+    "scheduler_leases",
+    "orchestrator_runs",
+    "orchestrator_steps",
+    "service_health_checks",
+    "operational_incidents",
+    "operational_alert_deliveries"
+  ],
+  "interfaces": {
+    "foundation": {
+      "modes": ["init", "status", "verify", "migrate"],
+      "statuses": ["initialized", "already_initialized", "ready", "incompatible", "lock_busy", "failed"],
+      "request_required": ["mode", "invocation_id", "target_schema_version", "requested_at_utc"],
+      "receipt_required": ["schema_version", "invocation_id", "mode", "status", "foundation_schema_version", "ready", "created_count", "existing_count", "verified_count", "migration_start_version", "migration_end_version", "applied_migration_ids", "next_action", "warnings", "errors", "started_at_utc", "completed_at_utc"]
+    },
+    "garmin": {
+      "modes": ["auth", "full", "incremental", "snapshot", "repair", "audit", "status"],
+      "statuses": ["succeeded", "partial", "deferred", "failed", "auth_required", "lock_busy"],
+      "request_required": ["mode", "health_from_local_date", "through_local_date", "snapshot_local_date", "resource_kinds", "activity_ids", "repair_strategy", "invocation_id"],
+      "receipt_required": ["schema_version", "run_id", "mode", "status", "requested_range", "effective_range", "coverage_state", "counts", "complete_through_by_resource", "open_gap_count", "next_retry_at_utc", "errors", "started_at_utc", "completed_at_utc"]
+    },
+    "analysis": {
+      "modes": ["daily", "weekly", "revise_plan", "regenerate", "retry_delivery", "reconcile_delivery", "status"],
+      "statuses": ["succeeded", "unchanged", "partial", "deferred", "rejected", "failed", "lock_busy"],
+      "request_required": ["mode", "subject_id", "invocation_id", "summary_local_date", "advice_local_date", "as_of_local_date", "plan_id", "reason_event_id", "effective_local_date", "artifact_id", "delivery_id", "regeneration_reason_code", "requested_at_utc"],
+      "status_only_optional_selectors": {"run_key": {"type": ["string", "null"], "allowed_modes": ["status"], "purpose": "read_only_history_run_selector", "non_status_policy": "reject_when_non_null", "excluded_from": ["invocation_id", "stable_write_identity", "run_creation", "run_recovery", "run_mutation"]}},
+      "receipt_required": ["schema_version", "run_key", "analysis_run_id", "invocation_id", "mode", "status", "target_periods", "quality_gate_state", "artifact_ids", "training_plan_id", "superseded_plan_id", "delivery", "input_snapshot_sha256", "harness_version", "input_schema_version", "output_schema_version", "warnings", "errors", "next_action", "next_retry_at_utc", "started_at_utc", "completed_at_utc"]
+    },
+    "mail": {
+      "modes": ["run", "poll", "process", "deliver_response", "reconcile", "status"],
+      "statuses": ["succeeded", "unchanged", "partial", "deferred", "lock_busy", "auth_required", "rejected", "failed"],
+      "request_required": ["mode", "subject_id", "invocation_id", "mail_message_ids", "mail_response_artifact_ids", "dependency_analysis_artifact_ids", "mail_delivery_ids", "thread_id", "max_items", "max_threads", "deadline_seconds", "regeneration_reason_code", "requested_at_utc"],
+      "status_only_optional_selectors": {"run_key": {"type": ["string", "null"], "allowed_modes": ["status"], "purpose": "read_only_history_run_selector", "non_status_policy": "reject_when_non_null", "excluded_from": ["invocation_id", "stable_write_identity", "run_creation", "run_recovery", "run_mutation"]}},
+      "receipt_required": ["schema_version", "run_key", "mail_agent_run_id", "invocation_id", "mode", "status", "counts", "processed_message_ids", "mail_response_artifact_ids", "mail_delivery_ids", "pending_dependencies", "poll_state", "next_action", "next_retry_at_utc", "warnings", "errors", "started_at_utc", "completed_at_utc"]
+    },
+    "orchestration": {
+      "modes": ["supervisor_run", "supervisor_doctor", "run_morning", "run_weekly", "run_mail", "run_health_check", "retry", "reconcile", "status"],
+      "statuses": ["queued", "running", "succeeded", "partial", "deferred", "attention_required", "failed", "cancelled"],
+      "request_required": ["workflow_kind", "subject_id", "logical_local_date", "invocation_id", "trigger_kind", "parent_workflow_run_id", "dependency_ids", "deadline_at_utc", "requested_at_utc"],
+      "receipt_required": ["schema_version", "workflow_run_id", "workflow_key", "workflow_kind", "status", "trigger_kind", "scheduled_at_utc", "started_at_utc", "completed_at_utc", "logical_local_date", "steps", "next_action", "next_retry_at_utc", "incident_ids", "warnings", "errors"]
+    },
+    "operational_gmail": {
+      "allowed_operations": ["get_self", "search_alert", "send_html_self", "apply_trainlab_label"],
+      "forbidden_operations": ["search_messages", "read_thread"],
+      "recipient_policy": "authenticated_self_only"
+    }
+  }
+}

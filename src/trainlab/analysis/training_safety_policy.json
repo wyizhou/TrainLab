@@ -1,0 +1,182 @@
+{
+  "schema_version": "1",
+  "policy_version": "1.0.1-a3-09",
+  "timezone": "Asia/Singapore",
+  "zone_boundary_policy": "inclusive_contiguous_no_overlap",
+  "zone_source_priority": [
+    "garmin_sport_zones",
+    "user_zones",
+    "hrr"
+  ],
+  "hrr_zone_percentages": {
+    "1": [0.5, 0.6],
+    "2": [0.6, 0.7],
+    "3": [0.7, 0.8],
+    "4": [0.8, 0.9],
+    "5": [0.9, 1.0]
+  },
+  "fallback": {
+    "maximum_rpe": 4,
+    "maximum_duration_minutes": 60,
+    "course_type": "easy"
+  },
+  "quality_session": {
+    "lookback_days": 7,
+    "maximum_prior_sessions": 2,
+    "minimum_recovery_hours": 48,
+    "zone4_maximum_total_work_seconds": 1200,
+    "zone5_maximum_total_work_seconds": 300,
+    "zone4_maximum_single_work_seconds": 600,
+    "zone5_maximum_single_work_seconds": 180,
+    "minimum_recovery_to_work_ratio": 1.0,
+    "minimum_warmup_cooldown_seconds": 600,
+    "quality_rpe_threshold": 8,
+    "maximum_rpe": 9
+  },
+  "controlled_tokens": {
+    "running_warmup": [
+      "easy_walk_jog_warmup",
+      "gentle_dynamic_warmup",
+      "gentle_warmup"
+    ],
+    "running_main_set": [
+      "steady_aerobic",
+      "structured_intervals",
+      "talk_test_easy"
+    ],
+    "running_cooldown": [
+      "easy_walk_cooldown",
+      "gentle_cooldown"
+    ],
+    "running_total_volume": [
+      "duration_only",
+      "easy_by_duration",
+      "interval_session_by_duration"
+    ],
+    "running_talk_test": [
+      "full_sentences",
+      "short_phrases"
+    ],
+    "running_rationale": [
+      "aerobic_base",
+      "data_limited_conservative",
+      "quality_session_appropriate",
+      "recovery_appropriate"
+    ],
+    "climbing_rationale": [
+      "recovery_appropriate",
+      "schedule_appropriate"
+    ],
+    "strength_rationale": [
+      "movement_practice",
+      "supports_running_and_climbing"
+    ],
+    "strength_exercises": {
+      "bodyweight_squat": "squat",
+      "dead_bug": "core",
+      "hip_hinge": "hinge",
+      "incline_push": "push",
+      "suitcase_carry": "carry",
+      "supported_row": "pull"
+    },
+    "rest_evidence": [
+      "acute_injury",
+      "acute_pain",
+      "back_recovery_insufficient",
+      "chest_pain",
+      "data_limited",
+      "explicit_red_flag",
+      "fainting",
+      "forearm_recovery_insufficient",
+      "recent_long_run",
+      "recent_running_quality_session",
+      "recovery_insufficient",
+      "scheduled_recovery",
+      "shoulder_recovery_insufficient"
+    ],
+    "rest_uncertainty": [
+      "data_limited",
+      "normal_training_uncertainty",
+      "safety_rule_not_medical_diagnosis"
+    ],
+    "rest_recovery_signals": [
+      "energy_improves",
+      "pain_free_daily_movement",
+      "recovery_status_reassessed",
+      "symptoms_resolved"
+    ],
+    "rest_seek_help": [
+      "concerning_symptom_appears",
+      "pain_or_recovery_concern_persists",
+      "red_flag_present_or_persistent"
+    ]
+  },
+  "required_running_stop_conditions": [
+    "acute_pain",
+    "chest_pain",
+    "fainting_or_dizziness",
+    "unusual_shortness_of_breath"
+  ],
+  "required_strength_stop_conditions": [
+    "acute_pain",
+    "acute_discomfort"
+  ],
+  "red_flag_signal_kinds": [
+    "chest_pain",
+    "fainting",
+    "acute_injury"
+  ],
+  "hr_blocking_signal_kinds": [
+    "hr_affecting_medication",
+    "hr_baseline_unreliable"
+  ],
+  "climbing_blocking_signal_kinds": [
+    "acute_pain",
+    "forearm_recovery_insufficient",
+    "shoulder_recovery_insufficient",
+    "back_recovery_insufficient"
+  ],
+  "strength_blocking_signal_kinds": [
+    "acute_pain",
+    "forearm_recovery_insufficient",
+    "shoulder_recovery_insufficient",
+    "back_recovery_insufficient",
+    "recent_running_quality_session",
+    "recent_long_run"
+  ],
+  "reason_codes": [
+    "all_out_prohibited",
+    "climbing_recovery_insufficient",
+    "clock_time_prohibited",
+    "device_anomaly_warning",
+    "duration_units_ambiguous",
+    "exact_zone_source_garmin",
+    "exact_zone_source_hrr",
+    "exact_zone_source_user",
+    "exact_zone_unavailable",
+    "hr_baseline_unreliable",
+    "hr_medication_exact_bpm_blocked",
+    "interval_structure_invalid",
+    "low_intensity_fallback",
+    "professional_evaluation_recommended",
+    "prohibited_zone_evidence",
+    "recommendation_accepted",
+    "red_flag_training_suspended",
+    "rest_selected",
+    "rpe_too_high",
+    "source_evidence_invalid",
+    "stop_conditions_incomplete",
+    "strength_recovery_insufficient",
+    "substitution_conflicts_exact_evidence",
+    "substitution_consistent",
+    "target_bpm_mismatch",
+    "zone45_dose_exceeded",
+    "zone45_frequency_exceeded",
+    "zone45_recovery_insufficient",
+    "zone45_requires_intervals",
+    "zone_evidence_expired",
+    "zone_evidence_future",
+    "zone_evidence_noncurrent",
+    "zone_source_conflict"
+  ]
+}

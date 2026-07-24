@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trainlab.local/schemas/mail_receipt.schema.json",
+  "title": "TrainLab MailReceipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run_key", "mail_agent_run_id", "invocation_id", "mode", "status", "counts", "processed_message_ids", "mail_response_artifact_ids", "mail_delivery_ids", "pending_dependencies", "poll_state", "next_action", "next_retry_at_utc", "warnings", "errors", "started_at_utc", "completed_at_utc"],
+  "properties": {
+    "schema_version": {"const": "1"},
+    "run_key": {"type": "string", "minLength": 1},
+    "mail_agent_run_id": {"type": ["string", "null"]},
+    "invocation_id": {"type": "string", "minLength": 1},
+    "mode": {"enum": ["run", "poll", "process", "deliver_response", "reconcile", "status"]},
+    "status": {"enum": ["succeeded", "unchanged", "partial", "deferred", "lock_busy", "auth_required", "rejected", "failed"]},
+    "counts": {"type": "object", "additionalProperties": false, "required": ["discovered", "archived", "unchanged", "queued", "processed", "ignored", "responses_accepted", "deliveries_sent", "deliveries_already_sent", "failed", "deferred"], "properties": {"discovered": {"type": "integer", "minimum": 0}, "archived": {"type": "integer", "minimum": 0}, "unchanged": {"type": "integer", "minimum": 0}, "queued": {"type": "integer", "minimum": 0}, "processed": {"type": "integer", "minimum": 0}, "ignored": {"type": "integer", "minimum": 0}, "responses_accepted": {"type": "integer", "minimum": 0}, "deliveries_sent": {"type": "integer", "minimum": 0}, "deliveries_already_sent": {"type": "integer", "minimum": 0}, "failed": {"type": "integer", "minimum": 0}, "deferred": {"type": "integer", "minimum": 0}}},
+    "processed_message_ids": {"type": "array", "items": {"type": "string"}},
+    "mail_response_artifact_ids": {"type": "array", "items": {"type": "string"}},
+    "mail_delivery_ids": {"type": "array", "items": {"type": "string"}},
+    "pending_dependencies": {"type": "array", "items": {"type": "object", "additionalProperties": {"type": "string"}}},
+    "poll_state": {"type": "array", "items": {"type": "object", "additionalProperties": {"type": "string"}}},
+    "next_action": {"type": "string", "minLength": 1},
+    "next_retry_at_utc": {"type": ["string", "null"]},
+    "warnings": {"type": "array", "items": {"type": "object", "additionalProperties": {"type": "string"}}},
+    "errors": {"type": "array", "items": {"type": "object", "additionalProperties": {"type": "string"}}},
+    "started_at_utc": {"type": "string", "minLength": 1},
+    "completed_at_utc": {"type": ["string", "null"]}
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["foundation"],
+  "additionalProperties": false,
+  "properties": {
+    "foundation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["data_root", "database_path", "raw_root", "state_root", "ready_marker", "lock_path"],
+      "properties": {
+        "data_root": {"type": "string", "minLength": 1},
+        "database_path": {"type": "string", "minLength": 1},
+        "raw_root": {"type": "string", "minLength": 1},
+        "state_root": {"type": "string", "minLength": 1},
+        "ready_marker": {"type": "string", "minLength": 1},
+        "lock_path": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

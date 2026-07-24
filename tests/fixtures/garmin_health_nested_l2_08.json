@@ -1,0 +1,48 @@
+{
+  "heart_rates": {
+    "heartRateValues": [[1776211200000, 59], [1776214800000, 62]],
+    "futureHeartRateEnvelope": {"algorithmVersion": 1}
+  },
+  "stress": {
+    "stressValuesArray": [[1776211200000, 21], [1776218400000, 34]],
+    "futureStressEnvelope": {"algorithmVersion": 1}
+  },
+  "respiration": {
+    "respirationValuesArray": [[1776214800000, 13.2], [1776222000000, 14.1]],
+    "futureRespirationEnvelope": {"algorithmVersion": 1}
+  },
+  "body_battery": [{
+    "date": "2026-04-15",
+    "bodyBatteryValuesArray": [[1776211200000, 66], [1776222000000, 61]],
+    "futureBodyBatteryEnvelope": {"algorithmVersion": 1}
+  }],
+  "spo2": {
+    "spO2HourlyAverages": [[1776211200000, 97], [1776218400000, 98]],
+    "futureSpo2Envelope": {"algorithmVersion": 1}
+  },
+  "body_composition": {
+    "dateWeightList": [
+      {"timestampGMT": "1776211200000", "weightKg": 70.4, "bodyFatPercent": 18.1},
+      {"timestampGMT": "1776222000000", "weightKg": 70.3, "bodyFatPercent": 18.0}
+    ],
+    "futureCompositionEnvelope": {"algorithmVersion": 1}
+  },
+  "blood_pressure": {
+    "bloodPressureSummaries": [
+      {"timestamp": "1776214800", "systolic": 118, "diastolic": 76},
+      {"timestamp": "2026-04-15T03:00:00Z", "systolic": 119, "diastolic": 77}
+    ],
+    "futureBloodPressureEnvelope": {"algorithmVersion": 1}
+  },
+  "sleep": {
+    "dailySleepDTO": {
+      "sleepStartTimestampGMT": "1776178800",
+      "sleepEndTimestampGMT": "1776189600000",
+      "sleepLevelsMap": {
+        "1776182400000": "light",
+        "2026-04-14T15:00:00Z": "deep",
+        "1776186000": "rem"
+      }
+    }
+  }
+}

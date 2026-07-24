@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "policy_version",
+    "result_schema_version",
+    "reason_codes",
+    "limits",
+    "intent_actions",
+    "fact_keys",
+    "long_term_markers",
+    "supersession_markers",
+    "forbidden_fact_prefixes",
+    "medical_diagnosis_phrases",
+    "medical_condition_terms",
+    "provider_markers",
+    "provider_metric_terms",
+    "provider_limitation_markers",
+    "privileged_claim_phrases",
+    "forbidden_structured_keys",
+    "plan_constraint_keys"
+  ],
+  "properties": {
+    "schema_version": {"const": "1"},
+    "policy_version": {"const": "mail-fact-gate-v1"},
+    "result_schema_version": {"const": "1"},
+    "reason_codes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^mail_fact_gate_[a-z0-9_]+$"}
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_result_bytes", "max_json_depth", "max_json_nodes", "max_temporary_days"],
+      "properties": {
+        "max_result_bytes": {"type": "integer", "minimum": 1024, "maximum": 1048576},
+        "max_json_depth": {"type": "integer", "minimum": 2, "maximum": 16},
+        "max_json_nodes": {"type": "integer", "minimum": 100, "maximum": 100000},
+        "max_temporary_days": {"type": "integer", "minimum": 1, "maximum": 366}
+      }
+    },
+    "intent_actions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "feedback",
+        "health_or_activity_question",
+        "training_question",
+        "plan_change_request",
+        "user_fact_update",
+        "acknowledgement",
+        "non_trainlab_or_unsupported",
+        "safety_concern"
+      ],
+      "properties": {
+        "feedback": {"$ref": "#/$defs/actions"},
+        "health_or_activity_question": {"$ref": "#/$defs/actions"},
+        "training_question": {"$ref": "#/$defs/actions"},
+        "plan_change_request": {"$ref": "#/$defs/actions"},
+        "user_fact_update": {"$ref": "#/$defs/actions"},
+        "acknowledgement": {"$ref": "#/$defs/actions"},
+        "non_trainlab_or_unsupported": {"$ref": "#/$defs/actions"},
+        "safety_concern": {"$ref": "#/$defs/actions"}
+      }
+    },
+    "fact_keys": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["scopes", "value_types"],
+        "properties": {
+          "scopes": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {"enum": ["message_only", "temporary", "long_term"]}
+          },
+          "value_types": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {"enum": ["string", "number", "boolean"]}
+          }
+        }
+      }
+    },
+    "long_term_markers": {"$ref": "#/$defs/phrases"},
+    "supersession_markers": {"$ref": "#/$defs/phrases"},
+    "forbidden_fact_prefixes": {"$ref": "#/$defs/phrases"},
+    "medical_diagnosis_phrases": {"$ref": "#/$defs/phrases"},
+    "medical_condition_terms": {"$ref": "#/$defs/phrases"},
+    "provider_markers": {"$ref": "#/$defs/phrases"},
+    "provider_metric_terms": {"$ref": "#/$defs/phrases"},
+    "provider_limitation_markers": {"$ref": "#/$defs/phrases"},
+    "privileged_claim_phrases": {"$ref": "#/$defs/phrases"},
+    "forbidden_structured_keys": {"$ref": "#/$defs/keys"},
+    "plan_constraint_keys": {"$ref": "#/$defs/keys"}
+  },
+  "$defs": {
+    "actions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"enum": ["reply", "store_only", "await_analysis", "ignore", "operator_review"]}
+    },
+    "phrases": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 80}
+    },
+    "keys": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$"}
+    }
+  }
+}

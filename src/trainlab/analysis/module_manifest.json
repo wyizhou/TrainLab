@@ -1,0 +1,27 @@
+{
+  "schema_version": "1",
+  "layer": "analysis",
+  "module_version": "0.1.0-a3-01",
+  "production_entrypoint": "trainlab run",
+  "contracts": {
+    "docs/layers/01-data-foundation.md": "9bf0a91e61bda47c9dba971c731ca6ec79e064b7f0ea4eb8124a5a216d67e396",
+    "docs/layers/02-data-collection.md": "afdffa6268d64403d170906ee6a42d10f873a75b1615b806d893982aea86db14",
+    "docs/layers/03-data-analysis.md": "4a9b3f1ffb92ba1ad4f56e68380344007e48a43e03a3e0f746399c50da794eb8",
+    "docs/layers/04-mail-agent.md": "47175280f917dee55d2aa5f663f0705da8ec7baf463eae5933ea391c0770be94",
+    "docs/layers/05-orchestration-monitoring.md": "5b1d5abf15689cec2507bd20e36aa83fe49626dd82247a4c0a1b91cc266ce804"
+  },
+  "migration_baseline": {
+    "AGENTS.md": "74aebb78f0e0eed24a8d4fa2b38cfed784cb1c2d04e39e774b44025e7bc3ad85",
+    "harness/shared/HARNESS.md": "847ec27f06e4d3955aa6064777c15870054ed9fcc61e3d406ec89f8c5fca15c9",
+    "harness/runtime/HARNESS.md": "824b4704635656eb6ebc410d90de9baf956b2fcd8d959f2fefdd61dac5b4ee66"
+  },
+  "capabilities": {
+    "network": false,
+    "database_read": false,
+    "database_write": false,
+    "subprocess": false,
+    "codex": false,
+    "gmail_mcp": false,
+    "scheduler": false
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "schema_version": "1",
+  "policy_version": "1.0.0-a3-10",
+  "default_max_context_bytes": 1000000,
+  "maximum_manifest_items": 4000,
+  "maximum_technical_sample_summaries": 16,
+  "maximum_technical_sample_rows": 1600,
+  "daily_baseline_days": 14,
+  "weekly_baseline_days": 28,
+  "maximum_recent_daily_artifacts": 7,
+  "pruning_order": [
+    "optional_activity_extras",
+    "old_activity_details",
+    "old_daily_history",
+    "optional_provider_display"
+  ],
+  "trust_classes": [
+    "derived_statistic",
+    "prior_model_output",
+    "provider_derived",
+    "provider_fact",
+    "provider_predicted",
+    "unknown",
+    "user_asserted"
+  ],
+  "fact_scopes": [
+    "long_term",
+    "message_only",
+    "temporary"
+  ],
+  "technical_sample_metrics": [
+    "altitude_m",
+    "cadence_rpm",
+    "heart_rate_bpm",
+    "power_w",
+    "speed_mps",
+    "temperature_c"
+  ]
+}

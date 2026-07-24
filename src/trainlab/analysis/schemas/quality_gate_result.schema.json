@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "trainlab.analysis.quality-gate-result.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "policy_version",
+    "state",
+    "snapshot_sha256",
+    "blockers",
+    "warnings",
+    "next_action"
+  ],
+  "properties": {
+    "schema_version": {"const": "1"},
+    "policy_version": {"const": "3"},
+    "state": {"enum": ["ready", "ready_with_warnings", "blocked"]},
+    "snapshot_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "blockers": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {"$ref": "#/$defs/reason"}
+    },
+    "warnings": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {"$ref": "#/$defs/reason"}
+    },
+    "next_action": {"enum": ["none", "rerun_collection", "repair_data"]}
+  },
+  "$defs": {
+    "reason": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "entity", "summary"],
+      "properties": {
+        "code": {
+          "enum": [
+            "activity_absent_unconfirmed",
+            "activity_inventory_incomplete",
+            "activity_inventory_proof_missing",
+            "activity_stage_incomplete",
+            "capability_conflict",
+            "capability_expired",
+            "capability_missing",
+            "capability_required_unavailable",
+            "coverage_ambiguous",
+            "coverage_error",
+            "coverage_missing",
+            "coverage_optional",
+            "coverage_partial",
+            "coverage_state_unknown",
+            "cursor_ambiguous",
+            "cursor_catalog_unknown",
+            "cursor_hole",
+            "cursor_missing",
+            "facts_malformed",
+            "gap_deferred",
+            "gap_open",
+            "gap_state_unknown",
+            "gate_evidence_limit_exceeded",
+            "plan_incomplete",
+            "plan_lineage_invalid",
+            "plan_reason_invalid",
+            "quality_error",
+            "quality_state_unknown",
+            "quality_warning",
+            "sleep_evidence_missing",
+            "snapshot_malformed",
+            "subject_identity_invalid"
+          ]
+        },
+        "entity": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 96,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "summary": {"type": "string", "minLength": 1, "maxLength": 64}
+      }
+    }
+  }
+}

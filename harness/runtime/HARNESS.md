@@ -6,6 +6,33 @@ status: active
 
 # Runtime harness
 
+This is the legacy production runtime extension. Load `shared/HARNESS.md` first,
+then apply this file in order. Its source, Drive, mailbox and sending rules are
+specific to the current `trainlab run` path and are not part of the production
+analysis Harness.
+
+- Source paths are exactly `source/Health.xlsx`, `source/HealthFit/*.fit`, and
+  root `data.db`.
+- Runtime inputs are bounded by `harness/schemas/runtime_input.schema.json`.
+- Runtime results are bounded by `harness/schemas/runtime_result.schema.json`.
+- Reports are user-visible only through Gmail. CLI output is an internal receipt.
+- Gmail recipients are the authenticated account only and the label is TrainLab.
+- Google Drive ingestion uses the exact remote items `Health Metrics_v5.xlsx`
+  and `HealthFit/` through a project-owned OAuth client and the
+  `drive.readonly` scope. Never copy the Drive root, upload to Drive, propagate
+  cloud deletions, or delete local raw files.
+- Gmail and rclone may use the same project-owned Google OAuth desktop client,
+  but they must use separate tokens with service-specific least-privilege
+  scopes. Never copy a Gmail token into rclone or a Drive token into Gmail.
+
+## Non-normative compatibility notes
+
+Linux production observations are recorded in
+`docs/runbooks/linux-production-observations.md`. They document issues seen with
+specific tool and provider versions, but do not create requirements for future
+runner adapters. Each new runner must be validated against the shared schemas and
+safety boundaries on its own behavior.
+
 Start with the supplied JSON context. It is authoritative and already enforces
 the seven-day/detail/history bounds. Do not open `data.db`, `source/`, the
 development harness, or `archive/`.
