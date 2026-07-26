@@ -203,7 +203,6 @@ def test_public_optional_fields_are_not_narrowed(layer: str, mode: str, kwargs: 
 
 
 @pytest.mark.parametrize("mode,kwargs", [
-    ("weekly", {"as_of_local_date":"2026-07-24"}),
     ("revise_plan", {"plan_id":"plan-1", "reason_event_id":"event-1"}),
     ("regenerate", {"artifact_id":"artifact-1", "regeneration_reason_code":"manual"}),
     ("status", {}),
@@ -356,7 +355,7 @@ def test_analysis_dynamic_colon_key_is_escaped_exactly(mode: str, kwargs: dict[s
 
 
 def test_all_mode_argv_snapshots_are_fixed_and_targets_are_required() -> None:
-    unavailable_analysis_modes = {"weekly", "revise_plan", "regenerate", "status"}
+    unavailable_analysis_modes = {"revise_plan", "regenerate", "status"}
     for layer, modes in runner_module._MODES.items():
         for mode in modes:
             args = dict(layer=layer, mode=mode, invocation_id="invoke-1", request_sha256=None)
@@ -761,6 +760,7 @@ def _every_allowlisted_call() -> tuple[DownstreamCall, ...]:
         DownstreamCall("garmin", "audit", "garmin-audit-1", None, health_from_local_date="2026-07-23", through_local_date="2026-07-24"),
         DownstreamCall("garmin", "status", "garmin-status-1", None),
         DownstreamCall("analysis", "daily", "analysis-daily-1", None, subject_id="subject-1", summary_local_date="2026-07-23", advice_local_date="2026-07-24"),
+        DownstreamCall("analysis", "weekly", "analysis-weekly-1", None, subject_id="subject-1", as_of_local_date="2026-07-24"),
         DownstreamCall("analysis", "retry_delivery", "analysis-retry-1", None, subject_id="subject-1", delivery_id="1"),
         DownstreamCall("analysis", "reconcile_delivery", "analysis-reconcile-1", None, subject_id="subject-1", delivery_id="1"),
         DownstreamCall("mail", "run", "mail-run-1", None, subject_id=1, max_items=2, deadline_seconds=30),

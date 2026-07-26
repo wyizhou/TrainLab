@@ -249,6 +249,12 @@ def _argv(call: DownstreamCall) -> tuple[str, ...]:
                 raise SubprocessBoundaryError("subprocess_advice_date_mismatch")
             base.append("--deliver")
             return tuple(base)
+        if call.mode == "weekly":
+            base.append("--weekly")
+            if call.as_of_local_date is not None:
+                base.extend(("--as-of-date", call.as_of_local_date))
+            base.append("--deliver")
+            return tuple(base)
         if call.mode in {"retry_delivery", "reconcile_delivery"}:
             if not isinstance(call.delivery_id, str) or re.fullmatch(r"[1-9][0-9]{0,18}", call.delivery_id) is None:
                 raise SubprocessBoundaryError("subprocess_delivery_id_required")
@@ -257,7 +263,7 @@ def _argv(call: DownstreamCall) -> tuple[str, ...]:
                 call.delivery_id,
             ))
             return tuple(base)
-        # Weekly/revision/regeneration/status remain frozen contract modes, but
+        # Revision/regeneration/status remain frozen contract modes, but
         # are not production-ready until they are integrated through
         # ``trainlab run``.  Never fall back to the internal future CLI.
         raise SubprocessBoundaryError("subprocess_analysis_mode_not_production_ready")

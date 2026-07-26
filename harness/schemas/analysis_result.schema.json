@@ -12,10 +12,10 @@
     "subject_id": {"type": "integer", "minimum": 1},
     "status": {"const": "accepted"},
     "artifacts": {"type": "array", "minItems": 1, "maxItems": 9, "items": {"$ref": "#/$defs/artifact"}},
-    "training_plan": {"type": "null"},
+    "training_plan": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/training_plan"}]},
     "source_usage": {"type": "array", "minItems": 1, "maxItems": 4000, "items": {"$ref": "#/$defs/source_usage"}},
     "quality_disclosures": {"type": "array", "maxItems": 128, "items": {"$ref": "#/$defs/disclosure"}},
-    "safety": {"$ref": "#/$defs/safety"},
+    "safety": {"oneOf": [{"$ref": "#/$defs/safety"}, {"$ref": "#/$defs/weekly_safety"}]},
     "warnings": {"type": "array", "maxItems": 128, "items": {"type": "string", "minLength": 1, "maxLength": 1000}}
   },
   "$defs": {
@@ -33,6 +33,56 @@
     "source_usage": {"type": "object", "additionalProperties": false, "required": ["ordinal", "input_role", "source_entity_id", "source_revision_id"], "properties": {"ordinal": {"type": "integer", "minimum": 0, "maximum": 3999}, "input_role": {"type": "string", "pattern": "^[a-z][a-z0-9_.-]{0,95}$"}, "source_entity_id": {"type": "string", "minLength": 1, "maxLength": 192}, "source_revision_id": {"type": "string", "minLength": 1, "maxLength": 192}}},
     "disclosure": {"type": "object", "additionalProperties": false, "required": ["code", "entity"], "properties": {"code": {"type": "string", "pattern": "^[a-z0-9_]{1,96}$"}, "entity": {"type": "string", "minLength": 1, "maxLength": 96, "pattern": "^[A-Za-z0-9_.:-]+$"}}},
     "safety": {"type": "object", "additionalProperties": false, "required": ["safety_state", "primary_item"], "properties": {"safety_state": {"enum": ["normal", "warning", "suspended"]}, "primary_item": {"$ref": "#/$defs/json_value"}}},
+    "prior_artifact_state": {
+      "type": "object", "additionalProperties": false,
+      "required": ["summary", "plan"],
+      "properties": {
+        "summary": {"enum": ["available", "no_prior_artifact"]},
+        "plan": {"enum": ["available", "no_prior_artifact"]}
+      }
+    },
+    "plan_item": {
+      "type": "object", "additionalProperties": false,
+      "required": ["item_index", "local_date", "activity_kind", "prescription", "rationale_text", "stop_conditions"],
+      "properties": {
+        "item_index": {"type": "integer", "minimum": 0, "maximum": 6},
+        "local_date": {"type": "string", "format": "date"},
+        "activity_kind": {"enum": ["running", "climbing", "strength", "rest"]},
+        "prescription": {"type": "object", "maxProperties": 64, "additionalProperties": {"$ref": "#/$defs/json_value"}},
+        "rationale_text": {"type": ["string", "null"], "maxLength": 10000},
+        "stop_conditions": {"type": "array", "maxItems": 12, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 128}}
+      }
+    },
+    "training_plan": {
+      "type": "object", "additionalProperties": false,
+      "required": ["period", "timezone", "objective", "constraints", "prior_artifact_state", "items"],
+      "properties": {
+        "period": {"$ref": "#/$defs/period"},
+        "timezone": {"const": "Asia/Singapore"},
+        "objective": {"type": "object", "maxProperties": 64, "additionalProperties": {"$ref": "#/$defs/json_value"}},
+        "constraints": {"type": "object", "maxProperties": 64, "additionalProperties": {"$ref": "#/$defs/json_value"}},
+        "prior_artifact_state": {"$ref": "#/$defs/prior_artifact_state"},
+        "items": {"type": "array", "minItems": 7, "maxItems": 7, "items": {"$ref": "#/$defs/plan_item"}}
+      }
+    },
+    "weekly_safety_item": {
+      "type": "object", "additionalProperties": false,
+      "required": ["item_index", "local_date", "safety_state", "primary_item"],
+      "properties": {
+        "item_index": {"type": "integer", "minimum": 0, "maximum": 6},
+        "local_date": {"type": "string", "format": "date"},
+        "safety_state": {"enum": ["normal", "warning", "suspended"]},
+        "primary_item": {"$ref": "#/$defs/json_value"}
+      }
+    },
+    "weekly_safety": {
+      "type": "object", "additionalProperties": false,
+      "required": ["safety_state", "plan_items"],
+      "properties": {
+        "safety_state": {"enum": ["normal", "warning", "suspended"]},
+        "plan_items": {"type": "array", "minItems": 7, "maxItems": 7, "items": {"$ref": "#/$defs/weekly_safety_item"}}
+      }
+    },
     "json_value": {"anyOf": [{"type": "null"}, {"type": "boolean"}, {"type": "number"}, {"type": "string", "maxLength": 10000}, {"type": "array", "maxItems": 256, "items": {"$ref": "#/$defs/json_value"}}, {"type": "object", "maxProperties": 128, "propertyNames": {"type": "string", "maxLength": 128}, "additionalProperties": {"$ref": "#/$defs/json_value"}}]}
   }
 }

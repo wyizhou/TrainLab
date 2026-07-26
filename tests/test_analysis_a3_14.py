@@ -108,3 +108,46 @@ def test_render_failure_does_not_roll_back_published_artifacts_or_pending_delive
         AnalysisDeliveryFactory(connection).prepare(publish_receipt=receipt, delivery_kind="daily_report", renderer=broken_renderer)
     assert connection.execute("SELECT count(*) FROM analysis_artifacts").fetchone()[0] == 2
     assert connection.execute("SELECT status FROM analysis_deliveries").fetchone()[0] == "pending"
+
+
+def test_weekly_report_binds_exact_summary_and_plan_revisions() -> None:
+    connection = database()
+    connection.execute(
+        "UPDATE analysis_runs SET run_key='analysis:1:weekly:2026-07-26:one',"
+        "analysis_kind='weekly' WHERE id=1"
+    )
+    connection.executemany(
+        "INSERT INTO analysis_artifacts(id,subject_id,artifact_kind,"
+        "period_start_local_date,period_end_local_date,revision_no,"
+        "generated_by_run_id,schema_version,structured_content_json,"
+        "user_visible_text,content_sha256,is_current,created_at_utc) "
+        "VALUES(?,1,?,?,?,?,1,'1','{}',?,?,1,'2026-07-26T00:00:00Z')",
+        (
+            (
+                11, "weekly_summary", "2026-07-19", "2026-07-25", 1,
+                "本周总结。", "b" * 64,
+            ),
+            (
+                12, "weekly_training_plan", "2026-07-26", "2026-08-01", 1,
+                "未来七天计划。", "c" * 64,
+            ),
+        ),
+    )
+    receipt = {
+        "run_id": 1,
+        "artifact_ids": {
+            "weekly_summary": 11,
+            "weekly_training_plan": 12,
+        },
+    }
+    connection.commit()
+    pending = AnalysisDeliveryFactory(connection).create_pending(
+        publish_receipt=receipt, delivery_kind="weekly_report"
+    )
+    assert [item.content_role for item in pending.artifacts] == [
+        "weekly_summary",
+        "weekly_plan",
+    ]
+    rendered = render_delivery(pending)
+    assert "每周总结" in rendered.plain_text
+    assert "未来七天计划" in rendered.plain_text

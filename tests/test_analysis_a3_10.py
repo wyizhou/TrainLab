@@ -1001,6 +1001,25 @@ def test_pruning_never_removes_quality_gaps_current_plan_prior_week_or_policies(
     } == policy_names
 
 
+def test_weekly_adherence_accepts_exact_prior_plan_artifact_lineage():
+    result = build(
+        weekly(max_context_bytes=1_000_000),
+        pruning_snapshot(),
+        adherence=(
+            {
+                "key": "plan_adherence.completed_as_planned.count.7d",
+                "value": 1,
+                "value_origin": "derived_statistic",
+                "algorithm_version": "2",
+                "input_revision_ids": ["201"],
+            },
+        ),
+    )
+    assert result.context["plan_adherence"][0]["content"]["input_revision_ids"] == [
+        "201"
+    ]
+
+
 def test_feature_lineage_must_be_unique_current_snapshot_evidence():
     value = snapshot(
         views={

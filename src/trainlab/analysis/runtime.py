@@ -79,6 +79,41 @@ def build_daily_request(
     })
 
 
+def build_weekly_request(
+    *, subject_id: str, invocation_id: str, as_of_date: str | None,
+    now: datetime | None = None,
+) -> AnalysisRequest:
+    """Build one rolling seven-day review plus seven-day plan request."""
+    if not isinstance(subject_id, str) or _SUBJECT_KEY.fullmatch(subject_id) is None:
+        raise ValueError("analysis_subject_id_invalid")
+    if not isinstance(invocation_id, str) or not invocation_id:
+        raise ValueError("analysis_invocation_id_required")
+    current = (now or datetime.now(UTC)).astimezone(_SINGAPORE).date()
+    as_of = _strict_date(as_of_date) or current
+    if as_of > current:
+        raise ValueError("analysis_weekly_as_of_date_in_future")
+    requested = (now or datetime.now(UTC)).astimezone(UTC).isoformat(
+        timespec="seconds"
+    ).replace("+00:00", "Z")
+    return AnalysisRequest.from_dict({
+        "schema_version": "1",
+        "mode": "weekly",
+        "subject_id": subject_id,
+        "invocation_id": invocation_id,
+        "run_key": None,
+        "summary_local_date": None,
+        "advice_local_date": None,
+        "as_of_local_date": as_of.isoformat(),
+        "plan_id": None,
+        "reason_event_id": None,
+        "effective_local_date": None,
+        "artifact_id": None,
+        "delivery_id": None,
+        "regeneration_reason_code": None,
+        "requested_at_utc": requested,
+    })
+
+
 def _active_subject_key(connection: object) -> str:
     """Read only the active public subject key; fail closed unless it is unique."""
     rows = list(connection.execute(
@@ -138,6 +173,62 @@ def run_analysis_only(
         artifact_ids = _delivery_artifact_ids(connection, delivery_id)
         receipt = _restore_daily_receipt_evidence(connection, receipt, artifact_ids)
         return _merge_daily_delivery(
+            receipt,
+            _execute_delivery(connection, config, delivery_id, "retry_delivery"),
+            artifact_ids,
+        )
+    finally:
+        connection.close()
+
+
+def run_weekly_analysis(
+    *, invocation_id: str, as_of_date: str | None = None, deliver: bool = False,
+    root: Path | None = None,
+) -> AnalysisReceipt:
+    """Execute one A3-18 weekly route through the sole production entry."""
+    root = (root or project_root()).resolve()
+    foundation = FoundationConfig.load(root)
+    config = load_analysis_config(root, root / "config" / "analysis.yaml")
+    connection = FoundationTool(foundation)._connect(foundation.database_path)
+    try:
+        request = build_weekly_request(
+            subject_id=_active_subject_key(connection),
+            invocation_id=invocation_id,
+            as_of_date=as_of_date,
+        )
+        repository = AnalysisRunRepository(connection)
+        coordinator = AnalysisRunCoordinator(
+            repository,
+            SubjectLockManager(
+                config.lock_path, trusted_root=config.lock_path.parent.parent
+            ),
+        )
+        from .weekly import WeeklyRoute
+
+        route = WeeklyRoute(
+            config=config,
+            coordinator=coordinator,
+            stable_views=StableViewRepository(connection),
+            runner=AnalysisCodexRunner(config),
+            publisher=AnalysisPublisher(connection),
+            delivery=AnalysisDeliveryFactory(connection),
+        )
+        receipt = route.execute(request)
+        if not deliver or receipt.status not in {"partial", "unchanged", "succeeded"}:
+            return receipt
+        delivery_id = _analysis_delivery_id(connection, receipt, "weekly_report")
+        if delivery_id is None:
+            return replace(
+                receipt,
+                status="partial",
+                errors=receipt.errors + (_error("analysis_delivery_missing"),),
+                next_action="retry_delivery",
+            )
+        artifact_ids = _delivery_artifact_ids(connection, delivery_id)
+        receipt = _restore_receipt_evidence(
+            connection, receipt, artifact_ids, include_training_plan=True
+        )
+        return _merge_delivery(
             receipt,
             _execute_delivery(connection, config, delivery_id, "retry_delivery"),
             artifact_ids,
@@ -221,12 +312,18 @@ def _execute_delivery(
 
 
 def _daily_delivery_id(connection: object, receipt: AnalysisReceipt) -> int | None:
+    return _analysis_delivery_id(connection, receipt, "daily_report")
+
+
+def _analysis_delivery_id(
+    connection: object, receipt: AnalysisReceipt, delivery_kind: str
+) -> int | None:
     if receipt.delivery is not None and receipt.delivery.delivery_id.isdecimal():
         return int(receipt.delivery.delivery_id)
     row = connection.execute(  # type: ignore[union-attr]
         "SELECT d.id FROM analysis_deliveries d JOIN analysis_runs r ON r.id=d.analysis_run_id "
-        "WHERE r.run_key=? AND d.delivery_kind='daily_report' ORDER BY d.id",
-        (receipt.run_key,),
+        "WHERE r.run_key=? AND d.delivery_kind=? ORDER BY d.id",
+        (receipt.run_key, delivery_kind),
     ).fetchall()
     return int(row[0][0]) if len(row) == 1 else None
 
@@ -256,6 +353,16 @@ def _restore_daily_receipt_evidence(
     connection: object, receipt: AnalysisReceipt, artifact_ids: tuple[str, ...]
 ) -> AnalysisReceipt:
     """Restore persisted public evidence for an unchanged successful run."""
+    return _restore_receipt_evidence(connection, receipt, artifact_ids)
+
+
+def _restore_receipt_evidence(
+    connection: object,
+    receipt: AnalysisReceipt,
+    artifact_ids: tuple[str, ...],
+    *,
+    include_training_plan: bool = False,
+) -> AnalysisReceipt:
     if receipt.status != "unchanged":
         return receipt
     row = connection.execute(  # type: ignore[union-attr]
@@ -265,10 +372,22 @@ def _restore_daily_receipt_evidence(
     ).fetchone()
     if row is None or row[1] != "succeeded":
         return receipt
+    training_plan_id = receipt.training_plan_id
+    if include_training_plan:
+        plans = connection.execute(  # type: ignore[union-attr]
+            "SELECT p.id FROM training_plans p "
+            "JOIN analysis_artifacts a ON a.id=p.analysis_artifact_id "
+            "WHERE a.generated_by_run_id=? ORDER BY p.id",
+            (row[0],),
+        ).fetchall()
+        if len(plans) != 1:
+            return receipt
+        training_plan_id = str(plans[0][0])
     return replace(
         receipt,
         analysis_run_id=str(row[0]),
         artifact_ids=artifact_ids,
+        training_plan_id=training_plan_id,
         quality_gate_state="ready",
         harness_version=row[2],
         input_schema_version=row[3],
@@ -278,6 +397,13 @@ def _restore_daily_receipt_evidence(
 
 
 def _merge_daily_delivery(
+    receipt: AnalysisReceipt, result: DeliveryExecution,
+    persisted_artifact_ids: tuple[str, ...],
+) -> AnalysisReceipt:
+    return _merge_delivery(receipt, result, persisted_artifact_ids)
+
+
+def _merge_delivery(
     receipt: AnalysisReceipt, result: DeliveryExecution,
     persisted_artifact_ids: tuple[str, ...],
 ) -> AnalysisReceipt:

@@ -32,6 +32,8 @@ _TRUST = frozenset({
     "unknown",
 })
 _DAILY_KINDS = frozenset({"daily_summary", "daily_training_advice"})
+_WEEKLY_KINDS = frozenset({"weekly_summary", "weekly_training_plan"})
+_PLAN_ITEM_KINDS = frozenset({"running", "climbing", "strength", "rest"})
 _FORBIDDEN_EVIDENCE_KEYS = frozenset({
     "access_token", "api_key", "authorization", "authorization_url",
     "client_credentials", "client_secret", "credential", "credentials",
@@ -92,6 +94,8 @@ class PublishReceipt:
     artifact_ids: Mapping[str, int]
     revisions: Mapping[str, int]
     input_count: int
+    training_plan_id: int | None = None
+    superseded_plan_ids: tuple[int, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -107,7 +111,7 @@ class RunEvidence:
 
 
 class AnalysisPublisher:
-    """Publish one accepted daily pair with revision/current invariants."""
+    """Publish accepted daily or weekly revisions in one short transaction."""
 
     def __init__(self, connection: sqlite3.Connection, *, clock: Callable[[], str] = _now) -> None:
         self._connection = connection
@@ -122,7 +126,7 @@ class AnalysisPublisher:
         run_evidence: RunEvidence | Mapping[str, Any],
         failpoint: Callable[[str], None] | None = None,
     ) -> PublishReceipt:
-        """Atomically publish a validated daily pair and its full input manifest.
+        """Atomically publish one validated route and its full input manifest.
 
         ``failpoint`` is an intentionally test-only seam.  Raising at any named
         stage proves that the enclosing transaction leaves the old current
@@ -160,10 +164,21 @@ class AnalysisPublisher:
         ).fetchone()
         if run is None or run["status"] != "started":
             raise AnalysisPublishError("analysis_publish_run_not_started")
-        if result.get("status") != "accepted" or result.get("mode") != "daily" or run["analysis_kind"] != "daily":
+        if result.get("status") != "accepted":
             raise AnalysisPublishError("analysis_publish_route_not_implemented")
         if result.get("run_key") != run["run_key"] or result.get("subject_id") != run["subject_id"]:
             raise AnalysisPublishError("analysis_publish_run_identity_mismatch")
+        if result.get("mode") == "daily" and run["analysis_kind"] == "daily":
+            return self._publish_daily(run, result, input_manifest, run_evidence, failpoint)
+        if result.get("mode") == "weekly" and run["analysis_kind"] == "weekly":
+            return self._publish_weekly(run, result, input_manifest, run_evidence, failpoint)
+        raise AnalysisPublishError("analysis_publish_route_not_implemented")
+
+    def _publish_daily(
+        self, run: sqlite3.Row, result: Mapping[str, Any],
+        input_manifest: Sequence[Mapping[str, Any]], run_evidence: RunEvidence | Mapping[str, Any],
+        failpoint: Callable[[str], None] | None,
+    ) -> PublishReceipt:
         artifacts = result.get("artifacts")
         if not isinstance(artifacts, Sequence) or isinstance(artifacts, (str, bytes)):
             raise AnalysisPublishError("analysis_publish_artifacts_invalid")
@@ -172,12 +187,12 @@ class AnalysisPublisher:
             raise AnalysisPublishError("analysis_publish_daily_cardinality_invalid")
         self._persist_run_evidence(run, run_evidence, input_manifest)
         self._fire(failpoint, "after_run_evidence")
-        self._insert_inputs(run_id, input_manifest)
+        self._insert_inputs(int(run["id"]), input_manifest)
         self._fire(failpoint, "after_inputs")
         ids: dict[str, int] = {}
         revisions: dict[str, int] = {}
         for kind in ("daily_summary", "daily_training_advice"):
-            artifact_id, revision = self._insert_revision(int(run["subject_id"]), run_id, kind, by_kind[kind])
+            artifact_id, revision = self._insert_revision(int(run["subject_id"]), int(run["id"]), kind, by_kind[kind])
             ids[kind], revisions[kind] = artifact_id, revision
             self._fire(failpoint, f"after_artifact:{kind}")
         now = self._clock()
@@ -190,7 +205,126 @@ class AnalysisPublisher:
             )
         self._record_prior_artifact_relations(int(run["subject_id"]), ids, input_manifest, now)
         self._fire(failpoint, "after_relations")
-        return PublishReceipt(run_id, dict(ids), dict(revisions), len(input_manifest))
+        return PublishReceipt(int(run["id"]), dict(ids), dict(revisions), len(input_manifest))
+
+    def _publish_weekly(
+        self, run: sqlite3.Row, result: Mapping[str, Any],
+        input_manifest: Sequence[Mapping[str, Any]], run_evidence: RunEvidence | Mapping[str, Any],
+        failpoint: Callable[[str], None] | None,
+    ) -> PublishReceipt:
+        artifacts = result.get("artifacts")
+        if not isinstance(artifacts, Sequence) or isinstance(artifacts, (str, bytes)):
+            raise AnalysisPublishError("analysis_publish_artifacts_invalid")
+        by_kind = {item.get("artifact_kind"): item for item in artifacts if isinstance(item, Mapping)}
+        if len(by_kind) != 2 or set(by_kind) != _WEEKLY_KINDS:
+            raise AnalysisPublishError("analysis_publish_weekly_cardinality_invalid")
+        plan = self._validate_weekly_plan(result.get("training_plan"), by_kind["weekly_training_plan"])
+        self._persist_run_evidence(run, run_evidence, input_manifest)
+        self._fire(failpoint, "after_run_evidence")
+        self._insert_inputs(int(run["id"]), input_manifest)
+        self._fire(failpoint, "after_inputs")
+        ids: dict[str, int] = {}
+        revisions: dict[str, int] = {}
+        for kind in ("weekly_summary", "weekly_training_plan"):
+            artifact_id, revision = self._insert_revision(
+                int(run["subject_id"]), int(run["id"]), kind, by_kind[kind]
+            )
+            ids[kind], revisions[kind] = artifact_id, revision
+            self._fire(failpoint, f"after_artifact:{kind}")
+        now = self._clock()
+        for left, right in (("weekly_summary", "weekly_training_plan"), ("weekly_training_plan", "weekly_summary")):
+            self._connection.execute(
+                "INSERT INTO analysis_artifact_relations(from_artifact_id,to_artifact_id,relation_type,created_at_utc) VALUES(?,?,?,?)",
+                (ids[left], ids[right], "paired_with", now),
+            )
+        self._record_prior_artifact_relations(int(run["subject_id"]), ids, input_manifest, now)
+        self._fire(failpoint, "after_relations")
+        superseded = self._supersede_overlapping_plans(int(run["subject_id"]), plan["start"], plan["end"])
+        self._fire(failpoint, "after_plan_supersession")
+        cursor = self._connection.execute(
+            "INSERT INTO training_plans(subject_id,analysis_artifact_id,plan_start_local_date,plan_end_local_date,timezone,status,objective_json,constraints_json,created_at_utc) VALUES(?,?,?,?,?,'active',?,?,?)",
+            (int(run["subject_id"]), ids["weekly_training_plan"], plan["start"].isoformat(), plan["end"].isoformat(),
+             plan["timezone"], _canonical(plan["objective"]), _canonical(plan["constraints"]), now),
+        )
+        plan_id = int(cursor.lastrowid)
+        self._fire(failpoint, "after_plan")
+        for item in plan["items"]:
+            self._connection.execute(
+                "INSERT INTO training_plan_items(training_plan_id,item_index,local_date,activity_kind,prescription_json,rationale_text,stop_conditions_json) VALUES(?,?,?,?,?,?,?)",
+                (plan_id, item["item_index"], item["local_date"], item["activity_kind"],
+                 _canonical(item["prescription"]), item["rationale_text"], _canonical(item["stop_conditions"])),
+            )
+            self._fire(failpoint, f"after_plan_item:{item['item_index']}")
+        self._fire(failpoint, "after_plan_items")
+        return PublishReceipt(int(run["id"]), dict(ids), dict(revisions), len(input_manifest), plan_id, superseded)
+
+    @staticmethod
+    def _validate_weekly_plan(value: Any, plan_artifact: Mapping[str, Any]) -> dict[str, Any]:
+        if not isinstance(value, Mapping) or set(value) != {"period", "timezone", "objective", "constraints", "prior_artifact_state", "items"}:
+            raise AnalysisPublishError("analysis_publish_weekly_plan_invalid")
+        if plan_artifact.get("structured_content") != value:
+            raise AnalysisPublishError("analysis_publish_weekly_plan_artifact_mismatch")
+        period = value.get("period")
+        artifact_period = plan_artifact.get("period")
+        if (
+            not isinstance(period, Mapping)
+            or not isinstance(artifact_period, Mapping)
+            or dict(period) != dict(artifact_period)
+        ):
+            raise AnalysisPublishError("analysis_publish_weekly_plan_period_invalid")
+        try:
+            start = date.fromisoformat(str(period["start_local_date"]))
+            end = date.fromisoformat(str(period["end_local_date"]))
+        except (KeyError, TypeError, ValueError) as error:
+            raise AnalysisPublishError("analysis_publish_weekly_plan_period_invalid") from error
+        if end - start != timedelta(days=6) or value.get("timezone") != "Asia/Singapore":
+            raise AnalysisPublishError("analysis_publish_weekly_plan_period_invalid")
+        if not isinstance(value.get("objective"), Mapping) or not isinstance(value.get("constraints"), Mapping):
+            raise AnalysisPublishError("analysis_publish_weekly_plan_invalid")
+        prior_state = value.get("prior_artifact_state")
+        if (
+            not isinstance(prior_state, Mapping)
+            or set(prior_state) != {"summary", "plan"}
+            or prior_state.get("summary") not in {"available", "no_prior_artifact"}
+            or prior_state.get("plan") not in {"available", "no_prior_artifact"}
+        ):
+            raise AnalysisPublishError("analysis_publish_weekly_plan_prior_artifact_state_invalid")
+        rows = value.get("items")
+        if not isinstance(rows, Sequence) or isinstance(rows, (str, bytes)) or len(rows) != 7:
+            raise AnalysisPublishError("analysis_publish_weekly_plan_items_invalid")
+        normalized: list[dict[str, Any]] = []
+        for ordinal, row in enumerate(rows):
+            if not isinstance(row, Mapping) or set(row) != {"item_index", "local_date", "activity_kind", "prescription", "rationale_text", "stop_conditions"}:
+                raise AnalysisPublishError("analysis_publish_weekly_plan_items_invalid")
+            if row.get("item_index") != ordinal or isinstance(row.get("item_index"), bool):
+                raise AnalysisPublishError("analysis_publish_weekly_plan_items_invalid")
+            try:
+                local_day = date.fromisoformat(str(row["local_date"]))
+            except (KeyError, TypeError, ValueError) as error:
+                raise AnalysisPublishError("analysis_publish_weekly_plan_items_invalid") from error
+            if local_day != start + timedelta(days=ordinal) or row.get("activity_kind") not in _PLAN_ITEM_KINDS:
+                raise AnalysisPublishError("analysis_publish_weekly_plan_items_invalid")
+            if not isinstance(row.get("prescription"), Mapping) or not isinstance(row.get("rationale_text"), str):
+                raise AnalysisPublishError("analysis_publish_weekly_plan_items_invalid")
+            stops = row.get("stop_conditions")
+            if not isinstance(stops, Sequence) or isinstance(stops, (str, bytes)) or any(not isinstance(x, str) or not x for x in stops):
+                raise AnalysisPublishError("analysis_publish_weekly_plan_items_invalid")
+            normalized.append({
+                "item_index": ordinal, "local_date": local_day.isoformat(), "activity_kind": row["activity_kind"],
+                "prescription": dict(row["prescription"]), "rationale_text": row["rationale_text"],
+                "stop_conditions": list(stops),
+            })
+        return {"start": start, "end": end, "timezone": value["timezone"], "objective": dict(value["objective"]), "constraints": dict(value["constraints"]), "prior_artifact_state": dict(prior_state), "items": normalized}
+
+    def _supersede_overlapping_plans(self, subject_id: int, start: date, end: date) -> tuple[int, ...]:
+        rows = self._connection.execute(
+            "SELECT id FROM training_plans WHERE subject_id=? AND status IN ('active','proposed') AND plan_end_local_date>=? AND plan_start_local_date<=? ORDER BY id",
+            (subject_id, start.isoformat(), end.isoformat()),
+        ).fetchall()
+        ids = tuple(int(row["id"]) for row in rows)
+        if ids:
+            self._connection.executemany("UPDATE training_plans SET status='superseded' WHERE id=? AND status IN ('active','proposed')", ((plan_id,) for plan_id in ids))
+        return ids
 
     def _persist_run_evidence(
         self, run: sqlite3.Row, value: RunEvidence | Mapping[str, Any],
@@ -282,7 +416,16 @@ class AnalysisPublisher:
             ).fetchone()
             if source is None or source["subject_id"] != subject_id:
                 raise AnalysisPublishError("analysis_publish_prior_artifact_invalid")
-            relation = "references_prior_plan" if source["artifact_kind"] == "weekly_training_plan" else "references_prior_summary"
+            if source["artifact_kind"] not in {
+                "weekly_summary",
+                "weekly_training_plan",
+            }:
+                continue
+            relation = (
+                "references_prior_plan"
+                if source["artifact_kind"] == "weekly_training_plan"
+                else "references_prior_summary"
+            )
             for artifact_id in artifact_ids.values():
                 self._connection.execute(
                     "INSERT OR IGNORE INTO analysis_artifact_relations(from_artifact_id,to_artifact_id,relation_type,created_at_utc) VALUES(?,?,?,?)",

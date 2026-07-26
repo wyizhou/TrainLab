@@ -1,6 +1,6 @@
 # 第三层：数据分析 Agent 工具层详细开发需求清单
 
-状态：开发中（A3-01～11、A3-15～17 已完成；A3-12～14 已完成 daily 子集，weekly/revision 及后续项目未完成）
+状态：开发中（A3-01～11、A3-15～18 已完成；A3-12～14 已完成 daily/weekly 子集，revision 及后续项目未完成）
 
 基线日期：2026-07-23
 
@@ -12,7 +12,7 @@
 |---|---:|---|
 | `01-data-foundation.md` | v2.4 | `9bf0a91e61bda47c9dba971c731ca6ec79e064b7f0ea4eb8124a5a216d67e396` |
 | `02-data-collection.md` | v1 | `c39ae1b82afcafe9f4fc3c54d1f851b4992c48021c5238038f078fab1ec885d6` |
-| `03-data-analysis.md` | v2.1 | `dd09ae08faa432d96d86d170943a7c36085274aa63f176c1bec96059c7d0acfc` |
+| `03-data-analysis.md` | v2.1 | `a98ff818f43321ded49efeec4630b3b5ac36678a80d6c4b8e350fb519edd6d05` |
 | `04-mail-agent.md` | v2.1 | `977246c604dc939cce1d97869f584e463030476db64b0d20e07bb625faa12e17` |
 | `05-orchestration-monitoring.md` | v1.1 | `f46aca332f146fa2efffb4da8a03b48037989b7e4e4f31df9d562932e46db356` |
 
@@ -177,7 +177,7 @@
   - **验证方法与证据：** 非 JSON、未知字段、虚构 BPM、医学诊断、all-out、七日缺项、改写历史 item、内部路径泄露均被拒绝。
   - **完成定义：** validator failure 只产生脱敏 code/path；不切 current、不发邮件、不创建半套 plan。
   - **集成顺序与失败回退：** A3-11 后；任何未通过输出状态为 rejected。
-  - **daily analysis-only 阶段证据（2026-07-26）：** daily 两类 artifact、精确 run/subject/period/source usage、质量披露及确定性 A3-09 安全覆盖已实现；模型只能提出训练候选，最终 safety 与 primary item 由 host 规则重算。当前 Schema 明确令 `training_plan=null`，weekly/revision cardinality 尚未实现，因此本单元不勾选完成。
+  - **daily/weekly analysis-only 阶段证据（2026-07-26）：** daily 两类 artifact 与 weekly 两类 artifact/七日 plan 的精确 run/subject/period/source usage、质量披露及确定性 A3-09 安全覆盖已实现；weekly 逐日重算安全处方，并额外限制七日内高强度频次和 48 小时间隔。revision cardinality 尚未实现，因此本单元不勾选完成。
 
 - [ ] **A3-13｜analysis/training 原子发布器**
   - **目的：** 把 accepted artifact、inputs、relations、plan/items 与 current 切换置于一个短事务。
@@ -188,7 +188,7 @@
   - **验证方法与证据：** 故意在每个事务阶段失败；验证无半套 plan、旧 current 保持、accepted relation/input 可复算。
   - **完成定义：** 提交后 artifact/plan 才可被读取为 current；提交前任何故障完全回滚。
   - **集成顺序与失败回退：** Wave 3 核心收口；失败保留旧 current 和可恢复 run。
-  - **daily analysis-only 阶段证据（2026-07-26）：** daily summary/advice、七类输入 trust、relations、run evidence 与 current 切换已在同一短事务发布，逐阶段故障注入均证明完整回滚。weekly/revision plan 与 plan items 尚未实现，因此本单元不勾选完成。
+  - **daily/weekly analysis-only 阶段证据（2026-07-26）：** daily summary/advice 已原子发布；weekly summary/plan artifact、双向 paired relations、一份 active plan 和七个连续唯一 items 也在同一短事务发布，重叠旧计划只在事务内 supersede，逐阶段故障注入证明完整回滚。revision plan 发布尚未实现，因此本单元不勾选完成。
 
 - [ ] **A3-14｜分析投递记录创建与确定性邮件渲染**
   - **目的：** 在 accepted 后固定精确 revision、`analysis_deliveries(status=pending)`、关联和无副作用的 plain/inline-HTML 表示。
@@ -199,7 +199,7 @@
   - **验证方法与证据：** accepted-before-delivery、同 revision 不重复创建、HTML 禁止 script/remote content、精确 revision 不随 current 漂移测试。
   - **完成定义：** artifact/plan 已提交后才有 pending delivery；渲染失败不回滚 accepted 内容并可报告 partial。
   - **集成顺序与失败回退：** A3-13 后、A3-15 前；失败保留 accepted artifact 并标记可恢复 delivery。
-  - **daily analysis-only 阶段证据（2026-07-26）：** daily 已在 accepted artifact 提交后创建唯一 pending delivery，固定精确 artifact revisions，并生成无 script/remote content 的确定性 plain/inline HTML；未调用 Gmail。weekly/plan-revision delivery kinds 尚未验收，因此本单元不勾选完成。
+  - **daily/weekly analysis-only 阶段证据（2026-07-26）：** daily 与 weekly 均在 accepted artifact/plan 提交后创建唯一 pending delivery，固定精确 artifact revisions，并生成无 script/remote content 的确定性 plain/inline HTML；weekly delivery 精确绑定 summary/plan 两项。plan-revision delivery 尚未验收，因此本单元不勾选完成。
 
 - [x] **A3-15｜受限 Gmail MCP 自投递 runner**
   - **目的：** 执行独立确定性 provider 阶段：仅将固定 artifact revision 投递给操作者批准的固定本人地址。
@@ -236,7 +236,7 @@
   - **集成顺序与失败回退：** Wave 4 第一条；失败保持旧 artifact/plan，按 receipt 请求采集/repair/投递恢复。
   - **完成证据（2026-07-26）：** 已用本机真实 Foundation 数据通过唯一生产入口 `trainlab run --slot morning --analysis-only` 完成 2026-07-25 日总结与 2026-07-26 建议，并用同入口的显式 delivery 参数完成自投递。两个 current artifact、一个 exact delivery 与 Gmail provider message ID 已对账；相同 invocation 加 `--deliver` 返回 unchanged，run/artifact/delivery 数量保持 18/2/1，未再次调用 Codex或发送第二封。
 
-- [ ] **A3-18｜weekly 路由与七天计划发布**
+- [x] **A3-18｜weekly 路由与七天计划发布**
   - **目的：** 生成过去七个结束日的 `weekly_summary`、未来连续七日 `weekly_training_plan` 和一份 plan/items revision。
   - **依赖与起始快照：** A3-05–16、A3-17、EXT-02/03、第三层 §7.2。
   - **负责范围：** as-of 解释、七天窗口、prior plan/summary、adherence、paired relations、七个唯一 item、weekly report delivery。
@@ -245,6 +245,7 @@
   - **验证方法与证据：** Sunday-like window、first-run `no_prior_artifact`、周内 gap blocked、exact seven items、allowed kinds/high-intensity rule、delivery pair 测试。
   - **完成定义：** summary、plan artifact、plan/items 作为原子集合发布；质量不满足时不调用 Codex、不替换 current。
   - **集成顺序与失败回退：** A3-17 后；失败不影响已存在计划，等待质量修复或显式新 invocation。
+  - **完成证据（2026-07-26）：** 新增 rolling weekly route，`as-of` 精确解释为过去七个结束日和未来连续七日；first-run 明确 `no_prior_artifact`，已有计划时使用确定性匹配/adherence，不因日期流逝推断完成。严格 Schema/validator 要求两个 artifact、七个有序唯一 item、允许类型、无训练钟点，并逐日执行 A3-09 安全归一化及跨日高强度限制。发布器以单事务写 artifact、relations、active plan 和七个 items，任意 failpoint 完整回滚；提交后才创建幂等 `weekly_report`。生产入口为 `trainlab run --slot morning --analysis-only --weekly --invocation-id ID [--as-of-date DATE] [--deliver]`，第五层 subprocess boundary 已同步接入；真实 Codex/Gmail 未在本单元验收中调用。
 
 - [ ] **A3-19｜revise-plan 路由与第四层原因事件边界**
   - **目的：** 基于已接受的 reason event 只重建原计划剩余范围，并由第三层主动投递新版计划。

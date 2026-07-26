@@ -834,6 +834,18 @@ def _revision_universe(snapshot: StableSnapshot) -> frozenset[str]:
                 revisions.add(_identifier(row[key], "analysis_context_revision_invalid"))
         if row.get("id") is not None and "availability_state" in row:
             revisions.add(f"coverage:{_identifier(row['id'])}")
+        # A3-08 represents a plan item's immutable source with the plan's
+        # analysis artifact ID.  Admit that exact ID into the revision
+        # universe so weekly adherence evidence can be carried into context;
+        # do not infer or synthesize a different revision identity.
+        if row.get("analysis_artifact_id") is not None:
+            revisions.add(_identifier(row["analysis_artifact_id"]))
+        if (
+            row.get("artifact_kind")
+            in {"weekly_summary", "weekly_training_plan"}
+            and row.get("id") is not None
+        ):
+            revisions.add(_identifier(row["id"]))
     return frozenset(revisions)
 
 

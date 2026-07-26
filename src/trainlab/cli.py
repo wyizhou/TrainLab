@@ -172,6 +172,8 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument("--at")
     run.add_argument("--analysis-only", action="store_true")
     run.add_argument("--summary-date")
+    run.add_argument("--weekly", action="store_true")
+    run.add_argument("--as-of-date")
     run.add_argument("--invocation-id")
     run.add_argument("--deliver", action="store_true")
     delivery_recovery = run.add_mutually_exclusive_group()
@@ -237,18 +239,38 @@ def main(argv: list[str] | None = None) -> int:
         )
         if recovery_id is not None and recovery_id <= 0:
             _parser().error("delivery ID must be positive")
-        if recovery_id is not None and (args.summary_date is not None or args.deliver):
-            _parser().error("delivery recovery does not accept --summary-date or --deliver")
+        if recovery_id is not None and (
+            args.summary_date is not None
+            or args.weekly
+            or args.as_of_date is not None
+            or args.deliver
+        ):
+            _parser().error("delivery recovery does not accept analysis route options")
+        if args.weekly and args.summary_date is not None:
+            _parser().error("--weekly does not accept --summary-date")
+        if not args.weekly and args.as_of_date is not None:
+            _parser().error("--as-of-date requires --weekly")
         try:
-            from .analysis.runtime import run_analysis_only, run_delivery_recovery
+            from .analysis.runtime import (
+                run_analysis_only,
+                run_delivery_recovery,
+                run_weekly_analysis,
+            )
             from .analysis.cli import exit_code_for
 
             if recovery_id is None:
-                receipt = run_analysis_only(
-                    invocation_id=args.invocation_id,
-                    summary_date=args.summary_date,
-                    deliver=args.deliver,
-                )
+                if args.weekly:
+                    receipt = run_weekly_analysis(
+                        invocation_id=args.invocation_id,
+                        as_of_date=args.as_of_date,
+                        deliver=args.deliver,
+                    )
+                else:
+                    receipt = run_analysis_only(
+                        invocation_id=args.invocation_id,
+                        summary_date=args.summary_date,
+                        deliver=args.deliver,
+                    )
             else:
                 receipt = run_delivery_recovery(
                     invocation_id=args.invocation_id,
@@ -261,6 +283,7 @@ def main(argv: list[str] | None = None) -> int:
         return exit_code_for(receipt.status)
     if args.command == "run" and (
         args.summary_date is not None or args.invocation_id is not None
+        or args.weekly or args.as_of_date is not None
         or args.deliver or args.retry_delivery is not None
         or args.reconcile_delivery is not None
     ):

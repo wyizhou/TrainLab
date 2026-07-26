@@ -23,6 +23,17 @@ def _receipt(status: str = "partial") -> AnalysisReceipt:
     )
 
 
+def _weekly_receipt(status: str = "partial") -> AnalysisReceipt:
+    return AnalysisReceipt(
+        run_key="analysis:active_subject:weekly:2026-07-26:invocation",
+        invocation_id="invocation",
+        mode="weekly",
+        status=status,  # type: ignore[arg-type]
+        started_at_utc="2026-07-26T00:00:00Z",
+        completed_at_utc="2026-07-26T00:00:01Z",
+    )
+
+
 def test_analysis_only_bypasses_legacy_runtime_and_prints_only_receipt(monkeypatch, capsys):
     calls: list[tuple[str, object]] = []
 
@@ -48,6 +59,9 @@ def test_analysis_only_bypasses_legacy_runtime_and_prints_only_receipt(monkeypat
     ["run", "--slot", "morning", "--analysis-only", "--invocation-id", "invocation", "--retry-delivery", "0"],
     ["run", "--slot", "morning", "--analysis-only", "--invocation-id", "invocation", "--retry-delivery", "1", "--deliver"],
     ["run", "--slot", "morning", "--analysis-only", "--invocation-id", "invocation", "--reconcile-delivery", "1", "--summary-date", "2026-07-25"],
+    ["run", "--slot", "morning", "--analysis-only", "--invocation-id", "invocation", "--weekly", "--summary-date", "2026-07-25"],
+    ["run", "--slot", "morning", "--analysis-only", "--invocation-id", "invocation", "--as-of-date", "2026-07-26"],
+    ["run", "--slot", "morning", "--analysis-only", "--invocation-id", "invocation", "--retry-delivery", "1", "--weekly"],
 ])
 def test_analysis_only_validates_before_legacy_loading(monkeypatch, argv):
     monkeypatch.setattr(cli, "load_settings", lambda: (_ for _ in ()).throw(AssertionError("legacy settings loaded")))
@@ -81,6 +95,28 @@ def test_daily_request_rejects_today_or_future_summary_before_runtime_setup():
     for summary_date in ("2026-07-26", "2026-07-27"):
         with pytest.raises(ValueError, match="analysis_summary_date_must_be_before_today"):
             runtime.build_daily_request(subject_id="default", invocation_id="invocation", summary_date=summary_date, now=now)
+
+
+def test_weekly_request_uses_rolling_as_of_date_without_iso_week_assumption():
+    request = runtime.build_weekly_request(
+        subject_id="default",
+        invocation_id="invocation",
+        as_of_date=None,
+        now=datetime(2026, 7, 26, 1, 0, tzinfo=UTC),
+    )
+    assert request.mode == "weekly"
+    assert request.as_of_local_date == "2026-07-26"
+    assert request.summary_local_date is None
+
+
+def test_weekly_request_rejects_future_as_of_date():
+    with pytest.raises(ValueError, match="analysis_weekly_as_of_date_in_future"):
+        runtime.build_weekly_request(
+            subject_id="default",
+            invocation_id="invocation",
+            as_of_date="2026-07-27",
+            now=datetime(2026, 7, 26, 1, 0, tzinfo=UTC),
+        )
 
 
 @pytest.mark.parametrize("rows", [[], [("default",), ("second",)]])
@@ -129,6 +165,46 @@ def test_unique_active_subject_is_used_for_runtime_wiring(monkeypatch):
     assert connection.closed
 
 
+def test_weekly_runtime_wires_the_weekly_route_and_closes_connection(monkeypatch):
+    class Connection:
+        def __init__(self): self.queries = []; self.closed = False
+        def execute(self, sql): self.queries.append(sql); return [("default",)]
+        def close(self): self.closed = True
+
+    connection = Connection()
+    foundation = SimpleNamespace(database_path=Path("/project/state/foundation/data.db"))
+    config = SimpleNamespace(lock_path=Path("/project/state/locks/analysis.lock"))
+    monkeypatch.setattr(runtime, "FoundationConfig", SimpleNamespace(load=lambda _root: foundation))
+    monkeypatch.setattr(runtime, "FoundationTool", lambda _foundation: SimpleNamespace(_connect=lambda _path: connection))
+    monkeypatch.setattr(runtime, "load_analysis_config", lambda _root, _path: config)
+    monkeypatch.setattr(runtime, "AnalysisRunRepository", lambda _connection: object())
+    monkeypatch.setattr(runtime, "AnalysisRunCoordinator", lambda _repository, _locks: object())
+    monkeypatch.setattr(runtime, "SubjectLockManager", lambda _path, **_kwargs: object())
+    monkeypatch.setattr(runtime, "StableViewRepository", lambda _connection: object())
+    monkeypatch.setattr(runtime, "AnalysisCodexRunner", lambda _config: object())
+    monkeypatch.setattr(runtime, "AnalysisPublisher", lambda _connection: object())
+    monkeypatch.setattr(runtime, "AnalysisDeliveryFactory", lambda _connection: object())
+
+    from trainlab.analysis import weekly
+    captured = {}
+
+    class Route:
+        def __init__(self, **kwargs): captured.update(kwargs)
+        def execute(self, request):
+            captured["request"] = request
+            return _weekly_receipt()
+
+    monkeypatch.setattr(weekly, "WeeklyRoute", Route)
+    receipt = runtime.run_weekly_analysis(
+        invocation_id="invocation", as_of_date="2026-07-26",
+        root=Path("/project"),
+    )
+    assert receipt.status == "partial"
+    assert captured["request"].mode == "weekly"
+    assert captured["request"].as_of_local_date == "2026-07-26"
+    assert connection.closed
+
+
 def test_analysis_deliver_flag_and_recovery_route_stay_under_trainlab_run(monkeypatch, capsys):
     calls = []
     monkeypatch.setattr(
@@ -139,6 +215,10 @@ def test_analysis_deliver_flag_and_recovery_route_stay_under_trainlab_run(monkey
         runtime, "run_delivery_recovery",
         lambda **kwargs: calls.append(("recovery", kwargs)) or _receipt("succeeded"),
     )
+    monkeypatch.setattr(
+        runtime, "run_weekly_analysis",
+        lambda **kwargs: calls.append(("weekly", kwargs)) or _weekly_receipt("succeeded"),
+    )
     assert cli.main([
         "run", "--slot", "morning", "--analysis-only", "--invocation-id", "one", "--deliver",
     ]) == 0
@@ -148,6 +228,14 @@ def test_analysis_deliver_flag_and_recovery_route_stay_under_trainlab_run(monkey
         "--reconcile-delivery", "7",
     ]) == 0
     assert calls[-1] == ("recovery", {"invocation_id": "two", "delivery_id": 7, "reconcile": True})
+    assert cli.main([
+        "run", "--slot", "morning", "--analysis-only", "--invocation-id", "three",
+        "--weekly", "--as-of-date", "2026-07-26", "--deliver",
+    ]) == 0
+    assert calls[-1] == (
+        "weekly",
+        {"invocation_id": "three", "as_of_date": "2026-07-26", "deliver": True},
+    )
     assert "recipient" not in capsys.readouterr().out
 
 
@@ -181,3 +269,24 @@ def test_unchanged_daily_receipt_restores_stored_run_evidence_without_generation
     assert restored.quality_gate_state == "ready"
     assert restored.artifact_ids == ("1", "2")
     assert restored.input_snapshot_sha256 == "a" * 64
+
+
+def test_unchanged_weekly_receipt_restores_exact_plan_and_run_evidence():
+    class Connection:
+        def execute(self, sql, values):
+            if "FROM analysis_runs" in sql:
+                return SimpleNamespace(fetchone=lambda: (
+                    21, "succeeded", "weekly-harness-v1", "1", "1", "b" * 64,
+                ))
+            assert "FROM training_plans" in sql
+            assert values == (21,)
+            return SimpleNamespace(fetchall=lambda: [(31,)])
+
+    restored = runtime._restore_receipt_evidence(
+        Connection(), _weekly_receipt("unchanged"), ("41", "42"),
+        include_training_plan=True,
+    )
+    assert restored.analysis_run_id == "21"
+    assert restored.training_plan_id == "31"
+    assert restored.artifact_ids == ("41", "42")
+    assert restored.input_snapshot_sha256 == "b" * 64
