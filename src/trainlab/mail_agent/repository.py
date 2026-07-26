@@ -1,7 +1,7 @@
 """SQLite persistence primitives owned exclusively by TrainLab layer four.
 
 No method in this module calls a provider, Codex, a renderer, or sleeps.  The
-repository uses only the Foundation v2.4 tables and keeps write transactions
+repository uses only the current frozen Foundation tables and keeps write transactions
 short and explicit.
 """
 
@@ -21,6 +21,7 @@ from typing import Any, Iterator, Mapping, Sequence
 from .contracts import MailRequest, utc_now
 from .eligibility import ActorEvidence, CanonicalMessage, Classification, TRAINLAB_LABEL, classify
 from trainlab.foundation import (
+    FOUNDATION_SCHEMA_VERSION,
     FoundationTool as _FoundationTool,
     TABLES as _FOUNDATION_TABLES,
     VIEWS as _FOUNDATION_VIEWS,
@@ -504,7 +505,7 @@ class MailDeliveryState:
 
 
 class MailRepository:
-    """Typed mapping over already-created Foundation v2.4 mail tables."""
+    """Typed mapping over an already-created current Foundation schema."""
 
     def __init__(self, connection: sqlite3.Connection, *, clock=utc_now) -> None:
         self.connection = connection
@@ -514,7 +515,7 @@ class MailRepository:
         self._verify_foundation_schema()
 
     def _verify_foundation_schema(self) -> None:
-        """Business code only attaches to the frozen Foundation v2 manifest."""
+        """Business code only attaches to the current frozen Foundation manifest."""
         try:
             state = self.connection.execute("SELECT state,schema_version,manifest_sha256 FROM foundation_state WHERE id=1").fetchone()
             manifest_path = Path(__file__).resolve().parents[3] / "harness" / "schemas" / "foundation_schema_manifest.json"
@@ -586,7 +587,12 @@ class MailRepository:
                     raise MailRepositoryError("foundation_schema_incompatible")
         except (OSError, ValueError, TypeError, KeyError, sqlite3.Error) as exc:
             raise MailRepositoryError("foundation_schema_unavailable") from exc
-        if state is None or state["state"] != "ready" or state["schema_version"] != 2 or state["manifest_sha256"] != _foundation_manifest_hash():
+        if (
+            state is None
+            or state["state"] != "ready"
+            or state["schema_version"] != FOUNDATION_SCHEMA_VERSION
+            or state["manifest_sha256"] != _foundation_manifest_hash()
+        ):
             raise MailRepositoryError("foundation_schema_incompatible")
         if not _FoundationTool._migration_receipt_valid(self.connection, state["manifest_sha256"]):
             raise MailRepositoryError("foundation_migration_incompatible")

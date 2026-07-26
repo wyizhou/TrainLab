@@ -145,7 +145,38 @@ class FakeMCPClient:
 
 
 def test_mapped_gateway_matches_trainlab_mcp_contract(base_settings):
-    config = __import__("yaml").safe_load((base_settings.root / "config" / "gmail_mcp.example.yaml").read_text())
+    # Frozen legacy mapping fixture. New production paths use the environment
+    # binding declared by config/gmail_mcp.example.yaml.
+    config = {
+        "capabilities": {
+            "get_self": {"tool": "get_self", "arguments": {}, "result_path": "email"},
+            "search": {
+                "tool": "search_messages",
+                "arguments": {"query": 'subject:"{run_id}"', "max_results": 10},
+                "result_path": "matches",
+            },
+            "send_html_self": {
+                "tool": "send_html_self",
+                "arguments": {
+                    "run_id": "{run_id}",
+                    "subject": "{subject}",
+                    "plain_text": "{plain_text}",
+                    "html": "{html}",
+                    "thread_id": "{thread_id}",
+                },
+                "result_path": None,
+            },
+            "create_or_apply_label": {
+                "tool": "create_or_apply_label",
+                "arguments": {
+                    "label": "{label}",
+                    "message_id": "{message_id}",
+                    "thread_id": "{thread_id}",
+                },
+                "result_path": None,
+            },
+        }
+    }
     gateway = object.__new__(MappedGmailMCP)
     gateway.config = config
     gateway.client = FakeMCPClient()

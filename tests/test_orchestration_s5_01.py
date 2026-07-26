@@ -15,7 +15,7 @@ from trainlab.orchestration import (
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def receipt(status: str, *, mode: str = "init", ready: bool = True, schema_version: int | None = 2) -> dict:
+def receipt(status: str, *, mode: str = "init", ready: bool = True, schema_version: int | None = 3) -> dict:
     return {
         "schema_version": "1", "invocation_id": "invocation-001", "mode": mode, "status": status,
         "foundation_schema_version": schema_version, "ready": ready,
@@ -55,10 +55,10 @@ def test_bootstrap_accepts_only_compatible_already_initialized_once() -> None:
 @pytest.mark.parametrize(
     ("status", "ready", "schema_version", "gate", "incident", "maintenance"),
     [
-        ("incompatible", False, 2, "attention_required", "foundation_incompatible", True),
+        ("incompatible", False, 3, "attention_required", "foundation_incompatible", True),
         ("failed", False, None, "attention_required", "foundation_failed", False),
         ("lock_busy", False, None, "deferred", "foundation_lock_busy", False),
-        ("ready", False, 2, "attention_required", "foundation_incompatible", True),
+        ("ready", False, 3, "attention_required", "foundation_incompatible", True),
         ("ready", True, 1, "attention_required", "foundation_incompatible", True),
         ("initialized", True, 2, "attention_required", "foundation_incompatible", True),
         ("ready", True, 2, "attention_required", "foundation_incompatible", True),

@@ -1,6 +1,6 @@
 # 第三层：数据分析 Agent 工具层详细开发需求清单
 
-状态：开发中（A3-01～10 已完成；A3-11～25 与正式集成/真实验收门未完成）
+状态：开发中（A3-01～11 已完成；A3-12～14、A3-17 已完成 daily analysis-only 子集，完整单元及其余项目未完成）
 
 基线日期：2026-07-23
 
@@ -11,10 +11,10 @@
 | 契约 | 版本 | SHA-256 |
 |---|---:|---|
 | `01-data-foundation.md` | v2.4 | `9bf0a91e61bda47c9dba971c731ca6ec79e064b7f0ea4eb8124a5a216d67e396` |
-| `02-data-collection.md` | v1 | `afdffa6268d64403d170906ee6a42d10f873a75b1615b806d893982aea86db14` |
-| `03-data-analysis.md` | v2 | `4a9b3f1ffb92ba1ad4f56e68380344007e48a43e03a3e0f746399c50da794eb8` |
-| `04-mail-agent.md` | v2 | `47175280f917dee55d2aa5f663f0705da8ec7baf463eae5933ea391c0770be94` |
-| `05-orchestration-monitoring.md` | v1 | `5b1d5abf15689cec2507bd20e36aa83fe49626dd82247a4c0a1b91cc266ce804` |
+| `02-data-collection.md` | v1 | `c39ae1b82afcafe9f4fc3c54d1f851b4992c48021c5238038f078fab1ec885d6` |
+| `03-data-analysis.md` | v2.1 | `98652387c7018138e7910dbdf83826cb1e6b7a2a830d1bd4d67debe4627f0956` |
+| `04-mail-agent.md` | v2.1 | `977246c604dc939cce1d97869f584e463030476db64b0d20e07bb625faa12e17` |
+| `05-orchestration-monitoring.md` | v1.1 | `f46aca332f146fa2efffb4da8a03b48037989b7e4e4f31df9d562932e46db356` |
 
 本层唯一长期业务状态是第一层 SQLite 中的 `analysis_*`、`training_*`、`analysis_delivery_*`。本层进程必须按请求启动、完成后退出；第五层是唯一调度者。
 
@@ -25,7 +25,7 @@
 | EXT-01 | 第一层 v2.4 已通过显式 init/migrate 建立兼容 schema、ready 标记、稳定视图与第三层表；提供者：第一层/发布流程。 | `foundation status/verify`、schema version、只读 stable views。 | 不创建/迁移表，不修复 foundation，不改写其他层表。 |
 | EXT-02 | 第二层已把目标日期或候选周所需 Garmin canonical、coverage、cursor、gap、活动阶段及质量事实写入；提供者：第二层。 | 第二层 receipt、`resource_coverage`、cursor/gap/quality 稳定读取结果。 | 不调用 Garmin、不解析 FIT、不推进 cursor、不修复 gap。 |
 | EXT-03 | 第四层已接受并持久化 active user facts 与 `plan_revision_reason_recorded`；提供者：第四层。 | `v_active_user_facts`、`v_plan_revision_reason_events` 的受控只读记录。 | 不读 Gmail、邮件正文或 thread；不写 `mail_*`、fact、event 或 mail delivery。 |
-| EXT-04 | 已安装且受部署约束的 Gmail MCP 能执行 `get_self`、精确搜索、`send_html_self`、TrainLab 标签；账号与 `subject_identities` 匹配；提供者：部署/邮件边界。 | allowlist 校验、self identity HMAC 对账、受控测试回执。 | 不读取 token/凭据，不扩展为收件箱或 thread 读取，不允许任意收件人。 |
+| EXT-04 | 当前 Codex 执行环境已把 `@artymclabin/gmail-mcp` 注册为唯一名称 `gmail` 并完成认证；提供者：部署/邮件边界。 | 脱敏绑定校验、只读认证 probe、route-specific allowlist 与受控测试回执。 | 不保存机器 command/cwd、token/凭据路径，不扩展为收件箱或 thread 读取，不允许任意收件人；缺失时只返回标准配置指引。 |
 | EXT-05 | 第五层按静态 argv 调用本层、传入稳定 invocation ID，并消费 receipt；提供者：第五层。 | `WorkflowRequest/Receipt` 兼容测试与受控子进程样例。 | 不实现调度、cron、daemon、邮件轮询、incident 或跨层重试策略。 |
 
 ## 2. 固定边界
@@ -157,7 +157,7 @@
 
 ### Wave 3：两段式 Codex、校验与原子发布
 
-- [ ] **A3-11｜分析 Codex 无工具 runner**
+- [x] **A3-11｜分析 Codex 无工具 runner**
   - **目的：** 以隔离的 `codex exec --ephemeral` 执行一次 route-specific 分析 generation。
   - **依赖与起始快照：** A3-04、A3-10、第三层 §18；仅使用允许的 Harness 和 input JSON。
   - **负责范围：** 临时目录/0600 文件、stdin/受控文件输入、无模型名、进程组超时终止、输出上限/捕获/清理。
@@ -166,6 +166,7 @@
   - **验证方法与证据：** 工具不可见、工作目录隔离、非零/超时/超限/遗留子进程模拟测试。
   - **完成定义：** 一次 run 最多一次 generation；失败没有 accepted artifact，临时目录和进程组均清理。
   - **集成顺序与失败回退：** A3-10 后；异常为 failed/rejected，保留旧 current。
+  - **完成证据（2026-07-26）：** 已实现一次性 `codex exec --ephemeral` 隔离 runner；不固定模型、不开放 MCP/工具，使用只读沙箱、独立临时 HOME、私有工作目录、输出上限与进程组超时清理。Codex 生成阶段使用由权威结果 Schema 确定性派生的兼容 Schema，最终结果仍由 A3-12 权威 strict Schema 复验。超时、非零退出、超限、残留进程、原始输出泄露及第二次自动生成均有离线测试证明。
 
 - [ ] **A3-12｜分析结果 Schema、安全与训练校验器**
   - **目的：** 只允许符合 route 输出、信任标签和安全政策的 JSON 进入发布器。
@@ -176,6 +177,7 @@
   - **验证方法与证据：** 非 JSON、未知字段、虚构 BPM、医学诊断、all-out、七日缺项、改写历史 item、内部路径泄露均被拒绝。
   - **完成定义：** validator failure 只产生脱敏 code/path；不切 current、不发邮件、不创建半套 plan。
   - **集成顺序与失败回退：** A3-11 后；任何未通过输出状态为 rejected。
+  - **daily analysis-only 阶段证据（2026-07-26）：** daily 两类 artifact、精确 run/subject/period/source usage、质量披露及确定性 A3-09 安全覆盖已实现；模型只能提出训练候选，最终 safety 与 primary item 由 host 规则重算。当前 Schema 明确令 `training_plan=null`，weekly/revision cardinality 尚未实现，因此本单元不勾选完成。
 
 - [ ] **A3-13｜analysis/training 原子发布器**
   - **目的：** 把 accepted artifact、inputs、relations、plan/items 与 current 切换置于一个短事务。
@@ -186,6 +188,7 @@
   - **验证方法与证据：** 故意在每个事务阶段失败；验证无半套 plan、旧 current 保持、accepted relation/input 可复算。
   - **完成定义：** 提交后 artifact/plan 才可被读取为 current；提交前任何故障完全回滚。
   - **集成顺序与失败回退：** Wave 3 核心收口；失败保留旧 current 和可恢复 run。
+  - **daily analysis-only 阶段证据（2026-07-26）：** daily summary/advice、七类输入 trust、relations、run evidence 与 current 切换已在同一短事务发布，逐阶段故障注入均证明完整回滚。weekly/revision plan 与 plan items 尚未实现，因此本单元不勾选完成。
 
 - [ ] **A3-14｜分析投递记录创建与确定性邮件渲染**
   - **目的：** 在 accepted 后固定精确 revision、`analysis_deliveries(status=pending)`、关联和无副作用的 plain/inline-HTML 表示。
@@ -196,11 +199,12 @@
   - **验证方法与证据：** accepted-before-delivery、同 revision 不重复创建、HTML 禁止 script/remote content、精确 revision 不随 current 漂移测试。
   - **完成定义：** artifact/plan 已提交后才有 pending delivery；渲染失败不回滚 accepted 内容并可报告 partial。
   - **集成顺序与失败回退：** A3-13 后、A3-15 前；失败保留 accepted artifact 并标记可恢复 delivery。
+  - **daily analysis-only 阶段证据（2026-07-26）：** daily 已在 accepted artifact 提交后创建唯一 pending delivery，固定精确 artifact revisions，并生成无 script/remote content 的确定性 plain/inline HTML；未调用 Gmail。weekly/plan-revision delivery kinds 尚未验收，因此本单元不勾选完成。
 
 - [ ] **A3-15｜受限 Gmail MCP 自投递 runner**
   - **目的：** 执行第二段 Codex invocation：仅将固定 artifact revision 投递给 authenticated self。
   - **依赖与起始快照：** A3-03、A3-14、EXT-04、第三层 §1、§3、§18、§24。
-  - **负责范围：** delivery Harness、`get_self` identity check、精确 idempotency search、`send_html_self`、TrainLab label、delivery result schema/receipt 更新。
+  - **负责范围：** delivery Harness、当前环境 `gmail`/`@artymclabin/gmail-mcp` 绑定与只读认证检查、精确 idempotency search、自投递、TrainLab label、delivery result schema/receipt 更新。
   - **禁止触碰范围：** 健康 DB/context、本地文件/credential、任意 inbox/thread 读取、任意 recipient、重跑 analysis Codex、第四层投递表。
   - **预期产物：** least-privilege delivery adapter/runner、allowlist verifier、delivery result validator、sanitized audit events。
   - **验证方法与证据：** tool allowlist、self mismatch abort、search-before-send、already-sent、label、no health input、no thread read 测试。
@@ -228,6 +232,7 @@
   - **验证方法与证据：** 完整昨日→两 artifact；partial→deferred/no Codex；follow/reduce/substitute/rest；跨午夜睡眠；同 invocation unchanged 测试。
   - **完成定义：** 两 artifact 均 accepted 才发布并固定到同一 delivery；投递失败只导致 partial，不影响分析结果。
   - **集成顺序与失败回退：** Wave 4 第一条；失败保持旧 artifact/plan，按 receipt 请求采集/repair/投递恢复。
+  - **analysis-only 阶段证据（2026-07-26）：** 已用本机真实 Foundation 数据通过唯一生产入口 `trainlab run --slot morning --analysis-only` 完成 2026-07-25 日总结与 2026-07-26 建议；生成两个 current artifact、一个 pending delivery，provider message/thread ID 均为空且未发送邮件。相同 invocation 重跑为 unchanged，未再次调用 Codex。A3-15/16 投递及完整 daily 交付链尚未实现，因此本单元不勾选完成。
 
 - [ ] **A3-18｜weekly 路由与七天计划发布**
   - **目的：** 生成过去七个结束日的 `weekly_summary`、未来连续七日 `weekly_training_plan` 和一份 plan/items revision。

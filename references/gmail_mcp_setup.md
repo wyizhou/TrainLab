@@ -1,27 +1,38 @@
-# Gmail MCP production binding
+# Gmail MCP environment binding
 
-The production binding is TrainLab's restricted MCP server, not a general Gmail
-tool surface. It reuses the already authenticated Gmail OAuth files but exposes
-only current-account verification, search, thread read, multipart self-send and
-TrainLab label application.
+TrainLab always uses the Gmail MCP named `gmail` from the current Codex
+execution environment. The supported implementation is
+`@artymclabin/gmail-mcp`.
 
-1. Copy `config/gmail_mcp.example.yaml` to the ignored mode-0600 file
-   `config/gmail_mcp.yaml`.
-2. Set `authenticated_self` and the two external credential paths. Never copy a
-   client secret or token into YAML.
-3. Use absolute production paths for the Python transport and mapping file.
-4. Register `python -m trainlab.gmail_mcp_server --config <absolute mapping>` as
-   the `gmail` stdio MCP in the dedicated `runner.codex_home`. Link the existing
-   Codex `auth.json` into that owner-only home, but do not link or copy general
-   custom skills or installed marketplace plugins. Codex-generated system skills
-   and remote catalog caches are acceptable. Do not expose the general Gmail
-   MCP to scheduled analysis.
-5. Set `mail.mode: mcp` and `production.enabled: true` in the ignored production
-   TrainLab config.
-6. Run `trainlab doctor`. This is read-only and must verify self, search, tool
-   names and credential permissions.
-7. Run the explicit Codex real-send acceptance. Confirm multipart
-   content, run-id headers, TrainLab label, thread read and idempotent re-search.
+Authenticate the package:
 
-The complete operational and rollback procedure is in
-`docs/runbooks/gmail-production.md`.
+```text
+npx @artymclabin/gmail-mcp auth
+```
+
+Register it in the current Codex environment:
+
+```text
+codex mcp add gmail -- npx @artymclabin/gmail-mcp
+```
+
+Confirm the binding:
+
+```text
+codex mcp get gmail --json
+```
+
+The binding must be enabled stdio with command `npx`, the single argument
+`@artymclabin/gmail-mcp`, no fixed working directory, and no copied environment
+secrets. TrainLab must not store a machine-specific executable, OAuth path,
+token path, host path, or duplicate Gmail credentials.
+
+If `gmail` is absent, disabled, points to another package, or fails its read-only
+authentication probe, TrainLab stops before every mailbox action and reports
+the two setup commands above. It never installs, authenticates, or falls back to
+another Gmail transport automatically.
+
+The general package exposes more Gmail tools than TrainLab needs. Each layer
+must place a route-specific allowlist in front of it. Codex analysis generation
+never receives Gmail tools; deterministic mail/delivery adapters may call only
+the operations required for that route.

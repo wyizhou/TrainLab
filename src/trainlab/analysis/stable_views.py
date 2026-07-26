@@ -28,7 +28,15 @@ _DENIED_PROJECTION_COLUMNS = frozenset({
     "password", "credential", "authorization", "mime", "attachment",
 })
 _MAX_SAMPLE_LIMIT = 100
-_MAX_AUX_ROWS = 500
+_MAX_PUBLIC_VIEW_ROWS = 500
+_MAX_VIEW_ROWS = 1_000
+# Coverage is one row per resource and date.  A 14-day daily baseline plus
+# summary/advice boundaries can legitimately exceed 500 rows on accounts with
+# the full Garmin resource catalog.  Route-rich climbing activities can also
+# exceed 500 bounded segment rows over the same window.  Both remain below the
+# 1,000-row per projection and bounded whole-snapshot limits.
+_MAX_AUX_ROWS = 1_000
+_MAX_READ_ROWS = 1_000
 _MAX_SNAPSHOT_ROWS = 4_000
 _SPECS: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     ("v_current_daily_health", "SELECT id,subject_id,local_date,values_json,source_revision_id FROM v_current_daily_health WHERE subject_id=? AND local_date BETWEEN ? AND ? ORDER BY local_date,id", ("subject", "date", "date")),
@@ -192,7 +200,7 @@ class StableViewRepository:
     def _read(self, operation: str, subject_id: int, sql: str, params: tuple[object, ...], start: str | None = None, end: str | None = None, *, limit: int = _MAX_AUX_ROWS) -> tuple[dict[str, Any], ...]:
         if isinstance(subject_id, bool) or not isinstance(subject_id, int) or subject_id <= 0:
             raise StableViewError("analysis_snapshot_subject_invalid")
-        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 500:
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= _MAX_READ_ROWS:
             raise StableViewError("analysis_snapshot_limit_invalid")
         if self._snapshot_read_active:
             try:
@@ -232,9 +240,10 @@ class StableViewRepository:
         self._audit.append(QueryAudit(operation, subject_id, start, end, len(rows)))
         return rows
 
-    def view(self, name: str, subject_id: int, start_local_date: str, end_local_date: str, *, limit: int = 500) -> tuple[dict[str, Any], ...]:
+    def view(self, name: str, subject_id: int, start_local_date: str, end_local_date: str, *, limit: int = _MAX_PUBLIC_VIEW_ROWS) -> tuple[dict[str, Any], ...]:
         start_local_date, end_local_date = _date(start_local_date), _date(end_local_date)
-        if start_local_date > end_local_date or isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 500:
+        maximum = _MAX_VIEW_ROWS if self._snapshot_read_active else _MAX_PUBLIC_VIEW_ROWS
+        if start_local_date > end_local_date or isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= maximum:
             raise StableViewError("analysis_snapshot_query_forbidden")
         spec = next((item for item in _SPECS if item[0] == name), None)
         if spec is None: raise StableViewError("analysis_snapshot_query_forbidden")
@@ -271,9 +280,15 @@ class StableViewRepository:
         # These views are intentionally queried independently: a missing
         # projection is schema incompatibility, never silently interpreted as empty.
             for name, _, _ in _SPECS:
-                views[name] = self.view(name, subject_id, start_local_date, end_local_date)
+                views[name] = self.view(
+                    name,
+                    subject_id,
+                    start_local_date,
+                    end_local_date,
+                    limit=_MAX_VIEW_ROWS,
+                )
             def aux(op: str, sql: str, params: tuple[object, ...]) -> tuple[dict[str, Any], ...]: return self._read(op, subject_id, sql + " LIMIT ?", params + (_MAX_AUX_ROWS + 1,), start_local_date, end_local_date, limit=_MAX_AUX_ROWS)
-            coverage = aux("coverage", "SELECT c.id,c.subject_id,c.provider,c.resource_kind,c.local_date,c.availability_state,c.record_count,c.source_revision_id,CASE WHEN c.source_revision_id IS NULL THEN 1 ELSE COALESCE((SELECT sr.is_current FROM source_revisions sr WHERE sr.id=c.source_revision_id),0) END AS source_revision_current,c.observed_at_utc FROM resource_coverage c WHERE c.subject_id=? AND c.local_date>=? AND c.local_date<=? ORDER BY c.local_date,c.resource_kind,c.id", (subject_id, start_local_date, end_local_date))
+            coverage = aux("coverage", "SELECT c.id,c.subject_id,c.provider,c.resource_kind,c.local_date,c.availability_state,c.record_count,c.source_revision_id,1 AS source_revision_current,c.observed_at_utc FROM resource_coverage c WHERE c.subject_id=? AND c.local_date>=? AND c.local_date<=? AND (c.source_revision_id IS NULL OR EXISTS(SELECT 1 FROM source_revisions current_source WHERE current_source.id=c.source_revision_id AND current_source.is_current=1)) AND NOT EXISTS(SELECT 1 FROM resource_coverage newer WHERE newer.subject_id=c.subject_id AND newer.provider=c.provider AND newer.resource_kind=c.resource_kind AND newer.local_date=c.local_date AND (newer.observed_at_utc>c.observed_at_utc OR (newer.observed_at_utc=c.observed_at_utc AND newer.id>c.id))) ORDER BY c.local_date,c.resource_kind,c.id", (subject_id, start_local_date, end_local_date))
             cursors = aux("cursors", "SELECT resource_kind,cursor_grain,complete_through_local_date,last_success_at_utc,catalog_version FROM garmin_sync_cursors WHERE subject_id=? ORDER BY resource_kind,cursor_grain", (subject_id,))
             gaps = aux("gaps", "SELECT resource_kind,logical_object_key,window_start_local_date,window_end_local_date,stage,reason_code,status,priority,next_retry_at_utc FROM garmin_sync_gaps WHERE subject_id=? AND status IN ('open','deferred') AND window_end_local_date>=? AND window_start_local_date<=? ORDER BY priority DESC,window_start_local_date,resource_kind,id", (subject_id, start_local_date, end_local_date))
             stages = aux("activity_stage", "SELECT a.id,a.provider_activity_id,a.sport,a.sub_sport,a.local_date,a.start_time_utc,a.end_time_utc,a.elapsed_seconds,a.timer_seconds,a.distance_m,a.provider_state,(SELECT c.availability_state FROM resource_coverage c WHERE c.subject_id=a.subject_id AND c.provider=a.provider AND c.resource_kind='activity_inventory' AND c.local_date=a.local_date ORDER BY c.observed_at_utc DESC,c.id DESC LIMIT 1) AS inventory_coverage_state,(SELECT c.observed_at_utc FROM resource_coverage c WHERE c.subject_id=a.subject_id AND c.provider=a.provider AND c.resource_kind='activity_inventory' AND c.local_date=a.local_date ORDER BY c.observed_at_utc DESC,c.id DESC LIMIT 1) AS inventory_coverage_observed_at_utc,SUM(CASE WHEN ar.source_role='summary_json' AND ar.is_active=1 THEN 1 ELSE 0 END) AS summary_relation_count,SUM(CASE WHEN ar.source_role='activity_fit' AND ar.is_active=1 THEN 1 ELSE 0 END) AS fit_relation_count,SUM(CASE WHEN ar.source_role='details_json_fallback' AND ar.is_active=1 THEN 1 ELSE 0 END) AS fallback_relation_count,CASE WHEN SUM(CASE WHEN ar.source_role='summary_json' AND ar.is_active=1 THEN 1 ELSE 0 END)=1 AND SUM(CASE WHEN ar.source_role='summary_json' AND ar.is_active=1 AND sr.is_current=1 AND sr.parsed_at_utc IS NOT NULL AND sr.provider=a.provider AND sr.resource_kind='activity_summary' AND sr.provider_object_id=a.provider_activity_id THEN 1 ELSE 0 END)=1 THEN 1 ELSE 0 END AS summary_ready,CASE WHEN SUM(CASE WHEN ar.source_role='activity_fit' AND ar.is_active=1 THEN 1 ELSE 0 END)=1 AND SUM(CASE WHEN ar.source_role='activity_fit' AND ar.is_active=1 AND sr.is_current=1 AND sr.parsed_at_utc IS NOT NULL AND sr.provider=a.provider AND sr.resource_kind='activity_fit' AND sr.provider_object_id=a.provider_activity_id THEN 1 ELSE 0 END)=1 THEN 1 ELSE 0 END AS fit_core_ready,CASE WHEN SUM(CASE WHEN ar.source_role='details_json_fallback' AND ar.is_active=1 THEN 1 ELSE 0 END)=1 AND SUM(CASE WHEN ar.source_role='details_json_fallback' AND ar.is_active=1 AND sr.is_current=1 AND sr.parsed_at_utc IS NOT NULL AND sr.provider=a.provider AND sr.resource_kind='activity_details_fallback' AND sr.provider_object_id=a.provider_activity_id THEN 1 ELSE 0 END)=1 THEN 1 ELSE 0 END AS fallback_ready,MAX(CASE WHEN ar.source_role='activity_fit' AND ar.is_active=1 AND sr.is_current=1 AND sr.parsed_at_utc IS NOT NULL THEN sr.id END) AS active_fit_revision_id FROM activities a LEFT JOIN activity_source_revisions ar ON ar.activity_id=a.id LEFT JOIN source_revisions sr ON sr.id=ar.source_revision_id WHERE a.subject_id=? AND a.local_date>=? AND a.local_date<=? AND a.provider_state IN ('active','suspected_missing') GROUP BY a.id ORDER BY a.local_date,a.start_time_utc,a.id", (subject_id, start_local_date, end_local_date))

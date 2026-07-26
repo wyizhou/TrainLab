@@ -71,6 +71,42 @@ def test_real_foundation_allowlist_subject_isolation_and_stable_snapshot(tmp_pat
     with pytest.raises(StableViewError): repo.view("activities", 1, "2026-07-22", "2026-07-22")
 
 
+def test_snapshot_exposes_only_latest_coverage_observation_per_resource_day(
+    tmp_path: Path,
+) -> None:
+    conn, repo = repository(tmp_path)
+    conn.execute(
+        """INSERT INTO resource_coverage(
+               subject_id,provider,resource_kind,local_date,availability_state,
+               record_count,observed_at_utc)
+           VALUES(1,'garmin','daily','2026-07-22','empty',0,'2026-07-23T00:00:00Z')"""
+    )
+
+    rows = [
+        row
+        for row in repo.snapshot(1, "2026-07-22", "2026-07-22").coverage
+        if row["resource_kind"] == "daily"
+    ]
+    assert len(rows) == 1
+    assert rows[0]["availability_state"] == "empty"
+    assert rows[0]["observed_at_utc"] == "2026-07-23T00:00:00Z"
+
+
+def test_snapshot_excludes_coverage_linked_to_noncurrent_source_revision(
+    tmp_path: Path,
+) -> None:
+    conn, repo = repository(tmp_path)
+    conn.execute(
+        """INSERT INTO resource_coverage(
+               subject_id,provider,resource_kind,local_date,availability_state,
+               record_count,source_revision_id,observed_at_utc)
+           VALUES(1,'garmin','legacy','2026-07-22','fetched',1,2,'2026-07-23T00:00:00Z')"""
+    )
+
+    snapshot = repo.snapshot(1, "2026-07-22", "2026-07-22")
+    assert not any(row["resource_kind"] == "legacy" for row in snapshot.coverage)
+
+
 def test_activity_stages_project_independent_summary_fit_fallback_and_inventory_evidence(tmp_path: Path) -> None:
     conn, repo = repository(tmp_path)
     first = repo.snapshot(1, "2026-07-22", "2026-07-22").activity_stages

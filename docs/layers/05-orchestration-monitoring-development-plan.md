@@ -19,10 +19,10 @@
 | 契约 | 版本 | SHA-256 |
 |---|---:|---|
 | [第一层](01-data-foundation.md) | v2.4 | `9bf0a91e61bda47c9dba971c731ca6ec79e064b7f0ea4eb8124a5a216d67e396` |
-| [第二层](02-data-collection.md) | v1 | `afdffa6268d64403d170906ee6a42d10f873a75b1615b806d893982aea86db14` |
-| [第三层](03-data-analysis.md) | v2 | `4a9b3f1ffb92ba1ad4f56e68380344007e48a43e03a3e0f746399c50da794eb8` |
-| [第四层](04-mail-agent.md) | v2 | `47175280f917dee55d2aa5f663f0705da8ec7baf463eae5933ea391c0770be94` |
-| [第五层](05-orchestration-monitoring.md) | v1 | `5b1d5abf15689cec2507bd20e36aa83fe49626dd82247a4c0a1b91cc266ce804` |
+| [第二层](02-data-collection.md) | v1 | `c39ae1b82afcafe9f4fc3c54d1f851b4992c48021c5238038f078fab1ec885d6` |
+| [第三层](03-data-analysis.md) | v2.1 | `98652387c7018138e7910dbdf83826cb1e6b7a2a830d1bd4d67debe4627f0956` |
+| [第四层](04-mail-agent.md) | v2.1 | `977246c604dc939cce1d97869f584e463030476db64b0d20e07bb625faa12e17` |
+| [第五层](05-orchestration-monitoring.md) | v1.1 | `f46aca332f146fa2efffb4da8a03b48037989b7e4e4f31df9d562932e46db356` |
 
 实施开始前必须重新计算以上哈希。任一哈希变化即停止后续单元，先由总控重新冻结
 影响范围；不得根据旧清单猜测新的共享边界。

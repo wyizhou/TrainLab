@@ -102,7 +102,6 @@ _EXPECTED_VIEWS = frozenset(
         "v_current_training_plans",
         "v_training_plan_items",
         "v_analysis_history_context",
-        "v_open_data_quality_issues",
     }
 )
 _FORBIDDEN_KEYS = frozenset(
@@ -136,6 +135,11 @@ _EMBEDDED_JSON_NAMES = {
     "prescription_json": "prescription",
     "value_json": "value",
     "values_json": "values",
+}
+_FOUNDATION_ORIGIN_TO_CONTEXT = {
+    "sensor_observed": "provider_fact",
+    "user_entered": "user_asserted",
+    "profile_setting": "user_asserted",
 }
 
 
@@ -227,6 +231,29 @@ def parse_canonical_json(value: str) -> Any:
     return parsed
 
 
+def _parse_embedded_json(value: str) -> Any:
+    """Parse trusted stable-view JSON without imposing a storage byte format.
+
+    Foundation guarantees ``json_valid`` but does not require compact,
+    key-sorted bytes.  The context serializer canonicalizes the parsed value
+    itself.  Duplicate keys and non-finite values remain rejected so alternate
+    byte formatting cannot change meaning or bypass validation.
+    """
+
+    if not isinstance(value, str):
+        _fail("analysis_context_json_text_invalid")
+    try:
+        return json.loads(
+            value,
+            object_pairs_hook=_duplicate_checked_object,
+            parse_constant=_reject_constant,
+        )
+    except ContextBuildError:
+        raise
+    except (json.JSONDecodeError, TypeError, ValueError) as error:
+        raise ContextBuildError("analysis_context_json_text_invalid") from error
+
+
 def _local_date(value: Any) -> date:
     if not isinstance(value, str):
         _fail("analysis_context_date_invalid")
@@ -248,10 +275,17 @@ def _utc(value: Any) -> datetime:
         raise ContextBuildError("analysis_context_utc_invalid") from error
     if parsed.tzinfo != timezone.utc:
         _fail("analysis_context_utc_invalid")
-    fraction = ""
-    if parsed.microsecond:
-        fraction = f".{parsed.microsecond:06d}".rstrip("0")
-    if value != f"{parsed:%Y-%m-%dT%H:%M:%S}{fraction}Z":
+    fraction = value[19:-1]
+    is_shortest_fraction = (
+        len(fraction) > 1
+        and len(fraction) < 7
+        and fraction[-1] != "0"
+    )
+    is_fixed_microsecond_fraction = len(fraction) == 7
+    if (
+        (fraction and parsed.microsecond == 0)
+        or (fraction and not (is_shortest_fraction or is_fixed_microsecond_fraction))
+    ):
         _fail("analysis_context_utc_not_canonical")
     return parsed
 
@@ -606,7 +640,7 @@ def _sanitize_row(row: Mapping[str, Any]) -> dict[str, Any]:
             elif not isinstance(value, str):
                 _fail("analysis_context_embedded_json_invalid")
             else:
-                output[target_key] = parse_canonical_json(value)
+                output[target_key] = _parse_embedded_json(value)
         else:
             output[target_key] = deepcopy(value)
     _json_value(output, forbid_source_keys=True)
@@ -660,6 +694,8 @@ def _row_date_window(row: Mapping[str, Any], fallback: tuple[str, str]) -> tuple
 
 def _origin(value: Any, default: str) -> str:
     origin = default if value is None else value
+    if isinstance(origin, str):
+        origin = _FOUNDATION_ORIGIN_TO_CONTEXT.get(origin, origin)
     if not isinstance(origin, str) or origin not in _TRUST:
         _fail("analysis_context_value_origin_invalid")
     return origin

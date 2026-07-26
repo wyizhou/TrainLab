@@ -3,22 +3,22 @@
   "bundles": {
     "daily": [
       {"path": "harness/shared/HARNESS.md", "sha256": "109e198d097cf8acbe5b59ee3be027a89f457de196b5b0a78f7846d5fb55eb0c"},
-      {"path": "harness/analysis/HARNESS.md", "sha256": "689d5896de472a5b840890232210a4f0cb1963bebf4e4cbf267144d6d7bd9cef"},
+      {"path": "harness/analysis/HARNESS.md", "sha256": "f11f57885214afa633f604a5444ace5a67ab85c60575e7536a8ab2b6549cdb2c"},
       {"path": "harness/analysis/daily.md", "sha256": "024213aa8366d6fe39a22ca0959af097e9928ebbfbec4dcadc6691dbc2006fc6"}
     ],
     "weekly": [
       {"path": "harness/shared/HARNESS.md", "sha256": "109e198d097cf8acbe5b59ee3be027a89f457de196b5b0a78f7846d5fb55eb0c"},
-      {"path": "harness/analysis/HARNESS.md", "sha256": "689d5896de472a5b840890232210a4f0cb1963bebf4e4cbf267144d6d7bd9cef"},
+      {"path": "harness/analysis/HARNESS.md", "sha256": "f11f57885214afa633f604a5444ace5a67ab85c60575e7536a8ab2b6549cdb2c"},
       {"path": "harness/analysis/weekly.md", "sha256": "56d05f3056be7266ec79790181c4b5cd593cad0ebf4400123526fd00861c56d1"}
     ],
     "revise_plan": [
       {"path": "harness/shared/HARNESS.md", "sha256": "109e198d097cf8acbe5b59ee3be027a89f457de196b5b0a78f7846d5fb55eb0c"},
-      {"path": "harness/analysis/HARNESS.md", "sha256": "689d5896de472a5b840890232210a4f0cb1963bebf4e4cbf267144d6d7bd9cef"},
+      {"path": "harness/analysis/HARNESS.md", "sha256": "f11f57885214afa633f604a5444ace5a67ab85c60575e7536a8ab2b6549cdb2c"},
       {"path": "harness/analysis/revise-plan.md", "sha256": "be2641fdb0225bc98ab5182de0d59449ed4d048f3300f17fb034f29537143636"}
     ],
     "delivery": [
       {"path": "harness/shared/HARNESS.md", "sha256": "109e198d097cf8acbe5b59ee3be027a89f457de196b5b0a78f7846d5fb55eb0c"},
-      {"path": "harness/analysis/HARNESS.md", "sha256": "689d5896de472a5b840890232210a4f0cb1963bebf4e4cbf267144d6d7bd9cef"},
+      {"path": "harness/analysis/HARNESS.md", "sha256": "f11f57885214afa633f604a5444ace5a67ab85c60575e7536a8ab2b6549cdb2c"},
       {"path": "harness/analysis/delivery.md", "sha256": "4d98c134abbdbaf6d72d8eb9a153bf688608298f013c3d9ab730a737bc11d452"}
     ]
   }

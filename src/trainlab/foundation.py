@@ -102,7 +102,7 @@ class _PinnedConnection(sqlite3.Connection):
         if failure is not None:
             raise failure
 
-FOUNDATION_SCHEMA_VERSION = 2
+FOUNDATION_SCHEMA_VERSION = 3
 RECEIPT_SCHEMA_VERSION = "1"
 BACKUP_MAGIC = b"TLFB"
 BACKUP_VERSION = b"\x01"
@@ -120,7 +120,11 @@ _PHASE1_DDL = {
 # derived from the current manifest/DDL, so an arbitrary v1-shaped database
 # cannot be silently blessed as a migration source.
 LEGACY_V1_MANIFEST_SHA256 = "e406492dc044dcc17c5e08776614b9f73ec08580b6c56c14898d9085708e6e88"
+LEGACY_V2_MANIFEST_SHA256 = "24b94ca0cffbc61a512fd29a968917020724c276c15e82413485549564b01c4c"
+LEGACY_V2_SCHEMA_OBJECTS_SHA256 = "80a3fd0508d31d1bf60d0a3329dee325bdf28d1f8d4a9951a8699a31f623cee5"
+LEGACY_V2_FROM_V1_SCHEMA_OBJECTS_SHA256 = "d4538219f96a856a611898bf3349f55a6489793412b0f6018af4e5811c4c4cf2"
 LEGACY_V1_SCHEMA_OBJECTS_SHA256 = "781db677d022d7f7904aaea3569662c025d76c659da224ae5876486eeade6732"
+LEGACY_V2_ANALYSIS_ARTIFACT_INPUTS_DDL = "id INTEGER PRIMARY KEY, analysis_run_id INTEGER NOT NULL REFERENCES analysis_runs(id), input_role TEXT NOT NULL, source_entity_type TEXT NOT NULL, source_entity_id INTEGER, source_revision_id INTEGER REFERENCES source_revisions(id), source_window_start_utc TEXT, source_window_end_utc TEXT, input_sha256 TEXT NOT NULL, trust_class TEXT NOT NULL CHECK(trust_class IN ('provider_fact','user_asserted','derived_statistic','prior_model_output')), ordinal INTEGER NOT NULL, UNIQUE(analysis_run_id,ordinal)"
 LEGACY_V1_MAIL_MESSAGES_DDL = "id INTEGER PRIMARY KEY, mail_thread_id INTEGER NOT NULL REFERENCES mail_threads(id), provider_message_id TEXT NOT NULL UNIQUE, direction TEXT NOT NULL CHECK(direction IN ('inbound','outbound','self_copy','unknown')), actor_role TEXT NOT NULL CHECK(actor_role IN ('user','trainlab','unknown')), sent_at_utc TEXT, received_at_utc TEXT, subject TEXT, body_text TEXT, body_sha256 TEXT, in_reply_to_provider_message_id TEXT, labels_json TEXT NOT NULL DEFAULT '[]' CHECK(json_valid(labels_json)), source_revision_id INTEGER REFERENCES source_revisions(id), processing_state TEXT NOT NULL DEFAULT 'new' CHECK(processing_state IN ('new','processed','ignored','error'))"
 MAIL_PROCESSING_STATES = (
     # Fourth-layer frozen state machine.
@@ -369,7 +373,7 @@ TABLES: dict[str, str] = {
     "mail_delivery_artifacts": "id INTEGER PRIMARY KEY, mail_delivery_id INTEGER NOT NULL REFERENCES mail_deliveries(id), mail_response_artifact_id INTEGER NOT NULL REFERENCES mail_response_artifacts(id), content_role TEXT NOT NULL CHECK(content_role='mail_response'), ordinal INTEGER NOT NULL, UNIQUE(mail_delivery_id,mail_response_artifact_id,content_role,ordinal)",
     "analysis_runs": "id INTEGER PRIMARY KEY, run_key TEXT NOT NULL UNIQUE, subject_id INTEGER NOT NULL REFERENCES data_subjects(id), analysis_kind TEXT NOT NULL CHECK(analysis_kind IN ('daily','weekly','plan_revision','regeneration')), target_start_local_date TEXT, target_end_local_date TEXT, status TEXT NOT NULL CHECK(status IN ('started','succeeded','failed','rejected')), harness_version TEXT, input_schema_version TEXT, output_schema_version TEXT, context_snapshot_json TEXT CHECK(json_valid(context_snapshot_json)), context_snapshot_sha256 TEXT, generator_metadata_json TEXT CHECK(json_valid(generator_metadata_json)), started_at_utc TEXT NOT NULL, completed_at_utc TEXT",
     "analysis_artifacts": "id INTEGER PRIMARY KEY, subject_id INTEGER NOT NULL REFERENCES data_subjects(id), artifact_kind TEXT NOT NULL CHECK(artifact_kind IN ('daily_summary','daily_training_advice','weekly_summary','weekly_training_plan')), period_start_local_date TEXT NOT NULL, period_end_local_date TEXT NOT NULL, revision_no INTEGER NOT NULL, generated_by_run_id INTEGER NOT NULL REFERENCES analysis_runs(id), schema_version TEXT NOT NULL, structured_content_json TEXT NOT NULL CHECK(json_valid(structured_content_json)), user_visible_text TEXT NOT NULL, content_sha256 TEXT NOT NULL, is_current INTEGER NOT NULL DEFAULT 1 CHECK(is_current IN (0,1)), supersedes_artifact_id INTEGER REFERENCES analysis_artifacts(id), created_at_utc TEXT NOT NULL, UNIQUE(subject_id,artifact_kind,period_start_local_date,period_end_local_date,revision_no)",
-    "analysis_artifact_inputs": "id INTEGER PRIMARY KEY, analysis_run_id INTEGER NOT NULL REFERENCES analysis_runs(id), input_role TEXT NOT NULL, source_entity_type TEXT NOT NULL, source_entity_id INTEGER, source_revision_id INTEGER REFERENCES source_revisions(id), source_window_start_utc TEXT, source_window_end_utc TEXT, input_sha256 TEXT NOT NULL, trust_class TEXT NOT NULL CHECK(trust_class IN ('provider_fact','user_asserted','derived_statistic','prior_model_output')), ordinal INTEGER NOT NULL, UNIQUE(analysis_run_id,ordinal)",
+    "analysis_artifact_inputs": "id INTEGER PRIMARY KEY, analysis_run_id INTEGER NOT NULL REFERENCES analysis_runs(id), input_role TEXT NOT NULL, source_entity_type TEXT NOT NULL, source_entity_id INTEGER, source_revision_id INTEGER REFERENCES source_revisions(id), source_window_start_utc TEXT, source_window_end_utc TEXT, input_sha256 TEXT NOT NULL, trust_class TEXT NOT NULL CHECK(trust_class IN ('provider_fact','provider_derived','provider_predicted','user_asserted','derived_statistic','prior_model_output','unknown')), ordinal INTEGER NOT NULL, UNIQUE(analysis_run_id,ordinal)",
     "analysis_artifact_relations": "id INTEGER PRIMARY KEY, from_artifact_id INTEGER NOT NULL REFERENCES analysis_artifacts(id), to_artifact_id INTEGER NOT NULL REFERENCES analysis_artifacts(id), relation_type TEXT NOT NULL CHECK(relation_type IN ('supersedes','derived_from','paired_with','references_prior_summary','references_prior_plan')), created_at_utc TEXT NOT NULL, UNIQUE(from_artifact_id,to_artifact_id,relation_type)",
     "training_plans": "id INTEGER PRIMARY KEY, subject_id INTEGER NOT NULL REFERENCES data_subjects(id), analysis_artifact_id INTEGER NOT NULL UNIQUE REFERENCES analysis_artifacts(id), plan_start_local_date TEXT NOT NULL, plan_end_local_date TEXT NOT NULL, timezone TEXT NOT NULL CHECK(timezone='Asia/Singapore'), status TEXT NOT NULL CHECK(status IN ('proposed','active','completed','superseded','cancelled')), objective_json TEXT NOT NULL DEFAULT '{}' CHECK(json_valid(objective_json)), constraints_json TEXT NOT NULL DEFAULT '{}' CHECK(json_valid(constraints_json)), created_at_utc TEXT NOT NULL, CHECK(julianday(plan_end_local_date)-julianday(plan_start_local_date)=6)",
     "training_plan_items": "id INTEGER PRIMARY KEY, training_plan_id INTEGER NOT NULL REFERENCES training_plans(id), item_index INTEGER NOT NULL, local_date TEXT NOT NULL, activity_kind TEXT NOT NULL CHECK(activity_kind IN ('running','climbing','strength','rest')), prescription_json TEXT NOT NULL DEFAULT '{}' CHECK(json_valid(prescription_json)), rationale_text TEXT, stop_conditions_json TEXT NOT NULL DEFAULT '{}' CHECK(json_valid(stop_conditions_json)), UNIQUE(training_plan_id,item_index)",
@@ -1206,10 +1210,11 @@ class FoundationTool:
     @staticmethod
     def _migration_receipt_valid(conn: sqlite3.Connection, manifest_hash: str) -> bool:
         rows=[tuple(row) for row in conn.execute("SELECT version,description,applied_at_utc,code_revision,content_sha256 FROM schema_migrations ORDER BY version")]
-        if len(rows)!=2: return False
+        if len(rows)!=3: return False
         expected=(
             (1,"foundation_v1","foundation-v1",{_FOUNDATION_V1_MIGRATION_SHA256,LEGACY_V1_MANIFEST_SHA256}),
-            (FOUNDATION_SCHEMA_VERSION,"mail_processing_state_v2","foundation-v2",{manifest_hash}),
+            (2,"mail_processing_state_v2","foundation-v2",{LEGACY_V2_MANIFEST_SHA256}),
+            (3,"analysis_input_trust_v3","foundation-v3",{manifest_hash}),
         )
         for row, wanted in zip(rows,expected):
             version,description,applied,revision,content=row
@@ -1258,7 +1263,7 @@ class FoundationTool:
                 errors.append("database_not_ready")
             if state["manifest_sha256"] != expected_hash:
                 errors.append("database_manifest_mismatch")
-            if state["implementation_version"] != "foundation-v2":
+            if state["implementation_version"] != "foundation-v3":
                 errors.append("database_implementation_version_mismatch")
             if not _canonical_utc(state["initialized_at_utc"]) or not _canonical_utc(state["updated_at_utc"]):
                 errors.append("database_timestamp_mismatch")
@@ -1379,13 +1384,13 @@ class FoundationTool:
             self._fire_failpoint("after_marker")
             conn = self._connect(paths["db"])
             try:
-                conn.execute("UPDATE foundation_state SET state='ready', initialized_at_utc=?, updated_at_utc=?, implementation_version='foundation-v2' WHERE id=1", (_utc(), _utc()))
+                conn.execute("UPDATE foundation_state SET state='ready', initialized_at_utc=?, updated_at_utc=?, implementation_version='foundation-v3' WHERE id=1", (_utc(), _utc()))
             finally:
                 conn.close()
             receipt.status, receipt.ready, receipt.next_action = "initialized", True, "none"
             receipt.foundation_schema_version = FOUNDATION_SCHEMA_VERSION
             receipt.created_count = len(TABLES) + len(VIEWS) + 10
-            receipt.applied_migration_ids = [1, 2]
+            receipt.applied_migration_ids = [1, 2, 3]
             receipt.migration_start_version, receipt.migration_end_version = 0, FOUNDATION_SCHEMA_VERSION
 
     def _fire_failpoint(self, phase: str) -> None:
@@ -1440,7 +1445,8 @@ class FoundationTool:
             "CREATE TRIGGER trg_training_plan_item_window BEFORE INSERT ON training_plan_items FOR EACH ROW WHEN NEW.local_date < (SELECT plan_start_local_date FROM training_plans WHERE id=NEW.training_plan_id) OR NEW.local_date > (SELECT plan_end_local_date FROM training_plans WHERE id=NEW.training_plan_id) BEGIN SELECT RAISE(ABORT,'training_plan_item_outside_plan_window'); END","CREATE TRIGGER trg_training_plan_artifact_insert BEFORE INSERT ON training_plans FOR EACH ROW WHEN (SELECT artifact_kind FROM analysis_artifacts WHERE id=NEW.analysis_artifact_id) != 'weekly_training_plan' BEGIN SELECT RAISE(ABORT,'training_plan_requires_weekly_training_plan'); END","CREATE TRIGGER trg_training_plan_artifact_update BEFORE UPDATE OF analysis_artifact_id ON training_plans FOR EACH ROW WHEN (SELECT artifact_kind FROM analysis_artifacts WHERE id=NEW.analysis_artifact_id) != 'weekly_training_plan' BEGIN SELECT RAISE(ABORT,'training_plan_requires_weekly_training_plan'); END","CREATE TRIGGER trg_climbing_route_segment_insert BEFORE INSERT ON climbing_routes FOR EACH ROW WHEN (SELECT segment_type FROM activity_segments WHERE id=NEW.segment_id) != 'climb_active' BEGIN SELECT RAISE(ABORT,'climbing_route_requires_climb_active'); END","CREATE TRIGGER trg_climbing_route_segment_update BEFORE UPDATE OF segment_id ON climbing_routes FOR EACH ROW WHEN (SELECT segment_type FROM activity_segments WHERE id=NEW.segment_id) != 'climb_active' BEGIN SELECT RAISE(ABORT,'climbing_route_requires_climb_active'); END","CREATE TRIGGER trg_strength_set_segment_insert BEFORE INSERT ON strength_sets FOR EACH ROW WHEN (SELECT segment_type FROM activity_segments WHERE id=NEW.segment_id) NOT IN ('strength_active','strength_rest') BEGIN SELECT RAISE(ABORT,'strength_set_requires_strength_segment'); END","CREATE TRIGGER trg_strength_set_segment_update BEFORE UPDATE OF segment_id ON strength_sets FOR EACH ROW WHEN (SELECT segment_type FROM activity_segments WHERE id=NEW.segment_id) NOT IN ('strength_active','strength_rest') BEGIN SELECT RAISE(ABORT,'strength_set_requires_strength_segment'); END"):
             conn.execute(statement)
         conn.execute("INSERT INTO schema_migrations VALUES(1,?,?,?,?)",("foundation_v1",_utc(),"foundation-v1",_FOUNDATION_V1_MIGRATION_SHA256))
-        conn.execute("INSERT INTO schema_migrations VALUES(2,?,?,?,?)",("mail_processing_state_v2",_utc(),"foundation-v2",manifest_hash))
+        conn.execute("INSERT INTO schema_migrations VALUES(2,?,?,?,?)",("mail_processing_state_v2",_utc(),"foundation-v2",LEGACY_V2_MANIFEST_SHA256))
+        conn.execute("INSERT INTO schema_migrations VALUES(3,?,?,?,?)",("analysis_input_trust_v3",_utc(),"foundation-v3",manifest_hash))
 
     def _complete_phase1_recovery(self, paths: dict[str, Path], expected_hash: str, receipt: FoundationReceipt) -> None:
         """Continue, without recreating metadata, from the exact phase-1 checkpoint."""
@@ -1460,10 +1466,10 @@ class FoundationTool:
         finally: audit.close()
         self._atomic_json(paths["ready"],{"schema_version":FOUNDATION_SCHEMA_VERSION,"manifest_sha256":expected_hash,"ready":True,"initialized_at_utc":_utc()})
         conn=self._connect(paths["db"])
-        try: conn.execute("UPDATE foundation_state SET state='ready', initialized_at_utc=?,updated_at_utc=?,implementation_version='foundation-v2' WHERE id=1",(_utc(),_utc()))
+        try: conn.execute("UPDATE foundation_state SET state='ready', initialized_at_utc=?,updated_at_utc=?,implementation_version='foundation-v3' WHERE id=1",(_utc(),_utc()))
         finally: conn.close()
         receipt.status,receipt.ready,receipt.next_action="initialized",True,"none"
-        receipt.foundation_schema_version=FOUNDATION_SCHEMA_VERSION; receipt.applied_migration_ids=[1,FOUNDATION_SCHEMA_VERSION]
+        receipt.foundation_schema_version=FOUNDATION_SCHEMA_VERSION; receipt.applied_migration_ids=[1,2,FOUNDATION_SCHEMA_VERSION]
         receipt.warnings.append({"code":"initialization_recovered","summary":"continued verified phase-1 initialization"})
 
     def _resume_or_reject_existing(self, paths: dict[str, Path], receipt: FoundationReceipt) -> None:
@@ -1523,7 +1529,7 @@ class FoundationTool:
                 raise IncompatibleError("initializing_not_recoverable:" + errors[0])
             if marker_kind is None:
                 self._atomic_json(paths["ready"], {"schema_version": FOUNDATION_SCHEMA_VERSION, "manifest_sha256": expected_hash, "ready": True, "initialized_at_utc": _utc()})
-            conn.execute("UPDATE foundation_state SET state='ready', initialized_at_utc=COALESCE(initialized_at_utc,?), updated_at_utc=?, implementation_version='foundation-v2' WHERE id=1", (_utc(), _utc()))
+            conn.execute("UPDATE foundation_state SET state='ready', initialized_at_utc=COALESCE(initialized_at_utc,?), updated_at_utc=?, implementation_version='foundation-v3' WHERE id=1", (_utc(), _utc()))
             receipt.status, receipt.ready, receipt.next_action = "initialized", True, "none"
             receipt.foundation_schema_version = FOUNDATION_SCHEMA_VERSION
             receipt.applied_migration_ids = [1, FOUNDATION_SCHEMA_VERSION]
@@ -1543,7 +1549,7 @@ class FoundationTool:
                 raise IncompatibleError("migration_database_missing")
             # Source admission is genuinely read-only.  In particular, do not
             # enable WAL or start a transaction before proving the source is
-            # the exact released v1 contract.
+            # an exact published Foundation contract.
             audit = self._connect(paths["db"], readonly=True)
             try:
                 state = self._read_foundation_state(audit)
@@ -1552,6 +1558,10 @@ class FoundationTool:
                     raise IncompatibleError("higher_schema_version")
                 if current == 1:
                     source_error = self._published_v1_source_error(audit, paths)
+                    if source_error:
+                        raise IncompatibleError(source_error)
+                elif current == 2:
+                    source_error = self._published_v2_source_error(audit, paths)
                     if source_error:
                         raise IncompatibleError(source_error)
             finally:
@@ -1568,7 +1578,7 @@ class FoundationTool:
                     manifest_hash = self._manifest_hash()
                     if state["manifest_sha256"] != manifest_hash:
                         errors.append("database_manifest_mismatch")
-                    if state["implementation_version"] != "foundation-v2":
+                    if state["implementation_version"] != "foundation-v3":
                         errors.append("database_implementation_version_mismatch")
                     if not _canonical_utc(state["initialized_at_utc"]) or not _canonical_utc(state["updated_at_utc"]):
                         errors.append("database_timestamp_mismatch")
@@ -1580,34 +1590,44 @@ class FoundationTool:
                     if conn.execute("PRAGMA foreign_key_check").fetchone() is not None:
                         errors.append("sqlite_foreign_key_mismatch")
                     if errors:
-                        raise IncompatibleError("migration_v2_" + errors[0])
+                        raise IncompatibleError("migration_v3_" + errors[0])
                     marker_error = self._marker_error(paths, self._manifest_hash())
                     if marker_error is None:
                         receipt.status, receipt.ready, receipt.next_action = "already_initialized", True, "none"
                         receipt.foundation_schema_version = FOUNDATION_SCHEMA_VERSION
                         return
-                    if not self._is_supported_v1_marker(paths):
+                    if not self._is_supported_v2_marker(paths):
                         raise IncompatibleError("migration_marker_inconsistent")
                     # A completed DB transaction may have crashed before marker
                     # publication.  Only an explicit maintenance request may
-                    # publish the v2 marker; init remains a strict no-op/reject.
-                    self._atomic_json(paths["ready"], {"schema_version": FOUNDATION_SCHEMA_VERSION, "manifest_sha256": self._manifest_hash(), "ready": True, "initialized_at_utc": _utc()}, expected_existing={"schema_version": 1, "manifest_sha256": LEGACY_V1_MANIFEST_SHA256, "ready": True})
+                    # publish the v3 marker; init remains a strict no-op/reject.
+                    self._atomic_json(paths["ready"], {"schema_version": FOUNDATION_SCHEMA_VERSION, "manifest_sha256": self._manifest_hash(), "ready": True, "initialized_at_utc": _utc()}, expected_existing={"schema_version": 2, "manifest_sha256": LEGACY_V2_MANIFEST_SHA256, "ready": True})
                     receipt.status, receipt.ready, receipt.next_action = "initialized", True, "none"
                     receipt.foundation_schema_version = FOUNDATION_SCHEMA_VERSION
                     receipt.applied_migration_ids = [FOUNDATION_SCHEMA_VERSION]
                     receipt.warnings.append({"code": "migration_marker_republished", "summary": "completed explicit migration publication"})
                     return
-                if current != 1 or state["state"] != "ready":
+                if current not in {1, 2} or state["state"] != "ready":
                     raise IncompatibleError("unsupported_migration_source_state")
                 # The writer is opened only after read-only admission while
                 # holding the Foundation maintenance lock.  Re-check the
-                # immutable v1 proof to catch an out-of-band schema mutation.
-                source_error = self._published_v1_source_error(conn, paths)
+                # immutable published-contract proof to catch an out-of-band
+                # schema mutation after the read-only admission.
+                source_error = self._published_v1_source_error(conn, paths) if current == 1 else self._published_v2_source_error(conn, paths)
                 if source_error:
                     raise IncompatibleError(source_error)
-                self._migrate_v1_mail_processing_state(conn, paths, receipt)
+                if current == 1:
+                    self._migrate_v1_mail_processing_state(conn, paths, receipt)
+                    conn.close()
+                    conn = None
+                    self._migrate_v2_analysis_input_trust(paths, receipt, migration_start=1)
+                else:
+                    conn.close()
+                    conn = None
+                    self._migrate_v2_analysis_input_trust(paths, receipt, migration_start=2)
             finally:
-                conn.close()
+                if conn is not None:
+                    conn.close()
 
     @staticmethod
     def _mail_message_columns() -> tuple[str, ...]:
@@ -1623,6 +1643,20 @@ class FoundationTool:
             and marker.get("ready") is True
             and marker.get("schema_version") == 1
             and marker.get("manifest_sha256") == LEGACY_V1_MANIFEST_SHA256
+            and _canonical_utc(marker.get("initialized_at_utc"))
+        )
+
+    def _is_supported_v2_marker(self, paths: dict[str, Path]) -> bool:
+        """Accept only the marker published by the reviewed v2 release."""
+        try:
+            marker = json.loads(self._secure_read_file(paths["ready"]).decode("utf-8"))
+        except (FileNotFoundError, OSError, json.JSONDecodeError):
+            return False
+        return (
+            set(marker) == {"schema_version", "manifest_sha256", "ready", "initialized_at_utc"}
+            and marker.get("ready") is True
+            and marker.get("schema_version") == 2
+            and marker.get("manifest_sha256") == LEGACY_V2_MANIFEST_SHA256
             and _canonical_utc(marker.get("initialized_at_utc"))
         )
 
@@ -1666,6 +1700,42 @@ class FoundationTool:
             return "legacy_v1_migration_receipt_unrecognized"
         if self._schema_objects_sha256(conn) != LEGACY_V1_SCHEMA_OBJECTS_SHA256:
             return "legacy_v1_schema_objects_unrecognized"
+        return None
+
+    def _published_v2_source_error(self, conn: sqlite3.Connection, paths: dict[str, Path]) -> str | None:
+        """Prove the input is the exact released v2 store before v3 writes."""
+        if not (self._is_supported_v2_marker(paths) or self._is_supported_v1_marker(paths)):
+            return "legacy_v2_marker_unrecognized"
+        try:
+            state = conn.execute(
+                "SELECT state,schema_version,manifest_sha256,initialized_at_utc,updated_at_utc,implementation_version FROM foundation_state WHERE id=1"
+            ).fetchone()
+            migrations = [tuple(row) for row in conn.execute(
+                "SELECT version,description,applied_at_utc,code_revision,content_sha256 FROM schema_migrations ORDER BY version"
+            )]
+        except sqlite3.DatabaseError:
+            return "legacy_v2_metadata_unreadable"
+        if state is None or (
+            state["state"] != "ready"
+            or int(state["schema_version"]) != 2
+            or state["manifest_sha256"] != LEGACY_V2_MANIFEST_SHA256
+            or state["implementation_version"] != "foundation-v2"
+            or not _canonical_utc(state["initialized_at_utc"])
+            or not _canonical_utc(state["updated_at_utc"])
+        ):
+            return "legacy_v2_foundation_state_unrecognized"
+        if (
+            len(migrations) != 2
+            or migrations[0][0:2] != (1, "foundation_v1")
+            or migrations[0][3:] not in (("foundation-v1", _FOUNDATION_V1_MIGRATION_SHA256), ("foundation-v1", LEGACY_V1_MANIFEST_SHA256))
+            or not _canonical_utc(migrations[0][2])
+            or migrations[1][0:2] != (2, "mail_processing_state_v2")
+            or migrations[1][3:] != ("foundation-v2", LEGACY_V2_MANIFEST_SHA256)
+            or not _canonical_utc(migrations[1][2])
+        ):
+            return "legacy_v2_migration_receipt_unrecognized"
+        if self._schema_objects_sha256(conn) not in {LEGACY_V2_SCHEMA_OBJECTS_SHA256, LEGACY_V2_FROM_V1_SCHEMA_OBJECTS_SHA256}:
+            return "legacy_v2_schema_objects_unrecognized"
         return None
 
     def _tighten_released_v1_directories(self, paths: dict[str, Path]) -> list[Path]:
@@ -1717,7 +1787,6 @@ class FoundationTool:
         actual = [row[1] for row in conn.execute("PRAGMA table_info(mail_messages)")]
         if actual != list(columns):
             raise IncompatibleError("migration_mail_messages_columns_unrecognized")
-        manifest_hash = self._manifest_hash()
         conn.execute("PRAGMA foreign_keys=OFF")
         transaction_open = False
         try:
@@ -1752,12 +1821,11 @@ class FoundationTool:
             conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS ux_garmin_sync_gap_unresolved ON garmin_sync_gaps(subject_id,resource_kind,logical_object_key,window_start_local_date,window_end_local_date,stage) WHERE status IN ('open','deferred')")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_coverage_resource_date ON resource_coverage(resource_kind,local_date)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_activity_samples_stream ON activity_samples(activity_id,stream_kind,sample_index)")
-            conn.execute("UPDATE foundation_state SET schema_version=?,manifest_sha256=?,updated_at_utc=?,implementation_version=? WHERE id=1", (FOUNDATION_SCHEMA_VERSION, manifest_hash, _utc(), "foundation-v2"))
-            conn.execute("INSERT OR IGNORE INTO schema_migrations(version,description,applied_at_utc,code_revision,content_sha256) VALUES(2,?,?,?,?)", ("mail_processing_state_v2", _utc(), "foundation-v2", manifest_hash))
+            conn.execute("UPDATE foundation_state SET schema_version=?,manifest_sha256=?,updated_at_utc=?,implementation_version=? WHERE id=1", (2, LEGACY_V2_MANIFEST_SHA256, _utc(), "foundation-v2"))
+            conn.execute("INSERT OR IGNORE INTO schema_migrations(version,description,applied_at_utc,code_revision,content_sha256) VALUES(2,?,?,?,?)", ("mail_processing_state_v2", _utc(), "foundation-v2", LEGACY_V2_MANIFEST_SHA256))
             self._fire_failpoint("during_migration_transaction")
             if (
-                validate_schema_manifest(conn, self._manifest())
-                or not self._migration_receipt_valid(conn, manifest_hash)
+                self._schema_objects_sha256(conn) not in {LEGACY_V2_SCHEMA_OBJECTS_SHA256, LEGACY_V2_FROM_V1_SCHEMA_OBJECTS_SHA256}
                 or [row[0] for row in conn.execute("PRAGMA integrity_check")] != ["ok"]
                 or conn.execute("PRAGMA foreign_key_check").fetchone() is not None
             ):
@@ -1772,14 +1840,119 @@ class FoundationTool:
         finally:
             conn.execute("PRAGMA foreign_keys=ON")
         self._fire_failpoint("after_migration_transaction")
-        self._atomic_json(paths["ready"], {"schema_version": FOUNDATION_SCHEMA_VERSION, "manifest_sha256": manifest_hash, "ready": True, "initialized_at_utc": _utc()}, expected_existing={"schema_version": 1, "manifest_sha256": LEGACY_V1_MANIFEST_SHA256, "ready": True})
+        self._atomic_json(paths["ready"], {"schema_version": 2, "manifest_sha256": LEGACY_V2_MANIFEST_SHA256, "ready": True, "initialized_at_utc": _utc()}, expected_existing={"schema_version": 1, "manifest_sha256": LEGACY_V1_MANIFEST_SHA256, "ready": True})
         self._fire_failpoint("after_migration_marker")
         receipt.status, receipt.ready, receipt.next_action = "initialized", True, "none"
-        receipt.foundation_schema_version = FOUNDATION_SCHEMA_VERSION
-        receipt.migration_start_version, receipt.migration_end_version = 1, FOUNDATION_SCHEMA_VERSION
-        receipt.applied_migration_ids = [FOUNDATION_SCHEMA_VERSION]
+        receipt.foundation_schema_version = 2
+        receipt.migration_start_version, receipt.migration_end_version = 1, 2
+        receipt.applied_migration_ids = [2]
         if tightened:
             receipt.warnings.append({"code": "legacy_directory_permissions_tightened", "summary": "secured released v1 raw directories"})
+
+    @staticmethod
+    def _analysis_artifact_input_columns() -> tuple[str, ...]:
+        return (
+            "id", "analysis_run_id", "input_role", "source_entity_type",
+            "source_entity_id", "source_revision_id", "source_window_start_utc",
+            "source_window_end_utc", "input_sha256", "trust_class", "ordinal",
+        )
+
+    @classmethod
+    def _analysis_artifact_input_evidence(cls, conn: sqlite3.Connection, table: str) -> tuple[int, str]:
+        """Return deterministic evidence for every value in the small rebuilt table."""
+        columns = cls._analysis_artifact_input_columns()
+        digest = hashlib.sha256()
+        count = 0
+        for row in conn.execute(f"SELECT {','.join(columns)} FROM {table} ORDER BY id"):
+            digest.update(json.dumps(list(row), ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
+            digest.update(b"\n")
+            count += 1
+        return count, digest.hexdigest()
+
+    def _migrate_v2_analysis_input_trust(self, paths: dict[str, Path], receipt: FoundationReceipt, *, migration_start: int) -> None:
+        """Explicit v2→v3 migration that rebuilds only analysis_artifact_inputs.
+
+        SQLite cannot modify a CHECK constraint in place.  The transaction copies
+        every column verbatim, proves the copied ordered rows are identical, and
+        never rebuilds raw data or any other business table.
+        """
+        # A v1→v2 commit may have crashed before its marker publication.  Its
+        # exact v2 database was admitted above, so explicit maintenance may
+        # complete only that known marker transition before starting v3 work.
+        republished_v2_marker = self._is_supported_v1_marker(paths)
+        if republished_v2_marker:
+            self._atomic_json(
+                paths["ready"],
+                {"schema_version": 2, "manifest_sha256": LEGACY_V2_MANIFEST_SHA256, "ready": True, "initialized_at_utc": _utc()},
+                expected_existing={"schema_version": 1, "manifest_sha256": LEGACY_V1_MANIFEST_SHA256, "ready": True},
+            )
+        conn = self._connect(paths["db"])
+        transaction_open = False
+        manifest_hash = self._manifest_hash()
+        columns = self._analysis_artifact_input_columns()
+        try:
+            actual = [row[1] for row in conn.execute("PRAGMA table_info(analysis_artifact_inputs)")]
+            if actual != list(columns):
+                raise IncompatibleError("migration_analysis_artifact_inputs_columns_unrecognized")
+            if conn.execute(
+                "SELECT 1 FROM analysis_artifact_inputs WHERE trust_class NOT IN ('provider_fact','user_asserted','derived_statistic','prior_model_output') LIMIT 1"
+            ).fetchone() is not None:
+                raise IncompatibleError("migration_analysis_artifact_inputs_values_unrecognized")
+            before = self._analysis_artifact_input_evidence(conn, "analysis_artifact_inputs")
+            conn.execute("PRAGMA foreign_keys=OFF")
+            self._fire_failpoint("before_v3_migration_transaction")
+            conn.execute("BEGIN IMMEDIATE")
+            transaction_open = True
+            conn.execute(f"CREATE TABLE analysis_artifact_inputs__foundation_v3 ({TABLES['analysis_artifact_inputs']})")
+            fields = ",".join(columns)
+            conn.execute(
+                f"INSERT INTO analysis_artifact_inputs__foundation_v3 ({fields}) SELECT {fields} FROM analysis_artifact_inputs"
+            )
+            after_copy = self._analysis_artifact_input_evidence(conn, "analysis_artifact_inputs__foundation_v3")
+            if after_copy != before:
+                raise RuntimeError("migration_analysis_artifact_inputs_evidence_mismatch")
+            conn.execute("DROP TABLE analysis_artifact_inputs")
+            conn.execute("ALTER TABLE analysis_artifact_inputs__foundation_v3 RENAME TO analysis_artifact_inputs")
+            if self._analysis_artifact_input_evidence(conn, "analysis_artifact_inputs") != before:
+                raise RuntimeError("migration_analysis_artifact_inputs_publish_mismatch")
+            conn.execute(
+                "UPDATE foundation_state SET schema_version=?,manifest_sha256=?,updated_at_utc=?,implementation_version=? WHERE id=1",
+                (FOUNDATION_SCHEMA_VERSION, manifest_hash, _utc(), "foundation-v3"),
+            )
+            conn.execute(
+                "INSERT INTO schema_migrations(version,description,applied_at_utc,code_revision,content_sha256) VALUES(3,?,?,?,?)",
+                ("analysis_input_trust_v3", _utc(), "foundation-v3", manifest_hash),
+            )
+            self._fire_failpoint("during_v3_migration_transaction")
+            if (
+                validate_schema_manifest(conn, self._manifest())
+                or not self._migration_receipt_valid(conn, manifest_hash)
+                or [row[0] for row in conn.execute("PRAGMA integrity_check")] != ["ok"]
+                or conn.execute("PRAGMA foreign_key_check").fetchone() is not None
+            ):
+                raise RuntimeError("migration_integrity_or_foreign_key_failed")
+            conn.execute("COMMIT")
+            transaction_open = False
+        except Exception:
+            if transaction_open:
+                conn.execute("ROLLBACK")
+            raise
+        finally:
+            conn.execute("PRAGMA foreign_keys=ON")
+            conn.close()
+        self._fire_failpoint("after_v3_migration_transaction")
+        self._atomic_json(
+            paths["ready"],
+            {"schema_version": FOUNDATION_SCHEMA_VERSION, "manifest_sha256": manifest_hash, "ready": True, "initialized_at_utc": _utc()},
+            expected_existing={"schema_version": 2, "manifest_sha256": LEGACY_V2_MANIFEST_SHA256, "ready": True},
+        )
+        self._fire_failpoint("after_v3_migration_marker")
+        receipt.status, receipt.ready, receipt.next_action = "initialized", True, "none"
+        receipt.foundation_schema_version = FOUNDATION_SCHEMA_VERSION
+        receipt.migration_start_version, receipt.migration_end_version = migration_start, FOUNDATION_SCHEMA_VERSION
+        receipt.applied_migration_ids = [2, 3] if migration_start == 1 else [3]
+        if republished_v2_marker:
+            receipt.warnings.append({"code": "migration_marker_republished", "summary": "completed explicit migration publication"})
 
     def _atomic_json(self, path: Path, payload: dict[str, Any], *, expected_existing: dict[str, Any] | None = None) -> None:
         parent_fd=self._open_checked_directory(path.parent); target=path.name; temp=f".{target}.tmp-{secrets.token_hex(16)}"; fd=-1

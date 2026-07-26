@@ -8,6 +8,7 @@ from trainlab.foundation import (
     LEGACY_V1_MAIL_MESSAGES_DDL,
     LEGACY_V1_MANIFEST_SHA256,
     LEGACY_V1_SCHEMA_OBJECTS_SHA256,
+    LEGACY_V2_ANALYSIS_ARTIFACT_INPUTS_DDL,
     FoundationConfig,
     FoundationTool,
     TABLES,
@@ -69,8 +70,14 @@ def create_published_v1_database(root: Path) -> FoundationTool:
         conn.execute("CREATE TABLE foundation_state (id INTEGER PRIMARY KEY CHECK(id=1), state TEXT NOT NULL CHECK(state IN ('initializing','ready')), schema_version INTEGER NOT NULL, manifest_sha256 TEXT NOT NULL, initialized_at_utc TEXT, updated_at_utc TEXT NOT NULL, implementation_version TEXT NOT NULL)")
         conn.execute("CREATE TABLE schema_migrations (version INTEGER PRIMARY KEY, description TEXT NOT NULL, applied_at_utc TEXT NOT NULL, code_revision TEXT NOT NULL DEFAULT 'foundation-v1', content_sha256 TEXT NOT NULL)")
         for name,definition in TABLES.items():
-            if name != "foundation_state":
-                conn.execute(f"CREATE TABLE {name} ({LEGACY_V1_MAIL_MESSAGES_DDL if name == 'mail_messages' else definition})")
+            if name == "foundation_state":
+                continue
+            legacy_definition = (
+                LEGACY_V1_MAIL_MESSAGES_DDL if name == "mail_messages"
+                else LEGACY_V2_ANALYSIS_ARTIFACT_INPUTS_DDL if name == "analysis_artifact_inputs"
+                else definition
+            )
+            conn.execute(f"CREATE TABLE {name} ({legacy_definition})")
         for name,query in VIEWS.items():
             conn.execute(f"CREATE VIEW {name} AS {query}")
         for statement in V1_SCHEMA_SUPPORT_SQL:

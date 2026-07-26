@@ -250,11 +250,18 @@ def _canonical_utc(value: object, code: str = "analysis_quality_timestamp_invali
         parsed = datetime.fromisoformat(value[:-1] + "+00:00")
     except ValueError as error:
         raise QualityGateError(code) from error
-    fraction = ""
-    if parsed.microsecond:
-        fraction = f".{parsed.microsecond:06d}".rstrip("0")
-    canonical = f"{parsed:%Y-%m-%dT%H:%M:%S}{fraction}Z"
-    if value != canonical or parsed.tzinfo != timezone.utc:
+    fraction = value[19:-1]
+    is_shortest_fraction = (
+        len(fraction) > 1
+        and len(fraction) < 7
+        and fraction[-1] != "0"
+    )
+    is_fixed_microsecond_fraction = len(fraction) == 7
+    if (
+        parsed.tzinfo != timezone.utc
+        or (fraction and parsed.microsecond == 0)
+        or (fraction and not (is_shortest_fraction or is_fixed_microsecond_fraction))
+    ):
         raise QualityGateError(code)
     return parsed
 

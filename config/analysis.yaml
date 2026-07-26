@@ -1,0 +1,13 @@
+analysis:
+  timezone: Asia/Singapore
+  harness_root: harness
+  input_schema: harness/schemas/analysis_input.schema.json
+  output_schema: harness/schemas/analysis_result.schema.json
+  max_context_bytes: 1000000
+  daily_baseline_days: 14
+  weekly_baseline_days: 28
+  max_recent_daily_artifacts: 7
+  codex_timeout_seconds: 600
+  delivery_timeout_seconds: 180
+  lock_path: state/locks/analysis.lock
+  temp_root: state/tmp/analysis

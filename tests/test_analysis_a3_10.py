@@ -42,7 +42,6 @@ VIEW_NAMES = (
     "v_current_training_plans",
     "v_training_plan_items",
     "v_analysis_history_context",
-    "v_open_data_quality_issues",
 )
 
 
@@ -585,6 +584,89 @@ def test_canonical_json_rejects_duplicate_noncanonical_and_nonfinite_bypasses():
         with pytest.raises(ContextBuildError, match="nonfinite"):
             parse_canonical_json(value)
     assert parse_canonical_json('{"a":1,"b":"测"}') == {"a": 1, "b": "测"}
+
+
+def test_context_accepts_fixed_six_digit_utc_with_trailing_zeroes():
+    value = snapshot(
+        coverage=(
+            {
+                "id": 1,
+                "subject_id": 1,
+                "provider": "garmin",
+                "resource_kind": "steps",
+                "local_date": "2026-07-23",
+                "availability_state": "fetched",
+                "record_count": 1,
+                "source_revision_id": 9,
+                "source_revision_current": 1,
+                "observed_at_utc": "2026-07-23T03:00:00.752070Z",
+            },
+        )
+    )
+
+    assert build(daily(), value).context["coverage"]
+
+
+def test_context_canonicalizes_valid_foundation_json_but_rejects_duplicate_keys():
+    valid = snapshot(
+        views={
+            "v_current_daily_health": (
+                health(1, "2026-07-23", "health-1", values_json='{ "z": 2, "a": 1 }'),
+            )
+        }
+    )
+    result = build(daily(), valid)
+    assert result.context["health"][0]["content"]["values"] == {"a": 1, "z": 2}
+
+    duplicate = snapshot(
+        views={
+            "v_current_daily_health": (
+                health(1, "2026-07-23", "health-1", values_json='{"a":1,"a":2}'),
+            )
+        }
+    )
+    with pytest.raises(ContextBuildError, match="duplicate_json_key"):
+        build(daily(), duplicate)
+
+
+@pytest.mark.parametrize(
+    ("foundation_origin", "context_origin"),
+    (
+        ("sensor_observed", "provider_fact"),
+        ("user_entered", "user_asserted"),
+        ("profile_setting", "user_asserted"),
+    ),
+)
+def test_foundation_value_origins_map_to_context_trust_classes(
+    foundation_origin, context_origin
+):
+    value = snapshot(
+        views={
+            "v_current_physiology_records": (
+                {
+                    "id": 1,
+                    "subject_id": 1,
+                    "domain": "profile",
+                    "record_type": "setting",
+                    "effective_at_utc": "2026-07-23T00:00:00Z",
+                    "period_start_utc": None,
+                    "period_end_utc": None,
+                    "local_date": "2026-07-23",
+                    "value_origin": foundation_origin,
+                    "status_key": None,
+                    "status_text": None,
+                    "source_revision_id": "profile-1",
+                },
+            )
+        }
+    )
+
+    result = build(daily(), value)
+    physiology = result.context["physiology"][0]
+    manifest = {
+        item["ordinal"]: item for item in result.context["input_manifest"]
+    }[physiology["ordinal"]]
+    assert manifest["value_origin"] == context_origin
 
 
 def test_canonical_context_parser_rejects_whitespace_and_manifest_tampering():

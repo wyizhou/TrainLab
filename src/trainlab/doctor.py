@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import os
 import re
 import shutil
@@ -8,33 +7,15 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
-from jsonschema import Draft202012Validator
-
-from .config import Settings, load_yaml
+from .config import Settings
 from .db import connect, migrate
-from .mail import MappedGmailMCP
+from .gmail_environment import inspect_gmail_environment, probe_gmail_environment
 from .runner import codex_home
 from .sync import verify_rclone
 
 
 def _check(name: str, ok: bool, detail: str, *, required: bool = True) -> dict[str, Any]:
     return {"name": name, "ok": bool(ok), "required": required, "detail": detail}
-
-
-def _mask_email(value: str) -> str:
-    local, separator, domain = value.partition("@")
-    if not separator:
-        return "configured-self"
-    return f"{local[:2]}***@{domain}"
-
-
-def _gmail_config_errors(root: Path, config: dict[str, Any]) -> list[str]:
-    schema = json.loads((root / "harness" / "schemas" / "gmail_mcp.schema.json").read_text(encoding="utf-8"))
-    errors = sorted(Draft202012Validator(schema).iter_errors(config), key=lambda item: list(item.path))
-    return [
-        f"{'.'.join(str(part) for part in error.path) or '<root>'}: {error.message}"
-        for error in errors
-    ]
 
 
 def _rclone_drive_security(settings: Settings, remote: str) -> tuple[bool, str]:
@@ -177,63 +158,20 @@ def run_doctor(settings: Settings, *, production: bool = True, verify_auth: bool
             else "movement-only catalog does not cover every required movement group"
         )
         checks.append(_check("strength_profile", complete, detail))
-    gmail_path = settings.root / settings.values["mail"]["gmail_config"]
-    if not gmail_path.is_file():
-        checks.append(_check("gmail_mapping", False, f"missing {gmail_path}", required=production))
-    else:
-        gmail_config = load_yaml(gmail_path)
-        gmail_errors = _gmail_config_errors(settings.root, gmail_config)
-        configured = bool(gmail_config.get("configured"))
-        authenticated_self = str(gmail_config.get("authenticated_self", "")).strip()
-        mapping_ok = bool(configured and not gmail_errors and authenticated_self)
-        mapping_detail = (
-            "configured TrainLab Gmail MCP mapping"
-            if mapping_ok
-            else "; ".join(gmail_errors[:3]) or "configured=false or authenticated_self is empty"
+    gmail_status = (
+        probe_gmail_environment(executable=executable)
+        if verify_auth
+        else inspect_gmail_environment(executable=executable)
+    )
+    checks.append(
+        _check(
+            "gmail_environment_mcp",
+            gmail_status.available
+            and (gmail_status.authenticated is not False),
+            f"{gmail_status.code}: {gmail_status.detail}",
+            required=production,
         )
-        checks.append(_check("gmail_mapping", mapping_ok, mapping_detail, required=production))
-        if mapping_ok and verify_auth:
-            client = None
-            try:
-                client = MappedGmailMCP(settings)
-                account = client.get_self()
-                client.search_run_id("trainlab-doctor-nonexistent")
-                expected_tools = {
-                    str(item["tool"])
-                    for item in gmail_config["capabilities"].values()
-                }
-                missing_tools = sorted(expected_tools - client.available_tools())
-                account_ok = account.lower() == authenticated_self.lower()
-                checks.append(
-                    _check(
-                        "gmail_auth",
-                        bool(account_ok and not missing_tools),
-                        f"authenticated self: {_mask_email(account)}; missing_tools={missing_tools}",
-                    )
-                )
-            except Exception as error:
-                checks.append(_check("gmail_auth", False, f"{type(error).__name__}: {error}"))
-            finally:
-                if client:
-                    client.close()
-        server_name = gmail_config.get("server_name")
-        if mapping_ok and server_name:
-            for runner, command in ((runner_name, [executable, "mcp", "list"]),):
-                try:
-                    process = subprocess.run(
-                        command,
-                        capture_output=True,
-                        text=True,
-                        timeout=20,
-                        check=False,
-                        env={**os.environ, "CODEX_HOME": str(runtime_home)},
-                    )
-                    found = process.returncode == 0 and str(server_name) in process.stdout
-                    detail = f"server {server_name}" if found else (process.stderr.strip() or f"server {server_name} not registered")
-                except (OSError, subprocess.SubprocessError) as error:
-                    found = False
-                    detail = f"{type(error).__name__}: {error}"
-                checks.append(_check(f"{runner}_gmail_mcp", found, detail, required=production))
+    )
     if production:
         checks.append(
             _check(

@@ -2,9 +2,9 @@
 
 状态：已冻结
 
-契约版本：1
+契约版本：1.1
 
-冻结日期：2026-07-23
+冻结日期：2026-07-26
 
 实现状态：尚未开始
 
@@ -12,8 +12,17 @@
 
 - [01-data-foundation.md](01-data-foundation.md) v2.4
 - [02-data-collection.md](02-data-collection.md) v1
-- [03-data-analysis.md](03-data-analysis.md) v2
-- [04-mail-agent.md](04-mail-agent.md) v2
+- [03-data-analysis.md](03-data-analysis.md) v2.1
+- [04-mail-agent.md](04-mail-agent.md) v2.1
+
+### Gmail 环境绑定修订（2026-07-26）
+
+第五层 Gmail MCP 的唯一名称为 `gmail`，实现固定为
+`@artymclabin/gmail-mcp`，默认使用当前 Codex 执行环境的注册和认证状态，不绑定
+部署机器路径或复制 token。缺失、禁用或实现不匹配时只保存本地 incident，并提示
+执行 `npx @artymclabin/gmail-mcp auth` 与
+`codex mcp add gmail -- npx @artymclabin/gmail-mcp`；不得自动安装或换用其他
+Gmail transport。下文旧自建工具名仅为迁移基线。
 
 ## 1. 目标
 
@@ -455,9 +464,10 @@ incident，不按每次健康检查重复发邮件。
 - 使用独立 `operational_alert_deliveries`，不写 `analysis_delivery_*` 或
   `mail_delivery_*`。
 
-第五层通过部署机器已安装的受限 Gmail MCP 确定性发送运维告警，只允许
-`get_self`、按 alert idempotency key 精确搜索、`send_html_self` 和应用 TrainLab
-标签；不读取 inbox/thread，不把 Gmail 工具交给 Codex，也不允许改变 recipient。
+第五层通过当前环境的 `gmail` MCP 确定性发送运维告警，只允许实际包中完成
+authenticated-self、按 alert idempotency key 精确搜索、自投递和应用 TrainLab
+标签所需的固定工具；不读取 inbox/thread，不把 Gmail 工具交给 Codex，也不允许
+改变 recipient。
 
 当 Gmail 本身故障时，不能依赖 Gmail 告警证明 Gmail 故障已送达；必须同时保留
 本地 incident，并允许未来接入第二告警渠道。

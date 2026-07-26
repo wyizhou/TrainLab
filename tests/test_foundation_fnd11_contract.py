@@ -309,10 +309,11 @@ def test_fnd11_postmarker_failure_leaves_verified_last_known_good(tmp_path: Path
     )
     assert failed.status == "failed"
     ready=FoundationTool(base.config)
+    assert ready.execute(request("status")).status == "incompatible"
+    assert ready.execute(request("verify")).status == "incompatible"
+    assert ready.execute(request("init")).status == "incompatible"
+    assert ready.execute(request("migrate", target=FOUNDATION_SCHEMA_VERSION)).status == "initialized"
     assert ready.execute(request("status")).status == "ready"
-    assert ready.execute(request("verify")).status == "ready"
-    assert ready.execute(request("init")).status == "already_initialized"
-    assert ready.execute(request("migrate", target=FOUNDATION_SCHEMA_VERSION)).status == "already_initialized"
 
 
 @pytest.mark.parametrize("mutation", ["marker_timestamp","state_timestamp","migration_timestamp"])

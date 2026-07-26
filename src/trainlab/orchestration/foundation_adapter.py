@@ -17,7 +17,7 @@ from jsonschema import Draft202012Validator
 
 
 FOUNDATION_RECEIPT_SCHEMA_VERSION = "1"
-FOUNDATION_SCHEMA_VERSION = 2
+FOUNDATION_SCHEMA_VERSION = 3
 FoundationInvoker = Callable[[Mapping[str, Any]], Mapping[str, Any]]
 
 

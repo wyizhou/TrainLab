@@ -11,6 +11,7 @@ from .foundation_v1_fixture import create_published_v1_database
 from trainlab.foundation import (
     FOUNDATION_SCHEMA_VERSION,
     LEGACY_V1_MANIFEST_SHA256,
+    LEGACY_V2_MANIFEST_SHA256,
     MAIL_PROCESSING_STATES,
     FoundationConfig,
     FoundationRequest,
@@ -77,7 +78,7 @@ def test_explicit_v1_migration_preserves_rows_is_idempotent_and_init_never_upgra
     conn = sqlite3.connect(root / "data.db")
     try:
         assert conn.execute("SELECT body_text,processing_state FROM mail_messages WHERE provider_message_id='legacy-message'").fetchone() == ("legacy body", "new")
-        assert conn.execute("SELECT version FROM schema_migrations ORDER BY version").fetchall() == [(1,), (2,)]
+        assert conn.execute("SELECT version FROM schema_migrations ORDER BY version").fetchall() == [(1,), (2,), (3,)]
         assert conn.execute("PRAGMA foreign_key_check").fetchall() == []
         assert validate_schema_manifest(conn, instance._manifest()) == []
     finally:
@@ -117,11 +118,11 @@ def test_only_exact_published_v1_is_admitted_before_any_database_write(tmp_path:
     assert marker.read_bytes() == before_marker
 
 
-def test_marker_republish_requires_completed_verified_v2_database(tmp_path: Path) -> None:
+def test_marker_republish_requires_completed_verified_v3_database(tmp_path: Path) -> None:
     root = tmp_path / "republish"; instance = create_published_v1_database(root)
     assert instance.execute(request("migrate", FOUNDATION_SCHEMA_VERSION)).status == "initialized"
     marker = root / "state" / "foundation-ready.json"
-    legacy_marker = json.dumps({"schema_version": 1, "manifest_sha256": LEGACY_V1_MANIFEST_SHA256, "ready": True, "initialized_at_utc": UTC}).encode()
+    legacy_marker = json.dumps({"schema_version": 2, "manifest_sha256": LEGACY_V2_MANIFEST_SHA256, "ready": True, "initialized_at_utc": UTC}).encode()
     marker.write_bytes(legacy_marker); marker.chmod(0o600)
     repaired = instance.execute(request("migrate", FOUNDATION_SCHEMA_VERSION))
     assert repaired.status == "initialized" and repaired.warnings[0]["code"] == "migration_marker_republished"

@@ -296,6 +296,14 @@ def test_sparse_range_is_planned_by_catalog_limit_and_closes_empty_days(tmp_path
         assert len({row[2] for row in rows[:14]}) == 1
         assert len({row[2] for row in rows[14:28]}) == 1
         assert conn.execute("SELECT count(*) FROM physiology_records WHERE record_type='menstrual'").fetchone()[0] == 3
+        assert conn.execute(
+            "SELECT capability_state FROM garmin_resource_capabilities "
+            "WHERE environment_key='cn' AND resource_kind='menstrual'"
+        ).fetchone() == ("supported",)
+        assert conn.execute(
+            "SELECT count(*) FROM garmin_resource_capabilities "
+            "WHERE environment_key='default' AND resource_kind='menstrual'"
+        ).fetchone()[0] == 0
 
 
 def test_range_parse_failure_keeps_received_revision_and_reparse_same_payload(tmp_path: Path) -> None:
@@ -754,6 +762,10 @@ def test_empty_meals_wrapper_is_zero_records_not_shape_failure(tmp_path: Path) -
             "SELECT count(*) FROM physiology_records "
             "WHERE record_type='nutrition_meals'"
         ).fetchone()[0] == 0
+        assert conn.execute(
+            "SELECT availability_state,record_count FROM resource_coverage "
+            "WHERE resource_kind='nutrition_meals'"
+        ).fetchone() == ("empty", 0)
 
 
 def test_endurance_latest_outside_requested_window_is_not_misattributed(tmp_path: Path) -> None:

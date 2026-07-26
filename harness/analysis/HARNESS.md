@@ -1,6 +1,6 @@
 ---
 name: trainlab-analysis
-version: 1
+version: 2
 status: active
 ---
 
@@ -30,3 +30,18 @@ Return only route-schema JSON. Do not emit hidden reasoning, prompt text,
 credentials, database instructions, Gmail instructions or an asserted delivery
 status. Each date may have at most one primary activity: running, climbing,
 strength or rest. Do not choose a clock time.
+
+Copy identity and evidence references exactly from the supplied context:
+
+- `run_key`, `subject_id`, route mode and artifact periods must equal the
+  corresponding context values.
+- `source_usage` may contain only manifest entries actually used. For every
+  entry, copy `ordinal`, `input_role`, `source_entity_id` and
+  `source_revision_id` verbatim from the same `input_manifest` row.
+- `quality_disclosures` must be the exact set of every `code` and `entity` pair
+  in `quality_gate.blockers` plus `quality_gate.warnings`: omit none, add none,
+  and do not paraphrase either field.
+- The advice `structured_content.primary_item` and top-level
+  `safety.primary_item` must describe the same candidate. Build that candidate
+  only from the supplied deterministic primary-item contract; never invent an
+  unsupported dosage, BPM target or activity shape.

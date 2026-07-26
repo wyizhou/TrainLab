@@ -93,7 +93,7 @@ def test_fnd02_ready_migration_receipt_tamper_is_incompatible_and_read_only(
         conn.execute("DELETE FROM schema_migrations WHERE version=2")
     elif mutation == "extra":
         conn.execute(
-            "INSERT INTO schema_migrations VALUES(3,'unexpected','2026-01-01T00:00:00Z','unexpected','unexpected')"
+            "INSERT INTO schema_migrations VALUES(4,'unexpected','2026-01-01T00:00:00Z','unexpected','unexpected')"
         )
     elif mutation == "version":
         conn.execute("UPDATE schema_migrations SET version=7 WHERE version=2")
@@ -154,7 +154,7 @@ def test_fnd02_ddl_transaction_crash_rolls_back_to_recoverable_phase1(tmp_path: 
         assert conn.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0] == 0
     finally: conn.close()
     receipt=FoundationTool(config(root)).execute(request())
-    assert receipt.status == "initialized" and receipt.ready and receipt.applied_migration_ids == [1,2]
+    assert receipt.status == "initialized" and receipt.ready and receipt.applied_migration_ids == [1,2,3]
 
 
 @pytest.mark.parametrize("mutation",["unknown_object","migration_row","marker","metadata","initialized","updated","column","default","check","unknown_index","unknown_view","unknown_trigger"])

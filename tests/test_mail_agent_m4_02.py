@@ -226,7 +226,7 @@ def test_repository_rejects_unready_manifest_and_does_not_migrate(tmp_path: Path
     connection.commit()
     with pytest.raises(MailRepositoryError, match="foundation_schema_incompatible"):
         MailRepository(connection, clock=lambda: NOW)
-    assert connection.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0] == 2
+    assert connection.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0] == 3
 
 
 def test_cursor_and_processing_state_are_subject_scoped_and_monotonic(tmp_path: Path) -> None:
@@ -376,14 +376,14 @@ def test_item_same_status_requires_exact_immutable_evidence(tmp_path: Path) -> N
     "tamper",
     (
         "DELETE FROM schema_migrations WHERE version=1",
-        "INSERT INTO schema_migrations VALUES(3,'extra','2026-07-23T00:00:00Z','foundation-v3','deadbeef')",
+        "INSERT INTO schema_migrations VALUES(4,'extra','2026-07-23T00:00:00Z','foundation-v4','deadbeef')",
         "UPDATE schema_migrations SET description='wrong' WHERE version=1",
         "UPDATE schema_migrations SET applied_at_utc='not-utc' WHERE version=2",
         "UPDATE schema_migrations SET code_revision='wrong' WHERE version=2",
         "UPDATE schema_migrations SET content_sha256='wrong' WHERE version=2",
     ),
 )
-def test_repository_requires_exact_two_foundation_migration_receipts(tmp_path: Path, tamper: str) -> None:
+def test_repository_requires_exact_foundation_migration_receipts(tmp_path: Path, tamper: str) -> None:
     connection, _, _, _, _ = initialize(tmp_path)
     connection.execute(tamper)
     connection.commit()

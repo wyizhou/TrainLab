@@ -170,6 +170,9 @@ def _parser() -> argparse.ArgumentParser:
     run = subparsers.add_parser("run")
     run.add_argument("--slot", choices=["morning", "evening"], required=True)
     run.add_argument("--at")
+    run.add_argument("--analysis-only", action="store_true")
+    run.add_argument("--summary-date")
+    run.add_argument("--invocation-id")
     scheduler = subparsers.add_parser("scheduler")
     scheduler.add_argument("--once", action="store_true")
     watchdog = subparsers.add_parser("watchdog")
@@ -216,6 +219,27 @@ def main(argv: list[str] | None = None) -> int:
         receipt = garmin_cli_execute(args)
         print(receipt.json())
         return _GARMIN_EXIT[receipt.status]
+    if args.command == "run" and args.analysis_only:
+        if args.slot != "morning":
+            _parser().error("--analysis-only requires --slot morning")
+        if not args.invocation_id:
+            _parser().error("--analysis-only requires --invocation-id")
+        if args.at is not None:
+            _parser().error("--analysis-only does not accept --at")
+        try:
+            from .analysis.runtime import run_analysis_only
+            from .analysis.cli import exit_code_for
+
+            receipt = run_analysis_only(
+                invocation_id=args.invocation_id,
+                summary_date=args.summary_date,
+            )
+        except ValueError as error:
+            _parser().error(str(error))
+        print(receipt.to_json())
+        return exit_code_for(receipt.status)
+    if args.command == "run" and (args.summary_date is not None or args.invocation_id is not None):
+        _parser().error("--summary-date and --invocation-id require --analysis-only")
     settings = load_settings()
     connection = connect(settings.database_path, busy_timeout_ms=int(settings.values["sqlite"].get("busy_timeout_ms", 10_000)))
     migrate(connection)

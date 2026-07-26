@@ -74,7 +74,27 @@ def test_import_boundary_is_empty_and_reproducible() -> None:
     second = verify_import_boundary(ANALYSIS_PACKAGE)
 
     assert first == second
-    assert set(first) == {"__init__.py", "boundary.py", "cli.py", "config.py", "context.py", "contracts.py", "features.py", "harness.py", "quality_gate.py", "run_state.py", "safety_rules.py", "service.py", "stable_views.py"}
+    assert set(first) == {
+        "__init__.py",
+        "boundary.py",
+        "cli.py",
+        "config.py",
+        "context.py",
+        "contracts.py",
+        "daily.py",
+        "delivery.py",
+        "features.py",
+        "harness.py",
+        "publisher.py",
+        "quality_gate.py",
+        "result_validation.py",
+        "run_state.py",
+        "runner.py",
+        "runtime.py",
+        "safety_rules.py",
+        "service.py",
+        "stable_views.py",
+    }
     assert all(not imported for imported in first.values())
 
 

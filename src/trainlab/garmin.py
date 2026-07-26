@@ -830,6 +830,125 @@ class GarminRepository:
         reason = safe_provider_error_code(reason) if reason else None
         now=utc_now(); conn.execute("INSERT INTO garmin_resource_capabilities(subject_id,environment_key,resource_kind,capability_state,reason_code,first_checked_at_utc,last_checked_at_utc,next_probe_at_utc) VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(subject_id,environment_key,resource_kind) DO UPDATE SET capability_state=excluded.capability_state,reason_code=excluded.reason_code,last_checked_at_utc=excluded.last_checked_at_utc,next_probe_at_utc=excluded.next_probe_at_utc",(subject,environment_key,resource,state,reason,now,now,next_probe))
 
+    def reconcile_legacy_capability_environment(
+        self, conn: sqlite3.Connection, subject: int, environment_key: str,
+    ) -> None:
+        """Reconcile legacy capability metadata and zero-record coverage.
+
+        Earlier health paths omitted ``environment_key`` and consequently
+        created ``default`` rows alongside the configured Garmin region.  This
+        merges only that capability metadata into the configured region.  It
+        also corrects legacy Garmin ``fetched`` coverage with zero canonical
+        records to ``empty``; it never changes counts, revisions, raw data,
+        evidence or observation timestamps.  It then restores missing
+        capability index rows from the subject's latest completed
+        coverage observations.  When a regional row already exists, the newer
+        observation defines the capability semantics while the observation
+        envelope is retained.
+        """
+        conn.execute("BEGIN IMMEDIATE")
+        try:
+            # A successful provider response that produced no reviewed
+            # canonical rows represents a completed empty day.  Repair only
+            # that legacy coverage label in place: raw data, revision links,
+            # counts and observation timestamps are deliberately untouched.
+            # This is scoped to Garmin and is naturally idempotent.
+            conn.execute(
+                """UPDATE resource_coverage
+                   SET availability_state='empty'
+                   WHERE subject_id=? AND provider='garmin'
+                     AND availability_state='fetched' AND record_count=0""",
+                (subject,),
+            )
+            # Coverage semantics are independent of the configured region;
+            # only migration of legacy capability rows is region-specific.
+            if environment_key == "default":
+                conn.execute("COMMIT")
+                return
+            legacy_rows = conn.execute(
+                """SELECT * FROM garmin_resource_capabilities
+                   WHERE subject_id=? AND environment_key='default'
+                   ORDER BY resource_kind,id""",
+                (subject,),
+            ).fetchall()
+            for legacy in legacy_rows:
+                current = conn.execute(
+                    """SELECT * FROM garmin_resource_capabilities
+                       WHERE subject_id=? AND environment_key=? AND resource_kind=?""",
+                    (subject, environment_key, legacy["resource_kind"]),
+                ).fetchone()
+                if current is None:
+                    conn.execute(
+                        "UPDATE garmin_resource_capabilities SET environment_key=? WHERE id=?",
+                        (environment_key, legacy["id"]),
+                    )
+                    continue
+                newest = max((legacy, current), key=lambda row: (row["last_checked_at_utc"], row["id"]))
+                first_checked = min(legacy["first_checked_at_utc"], current["first_checked_at_utc"])
+                last_checked = max(legacy["last_checked_at_utc"], current["last_checked_at_utc"])
+                conn.execute(
+                    """UPDATE garmin_resource_capabilities
+                       SET capability_state=?,reason_code=?,reason_summary=?,
+                           first_checked_at_utc=?,last_checked_at_utc=?,
+                           next_probe_at_utc=?,source_revision_id=?
+                       WHERE id=?""",
+                    (
+                        newest["capability_state"], newest["reason_code"], newest["reason_summary"],
+                        first_checked, last_checked, newest["next_probe_at_utc"],
+                        newest["source_revision_id"], current["id"],
+                    ),
+                )
+                conn.execute("DELETE FROM garmin_resource_capabilities WHERE id=?", (legacy["id"],))
+            completed = {
+                "fetched": "supported", "empty": "supported",
+                "not_enabled": "not_enabled", "not_available": "not_available",
+                "not_supported": "not_supported", "forbidden": "forbidden",
+            }
+            latest_coverage: dict[str, sqlite3.Row] = {}
+            for coverage in conn.execute(
+                """SELECT id,resource_kind,availability_state,observed_at_utc
+                   FROM resource_coverage
+                   WHERE subject_id=? AND provider='garmin'
+                   ORDER BY resource_kind,observed_at_utc DESC,id DESC""",
+                (subject,),
+            ):
+                if (
+                    coverage["resource_kind"] not in latest_coverage
+                    and coverage["availability_state"] in completed
+                ):
+                    latest_coverage[coverage["resource_kind"]] = coverage
+            for resource, coverage in latest_coverage.items():
+                current = conn.execute(
+                    """SELECT * FROM garmin_resource_capabilities
+                       WHERE subject_id=? AND environment_key=? AND resource_kind=?""",
+                    (subject, environment_key, resource),
+                ).fetchone()
+                if current is not None and current["last_checked_at_utc"] >= coverage["observed_at_utc"]:
+                    continue
+                state = completed[coverage["availability_state"]]
+                if current is None:
+                    conn.execute(
+                        """INSERT INTO garmin_resource_capabilities(
+                               subject_id,environment_key,resource_kind,capability_state,
+                               first_checked_at_utc,last_checked_at_utc)
+                           VALUES(?,?,?,?,?,?)""",
+                        (subject, environment_key, resource, state,
+                         coverage["observed_at_utc"], coverage["observed_at_utc"]),
+                    )
+                else:
+                    conn.execute(
+                        """UPDATE garmin_resource_capabilities
+                           SET capability_state=?,reason_code=NULL,reason_summary=NULL,
+                               last_checked_at_utc=?,next_probe_at_utc=NULL
+                           WHERE id=?""",
+                        (state, coverage["observed_at_utc"], current["id"]),
+                    )
+            conn.execute("COMMIT")
+        except Exception:
+            if conn.in_transaction:
+                conn.execute("ROLLBACK")
+            raise
+
     @staticmethod
     def _verify_dirfd(fd: int) -> None:
         info = os.fstat(fd)
@@ -1389,7 +1508,14 @@ class GarminCollectionTool:
         actual_start: date | None = None
         actual_through: date | None = None
         try:
-            subject = self.repo.subject(conn); run = self.repo.start_run(conn, request, subject, receipt)
+            subject = self.repo.subject(conn)
+            # Repair legacy implicit-default metadata before every controlled
+            # collection/audit entry.  It is local, idempotent and performs no
+            # provider call, so a small repair can heal an existing database.
+            self.repo.reconcile_legacy_capability_environment(
+                conn, subject, self.config.region,
+            )
+            run = self.repo.start_run(conn, request, subject, receipt)
             if receipt.status != "started": return receipt
             # Reparse and reconcile are deliberately offline operations.  In
             # particular they must remain usable while a token is expired or
@@ -2641,6 +2767,10 @@ class GarminCollectionTool:
         ).fetchone()
         if row is None or row["availability_state"] != "partial":
             return False
+        # A snapshot preserves its projected count.  A later unchanged full
+        # response must therefore not call a zero-record snapshot "fetched".
+        if state == "fetched" and row["record_count"] == 0:
+            state = "empty"
         conn.execute(
             """UPDATE resource_coverage
                SET availability_state=?,source_revision_id=?,observed_at_utc=?
@@ -2683,8 +2813,13 @@ class GarminCollectionTool:
                     stored_payload = validate_provider_json_payload(payload)
                     payload_state = self._health_payload_state(stored_payload, spec.empty_state)
                     if payload_state is not None:
-                        if payload_state != "empty":
-                            self.repo.capability(conn, subject, resource, payload_state, reason="provider_empty_or_capability")
+                        capability = "supported" if payload_state == "empty" else payload_state
+                        self.repo.capability(
+                            conn, subject, resource, capability,
+                            reason="provider_empty_or_capability" if capability != "supported" else None,
+                            next_probe=self._account_next_probe(capability),
+                            environment_key=self.config.region,
+                        )
                         coverage_state = "partial" if request.mode == "snapshot" else payload_state
                         def tombstone_projector(revision: int) -> None:
                             self.repo.fields(conn, resource, stored_payload)
@@ -2717,9 +2852,10 @@ class GarminCollectionTool:
                         self.repo.fields(conn, resource, stored_payload)
                         self._supersede_health_projection(conn, subject, resource, key, day.isoformat())
                         projected = self._project_health(conn, subject, resource, day.isoformat(), stored_payload, revision)
-                        self.repo.coverage(conn, subject, resource, day.isoformat(), "partial" if request.mode == "snapshot" else "fetched", revision, projected, snapshot=request.mode == "snapshot")
+                        completed_state = "fetched" if projected > 0 else "empty"
+                        self.repo.coverage(conn, subject, resource, day.isoformat(), "partial" if request.mode == "snapshot" else completed_state, revision, projected, snapshot=request.mode == "snapshot")
                         self._resolve_successful_health_gaps(
-                            conn, subject, resource, day.isoformat(), key, request, "fetched",
+                            conn, subject, resource, day.isoformat(), key, request, completed_state,
                         )
                     _, revision, changed = self.repo.archive(conn, resource, key, canonical_provider_json(stored_payload), "json", "application/json", projector)
                     if not changed:
@@ -2730,6 +2866,10 @@ class GarminCollectionTool:
                     self._resolve_successful_health_gaps(
                         conn, subject, resource, day.isoformat(), key, request, "fetched",
                     )
+                    self.repo.capability(
+                        conn, subject, resource, "supported",
+                        environment_key=self.config.region,
+                    )
                     self.repo.item(conn, run, resource, key, "project", "revised" if changed else "unchanged", revision_id=revision); receipt.counts["revised" if changed else "unchanged"] += 1
                 except GarminError as exc:
                     outcome = self._classify(exc, allows_404=spec.allows_404)
@@ -2737,7 +2877,7 @@ class GarminCollectionTool:
                         raise GarminError("auth_required", http_status=401) from None
                     if outcome.status == "not_available" or exc.code == "not_supported":
                         state = "not_supported" if exc.code == "not_supported" else "not_available"
-                        self.repo.capability(conn, subject, resource, state, reason=exc.code)
+                        self.repo.capability(conn, subject, resource, state, reason=exc.code, next_probe=self._account_next_probe(state), environment_key=self.config.region)
                         self.repo.coverage(conn, subject, resource, day.isoformat(), "partial" if request.mode == "snapshot" else state, None, 0, snapshot=request.mode == "snapshot")
                         self._resolve_successful_health_gaps(
                             conn, subject, resource, day.isoformat(), key, request, state,
@@ -2746,7 +2886,7 @@ class GarminCollectionTool:
                         if state in receipt.counts: receipt.counts[state] += 1
                         continue
                     if outcome.status == "forbidden":
-                        self.repo.capability(conn, subject, resource, "forbidden", reason=exc.code)
+                        self.repo.capability(conn, subject, resource, "forbidden", reason=exc.code, next_probe=self._account_next_probe("forbidden"), environment_key=self.config.region)
                         terminal, retry = "forbidden", None
                     elif outcome.status == "deferred":
                         terminal, retry = "deferred", self._next_retry(exc, 0)
@@ -2814,7 +2954,8 @@ class GarminCollectionTool:
                             )
                     self.repo.item(conn, run, resource, logical_key, "fetch", state, revision_id=revision, increment_attempt=False)
                     self._count_receipt_terminal(receipt, state)
-                    if state != "empty": self.repo.capability(conn, subject, resource, state, reason="provider_empty_or_capability", next_probe=self._account_next_probe(state), environment_key=self.config.region)
+                    capability = "supported" if state == "empty" else state
+                    self.repo.capability(conn, subject, resource, capability, reason="provider_empty_or_capability" if capability != "supported" else None, next_probe=self._account_next_probe(capability), environment_key=self.config.region)
                     for current_day in days:
                         self._resolve_successful_health_gaps(
                             conn, subject, resource, current_day.isoformat(), logical_key, request, state,
@@ -2844,7 +2985,7 @@ class GarminCollectionTool:
                         # Sparse records are a per-day absence, not an account
                         # capability conclusion.  Only an explicitly empty
                         # *whole response* above uses spec.empty_state.
-                        state_for_day = "partial" if request.mode == "snapshot" else ("fetched" if day_payload else "empty")
+                        state_for_day = "partial" if request.mode == "snapshot" else ("fetched" if count > 0 else "empty")
                         self.repo.coverage(conn, subject, resource, current_day.isoformat(), state_for_day, revision, count, snapshot=request.mode == "snapshot")
                         self._resolve_successful_health_gaps(
                             conn, subject, resource, current_day.isoformat(), logical_key, request, "fetched",
@@ -2868,6 +3009,9 @@ class GarminCollectionTool:
                     self._resolve_successful_health_gaps(
                         conn, subject, resource, current_day.isoformat(), logical_key, request, "fetched",
                     )
+                # Sparse per-day absence is coverage only; a successful range
+                # response still proves the resource is supported.
+                self.repo.capability(conn, subject, resource, "supported", environment_key=self.config.region)
                 self.repo.item(conn, run, resource, logical_key, "project", "revised" if changed else "unchanged", revision_id=revision, increment_attempt=False)
                 receipt.counts["revised" if changed else "unchanged"] += 1
             except GarminError as exc:

@@ -2,22 +2,38 @@
 
 状态：已冻结
 
-契约版本：2
+契约版本：2.1
 
-冻结日期：2026-07-23
+冻结日期：2026-07-26
 
 实现状态：尚未开始
 
 依赖契约：
 
 - [01-data-foundation.md](01-data-foundation.md) v2.4
-- [03-data-analysis.md](03-data-analysis.md) v2
+- [03-data-analysis.md](03-data-analysis.md) v2.1
 
 当前 Gmail MCP 迁移基线：
 
 - [../../config/gmail_mcp.example.yaml](../../config/gmail_mcp.example.yaml)
 - [../../harness/schemas/gmail_mcp.schema.json](../../harness/schemas/gmail_mcp.schema.json)
 - [../../references/gmail_mcp_setup.md](../../references/gmail_mcp_setup.md)
+
+### Gmail 环境绑定修订
+
+本层统一使用当前 Codex 执行环境中名称为 `gmail` 的 MCP，支持实现固定为
+`@artymclabin/gmail-mcp`。项目不得保存或启动机器专属 executable、cwd、
+OAuth/token 路径，也不得复制其他机器的认证状态。服务不存在、禁用、包不匹配或
+只读认证 probe 失败时，在任何邮箱动作前提示：
+
+```text
+npx @artymclabin/gmail-mcp auth
+codex mcp add gmail -- npx @artymclabin/gmail-mcp
+```
+
+下文 `get_self/search_messages/read_thread/send_html_self/create_or_apply_label`
+是旧自建 adapter 的迁移基线，不再是新实现可直接假定的工具名。新 adapter 必须
+按实际 package Schema 做固定逻辑能力映射；Codex Agent 仍不得取得 Gmail 工具。
 
 ## 1. 目标
 

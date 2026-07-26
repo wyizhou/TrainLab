@@ -283,7 +283,7 @@ def test_sleep_null_daily_dto_is_fetched_zero_but_one_sided_time_still_fails(
         assert conn.execute(
             """SELECT availability_state,record_count FROM resource_coverage
                WHERE resource_kind='sleep' ORDER BY id DESC LIMIT 1"""
-        ).fetchone() == ("fetched", 0)
+        ).fetchone() == ("empty", 0)
 
     transport.payloads["sleep"]["dailySleepDTO"]["sleepStartTimestampGMT"] = (
         "2026-04-14T16:00:00Z"
@@ -296,6 +296,32 @@ def test_sleep_null_daily_dto_is_fetched_zero_but_one_sided_time_still_fails(
                WHERE resource_kind='sleep'
                  AND reason_code='parse_or_project_failed'
                  AND status='open'"""
+        ).fetchone()[0] == 1
+
+
+def test_unchanged_zero_record_snapshot_promotes_to_empty_not_fetched(
+    tmp_path: Path,
+) -> None:
+    config, tool, transport = _setup(tmp_path)
+    transport.payloads["sleep"] = {
+        "dailySleepDTO": {
+            "calendarDate": "2026-04-15",
+            "sleepStartTimestampGMT": None,
+            "sleepEndTimestampGMT": None,
+        }
+    }
+    assert tool.execute(SyncRequest(
+        "snapshot", snapshot_local_date="2026-04-15",
+        invocation_id="sleep-zero-snapshot",
+    )).status == "succeeded"
+    assert _repair(tool, "sleep", "sleep-zero-promotion").status == "succeeded"
+    with sqlite3.connect(config.database_path) as conn:
+        assert conn.execute(
+            """SELECT availability_state,record_count FROM resource_coverage
+               WHERE resource_kind='sleep' ORDER BY id DESC LIMIT 1"""
+        ).fetchone() == ("empty", 0)
+        assert conn.execute(
+            "SELECT count(*) FROM resource_coverage WHERE resource_kind='sleep'"
         ).fetchone()[0] == 1
 
 
@@ -527,3 +553,93 @@ def test_live_daily_aliases_and_missing_sensor_points_do_not_drop_resource(tmp_p
             "SELECT count(*) FROM source_revisions "
             "WHERE resource_kind IN ('steps','heart_rates','hrv') AND is_current=1"
         ).fetchone()[0] == 3
+
+
+def test_daily_capabilities_record_supported_empty_and_explicit_state_in_configured_region(tmp_path: Path) -> None:
+    config, tool, transport = _setup(tmp_path)
+    transport.payloads["floors"] = []
+    transport.payloads["hydration"] = {"availability_state": "not_enabled"}
+    assert _repair(tool, "steps", "capability-daily-fetched").status == "succeeded"
+    assert _repair(tool, "floors", "capability-daily-empty").status == "succeeded"
+    assert _repair(tool, "hydration", "capability-daily-disabled").status == "succeeded"
+    with sqlite3.connect(config.database_path) as conn:
+        rows = dict(conn.execute(
+            "SELECT resource_kind,capability_state FROM garmin_resource_capabilities "
+            "WHERE environment_key='cn'"
+        ))
+        assert {"steps": "supported", "floors": "supported", "hydration": "not_enabled"}.items() <= rows.items()
+        assert conn.execute(
+            "SELECT count(*) FROM garmin_resource_capabilities WHERE environment_key='default'"
+        ).fetchone()[0] == 0
+
+
+def test_audit_reconciles_legacy_default_and_backfills_completed_coverage_idempotently(tmp_path: Path) -> None:
+    config, tool, _transport = _setup(tmp_path)
+    conn = tool.repo.connect()
+    try:
+        subject = tool.repo.subject(conn)
+        conn.execute(
+            """INSERT INTO garmin_resource_capabilities(
+                   subject_id,environment_key,resource_kind,capability_state,
+                   reason_code,first_checked_at_utc,last_checked_at_utc,next_probe_at_utc)
+               VALUES(?,?,?,?,?,?,?,?)""",
+            (subject, "cn", "steps", "not_available", "missing",
+             "2026-04-01T00:00:00Z", "2026-04-01T00:00:00Z", "2026-05-01T00:00:00Z"),
+        )
+        conn.execute(
+            """INSERT INTO garmin_resource_capabilities(
+                   subject_id,environment_key,resource_kind,capability_state,
+                   first_checked_at_utc,last_checked_at_utc)
+               VALUES(?,?,?,?,?,?)""",
+            (subject, "default", "steps", "supported",
+             "2026-04-02T00:00:00Z", "2026-04-02T00:00:00Z"),
+        )
+        conn.execute(
+            """INSERT INTO resource_coverage(
+                   subject_id,provider,resource_kind,local_date,availability_state,
+                   record_count,observed_at_utc)
+               VALUES(?,?,?,?,?,?,?)""",
+            (subject, "garmin", "floors", "2026-04-15", "fetched", 0,
+             "2026-04-03T00:00:00Z"),
+        )
+    finally:
+        conn.close()
+    assert tool.execute(SyncRequest("audit", invocation_id="capability-audit")).status in {"succeeded", "partial"}
+    assert tool.execute(SyncRequest("audit", invocation_id="capability-audit-repeat")).status in {"succeeded", "partial"}
+    with sqlite3.connect(config.database_path) as conn:
+        assert conn.execute(
+            "SELECT capability_state,next_probe_at_utc,first_checked_at_utc,last_checked_at_utc "
+            "FROM garmin_resource_capabilities WHERE environment_key='cn' AND resource_kind='steps'"
+        ).fetchone() == ("supported", None, "2026-04-01T00:00:00Z", "2026-04-02T00:00:00Z")
+        assert conn.execute(
+            "SELECT capability_state FROM garmin_resource_capabilities "
+            "WHERE environment_key='cn' AND resource_kind='floors'"
+        ).fetchone() == ("supported",)
+        assert conn.execute(
+            "SELECT count(*) FROM garmin_resource_capabilities WHERE environment_key='default'"
+        ).fetchone()[0] == 0
+        assert conn.execute("SELECT count(*) FROM resource_coverage WHERE resource_kind='floors'").fetchone()[0] == 1
+        assert conn.execute(
+            "SELECT availability_state,record_count,observed_at_utc FROM resource_coverage WHERE resource_kind='floors'"
+        ).fetchone() == ("empty", 0, "2026-04-03T00:00:00Z")
+
+
+def test_zero_record_coverage_reconciliation_is_region_independent(tmp_path: Path) -> None:
+    _config, tool, _transport = _setup(tmp_path)
+    conn = tool.repo.connect()
+    try:
+        subject = tool.repo.subject(conn)
+        conn.execute(
+            """INSERT INTO resource_coverage(
+                   subject_id,provider,resource_kind,local_date,availability_state,
+                   record_count,observed_at_utc)
+               VALUES(?,?,?,?,?,?,?)""",
+            (subject, "garmin", "hydration", "2026-04-15", "fetched", 0,
+             "2026-04-03T00:00:00Z"),
+        )
+        tool.repo.reconcile_legacy_capability_environment(conn, subject, "default")
+        assert tuple(conn.execute(
+            "SELECT availability_state,record_count FROM resource_coverage WHERE resource_kind='hydration'"
+        ).fetchone()) == ("empty", 0)
+    finally:
+        conn.close()

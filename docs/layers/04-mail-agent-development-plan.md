@@ -1,8 +1,8 @@
 # 第四层：邮件 Agent 工具层详细开发需求清单
 
 状态：开发中（M4-01～08 已完成；M4-09～15 与 IG-0～7 未完成）
-适用契约：第四层 v2；直接基线为第一层 v2.4、第三层 v2、第五层 v1
-规划日期：2026-07-23
+适用契约：第四层 v2.1；直接基线为第一层 v2.4、第三层 v2、第五层 v1
+规划日期：2026-07-26
 本文件性质：后续开发的唯一逐项清单；不修改五层冻结大契约，也不替代它们。
 
 ## 1. 冻结输入与边界
@@ -13,10 +13,10 @@
 | 契约 | 版本 | SHA-256 |
 |---|---:|---|
 | `01-data-foundation.md` | v2.4 | `9bf0a91e61bda47c9dba971c731ca6ec79e064b7f0ea4eb8124a5a216d67e396` |
-| `02-data-collection.md` | v1 | `afdffa6268d64403d170906ee6a42d10f873a75b1615b806d893982aea86db14` |
-| `03-data-analysis.md` | v2 | `4a9b3f1ffb92ba1ad4f56e68380344007e48a43e03a3e0f746399c50da794eb8` |
-| `04-mail-agent.md` | v2 | `47175280f917dee55d2aa5f663f0705da8ec7baf463eae5933ea391c0770be94` |
-| `05-orchestration-monitoring.md` | v1 | `5b1d5abf15689cec2507bd20e36aa83fe49626dd82247a4c0a1b91cc266ce804` |
+| `02-data-collection.md` | v1 | `c39ae1b82afcafe9f4fc3c54d1f851b4992c48021c5238038f078fab1ec885d6` |
+| `03-data-analysis.md` | v2.1 | `98652387c7018138e7910dbdf83826cb1e6b7a2a830d1bd4d67debe4627f0956` |
+| `04-mail-agent.md` | v2.1 | `977246c604dc939cce1d97869f584e463030476db64b0d20e07bb625faa12e17` |
+| `05-orchestration-monitoring.md` | v1.1 | `f46aca332f146fa2efffb4da8a03b48037989b7e4e4f31df9d562932e46db356` |
 
 第四层的唯一业务职责是：收件、原始归档、会话与用户事实、邮件 AI 回复及该回复的
 投递/对账。它是被第五层调用后即退出的工具，不是常驻服务。
@@ -50,9 +50,10 @@
   `MailReceipt.next_action=invoke_analysis`，按“reason event → `revise-plan` → 传回精确
   新 revision → resume process”执行；证据为跨层 stub/integration contract。第四层
   不实现调度器。
-- [ ] **EP-05｜部署 Gmail MCP 已认证并受限**：已安装映射仅含 `get_self`、
-  `search_messages`、`read_thread`、`send_html_self`、`create_or_apply_label`；token
-  属于 owner-only 外部敏感目录。证据不得包含 token、授权 URL 或正文。
+- [ ] **EP-05｜当前环境 Gmail MCP 已认证并受限**：当前 Codex 环境必须把
+  `@artymclabin/gmail-mcp` 注册为唯一名称 `gmail`；项目不保存机器 command/cwd、
+  token 或 OAuth 路径。缺失或不匹配时返回标准 auth/register 指引，实际宽工具面
+  由第四层确定性 adapter 收敛为 route-specific allowlist。
 
 每个第四层单元开始时必须记录：五份契约哈希、当前 schema/harness/config/adapter
 版本、所依赖 EP 的证据 ID、测试 fixture 版本和 git commit。若基线漂移，停止该单元，
@@ -196,7 +197,7 @@ flowchart LR
   不作为本单元完成证据。未访问真实 Gmail/Codex，未改第一层 DDL、migration 或冻结
   契约。
 
-### [x] M4-03｜受限 Gmail MCP adapter 与身份/能力校验
+### [x] M4-03｜受限 Gmail MCP adapter 与身份/能力校验（旧自建映射基线；待环境绑定迁移）
 
 - **目的**：把 Gmail MCP 映射为最小、可审计的确定性 transport，拒绝任何通用 Gmail
   操作和身份漂移。

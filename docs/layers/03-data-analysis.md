@@ -2,9 +2,9 @@
 
 状态：已冻结
 
-契约版本：2
+契约版本：2.1
 
-冻结日期：2026-07-23
+冻结日期：2026-07-26
 
 实现状态：尚未开始
 
@@ -17,6 +17,18 @@
 
 - [../../harness/shared/HARNESS.md](../../harness/shared/HARNESS.md)
 - [../../harness/runtime/HARNESS.md](../../harness/runtime/HARNESS.md)
+
+### Gmail 环境绑定修订（2026-07-26）
+
+第三层 Gmail MCP 的唯一服务器名为 `gmail`，实现固定为
+`@artymclabin/gmail-mcp`，并从当前 Codex 执行环境取得。不得在项目配置中保存
+机器专属 command、cwd、OAuth/token 路径或复制的 Codex home。若绑定缺失、禁用或
+不是该包，必须在任何投递前停止并提示先执行
+`npx @artymclabin/gmail-mcp auth`，再执行
+`codex mcp add gmail -- npx @artymclabin/gmail-mcp`。
+
+本修订优先于下文旧迁移基线中的 TrainLab 自建 MCP 工具名。A3-15 必须根据该包
+实际 Schema 建立 route-specific allowlist；分析 generation 仍为零 Gmail 工具。
 
 ## 1. 目标
 
@@ -859,8 +871,9 @@ codex exec --ephemeral
 
 投递是第二个、独立的 Codex invocation。它只加载 Shared Harness 的安全边界和
 `delivery.md`，接收已发布 artifact revision、确定性 plain/HTML、主题和 idempotency
-key。它只启用项目已安装 Gmail MCP 的 `get_self`、精确 key 搜索、`send_html_self`
-和标签工具；不得读取任意 thread、收件箱、附件、数据库、健康上下文或本地凭据。
+key。它只启用当前环境 `gmail` 中完成精确 key 搜索、自投递和 TrainLab 标签所
+必需的 route-specific 工具；不得读取任意 thread、收件箱、附件、数据库、健康
+上下文或本地凭据。
 投递调用前 artifact/plan 与 `analysis_deliveries(status=pending)` 必须已经提交。
 
 ## 19. 输出 Schema 和 Artifact

@@ -33,6 +33,7 @@ from .context import (
     parse_canonical_context_json,
     validate_analysis_context,
 )
+from .runner import AnalysisCodexRunner, AnalysisRunnerError, AnalysisRunnerResult
 
 __all__ = [
     "AnalysisBoundaryError",
@@ -64,4 +65,7 @@ __all__ = [
     "load_context_source",
     "parse_canonical_context_json",
     "validate_analysis_context",
+    "AnalysisCodexRunner",
+    "AnalysisRunnerError",
+    "AnalysisRunnerResult",
 ]

@@ -263,6 +263,30 @@ def test_request_requires_canonical_as_of_and_uses_singapore_date_at_23z() -> No
         request(start="2026-07-17", end="2026-07-17", as_of_utc=crossing_as_of).dates()
 
 
+def test_utc_timestamps_accept_fixed_microseconds_with_trailing_zeroes() -> None:
+    base = snapshot()
+    source = replace(
+        base,
+        capabilities=tuple(
+            {**row, "last_checked_at_utc": "2026-07-21T23:00:00.752070Z"}
+            for row in base.capabilities
+        ),
+    )
+
+    assert QualityGate().evaluate(
+        request(as_of_utc="2026-07-22T00:00:00.752070Z"), source
+    ).state == "ready_with_warnings"
+
+    for value in (
+        "2026-07-22T00:00:00.7520700Z",
+        "2026-07-22T00:00:00.75200Z",
+        "2026-07-22T00:00:00.000000Z",
+        "2026-07-22T00:00:00+00:00",
+    ):
+        with pytest.raises(QualityGateError, match="as_of_utc_invalid"):
+            request(as_of_utc=value).dates()
+
+
 def test_capability_rows_must_use_one_consistent_environment() -> None:
     gate = QualityGate()
     base = snapshot()

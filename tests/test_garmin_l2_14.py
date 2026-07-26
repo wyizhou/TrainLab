@@ -220,7 +220,7 @@ def test_unchanged_daily_success_promotes_latest_snapshot_partial_in_place(
                FROM resource_coverage WHERE resource_kind='steps'
                ORDER BY id DESC LIMIT 1"""
         ).fetchone()
-    assert after == (before[0], "fetched", before[1], before[2])
+    assert after == (before[0], "empty", before[1], before[2])
 
 
 def _archive_unparsed_range(
