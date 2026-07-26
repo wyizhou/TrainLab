@@ -12,7 +12,7 @@
 |---|---:|---|
 | `01-data-foundation.md` | v2.4 | `9bf0a91e61bda47c9dba971c731ca6ec79e064b7f0ea4eb8124a5a216d67e396` |
 | `02-data-collection.md` | v1 | `c39ae1b82afcafe9f4fc3c54d1f851b4992c48021c5238038f078fab1ec885d6` |
-| `03-data-analysis.md` | v2.1 | `a98ff818f43321ded49efeec4630b3b5ac36678a80d6c4b8e350fb519edd6d05` |
+| `03-data-analysis.md` | v2.1 | `2bc279170dfd7f8fc50acaf96ca631bad0fcd65069f3402a0c6d1b67c0caa99a` |
 | `04-mail-agent.md` | v2.1 | `977246c604dc939cce1d97869f584e463030476db64b0d20e07bb625faa12e17` |
 | `05-orchestration-monitoring.md` | v1.1 | `f46aca332f146fa2efffb4da8a03b48037989b7e4e4f31df9d562932e46db356` |
 
@@ -247,7 +247,7 @@
   - **集成顺序与失败回退：** A3-17 后；失败不影响已存在计划，等待质量修复或显式新 invocation。
   - **完成证据（2026-07-26）：** 新增 rolling weekly route，`as-of` 精确解释为过去七个结束日和未来连续七日；first-run 明确 `no_prior_artifact`，已有计划时使用确定性匹配/adherence，不因日期流逝推断完成。严格 Schema/validator 要求两个 artifact、七个有序唯一 item、允许类型、无训练钟点，并逐日执行 A3-09 安全归一化及跨日高强度限制。发布器以单事务写 artifact、relations、active plan 和七个 items，任意 failpoint 完整回滚；提交后才创建幂等 `weekly_report`。生产入口为 `trainlab run --slot morning --analysis-only --weekly --invocation-id ID [--as-of-date DATE] [--deliver]`，第五层 subprocess boundary 已同步接入；真实 Codex/Gmail 未在本单元验收中调用。
 
-- [ ] **A3-19｜revise-plan 路由与第四层原因事件边界**
+- [x] **A3-19｜revise-plan 路由与第四层原因事件边界**
   - **目的：** 基于已接受的 reason event 只重建原计划剩余范围，并由第三层主动投递新版计划。
   - **依赖与起始快照：** A3-05–16、A3-18、EXT-03/05、第三层 §7.3、第四层 §8.3、第五层 §5.3。
   - **负责范围：** plan/event/subject validity、effective date、past-item preservation、supersession/lineage、plan revision delivery、receipt return to fifth layer。
@@ -256,6 +256,7 @@
   - **验证方法与证据：** valid event revision、revoked/cross-subject/untrusted event deferred/rejected、past immutable、fourth-layer resume contract test。
   - **完成定义：** 只接受已持久化 event；成功后新 plan 与旧 plan 均可追溯，投递由第三层完成。
   - **集成顺序与失败回退：** A3-18 后；失败不更新旧计划，第四层保持 awaiting_analysis。
+  - **完成证据（2026-07-26）：** 已接入唯一生产入口 `trainlab run --slot morning --analysis-only --revise-plan --plan-id ID --reason-event-id ID --invocation-id ID [--effective-date DATE] [--deliver]` 及第五层精确 argv 边界。路由只接受第四层已持久化、仍处于 `awaiting_analysis`、具备 current Gmail source lineage 且绑定同 subject/current plan 的原因事件；显式生效日必须与事件一致。模型只能生成生效日至原计划结束日的连续 suffix，发布器在单事务内逐字节复制生效日前旧 items、写入新的完整七日 plan、切换 current、保留旧 plan/items，并建立 `supersedes`、`derived_from`、`references_prior_plan` 血缘；原因事件成功消费后不可重复用于另一修订。质量阻断、输出拒绝、任意发布 failpoint 或 pending delivery 建立失败均不破坏旧计划；成功发布后仅建立一条幂等 `plan_revision` 自投递。离线测试覆盖可信来源链、跨 subject/非 current/非 awaiting 拒绝、suffix 日期与 lineage、安全归一化、历史不变、原子回滚、单次消费、CLI/API/第五层 argv；未执行真实 Codex 或 Gmail。
 
 - [ ] **A3-20｜regenerate 路由**
   - **目的：** 以受控 reason code 显式重生成 artifact（必要时 plan），不将故障重试伪装为 regeneration。

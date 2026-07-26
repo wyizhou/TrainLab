@@ -172,8 +172,13 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument("--at")
     run.add_argument("--analysis-only", action="store_true")
     run.add_argument("--summary-date")
-    run.add_argument("--weekly", action="store_true")
+    analysis_route = run.add_mutually_exclusive_group()
+    analysis_route.add_argument("--weekly", action="store_true")
+    analysis_route.add_argument("--revise-plan", action="store_true")
     run.add_argument("--as-of-date")
+    run.add_argument("--plan-id", type=int)
+    run.add_argument("--reason-event-id", type=int)
+    run.add_argument("--effective-date")
     run.add_argument("--invocation-id")
     run.add_argument("--deliver", action="store_true")
     delivery_recovery = run.add_mutually_exclusive_group()
@@ -242,7 +247,11 @@ def main(argv: list[str] | None = None) -> int:
         if recovery_id is not None and (
             args.summary_date is not None
             or args.weekly
+            or args.revise_plan
             or args.as_of_date is not None
+            or args.plan_id is not None
+            or args.reason_event_id is not None
+            or args.effective_date is not None
             or args.deliver
         ):
             _parser().error("delivery recovery does not accept analysis route options")
@@ -250,10 +259,30 @@ def main(argv: list[str] | None = None) -> int:
             _parser().error("--weekly does not accept --summary-date")
         if not args.weekly and args.as_of_date is not None:
             _parser().error("--as-of-date requires --weekly")
+        if args.revise_plan and args.summary_date is not None:
+            _parser().error("--revise-plan does not accept --summary-date")
+        if args.revise_plan and (
+            args.plan_id is None or args.reason_event_id is None
+        ):
+            _parser().error("--revise-plan requires --plan-id and --reason-event-id")
+        if not args.revise_plan and (
+            args.plan_id is not None
+            or args.reason_event_id is not None
+            or args.effective_date is not None
+        ):
+            _parser().error("plan revision options require --revise-plan")
+        if (
+            args.plan_id is not None
+            and args.plan_id <= 0
+            or args.reason_event_id is not None
+            and args.reason_event_id <= 0
+        ):
+            _parser().error("plan and reason event IDs must be positive")
         try:
             from .analysis.runtime import (
                 run_analysis_only,
                 run_delivery_recovery,
+                run_plan_revision_analysis,
                 run_weekly_analysis,
             )
             from .analysis.cli import exit_code_for
@@ -263,6 +292,14 @@ def main(argv: list[str] | None = None) -> int:
                     receipt = run_weekly_analysis(
                         invocation_id=args.invocation_id,
                         as_of_date=args.as_of_date,
+                        deliver=args.deliver,
+                    )
+                elif args.revise_plan:
+                    receipt = run_plan_revision_analysis(
+                        invocation_id=args.invocation_id,
+                        plan_id=str(args.plan_id),
+                        reason_event_id=str(args.reason_event_id),
+                        effective_date=args.effective_date,
                         deliver=args.deliver,
                     )
                 else:
@@ -283,7 +320,9 @@ def main(argv: list[str] | None = None) -> int:
         return exit_code_for(receipt.status)
     if args.command == "run" and (
         args.summary_date is not None or args.invocation_id is not None
-        or args.weekly or args.as_of_date is not None
+        or args.weekly or args.revise_plan or args.as_of_date is not None
+        or args.plan_id is not None or args.reason_event_id is not None
+        or args.effective_date is not None
         or args.deliver or args.retry_delivery is not None
         or args.reconcile_delivery is not None
     ):

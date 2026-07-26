@@ -250,6 +250,8 @@ def test_fixed_route_windows_daily_weekly_revise_and_regenerate():
         plan_start_local_date="2026-07-21",
         plan_end_local_date="2026-07-27",
         effective_local_date="2026-07-24",
+        plan_id=10,
+        reason_event_id=9,
     )
     assert revise.validated_periods()["baseline"] == {
         "start_local_date": "2026-06-26",
@@ -261,6 +263,77 @@ def test_fixed_route_windows_daily_weekly_revise_and_regenerate():
         regenerate_source_route="weekly",
     )
     assert regenerated.validated_periods() == weekly_periods
+
+
+def test_revision_context_selects_exact_plan_and_reason_ids() -> None:
+    request = ContextBuildRequest(
+        "revise_plan",
+        "analysis:1:revise_plan:7:9:fixture",
+        1,
+        "2026-07-24T00:00:00Z",
+        plan_start_local_date="2026-07-21",
+        plan_end_local_date="2026-07-27",
+        effective_local_date="2026-07-24",
+        plan_id=7,
+        reason_event_id=9,
+    )
+    plan = {
+        "id": 7, "subject_id": 1, "analysis_artifact_id": 70,
+        "plan_start_local_date": "2026-07-21",
+        "plan_end_local_date": "2026-07-27",
+        "timezone": "Asia/Singapore", "status": "active",
+        "objective_json": "{}", "constraints_json": "{}",
+        "created_at_utc": "2026-07-20T00:00:00Z",
+    }
+    plan_artifact = artifact(
+        70, "weekly_training_plan", "2026-07-21", "2026-07-27"
+    )
+    plan_artifact.pop("is_current")
+    plan_artifact.pop("trust_class")
+    reasons = tuple(
+        {
+            "id": identity, "subject_id": 1,
+            "event_type": "plan_revision_reason_recorded",
+            "actor_role": "trainlab",
+            "occurred_at_utc": "2026-07-23T00:00:00Z",
+            "trust_level": "system_generated", "created_by": "mail_agent",
+            "source_mail_message_id": identity,
+            "source_mail_thread_id": identity,
+            "source_revision_id": identity,
+            "change_kind": "availability",
+            "affected_local_dates": ["2026-07-24"],
+            "constraints": {}, "effective_local_date": "2026-07-24",
+            "current_plan_id": 7,
+        }
+        for identity in (9, 10)
+    )
+    value = snapshot(
+        views={
+            "v_current_analysis_artifacts": (plan_artifact,),
+            "v_current_training_plans": (plan,),
+            "v_training_plan_items": tuple(
+                {
+                    "id": index + 1, "subject_id": 1,
+                    "training_plan_id": 7, "item_index": index,
+                    "local_date": f"2026-07-{21 + index:02d}",
+                    "activity_kind": "rest", "prescription_json": "{}",
+                    "rationale_text": "旧计划",
+                }
+                for index in range(7)
+            ),
+        },
+        plan_reasons=reasons,
+    )
+    result = build(request, value)
+    selected = [
+        item for item in result.context["input_manifest"]
+        if item["source_entity_type"] == "conversation_event"
+    ]
+    assert len(selected) == 1
+    assert selected[0]["source_entity_id"] == "9"
+    assert "10" not in {
+        item["source_entity_id"] for item in result.context["input_manifest"]
+    }
 
 
 @pytest.mark.parametrize(
@@ -818,6 +891,8 @@ def pruning_snapshot():
         "plan_end_local_date": "2026-07-20",
         "timezone": "Asia/Singapore",
         "status": "active",
+        "objective_json": "{}",
+        "constraints_json": "{}",
         "created_at_utc": "2026-07-13T00:00:00Z",
     }
     plan_items = tuple(

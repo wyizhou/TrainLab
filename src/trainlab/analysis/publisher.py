@@ -172,6 +172,10 @@ class AnalysisPublisher:
             return self._publish_daily(run, result, input_manifest, run_evidence, failpoint)
         if result.get("mode") == "weekly" and run["analysis_kind"] == "weekly":
             return self._publish_weekly(run, result, input_manifest, run_evidence, failpoint)
+        if result.get("mode") == "revise_plan" and run["analysis_kind"] == "plan_revision":
+            return self._publish_plan_revision(
+                run, result, input_manifest, run_evidence, failpoint
+            )
         raise AnalysisPublishError("analysis_publish_route_not_implemented")
 
     def _publish_daily(
@@ -257,6 +261,259 @@ class AnalysisPublisher:
             self._fire(failpoint, f"after_plan_item:{item['item_index']}")
         self._fire(failpoint, "after_plan_items")
         return PublishReceipt(int(run["id"]), dict(ids), dict(revisions), len(input_manifest), plan_id, superseded)
+
+    def _publish_plan_revision(
+        self, run: sqlite3.Row, result: Mapping[str, Any],
+        input_manifest: Sequence[Mapping[str, Any]], run_evidence: RunEvidence | Mapping[str, Any],
+        failpoint: Callable[[str], None] | None,
+    ) -> PublishReceipt:
+        """Persist one immutable replacement for one explicitly named plan.
+
+        The new plan is a full seven-day snapshot.  Rows before its effective
+        date are copied from the old plan's stored values, never from model
+        output, so published history cannot be rewritten during a revision.
+        """
+        artifacts = result.get("artifacts")
+        if not isinstance(artifacts, Sequence) or isinstance(artifacts, (str, bytes)):
+            raise AnalysisPublishError("analysis_publish_artifacts_invalid")
+        by_kind = {item.get("artifact_kind"): item for item in artifacts if isinstance(item, Mapping)}
+        if len(by_kind) != 1 or set(by_kind) != {"weekly_training_plan"}:
+            raise AnalysisPublishError("analysis_publish_plan_revision_cardinality_invalid")
+        plan, revision = self._validate_plan_revision(
+            result.get("training_plan"), by_kind["weekly_training_plan"]
+        )
+        subject_id = int(run["subject_id"])
+        old = self._load_revision_source(subject_id, revision)
+        if (
+            old["plan_start_local_date"] != plan["start"].isoformat()
+            or old["plan_end_local_date"] != plan["end"].isoformat()
+        ):
+            raise AnalysisPublishError("analysis_publish_revision_period_invalid")
+        self._validate_revision_manifest(input_manifest, old, revision)
+        self._assert_reason_unused(revision["reason_event_id"])
+        old_items = self._load_plan_items(int(old["plan_id"]), plan["start"], plan["end"])
+
+        self._persist_run_evidence(run, run_evidence, input_manifest)
+        self._fire(failpoint, "after_run_evidence")
+        self._insert_inputs(int(run["id"]), input_manifest)
+        self._fire(failpoint, "after_inputs")
+        artifact_id, artifact_revision = self._insert_revision(
+            subject_id, int(run["id"]), "weekly_training_plan", by_kind["weekly_training_plan"]
+        )
+        self._fire(failpoint, "after_artifact:weekly_training_plan")
+        now = self._clock()
+        for relation in ("derived_from", "references_prior_plan"):
+            self._connection.execute(
+                "INSERT INTO analysis_artifact_relations(from_artifact_id,to_artifact_id,relation_type,created_at_utc) VALUES(?,?,?,?)",
+                (artifact_id, int(old["artifact_id"]), relation, now),
+            )
+        self._fire(failpoint, "after_plan_revision_lineage")
+        changed = self._connection.execute(
+            "UPDATE training_plans SET status='superseded' WHERE id=? AND subject_id=? AND status='active'",
+            (int(old["plan_id"]), subject_id),
+        ).rowcount
+        if changed != 1:
+            raise AnalysisPublishError("analysis_publish_revision_source_invalid")
+        self._fire(failpoint, "after_plan_supersession")
+        cursor = self._connection.execute(
+            "INSERT INTO training_plans(subject_id,analysis_artifact_id,plan_start_local_date,plan_end_local_date,timezone,status,objective_json,constraints_json,created_at_utc) VALUES(?,?,?,?,?,'active',?,?,?)",
+            (subject_id, artifact_id, plan["start"].isoformat(), plan["end"].isoformat(),
+             plan["timezone"], _canonical(plan["objective"]), _canonical(plan["constraints"]), now),
+        )
+        new_plan_id = int(cursor.lastrowid)
+        self._fire(failpoint, "after_plan")
+        prefix_count = (
+            date.fromisoformat(revision["effective_local_date"]) - plan["start"]
+        ).days
+        published_items: list[tuple[dict[str, Any], bool]] = [
+            (item, True) for item in old_items[:prefix_count]
+        ]
+        published_items.extend(
+            ({**item, "item_index": prefix_count + ordinal}, False)
+            for ordinal, item in enumerate(plan["items"])
+        )
+        if len(published_items) != 7:
+            raise AnalysisPublishError("analysis_publish_plan_revision_invalid")
+        for item, copied in published_items:
+            self._connection.execute(
+                "INSERT INTO training_plan_items(training_plan_id,item_index,local_date,activity_kind,prescription_json,rationale_text,stop_conditions_json) VALUES(?,?,?,?,?,?,?)",
+                (new_plan_id, item["item_index"], item["local_date"], item["activity_kind"],
+                 item["prescription_json"] if copied else _canonical(item["prescription"]),
+                 item["rationale_text"],
+                 item["stop_conditions_json"] if copied else _canonical(item["stop_conditions"])),
+            )
+            self._fire(failpoint, f"after_plan_item:{item['item_index']}")
+        self._fire(failpoint, "after_plan_items")
+        return PublishReceipt(
+            int(run["id"]), {"weekly_training_plan": artifact_id},
+            {"weekly_training_plan": artifact_revision}, len(input_manifest),
+            new_plan_id, (int(old["plan_id"]),),
+        )
+
+    @staticmethod
+    def _validate_plan_revision(value: Any, artifact: Mapping[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+        if not isinstance(value, Mapping) or set(value) != {
+            "period", "timezone", "objective", "constraints", "original_plan_id",
+            "original_artifact_id", "reason_event_id", "effective_local_date", "items",
+        }:
+            raise AnalysisPublishError("analysis_publish_plan_revision_invalid")
+        if artifact.get("structured_content") != value:
+            raise AnalysisPublishError("analysis_publish_weekly_plan_artifact_mismatch")
+        period = value.get("period")
+        artifact_period = artifact.get("period")
+        if (
+            not isinstance(period, Mapping)
+            or not isinstance(artifact_period, Mapping)
+            or dict(period) != dict(artifact_period)
+        ):
+            raise AnalysisPublishError("analysis_publish_plan_revision_invalid")
+        try:
+            start = date.fromisoformat(str(period["start_local_date"]))
+            end = date.fromisoformat(str(period["end_local_date"]))
+            effective = date.fromisoformat(str(value["effective_local_date"]))
+        except (KeyError, TypeError, ValueError) as error:
+            raise AnalysisPublishError("analysis_publish_plan_revision_invalid") from error
+        if (
+            end - start != timedelta(days=6)
+            or not start <= effective <= end
+            or value.get("timezone") != "Asia/Singapore"
+            or not isinstance(value.get("objective"), Mapping)
+            or not isinstance(value.get("constraints"), Mapping)
+        ):
+            raise AnalysisPublishError("analysis_publish_plan_revision_invalid")
+        revision: dict[str, Any] = {}
+        normalized: dict[str, Any] = {}
+        for key in ("original_plan_id", "original_artifact_id", "reason_event_id"):
+            value_id = _integer_reference(value.get(key))
+            if value_id is None:
+                raise AnalysisPublishError("analysis_publish_plan_revision_invalid")
+            revision[key] = value_id
+        revision["effective_local_date"] = effective.isoformat()
+        rows = value.get("items")
+        suffix_days = (end - effective).days + 1
+        if (
+            not isinstance(rows, Sequence)
+            or isinstance(rows, (str, bytes))
+            or len(rows) != suffix_days
+        ):
+            raise AnalysisPublishError("analysis_publish_plan_revision_invalid")
+        items: list[dict[str, Any]] = []
+        for ordinal, row in enumerate(rows):
+            if not isinstance(row, Mapping) or set(row) != {
+                "item_index", "local_date", "activity_kind", "prescription",
+                "rationale_text", "stop_conditions",
+            }:
+                raise AnalysisPublishError("analysis_publish_plan_revision_invalid")
+            if (
+                isinstance(row.get("item_index"), bool)
+                or row.get("item_index") != ordinal
+                or row.get("local_date") != (effective + timedelta(days=ordinal)).isoformat()
+                or row.get("activity_kind") not in _PLAN_ITEM_KINDS
+                or not isinstance(row.get("prescription"), Mapping)
+                or row["prescription"].get("activity_kind") != row.get("activity_kind")
+                or not isinstance(row.get("rationale_text"), str)
+            ):
+                raise AnalysisPublishError("analysis_publish_plan_revision_invalid")
+            stops = row.get("stop_conditions")
+            if (
+                not isinstance(stops, Sequence)
+                or isinstance(stops, (str, bytes))
+                or any(not isinstance(item, str) or not item for item in stops)
+            ):
+                raise AnalysisPublishError("analysis_publish_plan_revision_invalid")
+            items.append({
+                "item_index": ordinal,
+                "local_date": row["local_date"],
+                "activity_kind": row["activity_kind"],
+                "prescription": dict(row["prescription"]),
+                "rationale_text": row["rationale_text"],
+                "stop_conditions": list(stops),
+            })
+        return {
+            "start": start,
+            "end": end,
+            "timezone": value["timezone"],
+            "objective": dict(value["objective"]),
+            "constraints": dict(value["constraints"]),
+            "items": items,
+        }, revision
+
+    def _load_revision_source(self, subject_id: int, revision: Mapping[str, Any]) -> sqlite3.Row:
+        row = self._connection.execute(
+            "SELECT p.id AS plan_id,p.subject_id,p.analysis_artifact_id,p.plan_start_local_date,p.plan_end_local_date,p.timezone,p.status,"
+            "a.id AS artifact_id,a.subject_id AS artifact_subject_id,a.artifact_kind,a.period_start_local_date,a.period_end_local_date,a.is_current "
+            "FROM training_plans p JOIN analysis_artifacts a ON a.id=p.analysis_artifact_id "
+            "WHERE p.id=? AND p.subject_id=? AND a.id=?",
+            (revision["original_plan_id"], subject_id, revision["original_artifact_id"]),
+        ).fetchone()
+        if (
+            row is None or row["artifact_subject_id"] != subject_id
+            or row["status"] != "active" or row["is_current"] != 1
+            or row["artifact_kind"] != "weekly_training_plan"
+            or row["timezone"] != "Asia/Singapore"
+            or row["plan_start_local_date"] != row["period_start_local_date"]
+            or row["plan_end_local_date"] != row["period_end_local_date"]
+        ):
+            raise AnalysisPublishError("analysis_publish_revision_source_invalid")
+        return row
+
+    def _validate_revision_manifest(
+        self, manifest: Sequence[Mapping[str, Any]], old: sqlite3.Row, revision: Mapping[str, Any],
+    ) -> None:
+        if not isinstance(manifest, Sequence) or isinstance(manifest, (str, bytes)):
+            raise AnalysisPublishError("analysis_publish_input_manifest_invalid")
+        expected = {
+            ("training_plan", int(old["plan_id"])),
+            ("analysis_artifact", int(old["artifact_id"])),
+            ("conversation_event", int(revision["reason_event_id"])),
+        }
+        actual = [
+            (item.get("source_entity_type"), _integer_reference(item.get("source_entity_id")))
+            for item in manifest if isinstance(item, Mapping)
+        ]
+        if any(actual.count(reference) != 1 for reference in expected):
+            raise AnalysisPublishError("analysis_publish_revision_manifest_invalid")
+        reason = self._connection.execute(
+            "SELECT id,subject_id,event_type,actor_role,trust_level FROM conversation_events WHERE id=?",
+            (revision["reason_event_id"],),
+        ).fetchone()
+        if (
+            reason is None or reason["subject_id"] != old["subject_id"]
+            or reason["event_type"] != "plan_revision_reason_recorded"
+            or reason["actor_role"] != "trainlab" or reason["trust_level"] != "system_generated"
+        ):
+            raise AnalysisPublishError("analysis_publish_revision_reason_invalid")
+
+    def _assert_reason_unused(self, reason_event_id: int) -> None:
+        row = self._connection.execute(
+            "SELECT 1 FROM analysis_artifact_inputs i JOIN analysis_runs r ON r.id=i.analysis_run_id "
+            "WHERE i.source_entity_type='conversation_event' AND i.source_entity_id=? "
+            "AND r.analysis_kind='plan_revision' AND r.status='succeeded' LIMIT 1",
+            (reason_event_id,),
+        ).fetchone()
+        if row is not None:
+            raise AnalysisPublishError("analysis_publish_revision_reason_already_consumed")
+
+    def _load_plan_items(self, plan_id: int, start: date, end: date) -> list[dict[str, Any]]:
+        rows = self._connection.execute(
+            "SELECT item_index,local_date,activity_kind,prescription_json,rationale_text,stop_conditions_json "
+            "FROM training_plan_items WHERE training_plan_id=? ORDER BY item_index",
+            (plan_id,),
+        ).fetchall()
+        if len(rows) != 7:
+            raise AnalysisPublishError("analysis_publish_revision_source_items_invalid")
+        items: list[dict[str, Any]] = []
+        for index, row in enumerate(rows):
+            if row["item_index"] != index or row["local_date"] != (start + timedelta(days=index)).isoformat() or row["activity_kind"] not in _PLAN_ITEM_KINDS or not isinstance(row["rationale_text"], str):
+                raise AnalysisPublishError("analysis_publish_revision_source_items_invalid")
+            try:
+                prescription, stops = json.loads(row["prescription_json"]), json.loads(row["stop_conditions_json"])
+            except (TypeError, ValueError) as error:
+                raise AnalysisPublishError("analysis_publish_revision_source_items_invalid") from error
+            if not isinstance(prescription, Mapping) or not isinstance(stops, list):
+                raise AnalysisPublishError("analysis_publish_revision_source_items_invalid")
+            items.append({**dict(row), "prescription": dict(prescription), "stop_conditions": stops})
+        return items
 
     @staticmethod
     def _validate_weekly_plan(value: Any, plan_artifact: Mapping[str, Any]) -> dict[str, Any]:

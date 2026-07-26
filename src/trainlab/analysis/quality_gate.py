@@ -56,6 +56,8 @@ _PLAN_FIELDS = frozenset(
         "plan_end_local_date",
         "timezone",
         "status",
+        "objective_json",
+        "constraints_json",
         "created_at_utc",
     }
 )
@@ -93,6 +95,11 @@ _REASON_FIELDS = frozenset(
         "created_by",
     }
 )
+_REASON_DTO_FIELDS = _REASON_FIELDS | frozenset({
+    "subject_id", "source_mail_message_id", "source_mail_thread_id",
+    "source_revision_id", "change_kind", "affected_local_dates", "constraints",
+    "effective_local_date", "current_plan_id",
+})
 _MAX_REASONS = int(_POLICY["max_reasons_per_bucket"])
 _MAX_SNAPSHOT_ROWS = int(_POLICY["max_snapshot_rows"])
 _MAX_SNAPSHOT_BYTES = int(_POLICY["max_snapshot_bytes"])
@@ -839,6 +846,8 @@ class QualityGate:
                 or (date.fromisoformat(end) - date.fromisoformat(start)).days != 6
                 or plan.get("timezone") != "Asia/Singapore"
                 or plan.get("status") not in {"proposed", "active"}
+                or not isinstance(plan.get("objective_json"), str)
+                or not isinstance(plan.get("constraints_json"), str)
                 or plan_created_at > as_of
             ):
                 blockers.append(_reason("plan_incomplete", f"plan:{plan_id}"))
@@ -909,11 +918,20 @@ class QualityGate:
             created_by = reason.get("created_by")
             reason_fields = frozenset(reason)
             if (
-                reason_fields not in {_REASON_FIELDS, _REASON_FIELDS | {"subject_id"}}
-                or ("subject_id" in reason and reason["subject_id"] != request.subject_id)
+                reason_fields != _REASON_DTO_FIELDS
+                or reason.get("subject_id") != request.subject_id
                 or reason.get("event_type") != "plan_revision_reason_recorded"
                 or reason.get("actor_role") != "trainlab"
                 or reason.get("trust_level") != "system_generated"
+                or reason.get("created_by") != "mail_agent"
+                or reason.get("current_plan_id") != request.plan_id
+                or reason.get("effective_local_date") != dates[0]
+                or not isinstance(reason.get("source_mail_message_id"), int)
+                or not isinstance(reason.get("source_mail_thread_id"), int)
+                or not isinstance(reason.get("source_revision_id"), int)
+                or reason.get("change_kind") not in {"move", "cancel", "replace", "availability", "injury", "preference"}
+                or not isinstance(reason.get("affected_local_dates"), list)
+                or not isinstance(reason.get("constraints"), (dict, list, str, int, float, bool, type(None)))
                 or not isinstance(created_by, str)
                 or not _valid_entity(created_by)
                 or occurred_at > as_of

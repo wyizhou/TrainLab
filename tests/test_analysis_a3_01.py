@@ -89,6 +89,7 @@ def test_import_boundary_is_empty_and_reproducible() -> None:
         "harness.py",
         "publisher.py",
         "quality_gate.py",
+        "revise_plan.py",
         "result_validation.py",
         "run_state.py",
         "runner.py",

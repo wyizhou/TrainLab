@@ -35,15 +35,17 @@ def _utc_now() -> str:
     return datetime.now(UTC).isoformat(timespec="microseconds").replace("+00:00", "Z")
 
 
-def _strict_date(value: str | None) -> date | None:
+def _strict_date(
+    value: str | None, error_code: str = "analysis_summary_date_invalid"
+) -> date | None:
     if value is None:
         return None
     if len(value) != 10 or value[4] != "-" or value[7] != "-" or not (value[:4] + value[5:7] + value[8:]).isdigit():
-        raise ValueError("analysis_summary_date_invalid")
+        raise ValueError(error_code)
     try:
         return date.fromisoformat(value)
     except ValueError as error:
-        raise ValueError("analysis_summary_date_invalid") from error
+        raise ValueError(error_code) from error
 
 
 def build_daily_request(
@@ -107,6 +109,56 @@ def build_weekly_request(
         "plan_id": None,
         "reason_event_id": None,
         "effective_local_date": None,
+        "artifact_id": None,
+        "delivery_id": None,
+        "regeneration_reason_code": None,
+        "requested_at_utc": requested,
+    })
+
+
+def build_plan_revision_request(
+    *,
+    subject_id: str,
+    invocation_id: str,
+    plan_id: str,
+    reason_event_id: str,
+    effective_date: str | None,
+    now: datetime | None = None,
+) -> AnalysisRequest:
+    """Build one explicit plan-revision request without reading the event."""
+    if not isinstance(subject_id, str) or _SUBJECT_KEY.fullmatch(subject_id) is None:
+        raise ValueError("analysis_subject_id_invalid")
+    if not isinstance(invocation_id, str) or not invocation_id:
+        raise ValueError("analysis_invocation_id_required")
+    for value, code in (
+        (plan_id, "analysis_plan_id_invalid"),
+        (reason_event_id, "analysis_reason_event_id_invalid"),
+    ):
+        if (
+            not isinstance(value, str)
+            or not value.isdecimal()
+            or value.startswith("0")
+            or int(value) <= 0
+        ):
+            raise ValueError(code)
+    effective = _strict_date(
+        effective_date, "analysis_plan_revision_effective_date_invalid"
+    )
+    requested = (now or datetime.now(UTC)).astimezone(UTC).isoformat(
+        timespec="seconds"
+    ).replace("+00:00", "Z")
+    return AnalysisRequest.from_dict({
+        "schema_version": "1",
+        "mode": "revise_plan",
+        "subject_id": subject_id,
+        "invocation_id": invocation_id,
+        "run_key": None,
+        "summary_local_date": None,
+        "advice_local_date": None,
+        "as_of_local_date": None,
+        "plan_id": plan_id,
+        "reason_event_id": reason_event_id,
+        "effective_local_date": effective.isoformat() if effective else None,
         "artifact_id": None,
         "delivery_id": None,
         "regeneration_reason_code": None,
@@ -217,6 +269,70 @@ def run_weekly_analysis(
         if not deliver or receipt.status not in {"partial", "unchanged", "succeeded"}:
             return receipt
         delivery_id = _analysis_delivery_id(connection, receipt, "weekly_report")
+        if delivery_id is None:
+            return replace(
+                receipt,
+                status="partial",
+                errors=receipt.errors + (_error("analysis_delivery_missing"),),
+                next_action="retry_delivery",
+            )
+        artifact_ids = _delivery_artifact_ids(connection, delivery_id)
+        receipt = _restore_receipt_evidence(
+            connection, receipt, artifact_ids, include_training_plan=True
+        )
+        return _merge_delivery(
+            receipt,
+            _execute_delivery(connection, config, delivery_id, "retry_delivery"),
+            artifact_ids,
+        )
+    finally:
+        connection.close()
+
+
+def run_plan_revision_analysis(
+    *,
+    invocation_id: str,
+    plan_id: str,
+    reason_event_id: str,
+    effective_date: str | None = None,
+    deliver: bool = False,
+    root: Path | None = None,
+) -> AnalysisReceipt:
+    """Execute one A3-19 plan revision through the production entry."""
+    root = (root or project_root()).resolve()
+    foundation = FoundationConfig.load(root)
+    config = load_analysis_config(root, root / "config" / "analysis.yaml")
+    connection = FoundationTool(foundation)._connect(foundation.database_path)
+    try:
+        request = build_plan_revision_request(
+            subject_id=_active_subject_key(connection),
+            invocation_id=invocation_id,
+            plan_id=plan_id,
+            reason_event_id=reason_event_id,
+            effective_date=effective_date,
+        )
+        repository = AnalysisRunRepository(connection)
+        coordinator = AnalysisRunCoordinator(
+            repository,
+            SubjectLockManager(
+                config.lock_path, trusted_root=config.lock_path.parent.parent
+            ),
+        )
+        from .revise_plan import PlanRevisionRoute
+
+        route = PlanRevisionRoute(
+            config=config,
+            coordinator=coordinator,
+            stable_views=StableViewRepository(connection),
+            runner=AnalysisCodexRunner(config),
+            publisher=AnalysisPublisher(connection),
+            delivery=AnalysisDeliveryFactory(connection),
+            connection=connection,
+        )
+        receipt = route.execute(request)
+        if not deliver or receipt.status not in {"partial", "unchanged", "succeeded"}:
+            return receipt
+        delivery_id = _analysis_delivery_id(connection, receipt, "plan_revision")
         if delivery_id is None:
             return replace(
                 receipt,

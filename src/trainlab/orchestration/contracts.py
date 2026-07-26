@@ -18,7 +18,7 @@ ORCHESTRATION_SCHEMA_VERSION = "1"
 FROZEN_CONTRACT_HASHES: Mapping[str, str] = {
     "01-data-foundation.md": "9bf0a91e61bda47c9dba971c731ca6ec79e064b7f0ea4eb8124a5a216d67e396",
     "02-data-collection.md": "c39ae1b82afcafe9f4fc3c54d1f851b4992c48021c5238038f078fab1ec885d6",
-    "03-data-analysis.md": "a98ff818f43321ded49efeec4630b3b5ac36678a80d6c4b8e350fb519edd6d05",
+    "03-data-analysis.md": "2bc279170dfd7f8fc50acaf96ca631bad0fcd65069f3402a0c6d1b67c0caa99a",
     "04-mail-agent.md": "977246c604dc939cce1d97869f584e463030476db64b0d20e07bb625faa12e17",
     "05-orchestration-monitoring.md": "f46aca332f146fa2efffb4da8a03b48037989b7e4e4f31df9d562932e46db356",
 }

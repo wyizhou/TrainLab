@@ -132,6 +132,8 @@ _DISPLAY_FIELDS = frozenset(
 )
 _EMBEDDED_JSON_NAMES = {
     "fact_value_json": "fact_value",
+    "objective_json": "objective",
+    "constraints_json": "constraints",
     "prescription_json": "prescription",
     "value_json": "value",
     "values_json": "values",
@@ -318,6 +320,8 @@ class ContextBuildRequest:
     plan_start_local_date: str | None = None
     plan_end_local_date: str | None = None
     effective_local_date: str | None = None
+    plan_id: int | None = None
+    reason_event_id: int | None = None
     max_context_bytes: int = DEFAULT_MAX_CONTEXT_BYTES
 
     def source_route(self) -> SourceRoute:
@@ -356,6 +360,8 @@ class ContextBuildRequest:
                     self.plan_start_local_date,
                     self.plan_end_local_date,
                     self.effective_local_date,
+                    self.plan_id,
+                    self.reason_event_id,
                 )
             ) or self.summary_local_date is None or self.advice_local_date is None:
                 _fail("analysis_context_daily_window_invalid")
@@ -378,6 +384,8 @@ class ContextBuildRequest:
                     self.plan_start_local_date,
                     self.plan_end_local_date,
                     self.effective_local_date,
+                    self.plan_id,
+                    self.reason_event_id,
                 )
             ) or self.review_end_local_date is None:
                 _fail("analysis_context_weekly_window_invalid")
@@ -404,12 +412,23 @@ class ContextBuildRequest:
                 self.plan_start_local_date,
                 self.plan_end_local_date,
                 self.effective_local_date,
+                self.plan_id,
+                self.reason_event_id,
             ):
                 _fail("analysis_context_revision_window_invalid")
             plan_start = _local_date(self.plan_start_local_date)
             plan_end = _local_date(self.plan_end_local_date)
             effective = _local_date(self.effective_local_date)
-            if plan_end - plan_start != timedelta(days=6) or not plan_start <= effective <= plan_end:
+            if (
+                plan_end - plan_start != timedelta(days=6)
+                or not plan_start <= effective <= plan_end
+                or isinstance(self.plan_id, bool)
+                or not isinstance(self.plan_id, int)
+                or self.plan_id <= 0
+                or isinstance(self.reason_event_id, bool)
+                or not isinstance(self.reason_event_id, int)
+                or self.reason_event_id <= 0
+            ):
                 _fail("analysis_context_revision_window_invalid")
             plan = _period(plan_start, plan_end)
             baseline = _period(
@@ -1277,6 +1296,11 @@ def _base_candidates(
     plan_ids: set[str] = set()
     current_plan_artifacts: set[tuple[str, str]] = set()
     for row in current_plans:
+        if (
+            request.source_route() == "revise_plan"
+            and row.get("id") != request.plan_id
+        ):
+            continue
         if not _within(row, complete_start, periods["plan"]["end_local_date"] if periods["plan"] else complete_end):
             continue
         identity = _identifier(row.get("id"))
@@ -1335,6 +1359,30 @@ def _base_candidates(
             fallback_window=fallback_window,
             trust="prior_model_output",
             origin="prior_model_output",
+        )
+
+    if request.source_route() == "revise_plan":
+        effective = periods["effective_local_date"]
+        matching_reasons = [
+            row for row in snapshot.plan_reasons
+            if row.get("id") == request.reason_event_id
+            and row.get("current_plan_id") == request.plan_id
+            and row.get("effective_local_date") == effective
+        ]
+        if len(matching_reasons) != 1:
+            _fail("analysis_context_plan_reason_invalid")
+        reason = matching_reasons[0]
+        _add_row(
+            candidates,
+            section="current_plan",
+            role="plan.revision_reason",
+            entity_type="conversation_event",
+            row=reason,
+            fallback_window=(effective, effective),
+            trust="user_asserted",
+            origin="user_asserted",
+            entity_id=_identifier(reason.get("id")),
+            revision_id=f"conversation_event:{_identifier(reason.get('id'))}:{_identifier(reason.get('source_revision_id'))}",
         )
 
     daily_rows = sorted(

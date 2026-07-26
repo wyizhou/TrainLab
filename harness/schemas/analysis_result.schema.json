@@ -12,10 +12,10 @@
     "subject_id": {"type": "integer", "minimum": 1},
     "status": {"const": "accepted"},
     "artifacts": {"type": "array", "minItems": 1, "maxItems": 9, "items": {"$ref": "#/$defs/artifact"}},
-    "training_plan": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/training_plan"}]},
+    "training_plan": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/training_plan"}, {"$ref": "#/$defs/revision_training_plan"}]},
     "source_usage": {"type": "array", "minItems": 1, "maxItems": 4000, "items": {"$ref": "#/$defs/source_usage"}},
     "quality_disclosures": {"type": "array", "maxItems": 128, "items": {"$ref": "#/$defs/disclosure"}},
-    "safety": {"oneOf": [{"$ref": "#/$defs/safety"}, {"$ref": "#/$defs/weekly_safety"}]},
+    "safety": {"anyOf": [{"$ref": "#/$defs/safety"}, {"$ref": "#/$defs/weekly_safety"}, {"$ref": "#/$defs/revision_safety"}]},
     "warnings": {"type": "array", "maxItems": 128, "items": {"type": "string", "minLength": 1, "maxLength": 1000}}
   },
   "$defs": {
@@ -65,6 +65,21 @@
         "items": {"type": "array", "minItems": 7, "maxItems": 7, "items": {"$ref": "#/$defs/plan_item"}}
       }
     },
+    "revision_training_plan": {
+      "type": "object", "additionalProperties": false,
+      "required": ["period", "timezone", "objective", "constraints", "original_plan_id", "original_artifact_id", "reason_event_id", "effective_local_date", "items"],
+      "properties": {
+        "period": {"$ref": "#/$defs/period"},
+        "timezone": {"const": "Asia/Singapore"},
+        "objective": {"type": "object", "maxProperties": 64, "additionalProperties": {"$ref": "#/$defs/json_value"}},
+        "constraints": {"type": "object", "maxProperties": 64, "additionalProperties": {"$ref": "#/$defs/json_value"}},
+        "original_plan_id": {"type": "string", "minLength": 1, "maxLength": 192},
+        "original_artifact_id": {"type": "string", "minLength": 1, "maxLength": 192},
+        "reason_event_id": {"type": "string", "minLength": 1, "maxLength": 192},
+        "effective_local_date": {"type": "string", "format": "date"},
+        "items": {"type": "array", "minItems": 1, "maxItems": 7, "items": {"$ref": "#/$defs/plan_item"}}
+      }
+    },
     "weekly_safety_item": {
       "type": "object", "additionalProperties": false,
       "required": ["item_index", "local_date", "safety_state", "primary_item"],
@@ -81,6 +96,14 @@
       "properties": {
         "safety_state": {"enum": ["normal", "warning", "suspended"]},
         "plan_items": {"type": "array", "minItems": 7, "maxItems": 7, "items": {"$ref": "#/$defs/weekly_safety_item"}}
+      }
+    },
+    "revision_safety": {
+      "type": "object", "additionalProperties": false,
+      "required": ["safety_state", "plan_items"],
+      "properties": {
+        "safety_state": {"enum": ["normal", "warning", "suspended"]},
+        "plan_items": {"type": "array", "minItems": 0, "maxItems": 7, "items": {"$ref": "#/$defs/weekly_safety_item"}}
       }
     },
     "json_value": {"anyOf": [{"type": "null"}, {"type": "boolean"}, {"type": "number"}, {"type": "string", "maxLength": 10000}, {"type": "array", "maxItems": 256, "items": {"$ref": "#/$defs/json_value"}}, {"type": "object", "maxProperties": 128, "propertyNames": {"type": "string", "maxLength": 128}, "additionalProperties": {"$ref": "#/$defs/json_value"}}]}

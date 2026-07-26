@@ -255,6 +255,29 @@ def _argv(call: DownstreamCall) -> tuple[str, ...]:
                 base.extend(("--as-of-date", call.as_of_local_date))
             base.append("--deliver")
             return tuple(base)
+        if call.mode == "revise_plan":
+            if (
+                not isinstance(call.plan_id, str)
+                or re.fullmatch(r"[1-9][0-9]{0,18}", call.plan_id) is None
+                or not isinstance(call.reason_event_id, str)
+                or re.fullmatch(r"[1-9][0-9]{0,18}", call.reason_event_id) is None
+            ):
+                raise SubprocessBoundaryError(
+                    "subprocess_plan_revision_target_required"
+                )
+            base.extend(
+                (
+                    "--revise-plan",
+                    "--plan-id",
+                    call.plan_id,
+                    "--reason-event-id",
+                    call.reason_event_id,
+                )
+            )
+            if call.effective_local_date is not None:
+                base.extend(("--effective-date", call.effective_local_date))
+            base.append("--deliver")
+            return tuple(base)
         if call.mode in {"retry_delivery", "reconcile_delivery"}:
             if not isinstance(call.delivery_id, str) or re.fullmatch(r"[1-9][0-9]{0,18}", call.delivery_id) is None:
                 raise SubprocessBoundaryError("subprocess_delivery_id_required")
@@ -263,7 +286,7 @@ def _argv(call: DownstreamCall) -> tuple[str, ...]:
                 call.delivery_id,
             ))
             return tuple(base)
-        # Revision/regeneration/status remain frozen contract modes, but
+        # Regeneration/status remain frozen contract modes, but
         # are not production-ready until they are integrated through
         # ``trainlab run``.  Never fall back to the internal future CLI.
         raise SubprocessBoundaryError("subprocess_analysis_mode_not_production_ready")

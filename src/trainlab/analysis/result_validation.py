@@ -78,6 +78,12 @@ class ResultValidationExpectation:
     # The context builder distinguishes an absent first weekly artifact from a
     # failed lookup.  Both new weekly artifacts must repeat this exact state.
     prior_artifact_state: Mapping[str, str] | None = None
+    # Revision routes bind the generated suffix to one immutable original plan
+    # and one already-accepted revision reason.  They are deliberately
+    # supplied by the host, never inferred from model output.
+    original_plan: Mapping[str, Any] | None = None
+    original_plan_items: Sequence[Mapping[str, Any]] | None = None
+    reason_event: Mapping[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -434,6 +440,166 @@ def _validate_weekly_clock_time(payload: Mapping[str, Any]) -> None:
             _reject("analysis_result_training_clock_time_forbidden", path)
 
 
+def _revision_metadata(expected: ResultValidationExpectation) -> tuple[str, str, Mapping[str, Any], str, str]:
+    plan = expected.original_plan
+    reason = expected.reason_event
+    if not isinstance(plan, Mapping) or not isinstance(reason, Mapping):
+        _reject("analysis_result_revision_expectation_invalid", "revision_metadata")
+    plan_id, artifact_id, period = plan.get("plan_id"), plan.get("artifact_id"), plan.get("period")
+    reason_id, effective = reason.get("reason_event_id"), reason.get("effective_local_date")
+    if not all(isinstance(value, str) and value for value in (plan_id, artifact_id, reason_id, effective)) or not isinstance(period, Mapping):
+        _reject("analysis_result_revision_expectation_invalid", "revision_metadata")
+    return plan_id, artifact_id, period, reason_id, effective
+
+
+def _original_plan_prescription(
+    item: Mapping[str, Any], *, path: str
+) -> Mapping[str, Any]:
+    value = item.get("prescription")
+    if isinstance(value, Mapping):
+        return value
+    encoded = item.get("prescription_json")
+    if isinstance(encoded, str):
+        try:
+            value = json.loads(encoded)
+        except json.JSONDecodeError:
+            value = None
+    if not isinstance(value, Mapping):
+        _reject("analysis_result_revision_original_items_invalid", path)
+    return value
+
+
+def _validate_revision_shape(payload: Mapping[str, Any], expected: ResultValidationExpectation) -> None:
+    if payload["mode"] != "revise_plan":
+        _reject("analysis_result_route_not_implemented", "mode")
+    plan_id, artifact_id, original_period, reason_id, effective = _revision_metadata(expected)
+    original_days = _period_days(original_period, path="original_plan.period")
+    if len(original_days) != 7:
+        _reject("analysis_result_revision_original_window_invalid", "original_plan.period")
+    if effective not in original_days:
+        _reject("analysis_result_revision_effective_date_invalid", "reason_event.effective_local_date")
+    artifacts = payload["artifacts"]
+    if len(artifacts) != 1 or artifacts[0]["artifact_kind"] != "weekly_training_plan":
+        _reject("analysis_result_revision_cardinality_invalid", "artifacts")
+    artifact = artifacts[0]
+    revision = payload["training_plan"]
+    if not isinstance(revision, Mapping):
+        _reject("analysis_result_revision_plan_required", "training_plan")
+    if dict(artifact["period"]) != dict(original_period) or dict(revision.get("period", {})) != dict(original_period):
+        _reject("analysis_result_revision_period_invalid", "training_plan.period")
+    if artifact["structured_content"] != revision:
+        _reject("analysis_result_revision_artifact_mismatch", "artifacts.0.structured_content")
+    if (revision.get("original_plan_id"), revision.get("original_artifact_id"), revision.get("reason_event_id"), revision.get("effective_local_date")) != (plan_id, artifact_id, reason_id, effective):
+        _reject("analysis_result_revision_lineage_mismatch", "training_plan")
+    expected_days = original_days[original_days.index(effective):]
+    items = revision.get("items")
+    if not isinstance(items, list) or len(items) != len(expected_days):
+        _reject("analysis_result_revision_item_cardinality_invalid", "training_plan.items")
+    for index, item in enumerate(items):
+        if not isinstance(item, Mapping) or item.get("item_index") != index or item.get("local_date") != expected_days[index]:
+            _reject("analysis_result_revision_item_sequence_invalid", f"training_plan.items.{index}")
+        if item.get("activity_kind") not in {"running", "climbing", "strength", "rest"} or not isinstance(item.get("prescription"), Mapping):
+            _reject("analysis_result_revision_item_invalid", f"training_plan.items.{index}")
+        if item["prescription"].get("activity_kind") != item["activity_kind"]:
+            _reject("analysis_result_revision_item_invalid", f"training_plan.items.{index}.prescription")
+    # The output shape has no historical-item field.  Assert the host supplied
+    # exactly the immutable prefix too, so a malformed expectation cannot
+    # accidentally turn a revision into a rewritten plan.
+    originals = expected.original_plan_items
+    if not isinstance(originals, Sequence) or isinstance(originals, (str, bytes)) or len(originals) != 7:
+        _reject("analysis_result_revision_original_items_invalid", "original_plan_items")
+    for index, item in enumerate(originals):
+        if (
+            not isinstance(item, Mapping)
+            or item.get("item_index") != index
+            or item.get("local_date") != original_days[index]
+        ):
+            _reject("analysis_result_revision_original_items_invalid", f"original_plan_items.{index}")
+        _original_plan_prescription(
+            item, path=f"original_plan_items.{index}.prescription"
+        )
+
+
+def _validate_revision_source_usage(payload: Mapping[str, Any], expected: ResultValidationExpectation) -> None:
+    _, artifact_id, _, reason_id, _ = _revision_metadata(expected)
+    used = {row["ordinal"] for row in payload["source_usage"]}
+    required = (("analysis_artifact", artifact_id), ("conversation_event", reason_id))
+    for entity_type, entity_id in required:
+        rows = [row for row in expected.input_manifest if isinstance(row, Mapping) and row.get("source_entity_type") == entity_type and row.get("source_entity_id") == entity_id]
+        if len(rows) != 1 or rows[0].get("ordinal") not in used:
+            _reject("analysis_result_revision_source_usage_required", f"source_usage.{entity_type}")
+
+
+def _validate_revision_safety(payload: dict[str, Any], expected: ResultValidationExpectation) -> None:
+    revision = payload["training_plan"]
+    assert isinstance(revision, dict)
+    items = revision["items"]
+    assert isinstance(items, list)
+    bases = expected.weekly_safety_request_bases
+    if not isinstance(bases, Mapping) or len(bases) < len(items):
+        _reject("analysis_result_revision_safety_base_invalid", "weekly_safety_request_bases")
+    normalized: list[dict[str, Any]] = []
+    suspended = False
+    for index, item in enumerate(items):
+        base = bases.get(item["local_date"])
+        if not isinstance(base, Mapping) or "primary_items" in base or base.get("advice_local_date") != item["local_date"]:
+            _reject("analysis_result_revision_safety_base_invalid", f"weekly_safety_request_bases.{item['local_date']}")
+        try:
+            evidence = evaluate_training_safety({**base, "primary_items": [item["prescription"]]})
+        except SafetyRuleError:
+            _reject("analysis_result_safety_candidate_invalid", f"training_plan.items.{index}.prescription")
+        primary = evidence.get("primary_items")
+        if evidence.get("status") == "rejected" or not isinstance(primary, list) or len(primary) != 1 or not isinstance(primary[0], Mapping):
+            _reject("analysis_result_safety_candidate_rejected", f"training_plan.items.{index}.prescription")
+        safe = dict(primary[0])
+        item["prescription"], item["activity_kind"] = safe, safe.get("activity_kind")
+        state = evidence.get("safety_state")
+        if state not in {"normal", "warning", "suspended"}:
+            _reject("analysis_result_safety_candidate_rejected", f"training_plan.items.{index}.prescription")
+        suspended = suspended or state == "suspended"
+        normalized.append({"item_index": item["item_index"], "local_date": item["local_date"], "safety_state": state, "primary_item": safe})
+    if suspended and any(row["primary_item"].get("activity_kind") != "rest" for row in normalized):
+        _reject("analysis_result_weekly_red_flag_plan_not_suspended", "training_plan.items")
+    _, _, _, _, effective = _revision_metadata(expected)
+    originals = expected.original_plan_items
+    assert isinstance(originals, Sequence)
+    high_days = [
+        date.fromisoformat(str(row["local_date"]))
+        for row in originals
+        if isinstance(row, Mapping)
+        and str(row.get("local_date")) < effective
+        and (
+            prescription := _original_plan_prescription(
+                row, path="original_plan_items.prescription"
+            )
+        ).get("activity_kind") == "running"
+        and prescription.get("target_zone") in {4, 5}
+    ]
+    high_days.extend(
+        date.fromisoformat(str(row["local_date"]))
+        for row in normalized
+        if row["primary_item"].get("activity_kind") == "running"
+        and row["primary_item"].get("target_zone") in {4, 5}
+    )
+    high_days.sort()
+    if len(high_days) > 2 or any((right - left) < timedelta(hours=48) for left, right in zip(high_days, high_days[1:])):
+        _reject("analysis_result_weekly_high_intensity_frequency_exceeded", "training_plan.items")
+    artifact = payload["artifacts"][0]
+    artifact["structured_content"] = revision
+    overall = "suspended" if suspended else "warning" if any(row["safety_state"] == "warning" for row in normalized) else "normal"
+    payload["safety"] = {"safety_state": overall, "plan_items": normalized}
+    for index, row in enumerate(normalized):
+        base = bases[row["local_date"]]
+        exact_bpm = bool(evaluate_training_safety({**base, "primary_items": [row["primary_item"]]}).get("zone_selection", {}).get("exact_bpm_allowed"))
+        if not exact_bpm:
+            for path, value in _strings({"plan_item": items[index], "safety": row}):
+                if re.search(r"\b\d{2,3}\s*(?:bpm|BPM)\b|\d{2,3}\s*次\s*/\s*分", value):
+                    _reject("analysis_result_invented_bpm_forbidden", path)
+    for path, value in _strings({"plan_revision": artifact}):
+        if _CLOCK_TIME.search(value):
+            _reject("analysis_result_training_clock_time_forbidden", path)
+
+
 def _validate_quality(payload: Mapping[str, Any], expected: ResultValidationExpectation) -> None:
     gate = _as_mapping(expected.quality_gate, "analysis_result_quality_gate_invalid")
     state = gate.get("state")
@@ -522,17 +688,23 @@ class AnalysisResultValidator:
             _validate_daily_shape(payload, expected)
         elif expected.mode == "weekly":
             _validate_weekly_shape(payload, expected)
+        elif expected.mode == "revise_plan":
+            _validate_revision_shape(payload, expected)
         else:
             _reject("analysis_result_route_not_implemented", "mode")
         _validate_source_usage(payload, expected)
         if expected.mode == "weekly":
             _validate_weekly_prior_source_usage(payload, expected)
+        elif expected.mode == "revise_plan":
+            _validate_revision_source_usage(payload, expected)
         _validate_quality(payload, expected)
         if expected.mode == "daily":
             _validate_safety(payload, expected)
-        else:
+        elif expected.mode == "weekly":
             _validate_weekly_safety(payload, expected)
             _validate_weekly_clock_time(payload)
+        else:
+            _validate_revision_safety(payload, expected)
         _validate_text_safety(payload)
         return ValidatedAnalysisResult(dict(payload))
 

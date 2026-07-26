@@ -5,6 +5,7 @@ from __future__ import annotations
 import sqlite3
 import re
 import math
+import json
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
@@ -49,7 +50,7 @@ _SPECS: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     ("v_active_user_facts", "SELECT id,subject_id,fact_key,fact_value_json,scope,effective_from_utc,expires_at_utc,confidence FROM v_active_user_facts WHERE subject_id=? ORDER BY fact_key,id", ("subject",)),
     ("v_current_analysis_artifacts", "SELECT id,subject_id,artifact_kind,period_start_local_date,period_end_local_date,revision_no,schema_version,content_sha256,created_at_utc FROM v_current_analysis_artifacts WHERE subject_id=? AND period_end_local_date>=? AND period_start_local_date<=? ORDER BY period_start_local_date,artifact_kind,revision_no,id", ("subject", "date", "date")),
     ("v_current_weekly_summaries", "SELECT id,subject_id,artifact_kind,period_start_local_date,period_end_local_date,revision_no,schema_version,content_sha256,created_at_utc FROM v_current_weekly_summaries WHERE subject_id=? AND period_end_local_date>=? AND period_start_local_date<=? ORDER BY period_start_local_date,revision_no,id", ("subject", "date", "date")),
-    ("v_current_training_plans", "SELECT id,subject_id,analysis_artifact_id,plan_start_local_date,plan_end_local_date,timezone,status,created_at_utc FROM v_current_training_plans WHERE subject_id=? AND plan_end_local_date>=? AND plan_start_local_date<=? ORDER BY plan_start_local_date,id", ("subject", "date", "date")),
+    ("v_current_training_plans", "SELECT id,subject_id,analysis_artifact_id,plan_start_local_date,plan_end_local_date,timezone,status,objective_json,constraints_json,created_at_utc FROM v_current_training_plans WHERE subject_id=? AND plan_end_local_date>=? AND plan_start_local_date<=? ORDER BY plan_start_local_date,id", ("subject", "date", "date")),
     ("v_training_plan_items", "SELECT i.id,p.subject_id,i.training_plan_id,i.item_index,i.local_date,i.activity_kind,i.prescription_json,i.rationale_text FROM v_training_plan_items i JOIN training_plans p ON p.id=i.training_plan_id WHERE p.subject_id=? AND i.local_date BETWEEN ? AND ? ORDER BY i.local_date,i.item_index,i.id", ("subject", "date", "date")),
     ("v_analysis_history_context", "SELECT id,subject_id,artifact_kind,period_start_local_date,period_end_local_date,revision_no,schema_version,content_sha256,is_current,created_at_utc,trust_class FROM v_analysis_history_context WHERE subject_id=? AND period_end_local_date>=? AND period_start_local_date<=? ORDER BY period_start_local_date,artifact_kind,revision_no,id", ("subject", "date", "date")),
 )
@@ -113,6 +114,74 @@ def _utc(value: str) -> tuple[str, datetime]:
     try: parsed = datetime.strptime(value, fmt)
     except ValueError as error: raise StableViewError("analysis_snapshot_utc_invalid") from error
     return value, parsed
+
+
+_REASON_PAYLOAD_FIELDS = frozenset({
+    "schema_version", "policy_version", "subject_id", "run_key",
+    "source_mail_message_id", "source_mail_thread_id", "source_revision_id",
+    "value_origin", "content_instruction_trust", "change_kind",
+    "affected_local_dates", "constraints", "effective_local_date",
+    "current_plan_id", "evidence_text_span",
+})
+_REASON_CHANGE_KINDS = frozenset({"move", "cancel", "replace", "availability", "injury", "preference"})
+
+
+def _reason_payload(row: dict[str, Any], subject_id: int) -> dict[str, Any]:
+    """Return the small, verified reason-event DTO; never retain mail evidence."""
+    try:
+        payload = json.loads(row.pop("reason_payload"))
+    except (TypeError, json.JSONDecodeError) as error:
+        raise StableViewError("analysis_plan_reason_payload_invalid") from error
+    if not isinstance(payload, dict) or frozenset(payload) != _REASON_PAYLOAD_FIELDS:
+        raise StableViewError("analysis_plan_reason_payload_invalid")
+    if (
+        payload.get("schema_version") != "1"
+        or payload.get("subject_id") != subject_id
+        or payload.get("value_origin") != "user_asserted"
+        or payload.get("content_instruction_trust") != "untrusted_content"
+        or payload.get("change_kind") not in _REASON_CHANGE_KINDS
+        or not isinstance(payload.get("policy_version"), str)
+        or not payload["policy_version"]
+        or not isinstance(payload.get("run_key"), str)
+        or not payload["run_key"]
+        or not isinstance(payload.get("constraints"), (dict, list, str, int, float, bool, type(None)))
+        or not isinstance(payload.get("affected_local_dates"), list)
+        or not 1 <= len(payload["affected_local_dates"]) <= 31
+        or len(set(payload["affected_local_dates"])) != len(payload["affected_local_dates"])
+        or any(_date(value) != value for value in payload["affected_local_dates"])
+        or _date(payload.get("effective_local_date")) != payload.get("effective_local_date")
+        or payload.get("current_plan_id") is None
+        or isinstance(payload.get("current_plan_id"), bool)
+        or not isinstance(payload.get("current_plan_id"), int)
+        or payload["current_plan_id"] <= 0
+    ):
+        raise StableViewError("analysis_plan_reason_payload_invalid")
+    for key in ("source_mail_message_id", "source_mail_thread_id", "source_revision_id"):
+        if isinstance(payload.get(key), bool) or not isinstance(payload.get(key), int) or payload[key] <= 0:
+            raise StableViewError("analysis_plan_reason_payload_invalid")
+    if (
+        row.get("subject_id") != subject_id
+        or row.get("thread_subject_id") != subject_id
+        or row.get("mail_actor_role") != "user"
+        or row.get("direction") != "inbound"
+        or row.get("processing_state") != "awaiting_analysis"
+        or row.get("thread_is_current") != 1
+        or row.get("source_is_current") != 1
+        or payload["source_mail_message_id"] != row.get("mail_message_id")
+        or payload["source_mail_thread_id"] != row.get("mail_thread_id")
+        or payload["source_revision_id"] != row.get("source_revision_id")
+    ):
+        raise StableViewError("analysis_plan_reason_lineage_invalid")
+    return {
+        "id": row["id"], "subject_id": subject_id,
+        "event_type": row["event_type"], "actor_role": row["actor_role"],
+        "occurred_at_utc": row["occurred_at_utc"], "trust_level": row["trust_level"],
+        "created_by": row["created_by"], "source_mail_message_id": row["mail_message_id"],
+        "source_mail_thread_id": row["mail_thread_id"], "source_revision_id": row["source_revision_id"],
+        "change_kind": payload["change_kind"], "affected_local_dates": payload["affected_local_dates"],
+        "constraints": payload["constraints"], "effective_local_date": payload["effective_local_date"],
+        "current_plan_id": payload["current_plan_id"],
+    }
 
 
 class StableViewRepository:
@@ -295,7 +364,8 @@ class StableViewRepository:
             quality = aux("quality", "SELECT q.entity_type,q.entity_id,q.issue_code,q.severity,q.status,q.first_seen_at_utc,q.last_seen_at_utc FROM v_open_data_quality_issues q WHERE (q.entity_type='activity' AND EXISTS(SELECT 1 FROM activities a WHERE a.id=q.entity_id AND a.subject_id=? AND a.local_date>=? AND a.local_date<=?)) OR (q.entity_type='daily_health' AND EXISTS(SELECT 1 FROM daily_health d WHERE d.id=q.entity_id AND d.subject_id=? AND d.local_date>=? AND d.local_date<=?)) OR (q.entity_type='sleep_session' AND EXISTS(SELECT 1 FROM sleep_sessions s WHERE s.id=q.entity_id AND s.subject_id=? AND substr(s.end_time_utc,1,10)>=? AND substr(s.end_time_utc,1,10)<=?)) OR (q.entity_type='physiology_record' AND EXISTS(SELECT 1 FROM physiology_records p WHERE p.id=q.entity_id AND p.subject_id=? AND p.local_date>=? AND p.local_date<=?)) OR (q.entity_type='coverage' AND EXISTS(SELECT 1 FROM resource_coverage c WHERE c.id=q.entity_id AND c.subject_id=? AND c.local_date>=? AND c.local_date<=?)) ORDER BY q.severity DESC,q.last_seen_at_utc,q.id", (subject_id,start_local_date,end_local_date,subject_id,start_local_date,end_local_date,subject_id,start_local_date,end_local_date,subject_id,start_local_date,end_local_date,subject_id,start_local_date,end_local_date))
             facts = aux("facts", "SELECT id,fact_key,scope,effective_from_utc,expires_at_utc,confidence FROM v_active_user_facts WHERE subject_id=? ORDER BY fact_key,id", (subject_id,))
             capabilities = aux("capabilities", "SELECT environment_key,resource_kind,capability_state,last_checked_at_utc,next_probe_at_utc FROM garmin_resource_capabilities WHERE subject_id=? ORDER BY environment_key,resource_kind,id", (subject_id,))
-            plan_reasons = aux("plan_reasons", "SELECT id,event_type,actor_role,occurred_at_utc,trust_level,created_by FROM v_plan_revision_reason_events WHERE subject_id=? ORDER BY occurred_at_utc,id", (subject_id,))
+            raw_plan_reasons = aux("plan_reasons", "SELECT e.id,e.subject_id,e.event_type,e.actor_role,e.occurred_at_utc,e.trust_level,e.created_by,e.structured_payload_json AS reason_payload,m.id AS mail_message_id,m.mail_thread_id,m.actor_role AS mail_actor_role,m.direction,m.processing_state,m.source_revision_id,t.subject_id AS thread_subject_id,t.is_current AS thread_is_current,CASE WHEN sr.id IS NULL THEN 0 ELSE 1 END AS source_is_current FROM v_plan_revision_reason_events e JOIN mail_messages m ON m.id=e.mail_message_id JOIN mail_threads t ON t.id=m.mail_thread_id LEFT JOIN source_revisions sr ON sr.id=m.source_revision_id AND sr.is_current=1 AND sr.provider='gmail' AND sr.resource_kind='message_json' AND sr.provider_object_id=m.provider_message_id WHERE e.subject_id=? ORDER BY e.occurred_at_utc,e.id", (subject_id,))
+            plan_reasons = tuple(_reason_payload(dict(row), subject_id) for row in raw_plan_reasons)
             if sum(len(x) for x in [*views.values(),coverage,cursors,gaps,stages,quality,facts,capabilities,plan_reasons]) > _MAX_SNAPSHOT_ROWS:
                 self._audit.clear()
                 raise StableViewError("analysis_snapshot_total_limit_exceeded")

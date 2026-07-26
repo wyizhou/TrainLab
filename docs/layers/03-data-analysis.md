@@ -191,7 +191,7 @@ trainlab analyze status [--run-key RUN_KEY]
   用户事实、Harness、Codex 原始输出或数据库内容。
 
 当前生产入口仍受项目根 `AGENTS.md` 约束，只能通过 `trainlab run` 执行生产分析。
-daily 与 weekly 当前已通过以下显式入口提供，固定本人地址仅由
+daily、weekly 与 revise-plan 当前已通过以下显式入口提供，固定本人地址仅由
 `TRAINLAB_GMAIL_SELF_ADDRESS` 运行环境变量提供：
 
 ```text
@@ -199,6 +199,9 @@ trainlab run --slot morning --analysis-only [--deliver]
              --invocation-id ID [--summary-date DATE]
 trainlab run --slot morning --analysis-only --weekly [--deliver]
              --invocation-id ID [--as-of-date DATE]
+trainlab run --slot morning --analysis-only --revise-plan [--deliver]
+             --invocation-id ID --plan-id ID --reason-event-id ID
+             [--effective-date DATE]
 trainlab run --slot morning --analysis-only
              --invocation-id ID --retry-delivery ID
 trainlab run --slot morning --analysis-only

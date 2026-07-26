@@ -203,7 +203,6 @@ def test_public_optional_fields_are_not_narrowed(layer: str, mode: str, kwargs: 
 
 
 @pytest.mark.parametrize("mode,kwargs", [
-    ("revise_plan", {"plan_id":"plan-1", "reason_event_id":"event-1"}),
     ("regenerate", {"artifact_id":"artifact-1", "regeneration_reason_code":"manual"}),
     ("status", {}),
 ])
@@ -242,6 +241,46 @@ def test_analysis_subject_disallows_colon_and_allowed_mode_validates_own_fields(
         runner_module._argv(DownstreamCall("mail", "process", "invoke-1", None, subject_id=1, mail_message_id="message-1", dependency_analysis_artifact_ids=("x",) * 65))
     with pytest.raises(ValueError, match="subprocess_reason_invalid"):
         runner_module._argv(DownstreamCall("analysis", "regenerate", "invoke-1", None, subject_id="subject-1", artifact_id="artifact-1", regeneration_reason_code="Bad"))
+
+
+def test_plan_revision_argv_uses_only_the_root_production_entry() -> None:
+    assert runner_module._argv(
+        DownstreamCall(
+            "analysis",
+            "revise_plan",
+            "invoke-1",
+            None,
+            subject_id="subject-1",
+            plan_id="7",
+            reason_event_id="9",
+            effective_local_date="2026-07-24",
+        )
+    )[-8:] == (
+        "--revise-plan",
+        "--plan-id",
+        "7",
+        "--reason-event-id",
+        "9",
+        "--effective-date",
+        "2026-07-24",
+        "--deliver",
+    )
+    for plan_id, reason_id in (("plan-7", "9"), ("7", "event-9")):
+        with pytest.raises(
+            SubprocessBoundaryError,
+            match="subprocess_plan_revision_target_required",
+        ):
+            runner_module._argv(
+                DownstreamCall(
+                    "analysis",
+                    "revise_plan",
+                    "invoke-1",
+                    None,
+                    subject_id="subject-1",
+                    plan_id=plan_id,
+                    reason_event_id=reason_id,
+                )
+            )
 
 
 def test_exact_exit_maps_cover_every_manifest_status() -> None:
@@ -355,11 +394,11 @@ def test_analysis_dynamic_colon_key_is_escaped_exactly(mode: str, kwargs: dict[s
 
 
 def test_all_mode_argv_snapshots_are_fixed_and_targets_are_required() -> None:
-    unavailable_analysis_modes = {"revise_plan", "regenerate", "status"}
+    unavailable_analysis_modes = {"regenerate", "status"}
     for layer, modes in runner_module._MODES.items():
         for mode in modes:
             args = dict(layer=layer, mode=mode, invocation_id="invoke-1", request_sha256=None)
-            values = {"subject_id": 1 if layer == "mail" else "subject-1", "summary_local_date":"2026-07-24", "advice_local_date":"2026-07-25", "as_of_local_date":"2026-07-24", "plan_id":"plan-1", "reason_event_id":"event-1", "effective_local_date":"2026-07-24", "artifact_id":"artifact-1", "delivery_id":"1" if layer == "analysis" else "delivery-1", "mail_message_id":"message-1", "mail_response_artifact_id":"response-1", "health_from_local_date":"2026-07-23", "through_local_date":"2026-07-24", "snapshot_local_date":"2026-07-24", "resource_kinds":("activities",), "activity_ids":("activity-1",), "repair_strategy":"auto", "regeneration_reason_code":"manual", "run_key":"run-1", "max_items":2, "max_threads":2, "deadline_seconds":30, "dependency_analysis_artifact_ids":("artifact-1",)}
+            values = {"subject_id": 1 if layer == "mail" else "subject-1", "summary_local_date":"2026-07-24", "advice_local_date":"2026-07-25", "as_of_local_date":"2026-07-24", "plan_id":"7", "reason_event_id":"9", "effective_local_date":"2026-07-24", "artifact_id":"artifact-1", "delivery_id":"1" if layer == "analysis" else "delivery-1", "mail_message_id":"message-1", "mail_response_artifact_id":"response-1", "health_from_local_date":"2026-07-23", "through_local_date":"2026-07-24", "snapshot_local_date":"2026-07-24", "resource_kinds":("activities",), "activity_ids":("activity-1",), "repair_strategy":"auto", "regeneration_reason_code":"manual", "run_key":"run-1", "max_items":2, "max_threads":2, "deadline_seconds":30, "dependency_analysis_artifact_ids":("artifact-1",)}
             args.update({key: values[key] for key in runner_module._MODE_FIELDS.get((layer, mode), ())})
             if layer == "analysis" and mode in unavailable_analysis_modes:
                 with pytest.raises(SubprocessBoundaryError, match="analysis_mode_not_production_ready"):
@@ -375,10 +414,12 @@ def test_generated_argv_round_trips_the_real_public_parsers() -> None:
     foundation = runner_module._argv(DownstreamCall("foundation", "verify", "invoke-1", None))
     garmin = runner_module._argv(DownstreamCall("garmin", "repair", "invoke-1", None, health_from_local_date="2026-07-23", through_local_date="2026-07-24", resource_kinds=("activities",), repair_strategy="auto"))
     analysis = runner_module._argv(DownstreamCall("analysis", "daily", "invoke-1", None, subject_id="subject-1", summary_local_date="2026-07-23"))
+    revision = runner_module._argv(DownstreamCall("analysis", "revise_plan", "invoke-2", None, subject_id="subject-1", plan_id="7", reason_event_id="9", effective_local_date="2026-07-24"))
     mail = runner_module._argv(DownstreamCall("mail", "run", "invoke-1", None, subject_id=1, max_items=2, deadline_seconds=30))
     root_parser().parse_args(list(foundation[1:]))
     root_parser().parse_args(list(garmin[1:]))
     root_parser().parse_args(list(analysis[1:]))
+    root_parser().parse_args(list(revision[1:]))
     mail_parser().parse_args(list(mail[3:]))
 
 
@@ -761,6 +802,7 @@ def _every_allowlisted_call() -> tuple[DownstreamCall, ...]:
         DownstreamCall("garmin", "status", "garmin-status-1", None),
         DownstreamCall("analysis", "daily", "analysis-daily-1", None, subject_id="subject-1", summary_local_date="2026-07-23", advice_local_date="2026-07-24"),
         DownstreamCall("analysis", "weekly", "analysis-weekly-1", None, subject_id="subject-1", as_of_local_date="2026-07-24"),
+        DownstreamCall("analysis", "revise_plan", "analysis-revision-1", None, subject_id="subject-1", plan_id="7", reason_event_id="9", effective_local_date="2026-07-24"),
         DownstreamCall("analysis", "retry_delivery", "analysis-retry-1", None, subject_id="subject-1", delivery_id="1"),
         DownstreamCall("analysis", "reconcile_delivery", "analysis-reconcile-1", None, subject_id="subject-1", delivery_id="1"),
         DownstreamCall("mail", "run", "mail-run-1", None, subject_id=1, max_items=2, deadline_seconds=30),
