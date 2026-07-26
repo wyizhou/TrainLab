@@ -1423,6 +1423,9 @@ class GarminCollectionTool:
                 )
                 receipt.effective_range = {"from": actual_start.isoformat(), "through": actual_through.isoformat()}
                 self._offline_repair(conn, run, subject, replace(request, repair_strategy=repair_strategy), receipt)
+                self._advance_repair_health_cursors(
+                    conn, run, subject, request, actual_through,
+                )
             elif request.mode in {"full", "incremental", "snapshot"}:
                 plan = self._build_mode_plan(conn, subject, request, today)
                 prior_gap_ceiling = (
@@ -1512,6 +1515,9 @@ class GarminCollectionTool:
                         conn, run, subject, actual_start, actual_through,
                         request, receipt, not selected or "activity_fit" in selected,
                     )
+                self._advance_repair_health_cursors(
+                    conn, run, subject, request, actual_through,
+                )
             receipt.status = "deferred" if receipt.counts["deferred"] else (
                 "partial"
                 if receipt.counts["failed"] or (
@@ -1585,6 +1591,41 @@ class GarminCollectionTool:
             complete_through_by_resource=cursors,
             lookback_days=self.config.lookback_days,
         )
+
+    @staticmethod
+    def _repair_cursor_resources(request: SyncRequest) -> tuple[str, ...]:
+        """Return only date-grained health resources in a repair's scope.
+
+        Account and activity observations have no complete-day cursor.  An
+        empty repair scope means the normal all-health scope, matching
+        ``_health``.
+        """
+        selected = set(request.resource_kinds)
+        return tuple(
+            resource for resource in HEALTH_RESOURCES
+            if not selected or resource in selected
+        )
+
+    def _advance_repair_health_cursors(
+        self,
+        conn: sqlite3.Connection,
+        run: int,
+        subject: int,
+        request: SyncRequest,
+        actual_through: date,
+    ) -> None:
+        """Advance repaired health cursors only across verified continuity.
+
+        ``advance_cursor`` checks the latest day coverage and open/deferred
+        gaps one date at a time.  Calling it per eligible resource therefore
+        allows a successful health repair to recover an old cursor even when
+        the same repair has unrelated activity/FIT failures, while still
+        stopping at every unresolved health gap.
+        """
+        for resource in self._repair_cursor_resources(request):
+            self.repo.advance_cursor(
+                conn, subject, resource, actual_through.isoformat(), run,
+            )
 
     @staticmethod
     def _health_windows_complete(
@@ -6824,6 +6865,7 @@ class GarminCollectionTool:
                    FROM garmin_sync_gaps WHERE subject_id=? AND resource_kind=?
                      AND status IN ('open','deferred')
                      AND stage!='cursor_audit'
+                     AND window_start_local_date!=''
                      AND (window_end_local_date='' OR window_end_local_date>=?)
                      AND (window_start_local_date='' OR window_start_local_date<=?)
                      AND (window_start_local_date='' OR window_start_local_date<=?)

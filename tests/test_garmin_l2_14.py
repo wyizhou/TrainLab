@@ -82,6 +82,97 @@ def _refetch_steps(tool: GarminCollectionTool, invocation: str) -> None:
     assert result.status == "succeeded", result.json()
 
 
+def _seed_steps_cursor(tool: GarminCollectionTool, day: str = "2026-04-14") -> int:
+    """Create the historical cursor position from which a repair resumes."""
+    result = tool.execute(SyncRequest(
+        "repair", health_from_local_date=day, through_local_date=day,
+        resource_kinds=("steps",), repair_strategy="refetch",
+        invocation_id=f"seed-cursor-{day}",
+    ))
+    assert result.status == "succeeded", result.json()
+    conn = tool.repo.connect()
+    try:
+        subject = tool.repo.subject(conn)
+        return subject
+    finally:
+        conn.close()
+
+
+def _steps_cursor(config: GarminConfig) -> str | None:
+    with sqlite3.connect(config.database_path) as conn:
+        row = conn.execute(
+            "SELECT complete_through_local_date FROM garmin_sync_cursors "
+            "WHERE resource_kind='steps'"
+        ).fetchone()
+    return row[0] if row else None
+
+
+def test_repair_resolved_historical_health_gap_advances_cursor(tmp_path: Path) -> None:
+    config, tool, _transport = _setup(tmp_path)
+    subject = _seed_steps_cursor(tool)
+    conn = tool.repo.connect()
+    try:
+        tool.repo.gap(
+            conn, subject, "steps", "garmin:health:steps:2026-04-15",
+            "2026-04-15", "project", "parse_or_project_failed",
+        )
+    finally:
+        conn.close()
+
+    _refetch_steps(tool, "cursor-repair-resolve")
+
+    assert _steps_cursor(config) == "2026-04-15"
+
+
+def test_repair_cursor_stops_at_unresolved_middle_health_gap(tmp_path: Path) -> None:
+    config, tool, _transport = _setup(tmp_path)
+    subject = _seed_steps_cursor(tool)
+    conn = tool.repo.connect()
+    try:
+        # The normal observation for this day succeeds, but this independent
+        # deferred observation remains unresolved and must block continuity.
+        tool.repo.gap(
+            conn, subject, "steps", "garmin:health:steps:2026-04-16:sibling",
+            "2026-04-16", "project", "parse_or_project_failed",
+        )
+    finally:
+        conn.close()
+
+    result = tool.execute(SyncRequest(
+        "repair", health_from_local_date="2026-04-15",
+        through_local_date="2026-04-17", resource_kinds=("steps",),
+        repair_strategy="refetch", invocation_id="cursor-repair-middle-gap",
+    ))
+
+    assert result.status == "succeeded", result.json()
+    assert _steps_cursor(config) == "2026-04-15"
+
+
+def test_repair_activity_fit_gap_does_not_block_health_cursor(tmp_path: Path) -> None:
+    config, tool, _transport = _setup(tmp_path)
+    subject = _seed_steps_cursor(tool)
+    conn = tool.repo.connect()
+    try:
+        tool.repo.gap(
+            conn, subject, "steps", "garmin:health:steps:2026-04-15",
+            "2026-04-15", "project", "parse_or_project_failed",
+        )
+        tool.repo.gap(
+            conn, subject, "activity_fit", "garmin:activity:fixture:fit",
+            "2026-04-15", "extract", "fit_missing",
+        )
+    finally:
+        conn.close()
+
+    _refetch_steps(tool, "cursor-repair-unrelated-fit-gap")
+
+    assert _steps_cursor(config) == "2026-04-15"
+    with sqlite3.connect(config.database_path) as conn:
+        assert conn.execute(
+            "SELECT count(*) FROM garmin_sync_cursors WHERE resource_kind='activity_fit'"
+        ).fetchone()[0] == 0
+
+
 def test_unchanged_daily_success_resolves_only_its_exact_gap_key(tmp_path: Path) -> None:
     config, tool, _transport = _setup(tmp_path)
     _refetch_steps(tool, "unchanged-daily-baseline")
