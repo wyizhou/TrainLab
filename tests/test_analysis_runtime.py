@@ -191,7 +191,11 @@ def test_unique_active_subject_is_used_for_runtime_wiring(monkeypatch):
     foundation = SimpleNamespace(database_path=Path("/project/state/foundation/data.db"))
     config = SimpleNamespace(lock_path=Path("/project/state/locks/analysis.lock"))
     monkeypatch.setattr(runtime, "FoundationConfig", SimpleNamespace(load=lambda _root: foundation))
-    monkeypatch.setattr(runtime, "FoundationTool", lambda _foundation: SimpleNamespace(_connect=lambda _path: connection))
+    monkeypatch.setattr(
+        runtime,
+        "FoundationTool",
+        lambda _foundation: SimpleNamespace(_connect=lambda _path: connection),
+    )
     monkeypatch.setattr(runtime, "load_analysis_config", lambda _root, _path: config)
     monkeypatch.setattr(runtime, "AnalysisRunRepository", lambda _connection: object())
     monkeypatch.setattr(runtime, "AnalysisRunCoordinator", lambda _repository, _locks: object())
@@ -227,7 +231,11 @@ def test_weekly_runtime_wires_the_weekly_route_and_closes_connection(monkeypatch
     foundation = SimpleNamespace(database_path=Path("/project/state/foundation/data.db"))
     config = SimpleNamespace(lock_path=Path("/project/state/locks/analysis.lock"))
     monkeypatch.setattr(runtime, "FoundationConfig", SimpleNamespace(load=lambda _root: foundation))
-    monkeypatch.setattr(runtime, "FoundationTool", lambda _foundation: SimpleNamespace(_connect=lambda _path: connection))
+    monkeypatch.setattr(
+        runtime,
+        "FoundationTool",
+        lambda _foundation: SimpleNamespace(_connect=lambda _path: connection),
+    )
     monkeypatch.setattr(runtime, "load_analysis_config", lambda _root, _path: config)
     monkeypatch.setattr(runtime, "AnalysisRunRepository", lambda _connection: object())
     monkeypatch.setattr(runtime, "AnalysisRunCoordinator", lambda _repository, _locks: object())
@@ -321,6 +329,16 @@ def test_analysis_deliver_flag_and_recovery_route_stay_under_trainlab_run(monkey
         lambda **kwargs: calls.append(("revision", kwargs))
         or _revision_receipt("succeeded"),
     )
+    monkeypatch.setattr(
+        runtime,
+        "run_regeneration_analysis",
+        lambda **kwargs: calls.append(("regenerate", kwargs)) or _receipt("succeeded"),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "run_analysis_status",
+        lambda **kwargs: calls.append(("status", kwargs)) or _receipt("succeeded"),
+    )
     assert cli.main([
         "run", "--slot", "morning", "--analysis-only", "--invocation-id", "one", "--deliver",
     ]) == 0
@@ -353,7 +371,75 @@ def test_analysis_deliver_flag_and_recovery_route_stay_under_trainlab_run(monkey
             "deliver": True,
         },
     )
+    assert cli.main([
+        "run", "--slot", "morning", "--analysis-only", "--regenerate",
+        "--artifact-id", "7", "--regenerate-reason", "explicit_user_request",
+        "--invocation-id", "five", "--deliver",
+    ]) == 0
+    assert calls[-1] == (
+        "regenerate",
+        {
+            "invocation_id": "five", "artifact_id": "7",
+            "reason_code": "explicit_user_request", "deliver": True,
+        },
+    )
+    assert cli.main([
+        "run", "--slot", "morning", "--analysis-only", "--status",
+        "--run-key", "analysis:active_subject:daily:2026-07-25:one",
+    ]) == 0
+    assert calls[-1] == (
+        "status", {"run_key": "analysis:active_subject:daily:2026-07-25:one"}
+    )
     assert "recipient" not in capsys.readouterr().out
+
+
+def test_status_runtime_opens_only_foundation_database_and_status_service(monkeypatch):
+    class Connection:
+        closed = False
+
+        def execute(self, sql):
+            assert "data_subjects" in sql
+            return [("default",)]
+
+        def close(self):
+            self.closed = True
+
+    connection = Connection()
+    foundation = SimpleNamespace(database_path=Path("/project/state/foundation/data.db"))
+    monkeypatch.setattr(runtime, "FoundationConfig", SimpleNamespace(load=lambda _root: foundation))
+    monkeypatch.setattr(
+        runtime,
+        "FoundationTool",
+        lambda _foundation: SimpleNamespace(
+            _connect=lambda _path, *, readonly=False: (
+                connection
+                if readonly
+                else (_ for _ in ()).throw(
+                    AssertionError("status connection is writable")
+                )
+            )
+        ),
+    )
+    monkeypatch.setattr(runtime, "load_analysis_config", lambda *_args: (_ for _ in ()).throw(AssertionError("analysis config loaded")))
+
+    from trainlab.analysis import status
+    captured = {}
+
+    class Service:
+        def __init__(self, actual_connection):
+            captured["connection"] = actual_connection
+
+        def execute(self, request):
+            captured["request"] = request
+            return _receipt("succeeded")
+
+    monkeypatch.setattr(status, "AnalysisStatusQueryService", Service)
+    assert runtime.run_analysis_status(
+        run_key="analysis:default:daily:2026-07-25:one", root=Path("/project")
+    ).status == "succeeded"
+    assert captured["connection"] is connection
+    assert captured["request"].invocation_id is None
+    assert connection.closed
 
 
 def test_unchanged_daily_receipt_recovers_persisted_delivery_artifact_ids():

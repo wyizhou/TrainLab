@@ -14,7 +14,7 @@ from jsonschema import Draft202012Validator
 from .config import AnalysisConfig
 
 
-HarnessRoute = Literal["daily", "weekly", "revise_plan", "delivery"]
+HarnessRoute = Literal["daily", "weekly", "revise_plan", "regenerate", "delivery"]
 
 
 class HarnessResolutionError(ValueError):
@@ -107,7 +107,7 @@ def _verify_schema(path: Path, expected_sha256: str, label: str) -> None:
 def resolve_harness_bundle(config: AnalysisConfig, route: HarnessRoute, schema_evidence: SchemaEvidence) -> HarnessBundle:
     """Resolve one fixed bundle without reading/returning prompt bodies."""
 
-    if route not in {"daily", "weekly", "revise_plan", "delivery"}:
+    if route not in {"daily", "weekly", "revise_plan", "regenerate", "delivery"}:
         raise HarnessResolutionError("analysis_harness_route_not_allowed")
     root = config.project_root.resolve()
     if config.harness_root.resolve() != root / "harness":

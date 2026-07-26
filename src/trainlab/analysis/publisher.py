@@ -6,7 +6,7 @@ delivery; the coordinator retains both of those responsibilities.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, datetime, time, timedelta, timezone
 from hashlib import sha256
 import json
@@ -96,6 +96,7 @@ class PublishReceipt:
     input_count: int
     training_plan_id: int | None = None
     superseded_plan_ids: tuple[int, ...] = ()
+    content_same: bool | None = None
 
 
 @dataclass(frozen=True)
@@ -124,6 +125,7 @@ class AnalysisPublisher:
         accepted: ValidatedAnalysisResult | Mapping[str, Any],
         input_manifest: Sequence[Mapping[str, Any]],
         run_evidence: RunEvidence | Mapping[str, Any],
+        regeneration_source: Mapping[str, Any] | None = None,
         failpoint: Callable[[str], None] | None = None,
     ) -> PublishReceipt:
         """Atomically publish one validated route and its full input manifest.
@@ -141,10 +143,60 @@ class AnalysisPublisher:
         try:
             self._connection.execute("BEGIN IMMEDIATE")
             receipt = self._publish_in_transaction(
-                run_id, result, input_manifest, run_evidence, failpoint
+                run_id, result, input_manifest, run_evidence, regeneration_source, failpoint
             )
             self._connection.execute("COMMIT")
             return receipt
+        except Exception:
+            if self._connection.in_transaction:
+                self._connection.execute("ROLLBACK")
+            raise
+
+    def publish_with_pending_delivery(
+        self,
+        *,
+        run_id: int,
+        accepted: ValidatedAnalysisResult | Mapping[str, Any],
+        input_manifest: Sequence[Mapping[str, Any]],
+        run_evidence: RunEvidence | Mapping[str, Any],
+        regeneration_source: Mapping[str, Any],
+        delivery_factory: Any,
+        delivery_kind: str,
+        failpoint: Callable[[str], None] | None = None,
+    ) -> tuple[PublishReceipt, Any]:
+        """Atomically publish regeneration and seed its exact pending delivery."""
+        result = (
+            accepted.result
+            if isinstance(accepted, ValidatedAnalysisResult)
+            else accepted
+        )
+        if not isinstance(result, Mapping):
+            raise AnalysisPublishError("analysis_publish_result_invalid")
+        self._connection.execute("PRAGMA foreign_keys=ON")
+        try:
+            self._connection.execute("BEGIN IMMEDIATE")
+            receipt = self._publish_in_transaction(
+                run_id,
+                result,
+                input_manifest,
+                run_evidence,
+                regeneration_source,
+                failpoint,
+            )
+            create = getattr(
+                delivery_factory, "create_pending_in_transaction", None
+            )
+            if not callable(create):
+                raise AnalysisPublishError(
+                    "analysis_publish_delivery_adapter_invalid"
+                )
+            pending = create(
+                publish_receipt=receipt,
+                delivery_kind=delivery_kind,
+            )
+            self._fire(failpoint, "after_pending_delivery")
+            self._connection.execute("COMMIT")
+            return receipt, pending
         except Exception:
             if self._connection.in_transaction:
                 self._connection.execute("ROLLBACK")
@@ -154,6 +206,7 @@ class AnalysisPublisher:
         self, run_id: int, result: Mapping[str, Any],
         input_manifest: Sequence[Mapping[str, Any]],
         run_evidence: RunEvidence | Mapping[str, Any],
+        regeneration_source: Mapping[str, Any] | None,
         failpoint: Callable[[str], None] | None,
     ) -> PublishReceipt:
         run = self._connection.execute(
@@ -176,7 +229,89 @@ class AnalysisPublisher:
             return self._publish_plan_revision(
                 run, result, input_manifest, run_evidence, failpoint
             )
+        if result.get("mode") == "regenerate" and run["analysis_kind"] == "regeneration":
+            return self._publish_regeneration(run, result, input_manifest, run_evidence, regeneration_source, failpoint)
         raise AnalysisPublishError("analysis_publish_route_not_implemented")
+
+    def _publish_regeneration(self, run: sqlite3.Row, result: Mapping[str, Any], input_manifest: Sequence[Mapping[str, Any]], run_evidence: RunEvidence | Mapping[str, Any], source: Mapping[str, Any] | None, failpoint: Callable[[str], None] | None) -> PublishReceipt:
+        if (
+            not isinstance(source, Mapping)
+            or source.get("shape") not in {"daily", "weekly", "plan_revision"}
+            or not isinstance(source.get("artifact_id"), int)
+            or source.get("kind") not in _DAILY_KINDS | _WEEKLY_KINDS
+            or not isinstance(source.get("start"), str)
+            or not isinstance(source.get("end"), str)
+        ):
+            raise AnalysisPublishError("analysis_publish_regeneration_source_invalid")
+        target_id, shape = source["artifact_id"], source["shape"]
+        target = self._connection.execute(
+            "SELECT a.subject_id,a.artifact_kind,a.period_start_local_date,"
+            "a.period_end_local_date,a.content_sha256,a.is_current,"
+            "source_run.analysis_kind AS source_run_kind "
+            "FROM analysis_artifacts a "
+            "JOIN analysis_runs source_run ON source_run.id=a.generated_by_run_id "
+            "WHERE a.id=?",
+            (target_id,),
+        ).fetchone()
+        expected_source_run_kind = (
+            "daily" if shape == "daily"
+            else "weekly" if shape == "weekly"
+            else "plan_revision"
+        )
+        if (
+            target is None
+            or target["subject_id"] != run["subject_id"]
+            or target["is_current"] != 1
+            or target["artifact_kind"] != source["kind"]
+            or target["period_start_local_date"] != source["start"]
+            or target["period_end_local_date"] != source["end"]
+            or target["source_run_kind"] != expected_source_run_kind
+        ):
+            raise AnalysisPublishError("analysis_publish_regeneration_source_invalid")
+        if shape == "daily":
+            receipt = self._publish_daily(run, result, input_manifest, run_evidence, failpoint)
+        elif shape == "weekly":
+            receipt = self._publish_weekly(run, result, input_manifest, run_evidence, failpoint)
+        else:
+            receipt = self._publish_regenerated_plan(run, result, input_manifest, run_evidence, failpoint)
+        direct_successor_id = receipt.artifact_ids.get(str(source["kind"]))
+        if not isinstance(direct_successor_id, int):
+            raise AnalysisPublishError("analysis_publish_regeneration_source_invalid")
+        self._connection.execute(
+            "INSERT INTO analysis_artifact_relations("
+            "from_artifact_id,to_artifact_id,relation_type,created_at_utc"
+            ") VALUES(?,?,?,?)",
+            (direct_successor_id, target_id, "derived_from", self._clock()),
+        )
+        successor = self._connection.execute(
+            "SELECT content_sha256 FROM analysis_artifacts WHERE id=?",
+            (direct_successor_id,),
+        ).fetchone()
+        if successor is None:
+            raise AnalysisPublishError("analysis_publish_regeneration_source_invalid")
+        return replace(
+            receipt,
+            content_same=successor["content_sha256"] == target["content_sha256"],
+        )
+
+    def _publish_regenerated_plan(self, run: sqlite3.Row, result: Mapping[str, Any], input_manifest: Sequence[Mapping[str, Any]], run_evidence: RunEvidence | Mapping[str, Any], failpoint: Callable[[str], None] | None) -> PublishReceipt:
+        artifacts = result.get("artifacts")
+        if not isinstance(artifacts, Sequence) or isinstance(artifacts, (str, bytes)) or len(artifacts) != 1 or not isinstance(artifacts[0], Mapping) or artifacts[0].get("artifact_kind") != "weekly_training_plan":
+            raise AnalysisPublishError("analysis_publish_regeneration_plan_cardinality_invalid")
+        artifact = artifacts[0]; plan = self._validate_weekly_plan(result.get("training_plan"), artifact)
+        self._persist_run_evidence(run, run_evidence, input_manifest); self._fire(failpoint, "after_run_evidence")
+        self._insert_inputs(int(run["id"]), input_manifest); self._fire(failpoint, "after_inputs")
+        artifact_id, revision = self._insert_revision(int(run["subject_id"]), int(run["id"]), "weekly_training_plan", artifact)
+        self._fire(failpoint, "after_artifact:weekly_training_plan")
+        superseded = self._supersede_overlapping_plans(int(run["subject_id"]), plan["start"], plan["end"]); self._fire(failpoint, "after_plan_supersession")
+        now = self._clock()
+        cursor = self._connection.execute("INSERT INTO training_plans(subject_id,analysis_artifact_id,plan_start_local_date,plan_end_local_date,timezone,status,objective_json,constraints_json,created_at_utc) VALUES(?,?,?,?,?,'active',?,?,?)", (int(run["subject_id"]), artifact_id, plan["start"].isoformat(), plan["end"].isoformat(), plan["timezone"], _canonical(plan["objective"]), _canonical(plan["constraints"]), now))
+        plan_id = int(cursor.lastrowid); self._fire(failpoint, "after_plan")
+        for item in plan["items"]:
+            self._connection.execute("INSERT INTO training_plan_items(training_plan_id,item_index,local_date,activity_kind,prescription_json,rationale_text,stop_conditions_json) VALUES(?,?,?,?,?,?,?)", (plan_id, item["item_index"], item["local_date"], item["activity_kind"], _canonical(item["prescription"]), item["rationale_text"], _canonical(item["stop_conditions"])))
+            self._fire(failpoint, f"after_plan_item:{item['item_index']}")
+        self._fire(failpoint, "after_plan_items")
+        return PublishReceipt(int(run["id"]), {"weekly_training_plan": artifact_id}, {"weekly_training_plan": revision}, len(input_manifest), plan_id, superseded)
 
     def _publish_daily(
         self, run: sqlite3.Row, result: Mapping[str, Any],

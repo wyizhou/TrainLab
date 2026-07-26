@@ -261,6 +261,7 @@ def test_fixed_route_windows_daily_weekly_revise_and_regenerate():
         weekly(),
         route="regenerate",
         regenerate_source_route="weekly",
+        artifact_id=1,
     )
     assert regenerated.validated_periods() == weekly_periods
 

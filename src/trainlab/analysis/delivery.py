@@ -162,6 +162,25 @@ class AnalysisDeliveryFactory:
                 self._connection.execute("ROLLBACK")
             raise
 
+    def create_pending_in_transaction(
+        self,
+        *,
+        publish_receipt: _PublishReceiptLike | Mapping[str, object],
+        delivery_kind: DeliveryKind,
+    ) -> PendingDelivery:
+        """Seed pending delivery inside a caller-owned publication transaction."""
+        if not self._connection.in_transaction:
+            raise AnalysisDeliveryError(
+                "analysis_delivery_transaction_required"
+            )
+        run_id, artifact_ids = _receipt_values(publish_receipt)
+        shape = _DELIVERY_SHAPES.get(delivery_kind)
+        if shape is None:
+            raise AnalysisDeliveryError("analysis_delivery_kind_invalid")
+        return self._create_in_transaction(
+            run_id, artifact_ids, delivery_kind, shape
+        )
+
     def prepare(
         self,
         *,

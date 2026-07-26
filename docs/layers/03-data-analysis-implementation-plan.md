@@ -1,6 +1,6 @@
 # 第三层：数据分析 Agent 工具层详细开发需求清单
 
-状态：开发中（A3-01～11、A3-15～18 已完成；A3-12～14 已完成 daily/weekly 子集，revision 及后续项目未完成）
+状态：开发中（A3-01～23 已完成；A3-24～25 的离线门禁与运行手册已完成，真实影子迁移和受控环境验收等待独立书面授权）
 
 基线日期：2026-07-23
 
@@ -258,7 +258,7 @@
   - **集成顺序与失败回退：** A3-18 后；失败不更新旧计划，第四层保持 awaiting_analysis。
   - **完成证据（2026-07-26）：** 已接入唯一生产入口 `trainlab run --slot morning --analysis-only --revise-plan --plan-id ID --reason-event-id ID --invocation-id ID [--effective-date DATE] [--deliver]` 及第五层精确 argv 边界。路由只接受第四层已持久化、仍处于 `awaiting_analysis`、具备 current Gmail source lineage 且绑定同 subject/current plan 的原因事件；显式生效日必须与事件一致。模型只能生成生效日至原计划结束日的连续 suffix，发布器在单事务内逐字节复制生效日前旧 items、写入新的完整七日 plan、切换 current、保留旧 plan/items，并建立 `supersedes`、`derived_from`、`references_prior_plan` 血缘；原因事件成功消费后不可重复用于另一修订。质量阻断、输出拒绝、任意发布 failpoint 或 pending delivery 建立失败均不破坏旧计划；成功发布后仅建立一条幂等 `plan_revision` 自投递。离线测试覆盖可信来源链、跨 subject/非 current/非 awaiting 拒绝、suffix 日期与 lineage、安全归一化、历史不变、原子回滚、单次消费、CLI/API/第五层 argv；未执行真实 Codex 或 Gmail。
 
-- [ ] **A3-20｜regenerate 路由**
+- [x] **A3-20｜regenerate 路由**
   - **目的：** 以受控 reason code 显式重生成 artifact（必要时 plan），不将故障重试伪装为 regeneration。
   - **依赖与起始快照：** A3-05–16、A3-17–19、第三层 §7.4。
   - **负责范围：** artifact lookup、reason-code allowlist、current inputs/policy/Harness、new revision/supersession、content-same 标记、new delivery。
@@ -267,8 +267,9 @@
   - **验证方法与证据：** 六类 reason、内容同 hash 仍新 revision、weekly plan 一并重建、rejection/failed retains old current 测试。
   - **完成定义：** 每次显式 regeneration 使用新 invocation/reason；投递恢复始终走 A3-16。
   - **集成顺序与失败回退：** A3-17–19 后；失败保留原 artifact/plan/delivery。
+  - **完成证据（2026-07-26）：** 已接入 `trainlab run --slot morning --analysis-only --regenerate --artifact-id ID --regenerate-reason CODE --invocation-id ID [--deliver]` 及第五层固定 argv。仅接受六类冻结原因和同 subject 的 current numeric artifact；精确目标 artifact 必须作为 `prior_model_output` 输入并由输出引用。daily、weekly 和历史 plan revision 目标分别原子重建完整配对产物或七日计划，保留 `supersedes/derived_from` 血缘；内容哈希相同仍生成新 revision，并在 receipt 返回 `content_same`。失败保留旧 current；相同 invocation 只恢复既有 artifact/plan/evidence/delivery。离线测试覆盖原因目录、日期窗口、来源篡改、相同内容、事务 failpoint、幂等恢复和 CLI/API/S5；未调用真实 Codex/Gmail。
 
-- [ ] **A3-21｜status 只读路由**
+- [x] **A3-21｜status 只读路由**
   - **目的：** 以无副作用的摘要提供 run、artifact、plan、delivery 和质量阻断状态。
   - **依赖与起始快照：** A3-02、A3-05–07、A3-13–16、第三层 §7.5。
   - **负责范围：** run-key lookup、current revisions、delivery pending/unknown/failed counts、next action、脱敏 status receipt。
@@ -277,10 +278,11 @@
   - **验证方法与证据：** status 不产生 run/lock/MCP/Codex 调用；不同 subject/range 不泄露正文或跨 subject ID 测试。
   - **完成定义：** 第五层可仅凭 status/receipt 决定 reconcile/retry，不需解析日志或邮件内容。
   - **集成顺序与失败回退：** Wave 4 末；失败仅影响可观测性，不触碰业务状态。
+  - **完成证据（2026-07-26）：** 已接入 `trainlab run --slot morning --analysis-only --status [--run-key RUN_KEY]`，不接受 invocation。运行时只打开 Foundation SQLite 并执行 subject-scoped `SELECT`，不加载分析配置、锁、Harness、context、runner、Codex 或 Gmail。receipt 仅返回有界 run/current artifact/current plan、delivery 数量与待恢复 ID、终态时间、质量 blocker code 和 next action；正文、provider ID 与错误详情均被排除。冻结 Foundation 无法可靠区分历史 deferred，故显式返回 `deferred_history_supported=false`。
 
 ### Wave 5：集成、迁移与验收
 
-- [ ] **A3-22｜跨模块端到端合成测试与安全回归**
+- [x] **A3-22｜跨模块端到端合成测试与安全回归**
   - **目的：** 用无真实健康/Gmail 数据的 fixture 验证全部第三层契约路径和失败边界。
   - **依赖与起始快照：** A3-01–21、第一层 §15、第三层 §27。
   - **负责范围：** synthetic DB/response fixtures、route matrix、fault injection、privacy/redaction、process cleanup、contract coverage report。
@@ -289,8 +291,9 @@
   - **验证方法与证据：** daily/weekly/revise/regenerate/status/retry/reconcile 全路径；Codex/MCP mock；crash/transaction/unknown delivery/lock cases；敏感内容扫描。
   - **完成定义：** 每条覆盖矩阵均有至少一个可自动化证据，且无后台线程、timer、daemon 或残留进程。
   - **集成顺序与失败回退：** 所有功能完成后；失败项回退到对应需求单元，不降低安全/质量规则。
+  - **完成证据（2026-07-26）：** 完全离线的合成矩阵与 [覆盖报告](evidence/analysis/A3-22-coverage-report.md) 已覆盖全部七类 route、质量阻断、锁忙、事务回滚、`delivery_unknown`、脱敏及无后台线程残留；所有 provider/runner 均为注入 fake。
 
-- [ ] **A3-23｜与第四、第五层的接口集成门**
+- [x] **A3-23｜与第四、第五层的接口集成门**
   - **目的：** 验证第三层交给第四层/第五层的边界不是共享实现或重复投递。
   - **依赖与起始快照：** A3-02、A3-16、A3-19、A3-21、EXT-03–05；第四层 v2、第五层 v1 固定接口。
   - **负责范围：** reason event→revise-plan→fourth resume、receipt schema/ID/date consistency、analysis delivery retry/reconcile handoff、ownership contract tests。
@@ -301,6 +304,7 @@
   - **完成定义：** 第三层一侧的计划修订与 delivery 恢复可通过公开 Request/Receipt
     和 stable views 验证，不调用对方内部函数；完整闭环是否成立由总控门最终判定。
   - **集成顺序与失败回退：** A3-22 前后均可；不兼容时停止切换并报告总控，不自行改变大契约。
+  - **完成证据（2026-07-26）：** [接口兼容报告](evidence/analysis/A3-23-interface-compatibility.md) 与 contract tests 已验证：第二层只通过有界 stable snapshot/质量门输入；第四层只交接已持久化的 `plan_id/reason_event_id` 且不代发第三层 delivery；第五层只以精确 `delivery_id` 执行 retry/reconcile，并消费公开 Request/Receipt 与固定 argv。未发现冻结契约冲突或跨层内部表写入。
 
 - [ ] **A3-24｜旧 Harness/入口影子迁移与回滚演练**
   - **目的：** 在不产生 current artifact 或邮件副作用的条件下比较旧/新上下文与新路由输出，准备独立生产切换。
@@ -311,6 +315,7 @@
   - **验证方法与证据：** 影子无 email/no current invariant、同逻辑日 collision prevention、rollback drill evidence。
   - **完成定义：** 仅在差异经审查、备份/回滚通过且总控批准时，才可进入独立切换任务。
   - **集成顺序与失败回退：** A3-22–23 后；任何不一致保持现生产入口，停止迁移。
+  - **离线准备证据（2026-07-26）：** 已新增只接受哈希、不透明 ID 与计数的 shadow evidence DTO、碰撞/无副作用门禁、测试及 [迁移回滚手册](../runbooks/analysis-shadow-migration.md)。它不会运行 runner、数据库、邮件、备份或切换。实际 shadow、备份和入口切换仍需独立 release authorization，因此本项保持未勾选。
 
 - [ ] **A3-25｜受控真实环境验收与交付门**
   - **目的：** 在明确授权的受控账号和小日期范围内，验证真实 self-delivery 与幂等恢复。
@@ -321,6 +326,7 @@
   - **验证方法与证据：** 第二层短窗成功后 daily；同 invocation unchanged；Sunday-like weekly；accepted-before-send；失败后 retry/reconcile；无残留进程。
   - **完成定义：** 真实结果与数据库精确 revision/delivery 对账且无敏感泄露；未通过即 no-go。
   - **集成顺序与失败回退：** 最终功能验收；失败保持旧入口和未切换状态，交由总控决定后续。
+  - **离线准备证据（2026-07-26）：** 已新增 [受控验收手册](../runbooks/analysis-controlled-acceptance.md) 与门禁测试，冻结书面授权、self-only 小窗口、幂等/unknown delivery、脱敏证据及无残留进程的 go/no-go 条件。本计划阶段未获单独真实环境授权，未运行真实 Codex/Gmail、未发送邮件、未切换生产入口，本项保持未勾选。
 
 ## 4. 依赖图与开发波次
 

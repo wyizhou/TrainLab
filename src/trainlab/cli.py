@@ -175,10 +175,15 @@ def _parser() -> argparse.ArgumentParser:
     analysis_route = run.add_mutually_exclusive_group()
     analysis_route.add_argument("--weekly", action="store_true")
     analysis_route.add_argument("--revise-plan", action="store_true")
+    analysis_route.add_argument("--regenerate", action="store_true")
+    analysis_route.add_argument("--status", action="store_true")
     run.add_argument("--as-of-date")
     run.add_argument("--plan-id", type=int)
     run.add_argument("--reason-event-id", type=int)
     run.add_argument("--effective-date")
+    run.add_argument("--artifact-id", type=int)
+    run.add_argument("--regenerate-reason")
+    run.add_argument("--run-key")
     run.add_argument("--invocation-id")
     run.add_argument("--deliver", action="store_true")
     delivery_recovery = run.add_mutually_exclusive_group()
@@ -233,10 +238,33 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "run" and args.analysis_only:
         if args.slot != "morning":
             _parser().error("--analysis-only requires --slot morning")
-        if not args.invocation_id:
+        if not args.status and not args.invocation_id:
             _parser().error("--analysis-only requires --invocation-id")
+        if args.status and args.invocation_id is not None:
+            _parser().error("--status does not accept --invocation-id")
         if args.at is not None:
             _parser().error("--analysis-only does not accept --at")
+        if args.status and any((
+            args.summary_date is not None, args.weekly, args.revise_plan,
+            args.regenerate, args.as_of_date is not None, args.plan_id is not None,
+            args.reason_event_id is not None, args.effective_date is not None,
+            args.artifact_id is not None, args.regenerate_reason is not None,
+            args.deliver, args.retry_delivery is not None,
+            args.reconcile_delivery is not None,
+        )):
+            _parser().error("--status does not accept analysis route options")
+        if args.regenerate and (
+            args.artifact_id is None or args.regenerate_reason is None
+        ):
+            _parser().error("--regenerate requires --artifact-id and --regenerate-reason")
+        if not args.regenerate and (
+            args.artifact_id is not None or args.regenerate_reason is not None
+        ):
+            _parser().error("regeneration options require --regenerate")
+        if not args.status and args.run_key is not None:
+            _parser().error("--run-key requires --status")
+        if args.artifact_id is not None and args.artifact_id <= 0:
+            _parser().error("artifact ID must be positive")
         recovery_id = (
             args.retry_delivery
             if args.retry_delivery is not None
@@ -247,14 +275,23 @@ def main(argv: list[str] | None = None) -> int:
         if recovery_id is not None and (
             args.summary_date is not None
             or args.weekly
-            or args.revise_plan
+            or args.revise_plan or args.regenerate or args.status
             or args.as_of_date is not None
             or args.plan_id is not None
             or args.reason_event_id is not None
             or args.effective_date is not None
+            or args.artifact_id is not None
+            or args.regenerate_reason is not None
+            or args.run_key is not None
             or args.deliver
         ):
             _parser().error("delivery recovery does not accept analysis route options")
+        if args.regenerate and any((
+            args.summary_date is not None, args.as_of_date is not None,
+            args.plan_id is not None, args.reason_event_id is not None,
+            args.effective_date is not None,
+        )):
+            _parser().error("--regenerate does not accept other analysis route options")
         if args.weekly and args.summary_date is not None:
             _parser().error("--weekly does not accept --summary-date")
         if not args.weekly and args.as_of_date is not None:
@@ -281,13 +318,17 @@ def main(argv: list[str] | None = None) -> int:
         try:
             from .analysis.runtime import (
                 run_analysis_only,
+                run_analysis_status,
                 run_delivery_recovery,
                 run_plan_revision_analysis,
+                run_regeneration_analysis,
                 run_weekly_analysis,
             )
             from .analysis.cli import exit_code_for
 
-            if recovery_id is None:
+            if args.status:
+                receipt = run_analysis_status(run_key=args.run_key)
+            elif recovery_id is None:
                 if args.weekly:
                     receipt = run_weekly_analysis(
                         invocation_id=args.invocation_id,
@@ -300,6 +341,13 @@ def main(argv: list[str] | None = None) -> int:
                         plan_id=str(args.plan_id),
                         reason_event_id=str(args.reason_event_id),
                         effective_date=args.effective_date,
+                        deliver=args.deliver,
+                    )
+                elif args.regenerate:
+                    receipt = run_regeneration_analysis(
+                        invocation_id=args.invocation_id,
+                        artifact_id=str(args.artifact_id),
+                        reason_code=args.regenerate_reason,
                         deliver=args.deliver,
                     )
                 else:
@@ -320,9 +368,11 @@ def main(argv: list[str] | None = None) -> int:
         return exit_code_for(receipt.status)
     if args.command == "run" and (
         args.summary_date is not None or args.invocation_id is not None
-        or args.weekly or args.revise_plan or args.as_of_date is not None
+        or args.weekly or args.revise_plan or args.regenerate or args.status
+        or args.as_of_date is not None
         or args.plan_id is not None or args.reason_event_id is not None
-        or args.effective_date is not None
+        or args.effective_date is not None or args.artifact_id is not None
+        or args.regenerate_reason is not None or args.run_key is not None
         or args.deliver or args.retry_delivery is not None
         or args.reconcile_delivery is not None
     ):

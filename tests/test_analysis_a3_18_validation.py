@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from dataclasses import replace
 from datetime import date, timedelta
 import json
 
@@ -128,6 +129,40 @@ def test_weekly_first_run_has_exact_windows_plan_items_and_host_safety_normaliza
     weekly_artifact = next(item for item in accepted["artifacts"] if item["artifact_kind"] == "weekly_training_plan")
     assert weekly_artifact["structured_content"] == plan
     assert accepted["safety"]["plan_items"][0]["primary_item"] == plan["items"][0]["prescription"]
+
+
+@pytest.mark.parametrize("shape", ["weekly", "plan_revision"])
+def test_regeneration_validates_complete_weekly_and_plan_revision_shapes(shape: str) -> None:
+    run_key = "analysis:1:regenerate:42:fixture"
+    value = output()
+    value["run_key"] = run_key
+    value["mode"] = "regenerate"
+    if shape == "plan_revision":
+        value["artifacts"] = [value["artifacts"][1]]
+    value["source_usage"] = [{
+        "ordinal": 0,
+        "input_role": "regeneration.source_artifact",
+        "source_entity_id": "42",
+        "source_revision_id": "3",
+    }]
+    source_manifest = [{
+        "ordinal": 0,
+        "input_role": "regeneration.source_artifact",
+        "source_entity_type": "analysis_artifact",
+        "source_entity_id": "42",
+        "source_revision_id": "3",
+    }]
+    exp = replace(
+        expectation(),
+        run_key=run_key,
+        mode="regenerate",
+        input_manifest=source_manifest,
+        regeneration_source_shape=shape,
+        regeneration_source_artifact_id="42",
+    )
+    accepted = validate(value, exp).result
+    assert accepted["mode"] == "regenerate"
+    assert len(accepted["training_plan"]["items"]) == 7
 
 
 @pytest.mark.parametrize("mutate,expected_code", [

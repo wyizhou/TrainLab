@@ -166,6 +166,57 @@ def build_plan_revision_request(
     })
 
 
+def build_regeneration_request(
+    *, subject_id: str, invocation_id: str, artifact_id: str, reason_code: str,
+    now: datetime | None = None,
+) -> AnalysisRequest:
+    """Build one explicit artifact-regeneration request without I/O."""
+    if not isinstance(subject_id, str) or _SUBJECT_KEY.fullmatch(subject_id) is None:
+        raise ValueError("analysis_subject_id_invalid")
+    if not isinstance(invocation_id, str) or not invocation_id:
+        raise ValueError("analysis_invocation_id_required")
+    if (
+        not isinstance(artifact_id, str)
+        or not artifact_id.isdecimal()
+        or artifact_id.startswith("0")
+        or int(artifact_id) <= 0
+    ):
+        raise ValueError("analysis_artifact_id_invalid")
+    if not isinstance(reason_code, str) or not reason_code:
+        raise ValueError("analysis_regeneration_reason_required")
+    requested = (now or datetime.now(UTC)).astimezone(UTC).isoformat(
+        timespec="seconds"
+    ).replace("+00:00", "Z")
+    return AnalysisRequest.from_dict({
+        "schema_version": "1", "mode": "regenerate", "subject_id": subject_id,
+        "invocation_id": invocation_id, "run_key": None,
+        "summary_local_date": None, "advice_local_date": None,
+        "as_of_local_date": None, "plan_id": None, "reason_event_id": None,
+        "effective_local_date": None, "artifact_id": artifact_id,
+        "delivery_id": None, "regeneration_reason_code": reason_code,
+        "requested_at_utc": requested,
+    })
+
+
+def build_status_request(
+    *, subject_id: str, run_key: str | None = None, now: datetime | None = None,
+) -> AnalysisRequest:
+    """Build the read-only status request without an invocation identity."""
+    if not isinstance(subject_id, str) or _SUBJECT_KEY.fullmatch(subject_id) is None:
+        raise ValueError("analysis_subject_id_invalid")
+    requested = (now or datetime.now(UTC)).astimezone(UTC).isoformat(
+        timespec="seconds"
+    ).replace("+00:00", "Z")
+    return AnalysisRequest.from_dict({
+        "schema_version": "1", "mode": "status", "subject_id": subject_id,
+        "invocation_id": None, "run_key": run_key,
+        "summary_local_date": None, "advice_local_date": None,
+        "as_of_local_date": None, "plan_id": None, "reason_event_id": None,
+        "effective_local_date": None, "artifact_id": None, "delivery_id": None,
+        "regeneration_reason_code": None, "requested_at_utc": requested,
+    })
+
+
 def _active_subject_key(connection: object) -> str:
     """Read only the active public subject key; fail closed unless it is unique."""
     rows = list(connection.execute(
@@ -353,6 +404,77 @@ def run_plan_revision_analysis(
         connection.close()
 
 
+def run_regeneration_analysis(
+    *, invocation_id: str, artifact_id: str, reason_code: str,
+    deliver: bool = False, root: Path | None = None,
+) -> AnalysisReceipt:
+    """Execute one A3-20 regeneration through the production entry."""
+    root = (root or project_root()).resolve()
+    foundation = FoundationConfig.load(root)
+    config = load_analysis_config(root, root / "config" / "analysis.yaml")
+    connection = FoundationTool(foundation)._connect(foundation.database_path)
+    try:
+        request = build_regeneration_request(
+            subject_id=_active_subject_key(connection), invocation_id=invocation_id,
+            artifact_id=artifact_id, reason_code=reason_code,
+        )
+        repository = AnalysisRunRepository(connection)
+        coordinator = AnalysisRunCoordinator(
+            repository,
+            SubjectLockManager(
+                config.lock_path, trusted_root=config.lock_path.parent.parent
+            ),
+        )
+        from .regenerate import RegenerateRoute
+
+        receipt = RegenerateRoute(
+            config=config, coordinator=coordinator,
+            stable_views=StableViewRepository(connection),
+            runner=AnalysisCodexRunner(config), publisher=AnalysisPublisher(connection),
+            delivery=AnalysisDeliveryFactory(connection), connection=connection,
+        ).execute(request)
+        if not deliver or receipt.status not in {"partial", "unchanged", "succeeded"}:
+            return receipt
+        delivery_id = _receipt_delivery_id(connection, receipt)
+        if delivery_id is None:
+            return replace(
+                receipt, status="partial",
+                errors=receipt.errors + (_error("analysis_delivery_missing"),),
+                next_action="retry_delivery",
+            )
+        artifact_ids = _delivery_artifact_ids(connection, delivery_id)
+        receipt = _restore_receipt_evidence(
+            connection, receipt, artifact_ids, include_training_plan=True
+        )
+        return _merge_delivery(
+            receipt,
+            _execute_delivery(connection, config, delivery_id, "retry_delivery"),
+            artifact_ids,
+        )
+    finally:
+        connection.close()
+
+
+def run_analysis_status(
+    *, run_key: str | None = None, root: Path | None = None,
+) -> AnalysisReceipt:
+    """Read A3-21 status using only the Foundation database connection."""
+    root = (root or project_root()).resolve()
+    foundation = FoundationConfig.load(root)
+    connection = FoundationTool(foundation)._connect(
+        foundation.database_path, readonly=True
+    )
+    try:
+        from .status import AnalysisStatusQueryService
+
+        request = build_status_request(
+            subject_id=_active_subject_key(connection), run_key=run_key
+        )
+        return AnalysisStatusQueryService(connection).execute(request)
+    finally:
+        connection.close()
+
+
 def run_delivery_recovery(
     *, invocation_id: str, delivery_id: int, reconcile: bool = False,
     root: Path | None = None,
@@ -444,6 +566,18 @@ def _analysis_delivery_id(
     return int(row[0][0]) if len(row) == 1 else None
 
 
+def _receipt_delivery_id(connection: object, receipt: AnalysisReceipt) -> int | None:
+    """Resolve the single delivery attached to an already-persisted run."""
+    if receipt.delivery is not None and receipt.delivery.delivery_id.isdecimal():
+        return int(receipt.delivery.delivery_id)
+    rows = connection.execute(  # type: ignore[union-attr]
+        "SELECT d.id FROM analysis_deliveries d JOIN analysis_runs r ON r.id=d.analysis_run_id "
+        "WHERE r.run_key=? ORDER BY d.id",
+        (receipt.run_key,),
+    ).fetchall()
+    return int(rows[0][0]) if len(rows) == 1 else None
+
+
 def _contract_delivery(result: DeliveryExecution, artifact_ids: tuple[str, ...]) -> AnalysisDelivery:
     error = None if result.error_code is None else {
         "code": result.error_code,
@@ -496,9 +630,11 @@ def _restore_receipt_evidence(
             "WHERE a.generated_by_run_id=? ORDER BY p.id",
             (row[0],),
         ).fetchall()
-        if len(plans) != 1:
-            return receipt
-        training_plan_id = str(plans[0][0])
+        if len(plans) == 1:
+            training_plan_id = str(plans[0][0])
+    content_same = receipt.content_same
+    if receipt.mode == "regenerate":
+        content_same = _regeneration_content_same(connection, int(row[0]))
     return replace(
         receipt,
         analysis_run_id=str(row[0]),
@@ -509,7 +645,24 @@ def _restore_receipt_evidence(
         input_schema_version=row[3],
         output_schema_version=row[4],
         input_snapshot_sha256=row[5],
+        content_same=content_same,
     )
+
+
+def _regeneration_content_same(connection: object, run_id: int) -> bool | None:
+    """Recover the persisted direct-source content comparison for a rerun."""
+    rows = connection.execute(  # type: ignore[union-attr]
+        "SELECT successor.content_sha256=source.content_sha256 "
+        "FROM analysis_artifact_relations relation "
+        "JOIN analysis_artifacts successor ON successor.id=relation.from_artifact_id "
+        "JOIN analysis_artifacts source ON source.id=relation.to_artifact_id "
+        "WHERE successor.generated_by_run_id=? AND relation.relation_type='derived_from' "
+        "ORDER BY successor.id",
+        (run_id,),
+    ).fetchall()
+    if len(rows) != 1:
+        return None
+    return bool(rows[0][0])
 
 
 def _merge_daily_delivery(

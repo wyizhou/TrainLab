@@ -202,14 +202,25 @@ def test_public_optional_fields_are_not_narrowed(layer: str, mode: str, kwargs: 
     assert runner_module._argv(DownstreamCall(layer, mode, "invoke-1", None, **kwargs))
 
 
-@pytest.mark.parametrize("mode,kwargs", [
-    ("regenerate", {"artifact_id":"artifact-1", "regeneration_reason_code":"manual"}),
-    ("status", {}),
-])
-def test_unintegrated_analysis_modes_fail_before_any_internal_cli_fallback(mode, kwargs):
-    with pytest.raises(SubprocessBoundaryError, match="analysis_mode_not_production_ready"):
+def test_analysis_regeneration_and_status_use_only_the_root_production_entry() -> None:
+    assert runner_module._argv(DownstreamCall(
+        "analysis", "regenerate", "invoke-1", None, subject_id="subject-1",
+        artifact_id="7", regeneration_reason_code="explicit_user_request",
+    )) == (
+        str(runner_module._EXECUTABLE), "run", "--slot", "morning", "--analysis-only",
+        "--regenerate", "--artifact-id", "7", "--regenerate-reason",
+        "explicit_user_request", "--invocation-id", "invoke-1", "--deliver",
+    )
+    assert runner_module._argv(DownstreamCall(
+        "analysis", "status", None, None, subject_id="subject-1",
+        run_key="analysis:subject-1:daily:2026-07-24:invoke-1",
+    )) == (
+        str(runner_module._EXECUTABLE), "run", "--slot", "morning", "--analysis-only",
+        "--status", "--run-key", "analysis:subject-1:daily:2026-07-24:invoke-1",
+    )
+    with pytest.raises(SubprocessBoundaryError, match="status_invocation_forbidden"):
         runner_module._argv(DownstreamCall(
-            "analysis", mode, "invoke-1", None, subject_id="subject-1", **kwargs
+            "analysis", "status", "invoke-1", None, subject_id="subject-1"
         ))
 
 
@@ -314,7 +325,7 @@ def _layer_fixture(layer: str, mode: str) -> dict[str, object]:
     path = Path(__file__).parent / "fixtures/orchestration/s5_00_receipts.json"
     value = deepcopy(json.loads(path.read_text())[layer][mode])
     if layer == "analysis":
-        value.update(run_key="analysis:subject-1:daily:default:analysis-daily-001", target_periods={"summary":None,"advice":None,"review":None,"plan":None})
+        value.update(run_key="analysis:subject-1:daily:default:analysis-daily-001", target_periods={"summary":None,"advice":None,"review":None,"plan":None}, status_snapshot=None, content_same=None)
         value["delivery"] = {"delivery_id":"analysis-delivery-001","status":"sent","artifact_ids":["artifact-001"],"provider_message_id":None,"provider_thread_id":None,"error":None}
     if layer == "mail": value.update(poll_state=[], run_key="mail:1:run:mail-run-001")
     return value
@@ -361,7 +372,7 @@ def test_weekly_boundary_mutations_fail_closed(period: str, field: str, wrong: s
 
 
 def test_analysis_status_default_key_and_unescaped_key_mutations_fail_closed() -> None:
-    value = _layer_fixture("analysis", "daily"); value.update(mode="status", invocation_id=None, run_key="analysis:subject-1:status:current:read_only")
+    value = _layer_fixture("analysis", "daily"); value.update(mode="status", invocation_id=None, run_key="analysis:subject-1:status:current:read_only", status_snapshot={"selected_run":None,"current_artifacts":[],"current_plan":None,"latest_delivery":None,"delivery_counts":{"pending":0,"delivery_unknown":0,"failed":0},"actionable_delivery_ids":{"retry_delivery":[],"reconcile_delivery":[]},"recent_terminal_at_utc":{"succeeded":None,"failed":None,"rejected":None,"deferred":None},"quality_blocker_codes":[],"deferred_history_supported":False})
     assert runner_module._validate_receipt(DownstreamCall("analysis","status",None,None,subject_id="subject-1"), value, 0)[0] is not None
     value["run_key"] = "prefix-analysis:subject-1:status:current:read_only"
     assert runner_module._validate_receipt(DownstreamCall("analysis","status",None,None,subject_id="subject-1"), value, 0)[0] is None
@@ -394,16 +405,13 @@ def test_analysis_dynamic_colon_key_is_escaped_exactly(mode: str, kwargs: dict[s
 
 
 def test_all_mode_argv_snapshots_are_fixed_and_targets_are_required() -> None:
-    unavailable_analysis_modes = {"regenerate", "status"}
     for layer, modes in runner_module._MODES.items():
         for mode in modes:
             args = dict(layer=layer, mode=mode, invocation_id="invoke-1", request_sha256=None)
-            values = {"subject_id": 1 if layer == "mail" else "subject-1", "summary_local_date":"2026-07-24", "advice_local_date":"2026-07-25", "as_of_local_date":"2026-07-24", "plan_id":"7", "reason_event_id":"9", "effective_local_date":"2026-07-24", "artifact_id":"artifact-1", "delivery_id":"1" if layer == "analysis" else "delivery-1", "mail_message_id":"message-1", "mail_response_artifact_id":"response-1", "health_from_local_date":"2026-07-23", "through_local_date":"2026-07-24", "snapshot_local_date":"2026-07-24", "resource_kinds":("activities",), "activity_ids":("activity-1",), "repair_strategy":"auto", "regeneration_reason_code":"manual", "run_key":"run-1", "max_items":2, "max_threads":2, "deadline_seconds":30, "dependency_analysis_artifact_ids":("artifact-1",)}
+            values = {"subject_id": 1 if layer == "mail" else "subject-1", "summary_local_date":"2026-07-24", "advice_local_date":"2026-07-25", "as_of_local_date":"2026-07-24", "plan_id":"7", "reason_event_id":"9", "effective_local_date":"2026-07-24", "artifact_id":"7", "delivery_id":"1" if layer == "analysis" else "delivery-1", "mail_message_id":"message-1", "mail_response_artifact_id":"response-1", "health_from_local_date":"2026-07-23", "through_local_date":"2026-07-24", "snapshot_local_date":"2026-07-24", "resource_kinds":("activities",), "activity_ids":("activity-1",), "repair_strategy":"auto", "regeneration_reason_code":"manual", "run_key":"run-1", "max_items":2, "max_threads":2, "deadline_seconds":30, "dependency_analysis_artifact_ids":("artifact-1",)}
             args.update({key: values[key] for key in runner_module._MODE_FIELDS.get((layer, mode), ())})
-            if layer == "analysis" and mode in unavailable_analysis_modes:
-                with pytest.raises(SubprocessBoundaryError, match="analysis_mode_not_production_ready"):
-                    runner_module._argv(DownstreamCall(**args))
-                continue
+            if layer == "analysis" and mode == "status":
+                args["invocation_id"] = None
             argv = runner_module._argv(DownstreamCall(**args))
             assert Path(argv[0]).is_absolute() and "sh" not in argv[0]
 

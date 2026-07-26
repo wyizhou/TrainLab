@@ -84,6 +84,10 @@ class ResultValidationExpectation:
     original_plan: Mapping[str, Any] | None = None
     original_plan_items: Sequence[Mapping[str, Any]] | None = None
     reason_event: Mapping[str, Any] | None = None
+    # Regeneration keeps a distinct top-level mode but its accepted artifact
+    # shape is determined by host-verified source lineage, never model output.
+    regeneration_source_shape: str | None = None
+    regeneration_source_artifact_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -159,7 +163,7 @@ def _expected_period(value: Mapping[str, Any], key: str) -> Mapping[str, Any]:
 
 
 def _validate_daily_shape(payload: Mapping[str, Any], expected: ResultValidationExpectation) -> None:
-    if payload["mode"] != "daily":
+    if payload["mode"] not in {"daily", "regenerate"}:
         _reject("analysis_result_route_not_implemented", "mode")
     if payload["training_plan"] is not None:
         _reject("analysis_result_daily_plan_forbidden", "training_plan")
@@ -197,7 +201,7 @@ def _weekly_prior_state(expected: ResultValidationExpectation) -> dict[str, str]
 
 
 def _validate_weekly_shape(payload: Mapping[str, Any], expected: ResultValidationExpectation) -> None:
-    if payload["mode"] != "weekly":
+    if payload["mode"] not in {"weekly", "regenerate"}:
         _reject("analysis_result_route_not_implemented", "mode")
     artifacts = payload["artifacts"]
     by_kind = {item["artifact_kind"]: item for item in artifacts}
@@ -239,6 +243,36 @@ def _validate_weekly_shape(payload: Mapping[str, Any], expected: ResultValidatio
         prescription = item.get("prescription")
         if not isinstance(prescription, Mapping) or prescription.get("activity_kind") != item.get("activity_kind"):
             _reject("analysis_result_weekly_item_prescription_invalid", f"training_plan.items.{index}.prescription")
+
+
+def _validate_regenerated_plan_shape(payload: Mapping[str, Any], expected: ResultValidationExpectation) -> None:
+    """Validate a full replacement for a plan-revision artifact.
+
+    Unlike ``revise_plan`` this is not an event-driven suffix rewrite: the
+    selected current plan is regenerated as one complete seven-day snapshot.
+    """
+    artifacts = payload["artifacts"]
+    if len(artifacts) != 1 or artifacts[0]["artifact_kind"] != "weekly_training_plan":
+        _reject("analysis_result_regeneration_plan_cardinality_invalid", "artifacts")
+    plan = payload["training_plan"]
+    if not isinstance(plan, Mapping):
+        _reject("analysis_result_regeneration_plan_required", "training_plan")
+    expected_period = _expected_period(expected.target_periods, "plan")
+    if dict(artifacts[0]["period"]) != dict(expected_period) or dict(plan.get("period", {})) != dict(expected_period):
+        _reject("analysis_result_date_mismatch", "training_plan.period")
+    if artifacts[0]["structured_content"] != plan:
+        _reject("analysis_result_weekly_plan_artifact_mismatch", "artifacts.0.structured_content")
+    items = plan.get("items")
+    days = _period_days(expected_period, path="plan")
+    if not isinstance(items, list) or len(items) != 7:
+        _reject("analysis_result_weekly_item_cardinality_invalid", "training_plan.items")
+    for index, item in enumerate(items):
+        if not isinstance(item, Mapping) or item.get("item_index") != index or item.get("local_date") != days[index]:
+            _reject("analysis_result_weekly_item_sequence_invalid", f"training_plan.items.{index}")
+        if item.get("activity_kind") not in {"running", "climbing", "strength", "rest"} or not isinstance(item.get("prescription"), Mapping):
+            _reject("analysis_result_weekly_item_invalid", f"training_plan.items.{index}")
+        if item["prescription"].get("activity_kind") != item["activity_kind"]:
+            _reject("analysis_result_weekly_item_invalid", f"training_plan.items.{index}.prescription")
 
 
 def _weekly_bases(expected: ResultValidationExpectation) -> Mapping[str, Mapping[str, Any]]:
@@ -363,6 +397,36 @@ def _validate_source_usage(payload: Mapping[str, Any], expected: ResultValidatio
         seen.add(ordinal)
         if (usage["input_role"], usage["source_entity_id"], usage["source_revision_id"]) != known[ordinal]:
             _reject("analysis_result_source_usage_invalid", f"source_usage.{index}")
+
+
+def _validate_regeneration_source_usage(
+    payload: Mapping[str, Any], expected: ResultValidationExpectation
+) -> None:
+    artifact_id = expected.regeneration_source_artifact_id
+    if not isinstance(artifact_id, str) or not artifact_id.isdecimal() or int(artifact_id) <= 0:
+        _reject(
+            "analysis_result_regeneration_source_invalid",
+            "regeneration_source_artifact_id",
+        )
+    matching = [
+        row
+        for row in expected.input_manifest
+        if isinstance(row, Mapping)
+        and row.get("input_role") == "regeneration.source_artifact"
+        and row.get("source_entity_type") == "analysis_artifact"
+        and row.get("source_entity_id") == artifact_id
+    ]
+    if len(matching) != 1:
+        _reject(
+            "analysis_result_regeneration_source_invalid",
+            "input_manifest",
+        )
+    used = {row["ordinal"] for row in payload["source_usage"]}
+    if matching[0].get("ordinal") not in used:
+        _reject(
+            "analysis_result_regeneration_source_not_used",
+            "source_usage",
+        )
 
 
 def _validate_weekly_prior_source_usage(
@@ -690,6 +754,16 @@ class AnalysisResultValidator:
             _validate_weekly_shape(payload, expected)
         elif expected.mode == "revise_plan":
             _validate_revision_shape(payload, expected)
+        elif expected.mode == "regenerate":
+            shape = expected.regeneration_source_shape
+            if shape == "daily":
+                _validate_daily_shape(payload, expected)
+            elif shape == "weekly":
+                _validate_weekly_shape(payload, expected)
+            elif shape == "plan_revision":
+                _validate_regenerated_plan_shape(payload, expected)
+            else:
+                _reject("analysis_result_regeneration_source_invalid", "regeneration_source_shape")
         else:
             _reject("analysis_result_route_not_implemented", "mode")
         _validate_source_usage(payload, expected)
@@ -697,10 +771,12 @@ class AnalysisResultValidator:
             _validate_weekly_prior_source_usage(payload, expected)
         elif expected.mode == "revise_plan":
             _validate_revision_source_usage(payload, expected)
+        elif expected.mode == "regenerate":
+            _validate_regeneration_source_usage(payload, expected)
         _validate_quality(payload, expected)
-        if expected.mode == "daily":
+        if expected.mode == "daily" or (expected.mode == "regenerate" and expected.regeneration_source_shape == "daily"):
             _validate_safety(payload, expected)
-        elif expected.mode == "weekly":
+        elif expected.mode == "weekly" or (expected.mode == "regenerate" and expected.regeneration_source_shape in {"weekly", "plan_revision"}):
             _validate_weekly_safety(payload, expected)
             _validate_weekly_clock_time(payload)
         else:

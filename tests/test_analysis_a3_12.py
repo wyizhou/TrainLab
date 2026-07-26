@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from dataclasses import replace
 import json
 from pathlib import Path
 
@@ -165,6 +166,51 @@ def test_identity_cardinality_dates_and_manifest_bindings_fail_closed(mutate, ex
     changed = deepcopy(output())
     mutate(changed)
     code(changed, expected_code)
+
+
+def test_regeneration_requires_exact_target_artifact_to_be_used() -> None:
+    value = output()
+    value["mode"] = "regenerate"
+    value["source_usage"][0] = {
+        "ordinal": 0,
+        "input_role": "regeneration.source_artifact",
+        "source_entity_id": "42",
+        "source_revision_id": "7",
+    }
+    manifest = [
+        {
+            "ordinal": 0,
+            "input_role": "regeneration.source_artifact",
+            "source_entity_type": "analysis_artifact",
+            "source_entity_id": "42",
+            "source_revision_id": "7",
+        },
+        {
+            "ordinal": 1,
+            "input_role": "health",
+            "source_entity_type": "daily_health",
+            "source_entity_id": "daily:2026-07-23",
+            "source_revision_id": "health-revision-1",
+        },
+    ]
+    expectation = replace(
+        expected(),
+        mode="regenerate",
+        input_manifest=manifest,
+        regeneration_source_shape="daily",
+        regeneration_source_artifact_id="42",
+    )
+    validate(value, expectation)
+    missing = deepcopy(value)
+    missing["source_usage"] = [{
+        "ordinal": 1,
+        "input_role": "health",
+        "source_entity_id": "daily:2026-07-23",
+        "source_revision_id": "health-revision-1",
+    }]
+    with pytest.raises(AnalysisResultValidationError) as caught:
+        validate(missing, expectation)
+    assert caught.value.code == "analysis_result_regeneration_source_not_used"
 
 
 @pytest.mark.parametrize(

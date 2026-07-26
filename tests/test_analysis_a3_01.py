@@ -89,6 +89,7 @@ def test_import_boundary_is_empty_and_reproducible() -> None:
         "harness.py",
         "publisher.py",
         "quality_gate.py",
+        "regenerate.py",
         "revise_plan.py",
         "result_validation.py",
         "run_state.py",
@@ -96,7 +97,9 @@ def test_import_boundary_is_empty_and_reproducible() -> None:
         "runtime.py",
         "safety_rules.py",
         "service.py",
+        "shadow.py",
         "stable_views.py",
+        "status.py",
         "weekly.py",
     }
     assert all(not imported for imported in first.values())

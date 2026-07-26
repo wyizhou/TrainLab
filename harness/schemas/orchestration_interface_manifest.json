@@ -42,7 +42,7 @@
       "statuses": ["succeeded", "unchanged", "partial", "deferred", "rejected", "failed", "lock_busy"],
       "request_required": ["mode", "subject_id", "invocation_id", "summary_local_date", "advice_local_date", "as_of_local_date", "plan_id", "reason_event_id", "effective_local_date", "artifact_id", "delivery_id", "regeneration_reason_code", "requested_at_utc"],
       "status_only_optional_selectors": {"run_key": {"type": ["string", "null"], "allowed_modes": ["status"], "purpose": "read_only_history_run_selector", "non_status_policy": "reject_when_non_null", "excluded_from": ["invocation_id", "stable_write_identity", "run_creation", "run_recovery", "run_mutation"]}},
-      "receipt_required": ["schema_version", "run_key", "analysis_run_id", "invocation_id", "mode", "status", "target_periods", "quality_gate_state", "artifact_ids", "training_plan_id", "superseded_plan_id", "delivery", "input_snapshot_sha256", "harness_version", "input_schema_version", "output_schema_version", "warnings", "errors", "next_action", "next_retry_at_utc", "started_at_utc", "completed_at_utc"]
+      "receipt_required": ["schema_version", "run_key", "analysis_run_id", "invocation_id", "mode", "status", "target_periods", "quality_gate_state", "artifact_ids", "training_plan_id", "superseded_plan_id", "delivery", "input_snapshot_sha256", "harness_version", "input_schema_version", "output_schema_version", "warnings", "errors", "next_action", "next_retry_at_utc", "status_snapshot", "content_same", "started_at_utc", "completed_at_utc"]
     },
     "mail": {
       "modes": ["run", "poll", "process", "deliver_response", "reconcile", "status"],

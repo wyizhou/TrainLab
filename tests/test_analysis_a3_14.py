@@ -76,6 +76,23 @@ def test_same_exact_revision_is_idempotent_and_does_not_duplicate_pending_delive
     assert connection.execute("SELECT count(*) FROM analysis_delivery_artifacts").fetchone()[0] == 2
 
 
+def test_pending_delivery_can_join_a_caller_owned_atomic_transaction():
+    connection = database()
+    receipt = published(connection)
+    factory = AnalysisDeliveryFactory(connection)
+    with pytest.raises(Exception, match="transaction_required"):
+        factory.create_pending_in_transaction(
+            publish_receipt=receipt, delivery_kind="daily_report"
+        )
+    connection.execute("BEGIN IMMEDIATE")
+    pending = factory.create_pending_in_transaction(
+        publish_receipt=receipt, delivery_kind="daily_report"
+    )
+    connection.execute("ROLLBACK")
+    assert pending.delivery_id > 0
+    assert connection.execute("SELECT count(*) FROM analysis_deliveries").fetchone()[0] == 0
+
+
 def test_delivery_remains_bound_to_exact_revision_after_current_drifts():
     connection = database()
     receipt = published(connection)

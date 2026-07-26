@@ -16,6 +16,11 @@
       {"path": "harness/analysis/HARNESS.md", "sha256": "f11f57885214afa633f604a5444ace5a67ab85c60575e7536a8ab2b6549cdb2c"},
       {"path": "harness/analysis/revise-plan.md", "sha256": "0697fd1da6d0124f218248186c7835c052fc33b1035d4dd2d2bca69b8a9181fa"}
     ],
+    "regenerate": [
+      {"path": "harness/shared/HARNESS.md", "sha256": "109e198d097cf8acbe5b59ee3be027a89f457de196b5b0a78f7846d5fb55eb0c"},
+      {"path": "harness/analysis/HARNESS.md", "sha256": "f11f57885214afa633f604a5444ace5a67ab85c60575e7536a8ab2b6549cdb2c"},
+      {"path": "harness/analysis/regenerate.md", "sha256": "9190c5e239581666aa1dea480ef5dbce109d08eb7c1e34cc7273c02d46149334"}
+    ],
     "delivery": [
       {"path": "harness/shared/HARNESS.md", "sha256": "109e198d097cf8acbe5b59ee3be027a89f457de196b5b0a78f7846d5fb55eb0c"},
       {"path": "harness/analysis/HARNESS.md", "sha256": "f11f57885214afa633f604a5444ace5a67ab85c60575e7536a8ab2b6549cdb2c"},

@@ -235,6 +235,13 @@ def _argv(call: DownstreamCall) -> tuple[str, ...]:
         return base
     if call.layer == "analysis":
         if type(call.subject_id) is not str or not _SUBJECT_ID.fullmatch(call.subject_id): raise SubprocessBoundaryError("subprocess_subject_required")
+        if call.mode == "status":
+            if call.invocation_id is not None:
+                raise SubprocessBoundaryError("subprocess_status_invocation_forbidden")
+            base = [str(_EXECUTABLE), "run", "--slot", "morning", "--analysis-only", "--status"]
+            if call.run_key is not None:
+                base.extend(("--run-key", require(call.run_key, "run_key")))
+            return tuple(base)
         invocation = require(call.invocation_id, "invocation")
         base = [str(_EXECUTABLE), "run", "--slot", "morning", "--analysis-only", "--invocation-id", invocation]
         if call.mode == "daily":
@@ -286,10 +293,20 @@ def _argv(call: DownstreamCall) -> tuple[str, ...]:
                 call.delivery_id,
             ))
             return tuple(base)
-        # Regeneration/status remain frozen contract modes, but
-        # are not production-ready until they are integrated through
-        # ``trainlab run``.  Never fall back to the internal future CLI.
-        raise SubprocessBoundaryError("subprocess_analysis_mode_not_production_ready")
+        if call.mode == "regenerate":
+            if (
+                not isinstance(call.artifact_id, str)
+                or re.fullmatch(r"[1-9][0-9]{0,18}", call.artifact_id) is None
+            ):
+                raise SubprocessBoundaryError("subprocess_artifact_id_required")
+            reason = require(call.regeneration_reason_code, "regeneration_reason")
+            return (
+                str(_EXECUTABLE), "run", "--slot", "morning", "--analysis-only",
+                "--regenerate", "--artifact-id", call.artifact_id,
+                "--regenerate-reason", reason, "--invocation-id", invocation,
+                "--deliver",
+            )
+        raise SubprocessBoundaryError("subprocess_mode_not_allowed")
     if type(call.subject_id) is not int or call.subject_id <= 0: raise SubprocessBoundaryError("subprocess_subject_required")
     base = [str(_PYTHON), "-m", "trainlab.mail_agent.cli", "--subject-id", str(call.subject_id), "--invocation-id", require(call.invocation_id, "invocation"), call.mode.replace("_", "-")]
     fields = {"process": (("--message-id", call.mail_message_id),), "deliver_response": (("--response-id", call.mail_response_artifact_id),), "reconcile": (("--delivery-id", call.delivery_id),)}.get(call.mode, ())

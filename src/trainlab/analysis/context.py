@@ -322,14 +322,21 @@ class ContextBuildRequest:
     effective_local_date: str | None = None
     plan_id: int | None = None
     reason_event_id: int | None = None
+    artifact_id: int | None = None
     max_context_bytes: int = DEFAULT_MAX_CONTEXT_BYTES
 
     def source_route(self) -> SourceRoute:
         if self.route == "regenerate":
             if self.regenerate_source_route not in {"daily", "weekly", "revise_plan"}:
                 _fail("analysis_context_regenerate_route_invalid")
+            if (
+                isinstance(self.artifact_id, bool)
+                or not isinstance(self.artifact_id, int)
+                or self.artifact_id <= 0
+            ):
+                _fail("analysis_context_regenerate_route_invalid")
             return self.regenerate_source_route
-        if self.regenerate_source_route is not None:
+        if self.regenerate_source_route is not None or self.artifact_id is not None:
             _fail("analysis_context_regenerate_route_invalid")
         if self.route not in {"daily", "weekly", "revise_plan"}:
             _fail("analysis_context_route_invalid")
@@ -1293,6 +1300,31 @@ def _base_candidates(
             _identifier(artifact_row.get("id")), []
         ).append(artifact_row)
     current_plans = snapshot.views["v_current_training_plans"]
+    regeneration_artifact: tuple[str, str] | None = None
+    if request.route == "regenerate":
+        matches = [
+            row for row in snapshot.views["v_current_analysis_artifacts"]
+            if row.get("id") == request.artifact_id
+            and row.get("subject_id") == request.subject_id
+        ]
+        if len(matches) != 1:
+            _fail("analysis_context_regeneration_artifact_invalid")
+        target = matches[0]
+        regeneration_artifact = (
+            _identifier(target.get("id")),
+            _identifier(target.get("revision_no")),
+        )
+        _add_row(
+            candidates,
+            section="prior_artifacts",
+            role="regeneration.source_artifact",
+            entity_type="analysis_artifact",
+            row=target,
+            fallback_window=fallback_window,
+            trust="prior_model_output",
+            origin="prior_model_output",
+            entity_id=regeneration_artifact[0],
+        )
     plan_ids: set[str] = set()
     current_plan_artifacts: set[tuple[str, str]] = set()
     for row in current_plans:
@@ -1430,6 +1462,8 @@ def _base_candidates(
             _identifier(row.get("revision_no")),
         )
         if identity_key in current_plan_artifacts:
+            continue
+        if identity_key == regeneration_artifact:
             continue
         if identity_key not in daily_ids | protected_weekly:
             continue

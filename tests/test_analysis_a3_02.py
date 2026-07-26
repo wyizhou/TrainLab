@@ -35,7 +35,7 @@ def test_bad_date_id_utc_and_forbidden_controls_are_rejected() -> None:
 class RecordingService:
     def __init__(self) -> None: self.request: AnalysisRequest | None = None
     def execute(self, request: AnalysisRequest) -> AnalysisReceipt:
-        self.request = request; return AnalysisReceipt(run_key=build_run_key(request),invocation_id=request.invocation_id,mode=request.mode,status="deferred",started_at_utc=request.requested_at_utc,completed_at_utc=REQUESTED_AT,errors=(AnalysisError("service","waiting_for_future_layer","no body"),))
+        self.request = request; return AnalysisReceipt(run_key=build_run_key(request),invocation_id=request.invocation_id,mode=request.mode,status="deferred",started_at_utc=request.requested_at_utc,completed_at_utc=REQUESTED_AT,errors=(AnalysisError("service","waiting_for_future_layer","no body"),),status_snapshot=None if request.mode != "status" else {"selected_run":None,"current_artifacts":[],"current_plan":None,"latest_delivery":None,"delivery_counts":{"pending":0,"delivery_unknown":0,"failed":0},"actionable_delivery_ids":{"retry_delivery":[],"reconcile_delivery":[]},"recent_terminal_at_utc":{"succeeded":None,"failed":None,"rejected":None,"deferred":None},"quality_blocker_codes":[],"deferred_history_supported":False})
 class WrongRunKeyService:
     def execute(self, request: AnalysisRequest) -> AnalysisReceipt:
         return AnalysisReceipt(run_key="analysis:subject_1:daily:other:wrong",invocation_id=request.invocation_id,mode=request.mode,status="deferred",started_at_utc=request.requested_at_utc,completed_at_utc=REQUESTED_AT,errors=(AnalysisError("service","waiting_for_future_layer","safe"),))

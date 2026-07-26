@@ -8,11 +8,12 @@
     "bundles": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["daily", "weekly", "revise_plan", "delivery"],
+      "required": ["daily", "weekly", "revise_plan", "regenerate", "delivery"],
       "properties": {
         "daily": {"$ref": "#/$defs/bundle"},
         "weekly": {"$ref": "#/$defs/bundle"},
         "revise_plan": {"$ref": "#/$defs/bundle"},
+        "regenerate": {"$ref": "#/$defs/bundle"},
         "delivery": {"$ref": "#/$defs/bundle"}
       }
     }
@@ -27,7 +28,7 @@
         "additionalProperties": false,
         "required": ["path", "sha256"],
         "properties": {
-          "path": {"type": "string", "pattern": "^harness/(shared/HARNESS|analysis/(HARNESS|daily|weekly|revise-plan|delivery))\\.md$"},
+          "path": {"type": "string", "pattern": "^harness/(shared/HARNESS|analysis/(HARNESS|daily|weekly|revise-plan|regenerate|delivery))\\.md$"},
           "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
         }
       }

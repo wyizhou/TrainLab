@@ -110,6 +110,122 @@ def test_weekly_pair_plan_and_seven_items_publish_atomically() -> None:
     ]
 
 
+def test_weekly_regeneration_rebuilds_pair_and_full_plan_with_direct_lineage() -> None:
+    conn = database()
+    conn.execute(
+        "UPDATE analysis_runs SET run_key=?,analysis_kind='regeneration' WHERE id=1",
+        ("analysis:1:regenerate:8:one",),
+    )
+    conn.execute(
+        "INSERT INTO analysis_runs(id,run_key,subject_id,analysis_kind,status) "
+        "VALUES(2,'old',1,'weekly','succeeded')"
+    )
+    conn.executemany(
+        "INSERT INTO analysis_artifacts(id,subject_id,artifact_kind,"
+        "period_start_local_date,period_end_local_date,revision_no,"
+        "generated_by_run_id,schema_version,structured_content_json,"
+        "user_visible_text,content_sha256,is_current,created_at_utc) "
+        "VALUES(?,1,?,?,?,1,2,'1','{}','旧内容','old-hash',1,'2026-07-20T00:00:00Z')",
+        (
+            (7, "weekly_summary", "2026-07-19", "2026-07-25"),
+            (8, "weekly_training_plan", "2026-07-26", "2026-08-01"),
+        ),
+    )
+    conn.execute(
+        "INSERT INTO training_plans(id,subject_id,analysis_artifact_id,"
+        "plan_start_local_date,plan_end_local_date,timezone,status,"
+        "objective_json,constraints_json,created_at_utc) "
+        "VALUES(9,1,8,'2026-07-26','2026-08-01','Asia/Singapore',"
+        "'active','{}','{}','2026-07-20T00:00:00Z')"
+    )
+    conn.commit()
+    payload = accepted("analysis:1:regenerate:8:one")
+    payload["mode"] = "regenerate"
+    rows = [{
+        "ordinal": 0, "input_role": "regeneration.source_artifact",
+        "source_entity_type": "analysis_artifact", "source_entity_id": "8",
+        "source_revision_id": "1",
+        "source_window": {"start_local_date": "2026-07-19", "end_local_date": "2026-08-01"},
+        "input_sha256": "a" * 64, "trust_class": "prior_model_output",
+    }]
+    receipt = AnalysisPublisher(conn).publish(
+        run_id=1, accepted=payload, input_manifest=rows,
+        run_evidence=evidence(rows),
+        regeneration_source={
+            "artifact_id": 8, "subject_id": 1, "shape": "weekly",
+            "kind": "weekly_training_plan",
+            "start": "2026-07-26", "end": "2026-08-01",
+        },
+    )
+    assert set(receipt.artifact_ids) == {"weekly_summary", "weekly_training_plan"}
+    assert receipt.training_plan_id is not None
+    assert receipt.superseded_plan_ids == (9,)
+    assert receipt.content_same is False
+    assert conn.execute(
+        "SELECT relation_type FROM analysis_artifact_relations "
+        "WHERE from_artifact_id=? AND to_artifact_id=8",
+        (receipt.artifact_ids["weekly_training_plan"],),
+    ).fetchone()[0] == "derived_from"
+    assert conn.execute(
+        "SELECT count(*) FROM training_plan_items WHERE training_plan_id=?",
+        (receipt.training_plan_id,),
+    ).fetchone()[0] == 7
+
+
+def test_plan_revision_artifact_regeneration_rebuilds_one_complete_plan() -> None:
+    conn = database()
+    conn.execute(
+        "UPDATE analysis_runs SET run_key=?,analysis_kind='regeneration' WHERE id=1",
+        ("analysis:1:regenerate:8:one",),
+    )
+    conn.execute(
+        "INSERT INTO analysis_runs(id,run_key,subject_id,analysis_kind,status) "
+        "VALUES(2,'old-revision',1,'plan_revision','succeeded')"
+    )
+    conn.execute(
+        "INSERT INTO analysis_artifacts(id,subject_id,artifact_kind,"
+        "period_start_local_date,period_end_local_date,revision_no,"
+        "generated_by_run_id,schema_version,structured_content_json,"
+        "user_visible_text,content_sha256,is_current,created_at_utc) "
+        "VALUES(8,1,'weekly_training_plan','2026-07-26','2026-08-01',1,2,"
+        "'1','{}','旧修订计划','old-hash',1,'2026-07-20T00:00:00Z')"
+    )
+    conn.execute(
+        "INSERT INTO training_plans(id,subject_id,analysis_artifact_id,"
+        "plan_start_local_date,plan_end_local_date,timezone,status,"
+        "objective_json,constraints_json,created_at_utc) "
+        "VALUES(9,1,8,'2026-07-26','2026-08-01','Asia/Singapore',"
+        "'active','{}','{}','2026-07-20T00:00:00Z')"
+    )
+    conn.commit()
+    payload = accepted("analysis:1:regenerate:8:one")
+    payload["mode"] = "regenerate"
+    payload["artifacts"] = [payload["artifacts"][1]]
+    rows = [{
+        "ordinal": 0, "input_role": "regeneration.source_artifact",
+        "source_entity_type": "analysis_artifact", "source_entity_id": "8",
+        "source_revision_id": "1",
+        "source_window": {"start_local_date": "2026-07-26", "end_local_date": "2026-08-01"},
+        "input_sha256": "a" * 64, "trust_class": "prior_model_output",
+    }]
+    receipt = AnalysisPublisher(conn).publish(
+        run_id=1, accepted=payload, input_manifest=rows,
+        run_evidence=evidence(rows),
+        regeneration_source={
+            "artifact_id": 8, "subject_id": 1, "shape": "plan_revision",
+            "kind": "weekly_training_plan",
+            "start": "2026-07-26", "end": "2026-08-01",
+        },
+    )
+    assert set(receipt.artifact_ids) == {"weekly_training_plan"}
+    assert receipt.training_plan_id is not None
+    assert receipt.superseded_plan_ids == (9,)
+    assert conn.execute(
+        "SELECT count(*) FROM training_plan_items WHERE training_plan_id=?",
+        (receipt.training_plan_id,),
+    ).fetchone()[0] == 7
+
+
 def test_weekly_prior_relations_and_overlapping_plans_are_preserved_then_superseded() -> None:
     conn = database()
     conn.execute("INSERT INTO analysis_runs(id,run_key,subject_id,analysis_kind,status) VALUES(2,'old',1,'weekly','succeeded')")
