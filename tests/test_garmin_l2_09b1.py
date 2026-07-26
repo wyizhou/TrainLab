@@ -6,6 +6,8 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 
+import pytest
+
 from trainlab.foundation import FoundationConfig, FoundationRequest, FoundationTool
 from trainlab.garmin import GarminCollectionTool, GarminConfig, GarminError, SyncReceipt, SyncRequest
 
@@ -193,6 +195,33 @@ def test_last_used_volatile_metadata_does_not_change_device_reference_revision(
         )
     )
     assert audited.status == "succeeded" and audited.counts["failed"] == 0
+
+
+@pytest.mark.parametrize("resource", ("primary_device", "device_last_used"))
+def test_unchanged_b1_success_resolves_only_its_account_key(
+    tmp_path: Path, resource: str,
+) -> None:
+    config, tool, _transport = _setup(tmp_path)
+    _repair(tool, f"b1-unchanged-baseline-{resource}", resource)
+    day = "2026-04-15"
+    key = f"garmin:account:{resource}:account"
+    sibling = f"{key}:sibling"
+    conn = tool.repo.connect()
+    try:
+        subject = tool.repo.subject(conn)
+        tool.repo.gap(conn, subject, resource, key, day, "project", "account_project_failed")
+        tool.repo.gap(conn, subject, resource, sibling, day, "project", "account_project_failed")
+    finally:
+        conn.close()
+    repeated = _repair(tool, f"b1-unchanged-resolve-{resource}", resource)
+    assert repeated.counts["unchanged"] >= 1
+    with sqlite3.connect(config.database_path) as conn:
+        states = dict(conn.execute(
+            "SELECT logical_object_key,status FROM garmin_sync_gaps WHERE resource_kind=?",
+            (resource,),
+        ))
+    assert states[key] == "resolved"
+    assert states[sibling] == "open"
 
 
 def test_b1_physiology_is_redacted_revisioned_and_noop(tmp_path: Path) -> None:

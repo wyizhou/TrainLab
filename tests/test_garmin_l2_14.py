@@ -82,6 +82,28 @@ def _refetch_steps(tool: GarminCollectionTool, invocation: str) -> None:
     assert result.status == "succeeded", result.json()
 
 
+def test_unchanged_daily_success_resolves_only_its_exact_gap_key(tmp_path: Path) -> None:
+    config, tool, _transport = _setup(tmp_path)
+    _refetch_steps(tool, "unchanged-daily-baseline")
+    day = "2026-04-15"
+    key = f"garmin:health:steps:{day}"
+    sibling = f"{key}:other-observation"
+    conn = tool.repo.connect()
+    try:
+        subject = tool.repo.subject(conn)
+        tool.repo.gap(conn, subject, "steps", key, day, "project", "parse_or_project_failed")
+        tool.repo.gap(conn, subject, "steps", sibling, day, "project", "parse_or_project_failed")
+    finally:
+        conn.close()
+    _refetch_steps(tool, "unchanged-daily-resolve")
+    with sqlite3.connect(config.database_path) as conn:
+        states = dict(conn.execute(
+            "SELECT logical_object_key,status FROM garmin_sync_gaps WHERE resource_kind='steps'"
+        ))
+    assert states[key] == "resolved"
+    assert states[sibling] == "open"
+
+
 def _archive_unparsed_range(
     tool: GarminCollectionTool, config: GarminConfig, resource: str,
     payload: object, start: str = "2026-04-15", end: str = "2026-04-15",

@@ -1875,6 +1875,9 @@ class GarminCollectionTool:
                     self.repo.coverage(conn, subject, resource, day.isoformat(), "partial" if request.mode == "snapshot" else state, None, 0, snapshot=request.mode == "snapshot")
                     self.repo.item(conn, run, resource, key, "fetch", state, increment_attempt=False)
                     self._count_receipt_terminal(receipt, state)
+                    self._resolve_successful_health_gaps(
+                        conn, subject, resource, day.isoformat(), key, request, state,
+                    )
                     continue
                 self.repo.item(conn, run, resource, key, "fetch", "fetched", increment_attempt=False)
                 safe = self._safe_account_payload(resource, payload)
@@ -1891,8 +1894,9 @@ class GarminCollectionTool:
                         self.repo.fields(conn, kind, safe_payload)
                         count = self._project_profile_settings(conn, subject, kind, safe_payload, revision)
                     self.repo.coverage(conn, subject, kind, day.isoformat(), "partial" if request.mode == "snapshot" else "fetched", revision, count, snapshot=request.mode == "snapshot")
-                    if request.mode != "snapshot":
-                        self.repo.resolve_gaps(conn, subject, kind, day.isoformat())
+                    self._resolve_successful_health_gaps(
+                        conn, subject, kind, day.isoformat(), key, request, "fetched",
+                    )
 
                 semantic_payload = (
                     canonical_provider_json(safe)
@@ -1918,6 +1922,9 @@ class GarminCollectionTool:
                     self._account_devices_ready = True
                 if not changed and request.mode == "snapshot":
                     self.repo.coverage(conn, subject, resource, day.isoformat(), "partial", revision, 0, snapshot=True)
+                self._resolve_successful_health_gaps(
+                    conn, subject, resource, day.isoformat(), key, request, "fetched",
+                )
                 self.repo.capability(conn, subject, resource, "supported", environment_key=self.config.region)
                 self.repo.item(conn, run, resource, key, "project", "revised" if changed else "unchanged", revision_id=revision, increment_attempt=False)
                 receipt.counts["revised" if changed else "unchanged"] += 1
@@ -1947,6 +1954,9 @@ class GarminCollectionTool:
                 # while correctly making this run partial.
                 if terminal == "not_available":
                     receipt.counts["failed"] += 1
+                self._resolve_successful_health_gaps(
+                    conn, subject, resource, day.isoformat(), key, request, terminal,
+                )
                 receipt.next_retry_at_utc = retry or receipt.next_retry_at_utc
             except Exception:
                 error = GarminError("account_project_failed")
@@ -1974,6 +1984,9 @@ class GarminCollectionTool:
                 self.repo.item(conn, run, resource, key, "discover", "not_available", increment_attempt=False)
                 outcomes.append(("not_available", None, 0, "not_available"))
                 self._count_receipt_terminal(receipt, "not_available")
+                self._resolve_successful_health_gaps(
+                    conn, subject, resource, day.isoformat(), key, request, "not_available",
+                )
                 self._publish_b1_coverage(conn, subject, resource, day.isoformat(), request, outcomes)
                 continue
             if resource == "device_settings" and not keys:
@@ -1981,6 +1994,9 @@ class GarminCollectionTool:
                 self.repo.item(conn, run, resource, "garmin:account:device_settings", "discover", "not_available", increment_attempt=False)
                 outcomes.append(("not_available", None, 0, "not_available"))
                 self._count_receipt_terminal(receipt, "not_available")
+                self._resolve_successful_health_gaps(
+                    conn, subject, resource, day.isoformat(), "garmin:account:device_settings", request, "not_available",
+                )
             for device_hash, provider_id in keys:
                 key = f"garmin:account:{resource}:{device_hash or 'account'}"
                 try:
@@ -2005,6 +2021,9 @@ class GarminCollectionTool:
                         self.repo.item(conn, run, resource, key, "fetch", state, revision_id=revision, increment_attempt=False)
                         outcomes.append((state, revision, 0, "provider_empty_or_capability" if state != "empty" else None))
                         self._count_receipt_terminal(receipt, state)
+                        self._resolve_successful_health_gaps(
+                            conn, subject, resource, day.isoformat(), key, request, state,
+                        )
                         continue
                     # _call records running for every provider operation.
                     # A successful fetch must end before projection begins.
@@ -2062,6 +2081,9 @@ class GarminCollectionTool:
                     self.repo.item(conn, run, resource, key, "project", "revised" if changed else "unchanged", revision_id=revision, increment_attempt=False)
                     outcomes.append(("fetched", revision, 1, None))
                     receipt.counts["revised" if changed else "unchanged"] += 1
+                    self._resolve_successful_health_gaps(
+                        conn, subject, resource, day.isoformat(), key, request, "fetched",
+                    )
                 except GarminError as exc:
                     outcome = self._classify(exc, allows_404=spec.allows_404)
                     if outcome.status == "auth_required": raise GarminError("auth_required", http_status=401) from None
@@ -2083,6 +2105,9 @@ class GarminCollectionTool:
                             self.repo.coverage(conn, subject, resource, day.isoformat(), "partial", None, 0, snapshot=True)
                     self.repo.item(conn, run, resource, key, "fetch", terminal, error=exc, next_retry=retry, increment_attempt=False)
                     outcomes.append((terminal, None, 0, exc.code))
+                    self._resolve_successful_health_gaps(
+                        conn, subject, resource, day.isoformat(), key, request, terminal,
+                    )
                     if terminal == "deferred":
                         self._count_receipt_terminal(receipt, terminal)
                         receipt.next_retry_at_utc = retry or receipt.next_retry_at_utc
@@ -2465,6 +2490,32 @@ class GarminCollectionTool:
             and stages.get("project") in {"revised", "unchanged", "succeeded"}
         )
 
+    def _resolve_successful_health_gaps(
+        self,
+        conn: sqlite3.Connection,
+        subject: int,
+        resource: str,
+        day: str,
+        logical_key: str,
+        request: SyncRequest,
+        terminal: str,
+    ) -> None:
+        """Close only the exact completed health/account observation.
+
+        A repeated raw response can legitimately leave ``archive`` unchanged,
+        so projection is not invoked.  Gap resolution is an observation-level
+        effect, rather than a projection-only effect.  Keep it fail-closed:
+        snapshots, failures, deferrals and forbidden responses cannot resolve
+        a historical full-day gap, and a same-day sibling key stays untouched.
+        """
+        if request.mode == "snapshot" or terminal not in {
+            "fetched", "empty", "not_available", "not_enabled", "not_supported",
+        }:
+            return
+        self.repo.resolve_gaps(
+            conn, subject, resource, day, logical_object_key=logical_key,
+        )
+
     def _health(self, conn: sqlite3.Connection, run: int, subject: int, start: date, through: date, request: SyncRequest, receipt: SyncReceipt) -> None:
         selected = set(request.resource_kinds) or set(HEALTH_RESOURCES)
         from .garmin_catalog import RESOURCE_CATALOG
@@ -2501,15 +2552,22 @@ class GarminCollectionTool:
                             self.repo.fields(conn, resource, stored_payload)
                             self._supersede_health_projection(conn, subject, resource, key, day.isoformat())
                             self.repo.coverage(conn, subject, resource, day.isoformat(), coverage_state, revision, 0, snapshot=request.mode == "snapshot")
-                            if request.mode != "snapshot":
-                                self.repo.resolve_gaps(conn, subject, resource, day.isoformat())
+                            self._resolve_successful_health_gaps(
+                                conn, subject, resource, day.isoformat(), key, request, payload_state,
+                            )
                         _, revision, changed = self.repo.archive(
                             conn, resource, key, canonical_provider_json(stored_payload), "json", "application/json", tombstone_projector
+                        )
+                        self._resolve_successful_health_gaps(
+                            conn, subject, resource, day.isoformat(), key, request, payload_state,
                         )
                         if not changed:
                             # A stable tombstone remains an immutable current
                             # revision; record this observation with provenance.
                             self.repo.coverage(conn, subject, resource, day.isoformat(), coverage_state, revision, 0, snapshot=request.mode == "snapshot")
+                            self._resolve_successful_health_gaps(
+                                conn, subject, resource, day.isoformat(), key, request, payload_state,
+                            )
                         self.repo.item(conn, run, resource, key, "fetch", payload_state, revision_id=revision, increment_attempt=False)
                         if payload_state in receipt.counts: receipt.counts[payload_state] += 1
                         continue
@@ -2519,8 +2577,13 @@ class GarminCollectionTool:
                         self._supersede_health_projection(conn, subject, resource, key, day.isoformat())
                         projected = self._project_health(conn, subject, resource, day.isoformat(), stored_payload, revision)
                         self.repo.coverage(conn, subject, resource, day.isoformat(), "partial" if request.mode == "snapshot" else "fetched", revision, projected, snapshot=request.mode == "snapshot")
-                        if request.mode != "snapshot": self.repo.resolve_gaps(conn,subject,resource,day.isoformat())
+                        self._resolve_successful_health_gaps(
+                            conn, subject, resource, day.isoformat(), key, request, "fetched",
+                        )
                     _, revision, changed = self.repo.archive(conn, resource, key, canonical_provider_json(stored_payload), "json", "application/json", projector)
+                    self._resolve_successful_health_gaps(
+                        conn, subject, resource, day.isoformat(), key, request, "fetched",
+                    )
                     self.repo.item(conn, run, resource, key, "project", "revised" if changed else "unchanged", revision_id=revision); receipt.counts["revised" if changed else "unchanged"] += 1
                 except GarminError as exc:
                     outcome = self._classify(exc, allows_404=spec.allows_404)
@@ -2530,7 +2593,9 @@ class GarminCollectionTool:
                         state = "not_supported" if exc.code == "not_supported" else "not_available"
                         self.repo.capability(conn, subject, resource, state, reason=exc.code)
                         self.repo.coverage(conn, subject, resource, day.isoformat(), "partial" if request.mode == "snapshot" else state, None, 0, snapshot=request.mode == "snapshot")
-                        if request.mode != "snapshot": self.repo.resolve_gaps(conn, subject, resource, day.isoformat())
+                        self._resolve_successful_health_gaps(
+                            conn, subject, resource, day.isoformat(), key, request, state,
+                        )
                         self.repo.item(conn, run, resource, key, "fetch", state, error=exc, increment_attempt=False)
                         if state in receipt.counts: receipt.counts[state] += 1
                         continue
@@ -2598,9 +2663,10 @@ class GarminCollectionTool:
                     self.repo.item(conn, run, resource, logical_key, "fetch", state, revision_id=revision, increment_attempt=False)
                     self._count_receipt_terminal(receipt, state)
                     if state != "empty": self.repo.capability(conn, subject, resource, state, reason="provider_empty_or_capability", next_probe=self._account_next_probe(state), environment_key=self.config.region)
-                    if request.mode != "snapshot":
-                        for current_day in days:
-                            self.repo.resolve_gaps(conn, subject, resource, current_day.isoformat())
+                    for current_day in days:
+                        self._resolve_successful_health_gaps(
+                            conn, subject, resource, current_day.isoformat(), logical_key, request, state,
+                        )
                     cursor = end + timedelta(days=1); continue
                 self.repo.item(conn, run, resource, logical_key, "fetch", "fetched", increment_attempt=False)
                 def projector(revision: int) -> None:
@@ -2628,9 +2694,14 @@ class GarminCollectionTool:
                         # *whole response* above uses spec.empty_state.
                         state_for_day = "partial" if request.mode == "snapshot" else ("fetched" if day_payload else "empty")
                         self.repo.coverage(conn, subject, resource, current_day.isoformat(), state_for_day, revision, count, snapshot=request.mode == "snapshot")
-                        if request.mode != "snapshot":
-                            self.repo.resolve_gaps(conn, subject, resource, current_day.isoformat())
+                        self._resolve_successful_health_gaps(
+                            conn, subject, resource, current_day.isoformat(), logical_key, request, "fetched",
+                        )
                 _, revision, changed = self.repo.archive(conn, resource, logical_key, canonical_provider_json(stored), "json", "application/json", projector)
+                for current_day in days:
+                    self._resolve_successful_health_gaps(
+                        conn, subject, resource, current_day.isoformat(), logical_key, request, "fetched",
+                    )
                 self.repo.item(conn, run, resource, logical_key, "project", "revised" if changed else "unchanged", revision_id=revision, increment_attempt=False)
                 receipt.counts["revised" if changed else "unchanged"] += 1
             except GarminError as exc:

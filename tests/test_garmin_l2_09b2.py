@@ -321,6 +321,50 @@ def test_range_parse_failure_keeps_received_revision_and_reparse_same_payload(tm
         assert conn.execute("SELECT count(*) FROM physiology_metrics WHERE metric_key='garmin.race_prediction.seconds'").fetchone()[0] == 1
 
 
+def test_unchanged_range_success_resolves_per_day_key_but_provider_error_does_not(
+    tmp_path: Path,
+) -> None:
+    config, tool, transport = _setup(tmp_path)
+    _repair(tool, "race_predictions", "range-unchanged-baseline")
+    day = "2026-04-15"
+    key = f"garmin:health:race_predictions:{day}:{day}"
+    sibling = f"{key}:sibling"
+    conn = tool.repo.connect()
+    try:
+        subject = tool.repo.subject(conn)
+        tool.repo.gap(conn, subject, "race_predictions", key, day, "project", "parse_or_project_failed")
+        tool.repo.gap(conn, subject, "race_predictions", sibling, day, "project", "parse_or_project_failed")
+    finally:
+        conn.close()
+    unchanged = _repair(tool, "race_predictions", "range-unchanged-resolve")
+    assert unchanged.counts["unchanged"] == 1
+    with sqlite3.connect(config.database_path) as conn:
+        states = dict(conn.execute(
+            "SELECT logical_object_key,status FROM garmin_sync_gaps WHERE resource_kind='race_predictions'"
+        ))
+    assert states[key] == "resolved"
+    assert states[sibling] == "open"
+
+    conn = tool.repo.connect()
+    try:
+        subject = tool.repo.subject(conn)
+        tool.repo.gap(conn, subject, "race_predictions", key, day, "project", "parse_or_project_failed")
+    finally:
+        conn.close()
+    transport.errors["race_predictions"] = GarminError("provider_error", http_status=500)
+    failed = _repair(tool, "race_predictions", "range-provider-error")
+    assert failed.status == "partial"
+    with sqlite3.connect(config.database_path) as conn:
+        assert conn.execute(
+            "SELECT status FROM garmin_sync_gaps WHERE resource_kind='race_predictions' AND logical_object_key=?",
+            (sibling,),
+        ).fetchone()[0] == "open"
+        assert conn.execute(
+            "SELECT count(*) FROM garmin_sync_gaps WHERE resource_kind='race_predictions' AND logical_object_key=? AND stage='project' AND status='open'",
+            (key,),
+        ).fetchone()[0] == 1
+
+
 def test_range_long_rate_limit_defers_whole_catalog_chunks_and_does_not_close_cursor(tmp_path: Path) -> None:
     config, tool, transport = _setup(tmp_path)
     transport.errors["menstrual"] = GarminError("rate_limited", http_status=429, retry_after=121)
