@@ -195,6 +195,34 @@ def test_unchanged_daily_success_resolves_only_its_exact_gap_key(tmp_path: Path)
     assert states[sibling] == "open"
 
 
+def test_unchanged_daily_success_promotes_latest_snapshot_partial_in_place(
+    tmp_path: Path,
+) -> None:
+    config, tool, _transport = _setup(tmp_path)
+    _refetch_steps(tool, "partial-daily-baseline")
+    with sqlite3.connect(config.database_path) as conn:
+        before = conn.execute(
+            """SELECT id,record_count,source_revision_id FROM resource_coverage
+               WHERE resource_kind='steps' ORDER BY id DESC LIMIT 1"""
+        ).fetchone()
+        assert before is not None
+        conn.execute(
+            "UPDATE resource_coverage SET availability_state='partial' WHERE id=?",
+            (before[0],),
+        )
+        conn.commit()
+
+    _refetch_steps(tool, "partial-daily-promote")
+
+    with sqlite3.connect(config.database_path) as conn:
+        after = conn.execute(
+            """SELECT id,availability_state,record_count,source_revision_id
+               FROM resource_coverage WHERE resource_kind='steps'
+               ORDER BY id DESC LIMIT 1"""
+        ).fetchone()
+    assert after == (before[0], "fetched", before[1], before[2])
+
+
 def _archive_unparsed_range(
     tool: GarminCollectionTool, config: GarminConfig, resource: str,
     payload: object, start: str = "2026-04-15", end: str = "2026-04-15",

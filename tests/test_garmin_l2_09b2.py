@@ -365,6 +365,35 @@ def test_unchanged_range_success_resolves_per_day_key_but_provider_error_does_no
         ).fetchone()[0] == 1
 
 
+def test_unchanged_range_success_promotes_each_snapshot_partial_in_place(
+    tmp_path: Path,
+) -> None:
+    config, tool, _transport = _setup(tmp_path)
+    _repair(tool, "race_predictions", "range-partial-baseline")
+    with sqlite3.connect(config.database_path) as conn:
+        before = conn.execute(
+            """SELECT id,record_count,source_revision_id FROM resource_coverage
+               WHERE resource_kind='race_predictions' AND local_date='2026-04-15'
+               ORDER BY id DESC LIMIT 1"""
+        ).fetchone()
+        assert before is not None
+        conn.execute(
+            "UPDATE resource_coverage SET availability_state='partial' WHERE id=?",
+            (before[0],),
+        )
+        conn.commit()
+
+    repeated = _repair(tool, "race_predictions", "range-partial-promote")
+    assert repeated.status == "succeeded" and repeated.counts["unchanged"] == 1
+    with sqlite3.connect(config.database_path) as conn:
+        after = conn.execute(
+            """SELECT id,availability_state,record_count,source_revision_id
+               FROM resource_coverage WHERE resource_kind='race_predictions'
+                 AND local_date='2026-04-15' ORDER BY id DESC LIMIT 1"""
+        ).fetchone()
+    assert after == (before[0], "fetched", before[1], before[2])
+
+
 def test_range_long_rate_limit_defers_whole_catalog_chunks_and_does_not_close_cursor(tmp_path: Path) -> None:
     config, tool, transport = _setup(tmp_path)
     transport.errors["menstrual"] = GarminError("rate_limited", http_status=429, retry_after=121)

@@ -115,6 +115,34 @@ def test_basic_fetch_stages_are_terminal_for_success_failure_noop_and_recovery(t
         assert conn.execute("SELECT count(*) FROM garmin_sync_items WHERE status='running'").fetchone()[0] == 0
 
 
+def test_unchanged_account_success_promotes_latest_snapshot_partial_in_place(
+    tmp_path: Path,
+) -> None:
+    config, tool, _transport = _setup(tmp_path)
+    _repair(tool, "account-partial-baseline", "user_profile")
+    with sqlite3.connect(config.database_path) as conn:
+        before = conn.execute(
+            """SELECT id,record_count,source_revision_id FROM resource_coverage
+               WHERE resource_kind='user_profile' ORDER BY id DESC LIMIT 1"""
+        ).fetchone()
+        assert before is not None
+        conn.execute(
+            "UPDATE resource_coverage SET availability_state='partial' WHERE id=?",
+            (before[0],),
+        )
+        conn.commit()
+
+    repeated = _repair(tool, "account-partial-promote", "user_profile")
+    assert repeated.status == "succeeded" and repeated.counts["unchanged"] == 1
+    with sqlite3.connect(config.database_path) as conn:
+        after = conn.execute(
+            """SELECT id,availability_state,record_count,source_revision_id
+               FROM resource_coverage WHERE resource_kind='user_profile'
+               ORDER BY id DESC LIMIT 1"""
+        ).fetchone()
+    assert after == (before[0], "fetched", before[1], before[2])
+
+
 def test_primary_last_used_have_fresh_devices_dependency_and_canonical_roles(tmp_path: Path) -> None:
     config, tool, transport = _setup(tmp_path)
     transport.calls.clear()
