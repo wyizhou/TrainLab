@@ -23,11 +23,30 @@ class QuietTransport(FakeGarminTransport):
         return []
 
 
-def _tool(tmp_path: Path, *, faults: dict[str, GarminError | list[GarminError]] | None = None, resource_interval: int = 0, max_attempts: int = 5, inline_retry_after_max_seconds: int = 120):
+def _tool(
+    tmp_path: Path,
+    *,
+    faults: dict[str, GarminError | list[GarminError]] | None = None,
+    resource_interval: int = 0,
+    resource_interval_jitter: int = 0,
+    max_attempts: int = 5,
+    inline_retry_after_max_seconds: int = 120,
+    rate_limit_fallback_seconds: int = 900,
+):
     root = tmp_path / "data"
     foundation = FoundationConfig(root, root / "data.db", root / "raw", root / "state", root / "state/receipt.json", root / "state/locks/foundation.lock")
     FoundationTool(foundation).execute(FoundationRequest("init", "fixture", "2026-01-01T00:00:00Z"))
-    config = GarminConfig(foundation.database_path, foundation.raw_root, foundation.state_root, "2026-04-15", request_min_interval_ms=resource_interval, max_attempts=max_attempts, inline_retry_after_max_seconds=inline_retry_after_max_seconds)
+    config = GarminConfig(
+        foundation.database_path,
+        foundation.raw_root,
+        foundation.state_root,
+        "2026-04-15",
+        request_min_interval_ms=resource_interval,
+        request_interval_jitter_ms=resource_interval_jitter,
+        max_attempts=max_attempts,
+        inline_retry_after_max_seconds=inline_retry_after_max_seconds,
+        rate_limit_fallback_seconds=rate_limit_fallback_seconds,
+    )
     fit = (Path(__file__).parents[1] / "test_data/new/Running.fit").read_bytes()
     transport = QuietTransport(fit, faults=faults or {})
     sleeps: list[float] = []
@@ -49,6 +68,24 @@ def _item_row(config: GarminConfig, invocation: str):
 def _resource_request(resources: tuple[str, ...], invocation: str) -> SyncRequest:
     # Public request schema reserves resource filters for targeted repair.
     return SyncRequest("repair", through_local_date="2026-04-15", resource_kinds=resources, repair_strategy="refetch", invocation_id=invocation)
+
+
+def test_normal_calls_use_bounded_pseudorandom_intervals(tmp_path: Path) -> None:
+    _, tool, _, sleeps = _tool(
+        tmp_path,
+        resource_interval=1_000,
+        resource_interval_jitter=2_000,
+    )
+    ticks = iter((100.0, 100.0, 101.5))
+    random_values = iter((0.25, 0.75))
+    tool.monotonic = lambda: next(ticks)
+    tool.rng = lambda: next(random_values)
+
+    assert tool._call(lambda: "first") == "first"
+    assert tool._call(lambda: "second") == "second"
+    assert tool._call(lambda: "third") == "third"
+
+    assert sleeps == [1.5, 2.5]
 
 
 def test_network_408_and_temporary_5xx_retry_with_jitter_and_durable_attempts(tmp_path: Path) -> None:
@@ -95,6 +132,19 @@ def test_configured_429_threshold_controls_inline_retry_vs_deferred(tmp_path: Pa
     result = deferred.execute(_resource_request(("steps",), "deferred-threshold"))
     assert result.status == "deferred" and result.next_retry_at_utc
     assert transport.calls.count("health:steps") == 1 and sleeps == []
+
+
+def test_429_without_retry_after_uses_configured_fallback(tmp_path: Path) -> None:
+    _, tool, transport, sleeps = _tool(
+        tmp_path,
+        faults={"health:steps": [GarminError("limited", http_status=429)]},
+        inline_retry_after_max_seconds=3,
+        rate_limit_fallback_seconds=3,
+    )
+    result = tool.execute(_resource_request(("steps",), "fallback-threshold"))
+    assert result.status == "succeeded"
+    assert transport.calls.count("health:steps") == 2
+    assert sleeps == [3.0]
 
 
 def test_401_refreshes_once_then_success_or_stops_all_following_network_work(tmp_path: Path) -> None:

@@ -182,3 +182,23 @@ def test_transport_uses_bounded_range_signatures_without_daily_fanout(tmp_path: 
     assert transport.fetch_range("lactate_threshold", "2026-04-01", "2026-04-14") == []
     assert transport.fetch_range("menstrual", "2026-04-01", "2026-04-14") == []
     assert client.calls == [("lactate", False, "2026-04-01", "2026-04-14", "daily"), ("menstrual", "2026-04-01", "2026-04-14")]
+
+
+def test_transport_uses_pinned_daily_signatures_for_race_and_endurance(tmp_path: Path) -> None:
+    class Client:
+        class Session:
+            def request(self, *args, **kwargs): return object()
+        def __init__(self):
+            self.cs, self._api_session, self.calls = self.Session(), self.Session(), []
+        def get_race_predictions(self, start: str, end: str, _type: str):
+            self.calls.append(("race", start, end, _type)); return []
+        def get_endurance_score(self, start: str, end: str | None = None):
+            self.calls.append(("endurance", start, end)); return {}
+    client = Client()
+    transport = GarminConnectTransport(None, None, TokenStore(tmp_path / "tokens"), client=client)
+    assert transport.fetch_range("race_predictions", "2026-04-15", "2026-04-15") == []
+    assert transport.fetch_range("endurance_score", "2026-04-15", "2026-04-15") == {}
+    assert client.calls == [
+        ("race", "2026-04-15", "2026-04-15", "daily"),
+        ("endurance", "2026-04-15", None),
+    ]

@@ -138,6 +138,63 @@ def test_primary_last_used_have_fresh_devices_dependency_and_canonical_roles(tmp
     assert wrapped.status == "succeeded"
 
 
+def test_last_used_volatile_metadata_does_not_change_device_reference_revision(
+    tmp_path: Path,
+) -> None:
+    config, tool, transport = _setup(tmp_path)
+    transport.account_payloads[("device_last_used", None)] = {
+        "deviceId": "PRIVATE-DEVICE-B",
+        "lastSyncTimestamp": "2026-04-17T00:00:00Z",
+    }
+    first = _repair(tool, "last-used-semantic-first", "device_last_used")
+    assert first.status == "succeeded" and first.counts["revised"] >= 1
+    with sqlite3.connect(config.database_path) as conn:
+        revisions_before = conn.execute(
+            """SELECT count(*) FROM source_revisions
+               WHERE resource_kind='device_last_used'"""
+        ).fetchone()[0]
+        raw_before = conn.execute(
+            "SELECT count(*) FROM raw_objects WHERE resource_kind='device_last_used'"
+        ).fetchone()[0]
+
+    transport.account_payloads[("device_last_used", None)][
+        "lastSyncTimestamp"
+    ] = "2026-04-17T00:01:00Z"
+    repeated = _repair(
+        tool,
+        "last-used-semantic-volatile",
+        "device_last_used",
+    )
+    assert repeated.counts["revised"] == 0
+    with sqlite3.connect(config.database_path) as conn:
+        assert conn.execute(
+            """SELECT count(*) FROM source_revisions
+               WHERE resource_kind='device_last_used'"""
+        ).fetchone()[0] == revisions_before
+        assert conn.execute(
+            "SELECT count(*) FROM raw_objects WHERE resource_kind='device_last_used'"
+        ).fetchone()[0] == raw_before + 1
+        assert conn.execute(
+            """SELECT profile_version FROM source_revisions
+               WHERE resource_kind='device_last_used' AND is_current=1"""
+        ).fetchone()[0] == "device-reference-v1"
+
+    transport.account_payloads[("device_last_used", None)][
+        "deviceId"
+    ] = "PRIVATE-DEVICE-A"
+    changed = _repair(tool, "last-used-semantic-real-change", "device_last_used")
+    assert changed.counts["revised"] == 1
+    audited = tool.execute(
+        SyncRequest(
+            "audit",
+            health_from_local_date="2026-04-15",
+            through_local_date="2026-04-15",
+            invocation_id="last-used-semantic-audit",
+        )
+    )
+    assert audited.status == "succeeded" and audited.counts["failed"] == 0
+
+
 def test_b1_physiology_is_redacted_revisioned_and_noop(tmp_path: Path) -> None:
     config, tool, transport = _setup(tmp_path)
     resources = ("personal_records", "cycling_ftp", "pregnancy")
@@ -176,14 +233,25 @@ def test_b1_capabilities_unknown_device_and_snapshot_are_isolated(tmp_path: Path
         states = dict(conn.execute("SELECT resource_kind,capability_state FROM garmin_resource_capabilities WHERE resource_kind IN ('pregnancy','personal_records')"))
         assert states == {"pregnancy": "not_available", "personal_records": "forbidden"}
         assert conn.execute("SELECT count(*) FROM garmin_sync_gaps WHERE resource_kind='primary_device' AND reason_code='unknown_device_reference'").fetchone()[0] == 1
-        assert conn.execute("SELECT count(*) FROM source_revisions WHERE resource_kind='primary_device'").fetchone()[0] == 0
+        # Raw-first publication keeps an unparsed received revision available
+        # for a later alias/wrapper repair, without accepting it as canonical.
+        assert conn.execute(
+            """SELECT count(*) FROM source_revisions
+               WHERE resource_kind='primary_device' AND is_current=0
+                 AND parsed_at_utc IS NULL"""
+        ).fetchone()[0] == 1
     # A disabled conditional endpoint is an immutable sanitized tombstone, not
     # a zero-valued physiology record, and is eligible for seven-day reprobe.
     transport.account_payloads[("pregnancy", None)] = {"availability_state": "not_enabled", "PRIVATE-PERSON": "must-not-persist"}
     disabled = _repair(tool, "b1-disabled", "pregnancy")
     assert disabled.status == "succeeded" and disabled.counts["not_enabled"] == 1
     with sqlite3.connect(config.database_path) as conn:
-        state, probe = conn.execute("SELECT capability_state,next_probe_at_utc FROM garmin_resource_capabilities WHERE resource_kind='pregnancy' AND environment_key='global'").fetchone()
+        state, probe = conn.execute(
+            "SELECT capability_state,next_probe_at_utc "
+            "FROM garmin_resource_capabilities "
+            "WHERE resource_kind='pregnancy' AND environment_key=?",
+            (config.region,),
+        ).fetchone()
         assert state == "not_enabled" and probe == "2026-04-23T16:00:00Z"
         revision = conn.execute("SELECT id FROM source_revisions WHERE resource_kind='pregnancy' AND is_current=1").fetchone()[0]
         assert conn.execute("SELECT source_revision_id FROM resource_coverage WHERE resource_kind='pregnancy' ORDER BY id DESC LIMIT 1").fetchone()[0] == revision
@@ -235,3 +303,26 @@ def test_receipt_v1_folds_not_supported_into_unavailable_and_replays(tmp_path: P
         assert conn.execute("SELECT status FROM garmin_sync_items WHERE resource_kind='cycling_ftp' AND stage='fetch'").fetchone()[0] == "not_supported"
         assert conn.execute("SELECT capability_state FROM garmin_resource_capabilities WHERE resource_kind='cycling_ftp'").fetchone()[0] == "not_supported"
         assert conn.execute("SELECT availability_state FROM resource_coverage WHERE resource_kind='cycling_ftp'").fetchone()[0] == "not_supported"
+
+
+def test_device_reference_aliases_resolve_to_inventory_canonical_hash(tmp_path: Path) -> None:
+    config, tool, transport = _setup(tmp_path)
+    transport.devices[0]["unitId"] = "PRIVATE-UNIT-A"
+    transport.account_payloads[("primary_device", None)] = {
+        "PrimaryTrainingDevice": {"serialNumber": "PRIVATE-SERIAL-A"}
+    }
+    transport.account_payloads[("device_last_used", None)] = {
+        "userDeviceId": "PRIVATE-UNIT-A"
+    }
+    receipt = _repair(
+        tool,
+        "b1-reference-aliases",
+        "primary_device",
+        "device_last_used",
+    )
+    assert receipt.status == "succeeded"
+    with sqlite3.connect(config.database_path) as conn:
+        assert conn.execute(
+            "SELECT count(*) FROM physiology_records "
+            "WHERE record_type IN ('primary_device','device_last_used')"
+        ).fetchone()[0] == 2

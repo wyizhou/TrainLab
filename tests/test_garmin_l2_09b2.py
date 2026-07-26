@@ -269,6 +269,9 @@ def test_range_calendar_is_chunked_once_and_one_raw_revision_has_multi_day_linea
 
 def test_sparse_range_is_planned_by_catalog_limit_and_closes_empty_days(tmp_path: Path) -> None:
     config, tool, transport = _setup(tmp_path)
+    # This test exercises 14-day chunking, not future-date semantics.  Keep
+    # its requested range inside the completed-day boundary required by L2-13.
+    tool.clock = lambda: datetime(2026, 5, 1)
     records = [
         {"calendarDate": "2026-04-01", "cycleLength": 28},
         {"calendarDate": "2026-04-15", "cycleLength": 29},
@@ -509,3 +512,213 @@ def test_range_second_401_is_run_auth_required_after_one_refresh(tmp_path: Path)
     assert receipt.status == "auth_required" and logins["count"] == 2  # initial login + one refresh
     with sqlite3.connect(config.database_path) as conn:
         assert conn.execute("SELECT status FROM garmin_sync_runs ORDER BY id DESC LIMIT 1").fetchone()[0] == "auth_required"
+
+
+@pytest.mark.parametrize(
+    ("resource", "payload"),
+    [
+        ("blood_pressure", {
+            "measurementSummaries": [], "categoryStats": {},
+            "from": "2026-04-15", "until": "2026-04-15",
+        }),
+        ("body_composition", {
+            "dateWeightList": [], "startDate": "2026-04-15",
+            "endDate": "2026-04-15", "totalAverage": {},
+        }),
+        ("weigh_ins", {
+            "dailyWeightSummaries": [], "previousDateWeight": {},
+            "nextDateWeight": {}, "totalAverage": {},
+        }),
+        ("lactate_threshold", {"speed": [], "heart_rate": [], "power": []}),
+        ("menstrual", {
+            "cycleSummaries": [], "loggedNoteDays": [],
+            "loggedOvulationDays": [], "loggedSymptomDays": [],
+        }),
+    ],
+)
+def test_live_range_metadata_envelopes_with_empty_results_are_valid(
+    tmp_path: Path, resource: str, payload: object
+) -> None:
+    config, tool, transport = _setup(tmp_path)
+    transport.payloads[resource] = payload
+    receipt = _repair(tool, resource, f"live-empty-{resource}")
+    assert receipt.status == "succeeded"
+    with sqlite3.connect(config.database_path) as conn:
+        assert conn.execute(
+            "SELECT availability_state FROM resource_coverage "
+            "WHERE resource_kind=? AND local_date='2026-04-15'",
+            (resource,),
+        ).fetchone()[0] == "empty"
+        assert conn.execute(
+            "SELECT count(*) FROM garmin_sync_gaps WHERE resource_kind=?",
+            (resource,),
+        ).fetchone()[0] == 0
+
+
+def test_live_health_range_shapes_project_only_measurements_and_preserve_raw(tmp_path: Path) -> None:
+    config, tool, transport = _setup(tmp_path)
+    weigh_ins = {
+        "dailyWeightSummaries": [{
+            "summaryDate": "2026-04-15",
+            "latestWeight": {"calendarDate": "2026-04-15", "weight": 70.1},
+            "allWeightMetrics": [
+                {"calendarDate": "2026-04-15", "weight": 70.2},
+                {"timestampGMT": "2026-04-15T02:30:00Z", "weight": 70.0},
+            ],
+        }],
+    }
+    lactate = {
+        "heart_rate": [{"from": "2026-04-15", "series": "daily", "until": "2026-04-15", "updatedDate": "2026-04-15", "value": 165}],
+        "power": [{"from": "2026-04-15", "series": "daily", "until": "2026-04-15", "updatedDate": "2026-04-15", "value": 240}],
+        "speed": [{"from": "2026-04-15", "series": "daily", "until": "2026-04-15", "updatedDate": "2026-04-15", "value": 3.8}],
+    }
+    hill_empty = {
+        "hillScoreDTOList": [], "maxScore": None,
+        "periodAvgScore": {"2026-04-15": None}, "startDate": "2026-04-15", "endDate": "2026-04-15",
+    }
+    transport.payloads.update({"weigh_ins": weigh_ins, "lactate_threshold": lactate, "hill_score": hill_empty})
+
+    assert _repair(tool, "weigh_ins", "live-weigh-ins").status == "succeeded"
+    assert _repair(tool, "lactate_threshold", "live-lactate").status == "succeeded"
+    assert _repair(tool, "hill_score", "live-hill-empty").status == "succeeded"
+    assert _repair(tool, "weigh_ins", "live-weigh-ins-repeat").counts["unchanged"] == 1
+    assert _repair(tool, "lactate_threshold", "live-lactate-repeat").counts["unchanged"] == 1
+    with sqlite3.connect(config.database_path) as conn:
+        assert conn.execute("SELECT count(*) FROM body_measurements").fetchone()[0] == 2
+        assert set(conn.execute(
+            "SELECT metric_key FROM physiology_metrics WHERE metric_key LIKE 'garmin.lactate_threshold.%'"
+        )) == {
+            ("garmin.lactate_threshold.heart_rate_bpm",),
+            ("garmin.lactate_threshold.power_w",),
+            ("garmin.lactate_threshold.speed_mps",),
+        }
+        assert set(conn.execute(
+            "SELECT source_path FROM physiology_metrics WHERE metric_key LIKE 'garmin.lactate_threshold.%'"
+        )) == {("/heart_rate/*/value",), ("/power/*/value",), ("/speed/*/value",)}
+        assert conn.execute(
+            "SELECT count(*) FROM physiology_metrics WHERE metric_key='garmin.hill_score'"
+        ).fetchone()[0] == 0
+        assert conn.execute(
+            "SELECT availability_state,record_count FROM resource_coverage WHERE resource_kind='hill_score'"
+        ).fetchone() == ("empty", 0)
+        assert conn.execute(
+            "SELECT count(*) FROM source_field_catalog WHERE resource_kind='lactate_threshold' AND field_path LIKE '%__trainlab%'"
+        ).fetchone()[0] == 0
+        assert set(conn.execute(
+            "SELECT field_path FROM source_field_catalog WHERE resource_kind='lactate_threshold' AND mapping_state='mapped'"
+        )) == {("/heart_rate/*/value",), ("/power/*/value",), ("/speed/*/value",)}
+        raw = b"".join(
+            (config.raw_root.parent / row[0]).read_bytes()
+            for row in conn.execute(
+                "SELECT relative_path FROM raw_objects WHERE resource_kind IN ('weigh_ins', 'lactate_threshold', 'hill_score')"
+            )
+        )
+        assert stable_json(weigh_ins) in raw and stable_json(lactate) in raw and stable_json(hill_empty) in raw
+
+
+def test_hill_score_non_null_period_average_is_not_silently_empty(tmp_path: Path) -> None:
+    config, tool, transport = _setup(tmp_path)
+    transport.payloads["hill_score"] = {
+        "hillScoreDTOList": [], "maxScore": None,
+        "periodAvgScore": {"2026-04-15": 42},
+        "startDate": "2026-04-15", "endDate": "2026-04-15",
+    }
+    receipt = _repair(tool, "hill_score", "hill-non-null-period-average")
+    assert receipt.status == "partial" and receipt.counts["failed"] == 1
+    with sqlite3.connect(config.database_path) as conn:
+        assert conn.execute(
+            "SELECT count(*) FROM resource_coverage WHERE resource_kind='hill_score'"
+        ).fetchone()[0] == 0
+        assert conn.execute(
+            "SELECT error_code FROM garmin_sync_items WHERE resource_kind='hill_score' ORDER BY id DESC LIMIT 1"
+        ).fetchone()[0] == "parse_or_project_failed"
+
+
+def test_live_body_battery_date_and_endurance_singleton_envelopes(tmp_path: Path) -> None:
+    config, tool, transport = _setup(tmp_path)
+    selected = tool._range_payload_by_day(
+        [{
+            "date": "2026-04-15",
+            "startTimestampGMT": "2026-04-14T15:00:00Z",
+            "bodyBatteryValuesArray": [["2026-04-15T00:00:00Z", 70]],
+            "charged": 25,
+            "drained": 10,
+        }],
+        datetime(2026, 4, 15).date(),
+        datetime(2026, 4, 15).date(),
+        resource="body_battery",
+    )
+    assert len(selected["2026-04-15"]) == 1
+
+    transport.payloads["endurance_score"] = {
+        "startDate": "2026-04-15",
+        "endDate": "2026-04-15",
+        "enduranceScoreDTO": {
+            "calendarDate": "2026-04-15",
+            "overallScore": 5100,
+        },
+        "groupMap": {},
+    }
+    receipt = _repair(tool, "endurance_score", "live-endurance-singleton")
+    assert receipt.status == "succeeded"
+    with sqlite3.connect(config.database_path) as conn:
+        assert conn.execute(
+            "SELECT value_number FROM physiology_metrics "
+            "WHERE metric_key='garmin.endurance_score'"
+        ).fetchone()[0] == 5100
+
+
+def test_empty_meals_wrapper_is_zero_records_not_shape_failure(tmp_path: Path) -> None:
+    config, tool, transport = _setup(tmp_path)
+    transport.payloads["nutrition_meals"] = {
+        "dailyViewType": "DAY",
+        "meals": [],
+    }
+    receipt = _repair(tool, "nutrition_meals", "live-empty-meals")
+    assert receipt.status == "succeeded"
+    with sqlite3.connect(config.database_path) as conn:
+        assert conn.execute(
+            "SELECT count(*) FROM physiology_records "
+            "WHERE record_type='nutrition_meals'"
+        ).fetchone()[0] == 0
+
+
+def test_endurance_latest_outside_requested_window_is_not_misattributed(tmp_path: Path) -> None:
+    config, tool, transport = _setup(tmp_path)
+    transport.payloads["endurance_score"] = {
+        "startDate": "2026-04-15",
+        "endDate": "2026-04-15",
+        "enduranceScoreDTO": {
+            "calendarDate": "2026-04-08",
+            "overallScore": 5000,
+            "contributors": [{"type": "activity"}],
+        },
+        "groupMap": {},
+    }
+    receipt = _repair(tool, "endurance_score", "endurance-older-latest")
+    assert receipt.status == "succeeded"
+    with sqlite3.connect(config.database_path) as conn:
+        assert conn.execute(
+            "SELECT availability_state FROM resource_coverage "
+            "WHERE resource_kind='endurance_score'"
+        ).fetchone()[0] == "empty"
+        assert conn.execute(
+            "SELECT count(*) FROM physiology_metrics "
+            "WHERE metric_key='garmin.endurance_score'"
+        ).fetchone()[0] == 0
+
+
+def test_endurance_supported_null_calendar_date_is_empty(tmp_path: Path) -> None:
+    config, tool, transport = _setup(tmp_path)
+    transport.payloads["endurance_score"] = {
+        "calendarDate": None,
+        "overallScore": None,
+        "contributors": [],
+    }
+    receipt = _repair(tool, "endurance_score", "endurance-null-day")
+    assert receipt.status == "succeeded"
+    with sqlite3.connect(config.database_path) as conn:
+        assert conn.execute(
+            "SELECT availability_state FROM resource_coverage "
+            "WHERE resource_kind='endurance_score'"
+        ).fetchone()[0] == "empty"

@@ -173,11 +173,12 @@ Python API 和 CLI 必须调用同一个 application service；CLI 不复制业�
 ```yaml
 garmin:
   history_start_date: YYYY-MM-DD
-  region: global
+  region: cn
   token_store: state/secrets/garmin
   lookback_days: 14
   max_repair_items_per_incremental: 100
-  request_min_interval_ms: 500
+  request_min_interval_ms: 1500
+  request_interval_jitter_ms: 2000
   request_timeout_seconds: 30
   max_attempts: 5
   retry_base_seconds: 2
@@ -191,8 +192,14 @@ garmin:
 - `history_start_date` 是首次 full 健康同步的必填下界；Garmin 没有可靠的
   “最早健康日期”接口，不能通过最早活动日期或连续空日猜测。
 - full 可以通过 `--health-from` 显式覆盖，但实际采用值必须写入 receipt。
-- `region` 仅允许 `global` 或 `cn`。
-- token store 必须位于允许的敏感状态目录，目录权限 `0700`、文件权限 `0600`。
+- `region` 仅允许 `global` 或 `cn`；TrainLab 默认使用中国区 `cn`，国际区账号
+  必须显式改为 `global`。
+- `token_store` 是相对于第一层 Foundation `state_root` 的固定逻辑定位符；
+  `state/secrets/garmin` 实际解析为 `<state_root>/secrets/garmin`，不是相对于
+  项目根目录。该目录权限必须为 `0700`、文件权限必须为 `0600`。
+- TrainLab 不设置 token TTL、不按时间主动删除或使登录失效；后续调用复用已保存
+  token，并在 Garmin 返回 401 时仅尝试一次库支持的 refresh。Garmin 服务端仍可能
+  因账号安全策略、撤销或会话失效要求重新认证。
 - 配置和日志不得保存 Garmin 密码、MFA、access token 或 refresh token。
 - 所有重试和限额值可配置，但上述值是首版默认。
 - 第二层配置不得包含执行时间、星期规则或定时表达式。
@@ -202,7 +209,8 @@ garmin:
 `trainlab garmin auth` 是一次性、可交互工具：
 
 1. 从 TTY 或仅本进程可见的安全输入读取账号和密码。
-2. 需要 MFA 时只在 TTY 请求一次性验证码。
+2. 仅当 Garmin 返回 `MFA_REQUIRED` 时，使用该 challenge 的同区域 session 调用
+   `mfa/sendCode`；仅接受 `MFA_CODE_SENT`，随后才在 TTY 请求一次性验证码。
 3. 登录成功后让 `python-garminconnect` 写入专用 token store。
 4. 将 token 文件权限收紧为 `0600`。
 5. 调用 profile/self 类接口取得稳定身份，生成 HMAC。
@@ -577,6 +585,8 @@ incremental 不包含时间安排；第五层可以在任何时间调用。
 
 策略：
 
+- 正常请求之间使用 `request_min_interval_ms + [0, request_interval_jitter_ms)`
+  的伪随机间隔；默认约为 1.5～3.5 秒，避免固定节奏和突发高频访问。
 - 最多 `max_attempts=5`。
 - 指数退避从 2 秒开始，上限 60 秒，并加入随机抖动。
 - 每次尝试写入同一 sync item 的 attempt 计数。

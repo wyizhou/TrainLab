@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "trainlab.garmin.legacy-reconciliation-report.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "report_id", "generated_at_utc", "window", "shadow_only", "canonical_owner", "legacy", "garmin", "snapshot_hashes", "differences", "decision", "report_sha256"],
+  "properties": {
+    "schema_version": {"const": "1"},
+    "report_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9:_-]{0,127}$"},
+    "generated_at_utc": {"type": "string", "format": "date-time", "pattern": "Z$"},
+    "window": {"type": "object", "additionalProperties": false, "required": ["start_local_date", "end_local_date"], "properties": {"start_local_date": {"type": "string", "format": "date"}, "end_local_date": {"type": "string", "format": "date"}}},
+    "shadow_only": {"const": true},
+    "canonical_owner": {"const": "unchanged"},
+    "legacy": {"$ref": "#/$defs/counts"},
+    "garmin": {"$ref": "#/$defs/counts"},
+    "snapshot_hashes": {"type": "object", "additionalProperties": false, "required": ["legacy_snapshot_sha256", "garmin_snapshot_sha256"], "properties": {"legacy_snapshot_sha256": {"$ref": "#/$defs/hash"}, "garmin_snapshot_sha256": {"$ref": "#/$defs/hash"}}},
+    "differences": {"type": "array", "items": {"$ref": "#/$defs/difference"}},
+    "decision": {"enum": ["observe", "investigate"]},
+    "report_sha256": {"$ref": "#/$defs/hash"}
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "counts": {"type": "object", "additionalProperties": false, "required": ["activity_count", "daily_coverage_count"], "properties": {"activity_count": {"type": "integer", "minimum": 0}, "daily_coverage_count": {"type": "integer", "minimum": 0}}},
+    "difference": {"type": "object", "additionalProperties": false, "required": ["code", "entity_kind", "legacy_count", "garmin_count"], "properties": {"code": {"enum": ["activity_count_mismatch", "activity_missing_in_garmin", "activity_missing_in_legacy", "daily_coverage_mismatch", "legacy_snapshot_unavailable", "garmin_snapshot_unavailable"]}, "entity_kind": {"enum": ["activity", "daily_health", "snapshot"]}, "legacy_count": {"type": "integer", "minimum": 0}, "garmin_count": {"type": "integer", "minimum": 0}}}
+  }
+}

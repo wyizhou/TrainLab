@@ -14,7 +14,8 @@ from jsonschema import Draft202012Validator
 from trainlab import cli
 from trainlab.foundation import FoundationConfig, FoundationRequest, FoundationTool
 from trainlab.garmin import GarminCollectionTool, GarminConfig, GarminError, SyncReceipt, SyncRequest
-from trainlab.garmin_client import TokenStore
+from trainlab.garmin_client import GarminConnectTransport, TokenStore
+from trainlab import garmin_client
 from .garmin_fakes import DeterministicClock, FakeGarminTransport
 
 
@@ -58,6 +59,111 @@ def test_auth_prompts_stderr_and_secret_is_not_receipt(monkeypatch,tmp_path):
         def isatty(self): return True
     err=io.StringIO(); out=cli.garmin_cli_execute(args,transport_factory=lambda *a,**k:object(),stdin=TTY("mail@example.test\n"),stderr=err)
     assert "Garmin email" in err.getvalue() and "PASSWORD_SECRET" not in out.json()
+
+
+def test_mfa_delivery_occurs_only_after_required_and_before_prompt(
+    monkeypatch,
+    tmp_path,
+):
+    events = []
+
+    class Response:
+        status_code = 200
+        headers = {}
+        def json(self):
+            return {"responseStatus": {"type": "MFA_CODE_SENT"}}
+
+    class Session:
+        def request(self, *_args, **_kwargs):
+            return Response()
+
+    class MfaSession:
+        def post(self, url, **kwargs):
+            events.append(("send", url, kwargs))
+            return Response()
+
+    class LowClient:
+        def __init__(self):
+            self.cs = Session()
+            self._api_session = Session()
+            self._mfa_flow = "ios"
+            self._mfa_method = "email"
+            self._mfa_session = MfaSession()
+            self._mfa_login_params = {"clientId": "synthetic"}
+            self._mfa_post_headers = {"Origin": "synthetic"}
+
+    class Facade:
+        def __init__(self, *_args, **kwargs):
+            self.client = LowClient()
+            self.prompt_mfa = kwargs["prompt_mfa"]
+        def login(self, _token_store):
+            events.append(("required",))
+            code = self.prompt_mfa()
+            events.append(("verify", code))
+
+    monkeypatch.setattr(garmin_client, "Garmin", Facade)
+    prompted = []
+    transport = GarminConnectTransport(
+        "synthetic@example.test",
+        "synthetic-password",
+        TokenStore(tmp_path / "tokens"),
+        region="cn",
+        mfa=lambda method: prompted.append(method) or "synthetic-code",
+    )
+
+    assert events == [] and prompted == []
+    transport.login()
+
+    assert [event[0] for event in events] == ["required", "send", "verify"]
+    send = events[1]
+    assert send[1] == "https://sso.garmin.cn/mobile/api/mfa/sendCode"
+    assert send[2]["json"] == {"mfaMethod": "email"}
+    assert send[2]["timeout"] == 30
+    assert prompted == ["email"]
+
+
+def test_mfa_delivery_failure_never_prompts_for_code(monkeypatch, tmp_path):
+    class Response:
+        status_code = 200
+        headers = {}
+        def json(self):
+            return {"responseStatus": {"type": "SESSION_EXPIRED"}}
+
+    class Session:
+        def request(self, *_args, **_kwargs):
+            return Response()
+        def post(self, *_args, **_kwargs):
+            return Response()
+
+    class LowClient:
+        def __init__(self):
+            self.cs = Session()
+            self._api_session = Session()
+            self._mfa_flow = "portal"
+            self._mfa_method = "email"
+            self._mfa_session = Session()
+            self._mfa_login_params = {}
+            self._mfa_post_headers = {}
+
+    class Facade:
+        def __init__(self, *_args, **kwargs):
+            self.client = LowClient()
+            self.prompt_mfa = kwargs["prompt_mfa"]
+        def login(self, _token_store):
+            self.prompt_mfa()
+
+    monkeypatch.setattr(garmin_client, "Garmin", Facade)
+    prompted = []
+    transport = GarminConnectTransport(
+        "synthetic@example.test",
+        "synthetic-password",
+        TokenStore(tmp_path / "tokens"),
+        mfa=lambda method: prompted.append(method) or "synthetic-code",
+    )
+
+    with pytest.raises(GarminError, match="mfa_code_delivery_failed"):
+        transport.login()
+    assert prompted == []
 
 
 def test_factory_secret_and_nested_sync_are_sanitized(monkeypatch,tmp_path):

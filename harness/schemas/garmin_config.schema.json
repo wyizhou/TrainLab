@@ -3,12 +3,12 @@
   "type": "object", "additionalProperties": false,
   "required": ["garmin"],
   "properties": {"garmin": {"type": "object", "additionalProperties": false,
-    "required": ["history_start_date","region","token_store","lookback_days","max_repair_items_per_incremental","request_min_interval_ms","request_timeout_seconds","max_attempts","retry_base_seconds","retry_max_seconds","inline_retry_after_max_seconds","rate_limit_fallback_seconds"],
+    "required": ["history_start_date","region","token_store","lookback_days","max_repair_items_per_incremental","request_min_interval_ms","request_interval_jitter_ms","request_timeout_seconds","max_attempts","retry_base_seconds","retry_max_seconds","inline_retry_after_max_seconds","rate_limit_fallback_seconds"],
     "properties": {
       "history_start_date":{"type":["string","null"],"pattern":"^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
       "region":{"enum":["global","cn"]}, "token_store":{"type":"string","pattern":"^state/secrets/"},
       "lookback_days":{"type":"integer","minimum":1}, "max_repair_items_per_incremental":{"type":"integer","minimum":1},
-      "request_min_interval_ms":{"type":"integer","minimum":0}, "request_timeout_seconds":{"type":"integer","minimum":1},
+      "request_min_interval_ms":{"type":"integer","minimum":0}, "request_interval_jitter_ms":{"type":"integer","minimum":0}, "request_timeout_seconds":{"type":"integer","minimum":1},
       "max_attempts":{"type":"integer","minimum":1}, "retry_base_seconds":{"type":"integer","minimum":1},
       "retry_max_seconds":{"type":"integer","minimum":1}, "inline_retry_after_max_seconds":{"type":"integer","minimum":0}, "rate_limit_fallback_seconds":{"type":"integer","minimum":1}
     }}}

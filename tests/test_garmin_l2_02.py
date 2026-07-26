@@ -20,9 +20,9 @@ def test_injected_monotonic_rng_and_fault_sequence_are_deterministic(tmp_path):
   value=outcomes.pop(0)
   if isinstance(value,Exception): raise value
   return value
- # The minimum interval applies to failed calls too, so the retry cannot
- # bypass the global request throttle.
- assert t._call(call)=="ok" and sleeps==[0.5,2.25,0.5]
+ # There is no artificial delay before the first provider call.  The retry
+ # backoff already exceeds the configured 500 ms request interval.
+ assert t._call(call)=="ok" and sleeps==[2.25]
 
 def test_receipt_and_captured_output_do_not_match_secret_patterns(tmp_path,caplog):
  c,t=env(tmp_path); receipt=t.execute(SyncRequest("incremental",through_local_date="2026-04-15",invocation_id="scan"))

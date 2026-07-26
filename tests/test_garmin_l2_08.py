@@ -229,6 +229,76 @@ def test_nested_connect_time_series_keep_each_sample_timestamp_and_local_day(tmp
         ).fetchone()[0] == 1
 
 
+def test_respiration_accepts_only_the_closed_interval_next_midnight_boundary(
+    tmp_path: Path,
+) -> None:
+    config, tool, transport = _setup(tmp_path)
+    transport.payloads["respiration"] = {
+        "calendarDate": "2026-04-15",
+        "respirationValuesArray": [
+            [1776268799000, 13.2],
+            [1776268800000, 13.3],
+        ],
+    }
+    assert _repair(tool, "respiration", "respiration-midnight-boundary").status == "succeeded"
+    with sqlite3.connect(config.database_path) as conn:
+        assert conn.execute(
+            """SELECT observed_at_utc,local_date FROM health_samples
+               WHERE metric_key='garmin.respiration.breaths_per_minute'
+               ORDER BY observed_at_utc"""
+        ).fetchall() == [
+            ("2026-04-15T15:59:59Z", "2026-04-15"),
+            ("2026-04-15T16:00:00Z", "2026-04-16"),
+        ]
+
+    transport.payloads["respiration"]["respirationValuesArray"] = [
+        [1776268801000, 13.4],
+    ]
+    receipt = _repair(tool, "respiration", "respiration-after-midnight")
+    assert receipt.status == "partial"
+    with sqlite3.connect(config.database_path) as conn:
+        assert conn.execute(
+            """SELECT count(*) FROM garmin_sync_gaps
+               WHERE resource_kind='respiration'
+                 AND reason_code='parse_or_project_failed'
+                 AND status='open'"""
+        ).fetchone()[0] == 1
+
+
+def test_sleep_null_daily_dto_is_fetched_zero_but_one_sided_time_still_fails(
+    tmp_path: Path,
+) -> None:
+    config, tool, transport = _setup(tmp_path)
+    transport.payloads["sleep"] = {
+        "dailySleepDTO": {
+            "calendarDate": "2026-04-15",
+            "sleepStartTimestampGMT": None,
+            "sleepEndTimestampGMT": None,
+        }
+    }
+    receipt = _repair(tool, "sleep", "sleep-zero-session")
+    assert receipt.status == "succeeded"
+    with sqlite3.connect(config.database_path) as conn:
+        assert conn.execute("SELECT count(*) FROM sleep_sessions").fetchone()[0] == 0
+        assert conn.execute(
+            """SELECT availability_state,record_count FROM resource_coverage
+               WHERE resource_kind='sleep' ORDER BY id DESC LIMIT 1"""
+        ).fetchone() == ("fetched", 0)
+
+    transport.payloads["sleep"]["dailySleepDTO"]["sleepStartTimestampGMT"] = (
+        "2026-04-14T16:00:00Z"
+    )
+    receipt = _repair(tool, "sleep", "sleep-one-sided-time")
+    assert receipt.status == "partial"
+    with sqlite3.connect(config.database_path) as conn:
+        assert conn.execute(
+            """SELECT count(*) FROM garmin_sync_gaps
+               WHERE resource_kind='sleep'
+                 AND reason_code='parse_or_project_failed'
+                 AND status='open'"""
+        ).fetchone()[0] == 1
+
+
 def test_sleep_levels_map_parses_string_epochs_and_iso_keys_into_bounded_stages(tmp_path: Path) -> None:
     config, tool, transport = _setup(tmp_path)
     transport.payloads["sleep"] = _nested_fixture_payloads()["sleep"]
@@ -419,3 +489,41 @@ def test_meaningful_timestampless_sample_is_not_fetched_with_zero_projection(tmp
         assert conn.execute(
             "SELECT count(*) FROM garmin_sync_gaps WHERE resource_kind='heart_rates' AND reason_code='parse_or_project_failed'"
         ).fetchone()[0] == 1
+
+
+def test_live_daily_aliases_and_missing_sensor_points_do_not_drop_resource(tmp_path: Path) -> None:
+    config, tool, transport = _setup(tmp_path)
+    transport.payloads["steps"] = [{
+        "startGMT": "2026-04-14T16:00:00.0",
+        "endGMT": "2026-04-14T16:15:00.0",
+        "steps": 9,
+    }]
+    transport.payloads["heart_rates"] = {
+        "calendarDate": "2026-04-15",
+        "startTimestampGMT": "2026-04-14T16:00:00.0",
+        "heartRateValues": [
+            ["2026-04-15T00:00:00Z", 61],
+            ["2026-04-15T00:02:00Z", None],
+        ],
+    }
+    transport.payloads["hrv"] = {
+        "startTimestampGMT": "2026-04-14T15:00:00.0",
+        "hrvReadings": [],
+        "hrvSummary": {},
+    }
+    assert _repair(tool, "steps", "live-steps-start-gmt").status == "succeeded"
+    assert _repair(tool, "heart_rates", "live-heart-null").status == "succeeded"
+    assert _repair(tool, "hrv", "live-hrv-empty-summary").status == "succeeded"
+    with sqlite3.connect(config.database_path) as conn:
+        assert conn.execute(
+            "SELECT local_date,value_number FROM health_samples "
+            "WHERE metric_key='garmin.steps.count'"
+        ).fetchall() == [("2026-04-15", 9.0)]
+        assert conn.execute(
+            "SELECT observed_at_utc,value_number FROM health_samples "
+            "WHERE metric_key='garmin.heart_rate.bpm'"
+        ).fetchall() == [("2026-04-15T00:00:00Z", 61.0)]
+        assert conn.execute(
+            "SELECT count(*) FROM source_revisions "
+            "WHERE resource_kind IN ('steps','heart_rates','hrv') AND is_current=1"
+        ).fetchone()[0] == 3

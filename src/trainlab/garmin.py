@@ -29,11 +29,19 @@ from zoneinfo import ZoneInfo
 
 import fitdecode
 from jsonschema import Draft202012Validator
-from .garmin_catalog import CATALOG_VERSION, EXTRA_ROLES, HEALTH_RESOURCES
+from .garmin_catalog import (
+    CATALOG_VERSION,
+    EXTRA_ROLES,
+    HEALTH_RESOURCES,
+    RESOURCE_CATALOG,
+)
+from .garmin_modes import CollectionModePlan, ResourceDateWindow, build_collection_mode_plan
 
 COLLECTOR_VERSION = "1"
 GARMINCONNECT_VERSION = "0.3.6"
 PARSER_VERSION = "fitdecode-0.11.0"
+ACCOUNT_PROFILE_SEMANTIC_VERSION = "account-profile-v1"
+DEVICE_REFERENCE_SEMANTIC_VERSION = "device-reference-v1"
 TZ = ZoneInfo("Asia/Singapore")
 
 # Provider JSON is untrusted input.  These bounds are deliberately well above
@@ -97,7 +105,10 @@ ADVANCED_PHYSIOLOGY_METRICS: dict[str, dict[str, tuple[str, str | None, str | No
     "lactate_threshold": {"lactateThresholdHeartRate": ("garmin.lactate_threshold.heart_rate_bpm", "bpm", "bpm", "provider_derived", "/lactateThresholdHeartRate"), "lactateThresholdPower": ("garmin.lactate_threshold.power_w", "W", "W", "provider_derived", "/lactateThresholdPower"), "lactateThresholdSpeed": ("garmin.lactate_threshold.speed_mps", "m/s", "m/s", "provider_derived", "/lactateThresholdSpeed")},
     "training_status": {"trainingStatusScore": ("garmin.training_status.score", "score", "score", "provider_derived", "/trainingStatusScore"), "acuteTrainingLoad": ("garmin.training_status.acute_load", "load", "load", "provider_derived", "/acuteTrainingLoad")},
     "running_tolerance": {"runningTolerance": ("garmin.running_tolerance.score", "score", "score", "provider_derived", "/runningTolerance"), "weeklyMileage": ("garmin.running_tolerance.weekly_distance_m", "m", "m", "provider_derived", "/weeklyMileage")},
-    "endurance_score": {"enduranceScore": ("garmin.endurance_score", "score", "score", "provider_derived", "/enduranceScore")},
+    "endurance_score": {
+        "enduranceScore": ("garmin.endurance_score", "score", "score", "provider_derived", "/enduranceScore"),
+        "overallScore": ("garmin.endurance_score", "score", "score", "provider_derived", "/overallScore"),
+    },
     "hill_score": {"hillScore": ("garmin.hill_score", "score", "score", "provider_derived", "/hillScore")},
     "race_predictions": {"predictionSeconds": ("garmin.race_prediction.seconds", "s", "s", "provider_predicted", "/predictionSeconds"), "time": ("garmin.race_prediction.seconds", "s", "s", "provider_predicted", "/time")},
     "fitness_age": {"fitnessAge": ("garmin.fitness_age.years", "year", "year", "provider_derived", "/fitnessAge")},
@@ -123,6 +134,15 @@ ACTIVITY_ENRICHMENTS: tuple[tuple[str, str], ...] = (
 )
 ACTIVITY_ENRICHMENT_RESOURCES = frozenset(resource for resource, _role in ACTIVITY_ENRICHMENTS)
 ACTIVITY_ENRICHMENT_ROLES = {resource: role for resource, role in ACTIVITY_ENRICHMENTS}
+ACTIVITY_RESOURCE_KINDS = frozenset({
+    "activity_inventory", "activity_summary", "activity_fit",
+    "activity_details_fallback", *ACTIVITY_ENRICHMENT_RESOURCES,
+})
+REQUEST_RESOURCE_KINDS = frozenset({*RESOURCE_CATALOG, "activities"})
+ACCOUNT_RESOURCE_KINDS = frozenset(
+    resource for resource, spec in RESOURCE_CATALOG.items()
+    if spec.scope == "account"
+)
 ACTIVITY_CHART_MAX_POINTS = 2_000
 ACTIVITY_CHART_MAX_POLYLINE_POINTS = 4_000
 
@@ -439,6 +459,11 @@ _DURABLE_PROVIDER_ERROR_CODES = frozenset({
     "activity_enrichment_invalid", "activity_enrichment_identity_mismatch",
     "activity_enrichment_binding_mismatch", "activity_chart_invalid",
     "activity_chart_empty", "activity_reconcile_failed",
+    # Local L2-14 repair/audit evidence codes.  They are intentionally
+    # machine-only labels, never provider text or raw payload fragments.
+    "raw_integrity", "coverage_error", "cursor_crosses_gap",
+    "unmapped_field_signature", "activity_summary_missing",
+    "offline_repair_failed", "capability_cooldown",
 })
 
 
@@ -456,7 +481,13 @@ class RetryClassification:
     retryable: bool
 
 
-def classify_garmin_error(error: GarminError, *, allows_404: bool = False, inline_retry_after_max_seconds: int = 120) -> RetryClassification:
+def classify_garmin_error(
+    error: GarminError,
+    *,
+    allows_404: bool = False,
+    inline_retry_after_max_seconds: int = 120,
+    rate_limit_fallback_seconds: int = 900,
+) -> RetryClassification:
     """Classify only status/code, never provider response text or credentials."""
     status = error.http_status
     if error.code == "cooldown_active":
@@ -468,7 +499,17 @@ def classify_garmin_error(error: GarminError, *, allows_404: bool = False, inlin
     if status == 404:
         return RetryClassification("not_available" if allows_404 else "failed", False)
     if status == 429:
-        return RetryClassification("deferred" if (error.retry_after or 900) > inline_retry_after_max_seconds else "retry", True)
+        retry_after = (
+            error.retry_after
+            if error.retry_after is not None
+            else rate_limit_fallback_seconds
+        )
+        return RetryClassification(
+            "deferred"
+            if retry_after > inline_retry_after_max_seconds
+            else "retry",
+            True,
+        )
     if status == 408 or status in {500, 502, 503, 504}:
         return RetryClassification("retry", True)
     if status is not None and 400 <= status < 500:
@@ -502,15 +543,17 @@ class GarminConfig:
     state_root: Path
     history_start_date: str | None
     subject_key: str = "default"
-    region: Literal["global", "cn"] = "global"
+    region: Literal["global", "cn"] = "cn"
     lookback_days: int = 14
     max_repair_items_per_incremental: int = 100
     request_min_interval_ms: int = 500
+    request_interval_jitter_ms: int = 0
     request_timeout_seconds: int = 30
     max_attempts: int = 5
     retry_base_seconds: int = 2
     retry_max_seconds: int = 60
     inline_retry_after_max_seconds: int = 120
+    rate_limit_fallback_seconds: int = 900
 
 
 @dataclass(frozen=True)
@@ -608,8 +651,12 @@ class GarminRepository:
             ).fetchone()
             receipt.coverage_state = (
                 "partial"
-                if full["mode"] == "snapshot" or fallback_used is not None
-                else None
+                if (
+                    full["mode"] == "snapshot"
+                    or fallback_used is not None
+                    or full["status"] in {"partial", "deferred", "failed"}
+                )
+                else "complete" if full["status"] == "succeeded" else None
             )
             receipt.complete_through_by_resource = {
                 row["resource_kind"]: row["complete_through_local_date"]
@@ -635,6 +682,31 @@ class GarminRepository:
                        WHERE garmin_sync_run_id=? AND status='running'""",
                     (existing["id"],),
                 )
+                # An interrupted run has not reached ``finish_run``, so its
+                # aggregate columns still contain their initial zeros. Rebuild
+                # only completed-success counters before skipping durable work.
+                # Failed/deferred items are retried below; carrying their old
+                # counts forward would incorrectly make a successful resume
+                # finish partial/deferred.
+                receipt.counts.update({key: 0 for key in receipt.counts})
+                for item_status, count in conn.execute(
+                    """SELECT status,count(*) AS count
+                         FROM garmin_sync_items
+                        WHERE garmin_sync_run_id=?
+                          AND status IN (
+                              'fetched','empty','unchanged','revised',
+                              'not_available','not_supported',
+                              'not_enabled'
+                          )
+                        GROUP BY status""",
+                    (existing["id"],),
+                ):
+                    counter = (
+                        "not_available"
+                        if item_status == "not_supported"
+                        else item_status
+                    )
+                    receipt.counts[counter] += int(count)
             return int(existing["id"])
         run_id = f"gr-{uuid.uuid4()}"
         receipt.run_id, receipt.status = run_id, "started"
@@ -644,12 +716,60 @@ class GarminRepository:
 
     def finish_run(self, conn: sqlite3.Connection, run_id: int, receipt: SyncReceipt, actual_from: str | None, actual_through: str | None) -> None:
         receipt.completed_at_utc = utc_now()
+        # A later successful stage proves that its provider fetch completed.
+        # Close any such predecessor defensively so a future adapter omission
+        # cannot publish a succeeded run with a lingering `running` item.
+        conn.execute(
+            """UPDATE garmin_sync_items AS fetch
+               SET status='fetched',completed_at_utc=?,error_code=NULL,
+                   error_summary=NULL,next_retry_at_utc=NULL
+               WHERE fetch.garmin_sync_run_id=? AND fetch.stage='fetch'
+                 AND fetch.status='running'
+                 AND EXISTS(
+                     SELECT 1 FROM garmin_sync_items AS later
+                     WHERE later.garmin_sync_run_id=fetch.garmin_sync_run_id
+                       AND later.resource_kind=fetch.resource_kind
+                       AND later.logical_object_key=fetch.logical_object_key
+                       AND later.stage IN ('extract','parse','project','reconcile','validate')
+                       AND later.status IN ('fetched','empty','unchanged','revised','succeeded',
+                                            'not_available','not_enabled','not_supported')
+                 )""",
+            (receipt.completed_at_utc, run_id),
+        )
+        remaining = int(
+            conn.execute(
+                """SELECT count(*) FROM garmin_sync_items
+                   WHERE garmin_sync_run_id=? AND status='running'""",
+                (run_id,),
+            ).fetchone()[0]
+        )
+        if remaining:
+            conn.execute(
+                """UPDATE garmin_sync_items
+                   SET status='failed',error_code='interrupted',
+                       error_summary='interrupted',completed_at_utc=?
+                   WHERE garmin_sync_run_id=? AND status='running'""",
+                (receipt.completed_at_utc, run_id),
+            )
+            receipt.counts["failed"] += remaining
+            if receipt.status == "succeeded":
+                receipt.status = "partial"
         conn.execute("""UPDATE garmin_sync_runs SET status=?,actual_from_local_date=?,actual_through_local_date=?,fetched_count=?,empty_count=?,unchanged_count=?,revised_count=?,failed_count=?,deferred_count=?,next_retry_at_utc=?,error_summary=?,completed_at_utc=? WHERE id=?""", (receipt.status, actual_from, actual_through, receipt.counts["fetched"], receipt.counts["empty"], receipt.counts["unchanged"], receipt.counts["revised"], receipt.counts["failed"], receipt.counts["deferred"], receipt.next_retry_at_utc, safe_provider_error_code(receipt.errors[0]["code"]) if receipt.errors else None, receipt.completed_at_utc, run_id))
 
     def item(self, conn: sqlite3.Connection, run_id: int, resource: str, key: str, stage: str, status: str, *, revision_id: int | None = None, error: GarminError | None = None, next_retry: str | None = None, increment_attempt: bool = True) -> None:
         allowed={"pending":{"running","failed","deferred"},"running":{"fetched","empty","unchanged","revised","succeeded","failed","deferred","not_available","not_enabled","not_supported","forbidden"},"deferred":{"running","failed"},"failed":{"running"}}
         row=conn.execute("SELECT status FROM garmin_sync_items WHERE garmin_sync_run_id=? AND resource_kind=? AND logical_object_key=? AND stage=?",(run_id,resource,key,stage)).fetchone()
-        if row and row["status"]!=status and status not in allowed.get(row["status"],set()): raise ValueError("invalid_item_transition")
+        terminal = {
+            "fetched", "empty", "unchanged", "revised", "succeeded", "failed",
+            "deferred", "not_available", "not_enabled", "not_supported",
+            "forbidden",
+        }
+        replay_allowed = (
+            row is not None
+            and row["status"] in terminal
+            and status in terminal | {"running"}
+        )
+        if row and row["status"]!=status and status not in allowed.get(row["status"],set()) and not replay_allowed: raise ValueError("invalid_item_transition")
         now = utc_now(); completed = now if status in {"fetched","empty","unchanged","revised","succeeded","failed","deferred","not_available","not_enabled","not_supported","forbidden"} else None
         error_code = self._safe_error_code(error.code) if error else None
         conn.execute("""INSERT INTO garmin_sync_items(garmin_sync_run_id,resource_kind,logical_object_key,stage,status,attempt_count,http_status,error_code,error_summary,next_retry_at_utc,source_revision_id,started_at_utc,completed_at_utc)
@@ -891,6 +1011,13 @@ class GarminRepository:
             os.close(current)
 
     def store_raw(self, resource: str, payload: bytes, suffix: str, media_type: str) -> tuple[int, str]:
+        """Append immutable provider evidence to the permanent raw archive.
+
+        Final JSON and FIT objects are content-addressed and never removed or
+        overwritten by collection, repair, audit, or replay.  The only cleanup
+        in this write path is for a private temporary inode after the durable
+        content-addressed file has been verified.
+        """
         allowed_types = {
             "json": "application/json",
             "fit": "application/octet-stream",
@@ -1051,6 +1178,7 @@ class GarminRepository:
         projector: Callable[[int], None] | None = None,
         *,
         payload_hash: str | None = None,
+        profile_version: str | None = None,
     ) -> tuple[int, bool]:
         if conn.in_transaction:
             raise ValueError("publisher_requires_clean_connection")
@@ -1061,25 +1189,25 @@ class GarminRepository:
         if raw is None or raw["sha256"] != raw_sha:
             raise ValueError("raw_revision_mismatch")
         semantic_hash = payload_hash or raw_sha
-        current = conn.execute("SELECT id,payload_hash,revision_no FROM source_revisions WHERE provider='garmin' AND resource_kind=? AND provider_object_id=? AND is_current=1", (resource, provider_id)).fetchone()
-        if current and current["payload_hash"] == semantic_hash:
+        current = conn.execute("SELECT id,payload_hash,profile_version,revision_no FROM source_revisions WHERE provider='garmin' AND resource_kind=? AND provider_object_id=? AND is_current=1", (resource, provider_id)).fetchone()
+        if current and current["payload_hash"] == semantic_hash and current["profile_version"] == profile_version:
             return int(current["id"]), False
         # Receiving provider evidence and accepting it as canonical are two
         # different durability boundaries.  A parser failure must leave an
         # immutable, non-current revision available for offline reparse.
         conn.execute("BEGIN IMMEDIATE")
         try:
-            current = conn.execute("SELECT id,payload_hash FROM source_revisions WHERE provider='garmin' AND resource_kind=? AND provider_object_id=? AND is_current=1", (resource, provider_id)).fetchone()
-            if current and current["payload_hash"] == semantic_hash:
+            current = conn.execute("SELECT id,payload_hash,profile_version FROM source_revisions WHERE provider='garmin' AND resource_kind=? AND provider_object_id=? AND is_current=1", (resource, provider_id)).fetchone()
+            if current and current["payload_hash"] == semantic_hash and current["profile_version"] == profile_version:
                 conn.execute("COMMIT")
                 return int(current["id"]), False
             # Only a previously *unparsed* received revision may be reused.
             # Returning from a tombstone to an old payload is a provider
             # correction and needs a new revision/current transition.
-            received = conn.execute("SELECT id FROM source_revisions WHERE provider='garmin' AND resource_kind=? AND provider_object_id=? AND payload_hash=? AND parsed_at_utc IS NULL ORDER BY revision_no DESC LIMIT 1", (resource, provider_id, semantic_hash)).fetchone()
+            received = conn.execute("SELECT id FROM source_revisions WHERE provider='garmin' AND resource_kind=? AND provider_object_id=? AND payload_hash=? AND profile_version IS ? AND parsed_at_utc IS NULL ORDER BY revision_no DESC LIMIT 1", (resource, provider_id, semantic_hash, profile_version)).fetchone()
             if received is None:
                 rev = int(conn.execute("SELECT coalesce(max(revision_no),0)+1 FROM source_revisions WHERE provider='garmin' AND resource_kind=? AND provider_object_id=?", (resource, provider_id)).fetchone()[0])
-                conn.execute("INSERT INTO source_revisions(provider,resource_kind,provider_object_id,revision_no,raw_object_id,payload_hash,parser_name,parser_version,is_current,parsed_at_utc) VALUES(?,?,?,?,?,?,?,?,0,NULL)", ("garmin", resource, provider_id, rev, raw_id, semantic_hash, "garmin", PARSER_VERSION))
+                conn.execute("INSERT INTO source_revisions(provider,resource_kind,provider_object_id,revision_no,raw_object_id,payload_hash,parser_name,parser_version,profile_version,is_current,parsed_at_utc) VALUES(?,?,?,?,?,?,?,?,?,0,NULL)", ("garmin", resource, provider_id, rev, raw_id, semantic_hash, "garmin", PARSER_VERSION, profile_version))
                 revision = int(conn.execute("SELECT last_insert_rowid()").fetchone()[0])
             else:
                 revision = int(received["id"])
@@ -1093,8 +1221,8 @@ class GarminRepository:
             raise
         conn.execute("BEGIN IMMEDIATE")
         try:
-            current = conn.execute("SELECT id,payload_hash FROM source_revisions WHERE provider='garmin' AND resource_kind=? AND provider_object_id=? AND is_current=1", (resource, provider_id)).fetchone()
-            if current and current["payload_hash"] == semantic_hash:
+            current = conn.execute("SELECT id,payload_hash,profile_version FROM source_revisions WHERE provider='garmin' AND resource_kind=? AND provider_object_id=? AND is_current=1", (resource, provider_id)).fetchone()
+            if current and current["payload_hash"] == semantic_hash and current["profile_version"] == profile_version:
                 conn.execute("COMMIT")
                 return int(current["id"]), False
             if projector:
@@ -1109,15 +1237,30 @@ class GarminRepository:
                 conn.execute("ROLLBACK")
             raise
 
-    def archive(self, conn: sqlite3.Connection, resource: str, provider_id: str, payload: bytes, suffix: str, media_type: str, projector: Callable[[int],None] | None=None) -> tuple[int,int,bool]:
+    def archive(
+        self,
+        conn: sqlite3.Connection,
+        resource: str,
+        provider_id: str,
+        payload: bytes,
+        suffix: str,
+        media_type: str,
+        projector: Callable[[int], None] | None = None,
+        *,
+        semantic_payload: bytes | None = None,
+        profile_version: str | None = None,
+    ) -> tuple[int, int, bool]:
         semantic_hash: str | None = None
         if suffix == "json":
-            _, canonical = parse_provider_json_bytes(payload)
+            _, canonical = parse_provider_json_bytes(
+                semantic_payload if semantic_payload is not None else payload
+            )
             semantic_hash = digest(canonical)
         raw_id, raw_sha = self.store_raw(resource, payload, suffix, media_type)
         revision, changed = self.publish_revision(
             conn, resource, provider_id, raw_id, raw_sha, projector,
             payload_hash=semantic_hash,
+            profile_version=profile_version,
         )
         return raw_id, revision, changed
 
@@ -1191,7 +1334,7 @@ class GarminCollectionTool:
     def __init__(self, config: GarminConfig, transport: GarminTransport | None = None, *, sleep: Callable[[float], None] = time.sleep, clock: Callable[[], datetime] = lambda: datetime.now(TZ), monotonic: Callable[[], float] = time.monotonic, rng: Callable[[], float] | None = None) -> None:
         self.config, self.transport, self.repo, self.sleep, self.clock, self.monotonic = config, transport, GarminRepository(config), sleep, clock, monotonic
         self.rng = rng or random.Random().random
-        self._last_request = 0.0
+        self._last_request: float | None = None
 
     def execute(self, request: SyncRequest) -> SyncReceipt:
         if request.invocation_id is None: request=replace(request,invocation_id=f"garmin-{uuid.uuid4()}")
@@ -1203,7 +1346,7 @@ class GarminCollectionTool:
         try:
             fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
         except FileExistsError:
-            if not self._recover_stale_lock(lock):
+            if not self._recover_stale_lock(lock, request.invocation_id):
                 receipt.status, receipt.completed_at_utc = "lock_busy", utc_now(); return self._validated_receipt(receipt)
             fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
         try:
@@ -1213,8 +1356,18 @@ class GarminCollectionTool:
         finally:
             os.close(fd); lock.unlink(missing_ok=True)
 
-    def _recover_stale_lock(self, lock: Path) -> bool:
-        """Only clear a dead-PID lock after confirming no matching started run."""
+    def _recover_stale_lock(
+        self,
+        lock: Path,
+        requested_invocation_id: str | None = None,
+    ) -> bool:
+        """Clear a dead-PID lock only when resuming its exact invocation.
+
+        A matching started run is intentionally recoverable because
+        ``start_run`` resets an interrupted running item to pending and reuses
+        the same run.  A different invocation must remain ``lock_busy`` so it
+        cannot strand or overlap the interrupted run.
+        """
         try:
             payload=json.loads(lock.read_text()); pid=int(payload["pid"]); invocation_id=payload.get("invocation_id")
             os.kill(pid, 0); return False
@@ -1225,54 +1378,140 @@ class GarminCollectionTool:
         conn=self.repo.connect()
         try:
             active=conn.execute("SELECT 1 FROM garmin_sync_runs WHERE invocation_id=? AND status='started'",(invocation_id,)).fetchone() if invocation_id else None
-            if active: return False
+            if active and requested_invocation_id != invocation_id:
+                return False
         finally: conn.close()
         lock.unlink(missing_ok=True); return True
 
     def _execute_locked(self, request: SyncRequest, receipt: SyncReceipt) -> SyncReceipt:
         conn = self.repo.connect()
+        run = 0
+        actual_start: date | None = None
+        actual_through: date | None = None
         try:
             subject = self.repo.subject(conn); run = self.repo.start_run(conn, request, subject, receipt)
             if receipt.status != "started": return receipt
-            identity = conn.execute("SELECT 1 FROM subject_identities WHERE subject_id=? AND provider='garmin' AND identity_kind='account' AND is_verified=1", (subject,)).fetchone()
-            if identity is None:
-                receipt.status = "auth_required"; receipt.errors.append({"code":"verified_identity_required","resource":"auth","logical_object_key":"garmin:account:identity","summary":"authenticate before sync"}); self.repo.finish_run(conn, run, receipt, None, None); return receipt
-            try:
-                self._transport().login()
-                actual = self._identity_hmac(self._transport().identity())
-                verified = conn.execute("SELECT 1 FROM subject_identities WHERE subject_id=? AND provider='garmin' AND identity_kind='account' AND identity_hmac=? AND is_verified=1", (subject, actual)).fetchone()
-                if verified is None:
-                    receipt.status="failed"; receipt.errors.append({"code":"identity_mismatch","resource":"auth","logical_object_key":"garmin:account:identity","summary":"identity mismatch"}); self.repo.finish_run(conn,run,receipt,None,None); return receipt
-            except GarminError as exc:
-                receipt.status="auth_required" if exc.http_status==401 else "failed"; receipt.errors.append({"code":exc.code,"resource":"auth","logical_object_key":"garmin:account:identity","summary":"provider authentication failed"}); self.repo.finish_run(conn,run,receipt,None,None); return receipt
-            today = self.clock().date(); yesterday = today - timedelta(days=1)
-            through = date.fromisoformat(request.through_local_date) if request.through_local_date else yesterday
-            start = date.fromisoformat(request.health_from_local_date) if request.health_from_local_date else (date.fromisoformat(self.config.history_start_date) if self.config.history_start_date else yesterday)
-            if request.mode == "snapshot": start = through = date.fromisoformat(request.snapshot_local_date or today.isoformat()); receipt.coverage_state = "partial"
-            receipt.requested_range = {"from": request.health_from_local_date, "through": request.through_local_date or request.snapshot_local_date}; receipt.effective_range = {"from": start.isoformat(), "through": through.isoformat()}
-            if request.mode == "repair" and request.repair_strategy in {"reparse", "reconcile"}:
-                self._offline_repair(conn, subject, request, receipt)
-            elif request.mode in {"full", "incremental", "snapshot", "repair"}:
-                self._account_basics(conn, run, subject, through, request, receipt)
-                self._account_b1(conn, run, subject, through, request, receipt)
-                if request.mode == "incremental": start = max(start, through - timedelta(days=self.config.lookback_days - 1))
+            # Reparse and reconcile are deliberately offline operations.  In
+            # particular they must remain usable while a token is expired or
+            # Garmin is unavailable; the immutable raw object is the input.
+            repair_strategy = self._repair_strategy(conn, subject, request, receipt)
+            offline_repair = request.mode == "repair" and repair_strategy in {"reparse", "reconcile"}
+            if request.mode == "repair" and repair_strategy == "deferred":
+                receipt.status = "deferred"
+                self.repo.finish_run(conn, run, receipt, None, None)
+                return receipt
+            if not offline_repair:
+                identity = conn.execute("SELECT 1 FROM subject_identities WHERE subject_id=? AND provider='garmin' AND identity_kind='account' AND is_verified=1", (subject,)).fetchone()
+                if identity is None:
+                    receipt.status = "auth_required"; receipt.errors.append({"code":"verified_identity_required","resource":"auth","logical_object_key":"garmin:account:identity","summary":"authenticate before sync"}); self.repo.finish_run(conn, run, receipt, None, None); return receipt
+                try:
+                    self._transport().login()
+                    actual = self._identity_hmac(self._transport().identity())
+                    verified = conn.execute("SELECT 1 FROM subject_identities WHERE subject_id=? AND provider='garmin' AND identity_kind='account' AND identity_hmac=? AND is_verified=1", (subject, actual)).fetchone()
+                    if verified is None:
+                        receipt.status="failed"; receipt.errors.append({"code":"identity_mismatch","resource":"auth","logical_object_key":"garmin:account:identity","summary":"identity mismatch"}); self.repo.finish_run(conn,run,receipt,None,None); return receipt
+                except GarminError as exc:
+                    receipt.status="auth_required" if exc.http_status==401 else "failed"; receipt.errors.append({"code":exc.code,"resource":"auth","logical_object_key":"garmin:account:identity","summary":"provider authentication failed"}); self.repo.finish_run(conn,run,receipt,None,None); return receipt
+            today = self._today_local()
+            yesterday = today - timedelta(days=1)
+            if request.mode == "repair" and offline_repair:
+                actual_through = date.fromisoformat(request.through_local_date) if request.through_local_date else yesterday
+                actual_start = date.fromisoformat(
+                    request.health_from_local_date
+                    or self.config.history_start_date
+                    or actual_through.isoformat()
+                )
+                receipt.effective_range = {"from": actual_start.isoformat(), "through": actual_through.isoformat()}
+                self._offline_repair(conn, run, subject, replace(request, repair_strategy=repair_strategy), receipt)
+            elif request.mode in {"full", "incremental", "snapshot"}:
+                plan = self._build_mode_plan(conn, subject, request, today)
+                prior_gap_ceiling = (
+                    int(conn.execute(
+                        "SELECT coalesce(max(id),0) FROM garmin_sync_gaps"
+                    ).fetchone()[0])
+                    if request.mode == "incremental"
+                    else 0
+                )
+                actual_start, actual_through = plan.effective_start, plan.effective_through
+                receipt.effective_range = {
+                    "from": actual_start.isoformat(),
+                    "through": actual_through.isoformat(),
+                }
+                if plan.snapshot:
+                    receipt.coverage_state = "partial"
+                self._account_basics(conn, run, subject, plan.effective_through, request, receipt)
+                self._account_b1(conn, run, subject, plan.effective_through, request, receipt)
                 selected = set(request.resource_kinds)
-                if not selected or selected.intersection(HEALTH_RESOURCES):
-                    self._health(conn, run, subject, start, through, request, receipt)
+                for window in plan.health_windows:
+                    scoped = replace(request, resource_kinds=(window.resource_kind,))
+                    self._health(
+                        conn, run, subject, window.start, window.through,
+                        scoped, receipt,
+                    )
                 # Explicit account-only repair is a closed provider scope: it
                 # must not enumerate activities merely because activities are
                 # normally part of a full collection invocation.
                 activity_scope = {
                     "activity_inventory", "activity_summary", "activity_fit",
-                    "activity_details_fallback", *ACTIVITY_ENRICHMENT_RESOURCES,
+                    "activity_details_fallback", "activities",
+                    *ACTIVITY_ENRICHMENT_RESOURCES,
                 }
                 if request.activity_ids or not selected or selected.intersection(activity_scope):
-                    self._activities(conn, run, subject, start, through, request, receipt, not selected or "activity_fit" in selected)
-                if request.mode != "snapshot" and (not selected or selected.intersection(HEALTH_RESOURCES)):
-                    for resource in HEALTH_RESOURCES:
-                        if not selected or resource in selected:
-                            self.repo.advance_cursor(conn, subject, resource, through.isoformat(), run)
-            if request.mode == "audit": self._audit(conn, subject, receipt)
+                    self._activities(
+                        conn, run, subject, plan.activity_start,
+                        plan.activity_through, request, receipt,
+                        not selected or "activity_fit" in selected,
+                    )
+                if request.mode == "incremental":
+                    self._process_due_gaps(
+                        conn, run, subject, request, receipt,
+                        plan.activity_start, plan.activity_through,
+                        prior_gap_ceiling,
+                    )
+                if not plan.snapshot:
+                    for window in plan.health_windows:
+                        self.repo.advance_cursor(
+                            conn, subject, window.resource_kind,
+                            window.through.isoformat(), run,
+                        )
+                    if receipt.coverage_state != "partial":
+                        receipt.coverage_state = (
+                            "complete"
+                            if self._health_windows_complete(conn, subject, plan.health_windows)
+                            else "partial"
+                        )
+            elif request.mode == "audit":
+                actual_through = date.fromisoformat(request.through_local_date) if request.through_local_date else today
+                actual_start = date.fromisoformat(
+                    request.health_from_local_date
+                    or self.config.history_start_date
+                    or actual_through.isoformat()
+                )
+                receipt.effective_range = {"from": actual_start.isoformat(), "through": actual_through.isoformat()}
+                self._audit(conn, subject, receipt, actual_start, actual_through)
+            elif request.mode == "repair":
+                actual_through = date.fromisoformat(request.through_local_date) if request.through_local_date else yesterday
+                actual_start = date.fromisoformat(
+                    request.health_from_local_date
+                    or self.config.history_start_date
+                    or actual_through.isoformat()
+                )
+                receipt.effective_range = {"from": actual_start.isoformat(), "through": actual_through.isoformat()}
+                self._account_basics(conn, run, subject, actual_through, request, receipt)
+                self._account_b1(conn, run, subject, actual_through, request, receipt)
+                selected = set(request.resource_kinds)
+                if not selected or selected.intersection(HEALTH_RESOURCES):
+                    self._health(conn, run, subject, actual_start, actual_through, request, receipt)
+                activity_scope = {
+                    "activity_inventory", "activity_summary", "activity_fit",
+                    "activity_details_fallback", "activities",
+                    *ACTIVITY_ENRICHMENT_RESOURCES,
+                }
+                if request.activity_ids or not selected or selected.intersection(activity_scope):
+                    self._activities(
+                        conn, run, subject, actual_start, actual_through,
+                        request, receipt, not selected or "activity_fit" in selected,
+                    )
             receipt.status = "deferred" if receipt.counts["deferred"] else (
                 "partial"
                 if receipt.counts["failed"] or (
@@ -1282,13 +1521,218 @@ class GarminCollectionTool:
             )
             receipt.open_gap_count = int(conn.execute("SELECT count(*) FROM garmin_sync_gaps WHERE subject_id=? AND status IN ('open','deferred')", (subject,)).fetchone()[0])
             receipt.complete_through_by_resource = {r["resource_kind"]: r["complete_through_local_date"] for r in conn.execute("SELECT resource_kind,complete_through_local_date FROM garmin_sync_cursors WHERE subject_id=?", (subject,))}
-            self.repo.finish_run(conn, run, receipt, start.isoformat(), through.isoformat()); return receipt
+            if receipt.next_retry_at_utc is None:
+                pending_retry = conn.execute(
+                    """SELECT min(next_retry_at_utc) FROM garmin_sync_gaps
+                       WHERE subject_id=? AND status='deferred'
+                         AND next_retry_at_utc IS NOT NULL""",
+                    (subject,),
+                ).fetchone()[0]
+                receipt.next_retry_at_utc = pending_retry
+            self.repo.finish_run(
+                conn, run, receipt,
+                actual_start.isoformat() if actual_start else None,
+                actual_through.isoformat() if actual_through else None,
+            )
+            return receipt
         except GarminError as exc:
             receipt.status = "auth_required" if exc.http_status == 401 else "failed"; receipt.errors.append({"code": exc.code, "resource": "garmin", "logical_object_key":"garmin:run","summary": exc.code})
-            try: self.repo.finish_run(conn, run, receipt, None, None)
+            try: self.repo.finish_run(conn, run, receipt, actual_start.isoformat() if actual_start else None, actual_through.isoformat() if actual_through else None)
             except Exception: receipt.completed_at_utc = utc_now()
             return receipt
         finally: conn.close()
+
+    def _today_local(self) -> date:
+        value = self.clock()
+        if value.tzinfo is not None:
+            value = value.astimezone(TZ)
+        return value.date()
+
+    def _build_mode_plan(
+        self,
+        conn: sqlite3.Connection,
+        subject: int,
+        request: SyncRequest,
+        today: date,
+    ) -> CollectionModePlan:
+        selected = set(request.resource_kinds)
+        health_resources = tuple(
+            resource for resource in HEALTH_RESOURCES
+            if not selected or resource in selected
+        )
+        cursors = {
+            row["resource_kind"]: row["complete_through_local_date"]
+            for row in conn.execute(
+                """SELECT resource_kind,complete_through_local_date
+                   FROM garmin_sync_cursors
+                   WHERE subject_id=? AND cursor_grain='local_date'""",
+                (subject,),
+            )
+        }
+        history_start = (
+            request.health_from_local_date
+            or self.config.history_start_date
+            or today.isoformat()
+        )
+        return build_collection_mode_plan(
+            mode=request.mode,  # type: ignore[arg-type]
+            today_local=today,
+            history_start_date=history_start,
+            requested_health_from=request.health_from_local_date,
+            requested_through=request.through_local_date,
+            requested_snapshot_date=request.snapshot_local_date,
+            health_resources=health_resources,
+            complete_through_by_resource=cursors,
+            lookback_days=self.config.lookback_days,
+        )
+
+    @staticmethod
+    def _health_windows_complete(
+        conn: sqlite3.Connection,
+        subject: int,
+        windows: Iterable[ResourceDateWindow],
+    ) -> bool:
+        closed_states = {
+            "fetched", "empty", "not_enabled", "not_available", "not_supported",
+        }
+        for window in windows:
+            rows = conn.execute(
+                """SELECT local_date,availability_state
+                   FROM resource_coverage
+                   WHERE subject_id=? AND provider='garmin'
+                     AND resource_kind=? AND local_date>=? AND local_date<=?
+                   ORDER BY id""",
+                (
+                    subject, window.resource_kind,
+                    window.start.isoformat(), window.through.isoformat(),
+                ),
+            )
+            latest = {row["local_date"]: row["availability_state"] for row in rows}
+            expected = (window.through - window.start).days + 1
+            if len(latest) != expected or any(
+                state not in closed_states for state in latest.values()
+            ):
+                return False
+            blocking_gap = conn.execute(
+                """SELECT 1 FROM garmin_sync_gaps
+                   WHERE subject_id=? AND resource_kind=?
+                     AND status IN ('open','deferred')
+                     AND window_start_local_date<=?
+                     AND window_end_local_date>=?
+                   LIMIT 1""",
+                (
+                    subject, window.resource_kind,
+                    window.through.isoformat(), window.start.isoformat(),
+                ),
+            ).fetchone()
+            if blocking_gap is not None:
+                return False
+        return True
+
+    def _process_due_gaps(
+        self,
+        conn: sqlite3.Connection,
+        run: int,
+        subject: int,
+        request: SyncRequest,
+        receipt: SyncReceipt,
+        activity_start: date,
+        activity_through: date,
+        prior_gap_ceiling: int,
+    ) -> None:
+        """Retry a bounded set of due gaps through the normal resource pipeline."""
+        limit = self.config.max_repair_items_per_incremental
+        if limit <= 0:
+            return
+        now = self._now_utc().isoformat().replace("+00:00", "Z")
+        gaps = list(conn.execute(
+            """SELECT id,resource_kind,logical_object_key,
+                      window_start_local_date,window_end_local_date,stage
+               FROM garmin_sync_gaps
+               WHERE id<=?
+                 AND (
+                     status='open'
+                     OR (
+                         status='deferred'
+                         AND (next_retry_at_utc IS NULL OR next_retry_at_utc<=?)
+                     )
+                 )
+                 AND NOT EXISTS (
+                     SELECT 1 FROM garmin_sync_items item
+                     WHERE item.garmin_sync_run_id=?
+                       AND item.resource_kind=garmin_sync_gaps.resource_kind
+                       AND item.logical_object_key=garmin_sync_gaps.logical_object_key
+                 )
+               ORDER BY priority DESC,
+                        CASE WHEN next_retry_at_utc IS NULL THEN 0 ELSE 1 END,
+                        next_retry_at_utc,id
+               LIMIT ?""",
+            (prior_gap_ceiling, now, run, limit),
+        ))
+        activity_resources = {
+            "activity_inventory", "activity_summary", "activity_fit",
+            "activity_details_fallback", "activities",
+            *ACTIVITY_ENRICHMENT_RESOURCES,
+        }
+        for gap in gaps:
+            still_due = conn.execute(
+                """SELECT 1 FROM garmin_sync_gaps
+                   WHERE id=? AND (
+                       status='open'
+                       OR (
+                           status='deferred'
+                           AND (next_retry_at_utc IS NULL OR next_retry_at_utc<=?)
+                       )
+                   )""",
+                (gap["id"], now),
+            ).fetchone()
+            if still_due is None:
+                continue
+            try:
+                start = date.fromisoformat(gap["window_start_local_date"])
+                through = date.fromisoformat(gap["window_end_local_date"])
+            except (TypeError, ValueError):
+                continue
+            if start > through:
+                continue
+            resource = str(gap["resource_kind"])
+            if resource in HEALTH_RESOURCES:
+                scoped = replace(
+                    request,
+                    resource_kinds=(resource,),
+                    activity_ids=(),
+                )
+                self._health(
+                    conn, run, subject, start, through, scoped, receipt,
+                )
+                continue
+            if resource not in activity_resources:
+                continue
+            logical_key = str(gap["logical_object_key"])
+            activity_id = self._activity_id_from_key(logical_key)
+            selected_resource = (
+                "activity_summary" if resource == "activities" else resource
+            )
+            scoped = replace(
+                request,
+                resource_kinds=(selected_resource,),
+                activity_ids=(activity_id,) if activity_id else (),
+            )
+            self._activities(
+                conn, run, subject,
+                start if activity_id else activity_start,
+                through if activity_id else activity_through,
+                scoped, receipt,
+                selected_resource == "activity_fit",
+            )
+
+    @staticmethod
+    def _activity_id_from_key(logical_key: str) -> str | None:
+        prefix = "garmin:activity:"
+        if not logical_key.startswith(prefix):
+            return None
+        value = logical_key[len(prefix):].strip()
+        return value if value and ":" not in value else None
 
     def _now_utc(self) -> datetime:
         value = self.clock()
@@ -1301,6 +1745,7 @@ class GarminCollectionTool:
             error,
             allows_404=allows_404,
             inline_retry_after_max_seconds=self.config.inline_retry_after_max_seconds,
+            rate_limit_fallback_seconds=self.config.rate_limit_fallback_seconds,
         )
 
     def _next_retry(self, error: GarminError, attempt: int) -> str:
@@ -1308,7 +1753,10 @@ class GarminCollectionTool:
         if seconds is None:
             # Garmin documents no Retry-After as a long cooldown.  It grows
             # between separate attempts while retaining a bounded value.
-            seconds = min(86_400, 900 * (2 ** attempt))
+            seconds = min(
+                86_400,
+                self.config.rate_limit_fallback_seconds * (2 ** attempt),
+            )
         return (self._now_utc() + timedelta(seconds=seconds)).isoformat().replace("+00:00", "Z")
 
     def _cooldown_error(self, conn: sqlite3.Connection | None, subject: int | None, resource: str | None, key: str | None) -> GarminError | None:
@@ -1340,11 +1788,17 @@ class GarminCollectionTool:
         for attempt in range(self.config.max_attempts):
             try:
                 now = self.monotonic()
-                interval = self.config.request_min_interval_ms / 1000 - (now - self._last_request)
-                if interval > 0:
-                    self.sleep(interval)
+                interval = 0.0
+                if self._last_request is not None:
+                    target_interval = (
+                        self.config.request_min_interval_ms
+                        + self.config.request_interval_jitter_ms * self.rng()
+                    ) / 1000
+                    interval = target_interval - (now - self._last_request)
+                    if interval > 0:
+                        self.sleep(interval)
                 # Record the time before invoking so failed requests also
-                # participate in the global minimum interval.
+                # participate in the global pseudo-random interval.
                 self._last_request = now + max(0.0, interval)
                 if conn is not None and run is not None and resource and key:
                     self.repo.item(conn, run, resource, key, stage, "running")
@@ -1370,7 +1824,13 @@ class GarminCollectionTool:
                 if exc.http_status == 429:
                     # Short Retry-After is honoured precisely; long cooldowns
                     # were rejected by the classification above.
-                    self.sleep(float(exc.retry_after or 900))
+                    self.sleep(
+                        float(
+                            exc.retry_after
+                            if exc.retry_after is not None
+                            else self.config.rate_limit_fallback_seconds
+                        )
+                    )
                 else:
                     delay = min(self.config.retry_max_seconds, self.config.retry_base_seconds * (2 ** attempt) + self.rng())
                     self.sleep(delay)
@@ -1395,6 +1855,7 @@ class GarminCollectionTool:
         # Never reuse IDs discovered by a previous invocation.
         if "devices" in resources:
             self._account_device_ids = {}
+            self._account_device_aliases = {}
             self._account_devices_ready = False
         from .garmin_catalog import RESOURCE_CATALOG
         for resource in resources:
@@ -1419,6 +1880,7 @@ class GarminCollectionTool:
                 safe = self._safe_account_payload(resource, payload)
                 if resource == "devices":
                     self._account_device_ids = self._device_id_map(payload)
+                    self._account_device_aliases = self._device_alias_map(payload)
                 provider_id = self._identity_hmac(f"account-resource:{resource}")
 
                 def projector(revision: int, *, safe_payload: Any = safe, kind: str = resource) -> None:
@@ -1432,7 +1894,26 @@ class GarminCollectionTool:
                     if request.mode != "snapshot":
                         self.repo.resolve_gaps(conn, subject, kind, day.isoformat())
 
-                _, revision, changed = self.repo.archive(conn, resource, provider_id, canonical_provider_json(raw_payload), "json", "application/json", projector)
+                semantic_payload = (
+                    canonical_provider_json(safe)
+                    if resource == "user_profile"
+                    else None
+                )
+                _, revision, changed = self.repo.archive(
+                    conn,
+                    resource,
+                    provider_id,
+                    canonical_provider_json(raw_payload),
+                    "json",
+                    "application/json",
+                    projector,
+                    semantic_payload=semantic_payload,
+                    profile_version=(
+                        ACCOUNT_PROFILE_SEMANTIC_VERSION
+                        if semantic_payload is not None
+                        else None
+                    ),
+                )
                 if resource == "devices":
                     self._account_devices_ready = True
                 if not changed and request.mode == "snapshot":
@@ -1528,16 +2009,56 @@ class GarminCollectionTool:
                     # _call records running for every provider operation.
                     # A successful fetch must end before projection begins.
                     self.repo.item(conn, run, resource, key, "fetch", "fetched", increment_attempt=False)
-                    safe = self._safe_b1_payload(resource, payload, device_hash=device_hash, device_ids=device_ids)
                     provider_key = self._identity_hmac(f"account-b1:{resource}:{device_hash or 'account'}")
-                    def projector(revision: int, *, kind: str = resource, safe_payload: Any = safe, hashed: str | None = device_hash) -> None:
+                    def projector(
+                        revision: int,
+                        *,
+                        kind: str = resource,
+                        raw_payload: Any = payload,
+                        hashed: str | None = device_hash,
+                    ) -> None:
+                        # Compute the redacted projection only after the raw
+                        # object and received revision are durable.  A future
+                        # wrapper drift therefore remains locally reparsable.
+                        safe_payload = self._safe_b1_payload(
+                            kind,
+                            raw_payload,
+                            device_hash=hashed,
+                            device_ids=device_ids,
+                            device_aliases=dict(
+                                getattr(self, "_account_device_aliases", {})
+                            ),
+                        )
                         if kind in {"primary_device", "device_last_used", "device_settings"}:
                             count = self._project_device_b1(conn, subject, kind, safe_payload, hashed, revision)
                         else:
                             self._supersede_b1_projection(conn, subject, kind)
                             self.repo.fields(conn, kind, safe_payload)
                             count = self._project_b1_physiology(conn, subject, kind, safe_payload, revision)
-                    _, revision, changed = self.repo.archive(conn, resource, provider_key, canonical_provider_json(raw_payload), "json", "application/json", projector)
+                    reference_semantic = (
+                        self._device_reference_semantic_payload(payload, resource)
+                        if resource == "device_last_used"
+                        else None
+                    )
+                    _, revision, changed = self.repo.archive(
+                        conn,
+                        resource,
+                        provider_key,
+                        canonical_provider_json(raw_payload),
+                        "json",
+                        "application/json",
+                        projector,
+                        semantic_payload=(
+                            canonical_provider_json(reference_semantic)
+                            if reference_semantic is not None
+                            else None
+                        ),
+                        profile_version=(
+                            DEVICE_REFERENCE_SEMANTIC_VERSION
+                            if reference_semantic is not None
+                            else None
+                        ),
+                    )
                     self.repo.item(conn, run, resource, key, "project", "revised" if changed else "unchanged", revision_id=revision, increment_attempt=False)
                     outcomes.append(("fetched", revision, 1, None))
                     receipt.counts["revised" if changed else "unchanged"] += 1
@@ -1590,14 +2111,69 @@ class GarminCollectionTool:
             if provider_id is not None: result[self._identity_hmac(f"device:{provider_id}")] = str(provider_id)
         return result
 
-    def _safe_b1_payload(self, resource: str, payload: Any, *, device_hash: str | None, device_ids: dict[str, str]) -> Any:
+    def _device_alias_map(self, payload: Any) -> dict[str, str]:
+        """Map every reviewed provider identifier to one canonical device hash."""
+        records = payload.get("devices", []) if isinstance(payload, dict) else payload
+        result: dict[str, str] = {}
+        if not isinstance(records, list):
+            return result
+        for entry in records:
+            if not isinstance(entry, dict):
+                continue
+            provider_id = (
+                entry.get("deviceId")
+                or entry.get("deviceUuid")
+                or entry.get("unitId")
+                or entry.get("serialNumber")
+            )
+            if provider_id is None:
+                continue
+            canonical = self._identity_hmac(f"device:{provider_id}")
+            for field in (
+                "deviceId",
+                "deviceUuid",
+                "unitId",
+                "serialNumber",
+                "userDeviceId",
+            ):
+                alias = entry.get(field)
+                if alias is not None:
+                    result[self._identity_hmac(f"device:{alias}")] = canonical
+        return result
+
+    def _safe_b1_payload(
+        self,
+        resource: str,
+        payload: Any,
+        *,
+        device_hash: str | None,
+        device_ids: dict[str, str],
+        device_aliases: dict[str, str] | None = None,
+    ) -> Any:
         if resource in {"primary_device", "device_last_used"}:
             source = self._device_reference_object(payload, resource)
-            provider_id = source.get("deviceId") or source.get("deviceUuid") or source.get("unitId")
-            hashed = self._identity_hmac(f"device:{provider_id}") if provider_id is not None else None
-            if hashed is None or hashed not in device_ids:
+            aliases = device_aliases or {
+                canonical: canonical for canonical in device_ids
+            }
+            canonical = None
+            for field in (
+                "deviceId",
+                "deviceUuid",
+                "unitId",
+                "serialNumber",
+                "userDeviceId",
+            ):
+                provider_id = source.get(field)
+                if provider_id is None:
+                    continue
+                canonical = aliases.get(
+                    self._identity_hmac(f"device:{provider_id}")
+                )
+                if canonical is not None:
+                    break
+            if canonical is None or canonical not in device_ids:
                 raise ValueError("unknown_device_reference")
-            return {"device_uid_hash": hashed}
+            return {"device_uid_hash": canonical}
         if resource == "device_settings":
             if device_hash is None or device_hash not in device_ids: raise ValueError("unknown_device_reference")
             source = payload if isinstance(payload, dict) else {}
@@ -1623,14 +2199,54 @@ class GarminCollectionTool:
         if not isinstance(payload, dict):
             raise ValueError("unknown_device_reference")
         wrappers = (
-            ("primaryTrainingDevice", "primaryDevice", "device") if resource == "primary_device"
-            else ("lastUsedDevice", "deviceLastUsed", "device")
+            (
+                "primaryTrainingDevice",
+                "PrimaryTrainingDevice",
+                "primaryTrainingDeviceDTO",
+                "primaryDevice",
+                "deviceDTO",
+                "device",
+            )
+            if resource == "primary_device"
+            else (
+                "lastUsedDevice",
+                "lastUsedDeviceDTO",
+                "deviceLastUsed",
+                "deviceDTO",
+                "device",
+            )
         )
         for name in wrappers:
             value = payload.get(name)
             if isinstance(value, dict):
                 return value
         return payload
+
+    @classmethod
+    def _device_reference_semantic_payload(
+        cls,
+        payload: Any,
+        resource: str,
+    ) -> dict[str, str] | None:
+        """Select stable reference fields while retaining complete raw JSON."""
+        try:
+            source = cls._device_reference_object(payload, resource)
+        except ValueError:
+            return None
+        reference = {
+            field: str(source[field])
+            for field in (
+                "deviceId",
+                "deviceUuid",
+                "unitId",
+                "serialNumber",
+                "userDeviceId",
+            )
+            if source.get(field) is not None
+        }
+        # Unknown wrapper drift falls back to full-response revisioning.  Its
+        # complete raw object remains available for a later parser repair.
+        return reference or None
 
     def _project_device_b1(self, conn: sqlite3.Connection, subject: int, resource: str, payload: Any, device_hash: str | None, revision: int) -> int:
         hashed = payload.get("device_uid_hash") if isinstance(payload, dict) else device_hash
@@ -1822,6 +2438,33 @@ class GarminCollectionTool:
             self.repo.map_field(conn, resource, f"/{key}", f"garmin.profile.{key}")
         return 1
 
+    @staticmethod
+    def _health_item_completed(
+        conn: sqlite3.Connection,
+        run: int,
+        resource: str,
+        logical_key: str,
+    ) -> bool:
+        """Return true only for a fully durable successful health work item."""
+        stages = {
+            str(row["stage"]): str(row["status"])
+            for row in conn.execute(
+                """SELECT stage,status FROM garmin_sync_items
+                    WHERE garmin_sync_run_id=? AND resource_kind=?
+                      AND logical_object_key=?""",
+                (run, resource, logical_key),
+            )
+        }
+        fetch = stages.get("fetch")
+        if fetch in {
+            "empty", "not_available", "not_enabled", "not_supported",
+        }:
+            return True
+        return (
+            fetch == "fetched"
+            and stages.get("project") in {"revised", "unchanged", "succeeded"}
+        )
+
     def _health(self, conn: sqlite3.Connection, run: int, subject: int, start: date, through: date, request: SyncRequest, receipt: SyncReceipt) -> None:
         selected = set(request.resource_kinds) or set(HEALTH_RESOURCES)
         from .garmin_catalog import RESOURCE_CATALOG
@@ -1836,6 +2479,8 @@ class GarminCollectionTool:
             for resource in HEALTH_RESOURCES:
                 if resource not in selected: continue
                 key = f"garmin:health:{resource}:{day}"
+                if self._health_item_completed(conn, run, resource, key):
+                    continue
                 try:
                     spec = RESOURCE_CATALOG[resource]
                     payload = self._call(
@@ -1936,6 +2581,9 @@ class GarminCollectionTool:
         while cursor <= through:
             end = min(through, cursor + timedelta(days=maximum_days - 1))
             logical_key = f"garmin:health:{resource}:{cursor}:{end}"
+            if self._health_item_completed(conn, run, resource, logical_key):
+                cursor = end + timedelta(days=1)
+                continue
             try:
                 payload = self._call(lambda s=cursor, e=end: self._transport().fetch_range(resource, s.isoformat(), e.isoformat()), conn=conn, run=run, subject=subject, resource=resource, key=logical_key, allows_404=spec.allows_404)
                 stored = validate_provider_json_payload(payload)
@@ -1960,10 +2608,20 @@ class GarminCollectionTool:
                     # any canonical row.  The received revision already exists
                     # at this point, so a malformed range remains reparsable.
                     by_day = self._range_payload_by_day(stored, cursor, end, resource=resource)
+                    lactate_envelope = resource == "lactate_threshold" and isinstance(stored, dict) and any(
+                        isinstance(stored.get(family), list)
+                        for family in ("heart_rate", "power", "speed")
+                    )
+                    if lactate_envelope:
+                        self.repo.fields(conn, resource, stored)
                     for current_day in days:
                         day_payload = by_day[current_day.isoformat()]
                         self._supersede_range_projection(conn, subject, resource, current_day.isoformat())
-                        self.repo.fields(conn, resource, day_payload)
+                        # Lactate's range envelope identifies the metric family
+                        # only at the top level.  Catalogue that source shape,
+                        # rather than the internally grouped day payload below.
+                        if not lactate_envelope:
+                            self.repo.fields(conn, resource, day_payload)
                         count = self._project_health(conn, subject, resource, current_day.isoformat(), day_payload, revision) if day_payload else 0
                         # Sparse records are a per-day absence, not an account
                         # capability conclusion.  Only an explicitly empty
@@ -1987,7 +2645,27 @@ class GarminCollectionTool:
                 for current_day in [cursor + timedelta(index) for index in range((end - cursor).days + 1)]:
                     coverage_state = "partial" if request.mode == "snapshot" else (terminal if terminal in {"not_available", "not_supported", "forbidden"} else "error")
                     self.repo.coverage(conn, subject, resource, current_day.isoformat(), coverage_state, None, 0, snapshot=request.mode == "snapshot")
-                self.repo.gap(conn, subject, resource, logical_key, cursor.isoformat(), "fetch", exc.code, end_day=end.isoformat(), deferred=terminal == "deferred", next_retry=retry)
+                if terminal in {"not_available", "not_supported"}:
+                    # Preserve the observed recovery history without leaving a
+                    # deterministic capability absence as a cursor blocker.
+                    self.repo.gap(
+                        conn, subject, resource, logical_key,
+                        cursor.isoformat(), "fetch", exc.code,
+                        end_day=end.isoformat(),
+                    )
+                    if request.mode != "snapshot":
+                        for current_day in (
+                            cursor + timedelta(index)
+                            for index in range((end - cursor).days + 1)
+                        ):
+                            self.repo.resolve_gaps(
+                                conn, subject, resource,
+                                current_day.isoformat(),
+                                logical_object_key=logical_key,
+                                stages=("fetch",),
+                            )
+                else:
+                    self.repo.gap(conn, subject, resource, logical_key, cursor.isoformat(), "fetch", exc.code, end_day=end.isoformat(), deferred=terminal == "deferred", next_retry=retry)
                 receipt.next_retry_at_utc = retry or receipt.next_retry_at_utc
                 self._count_receipt_terminal(receipt, terminal)
                 if terminal == "deferred":
@@ -2011,20 +2689,54 @@ class GarminCollectionTool:
         malformed dates on *returned* records are not sparse: they invalidate
         the whole chunk before any canonical projection occurs.
         """
-        records = self._range_records(payload)
+        records = self._range_records(payload, resource=resource)
         selected: dict[str, list[dict[str, Any]]] = {
             (start + timedelta(index)).isoformat(): []
             for index in range((end - start).days + 1)
         }
         for record in records:
-            stamp = next((record.get(key) for key in ("calendarDate", "timestamp", "timestampGMT", "startTimeGMT", "startTimestampGMT") if record.get(key) is not None), None)
+            date_keys = [
+                "calendarDate",
+                "timestamp",
+                "timestampGMT",
+                "measurementTimestampGMT",
+                "gmtTimestamp",
+                "startTimeGMT",
+                "startTimestampGMT",
+            ]
+            if resource == "lactate_threshold":
+                # Garmin's lactate range entries are dated by their update,
+                # not by the enclosing response's from/until bounds.
+                date_keys.insert(0, "updatedDate")
+            if resource in {
+                "body_battery",
+                "body_composition",
+                "weigh_ins",
+                "blood_pressure",
+            }:
+                # These reviewed range envelopes use a local calendar `date`.
+                # Do not accept that ambiguous key for unrelated resources.
+                date_keys.insert(1, "date")
+            stamp = next(
+                (
+                    record.get(key)
+                    for key in date_keys
+                    if record.get(key) is not None
+                ),
+                None,
+            )
             if stamp is None:
                 raise ValueError("range_record_missing_date")
             parsed = self._timestamp_utc(stamp, start.isoformat(), allow_day_boundary=True)
             local_day = self._local_day(parsed)
+            if local_day not in selected and resource == "endurance_score":
+                # The precise-day endpoint can return the latest available
+                # score even when it predates the requested window.  Keep that
+                # response as raw evidence without assigning it to this day.
+                continue
             if local_day not in selected:
                 raise ValueError("range_record_outside_window")
-            if resource in ADVANCED_RESOURCES and selected[local_day]:
+            if resource in ADVANCED_RESOURCES and resource != "lactate_threshold" and selected[local_day]:
                 # Reviewed advanced range endpoints carry one daily summary;
                 # duplicate calendar records are a shape drift, not a second
                 # canonical prediction.  Measurement endpoints may validly
@@ -2048,7 +2760,97 @@ class GarminCollectionTool:
         ).fetchone()
         return int(row["id"]) if row is not None else None
 
-    def _range_records(self, payload: Any) -> list[dict[str, Any]]:
+    def _range_records(
+        self, payload: Any, *, resource: str | None = None
+    ) -> list[dict[str, Any]]:
+        """Open only reviewed range envelopes; metadata is never a record."""
+        if isinstance(payload, dict):
+            if resource == "weigh_ins" and isinstance(payload.get("dailyWeightSummaries"), list):
+                # Daily summaries are envelopes.  Only allWeightMetrics holds
+                # measurements; latestWeight is a summary pointer and would
+                # otherwise duplicate a canonical observation.
+                return [
+                    metric
+                    for summary in payload["dailyWeightSummaries"]
+                    if isinstance(summary, dict)
+                    for metric in (
+                        summary.get("allWeightMetrics")
+                        if isinstance(summary.get("allWeightMetrics"), list)
+                        else []
+                    )
+                    if isinstance(metric, dict)
+                ]
+            if resource == "lactate_threshold" and any(
+                isinstance(payload.get(name), list)
+                for name in ("heart_rate", "power", "speed")
+            ):
+                # Retain the provider family only as ephemeral projection
+                # context.  It is never archived and never field-catalogued.
+                return [
+                    {**entry, "__trainlab_lactate_family": family}
+                    for family in ("heart_rate", "power", "speed")
+                    for entry in (payload.get(family) if isinstance(payload.get(family), list) else [])
+                    if isinstance(entry, dict)
+                ]
+            wrappers: dict[str, tuple[str, ...]] = {
+                "body_composition": ("dateWeightList",),
+                "weigh_ins": ("dailyWeightSummaries",),
+                "blood_pressure": ("measurementSummaries",),
+                "lactate_threshold": ("speed", "heart_rate", "power"),
+                "menstrual": (
+                    "cycleSummaries",
+                    "loggedNoteDays",
+                    "loggedOvulationDays",
+                    "loggedSymptomDays",
+                ),
+            }
+            selected_wrappers = wrappers.get(resource or "")
+            if selected_wrappers is not None and any(
+                name in payload for name in selected_wrappers
+            ):
+                return [
+                    item
+                    for name in selected_wrappers
+                    for item in (
+                        payload.get(name)
+                        if isinstance(payload.get(name), list)
+                        else []
+                    )
+                    if isinstance(item, dict)
+                ]
+            if (
+                resource == "endurance_score"
+                and "enduranceScoreDTO" in payload
+            ):
+                value = payload.get("enduranceScoreDTO")
+                if value in (None, {}):
+                    return []
+                if not isinstance(value, dict):
+                    raise ValueError("range_envelope_invalid")
+                return [value]
+            if (
+                resource == "endurance_score"
+                and "calendarDate" in payload
+                and payload.get("calendarDate") is None
+            ):
+                # A supported account without a score yet returns the DTO
+                # shape with a null day.  It is a valid empty observation for
+                # the requested window, not a timestampless score.
+                return []
+            if resource == "endurance_score" and "calendarDate" in payload:
+                # `contributors` is nested metadata, not a list of dated
+                # records.  Keep the DTO itself as the sole daily record.
+                return [payload]
+            if (
+                resource == "hill_score"
+                and payload.get("hillScoreDTOList") == []
+                and payload.get("maxScore") is None
+                and isinstance(payload.get("periodAvgScore"), dict)
+                and all(value is None for value in payload["periodAvgScore"].values())
+            ):
+                # A supported account can have no hill-score observations in
+                # the requested period.  It is an empty range, never score 0.
+                return []
         records = self._advanced_records(payload) if isinstance(payload, (dict, list)) else []
         if isinstance(payload, dict) and records == [payload]:
             nested = [item for value in payload.values() if isinstance(value, list) for item in value if isinstance(item, dict)]
@@ -2058,6 +2860,15 @@ class GarminCollectionTool:
 
     @staticmethod
     def _supersede_range_projection(conn: sqlite3.Connection, subject: int, resource: str, day: str) -> None:
+        conn.execute(
+            """DELETE FROM body_measurements
+                 WHERE subject_id=? AND local_date=?
+                   AND source_revision_id IN (
+                       SELECT id FROM source_revisions
+                        WHERE provider='garmin' AND resource_kind=?
+                   )""",
+            (subject, day, resource),
+        )
         records = list(conn.execute("SELECT id FROM physiology_records WHERE subject_id=? AND domain='garmin' AND record_type=? AND local_date=?", (subject, resource, day)))
         if records:
             ids = tuple(row[0] for row in records)
@@ -2090,7 +2901,13 @@ class GarminCollectionTool:
         return None
 
     @staticmethod
-    def _timestamp_utc(value: Any, fallback_day: str, *, allow_day_boundary: bool = False) -> str:
+    def _timestamp_utc(
+        value: Any,
+        fallback_day: str,
+        *,
+        allow_day_boundary: bool = False,
+        assume_utc: bool = False,
+    ) -> str:
         if isinstance(value, (int, float)) and not isinstance(value, bool):
             # Garmin epoch timestamps appear in seconds or milliseconds.
             seconds = float(value) / 1000 if abs(value) > 10_000_000_000 else float(value)
@@ -2128,7 +2945,7 @@ class GarminCollectionTool:
             try:
                 parsed = datetime.fromisoformat(candidate)
                 if parsed.tzinfo is None:
-                    parsed = parsed.replace(tzinfo=TZ)
+                    parsed = parsed.replace(tzinfo=UTC if assume_utc else TZ)
                 return parsed.astimezone(UTC).isoformat().replace("+00:00", "Z")
             except ValueError:
                 pass
@@ -2191,9 +3008,30 @@ class GarminCollectionTool:
         if values:
             conn.execute("INSERT INTO daily_health(subject_id,local_date,values_json,extras_json,source_map_json,source_revision_id,is_current) VALUES(?,?,?,?,?,?,1)", (subject, day, json.dumps(values, sort_keys=True, allow_nan=False), json.dumps(extras, sort_keys=True, allow_nan=False), json.dumps(source_map, sort_keys=True, allow_nan=False), prior["source_revision_id"]))
 
-    def _assert_sample_day(self, stamp: str, requested_day: str) -> None:
-        if self._local_day(stamp) != requested_day:
-            raise ValueError("timestamp_outside_requested_day")
+    def _assert_sample_day(
+        self,
+        stamp: str,
+        requested_day: str,
+        *,
+        allow_next_midnight: bool = False,
+    ) -> None:
+        observed = datetime.fromisoformat(
+            stamp.replace("Z", "+00:00")
+        ).astimezone(TZ)
+        requested = date.fromisoformat(requested_day)
+        if observed.date() == requested:
+            return
+        # Garmin's completed-day respiration stream is a closed interval: its
+        # final observation is exactly 00:00 on the following local day.  Keep
+        # that real timestamp, but do not relax the boundary for any other
+        # resource or for a later time on the following day.
+        if (
+            allow_next_midnight
+            and observed.date() == requested + timedelta(days=1)
+            and observed.time() == datetime.min.time()
+        ):
+            return
+        raise ValueError("timestamp_outside_requested_day")
 
     def _project_samples(self, conn: sqlite3.Connection, subject: int, resource: str, day: str, payload: Any, revision: int) -> int:
         """Project direct samples plus documented Garmin timestamp/value containers.
@@ -2227,7 +3065,16 @@ class GarminCollectionTool:
                         if not isinstance(point, (list, tuple)) or len(point) != 2:
                             raise ValueError("invalid_series_tuple_arity")
                         stamp = self._timestamp_utc(point[0], day)
-                        self._assert_sample_day(stamp, day)
+                        self._assert_sample_day(
+                            stamp,
+                            day,
+                            allow_next_midnight=resource == "respiration",
+                        )
+                        if point[1] is None:
+                            # Garmin uses null to represent a missing sensor
+                            # interval.  The raw tuple remains immutable; no
+                            # numeric sample is invented for this point.
+                            continue
                         if not isinstance(point[1], (int, float)) or isinstance(point[1], bool):
                             raise ValueError("invalid_series_value")
                         conn.execute(
@@ -2241,7 +3088,26 @@ class GarminCollectionTool:
             # fields (including future drift) through the generic path.
             generic_record = {key: value for key, value in record.items() if key not in recognised}
             if direct_metrics:
-                timestamp = generic_record.get("timestamp") or generic_record.get("timestampGMT") or generic_record.get("startTimeGMT") or generic_record.get("startTimestampGMT")
+                timestamp_fields = (
+                    "timestamp",
+                    "timestampGMT",
+                    "startTimeGMT",
+                    "startTimestampGMT",
+                    "startGMT",
+                )
+                timestamp_key = next(
+                    (
+                        key
+                        for key in timestamp_fields
+                        if generic_record.get(key) is not None
+                    ),
+                    None,
+                )
+                timestamp = (
+                    generic_record.get(timestamp_key)
+                    if timestamp_key is not None
+                    else None
+                )
                 if timestamp is None and resource == "rhr":
                     timestamp = generic_record.get("calendarDate")
                 def direct_value(source: str) -> Any:
@@ -2257,8 +3123,19 @@ class GarminCollectionTool:
                     and not isinstance(direct_value(source), bool)
                     for source in direct_metrics
                 )
-                if timestamp is not None:
-                    stamp = self._timestamp_utc(timestamp, day, allow_day_boundary=resource == "rhr")
+                if meaningful_direct and timestamp is not None:
+                    stamp = self._timestamp_utc(
+                        timestamp,
+                        day,
+                        allow_day_boundary=resource == "rhr",
+                        assume_utc=bool(
+                            timestamp_key
+                            and (
+                                "GMT" in timestamp_key
+                                or timestamp_key.endswith("UTC")
+                            )
+                        ),
+                    )
                     self._assert_sample_day(stamp, day)
                     for source, metric in direct_metrics.items():
                         value = direct_value(source)
@@ -2327,16 +3204,60 @@ class GarminCollectionTool:
                 and isinstance(value, (int, float))
                 and not isinstance(value, bool)
             ]
-            # A range entry that consists solely of an already-projected
-            # stream has no separate scalar summary record to publish.
-            if not scalar_items and isinstance(payload, list):
+            # A record that consists solely of an already-projected stream has
+            # no separate scalar summary fact to publish.
+            if not scalar_items and (
+                isinstance(payload, list)
+                or resource in {"hrv"}
+            ):
                 continue
-            has_timestamp = any(record.get(key) is not None for key in ("timestamp", "timestampGMT", "startTimeGMT", "startTimestampGMT"))
+            daily_stamp = (
+                record.get("calendarDate")
+                or record.get("date")
+                if resource in {
+                    "body_battery",
+                    "intensity_minutes",
+                    "hrv",
+                    "body_battery_events",
+                }
+                else None
+            )
+            timestamp_key = next(
+                (
+                    key
+                    for key in (
+                        "measurementTimestampGMT",
+                        "timestamp",
+                        "timestampGMT",
+                        "startTimeGMT",
+                        "startTimestampGMT",
+                        "calendarDate",
+                    )
+                    if record.get(key) is not None
+                ),
+                None,
+            )
+            timestamp_value = daily_stamp or (
+                record.get(timestamp_key) if timestamp_key else None
+            )
+            has_timestamp = timestamp_value is not None
             stamp = self._timestamp_utc(
-                record.get("timestamp") or record.get("timestampGMT") or record.get("startTimeGMT")
-                or record.get("startTimestampGMT") or record.get("calendarDate"),
+                timestamp_value,
                 day,
-                allow_day_boundary=resource in {"intensity_minutes", "all_day_events", "lifestyle", "body_battery_events"},
+                allow_day_boundary=bool(daily_stamp) or resource in {
+                    "intensity_minutes",
+                    "all_day_events",
+                    "lifestyle",
+                    "body_battery_events",
+                },
+                assume_utc=bool(
+                    not daily_stamp
+                    and timestamp_key
+                    and (
+                        "GMT" in timestamp_key
+                        or timestamp_key.endswith("UTC")
+                    )
+                ),
             )
             if has_timestamp:
                 self._assert_sample_day(stamp, day)
@@ -2362,7 +3283,34 @@ class GarminCollectionTool:
         for item in records:
             if not isinstance(item, dict):
                 continue
-            stamp = self._timestamp_utc(item.get("timestamp") or item.get("timestampGMT"), day)
+            timestamp_key = next(
+                (
+                    key
+                    for key in (
+                        "measurementTimestampGMT",
+                        "timestamp",
+                        "timestampGMT",
+                        "gmtTimestamp",
+                        "dateTimestamp",
+                        "calendarDate",
+                        "date",
+                    )
+                    if item.get(key) is not None
+                ),
+                None,
+            )
+            stamp = self._timestamp_utc(
+                item.get(timestamp_key) if timestamp_key else None,
+                day,
+                allow_day_boundary=timestamp_key in {"calendarDate", "date"},
+                assume_utc=bool(
+                    timestamp_key
+                    and (
+                        "GMT" in timestamp_key
+                        or timestamp_key == "gmtTimestamp"
+                    )
+                ),
+            )
             self._assert_sample_day(stamp, day)
             conn.execute("INSERT INTO body_measurements(subject_id,observed_at_utc,local_date,values_json,extras_json,source_revision_id) VALUES(?,?,?,?,?,?)", (subject, stamp, self._local_day(stamp), stable_json(item).decode("utf-8"), "{}", revision))
 
@@ -2375,7 +3323,22 @@ class GarminCollectionTool:
             sessions = [*sessions, *[{**nap, "session_type": nap.get("session_type", "nap")} for nap in naps if isinstance(nap, dict)]]
         main = payload.get("dailySleepDTO")
         if isinstance(main, dict):
-            sessions = [main, *sessions]
+            main_start = (
+                main.get("start_time_utc")
+                or main.get("startTimeGMT")
+                or main.get("sleepStartTimestampGMT")
+            )
+            main_end = (
+                main.get("end_time_utc")
+                or main.get("endTimeGMT")
+                or main.get("sleepEndTimestampGMT")
+            )
+            # Connect returns a populated dailySleepDTO with both timestamps
+            # null when no sleep session exists for that completed day.  This
+            # is a valid fetched zero-record observation.  A one-sided session
+            # remains invalid and is rejected below.
+            if main_start is not None or main_end is not None:
+                sessions = [main, *sessions]
         if not sessions and any(key in payload for key in ("sleepStartTimestampGMT", "startTimeGMT")):
             sessions = [payload]
         inserted = 0
@@ -2478,6 +3441,48 @@ class GarminCollectionTool:
 
     def _project_advanced(self, conn: sqlite3.Connection, subject: int, resource: str, day: str, payload: Any, revision: int) -> int:
         specs = ADVANCED_PHYSIOLOGY_METRICS[resource]
+        if (
+            resource == "lactate_threshold"
+            and isinstance(payload, list)
+            and any(
+                isinstance(record, dict)
+                and "__trainlab_lactate_family" in record
+                for record in payload
+            )
+        ):
+            inserted = 0
+            lactate_specs = {
+                "heart_rate": specs["lactateThresholdHeartRate"],
+                "power": specs["lactateThresholdPower"],
+                "speed": specs["lactateThresholdSpeed"],
+            }
+            for index, record in enumerate(payload):
+                if not isinstance(record, dict):
+                    continue
+                family = record.get("__trainlab_lactate_family")
+                spec = lactate_specs.get(family)
+                value = record.get("value")
+                if spec is None or not isinstance(value, (int, float)) or isinstance(value, bool):
+                    continue
+                stamp = self._timestamp_utc(
+                    record.get("updatedDate"), day, allow_day_boundary=True,
+                )
+                self._assert_sample_day(stamp, day)
+                cursor = conn.execute(
+                    """INSERT INTO physiology_records(subject_id,domain,record_type,provider_record_id,effective_at_utc,local_date,value_origin,extras_json,source_revision_id)
+                       VALUES(?,?,?,?,?,?,?,?,?)""",
+                    (subject, "garmin", resource, f"{family}:{index}", stamp,
+                     self._local_day(stamp), "provider_derived", "{}", revision),
+                )
+                source_path = f"/{family}/*/value"
+                conn.execute(
+                    """INSERT INTO physiology_metrics(physiology_record_id,metric_key,value_number,raw_unit,canonical_unit,value_origin,source_path)
+                       VALUES(?,?,?,?,?,?,?)""",
+                    (int(cursor.lastrowid), spec[0], float(value), spec[1], spec[2], spec[3], source_path),
+                )
+                self.repo.map_field(conn, resource, source_path, spec[0])
+                inserted += 1
+            return inserted
         records = self._advanced_records(payload)
         prefix = "/*/" if isinstance(payload, list) else "/"
         if isinstance(payload, dict):
@@ -2491,7 +3496,24 @@ class GarminCollectionTool:
         inserted = 0
         for index, record in enumerate(records):
             scalars = [(field, value, specs[field]) for field, value in record.items() if field in specs and isinstance(value, (int, float)) and not isinstance(value, bool)]
-            timestamp_value = next((record.get(field) for field in ("timestamp", "timestampGMT", "startTimeGMT", "startTimestampGMT", "calendarDate") if record.get(field) is not None), None)
+            # These are provider daily/range summaries.  Their calendar date is
+            # authoritative for the observation day; timestamps may describe
+            # a contributing sleep/recovery interval crossing midnight.
+            timestamp_value = next(
+                (
+                    record.get(field)
+                    for field in (
+                        "calendarDate",
+                        "date",
+                        "timestamp",
+                        "timestampGMT",
+                        "startTimeGMT",
+                        "startTimestampGMT",
+                    )
+                    if record.get(field) is not None
+                ),
+                None,
+            )
             # These endpoints are daily/range provider summaries. A missing
             # timestamp means the requested Singapore day boundary, never an
             # invented high-frequency sample time.
@@ -2512,7 +3534,19 @@ class GarminCollectionTool:
                 )
                 self.repo.map_field(conn, resource, source_path, spec[0])
             inserted += 1
-        if payload not in ({}, [], None) and not records:
+        known_empty_wrapper = isinstance(payload, dict) and any(
+            wrapper in payload
+            for wrapper in (
+                "trainingReadiness",
+                "racePredictions",
+                "calendarEntries",
+                "foodLog",
+                "meals",
+                "items",
+                "data",
+            )
+        )
+        if payload not in ({}, [], None) and not records and not known_empty_wrapper:
             raise ValueError("advanced_payload_shape")
         return inserted
 
@@ -3029,23 +4063,34 @@ class GarminCollectionTool:
     def _validate_activity_summary(self, summary: Any, activity_id: str) -> dict[str, Any]:
         if not isinstance(summary, dict):
             raise GarminError("activity_summary_invalid")
-        summary_id = summary.get("activityId")
+        normalized = dict(summary)
+        nested = summary.get("summaryDTO")
+        if nested is not None:
+            if not isinstance(nested, dict):
+                raise GarminError("activity_summary_invalid")
+            for key, value in nested.items():
+                normalized.setdefault(key, value)
+        if normalized.get("activityType") is None and isinstance(
+            summary.get("activityTypeDTO"), dict
+        ):
+            normalized["activityType"] = summary["activityTypeDTO"]
+        summary_id = normalized.get("activityId")
         if summary_id is None:
-            summary_id = summary.get("id")
+            summary_id = normalized.get("id")
         if isinstance(summary_id, bool) or str(summary_id).strip() != activity_id:
             raise GarminError("activity_summary_identity_mismatch")
-        start_value = summary.get("startTimeGMT") or summary.get("startTimeUTC") or summary.get("start_time_utc")
+        start_value = normalized.get("startTimeGMT") or normalized.get("startTimeUTC") or normalized.get("start_time_utc")
         start_utc, local_date = self._activity_time_utc(start_value, local=False)
-        activity_type = summary.get("activityType")
+        activity_type = normalized.get("activityType")
         if isinstance(activity_type, dict):
             sport = activity_type.get("typeKey")
             sub_sport = activity_type.get("subTypeKey")
         else:
             sport = activity_type
-            sub_sport = summary.get("activitySubType")
+            sub_sport = normalized.get("activitySubType")
         if not isinstance(sport, str) or not sport.strip():
             raise GarminError("activity_summary_type_invalid")
-        end_value = summary.get("endTimeGMT") or summary.get("endTimeUTC") or summary.get("end_time_utc")
+        end_value = normalized.get("endTimeGMT") or normalized.get("endTimeUTC") or normalized.get("end_time_utc")
         end_utc = None
         if end_value is not None:
             end_utc, _ = self._activity_time_utc(end_value, local=False)
@@ -3057,6 +4102,7 @@ class GarminCollectionTool:
             "local_date": local_date,
             "sport": sport.strip(),
             "sub_sport": sub_sport.strip() if isinstance(sub_sport, str) and sub_sport.strip() else None,
+            "normalized_summary": normalized,
         }
 
     def _collect_activity_summary(
@@ -3096,7 +4142,14 @@ class GarminCollectionTool:
                 return
             applicable_ids.add(activity_id)
             def summary_projector(revision: int) -> None:
-                self._project_activity(conn, subject, activity_id, summary, validated, revision)
+                self._project_activity(
+                    conn,
+                    subject,
+                    activity_id,
+                    validated["normalized_summary"],
+                    validated,
+                    revision,
+                )
             _, revision, changed = self.repo.archive(
                 conn, "activity_summary", activity_id, canonical_provider_json(summary),
                 "json", "application/json", summary_projector,
@@ -3107,6 +4160,12 @@ class GarminCollectionTool:
                 conn, run, "activity_summary", key, "project",
                 "revised" if changed else "unchanged",
                 revision_id=revision,
+            )
+            self.repo.resolve_gaps(
+                conn, subject, "activity_summary",
+                date.fromisoformat(validated["local_date"]).isoformat(),
+                logical_object_key=key,
+                stages=("fetch", "project"),
             )
             receipt.counts["revised" if changed else "unchanged"] += 1
         except GarminError as exc:
@@ -3210,9 +4269,11 @@ class GarminCollectionTool:
             (activity,),
         )
         conn.execute(
-            """INSERT OR IGNORE INTO activity_source_revisions(
+            """INSERT INTO activity_source_revisions(
                    activity_id,source_revision_id,source_role,is_active
-               ) VALUES(?,?,?,1)""",
+               ) VALUES(?,?,?,1)
+               ON CONFLICT(activity_id,source_revision_id,source_role)
+               DO UPDATE SET is_active=1""",
             (activity, revision, "summary_json"),
         )
         return activity
@@ -5182,16 +6243,34 @@ class GarminCollectionTool:
         if declared_counts and declared_counts != {len(sessions)}:
             raise GarminError("fit_ambiguous_session")
         activity_types = {str(activity.get("type") or "").strip() for activity in activities}
+        # Garmin Connect type keys and FIT sport vocabularies are not always
+        # identical.  Keep this table explicit and closed: a time match alone
+        # is never enough to accept an unrecognised Connect activity type.
         expected = {
+            "badminton": ("racket", "badminton"),
+            "breathwork": ("training", "breathing"),
+            "indoor_cardio": ("training", "cardio_training"),
+            "indoor_cycling": ("cycling", "indoor_cycling"),
+            "indoor_running": ("running", "indoor_running"),
+            "treadmill_running": ("running", "treadmill"),
             "strength_training": ("training", "strength_training"),
+            "training": ("training", None),
             "bouldering": ("rock_climbing", "bouldering"),
             "indoor_climbing": ("rock_climbing", "indoor_climbing"),
-        }.get(sport, (sport, None))
+            "rock_climbing": ("rock_climbing", None),
+            "running": ("running", None),
+            "cycling": ("cycling", None),
+            "hiking": ("hiking", None),
+        }.get(sport)
         multisport = (
             sport in {"multisport", "multi_sport", "triathlon"}
             or "auto_multi_sport" in activity_types
         )
         if not multisport:
+            if expected is None:
+                raise GarminError(
+                    "fit_ambiguous_session" if len(sessions) > 1 else "fit_identity_mismatch"
+                )
             conflicts = [
                 identity for identity in identities
                 if identity[1] != expected[0]
@@ -5227,6 +6306,10 @@ class GarminCollectionTool:
         key = f"garmin:activity:{provider_id}"
         try:
             blob = self._call(lambda: self._transport().activity_original(provider_id), conn=conn, run=run, subject=subject, resource="activity_fit", key=key, allows_404=True)
+            self.repo.item(
+                conn, run, "activity_fit", key, "fetch", "fetched",
+                increment_attempt=False,
+            )
             candidates = self._extract_fit_candidates(blob)
             valid: list[bytes] = []
             invalid_codes: list[str] = []
@@ -5239,6 +6322,21 @@ class GarminCollectionTool:
                     key=lambda item: item[0],
                 )
             }
+            # Every extracted FIT is immutable received evidence, irrespective
+            # of whether later validation selects it for canonical projection.
+            # Archive before parsing so corrupt, mismatched, or multi-session
+            # candidates cannot disappear with an extract failure.  The HMAC
+            # keeps the provider activity id and candidate digest out of
+            # externally visible identifiers; archive is content-addressed so
+            # a repeated ORIGINAL response is a no-op.
+            for candidate_hash, candidate in unique_candidates.items():
+                candidate_key = self._identity_hmac(
+                    f"fit-candidate:{provider_id}:{candidate_hash}"
+                )
+                self.repo.archive(
+                    conn, "activity_fit_candidate", candidate_key, candidate,
+                    "fit", "application/octet-stream",
+                )
             for candidate in unique_candidates.values():
                 try:
                     self._fit_session_identity(candidate, start_utc, sport)
@@ -5257,10 +6355,20 @@ class GarminCollectionTool:
             unique = {digest(candidate): candidate for candidate in valid}
             if len(unique) != 1:
                 candidate_revisions: list[int] = []
-                for sha, candidate in unique.items():
-                    candidate_key = self._identity_hmac(f"fit-candidate:{provider_id}:{sha}")
-                    _, candidate_revision, _ = self.repo.archive(conn, "activity_fit_candidate", candidate_key, candidate, "fit", "application/octet-stream")
-                    candidate_revisions.append(candidate_revision)
+                for candidate_hash in unique:
+                    candidate_key = self._identity_hmac(
+                        f"fit-candidate:{provider_id}:{candidate_hash}"
+                    )
+                    candidate_revision = conn.execute(
+                        """SELECT id FROM source_revisions
+                             WHERE provider='garmin'
+                               AND resource_kind='activity_fit_candidate'
+                               AND provider_object_id=? AND is_current=1""",
+                        (candidate_key,),
+                    ).fetchone()
+                    if candidate_revision is None:
+                        raise ValueError("fit_candidate_archive_missing")
+                    candidate_revisions.append(int(candidate_revision["id"]))
                 now = utc_now()
                 validation_errors: dict[str, str | None] = {}
                 for candidate_hash, candidate in unique_candidates.items():
@@ -5319,8 +6427,26 @@ class GarminCollectionTool:
             outcome = self._classify(exc, allows_404=True)
             terminal = "not_available" if outcome.status == "not_available" else ("forbidden" if outcome.status == "forbidden" else ("deferred" if outcome.status == "deferred" else "failed"))
             retry = self._next_retry(exc, 0) if terminal == "deferred" else None
-            self.repo.item(conn, run, "activity_fit", key, "extract", terminal, error=exc, next_retry=retry, increment_attempt=False)
-            self.repo.gap(conn, subject, "activity_fit", key, day.isoformat(), "extract", exc.code, deferred=terminal == "deferred", next_retry=retry)
+            fetch = conn.execute(
+                """SELECT status FROM garmin_sync_items
+                   WHERE garmin_sync_run_id=? AND resource_kind='activity_fit'
+                     AND logical_object_key=? AND stage='fetch'""",
+                (run, key),
+            ).fetchone()
+            failure_stage = (
+                "fetch"
+                if fetch is not None and fetch["status"] == "running"
+                else "extract"
+            )
+            self.repo.item(
+                conn, run, "activity_fit", key, failure_stage, terminal,
+                error=exc, next_retry=retry, increment_attempt=False,
+            )
+            self.repo.gap(
+                conn, subject, "activity_fit", key, day.isoformat(),
+                failure_stage, exc.code, deferred=terminal == "deferred",
+                next_retry=retry,
+            )
             if terminal == "not_available":
                 receipt.counts["not_available"] += 1
             else:
@@ -5504,37 +6630,541 @@ class GarminCollectionTool:
         finally:
             shutil.rmtree(directory, ignore_errors=True)
 
-    def _audit(self, conn: sqlite3.Connection, subject: int, receipt: SyncReceipt) -> None:
-        for row in conn.execute("SELECT resource_kind,local_date FROM resource_coverage WHERE subject_id=? AND provider='garmin' AND availability_state='error'", (subject,)):
+    def _repair_strategy(
+        self, conn: sqlite3.Connection, subject: int, request: SyncRequest,
+        receipt: SyncReceipt,
+    ) -> Literal["refetch", "reparse", "reconcile", "deferred"]:
+        """Choose auto repair from durable evidence, never from a guess.
+
+        A caller can explicitly choose a strategy.  ``auto`` only examines
+        unresolved gaps in the requested scope; capability cooldown is kept as
+        a deferred receipt rather than turning into an avoidable provider call.
+        """
+        if request.mode != "repair":
+            return "refetch"
+        if request.repair_strategy in {"refetch", "reparse", "reconcile"}:
+            return request.repair_strategy
+        resources = set(request.resource_kinds)
+        if "activities" in resources:
+            resources.remove("activities")
+            resources.update(ACTIVITY_RESOURCE_KINDS)
+        activity_ids = set(request.activity_ids)
+        clauses = ["subject_id=?", "status IN ('open','deferred')"]
+        values: list[Any] = [subject]
+        if resources:
+            clauses.append("resource_kind IN (%s)" % ",".join("?" for _ in resources))
+            values.extend(sorted(resources))
+        if request.health_from_local_date:
+            clauses.append("window_end_local_date>=?")
+            values.append(request.health_from_local_date)
+        if request.through_local_date:
+            clauses.append("window_start_local_date<=?")
+            values.append(request.through_local_date)
+        rows = list(conn.execute(
+            "SELECT resource_kind,logical_object_key,reason_code,status,next_retry_at_utc "
+            "FROM garmin_sync_gaps WHERE " + " AND ".join(clauses), values
+        ))
+        if activity_ids:
+            rows = [row for row in rows if any(
+                self._activity_id_matches(str(row["logical_object_key"]), activity_id)
+                for activity_id in activity_ids
+            )]
+        if rows and all(
+            row["status"] == "deferred" and row["next_retry_at_utc"]
+            and row["next_retry_at_utc"] > utc_now()
+            for row in rows
+        ):
+            receipt.counts["deferred"] += len(rows)
+            receipt.next_retry_at_utc = min(str(row["next_retry_at_utc"]) for row in rows)
+            receipt.errors.append({"code": "capability_cooldown", "resource": "garmin", "logical_object_key": "garmin:repair", "summary": "repair deferred until next retry"})
+            return "deferred"
+        reasons = {str(row["reason_code"]) for row in rows}
+        # FIT extraction/identity failures have no locally repairable
+        # canonical source.  They require a fresh ORIGINAL response, not an
+        # offline reconcile of whatever source happens to be current.
+        fit_refetch_reasons = {
+            "fit_identity_mismatch", "fit_crc_invalid", "fit_no_session",
+            "fit_ambiguous_session", "fit_missing", "fit_ambiguous",
+            "fit_zip_invalid", "fit_zip_limits_exceeded", "fit_zip_unsafe_member",
+        }
+        if any(
+            str(row["resource_kind"]) == "activity_fit"
+            and str(row["reason_code"]) in fit_refetch_reasons
+            for row in rows
+        ):
+            return "refetch"
+        # Missing, corrupt, and transport evidence requires a new provider
+        # response.  It has priority when a mixed scope is requested.
+        if not rows or any(
+            token in reason for reason in reasons
+            for token in ("network", "timeout", "rate", "raw_integrity", "missing_raw", "fetch")
+        ):
+            return "refetch"
+        if any("reconcile" in reason or "canonical" in reason for reason in reasons):
+            return "reconcile"
+        if any(token in reason for reason in reasons for token in ("parse", "project", "field")):
+            return "reparse"
+        return "refetch"
+
+    def _audit(
+        self, conn: sqlite3.Connection, subject: int, receipt: SyncReceipt,
+        start: date, through: date,
+    ) -> None:
+        """Build local, repeatable evidence; never overwrite provider facts."""
+        now = utc_now()
+        # Audit-owned gaps are refreshed for this bounded window.  They remain
+        # durable history, but a later clean scan closes stale evidence before
+        # recreating any issue that is still present.
+        conn.execute(
+            """UPDATE garmin_sync_gaps
+                  SET status='resolved',resolved_at_utc=?,last_attempt_at_utc=?
+                WHERE subject_id=? AND status IN ('open','deferred')
+                  AND reason_code IN ('coverage_error','cursor_crosses_gap',
+                                      'activity_summary_missing')
+                  AND (window_end_local_date='' OR window_end_local_date>=?)
+                  AND (window_start_local_date='' OR window_start_local_date<=?)""",
+            (now, now, subject, start.isoformat(), through.isoformat()),
+        )
+        conn.execute(
+            """UPDATE garmin_sync_gaps
+                  SET status='resolved',resolved_at_utc=?,last_attempt_at_utc=?
+                WHERE subject_id=? AND status IN ('open','deferred')
+                  AND reason_code='unmapped_field_signature'""",
+            (now, now, subject),
+        )
+        for row in conn.execute(
+            "SELECT resource_kind,local_date FROM resource_coverage "
+            """WHERE subject_id=? AND provider='garmin'
+                 AND availability_state='error'
+                 AND local_date BETWEEN ? AND ?""",
+            (subject, start.isoformat(), through.isoformat()),
+        ):
             self.repo.gap(conn, subject, row["resource_kind"], f"coverage:{row['resource_kind']}:{row['local_date']}", row["local_date"] or "", "validate", "coverage_error")
-        for row in conn.execute("SELECT r.id,r.resource_kind,r.provider_object_id,o.relative_path FROM source_revisions r JOIN raw_objects o ON o.id=r.raw_object_id WHERE r.provider='garmin' AND r.is_current=1"):
-            path = (self.config.raw_root.parent / row["relative_path"]).resolve()
-            if self.config.raw_root.parent not in path.parents or not path.exists() or digest(path.read_bytes()) != conn.execute("SELECT payload_hash FROM source_revisions WHERE id=?", (row["id"],)).fetchone()[0]:
-                self.repo.gap(conn, subject, row["resource_kind"], row["provider_object_id"], "", "validate", "raw_integrity")
+        # A completed cursor must never leap an unresolved date-level gap.
+        for cursor in conn.execute(
+            "SELECT resource_kind,complete_through_local_date FROM garmin_sync_cursors WHERE subject_id=?",
+            (subject,),
+        ):
+            ceiling = cursor["complete_through_local_date"]
+            if not ceiling:
+                continue
+            gap = conn.execute(
+                """SELECT logical_object_key,window_start_local_date,window_end_local_date,stage
+                   FROM garmin_sync_gaps WHERE subject_id=? AND resource_kind=?
+                     AND status IN ('open','deferred')
+                     AND stage!='cursor_audit'
+                     AND (window_end_local_date='' OR window_end_local_date>=?)
+                     AND (window_start_local_date='' OR window_start_local_date<=?)
+                     AND (window_start_local_date='' OR window_start_local_date<=?)
+                   ORDER BY id LIMIT 1""",
+                (
+                    subject, cursor["resource_kind"], start.isoformat(),
+                    through.isoformat(), ceiling,
+                ),
+            ).fetchone()
+            if gap is not None:
+                self.repo.gap(conn, subject, cursor["resource_kind"], str(gap["logical_object_key"]), str(gap["window_start_local_date"]), "cursor_audit", "cursor_crosses_gap", end_day=str(gap["window_end_local_date"]))
                 receipt.counts["failed"] += 1
+        # Validate every current revision's raw lineage.  ``raw_objects`` is
+        # authoritative for byte hash; source payload hash can be semantic JSON.
+        global_resources = tuple(sorted({*ACCOUNT_RESOURCE_KINDS, "activity_inventory"}))
+        placeholders = ",".join("?" for _ in global_resources)
+        raw_rows = conn.execute(
+            f"""SELECT DISTINCT r.id,r.resource_kind,r.provider_object_id,r.payload_hash,
+                       r.profile_version,
+                       o.relative_path,o.sha256,o.size_bytes,o.media_type
+                  FROM source_revisions r
+                  JOIN raw_objects o ON o.id=r.raw_object_id
+                 WHERE r.provider='garmin' AND r.is_current=1
+                   AND (
+                       r.resource_kind IN ({placeholders})
+                       OR EXISTS (
+                           SELECT 1 FROM resource_coverage coverage
+                            WHERE coverage.subject_id=?
+                              AND coverage.source_revision_id=r.id
+                              AND coverage.local_date BETWEEN ? AND ?
+                       )
+                       OR EXISTS (
+                           SELECT 1 FROM activity_source_revisions relation
+                           JOIN activities activity ON activity.id=relation.activity_id
+                            WHERE relation.source_revision_id=r.id
+                              AND activity.subject_id=?
+                              AND activity.local_date BETWEEN ? AND ?
+                       )
+                   )""",
+            (
+                *global_resources,
+                subject, start.isoformat(), through.isoformat(),
+                subject, start.isoformat(), through.isoformat(),
+            ),
+        )
+        for row in raw_rows:
+            try:
+                raw = self._repair_raw_bytes(row)
+                if digest(raw) != row["sha256"]:
+                    raise ValueError("raw_object_corrupt")
+                if str(row["media_type"]) == "application/json":
+                    payload, canonical = parse_provider_json_bytes(raw)
+                    if row["profile_version"] == ACCOUNT_PROFILE_SEMANTIC_VERSION:
+                        canonical = canonical_provider_json(
+                            self._safe_account_payload(
+                                str(row["resource_kind"]),
+                                payload,
+                            )
+                        )
+                    elif row["profile_version"] == DEVICE_REFERENCE_SEMANTIC_VERSION:
+                        reference = self._device_reference_semantic_payload(
+                            payload,
+                            str(row["resource_kind"]),
+                        )
+                        if reference is None:
+                            raise ValueError("raw_object_corrupt")
+                        canonical = canonical_provider_json(reference)
+                    elif row["profile_version"] is not None:
+                        raise ValueError("raw_object_corrupt")
+                    if digest(canonical) != row["payload_hash"]:
+                        raise ValueError("raw_object_corrupt")
+            except (OSError, ValueError, json.JSONDecodeError):
+                self.repo.gap(conn, subject, row["resource_kind"], row["provider_object_id"], "", "validate", "raw_integrity", revision=int(row["id"]))
+                receipt.counts["failed"] += 1
+            else:
+                conn.execute(
+                    """UPDATE garmin_sync_gaps
+                          SET status='resolved',resolved_at_utc=?,
+                              last_attempt_at_utc=?
+                        WHERE subject_id=? AND resource_kind=?
+                          AND logical_object_key=?
+                          AND stage='validate' AND reason_code='raw_integrity'
+                          AND status IN ('open','deferred')""",
+                    (
+                        now, now, subject, row["resource_kind"],
+                        row["provider_object_id"],
+                    ),
+                )
+        # Field catalog drift is retained as a gap so it is visible to repair
+        # and later quality policy, without inventing a canonical metric.
+        for row in conn.execute(
+            """SELECT resource_kind,count(*) AS count FROM source_field_catalog
+                 WHERE provider='garmin' AND mapping_state='unknown'
+                 GROUP BY resource_kind"""
+        ):
+            self.repo.gap(conn, subject, row["resource_kind"], f"field-signature:{row['resource_kind']}", start.isoformat(), "audit", "unmapped_field_signature", end_day=through.isoformat())
+        # An activity has a durable summary and, where FIT has been requested,
+        # an active parsed FIT revision.  This check never declares a FIT
+        # mandatory: an existing FIT-stage gap is the evidence of intent.
+        for row in conn.execute(
+            """SELECT a.id,a.provider_activity_id,a.local_date
+                 FROM activities a WHERE a.subject_id=? AND a.provider='garmin'
+                   AND a.local_date BETWEEN ? AND ? AND a.provider_state='active'
+                   AND NOT EXISTS (SELECT 1 FROM activity_source_revisions ar
+                                   WHERE ar.activity_id=a.id AND ar.source_role='summary_json'
+                                     AND ar.is_active=1)""",
+            (subject, start.isoformat(), through.isoformat()),
+        ):
+            self.repo.gap(conn, subject, "activity_summary", f"garmin:activity:{row['provider_activity_id']}", row["local_date"], "audit", "activity_summary_missing")
         receipt.counts["fetched"] += 1
 
-    def _offline_repair(self, conn: sqlite3.Connection, subject: int, request: SyncRequest, receipt: SyncReceipt) -> None:
+    def _repair_raw_bytes(self, row: sqlite3.Row) -> bytes:
+        root = self.config.raw_root.parent.resolve()
+        path = (root / str(row["relative_path"])).resolve()
+        if root not in path.parents or not path.is_file():
+            raise ValueError("raw_object_corrupt")
+        raw = path.read_bytes()
+        if "size_bytes" in row.keys() and len(raw) != int(row["size_bytes"]):
+            raise ValueError("raw_object_corrupt")
+        return raw
+
+    @staticmethod
+    def _repair_day(provider_object_id: str, request: SyncRequest) -> str | None:
+        matches = re.findall(r"\d{4}-\d{2}-\d{2}", provider_object_id)
+        if matches:
+            return matches[-1]
+        return request.through_local_date or request.health_from_local_date
+
+    @staticmethod
+    def _activity_id_matches(provider_object_id: str, activity_id: str) -> bool:
+        """Match activity ids as complete colon-delimited key segments."""
+        return (
+            provider_object_id == activity_id
+            or provider_object_id.endswith(f":{activity_id}")
+            or f":{activity_id}:" in provider_object_id
+        )
+
+    @staticmethod
+    def _repair_range_dates(
+        resource: str, provider_object_id: str, request: SyncRequest,
+    ) -> tuple[date, date]:
+        """Recover a bounded range key without guessing an endpoint day."""
+        match = re.fullmatch(
+            rf"garmin:health:{re.escape(resource)}:(\d{{4}}-\d{{2}}-\d{{2}}):(\d{{4}}-\d{{2}}-\d{{2}})",
+            provider_object_id,
+        )
+        if match is None:
+            raise ValueError("repair_range_key_invalid")
+        start, end = (date.fromisoformat(value) for value in match.groups())
+        if start > end:
+            raise ValueError("repair_range_invalid_bounds")
+        if request.health_from_local_date and start < date.fromisoformat(request.health_from_local_date):
+            raise ValueError("repair_range_before_request")
+        if request.through_local_date and end > date.fromisoformat(request.through_local_date):
+            raise ValueError("repair_range_after_request")
+        return start, end
+
+    def _offline_repair(self, conn: sqlite3.Connection, run: int, subject: int, request: SyncRequest, receipt: SyncReceipt) -> None:
         resources = set(request.resource_kinds)
-        rows = conn.execute("SELECT r.id,r.resource_kind,r.provider_object_id,o.relative_path FROM source_revisions r JOIN raw_objects o ON o.id=r.raw_object_id WHERE r.provider='garmin' AND r.is_current=1").fetchall()
-        for row in rows:
-            if resources and row["resource_kind"] not in resources: continue
-            path = (self.config.raw_root.parent / row["relative_path"]).resolve()
-            if self.config.raw_root.parent not in path.parents or not path.exists():
-                receipt.counts["failed"] += 1; continue
+        if "activities" in resources:
+            resources.remove("activities")
+            resources.update(ACTIVITY_RESOURCE_KINDS)
+        activity_ids = set(request.activity_ids)
+        rows = list(conn.execute(
+            """SELECT r.id,r.resource_kind,r.provider_object_id,r.is_current,r.parsed_at_utc,
+                      r.payload_hash,o.relative_path,o.sha256,o.size_bytes
+                 FROM source_revisions r JOIN raw_objects o ON o.id=r.raw_object_id
+                WHERE r.provider='garmin'
+                ORDER BY r.resource_kind,r.provider_object_id,r.revision_no DESC"""
+        ))
+        gap_filters = [
+            "subject_id=?", "status IN ('open','deferred')",
+            "source_revision_id IS NOT NULL",
+        ]
+        gap_parameters: list[Any] = [subject]
+        if request.health_from_local_date:
+            gap_filters.append("window_end_local_date>=?")
+            gap_parameters.append(request.health_from_local_date)
+        if request.through_local_date:
+            gap_filters.append("window_start_local_date<=?")
+            gap_parameters.append(request.through_local_date)
+        gap_revision_ids = {
+            int(row[0])
+            for row in conn.execute(
+                "SELECT DISTINCT source_revision_id FROM garmin_sync_gaps "
+                f"WHERE {' AND '.join(gap_filters)}",
+                gap_parameters,
+            )
+        }
+        eligible_rows = [
+            row for row in rows
+            if (not resources or str(row["resource_kind"]) in resources)
+            and (
+                not activity_ids
+                or any(
+                    self._activity_id_matches(
+                        str(row["provider_object_id"]), activity_id,
+                    )
+                    for activity_id in activity_ids
+                )
+            )
+        ]
+        # A revision-linked unresolved gap is precise recovery evidence.  Do
+        # not rebuild adjacent/current revisions from the same resource while
+        # such evidence exists in the requested window.
+        gap_rows = [row for row in eligible_rows if int(row["id"]) in gap_revision_ids]
+        if gap_rows:
+            selected = {
+                int(row["id"]): row
+                for row in gap_rows
+            }
+        else:
+            # Without an unresolved revision-linked gap, explicit reparse is a
+            # safe rebuild of the newest revision for each logical object.
+            selected = {}
+            for row in eligible_rows:
+                selected.setdefault(
+                    (str(row["resource_kind"]), str(row["provider_object_id"])), row,
+                )
+        for row in selected.values():
+            resource, key, revision = str(row["resource_kind"]), str(row["provider_object_id"]), int(row["id"])
+            day = self._repair_day(key, request) or ""
+            resolved_range_days: list[str] = []
             try:
-                raw = path.read_bytes()
+                raw = self._repair_raw_bytes(row)
+                if digest(raw) != row["sha256"]:
+                    raise ValueError("raw_object_corrupt")
+                conn.execute("BEGIN IMMEDIATE")
                 if request.repair_strategy == "reconcile":
-                    conn.execute("INSERT INTO reconciliation_results(entity_type,entity_id,field_key,left_source_revision_id,right_source_revision_id,result,checked_at_utc) VALUES(?,?,?,?,?,?,?)", ("source_revision", int(row["id"]), "canonical_source", int(row["id"]), int(row["id"]), "match", utc_now()))
-                elif path.suffix == ".fit":
-                    activity = conn.execute("SELECT id FROM activities WHERE provider='garmin' AND provider_activity_id=?", (row["provider_object_id"],)).fetchone()
-                    if activity: self._project_fit(conn, int(activity[0]), raw, int(row["id"]))
-                else:
+                    if resource == "activity_fit" or resource == "activity_summary":
+                        activity_id = key.removeprefix("garmin:activity:")
+                        activity = conn.execute("SELECT id,local_date FROM activities WHERE provider='garmin' AND provider_activity_id=?", (activity_id,)).fetchone()
+                        if activity is None:
+                            raise ValueError("activity_missing")
+                        self._reconcile_activity(conn, run, subject, activity_id, int(activity["id"]), date.fromisoformat(activity["local_date"]), receipt)
+                    else:
+                        # Non-activity source selection has one current raw
+                        # source.  Persist a deterministic check, not a fake
+                        # canonical rewrite.
+                        conn.execute("INSERT INTO reconciliation_results(entity_type,entity_id,field_key,left_source_revision_id,right_source_revision_id,result,checked_at_utc) VALUES(?,?,?,?,?,?,?)", ("source_revision", revision, "canonical_source", revision, revision, "match", utc_now()))
+                    conn.execute("COMMIT")
+                    receipt.counts["unchanged"] += 1
+                    continue
+                if resource == "activity_fit":
+                    activity_id = key.removeprefix("garmin:activity:")
+                    activity = conn.execute("SELECT id,local_date FROM activities WHERE provider='garmin' AND provider_activity_id=?", (activity_id,)).fetchone()
+                    if activity is None:
+                        raise ValueError("activity_missing")
+                    local_activity_id = int(activity["id"])
+                    # Rebuild the revision-bound FIT projection inside this
+                    # transaction.  A parser failure rolls the deletes back,
+                    # so the prior canonical/current projection remains
+                    # available rather than becoming half-reparsed.
+                    segment_ids = [
+                        int(item[0]) for item in conn.execute(
+                            """SELECT id FROM activity_segments
+                               WHERE activity_id=? AND source_revision_id=?""",
+                            (local_activity_id, revision),
+                        )
+                    ]
+                    if segment_ids:
+                        placeholders = ",".join("?" for _ in segment_ids)
+                        conn.execute(
+                            f"DELETE FROM climbing_routes WHERE segment_id IN ({placeholders})",
+                            segment_ids,
+                        )
+                        conn.execute(
+                            f"DELETE FROM strength_sets WHERE segment_id IN ({placeholders})",
+                            segment_ids,
+                        )
+                    for table in (
+                        "activity_samples", "activity_aux_messages",
+                        "fit_metric_definitions", "activity_devices",
+                        "fit_unknown_message_catalog",
+                    ):
+                        conn.execute(
+                            f"DELETE FROM {table} WHERE source_revision_id=?",
+                            (revision,),
+                        )
+                    conn.execute(
+                        "DELETE FROM activity_segments WHERE activity_id=? AND source_revision_id=?",
+                        (local_activity_id, revision),
+                    )
+                    conn.execute(
+                        """DELETE FROM activity_metric_sources
+                           WHERE activity_id=?
+                             AND source_kind IN ('standard_fit','developer_fit')""",
+                        (local_activity_id,),
+                    )
+                    conn.execute(
+                        "DELETE FROM course_points WHERE activity_id=? AND course_identity='fit'",
+                        (local_activity_id,),
+                    )
+                    activity_state = conn.execute(
+                        "SELECT extras_json,source_map_json FROM activities WHERE id=?",
+                        (local_activity_id,),
+                    ).fetchone()
+                    extras = json.loads(activity_state["extras_json"] or "{}")
+                    source_map = json.loads(activity_state["source_map_json"] or "{}")
+                    extras.pop("fit_session", None)
+                    extras["fit_sessions"] = []
+                    source_map.pop("fit_session", None)
+                    source_map.pop("fit_sessions", None)
+                    conn.execute(
+                        "UPDATE activities SET extras_json=?,source_map_json=? WHERE id=?",
+                        (
+                            json.dumps(extras, sort_keys=True, allow_nan=False),
+                            json.dumps(source_map, sort_keys=True, allow_nan=False),
+                            local_activity_id,
+                        ),
+                    )
+                    self._project_fit(conn, local_activity_id, raw, revision)
+                    conn.execute(
+                        """UPDATE activity_source_revisions SET is_active=0
+                           WHERE activity_id=? AND source_role='activity_fit'""",
+                        (local_activity_id,),
+                    )
+                    conn.execute(
+                        """INSERT INTO activity_source_revisions(
+                               activity_id,source_revision_id,source_role,is_active
+                           ) VALUES(?,?,?,1)
+                           ON CONFLICT(activity_id,source_revision_id,source_role)
+                           DO UPDATE SET is_active=1""",
+                        (local_activity_id, revision, "activity_fit"),
+                    )
+                    self._promote_fit_canonical(conn, local_activity_id, revision)
+                    day = str(activity["local_date"])
+                elif resource == "activity_summary":
                     payload, _canonical = parse_provider_json_bytes(raw)
-                    day = request.through_local_date or request.health_from_local_date
-                    if day and row["resource_kind"] in HEALTH_RESOURCES: self._project_health(conn, subject, row["resource_kind"], day, payload, int(row["id"]))
-                receipt.counts["fetched"] += 1
-            except (ValueError, json.JSONDecodeError, OSError): receipt.counts["failed"] += 1
+                    validated = self._validate_activity_summary(payload, key)
+                    local_activity_id = self._project_activity(
+                        conn, subject, key, payload, validated, revision
+                    )
+                    conn.execute(
+                        """UPDATE activity_source_revisions SET is_active=1
+                           WHERE activity_id=? AND source_revision_id=?
+                             AND source_role='summary_json'""",
+                        (local_activity_id, revision),
+                    )
+                    day = str(validated["local_date"])
+                elif resource in HEALTH_RESOURCES:
+                    payload, _canonical = parse_provider_json_bytes(raw)
+                    spec = RESOURCE_CATALOG[resource]
+                    if spec.scope == "range":
+                        range_start, range_end = self._repair_range_dates(resource, key, request)
+                        # Validate the entire immutable response before
+                        # replacing a single day's canonical projection.
+                        by_day = self._range_payload_by_day(
+                            payload, range_start, range_end, resource=resource,
+                        )
+                        lactate_envelope = resource == "lactate_threshold" and isinstance(payload, dict) and any(
+                            isinstance(payload.get(family), list)
+                            for family in ("heart_rate", "power", "speed")
+                        )
+                        if lactate_envelope:
+                            self.repo.fields(conn, resource, payload)
+                        for current_day in (
+                            range_start + timedelta(index)
+                            for index in range((range_end - range_start).days + 1)
+                        ):
+                            current_day_text = current_day.isoformat()
+                            day_payload = by_day[current_day_text]
+                            self._supersede_range_projection(
+                                conn, subject, resource, current_day_text,
+                            )
+                            if not lactate_envelope:
+                                self.repo.fields(conn, resource, day_payload)
+                            count = (
+                                self._project_health(
+                                    conn, subject, resource, current_day_text,
+                                    day_payload, revision,
+                                )
+                                if day_payload else 0
+                            )
+                            self.repo.coverage(
+                                conn, subject, resource, current_day_text,
+                                "fetched" if day_payload else "empty", revision, count,
+                            )
+                            resolved_range_days.append(current_day_text)
+                    else:
+                        if not day:
+                            raise ValueError("repair_date_unknown")
+                        self.repo.fields(conn, resource, payload)
+                        self._supersede_health_projection(conn, subject, resource, key, day)
+                        count = self._project_health(conn, subject, resource, day, payload, revision)
+                        self.repo.coverage(conn, subject, resource, day, "fetched", revision, count)
+                else:
+                    # Archive-only resources still get their raw syntax and
+                    # field signature verified; their existing projection is
+                    # intentionally left untouched until a typed projector is
+                    # available rather than guessed here.
+                    payload, _canonical = parse_provider_json_bytes(raw)
+                    self.repo.fields(conn, resource, payload)
+                current = conn.execute("SELECT id FROM source_revisions WHERE provider='garmin' AND resource_kind=? AND provider_object_id=? AND is_current=1", (resource, key)).fetchone()
+                if current is not None and int(current["id"]) != revision:
+                    conn.execute("UPDATE source_revisions SET is_current=0 WHERE id=?", (int(current["id"]),))
+                conn.execute("UPDATE source_revisions SET is_current=1,parsed_at_utc=?,parser_version=? WHERE id=?", (utc_now(), PARSER_VERSION, revision))
+                conn.execute("COMMIT")
+                if resolved_range_days:
+                    for resolved_day in resolved_range_days:
+                        self.repo.resolve_gaps(
+                            conn, subject, resource, resolved_day,
+                            logical_object_key=key,
+                        )
+                elif day:
+                    self.repo.resolve_gaps(conn, subject, resource, day)
+                receipt.counts["revised"] += 1
+            except Exception:
+                if conn.in_transaction:
+                    conn.execute("ROLLBACK")
+                self.repo.gap(conn, subject, resource, key, day, "reparse" if request.repair_strategy == "reparse" else "reconcile", "offline_repair_failed", revision=revision)
+                receipt.counts["failed"] += 1
 
     def _status(self, receipt: SyncReceipt) -> SyncReceipt:
         conn = self.repo.connect(readonly=True)
@@ -5580,9 +7210,12 @@ class GarminCollectionTool:
 
     def _validate(self, request: SyncRequest) -> None:
         if not 1 <= self.config.max_attempts <= 5: raise ValueError("max_attempts_out_of_range")
-        if self.config.request_min_interval_ms < 0 or self.config.request_timeout_seconds <= 0 or self.config.retry_base_seconds <= 0 or self.config.retry_max_seconds <= 0 or self.config.inline_retry_after_max_seconds < 0: raise ValueError("invalid_retry_configuration")
+        if self.config.request_min_interval_ms < 0 or self.config.request_interval_jitter_ms < 0 or self.config.request_timeout_seconds <= 0 or self.config.retry_base_seconds <= 0 or self.config.retry_max_seconds <= 0 or self.config.inline_retry_after_max_seconds < 0 or self.config.rate_limit_fallback_seconds <= 0: raise ValueError("invalid_retry_configuration")
+        if self.config.lookback_days < 1: raise ValueError("lookback_days_out_of_range")
+        if self.config.max_repair_items_per_incremental < 0: raise ValueError("invalid_repair_item_limit")
         if request.mode not in {"auth","full","incremental","snapshot","repair","audit","status"}: raise ValueError("invalid_mode")
         if request.mode == "full" and not (request.health_from_local_date or self.config.history_start_date): raise ValueError("history_start_date_required")
+        if request.mode == "incremental" and not self.config.history_start_date: raise ValueError("history_start_date_required")
         if request.mode == "repair" and not (request.health_from_local_date or request.through_local_date or request.resource_kinds or request.activity_ids): raise ValueError("repair_requires_scope")
         if request.mode == "snapshot" and request.through_local_date: raise ValueError("snapshot_uses_snapshot_date")
         if request.mode in {"auth", "status"} and any((request.health_from_local_date, request.through_local_date, request.snapshot_local_date, request.resource_kinds, request.activity_ids, request.repair_strategy)):
@@ -5593,8 +7226,43 @@ class GarminCollectionTool:
             raise ValueError("mode_has_incompatible_parameters")
         if request.mode == "repair" and request.snapshot_local_date:
             raise ValueError("mode_has_incompatible_parameters")
+        if any(resource not in REQUEST_RESOURCE_KINDS for resource in request.resource_kinds):
+            raise ValueError("resource_kind_invalid")
         for value in (request.health_from_local_date, request.through_local_date, request.snapshot_local_date):
             if value: date.fromisoformat(value)
+        if self.config.history_start_date:
+            date.fromisoformat(self.config.history_start_date)
+        today = self._today_local()
+        if request.mode in {"full", "incremental"}:
+            through = (
+                date.fromisoformat(request.through_local_date)
+                if request.through_local_date
+                else today - timedelta(days=1)
+            )
+            if through >= today:
+                raise ValueError("completed_mode_through_must_be_before_today")
+            if request.mode == "full":
+                start = date.fromisoformat(
+                    request.health_from_local_date
+                    or self.config.history_start_date
+                    or ""
+                )
+                if start > through:
+                    raise ValueError("sync_range_start_after_through")
+            elif date.fromisoformat(self.config.history_start_date or "") > through:
+                raise ValueError("sync_range_start_after_through")
+        if request.mode == "snapshot":
+            snapshot_day = date.fromisoformat(
+                request.snapshot_local_date or today.isoformat()
+            )
+            if snapshot_day > today:
+                raise ValueError("snapshot_date_in_future")
+        if request.mode in {"repair", "audit"}:
+            through = date.fromisoformat(request.through_local_date) if request.through_local_date else today
+            if through > today:
+                raise ValueError("repair_or_audit_through_must_not_be_after_today")
+            if request.health_from_local_date and date.fromisoformat(request.health_from_local_date) > through:
+                raise ValueError("sync_range_start_after_through")
         schema_path = Path(__file__).resolve().parents[2] / "harness" / "schemas" / "garmin_sync_request.schema.json"
         payload = asdict(request); payload["resource_kinds"] = list(request.resource_kinds); payload["activity_ids"] = list(request.activity_ids)
         if list(Draft202012Validator(json.loads(schema_path.read_text(encoding="utf-8"))).iter_errors(payload)): raise ValueError("invalid_sync_request_schema")

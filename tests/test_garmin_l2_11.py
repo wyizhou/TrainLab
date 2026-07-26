@@ -152,6 +152,54 @@ def test_session_identity_time_and_sport_mismatch_are_rejected(tmp_path: Path) -
     assert not list(tmp_path.glob(".fit-download-*"))
 
 
+@pytest.mark.parametrize(
+    ("connect_type", "fit_sport", "fit_sub_sport"),
+    (
+        ("badminton", "racket", "badminton"),
+        ("breathwork", "training", "breathing"),
+        ("indoor_cardio", "training", "cardio_training"),
+        ("indoor_cycling", "cycling", "indoor_cycling"),
+        ("indoor_running", "running", "indoor_running"),
+        ("treadmill_running", "running", "treadmill"),
+    ),
+)
+def test_explicit_connect_to_fit_vocabularies_are_accepted(
+    tmp_path: Path, connect_type: str, fit_sport: str, fit_sub_sport: str,
+) -> None:
+    tool = _tool(tmp_path)
+    start = datetime.fromisoformat("2026-07-18T22:53:01+00:00")
+    assert tool._validate_fit_sessions(
+        [{"start_time": start, "sport": fit_sport, "sub_sport": fit_sub_sport}],
+        [{"type": "manual", "num_sessions": 1}],
+        "2026-07-18T22:53:01Z", connect_type,
+    ) == ("2026-07-18T22:53:01Z", fit_sport)
+
+
+def test_connect_to_fit_vocabularies_reject_wrong_subsport_unknown_type_and_time(
+    tmp_path: Path,
+) -> None:
+    tool = _tool(tmp_path)
+    start = datetime.fromisoformat("2026-07-18T22:53:01+00:00")
+    with pytest.raises(GarminError, match="fit_identity_mismatch"):
+        tool._validate_fit_sessions(
+            [{"start_time": start, "sport": "running", "sub_sport": "treadmill"}],
+            [{"type": "manual", "num_sessions": 1}],
+            "2026-07-18T22:53:01Z", "indoor_running",
+        )
+    with pytest.raises(GarminError, match="fit_identity_mismatch"):
+        tool._validate_fit_sessions(
+            [{"start_time": start, "sport": "running", "sub_sport": "generic"}],
+            [{"type": "manual", "num_sessions": 1}],
+            "2026-07-18T22:53:01Z", "unknown_connect_type",
+        )
+    with pytest.raises(GarminError, match="fit_identity_mismatch"):
+        tool._validate_fit_sessions(
+            [{"start_time": start, "sport": "cycling", "sub_sport": "indoor_cycling"}],
+            [{"type": "manual", "num_sessions": 1}],
+            "2026-07-18T23:00:00Z", "indoor_cycling",
+        )
+
+
 def test_multi_session_identity_uses_earliest_start_and_fit_activity_semantics(
     tmp_path: Path,
 ) -> None:
@@ -431,7 +479,10 @@ def test_duplicate_same_hash_and_valid_plus_crc_invalid_publish_one_canonical_fi
     assert len(set(checked)) == 2
     with sqlite3.connect(foundation.database_path) as conn:
         assert conn.execute(
-            "SELECT count(*) FROM raw_objects WHERE resource_kind='activity_fit'"
+            "SELECT count(*) FROM source_revisions WHERE resource_kind='activity_fit_candidate'"
+        ).fetchone()[0] == 2
+        assert conn.execute(
+            "SELECT count(*) FROM source_revisions WHERE resource_kind='activity_fit'"
         ).fetchone()[0] == 1
         assert conn.execute(
             "SELECT count(*) FROM source_revisions WHERE resource_kind='activity_fit' AND is_current=1"
@@ -474,20 +525,68 @@ def test_all_invalid_candidate_error_priority_is_stable_across_zip_order(
         assert conn.execute(
             "SELECT count(*) FROM source_revisions WHERE resource_kind='activity_fit'"
         ).fetchone()[0] == 0
+        assert conn.execute(
+            "SELECT count(*) FROM source_revisions WHERE resource_kind='activity_fit_candidate'"
+        ).fetchone()[0] == 2
+
+
+def test_candidate_archive_failure_blocks_canonical_fit_publish(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fit = (Path(__file__).resolve().parents[1] / "test_data" / "new" / "Running.fit").read_bytes()
+    tool, _transport, foundation = _activity_pipeline(tmp_path, fit)
+    archive = tool.repo.archive
+
+    def fail_candidate_archive(conn, resource, *args, **kwargs):
+        if resource == "activity_fit_candidate":
+            raise ValueError("synthetic candidate archive failure")
+        return archive(conn, resource, *args, **kwargs)
+
+    monkeypatch.setattr(tool.repo, "archive", fail_candidate_archive)
+    receipt = _full(tool, "candidate-archive-failure")
+    assert receipt.status == "partial"
+    with sqlite3.connect(foundation.database_path) as conn:
+        assert conn.execute(
+            "SELECT count(*) FROM source_revisions WHERE resource_kind='activity_fit'"
+        ).fetchone()[0] == 0
+        assert conn.execute(
+            "SELECT count(*) FROM activity_source_revisions WHERE source_role='activity_fit'"
+        ).fetchone()[0] == 0
+
+
+def test_ambiguous_session_candidate_is_retained_without_canonical_fit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fit = (Path(__file__).resolve().parents[1] / "test_data" / "new" / "Running.fit").read_bytes()
+    tool, _transport, foundation = _activity_pipeline(tmp_path, fit)
+
+    def ambiguous_session(*_args, **_kwargs):
+        raise GarminError("fit_ambiguous_session")
+
+    monkeypatch.setattr(tool, "_fit_session_identity", ambiguous_session)
+    receipt = _full(tool, "ambiguous-session-candidate")
+    assert receipt.status == "partial"
+    with sqlite3.connect(foundation.database_path) as conn:
+        assert conn.execute(
+            "SELECT count(*) FROM source_revisions WHERE resource_kind='activity_fit_candidate'"
+        ).fetchone()[0] == 1
+        assert conn.execute(
+            "SELECT count(*) FROM activity_source_revisions WHERE source_role='activity_fit'"
+        ).fetchone()[0] == 0
 
 
 @pytest.mark.parametrize(
-    ("case", "payload_factory", "error_code"),
+    ("case", "payload_factory", "error_code", "candidate_count"),
     [
-        ("all_crc_invalid", lambda running, bouldering: bytes(bytearray(running[:-1]) + bytes([running[-1] ^ 1])), "fit_crc_invalid"),
-        ("no_session", lambda running, bouldering: _minimal_fit_without_session(), "fit_no_session"),
-        ("identity_mismatch", lambda running, bouldering: bouldering, "fit_identity_mismatch"),
-        ("no_fit", lambda running, bouldering: _zip_payload([("readme.txt", b"none")]), "fit_missing"),
-        ("bad_zip", lambda running, bouldering: b"PK\x03\x04broken", "fit_zip_invalid"),
+        ("all_crc_invalid", lambda running, bouldering: bytes(bytearray(running[:-1]) + bytes([running[-1] ^ 1])), "fit_crc_invalid", 1),
+        ("no_session", lambda running, bouldering: _minimal_fit_without_session(), "fit_no_session", 1),
+        ("identity_mismatch", lambda running, bouldering: bouldering, "fit_identity_mismatch", 1),
+        ("no_fit", lambda running, bouldering: _zip_payload([("readme.txt", b"none")]), "fit_missing", 0),
+        ("bad_zip", lambda running, bouldering: b"PK\x03\x04broken", "fit_zip_invalid", 0),
     ],
 )
 def test_candidate_failure_matrix_records_expected_gap_without_canonical(
-    tmp_path: Path, case: str, payload_factory, error_code: str,
+    tmp_path: Path, case: str, payload_factory, error_code: str, candidate_count: int,
 ) -> None:
     root = Path(__file__).resolve().parents[1] / "test_data" / "new"
     running = (root / "Running.fit").read_bytes()
@@ -502,11 +601,21 @@ def test_candidate_failure_matrix_records_expected_gap_without_canonical(
             "SELECT reason_code FROM garmin_sync_gaps WHERE resource_kind='activity_fit'"
         ).fetchone()[0] == error_code
         assert conn.execute(
+            "SELECT count(*) FROM garmin_sync_items "
+            "WHERE resource_kind='activity_fit' AND status='running'"
+        ).fetchone()[0] == 0
+        assert conn.execute(
             "SELECT count(*) FROM activity_source_revisions WHERE source_role='activity_fit'"
         ).fetchone()[0] == 0
         assert conn.execute(
             "SELECT count(*) FROM activity_samples"
         ).fetchone()[0] == 0
+        assert conn.execute(
+            "SELECT count(*) FROM source_revisions WHERE resource_kind='activity_fit_candidate'"
+        ).fetchone()[0] == candidate_count
+    receipt_json = receipt.json()
+    assert hashlib.sha256(running).hexdigest() not in receipt_json
+    assert "garmin:activity:1" not in receipt_json
 
 
 def test_different_valid_candidates_are_quarantined_repeatably_then_unique_fit_resolves_issue_and_gap(
@@ -535,19 +644,19 @@ def test_different_valid_candidates_are_quarantined_repeatably_then_unique_fit_r
                       raw_objects.resource_kind,source_revisions.provider_object_id
                FROM raw_objects JOIN source_revisions
                  ON source_revisions.raw_object_id=raw_objects.id
-               WHERE raw_objects.resource_kind='activity_fit_candidate'
+               WHERE source_revisions.resource_kind='activity_fit_candidate'
                ORDER BY raw_objects.sha256"""
         ).fetchall()
-        assert len(candidate_rows) == 2
+        assert len(candidate_rows) == 3
         assert all(row[1].endswith(".fit") for row in candidate_rows)
         assert all(row[2] == "application/octet-stream" for row in candidate_rows)
         assert all(row[3] == "activity_fit_candidate" for row in candidate_rows)
         assert all(len(row[4]) == 64 and row[4] not in {"1", row[0]} for row in candidate_rows)
         assert {row[4] for row in candidate_rows} == {
             tool._identity_hmac(f"fit-candidate:1:{candidate_hash}")
-            for candidate_hash in hashes
+            for candidate_hash in all_hashes
         }
-        assert len({row[4] for row in candidate_rows}) == 2
+        assert len({row[4] for row in candidate_rows}) == 3
         details = json.loads(conn.execute(
             "SELECT details_json FROM data_quality_issues WHERE issue_code='ambiguous_activity_fit'"
         ).fetchone()[0])
@@ -572,10 +681,10 @@ def test_different_valid_candidates_are_quarantined_repeatably_then_unique_fit_r
     with sqlite3.connect(foundation.database_path) as conn:
         assert conn.execute(
             "SELECT count(*) FROM raw_objects WHERE resource_kind='activity_fit_candidate'"
-        ).fetchone()[0] == 2
+        ).fetchone()[0] == 3
         assert conn.execute(
             "SELECT count(*) FROM source_revisions WHERE resource_kind='activity_fit_candidate'"
-        ).fetchone()[0] == 2
+        ).fetchone()[0] == 3
         assert conn.execute(
             "SELECT count(*) FROM data_quality_issues WHERE issue_code='ambiguous_activity_fit'"
         ).fetchone()[0] == 1
@@ -592,7 +701,7 @@ def test_different_valid_candidates_are_quarantined_repeatably_then_unique_fit_r
         ).fetchone()[0] == "resolved"
         assert conn.execute(
             "SELECT count(*) FROM raw_objects WHERE resource_kind='activity_fit_candidate'"
-        ).fetchone()[0] == 2
+        ).fetchone()[0] == 3
         assert conn.execute(
             "SELECT count(*) FROM activity_source_revisions WHERE source_role='activity_fit' AND is_active=1"
         ).fetchone()[0] == 1
@@ -853,7 +962,21 @@ def test_default_pipeline_archives_and_projects_representative_fit_then_replays_
     import sqlite3
     metric_source_count: int | None = None
     with sqlite3.connect(foundation.database_path) as conn:
-        assert conn.execute("SELECT count(*) FROM raw_objects WHERE resource_kind='activity_fit'").fetchone()[0] == 1
+        candidate_raw = conn.execute(
+            "SELECT sha256 FROM raw_objects WHERE resource_kind='activity_fit_candidate'"
+        ).fetchall()
+        assert candidate_raw == [(hashlib.sha256(sample.read_bytes()).hexdigest(),)]
+        assert conn.execute(
+            "SELECT count(*) FROM source_revisions WHERE resource_kind='activity_fit'"
+        ).fetchone()[0] == 1
+        assert conn.execute(
+            "SELECT count(*) FROM source_revisions "
+            "WHERE resource_kind='activity_fit' AND is_current=1"
+        ).fetchone()[0] == 1
+        assert conn.execute(
+            "SELECT count(*) FROM garmin_sync_items "
+            "WHERE resource_kind='activity_fit' AND status='running'"
+        ).fetchone()[0] == 0
         assert conn.execute("SELECT count(*) FROM activity_samples").fetchone()[0] > 0
         if expected == "running":
             assert conn.execute("SELECT count(*) FROM fit_metric_definitions").fetchone()[0] == 24
@@ -1033,8 +1156,24 @@ def test_changed_fit_keeps_revision_bound_history_and_switches_only_active_canon
         assert {entry["source_revision_id"] for entry in extras["fit_sessions"]} == {active}
         assert source_map["fit_sessions"]["source_revision_id"] == active
         assert conn.execute(
-            "SELECT count(*) FROM raw_objects WHERE resource_kind='activity_fit'"
+            "SELECT count(*) FROM raw_objects WHERE resource_kind='activity_fit_candidate'"
         ).fetchone()[0] == 2
+        assert {
+            row[0] for row in conn.execute(
+                "SELECT sha256 FROM raw_objects WHERE resource_kind='activity_fit_candidate'"
+            )
+        } == {hashlib.sha256(fit).hexdigest(), hashlib.sha256(variant).hexdigest()}
+        assert conn.execute(
+            "SELECT count(*) FROM source_revisions WHERE resource_kind='activity_fit'"
+        ).fetchone()[0] == 2
+        assert conn.execute(
+            "SELECT count(*) FROM source_revisions "
+            "WHERE resource_kind='activity_fit' AND is_current=1"
+        ).fetchone()[0] == 1
+        assert conn.execute(
+            "SELECT count(*) FROM activity_source_revisions "
+            "WHERE source_role='activity_fit' AND is_active=1"
+        ).fetchone()[0] == 1
 
 
 def test_fit_identity_hmacs_are_stable_canonical_and_absent_in_operational_text(
@@ -1128,7 +1267,8 @@ def test_fit_projection_failure_keeps_existing_current_revision_and_cleans_temp_
             "SELECT extras_json,source_map_json FROM activities"
         ).fetchone()
 
-    transport.payload = _original_zip(_valid_fit_variant(bouldering.read_bytes()))
+    failed_fit = _valid_fit_variant(bouldering.read_bytes())
+    transport.payload = _original_zip(failed_fit)
     monkeypatch.setattr(tool, "_project_fit", lambda *_args: (_ for _ in ()).throw(RuntimeError("projection failed")))
     receipt = tool.execute(SyncRequest("full", through_local_date="2026-07-19", invocation_id="fit-project-failure"))
     assert receipt.status == "partial"
@@ -1137,7 +1277,20 @@ def test_fit_projection_failure_keeps_existing_current_revision_and_cleans_temp_
         assert revisions[0] == (old_revision, 1, revisions[0][2])
         assert revisions[1][1:] == (0, None)
         assert conn.execute("SELECT source_revision_id FROM activity_source_revisions WHERE source_role='activity_fit' AND is_active=1").fetchone()[0] == old_active
-        assert conn.execute("SELECT count(*) FROM raw_objects WHERE resource_kind='activity_fit'").fetchone()[0] == 2
+        assert {
+            row[0] for row in conn.execute(
+                "SELECT sha256 FROM raw_objects WHERE resource_kind='activity_fit_candidate'"
+            )
+        } == {
+            hashlib.sha256(bouldering.read_bytes()).hexdigest(),
+            hashlib.sha256(failed_fit).hexdigest(),
+        }
+        assert conn.execute(
+            "SELECT count(*) FROM source_revisions WHERE resource_kind='activity_fit_candidate'"
+        ).fetchone()[0] == 2
+        assert conn.execute(
+            "SELECT count(*) FROM source_revisions WHERE resource_kind='activity_fit'"
+        ).fetchone()[0] == 2
         assert {
             table: conn.execute(f"SELECT count(*) FROM {table}").fetchone()[0]
             for table in before_counts

@@ -344,6 +344,35 @@ def test_summary_validation_failure_keeps_raw_revision_without_canonical(
         ).fetchone()[0] == 1
 
 
+def test_nested_connect_activity_summary_is_normalized_without_changing_raw(tmp_path: Path) -> None:
+    config, tool, transport = _setup(tmp_path, [_entry(1, "2026-04-15")])
+    transport.summaries["1"] = {
+        "activityId": 1,
+        "activityName": "synthetic-nested",
+        "activityTypeDTO": {"typeKey": "running"},
+        "summaryDTO": {
+            "startTimeGMT": "2026-04-15T00:00:00.0",
+            "startTimeLocal": "2026-04-15T08:00:00.0",
+            "duration": 600,
+            "movingDuration": 590,
+            "distance": 2000,
+        },
+        "metadataDTO": {"hasChartData": True},
+    }
+    receipt = _full(tool, "nested-connect-summary")
+    assert receipt.status == "succeeded"
+    with sqlite3.connect(config.database_path) as conn:
+        assert conn.execute(
+            "SELECT sport,start_time_utc,distance_m FROM activities"
+        ).fetchone() == ("running", "2026-04-15T00:00:00Z", 2000.0)
+        raw_path = conn.execute(
+            """SELECT o.relative_path FROM source_revisions r
+               JOIN raw_objects o ON o.id=r.raw_object_id
+               WHERE r.resource_kind='activity_summary'"""
+        ).fetchone()[0]
+        assert b"summaryDTO" in (config.raw_root.parent / raw_path).read_bytes()
+
+
 def test_malformed_page_and_paging_loop_keep_evidence_but_never_scan_missing(
     tmp_path: Path,
 ) -> None:

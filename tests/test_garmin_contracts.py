@@ -4,6 +4,7 @@ import json
 import os
 from dataclasses import asdict
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from jsonschema import Draft202012Validator
@@ -11,6 +12,96 @@ from jsonschema import Draft202012Validator
 from trainlab.garmin import SyncReceipt, SyncRequest
 from trainlab.garmin_catalog import RESOURCE_CATALOG, catalog_lint
 from trainlab.garmin_client import GarminConnectTransport, TokenStore
+from trainlab.garmin_config import load_garmin_config
+
+
+def _garmin_config_payload(token_store: str = "state/secrets/garmin") -> str:
+    return f"""garmin:
+  history_start_date: "2026-01-01"
+  region: cn
+  token_store: {token_store}
+  lookback_days: 14
+  max_repair_items_per_incremental: 100
+  request_min_interval_ms: 500
+  request_interval_jitter_ms: 0
+  request_timeout_seconds: 30
+  max_attempts: 5
+  retry_base_seconds: 2
+  retry_max_seconds: 60
+  inline_retry_after_max_seconds: 120
+  rate_limit_fallback_seconds: 900
+"""
+
+
+def test_token_store_locator_is_foundation_state_relative(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    (project / "config").mkdir(parents=True)
+    schema_directory = project / "harness" / "schemas"
+    schema_directory.mkdir(parents=True)
+    (project / "config" / "garmin.yaml").write_text(
+        _garmin_config_payload(),
+        encoding="utf-8",
+    )
+    source_schema = (
+        Path(__file__).resolve().parents[1]
+        / "harness"
+        / "schemas"
+        / "garmin_config.schema.json"
+    )
+    (schema_directory / "garmin_config.schema.json").write_bytes(
+        source_schema.read_bytes()
+    )
+    foundation = SimpleNamespace(
+        database_path=project / "runtime" / "data.db",
+        raw_root=project / "runtime" / "raw",
+        state_root=project / "runtime" / "state",
+    )
+
+    config = load_garmin_config(project, foundation)
+
+    assert config.state_root == foundation.state_root
+    assert config.region == "cn"
+    assert foundation.state_root / "secrets" / "garmin" != (
+        project / "state" / "secrets" / "garmin"
+    )
+
+
+@pytest.mark.parametrize(
+    "token_store",
+    (
+        "state/secrets/garmin/alternate",
+        "state/secrets/../garmin",
+    ),
+)
+def test_token_store_locator_rejects_alternate_or_traversal_paths(
+    tmp_path: Path,
+    token_store: str,
+) -> None:
+    project = tmp_path / "project"
+    (project / "config").mkdir(parents=True)
+    schema_directory = project / "harness" / "schemas"
+    schema_directory.mkdir(parents=True)
+    (project / "config" / "garmin.yaml").write_text(
+        _garmin_config_payload(token_store),
+        encoding="utf-8",
+    )
+    source_schema = (
+        Path(__file__).resolve().parents[1]
+        / "harness"
+        / "schemas"
+        / "garmin_config.schema.json"
+    )
+    (schema_directory / "garmin_config.schema.json").write_bytes(
+        source_schema.read_bytes()
+    )
+    foundation = SimpleNamespace(
+        database_path=project / "runtime" / "data.db",
+        raw_root=project / "runtime" / "raw",
+        state_root=project / "runtime" / "state",
+    )
+
+    with pytest.raises(ValueError, match="invalid_garmin_token_store"):
+        load_garmin_config(project, foundation)
 
 
 def test_request_and_receipt_schemas_are_closed_and_roundtrip() -> None:
@@ -42,7 +133,12 @@ def test_token_store_permissions_and_pinned_adapter_monkeypatch(tmp_path: Path) 
     transport=GarminConnectTransport(None,None,store,client=Client())
     assert transport.identity() == "fake" and transport.fetch_health("user_summary","2026-01-01")["day"] == "2026-01-01" and list(transport.list_activities(None,None)) == []
     token=directory/"token"; token.write_text("x"); token.chmod(0o644)
+    token_mtime = token.stat().st_mtime_ns
     with pytest.raises(ValueError, match="unsafe_token_file"): store.verify()
+    store.prepare()
+    assert token.read_text() == "x"
+    assert token.stat().st_mtime_ns == token_mtime
+    assert token.stat().st_mode & 0o777 == 0o600
 
 
 def test_status_is_read_only_and_does_not_create_subject(tmp_path: Path) -> None:

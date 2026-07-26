@@ -49,7 +49,16 @@ def _setup(tmp_path: Path):
     root = tmp_path / "data"
     foundation = FoundationConfig(root, root / "data.db", root / "raw", root / "state", root / "state/ready.json", root / "state/locks/foundation.lock")
     assert FoundationTool(foundation).execute(FoundationRequest("init", "l2-09a", "2026-01-01T00:00:00Z")).status == "initialized"
-    config = GarminConfig(foundation.database_path, foundation.raw_root, foundation.state_root, "2026-04-15", request_min_interval_ms=0)
+    # This test deliberately creates one record per provider environment.
+    # Production defaults to CN, so the first leg must request global explicitly.
+    config = GarminConfig(
+        foundation.database_path,
+        foundation.raw_root,
+        foundation.state_root,
+        "2026-04-15",
+        region="global",
+        request_min_interval_ms=0,
+    )
     transport = AccountTransport()
     tool = GarminCollectionTool(config, transport, sleep=lambda _: None, clock=lambda: datetime(2026, 4, 17), monotonic=lambda: 1_000.0)
     assert tool.execute(SyncRequest("auth")).status == "succeeded"
@@ -84,6 +93,56 @@ def test_account_profile_devices_are_redacted_revisioned_and_idempotent(tmp_path
     with sqlite3.connect(config.database_path) as conn:
         assert conn.execute("SELECT count(*) FROM devices").fetchone()[0] == 2
         assert conn.execute("SELECT count(*) FROM source_revisions WHERE resource_kind='devices' AND is_current=1").fetchone()[0] == 1
+
+
+def test_user_profile_volatile_raw_fields_do_not_create_semantic_revisions(
+    tmp_path: Path,
+) -> None:
+    config, tool, transport = _setup(tmp_path)
+    first = _account_sync(tool, "profile-semantic-first", "user_profile")
+    assert first.status == "succeeded" and first.counts["revised"] == 1
+    with sqlite3.connect(config.database_path) as conn:
+        revisions_before = conn.execute(
+            "SELECT count(*) FROM source_revisions WHERE resource_kind='user_profile'"
+        ).fetchone()[0]
+        raw_before = conn.execute(
+            "SELECT count(*) FROM raw_objects WHERE resource_kind='user_profile'"
+        ).fetchone()[0]
+
+    transport.payloads["user_profile"]["lastLoginTimestamp"] = (
+        "2026-04-17T00:00:00Z"
+    )
+    second = _account_sync(tool, "profile-semantic-volatile-one", "user_profile")
+    transport.payloads["user_profile"]["lastLoginTimestamp"] = (
+        "2026-04-17T00:01:00Z"
+    )
+    third = _account_sync(tool, "profile-semantic-volatile-two", "user_profile")
+    assert second.counts["unchanged"] == 1
+    assert third.counts["unchanged"] == 1
+    with sqlite3.connect(config.database_path) as conn:
+        assert conn.execute(
+            "SELECT count(*) FROM source_revisions WHERE resource_kind='user_profile'"
+        ).fetchone()[0] == revisions_before
+        assert conn.execute(
+            "SELECT count(*) FROM raw_objects WHERE resource_kind='user_profile'"
+        ).fetchone()[0] == raw_before + 2
+        assert conn.execute(
+            """SELECT profile_version FROM source_revisions
+               WHERE resource_kind='user_profile' AND is_current=1"""
+        ).fetchone()[0] == "account-profile-v1"
+
+    transport.payloads["user_profile"]["measurementSystem"] = "statute"
+    changed = _account_sync(tool, "profile-semantic-real-change", "user_profile")
+    assert changed.counts["revised"] == 1
+    audited = tool.execute(
+        SyncRequest(
+            "audit",
+            health_from_local_date="2026-04-15",
+            through_local_date="2026-04-15",
+            invocation_id="profile-semantic-audit",
+        )
+    )
+    assert audited.status == "succeeded" and audited.counts["failed"] == 0
 
 
 @pytest.mark.parametrize(

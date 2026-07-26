@@ -1,0 +1,28 @@
+{
+  "schema_version": "1",
+  "case": "incremental_completed_window",
+  "request": {
+    "layer": "garmin",
+    "mode": "incremental",
+    "invocation_id": "l2-17-incremental-001",
+    "through_local_date": "2026-07-22"
+  },
+  "expected_argv_suffix": ["garmin", "--invocation-id", "l2-17-incremental-001", "sync", "incremental", "--through", "2026-07-22"],
+  "expected_exit_code": 0,
+  "receipt": {
+    "schema_version": "1",
+    "run_id": "garmin-run-l2-17-001",
+    "mode": "incremental",
+    "status": "succeeded",
+    "requested_range": {"from": null, "through": "2026-07-22"},
+    "effective_range": {"from": "2026-07-08", "through": "2026-07-22"},
+    "coverage_state": "complete",
+    "counts": {"fetched": 3, "empty": 1, "unchanged": 7, "revised": 0, "failed": 0, "deferred": 0, "not_available": 0, "not_enabled": 0},
+    "complete_through_by_resource": {"user_summary": "2026-07-22"},
+    "open_gap_count": 0,
+    "next_retry_at_utc": null,
+    "errors": [],
+    "started_at_utc": "2026-07-24T00:00:00Z",
+    "completed_at_utc": "2026-07-24T00:00:01Z"
+  }
+}

@@ -22,9 +22,19 @@ logs/*
 *.lock
 !requirements.lock
 
+# Garmin Full archives are permanent local evidence, never Git content.
+# Raw provider JSON and extracted FIT files stay on disk indefinitely; the
+# database and sync state that reference them are local-only as well.
+/state/foundation/raw/garmin/json/
+/state/foundation/raw/garmin/fit/
+/state/foundation/data.db
+/state/foundation/data.db-*
+/state/foundation/state/
+
 # Credentials must never enter repository history.
 .env
 .env.*
+state/**/secrets/garmin/
 config/gmail_mcp.yaml
 config/trainlab.production.yaml
 config/rclone.conf

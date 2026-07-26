@@ -37,18 +37,114 @@ class TokenStore:
 
 
 class GarminConnectTransport:
-    def __init__(self, email: str | None, password: str | None, token_store: TokenStore, *, region: str = "global", mfa: Callable[[], str] | None = None, client: Any = None, request_timeout_seconds: int = 30) -> None:
+    _MFA_FLOW_PATH = {"ios": "mobile", "portal": "portal", "widget": "portal"}
+    _MFA_METHODS = frozenset({"email", "phone"})
+
+    def __init__(
+        self,
+        email: str | None,
+        password: str | None,
+        token_store: TokenStore,
+        *,
+        region: str = "cn",
+        mfa: Callable[[str], str] | None = None,
+        client: Any = None,
+        request_timeout_seconds: int = 30,
+    ) -> None:
         if request_timeout_seconds <= 0:
             raise ValueError("invalid_request_timeout")
+        if region not in {"global", "cn"}:
+            raise ValueError("invalid_garmin_region")
         self.request_timeout_seconds = request_timeout_seconds
+        self.region = region
+        self._mfa_callback = mfa
+        self._auth_flow_error: GarminError | None = None
         token_store.prepare(); self.token_store = token_store
         if client is not None: self.client = client
         elif Garmin is None: raise GarminError("garminconnect_not_installed")
         else:
             # python-garminconnect 0.3.6 accepts these documented concepts;
             # retry_attempts=0 makes Layer 2 the only retry owner.
-            self.client = Garmin(email, password, is_cn=(region == "cn"), prompt_mfa=mfa, retry_attempts=0)
+            self.client = Garmin(
+                email,
+                password,
+                is_cn=(region == "cn"),
+                prompt_mfa=self._prompt_mfa if mfa is not None else None,
+                retry_attempts=0,
+            )
         self._apply_request_timeout()
+
+    def _abort_mfa(self, error: GarminError) -> None:
+        """Preserve one safe error across the provider facade's exception wrapping."""
+        self._auth_flow_error = error
+        raise error
+
+    def _prompt_mfa(self) -> str:
+        """Request delivery after MFA_REQUIRED, then ask for the received code.
+
+        ``python-garminconnect==0.3.6`` invokes this callback only after its
+        low-level client has stored the MFA session returned by Garmin.  The
+        pinned library verifies codes but does not call Garmin's sendCode
+        endpoint, so TrainLab completes that missing state transition here.
+        """
+        provider = getattr(self.client, "client", None)
+        flow = str(getattr(provider, "_mfa_flow", "")).strip().lower()
+        flow_path = self._MFA_FLOW_PATH.get(flow)
+        method = str(getattr(provider, "_mfa_method", "email") or "email").strip().lower()
+        session = getattr(provider, "_mfa_session", None)
+        params = getattr(provider, "_mfa_login_params", None)
+        headers = getattr(provider, "_mfa_post_headers", None)
+        if (
+            flow_path is None
+            or method not in self._MFA_METHODS
+            or session is None
+            or not callable(getattr(session, "post", None))
+            or not isinstance(params, dict)
+            or not isinstance(headers, dict)
+        ):
+            self._abort_mfa(GarminError("mfa_code_delivery_unsupported"))
+
+        domain = "garmin.cn" if self.region == "cn" else "garmin.com"
+        endpoint = f"https://sso.{domain}/{flow_path}/api/mfa/sendCode"
+        try:
+            response = session.post(
+                endpoint,
+                params=params,
+                headers=headers,
+                json={"mfaMethod": method},
+                timeout=self.request_timeout_seconds,
+            )
+        except Exception:
+            self._abort_mfa(GarminError("mfa_code_delivery_failed"))
+
+        status = getattr(response, "status_code", None)
+        response_headers = getattr(response, "headers", {}) or {}
+        retry_after = response_headers.get("Retry-After")
+        try:
+            retry_after = int(retry_after) if retry_after is not None else None
+        except (TypeError, ValueError):
+            retry_after = None
+        if status == 429:
+            self._abort_mfa(
+                GarminError(
+                    "mfa_code_delivery_rate_limited",
+                    http_status=429,
+                    retry_after=retry_after,
+                )
+            )
+        if not isinstance(status, int) or not 200 <= status < 300:
+            self._abort_mfa(
+                GarminError("mfa_code_delivery_failed", http_status=status)
+            )
+        try:
+            response_type = response.json()["responseStatus"]["type"]
+        except (AttributeError, KeyError, TypeError, ValueError):
+            self._abort_mfa(GarminError("mfa_code_delivery_failed"))
+        if response_type != "MFA_CODE_SENT":
+            self._abort_mfa(GarminError("mfa_code_delivery_failed"))
+        if self._mfa_callback is None:
+            self._abort_mfa(GarminError("mfa_prompt_not_configured"))
+        return self._mfa_callback(method)
 
     def _apply_request_timeout(self) -> None:
         """Force the configured timeout through 0.3.6's real Session calls.
@@ -81,8 +177,17 @@ class GarminConnectTransport:
             setattr(bounded_request, "_trainlab_timeout_seconds", self.request_timeout_seconds)
             setattr(session, "request", bounded_request)
     def login(self) -> None:
-        try: self.client.login(str(self.token_store.directory)); self.token_store.verify()
-        except Exception as exc: raise self._error(exc)
+        self._auth_flow_error = None
+        try:
+            self.client.login(str(self.token_store.directory))
+            self.token_store.verify()
+        except Exception as exc:
+            if self._auth_flow_error is not None:
+                error, self._auth_flow_error = self._auth_flow_error, None
+                raise error
+            if isinstance(exc, GarminError):
+                raise
+            raise self._error(exc)
     def identity(self) -> str:
         profile = self._invoke(getattr(self.client, "get_full_name"))
         return str(profile)
@@ -108,6 +213,15 @@ class GarminConnectTransport:
             return self._invoke(method, latest=False, start_date=start_local_date, end_date=end_local_date, aggregation="daily")
         if spec.resource_kind == "running_tolerance":
             return self._invoke(method, start_local_date, end_local_date, aggregation="weekly")
+        if spec.resource_kind == "race_predictions":
+            # garminconnect 0.3.6 accepts either no arguments (latest) or the
+            # complete three-argument range form.  Passing only the two dates
+            # raises ValueError before a provider request is made.
+            return self._invoke(method, start_local_date, end_local_date, _type="daily")
+        if spec.resource_kind == "endurance_score" and start_local_date == end_local_date:
+            # The pinned client treats a one-argument call as a precise daily
+            # observation; its two-argument form is weekly aggregation.
+            return self._invoke(method, start_local_date)
         return self._invoke(method, start_local_date, end_local_date)
     def fetch_account(self, resource_kind: str, provider_device_id: str | None = None) -> Any:
         """Call only a reviewed account endpoint from the versioned catalog."""

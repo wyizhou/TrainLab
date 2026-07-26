@@ -13,6 +13,7 @@ from trainlab.foundation import FoundationConfig, FoundationRequest, FoundationT
 from trainlab.garmin import (
     GarminCollectionTool,
     GarminConfig,
+    GarminError,
     GarminRepository,
     SyncReceipt,
     SyncRequest,
@@ -119,6 +120,186 @@ def test_interrupted_item_recovers_without_duplicate_run(tmp_path: Path) -> None
     connection.close()
 
 
+def test_interrupted_full_skips_only_completed_health_items_and_rebuilds_counts(
+    tmp_path: Path,
+) -> None:
+    config, tool = _setup(tmp_path)
+    repository = GarminRepository(config)
+    connection = repository.connect()
+    subject = repository.subject(connection)
+    request = SyncRequest(
+        "full",
+        health_from_local_date="2026-04-15",
+        through_local_date="2026-04-16",
+        resource_kinds=("steps",),
+        invocation_id="resume-completed-health",
+    )
+    initial = SyncReceipt(mode="full")
+    run = repository.start_run(connection, request, subject, initial)
+
+    first_key = "garmin:health:steps:2026-04-15"
+    repository.item(connection, run, "steps", first_key, "fetch", "fetched")
+    repository.item(connection, run, "steps", first_key, "project", "revised")
+    repository.coverage(
+        connection, subject, "steps", "2026-04-15", "fetched", None, 1
+    )
+
+    second_key = "garmin:health:steps:2026-04-16"
+    repository.item(connection, run, "steps", second_key, "fetch", "empty")
+    repository.coverage(
+        connection, subject, "steps", "2026-04-16", "empty", None, 0
+    )
+    connection.close()
+
+    before = list(tool.transport.calls)
+    resumed = tool.execute(request)
+
+    assert resumed.status == "succeeded"
+    assert resumed.run_id == initial.run_id
+    assert resumed.counts["fetched"] == 1
+    assert resumed.counts["revised"] == 1
+    assert resumed.counts["empty"] == 1
+    assert "health:steps" not in tool.transport.calls[len(before):]
+    with repository.connect(readonly=True) as verified:
+        assert (
+            verified.execute(
+                """SELECT count(*) FROM garmin_sync_runs
+                    WHERE invocation_id='resume-completed-health'"""
+            ).fetchone()[0]
+            == 1
+        )
+
+
+def test_interrupted_full_retries_half_projected_health_item(
+    tmp_path: Path,
+) -> None:
+    config, tool = _setup(tmp_path)
+    repository = GarminRepository(config)
+    connection = repository.connect()
+    subject = repository.subject(connection)
+    request = SyncRequest(
+        "full",
+        health_from_local_date="2026-04-15",
+        through_local_date="2026-04-15",
+        resource_kinds=("steps",),
+        invocation_id="resume-half-projected-health",
+    )
+    initial = SyncReceipt(mode="full")
+    run = repository.start_run(connection, request, subject, initial)
+    repository.item(
+        connection,
+        run,
+        "steps",
+        "garmin:health:steps:2026-04-15",
+        "fetch",
+        "fetched",
+    )
+    connection.close()
+
+    resumed = tool.execute(request)
+
+    assert resumed.status == "succeeded"
+    assert "health:steps" in tool.transport.calls
+    with repository.connect(readonly=True) as verified:
+        item = verified.execute(
+            """SELECT status FROM garmin_sync_items
+                WHERE garmin_sync_run_id=? AND resource_kind='steps'
+                  AND logical_object_key='garmin:health:steps:2026-04-15'
+                  AND stage='fetch'""",
+            (run,),
+        ).fetchone()
+        assert item["status"] == "empty"
+
+
+def test_interrupted_full_recounts_failed_item_from_retry_outcome(
+    tmp_path: Path,
+) -> None:
+    config, tool = _setup(tmp_path)
+    repository = GarminRepository(config)
+    connection = repository.connect()
+    subject = repository.subject(connection)
+    request = SyncRequest(
+        "full",
+        health_from_local_date="2026-04-15",
+        through_local_date="2026-04-15",
+        resource_kinds=("steps",),
+        invocation_id="resume-failed-health",
+    )
+    initial = SyncReceipt(mode="full")
+    run = repository.start_run(connection, request, subject, initial)
+    repository.item(
+        connection,
+        run,
+        "steps",
+        "garmin:health:steps:2026-04-15",
+        "fetch",
+        "failed",
+        error=GarminError("network"),
+    )
+    connection.close()
+
+    resumed = tool.execute(request)
+
+    assert resumed.status == "succeeded"
+    assert resumed.counts["failed"] == 0
+    assert resumed.counts["deferred"] == 0
+    assert resumed.counts["empty"] == 1
+    assert "health:steps" in tool.transport.calls
+
+
+def test_finish_run_closes_proven_fetch_and_fails_orphaned_running_item(
+    tmp_path: Path,
+) -> None:
+    config, _ = _setup(tmp_path)
+    repository = GarminRepository(config)
+    connection = repository.connect()
+    subject = repository.subject(connection)
+
+    proven_run = _new_run(repository, connection, subject, "proven-fetch")
+    repository.item(
+        connection, proven_run, "activity_fit", "activity-1", "fetch", "running"
+    )
+    repository.item(
+        connection, proven_run, "activity_fit", "activity-1", "parse", "running"
+    )
+    repository.item(
+        connection, proven_run, "activity_fit", "activity-1", "parse", "unchanged"
+    )
+    proven_receipt = SyncReceipt(mode="incremental", status="succeeded")
+    repository.finish_run(connection, proven_run, proven_receipt, None, None)
+    proven_items = connection.execute(
+        """SELECT stage,status,error_code
+           FROM garmin_sync_items
+           WHERE garmin_sync_run_id=?
+           ORDER BY stage""",
+        (proven_run,),
+    ).fetchall()
+    assert [tuple(row) for row in proven_items] == [
+        ("fetch", "fetched", None),
+        ("parse", "unchanged", None),
+    ]
+    assert proven_receipt.status == "succeeded"
+    assert proven_receipt.counts["failed"] == 0
+
+    orphaned_run = _new_run(repository, connection, subject, "orphaned-fetch")
+    repository.item(
+        connection, orphaned_run, "steps", "2026-04-15", "fetch", "running"
+    )
+    orphaned_receipt = SyncReceipt(mode="incremental", status="succeeded")
+    repository.finish_run(connection, orphaned_run, orphaned_receipt, None, None)
+    orphaned_item = connection.execute(
+        """SELECT status,error_code,error_summary,completed_at_utc
+           FROM garmin_sync_items
+           WHERE garmin_sync_run_id=?""",
+        (orphaned_run,),
+    ).fetchone()
+    assert tuple(orphaned_item[:3]) == ("failed", "interrupted", "interrupted")
+    assert orphaned_item[3] is not None
+    assert orphaned_receipt.status == "partial"
+    assert orphaned_receipt.counts["failed"] == 1
+    connection.close()
+
+
 def test_completed_invocation_replays_full_receipt_without_network(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -166,7 +347,7 @@ def test_generated_invocation_is_shared_by_lock_and_run(
     assert observed["pid"] == os.getpid()
 
 
-def test_stale_lock_recovery_requires_dead_pid_and_no_active_run(
+def test_stale_lock_recovery_requires_dead_pid_and_exact_active_invocation(
     tmp_path: Path,
 ) -> None:
     config, tool = _setup(tmp_path)
@@ -195,6 +376,10 @@ def test_stale_lock_recovery_requires_dead_pid_and_no_active_run(
     )
     assert tool._recover_stale_lock(lock) is False
     assert lock.exists()
+    assert tool._recover_stale_lock(lock, "different") is False
+    assert lock.exists()
+    assert tool._recover_stale_lock(lock, "active") is True
+    assert not lock.exists()
 
     lock.write_text(
         json.dumps({"pid": 999_999_999, "invocation_id": "orphan"}),

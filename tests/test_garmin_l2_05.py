@@ -747,6 +747,83 @@ def test_all_json_fields_are_cataloged_and_fit_never_creates_zip(tmp_path: Path)
     connection.close()
 
 
+def test_raw_json_and_fit_revisions_are_permanent_append_only_evidence(
+    tmp_path: Path,
+) -> None:
+    config, _ = _setup(tmp_path)
+    repository = GarminRepository(config)
+    connection = repository.connect()
+    json_versions = (
+        b'{"calendarDate":"2026-04-15","value":1}',
+        b'{"calendarDate":"2026-04-15","value":2}',
+    )
+    fit_versions = (
+        b".FIT permanent raw revision one",
+        b".FIT permanent raw revision two",
+    )
+
+    for payload in json_versions:
+        repository.archive(
+            connection,
+            "steps",
+            "garmin:steps:2026-04-15",
+            payload,
+            "json",
+            "application/json",
+        )
+    for payload in fit_versions:
+        repository.archive(
+            connection,
+            "activity_fit",
+            "garmin:activity:permanent-fixture",
+            payload,
+            "fit",
+            "application/octet-stream",
+        )
+
+    for resource, expected_payloads in (
+        ("steps", json_versions),
+        ("activity_fit", fit_versions),
+    ):
+        rows = list(
+            connection.execute(
+                """SELECT o.relative_path
+                     FROM source_revisions AS r
+                     JOIN raw_objects AS o ON o.id=r.raw_object_id
+                    WHERE r.resource_kind=?
+                    ORDER BY r.revision_no""",
+                (resource,),
+            )
+        )
+        assert len(rows) == 2
+        assert [
+            (config.raw_root.parent / row["relative_path"]).read_bytes()
+            for row in rows
+        ] == list(expected_payloads)
+        assert (
+            connection.execute(
+                """SELECT count(*) FROM source_revisions
+                    WHERE resource_kind=? AND is_current=0""",
+                (resource,),
+            ).fetchone()[0]
+            == 1
+        )
+        assert (
+            connection.execute(
+                """SELECT count(*) FROM source_revisions
+                    WHERE resource_kind=? AND is_current=1""",
+                (resource,),
+            ).fetchone()[0]
+            == 1
+        )
+
+    assert len(list(config.raw_root.rglob("*.json"))) == 2
+    assert len(list(config.raw_root.rglob("*.fit"))) == 2
+    assert not list(config.raw_root.rglob("*.zip"))
+    assert not list(config.raw_root.rglob(".tmp-*"))
+    connection.close()
+
+
 @pytest.mark.parametrize("invalid_value", [float("nan"), float("inf"), float("-inf")])
 def test_nonfinite_provider_values_fail_closed_before_raw_revision_or_json_projection(
     tmp_path: Path, invalid_value: float,

@@ -1,6 +1,7 @@
 # 第二层：Garmin 数据采集工具层详细开发需求清单
 
-状态：开发中（L2-01～12 已完成；L2-13～18 与 G-01～06 未完成）
+状态：开发中（L2-01～16 已完成；L2-17 实现完成、待 E-04；L2-18 离线验收
+基础设施完成、真实 smoke 未开始；G-02、G-03 已完成）
 
 基线：第二层开发契约 v1、第一层数据基础契约 v2.4。
 
@@ -13,7 +14,7 @@
 | 层 | 权威文件 | 已校验 SHA-256 |
 |---|---|---|
 | 1 | `docs/layers/01-data-foundation.md` | `9bf0a91e61bda47c9dba971c731ca6ec79e064b7f0ea4eb8124a5a216d67e396` |
-| 2 | `docs/layers/02-data-collection.md` | `afdffa6268d64403d170906ee6a42d10f873a75b1615b806d893982aea86db14` |
+| 2 | `docs/layers/02-data-collection.md` | `c39ae1b82afcafe9f4fc3c54d1f851b4992c48021c5238038f078fab1ec885d6` |
 | 3 | `docs/layers/03-data-analysis.md` | `4a9b3f1ffb92ba1ad4f56e68380344007e48a43e03a3e0f746399c50da794eb8` |
 | 4 | `docs/layers/04-mail-agent.md` | `47175280f917dee55d2aa5f663f0705da8ec7baf463eae5933ea391c0770be94` |
 | 5 | `docs/layers/05-orchestration-monitoring.md` | `5b1d5abf15689cec2507bd20e36aa83fe49626dd82247a4c0a1b91cc266ce804` |
@@ -29,10 +30,17 @@ Garmin；第五层只传请求、读取 receipt/退出码并决定何时重试�
 
 | ID | 状态 | 外部所有者 | 必须具备的起始快照/证据 | 缺失时的处理 |
 |---|---|---|---|---|
-| E-01 | [ ] | 第一层 | `trainlab foundation init` 已产生 v2.4 compatible/ready 数据目录、DDL、稳定视图及 `garmin_sync_*` 表；可用隔离测试库。 | 停止任何会写数据库的第二层实现与集成；上报第一层。 |
+| E-01 | [x] | 第一层 | `trainlab foundation init` 已产生 v2.4 compatible/ready 数据目录、DDL、稳定视图及 `garmin_sync_*` 表；可用隔离测试库。 | 停止任何会写数据库的第二层实现与集成；上报第一层。 |
 | E-02 | [ ] | 部署/账号所有者 | Python >=3.12 受控运行环境、固定 `garminconnect==0.3.6` 依赖锁定方案、受控 Garmin 测试账号、`subject_identities(provider=garmin)` 绑定授权和无敏感数据的 fixture。 | 仅完成纯离线单元；认证和真实网络验收不得开始。 |
-| E-03 | [ ] | 第五层/总控 | 冻结的 `SyncRequest`/`SyncReceipt` JSON Schema consumer fixture、invocation ID 传递规则和退出码处理测试桩。 | 可完成第二层 API/CLI 自测；不得假定第五层内部实现或加入调度。 |
+| E-03 | [x] | 第五层/总控 | 冻结的 `SyncRequest`/`SyncReceipt` JSON Schema consumer fixture、invocation ID 传递规则和退出码处理测试桩。 | 可完成第二层 API/CLI 自测；不得假定第五层内部实现或加入调度。 |
 | E-04 | [ ] | 迁移负责人 | 现有 Drive/Excel/FIT 路径仍独立运行、备份与只读对账窗口已登记；未授权切换生产 canonical。 | 新工具只在隔离环境或 shadow 数据集运行，不修改旧路径。 |
+
+E-01 证据：第一层 FND-01～12 的 compatible/ready、隔离库与完整 Foundation
+离线回归均已登记在第一层实施文档。E-03 证据：
+`tests/test_orchestration_s5_06.py` 与
+`tests/fixtures/garmin_provider_contract_l2_17.json` 固定 invocation、typed argv、
+receipt Schema 和退出码 consumer 边界。E-02 的真实账号部分及 E-04 的迁移负责人
+登记仍未完成。
 
 ## 2. 共同完成规则
 
@@ -195,7 +203,7 @@ Garmin；第五层只传请求、读取 receipt/退出码并决定何时重试�
   可恢复且不会重复盲重试的行为。
 - **依赖与起始快照**：L2-02、L2-03、L2-04、L2-06；锁定 Python >=3.12 和库版本，
   创建 client 时 `retry_attempts=0`。
-- **负责范围**：最小请求间隔、timeout、5 次指数退避加抖动、408/网络/临时 5xx、
+- **负责范围**：带上下界的伪随机请求间隔、timeout、5 次指数退避加抖动、408/网络/临时 5xx、
   429 Retry-After 和 120 秒内联等待、长 429 deferred、401/403/允许 404/其他 4xx
   分类、冷却时间和 item attempt 记录。
 - **禁止触碰范围**：不依赖库的通用 retry；不把 403 变为 empty/not_available；不在
@@ -359,7 +367,7 @@ Garmin；第五层只传请求、读取 receipt/退出码并决定何时重试�
   chart 不生成 null sample 或 active fallback/source map，mixed payload 只发布逐行验证通过的
   canonical 数据并保留 source index 与 received/valid/dropped/persisted 证据。
 
-### [ ] L2-13｜Full、incremental 与 snapshot 统一编排
+### [x] L2-13｜Full、incremental 与 snapshot 统一编排
 
 - **目的**：用同一 catalog/fetch/archive/project pipeline 实现三种日期语义和可恢复
   工作计划，而非三套不一致逻辑。
@@ -379,7 +387,15 @@ Garmin；第五层只传请求、读取 receipt/退出码并决定何时重试�
 - **集成顺序与失败回退**：第五波，建立在具体资源单元完成后；模式异常时不推 cursor，
   仅保留完成 item 和 open/deferred gap，下一调用恢复。
 
-### [ ] L2-14｜Repair、reparse、reconcile、audit 与只读 status
+  **验收证据**：新增 `garmin_modes.py` 纯日期/游标规划器，三种模式继续调用同一
+  account/health/activity archive-project pipeline；incremental 在主范围完成后仅处理
+  调用前已存在且到期的最多 100 个 gap。`tests/test_garmin_l2_13.py` 的 7/7 项通过，
+  覆盖 full 同 invocation 中断恢复、逐资源 cursor 窗口、gap 阻断、100 项上限、
+  snapshot no-op/修订/活动复查和非法日期的 provider 前拒绝。第二层现有离线测试
+  共 267/267 项通过；未连接真实 Garmin，未加入 scheduler、daemon 或
+  后台线程。
+
+### [x] L2-14｜Repair、reparse、reconcile、audit 与只读 status
 
 - **目的**：将错漏、字段漂移、原始文件问题和远端 inventory 差异变为可审计、可选择、
   不盲目重抓的修复工具。
@@ -400,7 +416,14 @@ Garmin；第五层只传请求、读取 receipt/退出码并决定何时重试�
 - **集成顺序与失败回退**：第五波与 L2-13 后；修复失败保持旧 canonical 和 gap，返回
   partial/deferred/failed 的结构化 receipt，不发起无限重试。
 
-### [ ] L2-15｜数据质量门、隐私日志与分析可读状态
+  **验收证据**：`src/trainlab/garmin.py` 提供 durable gap 驱动的
+  auto/refetch/reparse/reconcile 路由、完全离线的 reparse/reconcile、事务内旧投影
+  清理与重建、成功后 current 切换，以及 bounded audit/read-only status。
+  `tests/test_garmin_l2_14.py` 的 7/7 项覆盖无显式日期的 raw-key 恢复、失败回滚保留旧
+  current、refetch no-op/修订、raw hash gap 建立/关闭、audit 日期窗和 status 零网络；
+  L2-10 继续覆盖两次完整 inventory 才确认 provider deleted。
+
+### [x] L2-15｜数据质量门、隐私日志与分析可读状态
 
 - **目的**：将 coverage、活动阶段、cursor、gap、capability 和对账问题汇总为第三层
   可验证的周分析质量事实，也为第五层提供脱敏监控状态。
@@ -421,7 +444,13 @@ Garmin；第五层只传请求、读取 receipt/退出码并决定何时重试�
 - **集成顺序与失败回退**：第六波；质量评估异常时保守返回 blocked/partial 并上报，
   不以人工 cursor 修改绕过门禁。
 
-### [ ] L2-16｜一次性 CLI 装配、进程清理与运维可观测性
+  **验收证据**：`src/trainlab/garmin_quality.py` 提供只读、版本化的七日 readiness 与
+  collection integrity facts；覆盖 capability、coverage、cursor、gap、活动阶段、
+  reconciliation、睡眠/样本边界和 subject 隔离。`tests/test_garmin_l2_15.py` 的 7/7
+  项覆盖 ready/warning/blocked、snapshot 后完成态、跨 subject 隔离、日期窗与数据库
+  失败保守阻断；返回值只含受控 code/entity，不含业务 payload。
+
+### [x] L2-16｜一次性 CLI 装配、进程清理与运维可观测性
 
 - **目的**：将 application service 正确暴露为冻结的 `trainlab garmin` 命令集，并确认
   调用完成即退出。
@@ -439,6 +468,12 @@ Garmin；第五层只传请求、读取 receipt/退出码并决定何时重试�
   命令退出后不存在残留采集服务。
 - **集成顺序与失败回退**：第六波，在 service 已完成后接线；CLI regression 时回退到
   API 离线测试，不启用第五层调用或生产切换。
+
+  **验收证据**：`src/trainlab/cli.py` 在加载配置/凭据/provider 前完成严格日期、
+  strategy、resource 和参数互斥校验，固定使用 `Asia/Singapore` 解释日期、UTC 完成
+  时间、唯一 API 调用和稳定退出码；`activities` 是明确活动资源别名，未知资源拒绝。
+  `tests/test_garmin_l2_16.py` 与 auth contract 共 25/25 项通过，覆盖唯一 receipt、
+  无监听/后台线程、status 零 transport、非法输入零 provider 及 legacy CLI 保留。
 
 ### [ ] L2-17｜跨层 request/receipt 合约与 legacy 并存验证
 
@@ -461,15 +496,25 @@ Garmin；第五层只传请求、读取 receipt/退出码并决定何时重试�
 - **集成顺序与失败回退**：第七波；合约不兼容即停止该集成，保持新工具隔离和旧路径
   原样，不以适配私有 SQL 临时绕过。
 
+  **当前实现证据（尚不代表验收完成）**：
+  `tests/fixtures/garmin_provider_contract_l2_17.json`、L2-17 的 7 项 contract test、
+  `garmin_legacy.py`、聚合-only report Schema 与
+  `docs/runbooks/garmin-layer-contract.md` 已通过离线验证；第五层无
+  `garmin_sync_*` 私有写，第三层无 Garmin provider，第四层仅可读 canonical
+  health/activity 且不调用或修改 Garmin，legacy sync/ingest 仍保持原路由。由于 E-04
+  的备份与只读 shadow 窗口尚未由迁移负责人登记，本项保持未勾选。
+
 ### [ ] L2-18｜受控真实账号 smoke、重复运行与最终回归
 
 - **目的**：在最小授权范围内证明真实 Garmin Connect 行为、文件安全、幂等与一次性
   生命周期符合契约，并为后续迁移提供可审计验收包。
 - **依赖与起始快照**：L2-01 至 L2-17、E-01 至 E-04；真实账号书面授权、短日期窗口、
   数据备份、停止/回退方案和无敏感输出环境。
-- **负责范围**：auth 后短窗口 full/incremental/snapshot/repair/audit/status smoke；
-  相同范围立即重跑；代表性活动与不支持健康资源验证；真实 429/缺口若出现的安全
-  receipt 记录；进程退出核验。
+- **负责范围**：在统一健康/活动起点的一至十四天短窗口内，按 `auth`、`incremental`、
+  重复 `incremental`、`snapshot`、重复 `snapshot`、`repair`、`audit`、`status` 固定八次
+  运行 smoke；代表性活动与不支持健康资源验证；真实 429/缺口若出现的安全 receipt
+  记录；进程退出核验。每项记录非敏感耗时，顶层记录端到端总耗时。L2-18 不执行 `full`。
+  本次实际 smoke 固定使用三个完整日的共同健康/活动起点；evidence 框架仍允许一至十四天。
 - **禁止触碰范围**：不扩大日期范围或权限、不执行生产迁移、不删除/编辑 Connect 云端、
   不把真实 raw/FIT/健康详情复制到测试报告、日志或本文件。
 - **预期产物**：脱敏 smoke runbook、run/receipt hash 清单、no-op 对比、质量/gap
@@ -481,6 +526,17 @@ Garmin；第五层只传请求、读取 receipt/退出码并决定何时重试�
   incident 交接和总控接受的阻断结论；不以“能下载一次”替代完整验收。
 - **集成顺序与失败回退**：最终波；任何异常立即停止扩大测试、保留本地不可变证据和
   脱敏 receipt，按 repair/audit 或账号运维处理，不切换 legacy/第五层生产调度。
+
+  **当前准备证据（尚不代表真实验收完成）**：
+  `src/trainlab/garmin_smoke.py`、`scripts/verify_garmin_smoke.py`、严格 evidence
+  Schema、19 项 L2-18 聚焦测试及
+  `docs/runbooks/garmin-real-account-smoke.md` 已通过独立离线复验。验证器只接受固定
+  格式授权/invocation/run ID、统一健康/活动起点的一至十四天新加坡窗口、E-01～E-04、
+  备份恢复、legacy 独立、凭据权限、`bounded_activity_window_verified`、request/receipt
+  Schema/hash、incremental 与 snapshot 两组重复 no-op、活动结构、capability、安全清理和
+  回滚证据及各 stage/端到端计时；它本身不访问 Garmin、
+  config、token、数据库或 raw。当前缺少 E-02 真实账号/token、E-04 真实备份恢复和
+  shadow 窗口和命名操作员，因此本项保持未勾选。
 
 ## 4. 依赖图与开发波次
 
@@ -514,15 +570,21 @@ L2-01～L2-07 完成，且 E-01/E-02 已满足。必须证明依赖锁、配置�
 raw/revision、run/gap/cursor、限流/错误分类均在离线环境可重现；未通过不得连接真实
 Garmin。
 
-### [ ] G-02｜数据语义集成门
+### [x] G-02｜数据语义集成门
 
 L2-08～L2-12 完成。必须覆盖契约全部健康数据族、活动 inventory、六类 FIT、
 enrichments、fallback 与对账；任一必需族仅有占位实现时不得宣称 full 支持。
 
-### [ ] G-03｜可恢复工具集成门
+证据：六类本地 FIT、全部 catalog 健康族、activity inventory/summary/FIT/enrichment/
+fallback/reconciliation 的第二层完整离线回归通过。
+
+### [x] G-03｜可恢复工具集成门
 
 L2-13～L2-16 完成。必须证明 full 续跑、14 日重拉、逐资源游标、gap 限额、snapshot
 partial、repair/audit/status、429/认证/中断恢复、单写锁和无后台生命周期。
+
+证据：L2-13～16 聚焦回归、错误/认证/锁/中断测试及完整 `tests/test_garmin*.py`
+离线回归通过；独立只读复验确认一次性生命周期、repair 原子回退、audit 窗口和质量门。
 
 ### [ ] G-04｜跨层接口门
 

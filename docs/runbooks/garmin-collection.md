@@ -4,9 +4,17 @@
 第五层传入稳定 invocation ID 并读取唯一 JSON receipt 和退出码。首次全量同步必须在
 `config/garmin.yaml` 设置 `history_start_date`，或显式传入 `--health-from`。
 
-部署前安装锁定依赖：`python -m pip install -r requirements.lock`。token 目录必须在
-`state/secrets/garmin` 下，目录 0700、文件 0600；不得把密码、MFA、token、原始 JSON
-或 FIT 写进日志、receipt 或工单。
+部署前安装锁定依赖：`python -m pip install -r requirements.lock`。配置中的
+`state/secrets/garmin` 是 Foundation `state_root` 的逻辑定位符，实际 token 目录为
+`<state_root>/secrets/garmin`，目录 0700、文件 0600；不得把密码、MFA、token、原始
+JSON 或 FIT 写进日志、receipt 或工单。TrainLab 不为 token 设置 TTL，也不按时间主动
+删除；Garmin 服务端撤销或会话失效时仍需重新执行认证。
+
+认证时，只有 Garmin SSO 明确返回 `MFA_REQUIRED`，适配层才按同一登录 session、
+区域和服务参数调用 `mfa/sendCode`。只有收到 `MFA_CODE_SENT` 后 CLI 才显示验证码
+输入提示；投递失败、未知方式、session 不完整或 429 均 fail closed，不询问验证码，
+也不把投递地址、服务端响应或凭据写入 receipt。首版每次 auth challenge 只主动发送
+一次，避免重复邮件和账号限流。
 
 离线验证使用 fake transport 与 `test_data/new` 的脱敏代表性 FIT。真实账号 smoke、
 legacy shadow、生产切换与第五层正式编排必须由授权流程单独批准；本手册不授权登录。
