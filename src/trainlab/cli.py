@@ -173,6 +173,10 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument("--analysis-only", action="store_true")
     run.add_argument("--summary-date")
     run.add_argument("--invocation-id")
+    run.add_argument("--deliver", action="store_true")
+    delivery_recovery = run.add_mutually_exclusive_group()
+    delivery_recovery.add_argument("--retry-delivery", type=int)
+    delivery_recovery.add_argument("--reconcile-delivery", type=int)
     scheduler = subparsers.add_parser("scheduler")
     scheduler.add_argument("--once", action="store_true")
     watchdog = subparsers.add_parser("watchdog")
@@ -226,20 +230,41 @@ def main(argv: list[str] | None = None) -> int:
             _parser().error("--analysis-only requires --invocation-id")
         if args.at is not None:
             _parser().error("--analysis-only does not accept --at")
+        recovery_id = (
+            args.retry_delivery
+            if args.retry_delivery is not None
+            else args.reconcile_delivery
+        )
+        if recovery_id is not None and recovery_id <= 0:
+            _parser().error("delivery ID must be positive")
+        if recovery_id is not None and (args.summary_date is not None or args.deliver):
+            _parser().error("delivery recovery does not accept --summary-date or --deliver")
         try:
-            from .analysis.runtime import run_analysis_only
+            from .analysis.runtime import run_analysis_only, run_delivery_recovery
             from .analysis.cli import exit_code_for
 
-            receipt = run_analysis_only(
-                invocation_id=args.invocation_id,
-                summary_date=args.summary_date,
-            )
+            if recovery_id is None:
+                receipt = run_analysis_only(
+                    invocation_id=args.invocation_id,
+                    summary_date=args.summary_date,
+                    deliver=args.deliver,
+                )
+            else:
+                receipt = run_delivery_recovery(
+                    invocation_id=args.invocation_id,
+                    delivery_id=recovery_id,
+                    reconcile=args.reconcile_delivery is not None,
+                )
         except ValueError as error:
             _parser().error(str(error))
         print(receipt.to_json())
         return exit_code_for(receipt.status)
-    if args.command == "run" and (args.summary_date is not None or args.invocation_id is not None):
-        _parser().error("--summary-date and --invocation-id require --analysis-only")
+    if args.command == "run" and (
+        args.summary_date is not None or args.invocation_id is not None
+        or args.deliver or args.retry_delivery is not None
+        or args.reconcile_delivery is not None
+    ):
+        _parser().error("analysis options require --analysis-only")
     settings = load_settings()
     connection = connect(settings.database_path, busy_timeout_ms=int(settings.values["sqlite"].get("busy_timeout_ms", 10_000)))
     migrate(connection)

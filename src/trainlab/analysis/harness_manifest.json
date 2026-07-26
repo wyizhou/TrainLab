@@ -19,7 +19,7 @@
     "delivery": [
       {"path": "harness/shared/HARNESS.md", "sha256": "109e198d097cf8acbe5b59ee3be027a89f457de196b5b0a78f7846d5fb55eb0c"},
       {"path": "harness/analysis/HARNESS.md", "sha256": "f11f57885214afa633f604a5444ace5a67ab85c60575e7536a8ab2b6549cdb2c"},
-      {"path": "harness/analysis/delivery.md", "sha256": "4d98c134abbdbaf6d72d8eb9a153bf688608298f013c3d9ab730a737bc11d452"}
+      {"path": "harness/analysis/delivery.md", "sha256": "1680deb7115fa344bd764bd3824ea9441120dd2461e740dda1a156700aafbad8"}
     ]
   }
 }

@@ -83,7 +83,9 @@ def test_import_boundary_is_empty_and_reproducible() -> None:
         "contracts.py",
         "daily.py",
         "delivery.py",
+        "delivery_service.py",
         "features.py",
+        "gmail_delivery.py",
         "harness.py",
         "publisher.py",
         "quality_gate.py",
@@ -102,4 +104,12 @@ def test_import_boundary_blocks_legacy_adapter_import(tmp_path: Path) -> None:
     (tmp_path / "bad.py").write_text("from trainlab import ingest\n", encoding="utf-8")
 
     with pytest.raises(AnalysisBoundaryError, match="analysis_forbidden_import:.*trainlab.ingest"):
+        verify_import_boundary(tmp_path)
+
+
+def test_shared_mcp_exception_is_limited_to_gmail_delivery_module(tmp_path: Path) -> None:
+    (tmp_path / "daily.py").write_text(
+        "from trainlab.mcp import StdioMCPClient\n", encoding="utf-8"
+    )
+    with pytest.raises(AnalysisBoundaryError, match="analysis_forbidden_import:.*trainlab.mcp"):
         verify_import_boundary(tmp_path)

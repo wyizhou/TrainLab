@@ -1,11 +1,14 @@
 """Production wiring for the explicit ``trainlab run --analysis-only`` path.
 
-This module is intentionally a small composition root.  It does not schedule,
-poll mail, or deliver mail; ``DailyRoute`` can only seed a pending delivery.
+This module is intentionally a small composition root.  It does not schedule
+or poll mail.  Delivery is an explicit second phase over an already-persisted
+delivery ID and can never regenerate analysis output.
 """
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import UTC, date, datetime, timedelta
+import os
 from pathlib import Path
 import re
 from zoneinfo import ZoneInfo
@@ -13,8 +16,10 @@ from zoneinfo import ZoneInfo
 from ..foundation import FoundationConfig, FoundationTool
 from ..util import project_root
 from .config import load_analysis_config
-from .contracts import AnalysisRequest, AnalysisReceipt
-from .delivery import AnalysisDeliveryFactory
+from .contracts import AnalysisDelivery, AnalysisError, AnalysisRequest, AnalysisReceipt, build_run_key
+from .delivery import AnalysisDeliveryFactory, AnalysisDeliveryRepository
+from .delivery_service import AnalysisDeliveryService, DeliveryExecution
+from .gmail_delivery import GmailDeliveryError, GmailDeliveryGateway
 from .publisher import AnalysisPublisher
 from .run_state import AnalysisRunCoordinator, AnalysisRunRepository, SubjectLockManager
 from .runner import AnalysisCodexRunner
@@ -23,6 +28,11 @@ from .stable_views import StableViewRepository
 
 _SINGAPORE = ZoneInfo("Asia/Singapore")
 _SUBJECT_KEY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$")
+GMAIL_SELF_ADDRESS_ENV = "TRAINLAB_GMAIL_SELF_ADDRESS"
+
+
+def _utc_now() -> str:
+    return datetime.now(UTC).isoformat(timespec="microseconds").replace("+00:00", "Z")
 
 
 def _strict_date(value: str | None) -> date | None:
@@ -83,7 +93,8 @@ def _active_subject_key(connection: object) -> str:
 
 
 def run_analysis_only(
-    *, invocation_id: str, summary_date: str | None = None, root: Path | None = None
+    *, invocation_id: str, summary_date: str | None = None, deliver: bool = False,
+    root: Path | None = None
 ) -> AnalysisReceipt:
     """Execute one L3 daily route and always release its Foundation connection."""
     root = (root or project_root()).resolve()
@@ -113,6 +124,175 @@ def run_analysis_only(
             publisher=AnalysisPublisher(connection),
             delivery=AnalysisDeliveryFactory(connection),
         )
-        return route.execute(request)
+        receipt = route.execute(request)
+        if not deliver or receipt.status not in {"partial", "unchanged", "succeeded"}:
+            return receipt
+        delivery_id = _daily_delivery_id(connection, receipt)
+        if delivery_id is None:
+            return replace(
+                receipt,
+                status="partial",
+                errors=receipt.errors + (_error("analysis_delivery_missing"),),
+                next_action="retry_delivery",
+            )
+        artifact_ids = _delivery_artifact_ids(connection, delivery_id)
+        receipt = _restore_daily_receipt_evidence(connection, receipt, artifact_ids)
+        return _merge_daily_delivery(
+            receipt,
+            _execute_delivery(connection, config, delivery_id, "retry_delivery"),
+            artifact_ids,
+        )
     finally:
         connection.close()
+
+
+def run_delivery_recovery(
+    *, invocation_id: str, delivery_id: int, reconcile: bool = False,
+    root: Path | None = None,
+) -> AnalysisReceipt:
+    """Recover one persisted delivery without invoking the analysis generator."""
+    root = (root or project_root()).resolve()
+    foundation = FoundationConfig.load(root)
+    config = load_analysis_config(root, root / "config" / "analysis.yaml")
+    connection = FoundationTool(foundation)._connect(foundation.database_path)
+    started = _utc_now()
+    mode = "reconcile_delivery" if reconcile else "retry_delivery"
+    try:
+        repository = AnalysisDeliveryRepository(connection)
+        pending = repository.load_pending(delivery_id)
+        row = connection.execute(
+            "SELECT s.subject_key FROM data_subjects s WHERE s.id=? AND s.is_active=1",
+            (pending.subject_id,),
+        ).fetchone()
+        if row is None or not isinstance(row[0], str):
+            raise ValueError("analysis_delivery_subject_not_active")
+        request = AnalysisRequest.from_dict({
+            "schema_version": "1", "mode": mode, "subject_id": row[0],
+            "invocation_id": invocation_id, "run_key": None,
+            "summary_local_date": None, "advice_local_date": None,
+            "as_of_local_date": None, "plan_id": None, "reason_event_id": None,
+            "effective_local_date": None, "artifact_id": None,
+            "delivery_id": str(delivery_id), "regeneration_reason_code": None,
+            "requested_at_utc": started,
+        })
+        result = _execute_delivery(connection, config, delivery_id, mode)
+        delivery = _contract_delivery(result, tuple(str(x.artifact_id) for x in pending.artifacts))
+        succeeded = result.status in {"sent", "already_sent"}
+        return AnalysisReceipt(
+            run_key=build_run_key(request),
+            invocation_id=invocation_id, mode=mode,
+            status="succeeded" if succeeded else "partial",
+            started_at_utc=started, completed_at_utc=_utc_now(),
+            analysis_run_id=str(pending.analysis_run_id),
+            quality_gate_state="ready",
+            artifact_ids=delivery.artifact_ids,
+            delivery=delivery,
+            errors=() if result.error_code is None else (_error(result.error_code),),
+            next_action=result.next_action,
+        )
+    finally:
+        connection.close()
+
+
+def _execute_delivery(
+    connection: object, config: object, delivery_id: int, mode: str
+) -> DeliveryExecution:
+    recipient = os.environ.get(GMAIL_SELF_ADDRESS_ENV)
+    if recipient is None:
+        state = AnalysisDeliveryRepository(connection).read_state(delivery_id)  # type: ignore[arg-type]
+        return DeliveryExecution(
+            delivery_id, state.status, state.provider_message_id,
+            state.provider_thread_id, "analysis_delivery_recipient_not_configured",
+            "reconcile_delivery" if state.status in {"sending", "delivery_unknown"} else "retry_delivery",
+        )
+    try:
+        gateway = GmailDeliveryGateway(
+            recipient, timeout_seconds=int(config.delivery_timeout_seconds)
+        )
+    except GmailDeliveryError as error:
+        state = AnalysisDeliveryRepository(connection).read_state(delivery_id)  # type: ignore[arg-type]
+        return DeliveryExecution(
+            delivery_id, state.status, state.provider_message_id,
+            state.provider_thread_id, f"analysis_delivery_{error.code.removeprefix('gmail_')}",
+            "reconcile_delivery" if state.status in {"sending", "delivery_unknown"} else "retry_delivery",
+        )
+    service = AnalysisDeliveryService(AnalysisDeliveryRepository(connection), gateway)  # type: ignore[arg-type]
+    return service.execute(delivery_id, mode)  # type: ignore[arg-type]
+
+
+def _daily_delivery_id(connection: object, receipt: AnalysisReceipt) -> int | None:
+    if receipt.delivery is not None and receipt.delivery.delivery_id.isdecimal():
+        return int(receipt.delivery.delivery_id)
+    row = connection.execute(  # type: ignore[union-attr]
+        "SELECT d.id FROM analysis_deliveries d JOIN analysis_runs r ON r.id=d.analysis_run_id "
+        "WHERE r.run_key=? AND d.delivery_kind='daily_report' ORDER BY d.id",
+        (receipt.run_key,),
+    ).fetchall()
+    return int(row[0][0]) if len(row) == 1 else None
+
+
+def _contract_delivery(result: DeliveryExecution, artifact_ids: tuple[str, ...]) -> AnalysisDelivery:
+    error = None if result.error_code is None else {
+        "code": result.error_code,
+        "summary": "analysis delivery did not complete",
+    }
+    return AnalysisDelivery(
+        str(result.delivery_id), result.status, artifact_ids,
+        provider_message_id=result.provider_message_id,
+        provider_thread_id=result.provider_thread_id, error=error,
+    )
+
+
+def _delivery_artifact_ids(connection: object, delivery_id: int) -> tuple[str, ...]:
+    rows = connection.execute(  # type: ignore[union-attr]
+        "SELECT analysis_artifact_id FROM analysis_delivery_artifacts "
+        "WHERE analysis_delivery_id=? ORDER BY ordinal",
+        (delivery_id,),
+    ).fetchall()
+    return tuple(str(row[0]) for row in rows)
+
+
+def _restore_daily_receipt_evidence(
+    connection: object, receipt: AnalysisReceipt, artifact_ids: tuple[str, ...]
+) -> AnalysisReceipt:
+    """Restore persisted public evidence for an unchanged successful run."""
+    if receipt.status != "unchanged":
+        return receipt
+    row = connection.execute(  # type: ignore[union-attr]
+        "SELECT id,status,harness_version,input_schema_version,output_schema_version,"
+        "context_snapshot_sha256 FROM analysis_runs WHERE run_key=?",
+        (receipt.run_key,),
+    ).fetchone()
+    if row is None or row[1] != "succeeded":
+        return receipt
+    return replace(
+        receipt,
+        analysis_run_id=str(row[0]),
+        artifact_ids=artifact_ids,
+        quality_gate_state="ready",
+        harness_version=row[2],
+        input_schema_version=row[3],
+        output_schema_version=row[4],
+        input_snapshot_sha256=row[5],
+    )
+
+
+def _merge_daily_delivery(
+    receipt: AnalysisReceipt, result: DeliveryExecution,
+    persisted_artifact_ids: tuple[str, ...],
+) -> AnalysisReceipt:
+    artifacts = receipt.artifact_ids or persisted_artifact_ids
+    delivery = _contract_delivery(result, artifacts)
+    terminal = result.status in {"sent", "already_sent"}
+    status = ("unchanged" if receipt.status == "unchanged" else "succeeded") if terminal else "partial"
+    errors = receipt.errors
+    if result.error_code is not None:
+        errors += (_error(result.error_code),)
+    return replace(
+        receipt, status=status, artifact_ids=artifacts, delivery=delivery, errors=errors,
+        next_action=result.next_action,
+    )
+
+
+def _error(code: str) -> AnalysisError:
+    return AnalysisError("service", code, code.replace("_", " "))

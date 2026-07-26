@@ -64,3 +64,12 @@ def test_cli_never_generates_an_invocation_id() -> None:
     assert parse_request(["daily"],subject_id="subject_1",invocation_id_provider=lambda:"injected_1",requested_at_utc=REQUESTED_AT).invocation_id == "injected_1"
 @pytest.mark.parametrize(("status","code"),[("succeeded",0),("unchanged",0),("partial",10),("deferred",11),("lock_busy",12),("rejected",20),("failed",21)])
 def test_exit_mapping(status: str, code: int) -> None: assert exit_code_for(status) == code
+
+def test_receipt_supports_explicit_reconcile_delivery_next_action() -> None:
+    request = AnalysisRequest.from_dict(payload("retry_delivery"))
+    receipt = AnalysisReceipt(
+        run_key=build_run_key(request), invocation_id=request.invocation_id,
+        mode=request.mode, status="partial", started_at_utc=REQUESTED_AT,
+        completed_at_utc=REQUESTED_AT, next_action="reconcile_delivery",
+    )
+    receipt.validate()

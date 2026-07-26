@@ -12,6 +12,7 @@ from copy import deepcopy
 import pytest
 
 from trainlab.orchestration import DownstreamCall, SubprocessRunner
+from trainlab.orchestration.subprocess_runner import SubprocessBoundaryError
 import trainlab.orchestration.subprocess_runner as runner_module
 
 
@@ -196,10 +197,22 @@ def test_rejects_unsafe_mode_or_timeout_before_process(monkeypatch: pytest.Monke
 @pytest.mark.parametrize("layer,mode,kwargs", [
     ("garmin", "full", {}), ("garmin", "incremental", {}),
     ("garmin", "snapshot", {}),
-    ("analysis", "revise_plan", {"subject_id":"subject-1", "plan_id":"plan-1", "reason_event_id":"event-1"}),
 ])
 def test_public_optional_fields_are_not_narrowed(layer: str, mode: str, kwargs: dict[str, object]) -> None:
     assert runner_module._argv(DownstreamCall(layer, mode, "invoke-1", None, **kwargs))
+
+
+@pytest.mark.parametrize("mode,kwargs", [
+    ("weekly", {"as_of_local_date":"2026-07-24"}),
+    ("revise_plan", {"plan_id":"plan-1", "reason_event_id":"event-1"}),
+    ("regenerate", {"artifact_id":"artifact-1", "regeneration_reason_code":"manual"}),
+    ("status", {}),
+])
+def test_unintegrated_analysis_modes_fail_before_any_internal_cli_fallback(mode, kwargs):
+    with pytest.raises(SubprocessBoundaryError, match="analysis_mode_not_production_ready"):
+        runner_module._argv(DownstreamCall(
+            "analysis", mode, "invoke-1", None, subject_id="subject-1", **kwargs
+        ))
 
 
 @pytest.mark.parametrize("kwargs,code", [
@@ -343,18 +356,22 @@ def test_analysis_dynamic_colon_key_is_escaped_exactly(mode: str, kwargs: dict[s
 
 
 def test_all_mode_argv_snapshots_are_fixed_and_targets_are_required() -> None:
+    unavailable_analysis_modes = {"weekly", "revise_plan", "regenerate", "status"}
     for layer, modes in runner_module._MODES.items():
         for mode in modes:
             args = dict(layer=layer, mode=mode, invocation_id="invoke-1", request_sha256=None)
-            values = {"subject_id": 1 if layer == "mail" else "subject-1", "summary_local_date":"2026-07-24", "advice_local_date":"2026-07-25", "as_of_local_date":"2026-07-24", "plan_id":"plan-1", "reason_event_id":"event-1", "effective_local_date":"2026-07-24", "artifact_id":"artifact-1", "delivery_id":"delivery-1", "mail_message_id":"message-1", "mail_response_artifact_id":"response-1", "health_from_local_date":"2026-07-23", "through_local_date":"2026-07-24", "snapshot_local_date":"2026-07-24", "resource_kinds":("activities",), "activity_ids":("activity-1",), "repair_strategy":"auto", "regeneration_reason_code":"manual", "run_key":"run-1", "max_items":2, "max_threads":2, "deadline_seconds":30, "dependency_analysis_artifact_ids":("artifact-1",)}
+            values = {"subject_id": 1 if layer == "mail" else "subject-1", "summary_local_date":"2026-07-24", "advice_local_date":"2026-07-25", "as_of_local_date":"2026-07-24", "plan_id":"plan-1", "reason_event_id":"event-1", "effective_local_date":"2026-07-24", "artifact_id":"artifact-1", "delivery_id":"1" if layer == "analysis" else "delivery-1", "mail_message_id":"message-1", "mail_response_artifact_id":"response-1", "health_from_local_date":"2026-07-23", "through_local_date":"2026-07-24", "snapshot_local_date":"2026-07-24", "resource_kinds":("activities",), "activity_ids":("activity-1",), "repair_strategy":"auto", "regeneration_reason_code":"manual", "run_key":"run-1", "max_items":2, "max_threads":2, "deadline_seconds":30, "dependency_analysis_artifact_ids":("artifact-1",)}
             args.update({key: values[key] for key in runner_module._MODE_FIELDS.get((layer, mode), ())})
+            if layer == "analysis" and mode in unavailable_analysis_modes:
+                with pytest.raises(SubprocessBoundaryError, match="analysis_mode_not_production_ready"):
+                    runner_module._argv(DownstreamCall(**args))
+                continue
             argv = runner_module._argv(DownstreamCall(**args))
             assert Path(argv[0]).is_absolute() and "sh" not in argv[0]
 
 
 def test_generated_argv_round_trips_the_real_public_parsers() -> None:
     from trainlab.cli import _parser as root_parser
-    from trainlab.analysis.cli import build_parser as analysis_parser
     from trainlab.mail_agent.cli import _parser as mail_parser
     foundation = runner_module._argv(DownstreamCall("foundation", "verify", "invoke-1", None))
     garmin = runner_module._argv(DownstreamCall("garmin", "repair", "invoke-1", None, health_from_local_date="2026-07-23", through_local_date="2026-07-24", resource_kinds=("activities",), repair_strategy="auto"))
@@ -362,7 +379,7 @@ def test_generated_argv_round_trips_the_real_public_parsers() -> None:
     mail = runner_module._argv(DownstreamCall("mail", "run", "invoke-1", None, subject_id=1, max_items=2, deadline_seconds=30))
     root_parser().parse_args(list(foundation[1:]))
     root_parser().parse_args(list(garmin[1:]))
-    analysis_parser().parse_args(list(analysis[3:]))
+    root_parser().parse_args(list(analysis[1:]))
     mail_parser().parse_args(list(mail[3:]))
 
 
@@ -486,7 +503,7 @@ def _contract_call_for(layer: str) -> DownstreamCall:
     return {
         "foundation": DownstreamCall("foundation", "status", "foundation-contract-1", None),
         "garmin": DownstreamCall("garmin", "status", "garmin-contract-1", None),
-        "analysis": DownstreamCall("analysis", "status", None, None, subject_id="subject-1"),
+        "analysis": DownstreamCall("analysis", "daily", "analysis-contract-1", None, subject_id="subject-1"),
         "mail": DownstreamCall("mail", "run", "mail-contract-1", None, subject_id=1),
     }[layer]
 
@@ -744,14 +761,8 @@ def _every_allowlisted_call() -> tuple[DownstreamCall, ...]:
         DownstreamCall("garmin", "audit", "garmin-audit-1", None, health_from_local_date="2026-07-23", through_local_date="2026-07-24"),
         DownstreamCall("garmin", "status", "garmin-status-1", None),
         DownstreamCall("analysis", "daily", "analysis-daily-1", None, subject_id="subject-1", summary_local_date="2026-07-23", advice_local_date="2026-07-24"),
-        DownstreamCall("analysis", "weekly", "analysis-weekly-1", None, subject_id="subject-1", as_of_local_date="2026-07-24"),
-        DownstreamCall("analysis", "revise_plan", "analysis-revise-1", None, subject_id="subject-1", plan_id="plan-1", reason_event_id="event-1", effective_local_date="2026-07-24"),
-        # artifact-1 is source lineage only; regenerated receipts may name a
-        # different accepted/reused artifact.
-        DownstreamCall("analysis", "regenerate", "analysis-regenerate-1", None, subject_id="subject-1", artifact_id="artifact-1", regeneration_reason_code="operator_request"),
-        DownstreamCall("analysis", "retry_delivery", "analysis-retry-1", None, subject_id="subject-1", delivery_id="delivery-1"),
-        DownstreamCall("analysis", "reconcile_delivery", "analysis-reconcile-1", None, subject_id="subject-1", delivery_id="delivery-1"),
-        DownstreamCall("analysis", "status", None, None, subject_id="subject-1", run_key="analysis:subject-1:daily:2026-07-23:analysis-daily-1"),
+        DownstreamCall("analysis", "retry_delivery", "analysis-retry-1", None, subject_id="subject-1", delivery_id="1"),
+        DownstreamCall("analysis", "reconcile_delivery", "analysis-reconcile-1", None, subject_id="subject-1", delivery_id="1"),
         DownstreamCall("mail", "run", "mail-run-1", None, subject_id=1, max_items=2, deadline_seconds=30),
         DownstreamCall("mail", "poll", "mail-poll-1", None, subject_id=1, max_threads=2),
         DownstreamCall("mail", "process", "mail-process-1", None, subject_id=1, mail_message_id="message-1", dependency_analysis_artifact_ids=("artifact-1",), regeneration_reason_code="operator_request"),
@@ -824,7 +835,7 @@ def test_every_allowlisted_mode_runs_offline_with_fixed_boundary(monkeypatch: py
     for status, exit_code in runner_module._EXIT_BY_LAYER[downstream_call.layer].items():
         payload = _offline_receipt_for(downstream_call, status)
         _script(child, "import json,os,sys; open(" + repr(str(log)) + ",'w').write(json.dumps({'argv':sys.argv[1:],'cwd':os.getcwd(),'env':dict(os.environ)},sort_keys=True)); print(" + repr(json.dumps(payload)) + "); raise SystemExit(" + str(exit_code) + ")")
-        if downstream_call.layer in {"foundation", "garmin"}:
+        if downstream_call.layer in {"foundation", "garmin", "analysis"}:
             monkeypatch.setattr(runner_module, "_EXECUTABLE", child)
         else:
             monkeypatch.setattr(runner_module, "_PYTHON", child)

@@ -23,7 +23,7 @@ CURRENT_PRODUCTION_ENTRYPOINT = "trainlab run"
 FROZEN_CONTRACT_SHA256: dict[str, str] = {
     "docs/layers/01-data-foundation.md": "9bf0a91e61bda47c9dba971c731ca6ec79e064b7f0ea4eb8124a5a216d67e396",
     "docs/layers/02-data-collection.md": "c39ae1b82afcafe9f4fc3c54d1f851b4992c48021c5238038f078fab1ec885d6",
-    "docs/layers/03-data-analysis.md": "98652387c7018138e7910dbdf83826cb1e6b7a2a830d1bd4d67debe4627f0956",
+    "docs/layers/03-data-analysis.md": "dd09ae08faa432d96d86d170943a7c36085274aa63f176c1bec96059c7d0acfc",
     "docs/layers/04-mail-agent.md": "977246c604dc939cce1d97869f584e463030476db64b0d20e07bb625faa12e17",
     "docs/layers/05-orchestration-monitoring.md": "f46aca332f146fa2efffb4da8a03b48037989b7e4e4f31df9d562932e46db356",
 }
@@ -194,8 +194,16 @@ def verify_import_boundary(package_root: Path) -> dict[str, tuple[str, ...]]:
     graph: dict[str, tuple[str, ...]] = {}
     violations: list[str] = []
     for source_path in sorted(package_root.rglob("*.py")):
-        imported = tuple(sorted(_forbidden_imports(source_path)))
-        graph[source_path.relative_to(package_root).as_posix()] = imported
+        relative = source_path.relative_to(package_root).as_posix()
+        forbidden = _forbidden_imports(source_path)
+        # A3-15 is the only planned exception: the route-specific Gmail
+        # boundary reuses the shared, sanitized stdio MCP transport.  Keeping
+        # the global prohibition and subtracting it only here prevents any
+        # analysis/model/context module from acquiring a generic MCP surface.
+        if relative == "gmail_delivery.py":
+            forbidden.discard("trainlab.mcp")
+        imported = tuple(sorted(forbidden))
+        graph[relative] = imported
         violations.extend(f"{source_path}:{module}" for module in imported)
     if violations:
         raise AnalysisBoundaryError("analysis_forbidden_import:" + ",".join(violations))

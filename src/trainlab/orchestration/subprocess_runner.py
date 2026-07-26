@@ -234,15 +234,33 @@ def _argv(call: DownstreamCall) -> tuple[str, ...]:
             return tuple(args)
         return base
     if call.layer == "analysis":
-        base = [str(_PYTHON), "-m", "trainlab.analysis.cli", call.mode.replace("_", "-")]
         if type(call.subject_id) is not str or not _SUBJECT_ID.fullmatch(call.subject_id): raise SubprocessBoundaryError("subprocess_subject_required")
-        base[3:3] = ["--subject-id", call.subject_id]
-        if call.mode != "status": base.extend(("--invocation-id", require(call.invocation_id, "invocation")))
-        fields = {"daily": (("--summary-date", call.summary_local_date), ("--advice-date", call.advice_local_date)), "weekly": (("--as-of", call.as_of_local_date),), "revise_plan": (("--plan-id", call.plan_id), ("--reason-event-id", call.reason_event_id), ("--effective-date", call.effective_local_date)), "regenerate": (("--artifact-id", call.artifact_id), ("--reason", call.regeneration_reason_code)), "retry_delivery": (("--delivery-id", call.delivery_id),), "reconcile_delivery": (("--delivery-id", call.delivery_id),)}.get(call.mode, ())
-        for flag, value in fields:
-            if value is not None: base.extend((flag, require(value, "target")))
-        if call.mode == "status" and call.run_key is not None: base.extend(("--run-key", require(call.run_key, "run_key")))
-        return tuple(base)
+        invocation = require(call.invocation_id, "invocation")
+        base = [str(_EXECUTABLE), "run", "--slot", "morning", "--analysis-only", "--invocation-id", invocation]
+        if call.mode == "daily":
+            if call.summary_local_date is not None:
+                base.extend(("--summary-date", call.summary_local_date))
+                if call.advice_local_date is not None and (
+                    date.fromisoformat(call.advice_local_date)
+                    != date.fromisoformat(call.summary_local_date) + timedelta(days=1)
+                ):
+                    raise SubprocessBoundaryError("subprocess_advice_date_mismatch")
+            elif call.advice_local_date is not None:
+                raise SubprocessBoundaryError("subprocess_advice_date_mismatch")
+            base.append("--deliver")
+            return tuple(base)
+        if call.mode in {"retry_delivery", "reconcile_delivery"}:
+            if not isinstance(call.delivery_id, str) or re.fullmatch(r"[1-9][0-9]{0,18}", call.delivery_id) is None:
+                raise SubprocessBoundaryError("subprocess_delivery_id_required")
+            base.extend((
+                "--retry-delivery" if call.mode == "retry_delivery" else "--reconcile-delivery",
+                call.delivery_id,
+            ))
+            return tuple(base)
+        # Weekly/revision/regeneration/status remain frozen contract modes, but
+        # are not production-ready until they are integrated through
+        # ``trainlab run``.  Never fall back to the internal future CLI.
+        raise SubprocessBoundaryError("subprocess_analysis_mode_not_production_ready")
     if type(call.subject_id) is not int or call.subject_id <= 0: raise SubprocessBoundaryError("subprocess_subject_required")
     base = [str(_PYTHON), "-m", "trainlab.mail_agent.cli", "--subject-id", str(call.subject_id), "--invocation-id", require(call.invocation_id, "invocation"), call.mode.replace("_", "-")]
     fields = {"process": (("--message-id", call.mail_message_id),), "deliver_response": (("--response-id", call.mail_response_artifact_id),), "reconcile": (("--delivery-id", call.delivery_id),)}.get(call.mode, ())

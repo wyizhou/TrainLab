@@ -35,7 +35,7 @@ def test_analysis_only_bypasses_legacy_runtime_and_prints_only_receipt(monkeypat
     monkeypatch.setattr(runtime, "run_analysis_only", lambda **kwargs: calls.append(("run", kwargs)) or _receipt())
 
     assert cli.main(["run", "--slot", "morning", "--analysis-only", "--invocation-id", "invocation"]) == 10
-    assert calls == [("run", {"invocation_id": "invocation", "summary_date": None})]
+    assert calls == [("run", {"invocation_id": "invocation", "summary_date": None, "deliver": False})]
     assert json.loads(capsys.readouterr().out)["status"] == "partial"
 
 
@@ -45,6 +45,9 @@ def test_analysis_only_bypasses_legacy_runtime_and_prints_only_receipt(monkeypat
     ["run", "--slot", "morning", "--analysis-only", "--invocation-id", "invocation", "--at", "2026-07-26T00:00:00Z"],
     ["run", "--slot", "morning", "--summary-date", "2026-07-25"],
     ["run", "--slot", "morning", "--invocation-id", "invocation"],
+    ["run", "--slot", "morning", "--analysis-only", "--invocation-id", "invocation", "--retry-delivery", "0"],
+    ["run", "--slot", "morning", "--analysis-only", "--invocation-id", "invocation", "--retry-delivery", "1", "--deliver"],
+    ["run", "--slot", "morning", "--analysis-only", "--invocation-id", "invocation", "--reconcile-delivery", "1", "--summary-date", "2026-07-25"],
 ])
 def test_analysis_only_validates_before_legacy_loading(monkeypatch, argv):
     monkeypatch.setattr(cli, "load_settings", lambda: (_ for _ in ()).throw(AssertionError("legacy settings loaded")))
@@ -124,3 +127,57 @@ def test_unique_active_subject_is_used_for_runtime_wiring(monkeypatch):
     assert captured["request"].subject_id == "default"
     assert connection.queries == ["SELECT subject_key FROM data_subjects WHERE is_active=1 ORDER BY id"]
     assert connection.closed
+
+
+def test_analysis_deliver_flag_and_recovery_route_stay_under_trainlab_run(monkeypatch, capsys):
+    calls = []
+    monkeypatch.setattr(
+        runtime, "run_analysis_only",
+        lambda **kwargs: calls.append(("daily", kwargs)) or _receipt("succeeded"),
+    )
+    monkeypatch.setattr(
+        runtime, "run_delivery_recovery",
+        lambda **kwargs: calls.append(("recovery", kwargs)) or _receipt("succeeded"),
+    )
+    assert cli.main([
+        "run", "--slot", "morning", "--analysis-only", "--invocation-id", "one", "--deliver",
+    ]) == 0
+    assert calls[-1] == ("daily", {"invocation_id": "one", "summary_date": None, "deliver": True})
+    assert cli.main([
+        "run", "--slot", "morning", "--analysis-only", "--invocation-id", "two",
+        "--reconcile-delivery", "7",
+    ]) == 0
+    assert calls[-1] == ("recovery", {"invocation_id": "two", "delivery_id": 7, "reconcile": True})
+    assert "recipient" not in capsys.readouterr().out
+
+
+def test_unchanged_daily_receipt_recovers_persisted_delivery_artifact_ids():
+    result = SimpleNamespace(
+        delivery_id=7, status="sent", provider_message_id="message-1",
+        provider_thread_id=None, error_code=None, next_action="none",
+    )
+    merged = runtime._merge_daily_delivery(
+        _receipt("unchanged"), result, ("11", "12")
+    )
+    assert merged.status == "unchanged"
+    assert merged.delivery is not None
+    assert merged.delivery.artifact_ids == ("11", "12")
+    assert merged.artifact_ids == ("11", "12")
+
+
+def test_unchanged_daily_receipt_restores_stored_run_evidence_without_generation():
+    class Connection:
+        def execute(self, sql, values):
+            assert "FROM analysis_runs" in sql
+            assert values == ("analysis:active_subject:daily:2026-07-25:invocation",)
+            return SimpleNamespace(fetchone=lambda: (
+                17, "succeeded", "harness-v1", "1", "1", "a" * 64,
+            ))
+
+    restored = runtime._restore_daily_receipt_evidence(
+        Connection(), _receipt("unchanged"), ("1", "2")
+    )
+    assert restored.analysis_run_id == "17"
+    assert restored.quality_gate_state == "ready"
+    assert restored.artifact_ids == ("1", "2")
+    assert restored.input_snapshot_sha256 == "a" * 64

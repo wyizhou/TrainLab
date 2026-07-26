@@ -6,7 +6,7 @@
 
 冻结日期：2026-07-26
 
-实现状态：尚未开始
+实现状态：开发中（daily 分析、投递与恢复闭环已完成）
 
 依赖契约：
 
@@ -29,14 +29,17 @@
 
 本修订优先于下文旧迁移基线中的 TrainLab 自建 MCP 工具名。A3-15 必须根据该包
 实际 Schema 建立 route-specific allowlist；分析 generation 仍为零 Gmail 工具。
+由于该包不提供账号 profile/get-self 或自定义 MIME header，操作者批准的固定本人
+地址通过运行环境提供，不写入仓库；幂等以主题中的唯一 key 搜索并以完整 subject
+与 From 二次核验。
 
 ## 1. 目标
 
 数据分析层是由第五层被动调用的一次性分析 Agent 工具，不是常驻服务。每次调用
 完成一个明确的日总结、周总结/未来七天计划、正式计划修订或显式重新生成任务，
 将通过验证的结果写入第一层定义的分析与训练计划表；随后以精确 artifact revision
-为依据，使用受限 Codex Gmail MCP 向已认证账号本人发送邮件，返回结构化 receipt，
-然后退出。
+为依据，使用确定性的受限 Gmail MCP adapter 向操作者批准的固定本人地址发送邮件，
+返回结构化 receipt，然后退出。
 
 本层由两部分组成：
 
@@ -90,7 +93,7 @@ Harness、Codex Exec 适配器、Schema 校验器和安全组件。
 → 解析 JSON，执行 Schema、安全和训练规则校验
 → 在短事务中发布 artifact、输入血缘、关系和可选 training plan
 → 创建 analysis_delivery pending 记录并固定待发送 revision
-→ 调用受限 Codex Gmail MCP 派发并写入投递结果
+→ 调用确定性受限 Gmail MCP adapter 派发并写入投递结果
 → 生成 AnalysisReceipt
 → 释放锁并退出
 ```
@@ -105,8 +108,8 @@ SQLite 读取快照完成后立即结束只读事务。Codex 执行、特征计�
 3. 日总结、周总结/计划、计划修订和重新生成共用同一执行管线，不复制上下文、
    Codex、校验或入库逻辑。
 4. 分析 Codex Agent 只有有界 JSON 输入和结构化 JSON 输出，没有数据库、网络、
-   Gmail、Garmin 或 shell 工具权限；artifact 已落库后，独立 delivery Codex
-   invocation 仅获得受限 Gmail MCP 工具，不能访问健康上下文、数据库或本地文件。
+   Gmail、Garmin 或 shell 工具权限；artifact 已落库后，确定性 delivery adapter
+   只能调用 allowlist 中的 Gmail MCP 工具，不能访问健康上下文或任意邮件内容。
 5. 正常分析只读取第一层 current canonical 视图、质量状态和 accepted 历史产物，
    不重新解析 FIT，不直接扫描原始 Garmin JSON 或 Gmail MIME/HTML。
 6. Garmin 已提供的睡眠、恢复、训练状态、Training Effect、VO₂ Max 等结果作为
@@ -188,8 +191,21 @@ trainlab analyze status [--run-key RUN_KEY]
   用户事实、Harness、Codex 原始输出或数据库内容。
 
 当前生产入口仍受项目根 `AGENTS.md` 约束，只能通过 `trainlab run` 执行生产分析。
-本节是目标架构 CLI；实现、迁移和生产切换完成前不得绕过现有入口。切换时必须在
-同一发布中更新 `AGENTS.md`、生产 Harness、配置、第五层调用和回滚手册。
+daily 当前已通过以下显式入口提供，固定本人地址仅由
+`TRAINLAB_GMAIL_SELF_ADDRESS` 运行环境变量提供：
+
+```text
+trainlab run --slot morning --analysis-only [--deliver]
+             --invocation-id ID [--summary-date DATE]
+trainlab run --slot morning --analysis-only
+             --invocation-id ID --retry-delivery ID
+trainlab run --slot morning --analysis-only
+             --invocation-id ID --reconcile-delivery ID
+```
+
+本节其余 `trainlab analyze` 命令仍是目标架构 CLI；后续 route 完成和独立切换前
+不得绕过 `trainlab run`。切换时必须在同一发布中更新 `AGENTS.md`、生产 Harness、
+配置、第五层调用和回滚手册。
 
 ### 5.1 CLI 退出码
 
@@ -427,7 +443,7 @@ flowchart LR
     Q --> X["Codex Exec<br/>无工具、无数据库、无网络"]
     X --> V["Schema + 训练规则校验"]
     V --> S["短事务发布<br/>artifacts / plans / inputs"]
-    S --> G["Codex Gmail MCP<br/>受限自投递"]
+    S --> G["确定性 Gmail MCP adapter<br/>受限自投递"]
     G --> R["AnalysisReceipt"]
     R --> O
     S --> M["第四层只读引用 accepted artifact"]
@@ -444,7 +460,7 @@ flowchart LR
 - `runner`：Codex Exec 进程隔离、超时和输出捕获。
 - `validators`：Schema、安全、日期和训练规则校验。
 - `publisher`：artifact、relation、plan 和 item 原子发布。
-- `delivery`：固定 artifact revision、幂等查询、受限 Codex Gmail MCP 派发和回执。
+- `delivery`：固定 artifact revision、幂等查询、受限 Gmail MCP adapter 派发和回执。
 
 各模块可以是同一 Python 包中的组件，不表示存在多个服务进程。
 
@@ -825,8 +841,8 @@ harness/
 - Analysis Harness：训练类型、来源优先级、历史 AI 边界、一个 primary、计划和
   安全公共规则。
 - Route Harness：daily/weekly/revise-plan 的日期、必填字段和专项输出。
-- Delivery Harness：只允许将宿主固定的 artifact revision 发给 authenticated self，
-  先查幂等键、应用 TrainLab 标签、返回受限投递 receipt；不读取或解释邮件内容。
+- Delivery Harness：只允许将宿主固定的 artifact revision 发给操作者批准的固定本人
+  地址，先查幂等键、应用 TrainLab 标签、返回受限投递 receipt；不读取邮件正文。
 - Mail Harness：第四层邮件会话、回复和发送规则，不进入第三层调用。
 
 第三层和第四层“共用一套 Harness”是共用 Shared Harness 与执行基础设施，不是
@@ -869,11 +885,12 @@ codex exec --ephemeral
 进程异常中断且尚未产生 accepted artifact 时，可以用相同 invocation 恢复原 run；
 一旦 accepted artifact 已发布，相同 invocation 只返回 unchanged。
 
-投递是第二个、独立的 Codex invocation。它只加载 Shared Harness 的安全边界和
-`delivery.md`，接收已发布 artifact revision、确定性 plain/HTML、主题和 idempotency
-key。它只启用当前环境 `gmail` 中完成精确 key 搜索、自投递和 TrainLab 标签所
-必需的 route-specific 工具；不得读取任意 thread、收件箱、附件、数据库、健康
-上下文或本地凭据。
+投递不是第二次模型生成，而是独立、确定性的 provider 阶段。宿主以
+`delivery.md` 固定安全边界，接收已发布 artifact revision、确定性 plain/HTML、
+完整主题、idempotency key 和运行环境提供的固定本人地址。adapter 先验证当前环境
+`gmail` 精确绑定 `@artymclabin/gmail-mcp`，随后只允许 `search_emails`、
+`send_email`、`get_or_create_label` 和 `modify_email`。它不得读取任意 thread、
+邮件正文、附件、健康上下文或本地凭据；reconcile 模式禁止调用 send。
 投递调用前 artifact/plan 与 `analysis_deliveries(status=pending)` 必须已经提交。
 
 ## 19. 输出 Schema 和 Artifact
@@ -1107,8 +1124,9 @@ watchdog 设置在目标架构中必须拆分。第三层只读取分析、策�
 
 ### 24.4 Gmail 投递
 
-- artifact/plan 发布后，创建 pending delivery，再调用受限 Codex Gmail MCP。
-- 发送前精确搜索 idempotency key；已存在则标记 already_sent。
+- artifact/plan 发布后，创建 pending delivery，再调用确定性受限 Gmail MCP adapter。
+- 发送前以 `in:sent` 精确搜索 idempotency key，并复核完整 subject 与 From；
+  已存在则补 TrainLab 标签并标记 already_sent。
 - 工具不可用、认证失败、超时或发送失败：保留 artifact、plan 和 pending/failed
   delivery，receipt 为 partial，`next_action=retry_delivery`。
 - 投递恢复只重试同一 delivery，不能重新调用分析 Codex，也不能改写邮件正文。
@@ -1126,8 +1144,8 @@ watchdog 设置在目标架构中必须拆分。第三层只读取分析、策�
 - 临时目录在成功、失败、超时和信号终止时都必须清理。
 - 日志只记录 run key、阶段、版本、计数、耗时和脱敏 code。
 - 不保存隐藏推理、模型协议响应、完整 prompt 或工具调用 transcript。
-- Gmail MCP 投递只允许 authenticated self 和 TrainLab 标签；投递 prompt 中的正文是
-  已验证 artifact，不是可执行指令。
+- Gmail MCP 投递只允许运行环境提供且操作者批准的固定本人地址和 TrainLab 标签；
+  已验证 artifact 正文只是待发送数据，不是可执行指令。
 
 ## 26. 与当前生产 Harness 的迁移
 
@@ -1146,7 +1164,7 @@ watchdog 设置在目标架构中必须拆分。第三层只读取分析、策�
 3. 用第一层稳定视图、coverage、gap 和 revision 构建新 context。
 4. 将 `morning/evening` 改为 daily/weekly/revise-plan route。
 5. 将 Gmail 收件箱扫描和回复 Agent 迁移到第四层；第三层保留仅用于自身 artifact
-   自投递的受限 Gmail MCP invocation。
+   自投递的确定性受限 Gmail MCP adapter。
 6. 先落库再发送，第三层不再让分析 Codex 同时分析、读邮件和发邮件。
 7. 将 sync/ingest、运行时间和 watchdog 迁移到第二/第五层。
 8. 用新的 analysis input/result Schema 替换旧 runtime Schema。
