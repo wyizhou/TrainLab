@@ -218,10 +218,12 @@ def _parser() -> argparse.ArgumentParser:
     repair = garmin_sub.add_parser("repair"); repair.add_argument("--from", dest="health_from"); repair.add_argument("--through"); repair.add_argument("--resource", action="append", default=[]); repair.add_argument("--activity-id", action="append", default=[]); repair.add_argument("--strategy", choices=["auto","refetch","reparse","reconcile"], default="auto")
     audit = garmin_sub.add_parser("audit"); audit.add_argument("--from", dest="health_from"); audit.add_argument("--through")
     garmin_sub.add_parser("status")
+    from .mail_agent.cli import add_root_subparser
+    add_root_subparser(subparsers)
     return parser
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None, *, mail_tool=None) -> int:
     args = _parser().parse_args(argv)
     if args.command == "foundation":
         forwarded = []
@@ -235,6 +237,16 @@ def main(argv: list[str] | None = None) -> int:
         receipt = garmin_cli_execute(args)
         print(receipt.json())
         return _GARMIN_EXIT[receipt.status]
+    if args.command == "mail":
+        from .mail_agent.application import UnavailableMailApplicationService
+        from .mail_agent.cli import mail_cli_execute
+        from .mail_agent.contracts import MailTool, exit_code_for_status
+        receipt = mail_cli_execute(
+            args,
+            tool=mail_tool or MailTool(UnavailableMailApplicationService()),
+        )
+        print(receipt.json())
+        return exit_code_for_status(receipt.status)
     if args.command == "run" and args.analysis_only:
         if args.slot != "morning":
             _parser().error("--analysis-only requires --slot morning")

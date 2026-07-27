@@ -1,6 +1,7 @@
 # 第四层：邮件 Agent 工具层详细开发需求清单
 
-状态：开发中（M4-01～08 已完成；M4-09～15 与 IG-0～7 未完成）
+状态：开发中（M4-01～09、M4-13、M4-14A 已完成；M4-10～12
+仍待生产环境绑定闭环；M4-14B、M4-15 真实验收与 IG-0～7 未完成）
 适用契约：第四层 v2.1；直接基线为第一层 v2.4、第三层 v2、第五层 v1
 规划日期：2026-07-26
 本文件性质：后续开发的唯一逐项清单；不修改五层冻结大契约，也不替代它们。
@@ -392,7 +393,7 @@ flowchart LR
   自校验及五份冻结 SHA-256 均通过。未调用 `trainlab run`、真实 Codex/provider，
   未改 Foundation DDL/迁移，未进入 M4-09、未暂存或提交。
 
-### [ ] M4-09｜不可变回复发布、修订与精确输入关系
+### [x] M4-09｜不可变回复发布、修订与精确输入关系
 
 - **目的**：在发送前原子发布可审计的邮件回复，令发送失败不丢失用户可见内容。
 - **依赖与起始快照**：M4-02、M4-07、M4-08；使用 validation-approved result 和
@@ -411,6 +412,10 @@ flowchart LR
   血缘和唯一 current revision；所有关联在同一短事务提交。
 - **集成顺序与失败回退**：W3、M4-10 前；发布失败完整回滚到旧 current，绝不通过发送
   成功反推或重建内容。
+- **完成证据（2026-07-27）**：已实现 immutable response/input/event/fact/delivery
+  原子发布、精确 `mail:response:<artifact>:<thread>` 幂等键、revision supersession、
+  publish item 与消息状态推进；精确 replay 不重复写。M4-01～15 当前离线邮件回归
+  501 项通过。未调用 Gmail/Codex，未修改 Foundation DDL。
 
 ### [ ] M4-10｜确定性渲染与 `deliver-response`
 
@@ -432,6 +437,11 @@ flowchart LR
   delivery 永远指向实际发送 revision，current 改变不漂移。
 - **集成顺序与失败回退**：W3；发送前失败可按规则重试，发送结果不确定立即交 M4-11，
   绝不重新生成或盲发。
+- **当前进展（2026-07-27，未完成）**：确定性 renderer、受限 delivery service 和
+  SQLite 原子投递证据链已经完成并通过离线集成测试。尚未完成当前环境 `gmail`
+  （`@artymclabin/gmail-mcp`）的生产 adapter：该 package 的 `reply_all` 不支持冻结
+  契约要求的自定义 `X-TrainLab-Run-ID` 与稳定 Message-ID，因此不得用旧本机
+  config/credential adapter 冒充完成。
 
 ### [ ] M4-11｜`reconcile`、重试预算、错误恢复与并发治理
 
@@ -452,6 +462,9 @@ flowchart LR
   `duplicate_delivery_conflict/operator_review`，不会再发送。
 - **集成顺序与失败回退**：W4；恢复逻辑失败时保持原 delivery/item 状态和原始证据，
   返回受控 next action 给第五层，而非新建 invocation 绕过幂等。
+- **当前进展（2026-07-27，未完成）**：有限 retry/backoff/deadline、401/403/429
+  决策、unknown 零/一/多匹配和 label-only 恢复已实现并离线验证；尚未接入生产
+  environment adapter/application composition，unknown 不会被重新发送。
 
 ### [ ] M4-12｜CLI/API 编排、`run` 组合与只读 `status`
 
@@ -473,8 +486,12 @@ flowchart LR
   因单 item 失败回滚已完成 item 或无限循环。
 - **集成顺序与失败回退**：W4；CLI 出现语义差异时停用有问题 mode 并保留更细粒度
   mode，禁止用 shell 包装或 stdout 文本兼容。
+- **当前进展（2026-07-27，未完成）**：六种 mode 的统一 application service、
+  有界 `run`、只读 `status`、顶层 `trainlab mail` CLI 和 fail-closed receipt 已完成。
+  默认 CLI 仍明确返回 `mail_application_dependencies_unavailable`，直到 M4-10/11
+  的生产组合根完成；不得把该安全失败误记为交付完成。
 
-### [ ] M4-13｜自动化验证、隐私回归与质量审计工具
+### [x] M4-13｜自动化验证、隐私回归与质量审计工具
 
 - **目的**：将第四层冻结条款转化为可重复证据，特别覆盖安全、幂等、raw/revision、
   cursor、事实和投递边界。
@@ -493,6 +510,9 @@ flowchart LR
   drift 形成 warning/fixture，而非静默忽略。
 - **集成顺序与失败回退**：W4；测试不稳定时隔离 fixture/adapter mock，禁止放宽安全
   断言或以真实账号掩盖问题。
+- **完成证据（2026-07-27）**：已增加纯合成 fixture 目录、privacy scanner 和
+  response/revision/input/delivery 持久化不变量审计；finding 不回显正文、凭据或
+  hidden reasoning。完整离线邮件回归 501 项通过。
 
 ### [ ] M4-14｜第三/第五层计划修订交接与防越权集成
 
@@ -521,6 +541,9 @@ flowchart LR
   artifact 投递或直接计划写入。
 - **集成顺序与失败回退**：W5、IG-5；任一依赖 ID 不一致则保留 awaiting_analysis，
   返回 operator_review/deferred，不猜测新计划内容。
+- **M4-14A 完成证据（2026-07-27）**：provider-side handoff DTO、pending dependency
+  和 resume identity validator 已完成；跨 subject、stale、reason/plan/artifact/period
+  mismatch 全部 fail closed。`M4-14B` 仍由 S5-10 后的 X-04 唯一执行，本项保持未勾选。
 
 ### [ ] M4-15｜迁移影子对账、受控真实账号验收与切换回滚包
 
@@ -542,6 +565,10 @@ flowchart LR
   邮箱和数据库中均不存在重复 reply 或第三层 artifact 被第四层代发。
 - **集成顺序与失败回退**：W5 最后；任何差异/未知投递立即冻结 cutover、保持 backup
   与旧路径单一写入，先 reconcile/人工审查，再由独立切换任务决定恢复。
+- **当前进展（2026-07-27，未完成）**：已提供纯 metadata shadow comparator、
+  单 writer/cutover/rollback gate 和
+  [迁移回滚手册](04-mail-agent-migration-runbook.md)。这只是离线准备，不代表
+  real-Gmail read-only、self-send、send interruption reconcile 或 IG-6/IG-7 已完成。
 
 ## 6. 大契约覆盖矩阵
 

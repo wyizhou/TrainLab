@@ -13,8 +13,7 @@ from typing import TextIO
 from .contracts import MailReceipt, MailRequest, MailTool, exit_code_for_status, utc_now
 
 
-def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="trainlab mail", description="TrainLab fourth-layer mail tool")
+def _add_commands(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument("--subject-id", type=int, required=True)
     parser.add_argument("--invocation-id", required=True)
     subparsers = parser.add_subparsers(dest="mode", required=True)
@@ -35,6 +34,15 @@ def _parser() -> argparse.ArgumentParser:
     status.add_argument("--run-key")
     status.add_argument("--message-id")
     return parser
+
+
+def _parser() -> argparse.ArgumentParser:
+    return _add_commands(argparse.ArgumentParser(prog="trainlab mail", description="TrainLab fourth-layer mail tool"))
+
+
+def add_root_subparser(parent: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    """Register the exact same public surface below the top-level CLI."""
+    _add_commands(parent.add_parser("mail", help="one-shot fourth-layer mail tool"))
 
 
 def request_from_args(args: argparse.Namespace, *, requested_at_utc: str | None = None) -> MailRequest:

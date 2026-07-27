@@ -91,6 +91,7 @@ _EMAIL = re.compile(r"\b[^\s@]+@[^\s@]+\.[^\s@]+\b")
 _URL = re.compile(r"https?://\S+")
 _SAFE_CODE = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
 _SAFE_ID = re.compile(r"^[A-Za-z0-9._:-]{1,160}$")
+_AUTO_RESPONSE_DELIVERY_KEY = "mail:response:auto"
 _POLL_RECEIPT_KEYS = frozenset({
     "schema_version", "run_key", "mail_agent_run_id", "invocation_id", "mode", "status", "counts",
     "processed_message_ids", "mail_response_artifact_ids", "mail_delivery_ids", "pending_dependencies",
@@ -1950,7 +1951,13 @@ class MailRepository:
                 )
             return bind_reason_event(decision, reason_id)
 
-    def publish_accepted_response(self, run_id: int, draft: AcceptedResponseDraft) -> PublishedResponse:
+    def publish_accepted_response(
+        self,
+        run_id: int,
+        draft: AcceptedResponseDraft,
+        *,
+        advance_processing_state: bool = False,
+    ) -> PublishedResponse:
         """Atomically publish an accepted response, its lineage, facts and relation."""
         with self._write_transaction():
             run = self.connection.execute("SELECT * FROM mail_agent_runs WHERE id=?", (run_id,)).fetchone()
@@ -1959,9 +1966,12 @@ class MailRepository:
             structured_content_json, fact_value_json = self._validate_response_draft(run, draft)
             existing = self.connection.execute("SELECT id FROM mail_response_artifacts WHERE generated_by_mail_agent_run_id=?", (run_id,)).fetchone()
             if existing is not None:
-                return self._assert_existing_response_matches(
+                published = self._assert_existing_response_matches(
                     run, existing["id"], draft, structured_content_json, fact_value_json
                 )
+                if advance_processing_state:
+                    self._record_response_publication_txn(run, draft, published)
+                return published
             event_ids: dict[str, int] = {}
             for event in draft.events:
                 event_ids[event.event_type] = self._create_or_recover_event(run, event)
@@ -2048,13 +2058,20 @@ class MailRepository:
                 self.connection.execute("INSERT INTO mail_response_inputs(mail_agent_run_id,input_role,source_entity_type,source_entity_id,source_revision_id,input_sha256,trust_class,ordinal) VALUES(?,?,?,?,?,?,?,?)", (run_id, item.input_role, item.source_entity_type, item.source_entity_id, item.source_revision_id, item.input_sha256, item.trust_class, ordinal))
             delivery_id: int | None = None
             if draft.delivery is not None:
+                delivery_key = draft.delivery.idempotency_key
+                if delivery_key == _AUTO_RESPONSE_DELIVERY_KEY:
+                    if draft.delivery.provider_thread_id is None:
+                        raise MailRepositoryError("invalid_mail_delivery_draft")
+                    delivery_key = (
+                        f"mail:response:{response_id}:{draft.delivery.provider_thread_id}"
+                    )
                 self.connection.execute(
                     "INSERT INTO mail_deliveries("
                     "idempotency_key,delivery_kind,related_run_key,mail_message_id,"
                     "provider_thread_id,status,created_at_utc,updated_at_utc"
                     ") VALUES(?,?,?,NULL,?,'pending',?,?)",
                     (
-                        draft.delivery.idempotency_key,
+                        delivery_key,
                         "mail_response",
                         run["run_key"],
                         draft.delivery.provider_thread_id,
@@ -2062,9 +2079,132 @@ class MailRepository:
                         self._clock(),
                     ),
                 )
-                delivery_id = self.connection.execute("SELECT id FROM mail_deliveries WHERE idempotency_key=?", (draft.delivery.idempotency_key,)).fetchone()["id"]
+                delivery_id = self.connection.execute("SELECT id FROM mail_deliveries WHERE idempotency_key=?", (delivery_key,)).fetchone()["id"]
                 self.connection.execute("INSERT INTO mail_delivery_artifacts(mail_delivery_id,mail_response_artifact_id,content_role,ordinal) VALUES(?,?,?,0)", (delivery_id, response_id, "mail_response"))
-            return PublishedResponse(response_id, delivery_id, tuple(event_ids.values()), tuple(fact_ids))
+            published = PublishedResponse(
+                response_id, delivery_id, tuple(event_ids.values()), tuple(fact_ids)
+            )
+            if advance_processing_state:
+                self._record_response_publication_txn(run, draft, published)
+            return published
+
+    def _record_response_publication_txn(
+        self,
+        run: sqlite3.Row,
+        draft: AcceptedResponseDraft,
+        published: PublishedResponse,
+    ) -> None:
+        """Finish the M4-09 publication boundary in the caller's transaction.
+
+        This deliberately lives beside the immutable artifact insert: an accepted
+        reply is not externally deliverable until its triggering message and
+        publish audit item have advanced together.  Replays only verify the
+        already-recorded evidence; they never create another event or item.
+        """
+        if (
+            draft.in_reply_to_mail_message_id is None
+            or draft.delivery is None
+            or published.delivery_id is None
+        ):
+            raise MailRepositoryError("mail_response_publication_delivery_required")
+        message = self.connection.execute(
+            "SELECT m.id,m.processing_state FROM mail_messages m "
+            "JOIN mail_threads t ON t.id=m.mail_thread_id "
+            "WHERE m.id=? AND t.subject_id=?",
+            (draft.in_reply_to_mail_message_id, run["subject_id"]),
+        ).fetchone()
+        if message is None:
+            raise MailRepositoryError("mail_message_ownership_invalid")
+        if message["processing_state"] == "analyzing":
+            self.connection.execute(
+                "UPDATE mail_messages SET processing_state='response_accepted' WHERE id=?",
+                (message["id"],),
+            )
+            self.connection.execute(
+                "UPDATE mail_messages SET processing_state='ready_to_send' WHERE id=?",
+                (message["id"],),
+            )
+        elif message["processing_state"] == "response_accepted":
+            self.connection.execute(
+                "UPDATE mail_messages SET processing_state='ready_to_send' WHERE id=?",
+                (message["id"],),
+            )
+        elif message["processing_state"] != "ready_to_send":
+            raise MailRepositoryError("mail_response_publication_state_invalid")
+
+        item_id = str(published.response_artifact_id)
+        self._validate_item_relations(
+            run["subject_id"],
+            "response",
+            item_id,
+            draft.in_reply_to_mail_message_id,
+            None,
+            published.response_artifact_id,
+            published.delivery_id,
+        )
+        item = self.connection.execute(
+            "SELECT * FROM mail_agent_items WHERE mail_agent_run_id=? "
+            "AND logical_item_kind='response' AND logical_item_id=? AND stage='publish'",
+            (run["id"], item_id),
+        ).fetchone()
+        relations = (
+            draft.in_reply_to_mail_message_id,
+            None,
+            published.response_artifact_id,
+            published.delivery_id,
+        )
+        if item is None:
+            now = self._clock()
+            self.connection.execute(
+                "INSERT INTO mail_agent_items("
+                "mail_agent_run_id,logical_item_kind,logical_item_id,mail_message_id,"
+                "dependency_analysis_artifact_id,mail_response_artifact_id,mail_delivery_id,"
+                "stage,status,attempt_count,started_at_utc,completed_at_utc"
+                ") VALUES(?,?,?,?,?,?,?,'publish','succeeded',1,?,?)",
+                (run["id"], "response", item_id, *relations, now, now),
+            )
+        elif (
+            (item["mail_message_id"], item["dependency_analysis_artifact_id"],
+             item["mail_response_artifact_id"], item["mail_delivery_id"]) != relations
+            or item["status"] != "succeeded"
+            or item["error_code"] is not None
+            or item["error_summary"] is not None
+            or item["next_retry_at_utc"] is not None
+        ):
+            raise MailRepositoryError("mail_response_publication_replay_conflict")
+
+        prepared = self.connection.execute(
+            "SELECT id FROM conversation_events WHERE mail_response_artifact_id=? "
+            "AND event_type='mail_response_prepared' AND subject_id=?",
+            (published.response_artifact_id, run["subject_id"]),
+        ).fetchall()
+        if len(prepared) > 1:
+            raise MailRepositoryError("mail_response_publication_event_ambiguous")
+        if not prepared:
+            event_id = self._create_or_recover_event(
+                run,
+                EventDraft(
+                    "mail_response_prepared",
+                    "trainlab",
+                    run["started_at_utc"],
+                    None,
+                    "system_generated",
+                    related_run_key=run["run_key"],
+                    structured_payload_json=json.dumps(
+                        {"mail_response_artifact_id": published.response_artifact_id},
+                        ensure_ascii=False,
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    ),
+                ),
+            )
+            changed = self.connection.execute(
+                "UPDATE conversation_events SET mail_response_artifact_id=? "
+                "WHERE id=? AND mail_response_artifact_id IS NULL",
+                (published.response_artifact_id, event_id),
+            ).rowcount
+            if changed != 1:
+                raise MailRepositoryError("mail_response_publication_event_conflict")
 
     def _validate_response_draft(
         self, run: sqlite3.Row, draft: AcceptedResponseDraft
@@ -2352,6 +2492,10 @@ class MailRepository:
                     thread_provider_id is not None
                     and draft.delivery.provider_thread_id
                     not in {None, thread_provider_id}
+                )
+                or (
+                    draft.delivery.idempotency_key == _AUTO_RESPONSE_DELIVERY_KEY
+                    and draft.delivery.provider_thread_id is None
                 )
             ):
                 raise MailRepositoryError("invalid_mail_delivery_draft")
@@ -2993,6 +3137,11 @@ class MailRepository:
             if len(deliveries) != 1:
                 raise MailRepositoryError("conflicting_mail_response_retry")
             delivery = deliveries[0]
+            expected_key = (
+                f"mail:response:{response_id}:{draft.delivery.provider_thread_id}"
+                if draft.delivery.idempotency_key == _AUTO_RESPONSE_DELIVERY_KEY
+                else draft.delivery.idempotency_key
+            )
             if (
                 delivery["idempotency_key"],
                 delivery["delivery_kind"],
@@ -3002,7 +3151,7 @@ class MailRepository:
                 delivery["content_role"],
                 delivery["ordinal"],
             ) != (
-                draft.delivery.idempotency_key,
+                expected_key,
                 "mail_response",
                 run["run_key"],
                 draft.delivery.provider_thread_id,

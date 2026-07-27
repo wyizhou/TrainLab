@@ -38,6 +38,13 @@ from .fact_gate import (
     MailFactGateError,
     bind_reason_event,
 )
+from .application import (
+    MailApplicationError,
+    MailApplicationPolicy,
+    MailApplicationService,
+    MailApplicationStages,
+    UnavailableMailApplicationService,
+)
 
 __all__ = [
     "MAIL_RECEIPT_SCHEMA_VERSION",
@@ -70,4 +77,9 @@ __all__ = [
     "MailFactGate",
     "MailFactGateError",
     "bind_reason_event",
+    "MailApplicationError",
+    "MailApplicationPolicy",
+    "MailApplicationService",
+    "MailApplicationStages",
+    "UnavailableMailApplicationService",
 ]
