@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from dataclasses import replace
 from datetime import UTC, date, datetime, timedelta
-import os
 from pathlib import Path
 import re
 from zoneinfo import ZoneInfo
@@ -24,13 +23,11 @@ from .publisher import AnalysisPublisher
 from .run_state import AnalysisRunCoordinator, AnalysisRunRepository, SubjectLockManager
 from .runner import AnalysisCodexRunner
 from .stable_views import StableViewRepository
+from ..mail_agent.runtime import _recipient_email
 
 
 _SINGAPORE = ZoneInfo("Asia/Singapore")
 _SUBJECT_KEY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$")
-GMAIL_SELF_ADDRESS_ENV = "TRAINLAB_GMAIL_SELF_ADDRESS"
-
-
 def _utc_now() -> str:
     return datetime.now(UTC).isoformat(timespec="microseconds").replace("+00:00", "Z")
 
@@ -526,8 +523,9 @@ def run_delivery_recovery(
 def _execute_delivery(
     connection: object, config: object, delivery_id: int, mode: str
 ) -> DeliveryExecution:
-    recipient = os.environ.get(GMAIL_SELF_ADDRESS_ENV)
-    if recipient is None:
+    try:
+        recipient = _recipient_email(project_root())
+    except ValueError:
         state = AnalysisDeliveryRepository(connection).read_state(delivery_id)  # type: ignore[arg-type]
         return DeliveryExecution(
             delivery_id, state.status, state.provider_message_id,

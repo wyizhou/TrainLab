@@ -25,13 +25,27 @@ def request():
 
 
 def test_morning_uses_explicit_singapore_yesterday_and_today_once() -> None:
-    queue = Queue([garmin("incremental"), garmin("audit"), analysis("daily")])
+    audit = garmin("audit")
+    audit["coverage_state"] = None
+    queue = Queue([garmin("incremental"), audit, analysis("daily")])
     result = MorningWorkflowService(queue).execute(request())
     assert result.status == "succeeded"
     assert [(call.layer, call.mode) for call in queue.calls] == [("garmin", "incremental"), ("garmin", "audit"), ("analysis", "daily")]
     assert queue.calls[0].through_local_date == "2026-07-23"
     assert (queue.calls[-1].summary_local_date, queue.calls[-1].advice_local_date) == ("2026-07-23", "2026-07-24")
     assert MorningWorkflowService(queue).execute if False else True
+
+
+def test_collection_coverage_remains_the_quality_authority() -> None:
+    queue = Queue([
+        garmin("incremental", coverage="partial"),
+        garmin("audit", coverage=None),
+        garmin("repair"),
+        garmin("audit", coverage=None),
+    ])
+    result = MorningWorkflowService(queue).execute(request())
+    assert result.status == "deferred" and result.next_action == "repair_data"
+    assert [item.mode for item in queue.calls] == ["incremental", "audit", "repair", "audit"]
 
 
 def test_blocked_quality_is_repaired_once_then_does_not_call_daily_when_still_blocked() -> None:

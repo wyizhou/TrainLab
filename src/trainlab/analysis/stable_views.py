@@ -30,15 +30,14 @@ _DENIED_PROJECTION_COLUMNS = frozenset({
 })
 _MAX_SAMPLE_LIMIT = 100
 _MAX_PUBLIC_VIEW_ROWS = 500
-_MAX_VIEW_ROWS = 1_000
-# Coverage is one row per resource and date.  A 14-day daily baseline plus
-# summary/advice boundaries can legitimately exceed 500 rows on accounts with
-# the full Garmin resource catalog.  Route-rich climbing activities can also
-# exceed 500 bounded segment rows over the same window.  Both remain below the
-# 1,000-row per projection and bounded whole-snapshot limits.
-_MAX_AUX_ROWS = 1_000
-_MAX_READ_ROWS = 1_000
-_MAX_SNAPSHOT_ROWS = 4_000
+_MAX_VIEW_ROWS = 2_000
+# Analysis reads one fixed 30-completed-day boundary. Stable reads retain
+# detailed records for deterministic quality checks and future explicitly
+# requested drill-down, while the default context builder emits only aggregate
+# health/sleep/physiology and activity-level summaries.
+_MAX_AUX_ROWS = 2_000
+_MAX_READ_ROWS = 2_000
+_MAX_SNAPSHOT_ROWS = 8_000
 _SPECS: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     ("v_current_daily_health", "SELECT id,subject_id,local_date,values_json,source_revision_id FROM v_current_daily_health WHERE subject_id=? AND local_date BETWEEN ? AND ? ORDER BY local_date,id", ("subject", "date", "date")),
     ("v_current_physiology_records", "SELECT id,subject_id,domain,record_type,effective_at_utc,period_start_utc,period_end_utc,local_date,value_origin,status_key,status_text,source_revision_id FROM v_current_physiology_records WHERE subject_id=? AND COALESCE(local_date,substr(effective_at_utc,1,10)) BETWEEN ? AND ? ORDER BY COALESCE(local_date,substr(effective_at_utc,1,10)),id", ("subject", "date", "date")),

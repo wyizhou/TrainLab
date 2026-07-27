@@ -24,7 +24,7 @@ from dataclasses import asdict, dataclass, field, replace
 from datetime import UTC, date, datetime, time as datetime_time, timedelta
 from pathlib import Path
 from pathlib import PurePosixPath
-from typing import Any, Callable, Iterable, Literal, Protocol
+from typing import Any, Callable, Iterable, Literal, Mapping, Protocol
 from zoneinfo import ZoneInfo
 
 import fitdecode
@@ -456,6 +456,8 @@ _DURABLE_PROVIDER_ERROR_CODES = frozenset({
     "fit_zip_invalid", "fit_zip_unsafe_member", "fit_zip_limits_exceeded",
     "fit_ambiguous", "fit_missing", "fit_crc_invalid", "fit_no_session",
     "fit_identity_mismatch", "fit_ambiguous_session", "fit_parse_failed",
+    "fit_not_available_for_activity_format", "activity_original_missing",
+    "activity_original_ambiguous", "activity_original_archive_failed",
     "activity_enrichment_invalid", "activity_enrichment_identity_mismatch",
     "activity_enrichment_binding_mismatch", "activity_chart_invalid",
     "activity_chart_empty", "activity_reconcile_failed",
@@ -1140,6 +1142,8 @@ class GarminRepository:
         allowed_types = {
             "json": "application/json",
             "fit": "application/octet-stream",
+            "tcx": "application/vnd.garmin.tcx+xml",
+            "gpx": "application/gpx+xml",
         }
         if allowed_types.get(suffix) != media_type:
             raise ValueError("raw_type_not_allowed")
@@ -1176,7 +1180,8 @@ class GarminRepository:
         dir_fds = [root_fd]
         final_name = f"{sha}.{suffix}"
         try:
-            for part in ("garmin", "fit" if suffix == "fit" else "json", *date_path.split("/")):
+            storage_kind = suffix if suffix in {"fit", "tcx", "gpx"} else "json"
+            for part in ("garmin", storage_kind, *date_path.split("/")):
                 child_fd = self._open_child_dirfd(dir_fds[-1], part, create=True)
                 dir_fds.append(child_fd)
             directory_fd = dir_fds[-1]
@@ -1252,7 +1257,7 @@ class GarminRepository:
                             inode=tmp_inode,
                             payload=payload[:written],
                         )
-            rel = str(Path("raw") / "garmin" / ("fit" if suffix == "fit" else "json") / date_path / final_name)
+            rel = str(Path("raw") / "garmin" / storage_kind / date_path / final_name)
         finally:
             for fd in reversed(dir_fds):
                 os.close(fd)
@@ -1408,9 +1413,24 @@ class GarminRepository:
         conn.execute("INSERT INTO resource_coverage(subject_id,provider,resource_kind,local_date,availability_state,record_count,source_revision_id,observed_at_utc) VALUES(?,?,?,?,?,?,?,?)", (subject, "garmin", resource, day, state, count, revision, utc_now()))
 
     def fields(self, conn: sqlite3.Connection, resource: str, payload: Any) -> None:
+        """Catalog source leaf paths without treating discovery as a failure.
+
+        Garmin responses occasionally use numeric dictionary keys for device
+        identifiers or epoch buckets.  Those values describe a collection
+        member, rather than a distinct field, so catalog them as ``*`` just as
+        list members are catalogued.  Named keys remain exact: reviewed
+        mappings must continue to match their precise source path.
+        """
+        def segment(key: Any) -> str:
+            if isinstance(key, int) and not isinstance(key, bool):
+                return "*"
+            if isinstance(key, str) and re.fullmatch(r"[0-9]+", key):
+                return "*"
+            return str(key)
+
         def walk(value: Any, path: str = ""):
             if isinstance(value, dict):
-                for key, child in value.items(): yield from walk(child, f"{path}/{key}")
+                for key, child in value.items(): yield from walk(child, f"{path}/{segment(key)}")
             elif isinstance(value, list):
                 for child in value: yield from walk(child, f"{path}/*")
             else: yield path or "/", type(value).__name__
@@ -4486,6 +4506,62 @@ class GarminCollectionTool:
             "normalized_summary": normalized,
         }
 
+    @staticmethod
+    def _summary_original_format(summary: Mapping[str, Any]) -> str | None:
+        """Return only Garmin's declared ORIGINAL container format."""
+        metadata = summary.get("metadataDTO")
+        if not isinstance(metadata, Mapping):
+            return None
+        file_format = metadata.get("fileFormat")
+        if not isinstance(file_format, Mapping):
+            return None
+        value = file_format.get("formatKey")
+        if not isinstance(value, str) or not value.strip():
+            return None
+        return value.strip().casefold()
+
+    def _record_activity_original_format(
+        self,
+        conn: sqlite3.Connection,
+        subject: int,
+        provider_id: str,
+        summary: Mapping[str, Any],
+        revision: int,
+    ) -> None:
+        """Keep the small reviewed format fact in activity extras.
+
+        The complete provider summary remains in its immutable raw revision.
+        This avoids copying metadata payloads into the canonical activity while
+        allowing the FIT stage to distinguish FIT from TCX/GPX deterministically.
+        """
+        original_format = self._summary_original_format(summary)
+        if original_format is None:
+            return
+        row = conn.execute(
+            """SELECT id,extras_json,source_map_json FROM activities
+               WHERE subject_id=? AND provider='garmin'
+                 AND provider_activity_id=?""",
+            (subject, provider_id),
+        ).fetchone()
+        if row is None:
+            return
+        extras = json.loads(row["extras_json"] or "{}")
+        source_map = json.loads(row["source_map_json"] or "{}")
+        extras["connect_original_format"] = original_format
+        source_map["connect_original_format"] = {
+            "source_revision_id": revision,
+            "source_role": "summary_json",
+            "source_path": "/metadataDTO/fileFormat/formatKey",
+        }
+        conn.execute(
+            "UPDATE activities SET extras_json=?,source_map_json=? WHERE id=?",
+            (
+                json.dumps(extras, sort_keys=True, allow_nan=False),
+                json.dumps(source_map, sort_keys=True, allow_nan=False),
+                row["id"],
+            ),
+        )
+
     def _collect_activity_summary(
         self,
         conn: sqlite3.Connection,
@@ -4534,6 +4610,9 @@ class GarminCollectionTool:
             _, revision, changed = self.repo.archive(
                 conn, "activity_summary", activity_id, canonical_provider_json(summary),
                 "json", "application/json", summary_projector,
+            )
+            self._record_activity_original_format(
+                conn, subject, activity_id, summary, revision,
             )
             if not changed:
                 self._set_activity_active(conn, subject, activity_id)
@@ -6539,15 +6618,18 @@ class GarminCollectionTool:
                 return (datetime(1989, 12, 31, tzinfo=UTC) + timedelta(seconds=field.value)).isoformat().replace("+00:00", "Z")
         return fallback
 
-    def _extract_fit_candidates(self, blob: bytes) -> list[bytes]:
-        """Read ORIGINAL as an untrusted transient container; leave no ZIP behind."""
+    def _extract_original_candidates(self, blob: bytes, suffix: str) -> list[bytes]:
+        """Extract one ORIGINAL format from an untrusted transient container."""
+        if suffix not in {"fit", "tcx", "gpx"}:
+            raise ValueError("unsupported_original_format")
         if len(blob) > self._FIT_MAX_BYTES:
             raise GarminError("fit_zip_limits_exceeded")
         directory = self._fit_temp_dir()
         try:
             zip_path = directory / "original.zip"
             if not blob.startswith(b"PK"):
-                return [blob] if len(blob) >= 12 else []
+                minimum = 12 if suffix == "fit" else 1
+                return [blob] if len(blob) >= minimum else []
             self._write_temp_file(zip_path, blob)
             try:
                 with zipfile.ZipFile(zip_path) as archive:
@@ -6571,7 +6653,7 @@ class GarminCollectionTool:
                             raise GarminError("fit_zip_unsafe_member")
                         if info.file_size > self._FIT_MAX_BYTES:
                             raise GarminError("fit_zip_limits_exceeded")
-                        if name.suffix.casefold() == ".fit":
+                        if name.suffix.casefold() == f".{suffix}":
                             try:
                                 candidates.append(archive.read(info))
                             except (RuntimeError, zipfile.BadZipFile) as exc:
@@ -6583,6 +6665,155 @@ class GarminCollectionTool:
                 raise GarminError("fit_zip_invalid") from exc
         finally:
             shutil.rmtree(directory, ignore_errors=True)
+
+    def _extract_fit_candidates(self, blob: bytes) -> list[bytes]:
+        """Read ORIGINAL as an untrusted transient container; leave no ZIP behind."""
+        return self._extract_original_candidates(blob, "fit")
+
+    @staticmethod
+    def _activity_declared_original_format(
+        conn: sqlite3.Connection, activity: int,
+    ) -> str | None:
+        row = conn.execute(
+            "SELECT extras_json FROM activities WHERE id=?", (activity,),
+        ).fetchone()
+        if row is None:
+            return None
+        value = json.loads(row["extras_json"] or "{}").get(
+            "connect_original_format"
+        )
+        return value if value in {"fit", "tcx", "gpx"} else None
+
+    @staticmethod
+    def _has_archived_activity_original(
+        conn: sqlite3.Connection, provider_id: str, original_format: str,
+    ) -> bool:
+        return conn.execute(
+            """SELECT 1 FROM source_revisions
+               WHERE provider='garmin' AND resource_kind=?
+                 AND provider_object_id=? AND is_current=1
+                 AND parsed_at_utc IS NOT NULL""",
+            (f"activity_original_{original_format}", provider_id),
+        ).fetchone() is not None
+
+    def _collect_nonfit_activity_original(
+        self,
+        conn: sqlite3.Connection,
+        run: int,
+        subject: int,
+        provider_id: str,
+        activity: int,
+        original_format: str,
+        day: date,
+        receipt: SyncReceipt,
+    ) -> str:
+        """Archive a declared TCX/GPX ORIGINAL without parsing it as FIT."""
+        key = f"garmin:activity:{provider_id}"
+        resource = f"activity_original_{original_format}"
+        media_type = {
+            "tcx": "application/vnd.garmin.tcx+xml",
+            "gpx": "application/gpx+xml",
+        }[original_format]
+        try:
+            if self._has_archived_activity_original(
+                conn, provider_id, original_format,
+            ):
+                self.repo.item(
+                    conn, run, resource, key, "project", "unchanged",
+                    increment_attempt=False,
+                )
+                receipt.counts["unchanged"] += 1
+            else:
+                blob = self._call(
+                    lambda: self._transport().activity_original(provider_id),
+                    conn=conn, run=run, subject=subject, resource=resource,
+                    key=key, allows_404=True,
+                )
+                self.repo.item(
+                    conn, run, resource, key, "fetch", "fetched",
+                    increment_attempt=False,
+                )
+                candidates = self._extract_original_candidates(
+                    blob, original_format,
+                )
+                unique = {
+                    digest(candidate): candidate for candidate in candidates
+                }
+                if not unique:
+                    raise GarminError("activity_original_missing")
+                if len(unique) != 1:
+                    for candidate_hash, candidate in sorted(unique.items()):
+                        candidate_key = self._identity_hmac(
+                            f"{resource}-candidate:{provider_id}:{candidate_hash}"
+                        )
+                        self.repo.archive(
+                            conn, f"{resource}_candidate", candidate_key,
+                            candidate, original_format, media_type,
+                        )
+                    raise GarminError("activity_original_ambiguous")
+                candidate = next(iter(unique.values()))
+                _, revision, changed = self.repo.archive(
+                    conn, resource, provider_id, candidate,
+                    original_format, media_type,
+                )
+                self.repo.item(
+                    conn, run, resource, key, "project",
+                    "revised" if changed else "unchanged",
+                    revision_id=revision, increment_attempt=False,
+                )
+                receipt.counts["revised" if changed else "unchanged"] += 1
+        except GarminError as exc:
+            outcome = self._classify(exc, allows_404=True)
+            if outcome.status == "auth_required":
+                raise GarminError("auth_required", http_status=401) from None
+            deferred = outcome.status == "deferred"
+            terminal = (
+                "not_available" if outcome.status == "not_available"
+                else "forbidden" if outcome.status == "forbidden"
+                else "deferred" if deferred else "failed"
+            )
+            retry = self._next_retry(exc, 0) if deferred else None
+            self.repo.item(
+                conn, run, resource, key, "project", terminal,
+                error=exc, next_retry=retry, increment_attempt=False,
+            )
+            self.repo.gap(
+                conn, subject, resource, key, day.isoformat(), "project",
+                exc.code, deferred=deferred, next_retry=retry,
+            )
+            receipt.counts[
+                "not_available" if terminal == "not_available"
+                else "deferred" if deferred else "failed"
+            ] += 1
+            receipt.next_retry_at_utc = retry or receipt.next_retry_at_utc
+            return "invalid"
+        except Exception:
+            error = GarminError("activity_original_archive_failed")
+            self.repo.item(
+                conn, run, resource, key, "project", "failed",
+                error=error, increment_attempt=False,
+            )
+            self.repo.gap(
+                conn, subject, resource, key, day.isoformat(), "project",
+                error.code,
+            )
+            receipt.counts["failed"] += 1
+            return "invalid"
+
+        # The provider metadata is authoritative: FIT is not applicable to
+        # this activity.  Preserve and close any legacy fit_missing evidence.
+        self.repo.resolve_gaps(
+            conn, subject, "activity_fit", day.isoformat(),
+            logical_object_key=key,
+            stages=("fetch", "extract", "parse", "project"),
+        )
+        self.repo.item(
+            conn, run, "activity_fit", key, "discover", "not_available",
+            error=GarminError("fit_not_available_for_activity_format"),
+            increment_attempt=False,
+        )
+        receipt.counts["not_available"] += 1
+        return "fit" if self._has_active_fit(conn, activity) else "not_available"
 
     def _validate_fit_sessions(
         self,
@@ -6685,6 +6916,14 @@ class GarminCollectionTool:
 
     def _collect_activity_fit(self, conn: sqlite3.Connection, run: int, subject: int, provider_id: str, activity: int, start_utc: str, sport: str, day: date, receipt: SyncReceipt) -> str:
         key = f"garmin:activity:{provider_id}"
+        original_format = self._activity_declared_original_format(
+            conn, activity,
+        )
+        if original_format in {"tcx", "gpx"}:
+            return self._collect_nonfit_activity_original(
+                conn, run, subject, provider_id, activity,
+                original_format, day, receipt,
+            )
         try:
             blob = self._call(lambda: self._transport().activity_original(provider_id), conn=conn, run=run, subject=subject, resource="activity_fit", key=key, allows_404=True)
             self.repo.item(
@@ -7108,7 +7347,8 @@ class GarminCollectionTool:
         )
         conn.execute(
             """UPDATE garmin_sync_gaps
-                  SET status='resolved',resolved_at_utc=?,last_attempt_at_utc=?
+                  SET status='ignored_with_reason',resolved_at_utc=?,last_attempt_at_utc=?,
+                      next_retry_at_utc=NULL
                 WHERE subject_id=? AND status IN ('open','deferred')
                   AND reason_code='unmapped_field_signature'""",
             (now, now, subject),
@@ -7223,14 +7463,12 @@ class GarminCollectionTool:
                         row["provider_object_id"],
                     ),
                 )
-        # Field catalog drift is retained as a gap so it is visible to repair
-        # and later quality policy, without inventing a canonical metric.
-        for row in conn.execute(
-            """SELECT resource_kind,count(*) AS count FROM source_field_catalog
-                 WHERE provider='garmin' AND mapping_state='unknown'
-                 GROUP BY resource_kind"""
-        ):
-            self.repo.gap(conn, subject, row["resource_kind"], f"field-signature:{row['resource_kind']}", start.isoformat(), "audit", "unmapped_field_signature", end_day=through.isoformat())
+        # Field catalog drift remains discoverable in ``source_field_catalog``.
+        # An unknown leaf is preserved verbatim in raw evidence and may be
+        # reviewed later, but discovery alone is not a failed fetch or an
+        # unresolved data gap.  In particular, do not recreate legacy
+        # ``unmapped_field_signature`` gaps here: those would block unrelated
+        # analysis despite there being no lost or invalid source data.
         # An activity has a durable summary and, where FIT has been requested,
         # an active parsed FIT revision.  This check never declares a FIT
         # mandatory: an existing FIT-stage gap is the evidence of intent.

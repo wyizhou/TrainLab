@@ -273,6 +273,9 @@ def test_ready_revision_resolves_reason_publishes_and_only_seeds_delivery(
         f"2026-07-{day:02d}" for day in range(22, 27)
     }
     assert context.features[0]["reason_event_id"] == "91"
+    assert {
+        item["key"] for item in context.features
+    } >= {"training_difficulty_contract_v1", "race_goal_contract_v1"}
 
 
 def test_explicit_effective_date_must_match_reason_and_never_runs_generator(

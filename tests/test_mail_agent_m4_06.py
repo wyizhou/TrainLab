@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import hashlib
 import sqlite3
+from datetime import date, timedelta
 from pathlib import Path
 
 import pytest
@@ -93,6 +94,15 @@ def test_date_extension_is_controlled_and_trust_is_actor_specific(tmp_path: Path
     outbound=next(x for x in result.payload['thread_context'] if x['provider_message_id']=='out')
     assert outbound['value_origin']=='prior_model_output' and outbound['content_instruction_trust']=='untrusted_content'
     with pytest.raises(MailContextError,match='extension'): MailContextBuilder(conn).build(run_id=run,subject_id=subject,trigger_message_id=1,as_of_local_date='2026-07-24',requested_start_local_date='2026-07-01')
+    with pytest.raises(MailContextError,match='extension'):
+        MailContextBuilder(conn).build(
+            run_id=run,
+            subject_id=subject,
+            trigger_message_id=1,
+            as_of_local_date='2026-07-24',
+            requested_start_local_date='2026-06-23',
+            extension_reason='explicit_earlier_date',
+        )
 
 
 def test_schema_mutation_and_wrong_gmail_lineage_fail_closed(tmp_path: Path) -> None:
@@ -127,10 +137,65 @@ def test_schema_strict_types_formats_enums_ranges_and_manifest_semantics(tmp_pat
     rejects(lambda value: value['input_manifest'][0].__setitem__('ordinal', -1), ['input_manifest', 0, 'ordinal'])
     rejects(lambda value: value['policies'].__setitem__('extra', True), ['policies'])
     bad = json.loads(result.canonical_json)
-    bad['current_health_context'].append({'id': 1, 'local_date': '2026/07/24', 'values': {}, 'source_revision_id': 1})
-    assert any(list(error.path) == ['current_health_context', 0, 'local_date'] for error in validator.iter_errors(bad))
+    bad['current_health_context'] = [{
+        'window': {'start': '2026/06/24', 'end': '2026-07-23'},
+        'completed_days': 1,
+        'source_count': 1,
+        'sources': [{'id': 1, 'source_revision_id': 1, 'local_date': '2026-07-23'}],
+        'aggregate_sha256': '0' * 64,
+        'metrics': [],
+    }]
+    assert any(list(error.path) == ['current_health_context', 0, 'window', 'start'] for error in validator.iter_errors(bad))
     bad = json.loads(result.canonical_json); bad['input_manifest'][0]['input_sha256'] = '0' * 64
     with pytest.raises(MailContextError, match='fragment'): MailContextBuilder(conn, shared_harness_version='shared', mail_harness_version='mail')._validate_manifest(bad)
+
+
+def test_health_context_is_a_thirty_completed_day_aggregate_with_full_lineage(tmp_path: Path) -> None:
+    conn, subject, run = fixture(tmp_path)
+    first_day = date(2026, 6, 24)
+    for offset in range(30):
+        local_date = first_day + timedelta(days=offset)
+        conn.execute(
+            """INSERT INTO source_revisions(
+                   provider,resource_kind,provider_object_id,revision_no,payload_hash,
+                   is_current,parsed_at_utc
+               ) VALUES('garmin','user_summary',?,1,?,1,?)""",
+            (str(local_date), f"{offset:064x}", NOW),
+        )
+        revision = conn.execute(
+            "SELECT id FROM source_revisions WHERE provider='garmin' AND resource_kind='user_summary' AND provider_object_id=?",
+            (str(local_date),),
+        ).fetchone()[0]
+        conn.execute(
+            """INSERT INTO daily_health(
+                   subject_id,local_date,values_json,source_revision_id,is_current
+               ) VALUES(?,?,?,?,1)""",
+            (
+                subject,
+                str(local_date),
+                json.dumps({"restingHeartRate": 50 + offset % 3, "status": "BALANCED"}),
+                revision,
+            ),
+        )
+
+    result = build(conn, subject, run)
+    assert len(result.payload["current_health_context"]) == 1
+    summary = result.payload["current_health_context"][0]
+    assert summary["window"] == {"start": "2026-06-24", "end": "2026-07-23"}
+    assert summary["completed_days"] == 30
+    assert summary["source_count"] == 30
+    assert len(summary["sources"]) == 30
+    assert "values" not in summary and "values_json" not in summary
+    metric = next(item for item in summary["metrics"] if item["metric_key"] == "health.restingHeartRate")
+    assert metric["observation_count"] == 30
+    assert metric["coverage_days"] == 30
+    assert metric["minimum"] == 50
+    assert metric["maximum"] == 52
+    health_manifest = [item for item in result.payload["input_manifest"] if item["input_role"] == "health_fact"]
+    assert len(health_manifest) == 30
+    assert {item["input_sha256"] for item in health_manifest} == {hashlib.sha256(
+        json.dumps(summary, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()}
 
 
 def test_schema_omission_shapes_and_context_semantics_are_closed(tmp_path: Path) -> None:

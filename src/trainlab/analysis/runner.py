@@ -118,8 +118,9 @@ def _safe_output_schema(config: AnalysisConfig, bundle: HarnessBundle) -> bytes:
 def _codex_compatible_output_schema(payload: bytes) -> bytes:
     """Derive the generation schema without weakening final validation.
 
-    Codex structured output currently rejects ``propertyNames`` and
-    ``maxProperties`` and requires an explicit type alongside ``const``.
+    Codex structured output currently rejects ``propertyNames``,
+    ``maxProperties`` and ``uniqueItems`` and requires an explicit type
+    alongside ``const``.
     The authoritative schema remains byte-for-byte hash checked above and is
     still applied by A3-12 after generation; this derivative only constrains
     the model-side response format.
@@ -134,6 +135,7 @@ def _codex_compatible_output_schema(payload: bytes) -> bytes:
         if isinstance(value, dict):
             value.pop("propertyNames", None)
             value.pop("maxProperties", None)
+            value.pop("uniqueItems", None)
             if "const" in value and "type" not in value:
                 constant = value["const"]
                 if constant is None:
@@ -167,6 +169,26 @@ def _codex_compatible_output_schema(payload: bytes) -> bytes:
         raise AnalysisRunnerError("analysis_runner_output_schema_invalid") from error
 
 
+def _supports_strict_structured_output(schema: bytes) -> bool:
+    """Detect valid schema constructs that strict Structured Outputs rejects."""
+
+    try:
+        document = json.loads(schema)
+    except (UnicodeDecodeError, json.JSONDecodeError, TypeError) as error:
+        raise AnalysisRunnerError("analysis_runner_output_schema_invalid") from error
+
+    def supported(value: Any) -> bool:
+        if isinstance(value, dict):
+            if isinstance(value.get("additionalProperties"), dict):
+                return False
+            return all(supported(child) for child in value.values())
+        if isinstance(value, list):
+            return all(supported(child) for child in value)
+        return True
+
+    return supported(document)
+
+
 def _canonical_context(context_bytes: bytes, maximum: int) -> bytes:
     if not isinstance(context_bytes, bytes) or not context_bytes or len(context_bytes) > maximum:
         raise AnalysisRunnerError("analysis_runner_context_invalid")
@@ -196,6 +218,8 @@ def _prompt(
     harness: Sequence[tuple[str, bytes]],
     harness_files: Sequence[str],
     context_file: str,
+    output_schema: bytes,
+    correction_code: str | None = None,
 ) -> bytes:
     # The controlled stdin carries the complete instruction material.  The
     # copied files are only an isolated, auditable reference and never require
@@ -218,11 +242,28 @@ def _prompt(
                 f"\n--- END TRUSTED HARNESS {path_id} ---\n".encode("utf-8"),
             )
         )
+    sections.extend(
+        (
+            b"\n--- BEGIN AUTHORITATIVE OUTPUT SCHEMA ---\n",
+            output_schema,
+            b"\n--- END AUTHORITATIVE OUTPUT SCHEMA ---\n",
+        )
+    )
     sections.append(
         f"Canonical analysis input is in {context_file}; its complete UTF-8 JSON follows:\n".encode(
             "utf-8"
         )
     )
+    if correction_code is not None:
+        sections.append(
+            (
+                "\nA prior candidate was rejected by the deterministic host validator "
+                f"with code `{correction_code}`. Produce a fresh candidate from the "
+                "same authoritative context, explicitly correcting that violation. "
+                "The rejected candidate is intentionally unavailable; do not infer or "
+                "repeat it.\n"
+            ).encode("utf-8")
+        )
     return b"".join(sections)
 
 
@@ -245,7 +286,9 @@ def _trusted_codex_home() -> str:
 
 
 def _command(
-    executable: Sequence[str], output_schema_path: str = "output.schema.json"
+    executable: Sequence[str],
+    output_schema_path: str = "output.schema.json",
+    structured_output: bool = True,
 ) -> tuple[str, ...]:
     if not executable or any(not isinstance(item, str) or not item for item in executable):
         raise AnalysisRunnerError("analysis_runner_command_invalid")
@@ -255,13 +298,11 @@ def _command(
     # The sandbox and empty MCP registry are explicit defence in depth.  The
     # no-tool feature switches are deliberately adapter-owned, never config- or
     # prompt-controlled.
-    return tuple(executable) + (
+    command = tuple(executable) + (
         "exec",
         "--ephemeral",
         "--ignore-user-config",
         "--ignore-rules",
-        "--output-schema",
-        output_schema_path,
         "--sandbox",
         "read-only",
         "--skip-git-repo-check",
@@ -273,6 +314,15 @@ def _command(
         "tools.file_write=false",
         "--config",
         "tools.network=false",
+    )
+    if not structured_output:
+        return command
+    insertion = command.index("--sandbox")
+    return (
+        *command[:insertion],
+        "--output-schema",
+        output_schema_path,
+        *command[insertion:],
     )
 
 
@@ -312,12 +362,43 @@ class AnalysisCodexRunner:
     def execute(self, bundle: HarnessBundle, canonical_context: bytes) -> AnalysisRunnerResult:
         """Perform exactly one generation, or raise a stable safe failure code."""
 
+        return self._execute(bundle, canonical_context, correction_code=None)
+
+    def execute_correction(
+        self,
+        bundle: HarnessBundle,
+        canonical_context: bytes,
+        correction_code: str,
+    ) -> AnalysisRunnerResult:
+        """Perform one bounded fresh generation using only a safe rejection code."""
+
+        if (
+            not isinstance(correction_code, str)
+            or not correction_code.startswith("analysis_result_")
+            or len(correction_code) > 160
+        ):
+            raise AnalysisRunnerError("analysis_runner_correction_code_invalid")
+        return self._execute(
+            bundle, canonical_context, correction_code=correction_code
+        )
+
+    def _execute(
+        self,
+        bundle: HarnessBundle,
+        canonical_context: bytes,
+        *,
+        correction_code: str | None,
+    ) -> AnalysisRunnerResult:
         context = _canonical_context(canonical_context, self._config.max_context_bytes)
         harness = _safe_bundle_files(self._config, bundle)
+        authoritative_output_schema = _safe_output_schema(self._config, bundle)
         output_schema = _codex_compatible_output_schema(
-            _safe_output_schema(self._config, bundle)
+            authoritative_output_schema
         )
-        command = _command(self._executable)
+        command = _command(
+            self._executable,
+            structured_output=_supports_strict_structured_output(output_schema),
+        )
         codex_home = _trusted_codex_home()
         started = self._monotonic()
         process: subprocess.Popen[bytes] | None = None
@@ -339,7 +420,14 @@ class AnalysisCodexRunner:
                 context_path = workspace / "context.json"
                 _write_private(context_path, context)
                 _write_private(workspace / "output.schema.json", output_schema)
-                stdin_payload = _prompt(bundle, harness, copied_names, "context.json") + context
+                stdin_payload = _prompt(
+                    bundle,
+                    harness,
+                    copied_names,
+                    "context.json",
+                    authoritative_output_schema,
+                    correction_code,
+                ) + context
 
                 try:
                     process = self._process_factory(
@@ -386,6 +474,8 @@ class AnalysisCodexRunner:
                         "duration_ms": max(duration_ms, 0),
                         "timed_out": False,
                         "process_group_cleaned": True,
+                        "correction_attempt": correction_code is not None,
+                        "correction_code": correction_code,
                     },
                 )
         finally:

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import html
 from collections import Counter
-from datetime import date
 from typing import Any
 
 from .feedback import extract_feedback
@@ -36,10 +35,6 @@ def _training_plan(payload: dict[str, Any]) -> tuple[str, list[str]]:
             "暂停负荷训练。你报告了需要谨慎处理的症状。",
             "请联系合适的医疗专业人员；本邮件不作诊断。",
         ]
-    planned_climbing = {str(item).lower() for item in payload["profile"].get("climbing", {}).get("planned_days", [])}
-    weekday = date.fromisoformat(plan_date).strftime("%A").lower()
-    if plan_date in planned_climbing or weekday in planned_climbing:
-        return "今日攀岩", ["今日攀岩。安排前请结合前臂、背部、肩部和核心的恢复状态。"]
     heart_rate_policy = payload["policy"].get("heart_rate_intensity", {})
     decision_policy = payload["policy"].get("training_decision", {})
     fallback = decision_policy.get("running_load", {}).get("insufficient_history_fallback", {})
@@ -164,6 +159,7 @@ def build_fake_report(payload: dict[str, Any]) -> tuple[str, str, str, list[dict
             "primary_training": "running",
             "primary_training_count": 1,
             "running_plan": {
+                "hansons_session_role": "easy",
                 "course_type": "轻松跑",
                 "target_zone": "zone_2" if hrr_usable else None,
                 "prescribed_rpe": 3,
@@ -181,16 +177,6 @@ def build_fake_report(payload: dict[str, Any]) -> tuple[str, str, str, list[dict
             "strength_items": [],
             "strength_stop_conditions": None,
             "heart_rate_target_used": hrr_usable,
-        }
-    elif plan_title == "今日攀岩":
-        audit = {
-            "primary_training": "climbing",
-            "primary_training_count": 1,
-            "running_plan": None,
-            "climbing_text": plan_lines[0],
-            "strength_items": [],
-            "strength_stop_conditions": None,
-            "heart_rate_target_used": False,
         }
     else:
         audit = {

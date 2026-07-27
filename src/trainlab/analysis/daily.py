@@ -26,6 +26,7 @@ from .quality_gate import QualityGate, QualityGateRequest
 from .result_validation import AnalysisResultValidationError, ResultValidationExpectation
 from .run_state import AnalysisRunCoordinator, AnalysisRunStateError
 from .stable_views import StableViewRepository
+from .training_difficulty import training_control_contracts
 
 
 _SG = ZoneInfo("Asia/Singapore")
@@ -39,6 +40,29 @@ class PendingDailyDelivery(Protocol):
 
 class _Runner(Protocol):
     def execute(self, bundle: Any, canonical_context: bytes) -> Any: ...
+
+
+def _validate_with_bounded_corrections(
+    *,
+    runner: Any,
+    bundle: Any,
+    canonical_context: bytes,
+    run_result: Any,
+    validator: Any,
+    expectation: ResultValidationExpectation,
+) -> tuple[Any, Any]:
+    """Validate once, then allow at most two safe-code-only corrections."""
+
+    current = run_result
+    correction = getattr(runner, "execute_correction", None)
+    for correction_index in range(3):
+        try:
+            return validator.validate(current.output_bytes, expectation), current
+        except AnalysisResultValidationError as error:
+            if correction_index == 2 or not callable(correction):
+                raise
+            current = correction(bundle, canonical_context, error.code)
+    raise AssertionError("unreachable")
 
 
 def _utc_now() -> str:
@@ -80,9 +104,9 @@ def daily_primary_item_contract() -> Mapping[str, Any]:
         "value_origin": "derived_statistic",
         "input_revision_ids": [],
         "contract_version": "1",
-        "allowed_activity_kinds": ["running", "climbing", "strength", "rest"],
+        "allowed_activity_kinds": ["running", "rest"],
         "running_template": {
-            "activity_kind": "running", "course_type": "easy", "warmup": "gentle_warmup",
+            "activity_kind": "running", "hansons_session_role": "easy", "course_type": "easy", "warmup": "gentle_warmup",
             "main_set": "talk_test_easy", "cooldown": "gentle_cooldown", "planned_duration_minutes": 30,
             "total_volume": "easy_by_duration", "target_zone": None, "target_bpm_range": None,
             "prescribed_rpe": 4, "talk_test": "full_sentences", "work_intervals": [],
@@ -93,15 +117,6 @@ def daily_primary_item_contract() -> Mapping[str, Any]:
             "activity_kind": "rest", "evidence": ["data_limited"], "uncertainty": "data_limited",
             "daily_activity_allowed": True, "recovery_signals": ["recovery_status_reassessed"],
             "seek_professional_help_if": ["concerning_symptom_appears"],
-        },
-        "climbing_template": {"activity_kind": "climbing", "rationale": "recovery_appropriate"},
-        "strength_template": {
-            "activity_kind": "strength", "rationale": "supports_running_and_climbing",
-            "movements": [
-                {"exercise_key": "bodyweight_squat", "movement_kind": "squat"},
-                {"exercise_key": "incline_push", "movement_kind": "push"},
-                {"exercise_key": "dead_bug", "movement_kind": "core"},
-            ], "stop_conditions": ["acute_pain", "acute_discomfort"],
         },
     }
 
@@ -222,19 +237,35 @@ class DailyRoute:
         output_sha = sha256(Path(self.config.output_schema).read_bytes()).hexdigest()
         bundle = self.harness_resolver(self.config, "daily", SchemaEvidence(
             ANALYSIS_INPUT_SCHEMA_VERSION, ANALYSIS_INPUT_SCHEMA_SHA256, "1", output_sha))
-        built = self.context_builder.build(context_request, ContextSource(snapshot=snapshot), quality_gate=gate,
-            harness_bundle=bundle, deterministic_features=(daily_primary_item_contract(),))
+        built = self.context_builder.build(
+            context_request,
+            ContextSource(snapshot=snapshot),
+            quality_gate=gate,
+            harness_bundle=bundle,
+            deterministic_features=(
+                daily_primary_item_contract(),
+                *training_control_contracts(self.config),
+            ),
+        )
         run_result = self.runner.execute(bundle, built.canonical_json.encode("utf-8"))
         expectation = ResultValidationExpectation(prepared.decision.run_key, "daily", context_request.subject_id,
             {"summary": {"start_local_date": request.summary_local_date, "end_local_date": request.summary_local_date},
              "advice": {"start_local_date": request.advice_local_date, "end_local_date": request.advice_local_date}},
-            built.context["input_manifest"], gate.as_dict(), _safety_base(context_request.subject_id, request.advice_local_date, request.requested_at_utc, snapshot))
+            built.context["input_manifest"], gate.as_dict(), _safety_base(context_request.subject_id, request.advice_local_date, request.requested_at_utc, snapshot),
+            training_difficulty_level=self.config.training_difficulty_level)
         validator = self.validator
         if validator is None:
             from .result_validation import AnalysisResultValidator
             validator = AnalysisResultValidator()
         try:
-            accepted = validator.validate(run_result.output_bytes, expectation)
+            accepted, run_result = _validate_with_bounded_corrections(
+                runner=self.runner,
+                bundle=bundle,
+                canonical_context=built.canonical_json.encode("utf-8"),
+                run_result=run_result,
+                validator=validator,
+                expectation=expectation,
+            )
         except AnalysisResultValidationError as error:
             self.coordinator.finish(prepared, "rejected")
             return self._receipt(request, "rejected", started, run_key=prepared.decision.run_key, analysis_run_id=str(prepared.decision.run_id),

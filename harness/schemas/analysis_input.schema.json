@@ -102,7 +102,7 @@
         "max_utf8_bytes": {
           "type": "integer",
           "minimum": 1,
-          "maximum": 1000000
+          "maximum": 1100000
         },
         "pruning_policy_version": {"type": "string", "minLength": 1, "maxLength": 64},
         "applied_pruning_stages": {
@@ -255,7 +255,8 @@
             "type": "string",
             "pattern": "^[a-z][a-z0-9_]{0,95}$"
           }
-        }
+        },
+        "omitted_count": {"type": "integer", "minimum": 2, "maximum": 4000}
       }
     },
     "json_value": {

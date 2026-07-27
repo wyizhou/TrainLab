@@ -393,6 +393,42 @@ def test_analysis_deliver_flag_and_recovery_route_stay_under_trainlab_run(monkey
     assert "recipient" not in capsys.readouterr().out
 
 
+def test_analysis_delivery_uses_the_shared_project_recipient_config(monkeypatch):
+    captured = {}
+
+    def recipient(root):
+        captured["root"] = root
+        return "configured@example.com"
+
+    monkeypatch.setattr(runtime, "_recipient_email", recipient)
+    monkeypatch.setattr(
+        runtime,
+        "GmailDeliveryGateway",
+        lambda recipient, timeout_seconds: captured.update(
+            recipient=recipient, timeout=timeout_seconds
+        ) or object(),
+    )
+
+    class Service:
+        def __init__(self, repository, gateway):
+            captured.update(repository=repository, gateway=gateway)
+
+        def execute(self, delivery_id, mode):
+            captured.update(delivery_id=delivery_id, mode=mode)
+            return "delivered"
+
+    monkeypatch.setattr(
+        runtime, "AnalysisDeliveryRepository", lambda connection: connection
+    )
+    monkeypatch.setattr(runtime, "AnalysisDeliveryService", Service)
+    config = SimpleNamespace(delivery_timeout_seconds=30)
+    assert runtime._execute_delivery(
+        object(), config, 7, "retry_delivery"
+    ) == "delivered"
+    assert captured["recipient"] == "configured@example.com"
+    assert captured["delivery_id"] == 7
+
+
 def test_status_runtime_opens_only_foundation_database_and_status_service(monkeypatch):
     class Connection:
         closed = False

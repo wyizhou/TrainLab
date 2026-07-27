@@ -1,5 +1,8 @@
 {
   "schema_version": 1,
+  "training_difficulty_level": 2,
+  "marathon_target_finish_time": null,
+  "half_marathon_target_finish_time": null,
   "mail": {
     "recipient_email": "your-email@example.com"
   }

@@ -248,6 +248,9 @@ def test_ready_weekly_route_publishes_plan_and_only_seeds_pending_delivery(
         f"2026-07-{day:02d}" for day in range(26, 32)
     } | {"2026-08-01"}
     assert context.kwargs["plan_adherence"]
+    assert {
+        item["key"] for item in context.kwargs["deterministic_features"]
+    } >= {"training_difficulty_contract_v1", "race_goal_contract_v1"}
 
 
 def test_first_run_contract_marks_absent_prior_artifacts() -> None:

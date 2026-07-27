@@ -741,6 +741,80 @@ def test_audit_does_not_create_coverage_gap_outside_requested_window(tmp_path: P
         ).fetchone()[0] == 0
 
 
+def test_audit_keeps_unknown_fields_discoverable_without_blocking_analysis(tmp_path: Path) -> None:
+    config, tool, _transport = _setup(tmp_path)
+    _refetch_steps(tool, "unknown-field-source")
+    conn = tool.repo.connect()
+    try:
+        subject = tool.repo.subject(conn)
+        before_raw = conn.execute(
+            "SELECT count(*) FROM raw_objects WHERE resource_kind='steps'"
+        ).fetchone()[0]
+        before_revisions = conn.execute(
+            "SELECT count(*) FROM source_revisions WHERE resource_kind='steps'"
+        ).fetchone()[0]
+        # This models a historical audit result from before field discovery
+        # stopped being treated as a synchronization failure.
+        tool.repo.gap(
+            conn, subject, "steps", "field-signature:steps", "2026-04-15",
+            "audit", "unmapped_field_signature",
+        )
+    finally:
+        conn.close()
+
+    result = tool.execute(SyncRequest(
+        "audit", health_from_local_date="2026-04-15",
+        through_local_date="2026-04-15", invocation_id="unknown-field-audit",
+    ))
+    assert result.status == "succeeded", result.json()
+    assert result.open_gap_count == 0
+    with sqlite3.connect(config.database_path) as conn:
+        # The catalog still exposes unreviewed source fields for later work.
+        assert conn.execute(
+            """SELECT count(*) FROM source_field_catalog
+               WHERE resource_kind='steps' AND mapping_state='unknown'"""
+        ).fetchone()[0] > 0
+        # But the historical audit entry is retained as terminal evidence,
+        # not deleted and not returned as an unresolved synchronization gap.
+        assert conn.execute(
+            """SELECT status FROM garmin_sync_gaps
+               WHERE resource_kind='steps' AND logical_object_key='field-signature:steps'"""
+        ).fetchone() == ("ignored_with_reason",)
+        assert conn.execute(
+            "SELECT count(*) FROM raw_objects WHERE resource_kind='steps'"
+        ).fetchone()[0] == before_raw
+        assert conn.execute(
+            "SELECT count(*) FROM source_revisions WHERE resource_kind='steps'"
+        ).fetchone()[0] == before_revisions
+
+
+def test_field_catalog_normalizes_only_dynamic_numeric_dictionary_keys(tmp_path: Path) -> None:
+    _config, tool, _transport = _setup(tmp_path)
+    conn = tool.repo.connect()
+    try:
+        tool.repo.fields(conn, "catalog-paths", {
+            "devices": {"1234567890": {"hardwareVersion": "1.0"}},
+            "epochBuckets": {"1776211200000": {"value": 5}},
+            "namedField": {"value": "kept-exact"},
+        })
+        tool.repo.map_field(
+            conn, "catalog-paths", "/devices/*/hardwareVersion",
+            "garmin.device.hardware_version",
+        )
+        rows = dict(conn.execute(
+            "SELECT field_path,mapping_state FROM source_field_catalog "
+            "WHERE resource_kind='catalog-paths'"
+        ))
+    finally:
+        conn.close()
+
+    assert rows == {
+        "/devices/*/hardwareVersion": "mapped",
+        "/epochBuckets/*/value": "unknown",
+        "/namedField/value": "unknown",
+    }
+
+
 def test_status_is_local_read_only_and_never_logs_in(tmp_path: Path) -> None:
     _config, tool, transport = _setup(tmp_path)
     before = transport.login_calls

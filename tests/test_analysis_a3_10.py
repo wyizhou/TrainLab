@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, replace
+from datetime import date, timedelta
 from hashlib import sha256
 import json
 from pathlib import Path
@@ -18,6 +19,7 @@ from trainlab.analysis.context import (
     ContextBuildRequest,
     ContextSource,
     TechnicalSampleRequest,
+    _sanitize_row,
     load_context_source,
     parse_canonical_context_json,
     parse_canonical_json,
@@ -43,6 +45,12 @@ VIEW_NAMES = (
     "v_training_plan_items",
     "v_analysis_history_context",
 )
+
+
+def test_python_tuples_are_normalized_before_json_schema_validation() -> None:
+    assert _sanitize_row({"input_revision_ids": ("r1", "r2")}) == {
+        "input_revision_ids": ["r1", "r2"]
+    }
 
 
 def snapshot(
@@ -200,12 +208,13 @@ def test_static_schema_and_context_policy_are_versioned_and_frozen():
     Draft202012Validator.check_schema(schema)
     assert schema["additionalProperties"] is False
     assert ANALYSIS_INPUT_SCHEMA_VERSION == "1"
-    assert ANALYSIS_INPUT_SCHEMA_SHA256 == "aa4faf89d324ea2d8ca228a131e144dca05e47609e37d716714b176e10b46329"
+    assert ANALYSIS_INPUT_SCHEMA_SHA256 == "40c9ff7b1eddc3fe1d0ce88b4e9268f6719ee066406686c67245592d6f479e57"
     assert ANALYSIS_INPUT_SCHEMA_SHA256 == sha256(schema_path.read_bytes()).hexdigest()
-    assert CONTEXT_POLICY_VERSION == "1.0.0-a3-10"
-    assert CONTEXT_POLICY_SHA256 == "3b189416ac59460320c81bf31589119093fb19ed55e52cd53f0a4ad73a08d3b3"
+    assert CONTEXT_POLICY_VERSION == "2.0.0-compact-30d"
+    assert CONTEXT_POLICY_SHA256 == "99296a1b67b6de08fad3071671f038e24d996adb5089d66619e32daa17f22fb2"
     assert CONTEXT_POLICY_SHA256 == sha256(policy_path.read_bytes()).hexdigest()
-    assert policy["default_max_context_bytes"] == 1_000_000
+    assert policy["default_max_context_bytes"] == 1_100_000
+    assert policy["completed_window_days"] == 30
     assert policy["pruning_order"] == [
         "optional_activity_extras",
         "old_activity_details",
@@ -227,8 +236,8 @@ def test_fixed_route_windows_daily_weekly_revise_and_regenerate():
         "review": None,
         "plan": None,
         "baseline": {
-            "start_local_date": "2026-07-09",
-            "end_local_date": "2026-07-22",
+            "start_local_date": "2026-06-24",
+            "end_local_date": "2026-07-23",
         },
         "effective_local_date": None,
     }
@@ -241,7 +250,10 @@ def test_fixed_route_windows_daily_weekly_revise_and_regenerate():
         "start_local_date": "2026-07-21",
         "end_local_date": "2026-07-27",
     }
-    assert weekly_periods["baseline"]["start_local_date"] == "2026-06-16"
+    assert weekly_periods["baseline"] == {
+        "start_local_date": "2026-06-21",
+        "end_local_date": "2026-07-20",
+    }
     revise = ContextBuildRequest(
         "revise_plan",
         "analysis:1:revise_plan:10:fixture",
@@ -254,7 +266,7 @@ def test_fixed_route_windows_daily_weekly_revise_and_regenerate():
         reason_event_id=9,
     )
     assert revise.validated_periods()["baseline"] == {
-        "start_local_date": "2026-06-26",
+        "start_local_date": "2026-06-24",
         "end_local_date": "2026-07-23",
     }
     regenerated = replace(
@@ -397,7 +409,7 @@ def test_repository_seam_uses_only_bounded_snapshot_and_sample_summary():
     source = load_context_source(repository, daily(), (sample,))
     assert source.snapshot is value and len(source.technical_samples) == 1
     assert repository.calls == [
-        ("snapshot", 1, "2026-07-09", "2026-07-24"),
+        ("snapshot", 1, "2026-06-24", "2026-07-24"),
         (
             "samples",
             1,
@@ -649,6 +661,40 @@ def test_duplicate_lineage_and_self_reported_hash_or_raw_mail_are_rejected():
             )
 
 
+def test_same_prior_artifact_across_history_and_current_views_is_deduplicated() -> None:
+    prior = artifact(10, "weekly_summary", "2026-07-07", "2026-07-13")
+    history_projection = dict(prior, trust_class="prior_model_output")
+    current_projection = dict(prior, is_current=1)
+    result = build(
+        daily(),
+        snapshot(
+            views={
+                "v_analysis_history_context": (history_projection,),
+                "v_current_weekly_summaries": (current_projection,),
+                "v_current_analysis_artifacts": (current_projection,),
+            }
+        ),
+    )
+    rows = [
+        item
+        for item in result.context["prior_artifacts"]
+        if item["content"]["id"] == prior["id"]
+    ]
+    assert len(rows) == 1
+
+    conflicting = dict(prior, user_visible_text="different")
+    with pytest.raises(ContextBuildError, match="duplicate_lineage"):
+        build(
+            daily(),
+            snapshot(
+                views={
+                    "v_analysis_history_context": (history_projection,),
+                    "v_current_analysis_artifacts": (conflicting,),
+                }
+            ),
+        )
+
+
 def test_canonical_json_rejects_duplicate_noncanonical_and_nonfinite_bypasses():
     with pytest.raises(ContextBuildError, match="duplicate_json_key"):
         parse_canonical_json('{"a":1,"a":2}')
@@ -690,7 +736,13 @@ def test_context_canonicalizes_valid_foundation_json_but_rejects_duplicate_keys(
         }
     )
     result = build(daily(), valid)
-    assert result.context["health"][0]["content"]["values"] == {"a": 1, "z": 2}
+    metrics = {
+        item["content"]["metric_key"]: item["content"]
+        for item in result.context["health"]
+    }
+    assert metrics["health.a"]["latest"]["value"] == 1
+    assert metrics["health.z"]["latest"]["value"] == 2
+    assert all(item["value_kind"] == "numeric" for item in metrics.values())
 
     duplicate = snapshot(
         views={
@@ -703,17 +755,97 @@ def test_context_canonicalizes_valid_foundation_json_but_rejects_duplicate_keys(
         build(daily(), duplicate)
 
 
-@pytest.mark.parametrize(
-    ("foundation_origin", "context_origin"),
-    (
-        ("sensor_observed", "provider_fact"),
-        ("user_entered", "user_asserted"),
-        ("profile_setting", "user_asserted"),
-    ),
-)
-def test_foundation_value_origins_map_to_context_trust_classes(
-    foundation_origin, context_origin
-):
+def test_thirty_completed_days_are_aggregated_and_today_is_excluded() -> None:
+    first_day = date(2026, 6, 24)
+    rows = tuple(
+        health(
+            index + 1,
+            (first_day + timedelta(days=index)).isoformat(),
+            f"health-{index + 1}",
+            values_json=json.dumps(
+                {"resting_heart_rate": 50 + index % 3},
+                separators=(",", ":"),
+            ),
+        )
+        for index in range(30)
+    ) + (
+        health(
+            31,
+            "2026-07-24",
+            "health-today",
+            values_json='{"resting_heart_rate":99}',
+        ),
+    )
+    result = build(
+        daily(),
+        snapshot(views={"v_current_daily_health": rows}),
+    )
+    aggregate = next(
+        item["content"]
+        for item in result.context["health"]
+        if item["content"]["metric_key"] == "health.resting_heart_rate"
+    )
+
+    assert result.context["target_periods"]["baseline"] == {
+        "start_local_date": "2026-06-24",
+        "end_local_date": "2026-07-23",
+    }
+    assert aggregate["coverage_days"] == 30
+    assert aggregate["observation_count"] == 30
+    assert aggregate["minimum"] == 50
+    assert aggregate["maximum"] == 52
+    assert aggregate["latest"]["local_date"] == "2026-07-23"
+    assert aggregate["latest"]["value"] != 99
+    assert len(aggregate["aggregate_sha256"]) == 64
+
+
+def test_compact_hash_changes_with_source_revision_without_exposing_details() -> None:
+    base = snapshot(
+        views={
+            "v_current_daily_health": (
+                health(1, "2026-07-23", "health-1"),
+            ),
+            "v_current_activities": (
+                activity(1, "2026-07-23", "activity-1"),
+            ),
+            "v_activity_segments": (
+                {
+                    "id": 10,
+                    "subject_id": 1,
+                    "activity_id": 1,
+                    "segment_type": "lap",
+                    "segment_index": 0,
+                    "start_time_utc": "2026-07-23T01:00:00Z",
+                    "end_time_utc": "2026-07-23T01:10:00Z",
+                    "duration_seconds": 600,
+                    "distance_m": 2000,
+                    "source_revision_id": "activity-1",
+                },
+            ),
+        }
+    )
+    first = build(daily(), base)
+    revised_row = health(1, "2026-07-23", "health-2")
+    revised = snapshot(
+        views={
+            **base.views,
+            "v_current_daily_health": (revised_row,),
+        }
+    )
+    second = build(daily(), revised)
+    first_health = first.context["health"][0]["content"]
+    second_health = second.context["health"][0]["content"]
+
+    assert first_health["aggregate_sha256"] != second_health["aggregate_sha256"]
+    assert first.context_snapshot_sha256 != second.context_snapshot_sha256
+    serialized = first.canonical_json.lower()
+    assert "activity.segment" not in serialized
+    assert "segment_type" not in serialized
+    assert "activity.metric_source" not in serialized
+    assert "raw_payload" not in serialized
+
+
+def test_physiology_values_are_aggregated_as_derived_statistics():
     value = snapshot(
         views={
             "v_current_physiology_records": (
@@ -726,9 +858,9 @@ def test_foundation_value_origins_map_to_context_trust_classes(
                     "period_start_utc": None,
                     "period_end_utc": None,
                     "local_date": "2026-07-23",
-                    "value_origin": foundation_origin,
-                    "status_key": None,
-                    "status_text": None,
+                    "value_origin": "sensor_observed",
+                    "status_key": "stable",
+                    "status_text": "稳定",
                     "source_revision_id": "profile-1",
                 },
             )
@@ -740,7 +872,8 @@ def test_foundation_value_origins_map_to_context_trust_classes(
     manifest = {
         item["ordinal"]: item for item in result.context["input_manifest"]
     }[physiology["ordinal"]]
-    assert manifest["value_origin"] == context_origin
+    assert manifest["value_origin"] == "derived_statistic"
+    assert physiology["content"]["aggregate_sha256"]
 
 
 def test_canonical_context_parser_rejects_whitespace_and_manifest_tampering():
@@ -966,53 +1099,22 @@ def pruning_features():
     )
 
 
-def test_pruning_is_deterministic_ordered_and_records_recomputable_omissions():
+def test_compact_context_is_deterministic_and_excludes_activity_details():
     value = pruning_snapshot()
     features = pruning_features()
-    full = build(
+    result = build(
         weekly(max_context_bytes=1_000_000),
         value,
         features=features,
     )
-    observed = {}
-    for ratio in (0.95, 0.85, 0.75, 0.70):
-        result = build(
-            weekly(max_context_bytes=int(full.utf8_bytes * ratio)),
-            value,
-            features=features,
-        )
-        observed[
-            tuple(result.context["context_limits"]["applied_pruning_stages"])
-        ] = result
-    assert set(observed) == {
-        (1,),
-        (1, 2),
-        (1, 2, 3),
-        (1, 2, 3, 4),
-    }
-    result = observed[(1, 2, 3, 4)]
-    omissions = result.context["context_limits"]["omissions"]
-    assert [row["stage"] for row in omissions] == sorted(
-        row["stage"] for row in omissions
+    roles = {row["input_role"] for row in result.context["input_manifest"]}
+    assert "activity.segment" not in roles
+    assert "activity.metric_source" not in roles
+    assert all(
+        row["input_role"] == "activity.summary"
+        for row in result.context["input_manifest"]
+        if row["source_entity_type"] == "activity"
     )
-    assert len(omissions) == result.context["context_limits"]["omission_count"]
-    for omission in omissions:
-        assert omission["reason_code"] == (
-            "optional_activity_extras",
-            "old_activity_details",
-            "old_daily_history",
-            "optional_provider_display",
-        )[omission["stage"] - 1]
-        assert len(omission["before_sha256"]) == 64
-        if omission["stage"] == 4:
-            manifest = next(
-                row
-                for row in result.context["input_manifest"]
-                if row["input_role"] == omission["input_role"]
-                and row["source_entity_id"] == omission["source_entity_id"]
-                and row["source_revision_id"] == omission["source_revision_id"]
-            )
-            assert manifest["input_sha256"] == omission["after_sha256"]
     reversed_value = pruning_snapshot()
     reversed_value.views["v_activity_segments"] = tuple(
         reversed(reversed_value.views["v_activity_segments"])
@@ -1023,34 +1125,13 @@ def test_pruning_is_deterministic_ordered_and_records_recomputable_omissions():
         features=tuple(reversed(features)),
     )
     assert result.context_snapshot_sha256 == reversed_result.context_snapshot_sha256
-    assert [
-        (
-            item["stage"],
-            item["input_role"],
-            item["source_entity_id"],
-            item["source_revision_id"],
-        )
-        for item in omissions
-    ] == [
-        (
-            item["stage"],
-            item["input_role"],
-            item["source_entity_id"],
-            item["source_revision_id"],
-        )
-        for item in reversed_result.context["context_limits"]["omissions"]
-    ]
+    assert result.canonical_json == reversed_result.canonical_json
 
 
-def test_pruning_never_removes_quality_gaps_current_plan_prior_week_or_policies():
+def test_compaction_keeps_quality_gaps_current_plan_prior_week_and_policies():
     value = pruning_snapshot()
     features = pruning_features()
-    full = build(weekly(max_context_bytes=1_000_000), value, features=features)
-    chosen = build(
-        weekly(max_context_bytes=int(full.utf8_bytes * 0.70)),
-        value,
-        features=features,
-    )
+    chosen = build(weekly(max_context_bytes=1_000_000), value, features=features)
     assert chosen.context["quality_gate"]["content"]["state"] == "ready"
     assert chosen.context["gaps"]
     assert chosen.context["current_plan"]

@@ -9,10 +9,10 @@ from zoneinfo import ZoneInfo
 
 from jsonschema import Draft202012Validator, FormatChecker
 
+from .analysis.config import load_project_training_controls
 from .compression import ensure_summaries
 from .config import Settings
 from .util import iso_utc, stable_hash, utc_now
-from .video import select_video
 
 
 def scheduled_run_id(local_date: str, slot: str) -> str:
@@ -214,11 +214,13 @@ def build_runtime_input(
     ingest_check = json.loads(ingest_check_path.read_text(encoding="utf-8")) if ingest_check_path.is_file() else {}
     sync_manifest = json.loads(sync_manifest_path.read_text(encoding="utf-8")) if sync_manifest_path.is_file() else {}
     plan_date = local.date() if slot == "morning" else local.date() + timedelta(days=1)
-    exercise_catalog = copy.deepcopy(settings.exercise_catalog.get("exercises", []))
-    for exercise in exercise_catalog:
-        exercise["resolved_youtube"] = select_video(connection, exercise)
+    # The legacy schema keeps this compatibility field, but future
+    # prescriptions are running/rest only, so no gym exercise catalogue is
+    # exposed to the model.
+    exercise_catalog: list[dict[str, Any]] = []
     payload = {
         "schema_version": 1,
+        "training_controls": load_project_training_controls(settings.root).as_context(),
         "run": {
             "run_id": run_id or scheduled_run_id(local.date().isoformat(), slot),
             "slot": slot,
@@ -284,7 +286,7 @@ def build_runtime_input(
         "compression": compression,
         "exercise_catalog": exercise_catalog,
         "policy": {
-            "allowed_future_prescriptions": ["running", "climbing", "strength_training", "rest"],
+            "allowed_future_prescriptions": ["running", "rest"],
             "one_primary_training_per_day": True,
             "training_decision": copy.deepcopy(settings.decision_policy),
             "heart_rate_intensity": {

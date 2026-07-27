@@ -154,6 +154,10 @@ def _validate_result(settings: Settings, result: dict[str, Any], run_id: str, pa
         expected_primary_count = 0 if audit["primary_training"] is None else 1
         if int(audit["primary_training_count"]) != expected_primary_count:
             raise ValueError("primary_training_count does not match primary_training")
+        if audit["primary_training"] not in {None, "running", "rest"}:
+            raise ValueError("Only running or rest may be prescribed")
+        if audit["climbing_text"] is not None or audit["strength_items"] or audit["strength_stop_conditions"] is not None:
+            raise ValueError("Climbing and gym-strength prescriptions are forbidden")
         heart_rate_policy = payload["policy"].get("heart_rate_intensity", {})
         estimate = heart_rate_policy.get("estimate") or {}
         hrr_usable = bool(estimate.get("usable_for_prescription") and estimate.get("zones"))
@@ -165,6 +169,18 @@ def _validate_result(settings: Settings, result: dict[str, Any], run_id: str, pa
             plan = audit.get("running_plan")
             if not plan:
                 raise ValueError("Running prescription requires a structured running_plan")
+            role = plan.get("hansons_session_role")
+            if role not in {"easy", "long", "tempo", "speed", "running_strength"}:
+                raise ValueError("Running prescription requires a valid Hansons session role")
+            expected_course = {
+                "easy": "轻松跑",
+                "long": "汉森长跑",
+                "tempo": "汉森节奏跑",
+                "speed": "汉森速度间歇跑",
+                "running_strength": "汉森跑步力量间歇",
+            }[role]
+            if plan.get("course_type") != expected_course:
+                raise ValueError("Hansons session role does not match the course type")
             target_zone = plan.get("target_zone")
             target_used = bool(audit["heart_rate_target_used"])
             if not hrr_usable:

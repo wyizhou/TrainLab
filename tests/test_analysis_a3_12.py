@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 from jsonschema import Draft202012Validator
 
+from trainlab.analysis.daily import daily_primary_item_contract
 from trainlab.analysis.result_validation import (
     AnalysisResultValidationError,
     AnalysisResultValidator,
@@ -40,6 +41,7 @@ def safety_request_base(**changes: object) -> dict[str, object]:
 def candidate(**changes: object) -> dict[str, object]:
     value: dict[str, object] = {
         "activity_kind": "running",
+        "hansons_session_role": "easy",
         "course_type": "easy",
         "warmup": "gentle_warmup",
         "main_set": "talk_test_easy",
@@ -55,6 +57,13 @@ def candidate(**changes: object) -> dict[str, object]:
         "rationale": "recovery_appropriate",
     }
     value.update(changes)
+    if "hansons_session_role" not in changes:
+        value["hansons_session_role"] = {
+            "easy": "easy",
+            "long_easy": "long",
+            "steady": "tempo",
+            "intervals": "speed",
+        }[str(value["course_type"])]
     return value
 
 
@@ -97,14 +106,36 @@ def output(item: dict[str, object] | None = None) -> dict[str, object]:
             {
                 "artifact_kind": "daily_summary",
                 "period": SUMMARY,
-                "structured_content": {"summary": "恢复情况稳定"},
-                "user_visible_text": "昨日恢复情况稳定，已记录健康与运动数据。",
+                "structured_content": {
+                    "overall_state": "恢复情况稳定",
+                    "decision_factors": ["恢复信号接近个人近期水平"],
+                    "activity_evidence": "confirmed_recorded",
+                    "plan_evidence": "available",
+                    "data_completeness": "complete",
+                },
+                "user_visible_text": (
+                    "昨日整体恢复较为稳定。睡眠和静息心率与近期水平接近，"
+                    "活动记录已确认。"
+                ),
             },
             {
                 "artifact_kind": "daily_training_advice",
                 "period": ADVICE,
-                "structured_content": {"primary_item": proposed},
-                "user_visible_text": "今日建议轻松跑，保持能完整说话的轻松感觉；如有急性疼痛请停止。",
+                "structured_content": {
+                    "primary_item": proposed,
+                    "configured_difficulty_level": 2,
+                    "selected_session_difficulty_level": 2,
+                    "difficulty_adjustment_reason": None,
+                    "confidence": "较高",
+                    "confidence_reason": "关键数据完整且多个信号方向一致。",
+                    "data_limitation": None,
+                },
+                "user_visible_text": (
+                    "今日跑步。完成包含热身、轻松主训练和放松的30分钟课程，"
+                    "全程保持能说完整句子。如有急性疼痛、胸痛、晕厥或异常"
+                    "呼吸困难，请立即停止。\n"
+                    "判断置信度：较高——关键数据完整且多个信号方向一致。"
+                ),
             },
         ],
         "training_plan": None,
@@ -143,6 +174,12 @@ def test_schema_is_strict_and_a_valid_daily_result_returns_only_typed_value() ->
     assert set(accepted.result) == {"schema_version", "run_key", "mode", "subject_id", "status", "artifacts", "training_plan", "source_usage", "quality_disclosures", "safety", "warnings"}
 
 
+def test_general_illness_caution_is_not_misclassified_as_a_diagnosis() -> None:
+    value = output()
+    value["warnings"] = ["疾病或明显不适期间应优先休息。"]
+    assert validate(value).result["warnings"] == value["warnings"]
+
+
 def test_non_json_and_unknown_fields_are_rejected_without_echoing_output() -> None:
     with pytest.raises(AnalysisResultValidationError) as caught:
         AnalysisResultValidator().validate(b"not json", expected())
@@ -159,13 +196,32 @@ def test_non_json_and_unknown_fields_are_rejected_without_echoing_output() -> No
         (lambda value: value.update(subject_id=2), "analysis_result_subject_mismatch"),
         (lambda value: value["artifacts"].pop(), "analysis_result_daily_cardinality_invalid"),
         (lambda value: value["artifacts"][0].update(period=ADVICE), "analysis_result_date_mismatch"),
-        (lambda value: value["source_usage"][0].update(source_revision_id="invented"), "analysis_result_source_usage_invalid"),
     ],
 )
 def test_identity_cardinality_dates_and_manifest_bindings_fail_closed(mutate, expected_code: str) -> None:
     changed = deepcopy(output())
     mutate(changed)
     code(changed, expected_code)
+
+
+def test_source_usage_selects_by_ordinal_and_host_canonicalizes_lineage() -> None:
+    changed = output()
+    changed["source_usage"][0].update(
+        input_role="mistyped",
+        source_entity_id="mistyped",
+        source_revision_id="mistyped",
+    )
+    accepted = validate(changed).result["source_usage"][0]
+    assert accepted == {
+        "ordinal": 0,
+        "input_role": "health",
+        "source_entity_id": "daily:2026-07-23",
+        "source_revision_id": "health-revision-1",
+    }
+
+    unknown = output()
+    unknown["source_usage"][0]["ordinal"] = 999
+    code(unknown, "analysis_result_source_usage_invalid")
 
 
 def test_regeneration_requires_exact_target_artifact_to_be_used() -> None:
@@ -232,11 +288,12 @@ def test_unsafe_visible_text_is_rejected(text: str, expected_code: str) -> None:
 
 def test_simplified_training_plan_wording_passes_but_traditional_wording_fails() -> None:
     simplified = output()
-    simplified["artifacts"][1]["user_visible_text"] = "今日训练方案为轻松跑，保持能完整说话的感觉。"
     assert validate(simplified).result["status"] == "accepted"
 
-    traditional = output()
-    traditional["artifacts"][1]["user_visible_text"] = "今日訓練計畫為輕鬆跑。"
+    traditional = deepcopy(simplified)
+    traditional["artifacts"][1]["user_visible_text"] = traditional[
+        "artifacts"
+    ][1]["user_visible_text"].replace("主训练", "主訓練")
     code(traditional, "analysis_result_simplified_chinese_required")
 
 
@@ -252,9 +309,73 @@ def test_fallback_hr_evidence_rejects_invented_bpm_and_changed_primary_item() ->
 def test_source_backed_observed_bpm_is_allowed_only_in_completed_day_summary() -> None:
     value = output()
     value["artifacts"][0]["user_visible_text"] = (
-        "昨日 Garmin 记录的静息心率为 52 bpm；该数值仅用于健康摘要。"
+        "昨日整体恢复较为稳定。Garmin 记录的静息心率为 52 bpm，"
+        "该数值与个人近期水平接近。"
     )
     assert validate(value).result["status"] == "accepted"
+
+
+def test_daily_titles_are_host_owned_and_raw_device_narration_is_rejected() -> None:
+    titled = output()
+    titled["artifacts"][0]["user_visible_text"] = (
+        "昨日回顾\n" + titled["artifacts"][0]["user_visible_text"]
+    )
+    code(titled, "analysis_result_daily_embedded_title_forbidden")
+
+    raw = output()
+    raw["artifacts"][0]["user_visible_text"] = (
+        "昨日睡眠评分53分，训练准备度32分。身体状态仍需谨慎观察。"
+    )
+    code(raw, "analysis_result_raw_device_narration_forbidden")
+
+
+def test_unconfirmed_activity_is_not_rewritten_as_no_training() -> None:
+    value = output()
+    value["artifacts"][0]["structured_content"]["activity_evidence"] = "unconfirmed"
+    value["artifacts"][0]["structured_content"]["data_completeness"] = "partial"
+    value["artifacts"][1]["structured_content"]["confidence"] = "一般"
+    value["artifacts"][1]["structured_content"]["confidence_reason"] = (
+        "活动记录尚未确认。"
+    )
+    value["artifacts"][1]["user_visible_text"] = value["artifacts"][1][
+        "user_visible_text"
+    ].replace(
+        "判断置信度：较高——关键数据完整且多个信号方向一致。",
+        "判断置信度：一般——活动记录尚未确认。",
+    )
+    value["artifacts"][0]["user_visible_text"] = (
+        "昨日没有训练。现有恢复信号接近个人近期水平。"
+    )
+    code(value, "analysis_result_unconfirmed_activity_claim_forbidden")
+
+
+def test_confidence_and_training_difficulty_must_match_host_evidence() -> None:
+    partial = output()
+    partial["artifacts"][0]["structured_content"]["data_completeness"] = "partial"
+    code(partial, "analysis_result_daily_confidence_too_high")
+
+    mismatch = output()
+    exp = replace(expected(), training_difficulty_level=3)
+    with pytest.raises(AnalysisResultValidationError) as caught:
+        validate(mismatch, exp)
+    assert caught.value.code == "analysis_result_training_difficulty_mismatch"
+
+
+def test_primary_opening_and_running_only_plan_are_enforced() -> None:
+    wrong_opening = output()
+    wrong_opening["artifacts"][1]["user_visible_text"] = wrong_opening[
+        "artifacts"
+    ][1]["user_visible_text"].replace("今日跑步。", "今日力量训练。")
+    code(wrong_opening, "analysis_result_daily_primary_opening_invalid")
+
+    climbing = output(
+        {"activity_kind": "climbing", "rationale": "recovery_appropriate"}
+    )
+    climbing["artifacts"][1]["user_visible_text"] = (
+        "今日攀岩。当前恢复状态允许按原有安排完成攀岩。\n"
+        "判断置信度：较高——关键数据完整且多个信号方向一致。"
+    )
+    code(climbing, "analysis_result_daily_item_kind_invalid")
 
 
 def test_quality_disclosures_must_equal_actual_gate_warnings() -> None:

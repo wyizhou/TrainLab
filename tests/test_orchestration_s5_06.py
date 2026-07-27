@@ -245,6 +245,19 @@ def test_garmin_full_preserves_each_independently_optional_date(kwargs: dict[str
     assert runner_module._argv(DownstreamCall("garmin", "full", "invoke-1", None, **kwargs))[-2:] == suffix
 
 
+def test_garmin_audit_preserves_bounded_date_range() -> None:
+    assert runner_module._argv(
+        DownstreamCall(
+            "garmin",
+            "audit",
+            "invoke-1",
+            None,
+            health_from_local_date="2026-07-23",
+            through_local_date="2026-07-24",
+        )
+    )[-4:] == ("--from", "2026-07-23", "--through", "2026-07-24")
+
+
 def test_analysis_subject_disallows_colon_and_allowed_mode_validates_own_fields() -> None:
     with pytest.raises(ValueError, match="subprocess_subject_required"):
         runner_module._argv(DownstreamCall("analysis", "daily", "invoke-1", None, subject_id="subject:bad"))

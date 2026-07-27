@@ -5,7 +5,7 @@
   "properties": {
     "schema_version": {"const": "1"}, "run": {"$ref": "#/$defs/run"}, "trigger_message": {"$ref": "#/$defs/trigger_message"},
     "thread_context": {"type": "array", "maxItems": 20, "items": {"$ref": "#/$defs/thread_message"}}, "conversation_events": {"type": "array", "maxItems": 100, "items": {"$ref": "#/$defs/conversation_event"}},
-    "active_user_facts": {"type": "array", "maxItems": 100, "items": {"$ref": "#/$defs/user_fact"}}, "current_health_context": {"type": "array", "maxItems": 90, "items": {"$ref": "#/$defs/health_context"}},
+    "active_user_facts": {"type": "array", "maxItems": 100, "items": {"$ref": "#/$defs/user_fact"}}, "current_health_context": {"type": "array", "maxItems": 1, "items": {"$ref": "#/$defs/health_context"}},
     "current_activity_context": {"type": "array", "maxItems": 500, "items": {"$ref": "#/$defs/activity_context"}}, "current_training_plan": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/training_plan"}]},
     "relevant_analysis_artifacts": {"type": "array", "maxItems": 8, "items": {"$ref": "#/$defs/analysis_artifact"}}, "prior_mail_responses": {"type": "array", "maxItems": 5, "items": {"$ref": "#/$defs/prior_mail_response"}},
     "data_quality": {"type": "array", "maxItems": 100, "items": {"$ref": "#/$defs/quality_issue"}}, "policies": {"$ref": "#/$defs/policies"}, "input_manifest": {"type": "array", "items": {"$ref": "#/$defs/manifest"}}, "context_limits": {"$ref": "#/$defs/context_limits"}
@@ -20,7 +20,81 @@
     "thread_message": {"type": "object", "additionalProperties": false, "required": ["id", "provider_message_id", "timestamp_utc", "subject", "body_text", "body_sha256", "actor_role", "direction", "source_revision_id", "value_origin", "content_instruction_trust"], "properties": {"id": {"$ref": "#/$defs/id"}, "provider_message_id": {"type": "string", "minLength": 1}, "timestamp_utc": {"$ref": "#/$defs/nullable_utc_datetime"}, "subject": {"$ref": "#/$defs/nullable_string"}, "body_text": {"type": "string"}, "body_sha256": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/sha256"}]}, "actor_role": {"enum": ["user", "trainlab", "unknown"]}, "direction": {"enum": ["inbound", "outbound", "self_copy", "unknown"]}, "source_revision_id": {"$ref": "#/$defs/id"}, "value_origin": {"enum": ["user_asserted", "prior_model_output"]}, "content_instruction_trust": {"const": "untrusted_content"}}, "oneOf": [{"properties": {"actor_role": {"const": "user"}, "direction": {"const": "inbound"}, "value_origin": {"const": "user_asserted"}}}, {"properties": {"actor_role": {"const": "trainlab"}, "direction": {"enum": ["outbound", "self_copy"]}, "value_origin": {"const": "prior_model_output"}}}, {"properties": {"actor_role": {"const": "unknown"}, "direction": {"const": "outbound"}, "value_origin": {"const": "prior_model_output"}}}]},
     "conversation_event": {"type": "object", "additionalProperties": false, "required": ["id", "subject_id", "event_type", "actor_role", "occurred_at_utc", "trust_level", "created_by"], "properties": {"id": {"$ref": "#/$defs/id"}, "subject_id": {"$ref": "#/$defs/id"}, "event_type": {"type": "string", "minLength": 1}, "actor_role": {"enum": ["user", "trainlab", "unknown"]}, "occurred_at_utc": {"$ref": "#/$defs/utc_datetime"}, "mail_message_id": {"$ref": "#/$defs/nullable_id"}, "analysis_artifact_id": {"$ref": "#/$defs/nullable_id"}, "mail_response_artifact_id": {"$ref": "#/$defs/nullable_id"}, "analysis_delivery_id": {"$ref": "#/$defs/nullable_id"}, "mail_delivery_id": {"$ref": "#/$defs/nullable_id"}, "related_run_key": {"$ref": "#/$defs/nullable_string"}, "content_text": {"$ref": "#/$defs/nullable_string"}, "structured_payload_json": {"$ref": "#/$defs/nullable_string"}, "trust_level": {"enum": ["untrusted_content", "system_generated"]}, "created_by": {"type": "string", "minLength": 1}}},
     "user_fact": {"type": "object", "additionalProperties": false, "required": ["id", "fact_key", "value", "scope", "effective_from_utc", "expires_at_utc", "confidence"], "properties": {"id": {"$ref": "#/$defs/id"}, "fact_key": {"type": "string", "minLength": 1}, "value": {"$ref": "#/$defs/json_value"}, "scope": {"enum": ["temporary", "long_term"]}, "effective_from_utc": {"$ref": "#/$defs/nullable_utc_datetime"}, "expires_at_utc": {"$ref": "#/$defs/nullable_utc_datetime"}, "confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1}}},
-    "health_context": {"type": "object", "additionalProperties": false, "required": ["id", "local_date", "values", "source_revision_id"], "properties": {"id": {"$ref": "#/$defs/id"}, "local_date": {"$ref": "#/$defs/local_date"}, "values": {"$ref": "#/$defs/json_value"}, "source_revision_id": {"$ref": "#/$defs/id"}}},
+    "health_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["window", "completed_days", "source_count", "sources", "aggregate_sha256", "metrics"],
+      "properties": {
+        "window": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["start", "end"],
+          "properties": {
+            "start": {"$ref": "#/$defs/local_date"},
+            "end": {"$ref": "#/$defs/local_date"}
+          }
+        },
+        "completed_days": {"type": "integer", "minimum": 0, "maximum": 30},
+        "source_count": {"type": "integer", "minimum": 1, "maximum": 1000},
+        "sources": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "source_revision_id", "local_date"],
+            "properties": {
+              "id": {"$ref": "#/$defs/id"},
+              "source_revision_id": {"$ref": "#/$defs/id"},
+              "local_date": {"$ref": "#/$defs/local_date"}
+            }
+          }
+        },
+        "aggregate_sha256": {"$ref": "#/$defs/sha256"},
+        "metrics": {
+          "type": "array",
+          "maxItems": 1000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["metric_key", "value_kind", "observation_count", "coverage_days", "latest"],
+            "properties": {
+              "metric_key": {"type": "string", "minLength": 1, "maxLength": 512},
+              "value_kind": {"enum": ["numeric", "categorical"]},
+              "observation_count": {"type": "integer", "minimum": 1},
+              "coverage_days": {"type": "integer", "minimum": 1, "maximum": 30},
+              "latest": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["local_date", "value"],
+                "properties": {
+                  "local_date": {"$ref": "#/$defs/local_date"},
+                  "value": {"$ref": "#/$defs/json_value"}
+                }
+              },
+              "average": {"type": "number"},
+              "minimum": {"type": "number"},
+              "maximum": {"type": "number"},
+              "trend": {"enum": ["increasing", "decreasing", "stable", "insufficient"]},
+              "value_counts": {
+                "type": "array",
+                "maxItems": 5,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["value", "count"],
+                  "properties": {
+                    "value": {"$ref": "#/$defs/json_value"},
+                    "count": {"type": "integer", "minimum": 1}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "activity_context": {"oneOf": [{"$ref": "#/$defs/activity_context_full"}, {"$ref": "#/$defs/activity_context_compact"}]},
     "activity_context_full": {"type": "object", "additionalProperties": false, "required": ["id", "provider_activity_id", "name", "sport", "sub_sport", "start_time_utc", "end_time_utc", "local_date", "elapsed_seconds", "timer_seconds", "distance_m", "primary_revision_id", "provider_state"], "properties": {"id": {"$ref": "#/$defs/id"}, "provider_activity_id": {"type": "string", "minLength": 1}, "name": {"$ref": "#/$defs/nullable_string"}, "sport": {"$ref": "#/$defs/nullable_string"}, "sub_sport": {"$ref": "#/$defs/nullable_string"}, "start_time_utc": {"$ref": "#/$defs/utc_datetime"}, "end_time_utc": {"$ref": "#/$defs/nullable_utc_datetime"}, "local_date": {"$ref": "#/$defs/local_date"}, "elapsed_seconds": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/nonnegative_number"}]}, "timer_seconds": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/nonnegative_number"}]}, "distance_m": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/nonnegative_number"}]}, "primary_revision_id": {"$ref": "#/$defs/id"}, "provider_state": {"enum": ["active", "suspected_missing"]}}},
     "activity_context_compact": {"type": "object", "additionalProperties": false, "required": ["id", "provider_activity_id", "sport", "local_date", "start_time_utc", "elapsed_seconds", "distance_m", "primary_revision_id"], "properties": {"id": {"$ref": "#/$defs/id"}, "provider_activity_id": {"type": "string", "minLength": 1}, "sport": {"$ref": "#/$defs/nullable_string"}, "local_date": {"$ref": "#/$defs/local_date"}, "start_time_utc": {"$ref": "#/$defs/utc_datetime"}, "elapsed_seconds": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/nonnegative_number"}]}, "distance_m": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/nonnegative_number"}]}, "primary_revision_id": {"$ref": "#/$defs/id"}}},

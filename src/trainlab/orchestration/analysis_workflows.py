@@ -130,15 +130,30 @@ def _receipt(result: DownstreamResult) -> Mapping[str, Any] | None:
     return result.receipt if result.kind == "accepted" and result.receipt is not None else None
 
 
-def _quality(receipt: Mapping[str, Any] | None) -> Literal["ready", "ready_with_warnings", "blocked"]:
-    if receipt is None or receipt.get("status") not in _TERMINAL_GOOD:
+def _quality(
+    collection: Mapping[str, Any] | None,
+    audit: Mapping[str, Any] | None,
+) -> Literal["ready", "ready_with_warnings", "blocked"]:
+    if (
+        collection is None
+        or collection.get("status") not in _TERMINAL_GOOD
+        or collection.get("coverage_state") != "complete"
+        or audit is None
+        or audit.get("status") not in _TERMINAL_GOOD
+    ):
         return "blocked"
-    if receipt.get("coverage_state") != "complete" or receipt.get("open_gap_count") != 0:
+    if audit.get("open_gap_count") != 0:
         return "blocked"
-    counts = receipt.get("counts")
-    if type(counts) is not dict:
+    collection_counts = collection.get("counts")
+    audit_counts = audit.get("counts")
+    if type(collection_counts) is not dict or type(audit_counts) is not dict:
         return "blocked"
-    return "ready_with_warnings" if counts.get("not_available", 0) or counts.get("not_enabled", 0) else "ready"
+    warning_count = sum(
+        int(counts.get(key, 0))
+        for counts in (collection_counts, audit_counts)
+        for key in ("not_available", "not_enabled")
+    )
+    return "ready_with_warnings" if warning_count else "ready"
 
 
 def _stop(request: AnalysisWorkflowRequest, steps: list[AnalysisWorkflowStep], quality: Literal["ready", "ready_with_warnings", "blocked"], status: str) -> AnalysisWorkflowResult:
@@ -178,14 +193,14 @@ class MorningWorkflowService:
         quality_receipt = _receipt(audited)
         if audit_step.status not in _TERMINAL_GOOD:
             return _stop(request, steps, "blocked", audit_step.status)
-        quality = _quality(quality_receipt)
+        quality = _quality(collection, quality_receipt)
         if quality == "blocked" and self._max_repair_attempts:
             repaired, repair_step = _run(self._executor, request.workflow_key, "repair", layer="garmin", mode="repair", health_from_local_date=yesterday, through_local_date=yesterday, repair_strategy="auto")
             steps.append(repair_step)
             if repair_step.status not in _TERMINAL_GOOD:
                 return _stop(request, steps, "blocked", repair_step.status)
             audited, audit_step = _run(self._executor, request.workflow_key, "quality_after_repair", layer="garmin", mode="audit", health_from_local_date=yesterday, through_local_date=yesterday)
-            steps.append(audit_step); quality_receipt = _receipt(audited); quality = _quality(quality_receipt)
+            steps.append(audit_step); quality_receipt = _receipt(audited); quality = _quality(collection, quality_receipt)
         if quality == "blocked":
             return AnalysisWorkflowResult(request.workflow_key, "deferred", today, None, quality, tuple(steps), "repair_data", None)
         return self._analyse(request, steps, quality, collection, yesterday, today)
@@ -215,13 +230,13 @@ class SundayWorkflowService(MorningWorkflowService):
         collection = _receipt(collected)
         if item.status not in _TERMINAL_GOOD: return _stop(request, steps, "blocked", item.status)
         audited, item = _run(self._executor, request.workflow_key, "quality", layer="garmin", mode="audit", health_from_local_date=yesterday, through_local_date=yesterday); steps.append(item)
-        quality = _quality(_receipt(audited))
+        quality = _quality(collection, _receipt(audited))
         if item.status not in _TERMINAL_GOOD: return _stop(request, steps, "blocked", item.status)
         if quality == "blocked" and self._max_repair_attempts:
             repaired, item = _run(self._executor, request.workflow_key, "repair", layer="garmin", mode="repair", health_from_local_date=yesterday, through_local_date=yesterday, repair_strategy="auto"); steps.append(item)
             if item.status not in _TERMINAL_GOOD: return _stop(request, steps, "blocked", item.status)
             audited, item = _run(self._executor, request.workflow_key, "quality_after_repair", layer="garmin", mode="audit", health_from_local_date=yesterday, through_local_date=yesterday); steps.append(item)
-            quality = _quality(_receipt(audited))
+            quality = _quality(collection, _receipt(audited))
             if item.status not in _TERMINAL_GOOD: return _stop(request, steps, "blocked", item.status)
         if quality == "blocked": return AnalysisWorkflowResult(request.workflow_key, "deferred", today, None, quality, tuple(steps), "repair_data", None)
         _daily, item = _run(self._executor, request.workflow_key, "daily", layer="analysis", mode="daily", subject_id=request.subject_id, summary_local_date=yesterday, advice_local_date=today); steps.append(item)

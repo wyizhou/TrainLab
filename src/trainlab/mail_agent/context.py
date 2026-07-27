@@ -11,8 +11,8 @@ from jsonschema import Draft202012Validator, FormatChecker
 from .repository import InputDraft
 
 MAX_TRIGGER_BYTES=65_536; MAX_THREAD_BYTES=131_072; MAX_THREAD_MESSAGES=20
-MAX_PRIOR_RESPONSES=5; MAX_COMPLETED_DAYS=14; MAX_ARTIFACTS=8; MAX_CONTEXT_BYTES=1_000_000
-MAX_EXTENSION_DAYS=90; MAX_FACTS=100; MAX_EVENTS=100; MAX_QUALITY=100
+MAX_PRIOR_RESPONSES=5; MAX_COMPLETED_DAYS=30; MAX_ARTIFACTS=8; MAX_CONTEXT_BYTES=1_000_000
+MAX_EXTENSION_DAYS=30; MAX_FACTS=100; MAX_EVENTS=100; MAX_QUALITY=100
 _EXTENSION_REASONS=frozenset({'explicit_earlier_date','explicit_date_range','plan_history_question'})
 _BAD_KEY=re.compile(r"(?:lat(?:itude)?|lon(?:gitude)?|gps|geo(?:location)?|address|location|token|secret|password|credential|authori[sz]|refresh)",re.I)
 _COORD=re.compile(r"(?<!\d)-?\d{1,3}\.\d{4,}\s*[,/]\s*-?\d{1,3}\.\d{4,}(?!\d)")
@@ -50,6 +50,48 @@ def _safe(x:Any)->Any:
 def _loads(x:str)->Any:
     try:return _safe(json.loads(x))
     except Exception as e: raise MailContextError("context_canonical_json_invalid") from e
+
+def _flatten_health(value:Any,prefix:str="",depth:int=0)->list[tuple[str,Any]]:
+    if depth>4:return []
+    if value is None or isinstance(value,(str,bool,int,float)):return [(prefix or "value",value)]
+    if not isinstance(value,dict):return []
+    out=[]
+    for key in sorted(value,key=str):
+        part="*" if str(key).isdigit() else re.sub(r"[^A-Za-z0-9_.-]+","_",str(key)).strip("_")[:80] or "value"
+        out.extend(_flatten_health(value[key],f"{prefix}.{part}" if prefix else part,depth+1))
+    return out
+
+def _health_window_summary(rows:list[dict[str,Any]],start:date,end:date)->dict[str,Any]|None:
+    if not rows:return None
+    groups:dict[str,list[dict[str,Any]]]={}
+    material=[]
+    sources=[]
+    for row in rows:
+        values=_loads(row["values_json"])
+        material.append({"id":row["id"],"local_date":row["local_date"],"source_revision_id":row["source_revision_id"],"values":values})
+        sources.append({"id":row["id"],"source_revision_id":row["source_revision_id"],"local_date":row["local_date"]})
+        if isinstance(values,dict):
+            for key,value in _flatten_health(values):
+                if value is not None:groups.setdefault(f"health.{key}",[]).append({"local_date":row["local_date"],"value":value})
+    metrics=[]
+    for key,observations in sorted(groups.items()):
+        observations=sorted(observations,key=lambda item:(item["local_date"],_j(item["value"])))
+        values=[item["value"] for item in observations]; numeric=all(not isinstance(value,bool) and isinstance(value,(int,float)) for value in values)
+        metric={"metric_key":key,"value_kind":"numeric" if numeric else "categorical","observation_count":len(values),"coverage_days":len({item["local_date"] for item in observations}),"latest":{"local_date":observations[-1]["local_date"],"value":observations[-1]["value"]}}
+        if numeric:
+            numbers=[float(value) for value in values]; average=sum(numbers)/len(numbers)
+            if len(numbers)<4:trend="insufficient"
+            else:
+                middle=len(numbers)//2; earlier=sum(numbers[:middle])/middle; later=sum(numbers[-middle:])/middle; tolerance=max(abs(average)*0.02,1e-9)
+                trend="increasing" if later-earlier>tolerance else "decreasing" if earlier-later>tolerance else "stable"
+            metric.update({"average":round(average,6),"minimum":round(min(numbers),6),"maximum":round(max(numbers),6),"trend":trend})
+        else:
+            counts:dict[str,int]={}; originals={}
+            for value in values:
+                token=_j(value);counts[token]=counts.get(token,0)+1;originals[token]=value
+            metric["value_counts"]=[{"value":originals[token],"count":count} for token,count in sorted(counts.items(),key=lambda item:(-item[1],item[0]))[:5]]
+        metrics.append(metric)
+    return {"window":{"start":str(start),"end":str(end)},"completed_days":len({row["local_date"] for row in rows}),"source_count":len(rows),"sources":sources,"aggregate_sha256":_h(material),"metrics":metrics}
 
 class MailContextBuilder:
     def __init__(self,connection:sqlite3.Connection,*,schema_version:str="1",policy_version:str="mail-context-v1",shared_harness_version:str="unknown",mail_harness_version:str="unknown"):
@@ -99,8 +141,10 @@ class MailContextBuilder:
                 omissions.append({"kind":"thread_message_untrusted_excluded","entity_id":r['id']}); continue
             thread.append(_safe({"id":r['id'],"provider_message_id":r['provider_message_id'],"timestamp_utc":r['received_at_utc'] or r['sent_at_utc'],"subject":r['subject'],"body_text":body,"body_sha256":r['body_sha256'],"actor_role":r['actor_role'],"direction":r['direction'],"source_revision_id":r['source_revision_id'],"value_origin":origin,"content_instruction_trust":"untrusted_content"}))
         thread.reverse()
-        start=requested or asof-timedelta(days=MAX_COMPLETED_DAYS-1)
-        health=[_safe({"id":r['id'],"local_date":r['local_date'],"values":_loads(r['values_json']),"source_revision_id":r['source_revision_id']}) for r in self.connection.execute("SELECT d.* FROM v_current_daily_health d JOIN source_revisions r ON r.id=d.source_revision_id AND r.is_current=1 AND r.provider='garmin' AND r.resource_kind IN ('user_summary','intensity_minutes','hydration') AND r.provider_object_id=d.local_date WHERE d.subject_id=? AND d.local_date BETWEEN ? AND ? AND d.local_date<? ORDER BY d.local_date,d.id",(sid,str(start),str(asof),str(asof)))]
+        start=requested or asof-timedelta(days=MAX_COMPLETED_DAYS)
+        health_source_rows=[dict(r) for r in self.connection.execute("SELECT d.* FROM v_current_daily_health d JOIN source_revisions r ON r.id=d.source_revision_id AND r.is_current=1 AND r.provider='garmin' AND r.resource_kind IN ('user_summary','intensity_minutes','hydration') AND r.provider_object_id=d.local_date WHERE d.subject_id=? AND d.local_date BETWEEN ? AND ? AND d.local_date<? ORDER BY d.local_date,d.id",(sid,str(start),str(asof),str(asof)))]
+        health_summary=_health_window_summary(health_source_rows,start,asof-timedelta(days=1))
+        health=[] if health_summary is None else [health_summary]
         if not requested:
             n=self.connection.execute("SELECT count(DISTINCT local_date) FROM v_current_daily_health WHERE subject_id=? AND local_date<?",(sid,str(start))).fetchone()[0]
             if n:omissions.append({"kind":"completed_days_omitted","count":n,"before_local_date":str(start)})
@@ -146,7 +190,11 @@ class MailContextBuilder:
         # User facts have no Foundation source_revision column; their immutable
         # entity id is the revision identity, rather than a forged mail revision.
         for x in facts:add('active_user_fact','user_fact',x,'user_asserted',None,entity_revision=x['id'])
-        for x in health:add('health_fact','daily_health',x,'provider_fact',x['source_revision_id'])
+        if health:
+            digest=_h(health[0])
+            for source in health[0]['sources']:
+                dbmanifest.append(InputDraft('health_fact','daily_health',digest,'provider_fact',source['id'],source['source_revision_id']))
+                entries.append({"ordinal":len(entries),"input_role":'health_fact',"source_entity_type":'daily_health',"source_entity_id":source['id'],"source_revision_id":source['source_revision_id'],"entity_revision":source['source_revision_id'],"value_origin":'provider_fact',"trust_class":'provider_fact',"content_instruction_trust":'untrusted_content',"input_sha256":digest,"context_schema_version":self.schema_version,"policy_version":self.policy_version,"shared_harness_version":self.shared_harness_version,"mail_harness_version":self.mail_harness_version})
         for x in acts:add('activity_fact','activity',x,'provider_fact',x['primary_revision_id'])
         # Analysis artifact ids are entities, not source_revisions; never forge them into that FK column.
         for x in artifacts:add('analysis_artifact','analysis_artifact',x,'prior_model_output',None,entity_revision=x['revision_no'])
@@ -154,7 +202,7 @@ class MailContextBuilder:
         if plans:add('current_plan','training_plan',plans[0],'prior_model_output',None,entity_revision=plans[0]['artifact_revision_no'])
         for x in events:add('conversation_event','conversation_event',x,'derived_statistic',None,entity_revision=x['id'],instruction='untrusted_content')
         for x in quality:add('quality_state','data_quality_issue',x,'derived_statistic',x.get('source_revision_id'),entity_revision=x['id'])
-        payload={"schema_version":self.schema_version,"run":_safe({"id":run['id'],"run_key":run['run_key'],"invocation_id":run['invocation_id'],"request_kind":run['request_kind']}),"trigger_message":trig,"thread_context":thread,"conversation_events":events,"active_user_facts":facts,"current_health_context":health,"current_activity_context":acts,"current_training_plan":plans[0] if plans else None,"relevant_analysis_artifacts":artifacts,"prior_mail_responses":prior,"data_quality":quality,"policies":_safe({"version":self.policy_version,"timezone":"Asia/Singapore","sensitive_field_policy":"recursive_minimization"}),"input_manifest":entries,"context_limits":{"trigger_bytes":len(trig['latest_authored_text'].encode()),"thread_body_bytes":used,"thread_messages":len(thread),"completed_days":len({x['local_date'] for x in health}),"prior_responses":len(prior),"related_artifacts":len(artifacts),"max_bytes":MAX_CONTEXT_BYTES,"date_extension_reason":reason,"omissions":omissions}}
+        payload={"schema_version":self.schema_version,"run":_safe({"id":run['id'],"run_key":run['run_key'],"invocation_id":run['invocation_id'],"request_kind":run['request_kind']}),"trigger_message":trig,"thread_context":thread,"conversation_events":events,"active_user_facts":facts,"current_health_context":health,"current_activity_context":acts,"current_training_plan":plans[0] if plans else None,"relevant_analysis_artifacts":artifacts,"prior_mail_responses":prior,"data_quality":quality,"policies":_safe({"version":self.policy_version,"timezone":"Asia/Singapore","sensitive_field_policy":"recursive_minimization"}),"input_manifest":entries,"context_limits":{"trigger_bytes":len(trig['latest_authored_text'].encode()),"thread_body_bytes":used,"thread_messages":len(thread),"completed_days":0 if not health else health[0]['completed_days'],"prior_responses":len(prior),"related_artifacts":len(artifacts),"max_bytes":MAX_CONTEXT_BYTES,"date_extension_reason":reason,"omissions":omissions}}
         def remove_manifest(role:str, entity:int)->None:
             entries[:]=[m for m in entries if not (m['input_role']==role and m['source_entity_id']==entity)]
             dbmanifest[:]=[m for m in dbmanifest if not (m.input_role==role and m.source_entity_id==entity)]
@@ -212,7 +260,6 @@ class MailContextBuilder:
             ('trigger_message','mail_message',payload['trigger_message'],'user_asserted',lambda x:x['source_revision_id'],lambda x:x['source_revision_id']),
             *[('thread_message','mail_message',x,x['value_origin'],lambda x:x['source_revision_id'],lambda x:x['source_revision_id']) for x in payload['thread_context']],
             *[('active_user_fact','user_fact',x,'user_asserted',lambda x:None,lambda x:x['id']) for x in payload['active_user_facts']],
-            *[('health_fact','daily_health',x,'provider_fact',lambda x:x['source_revision_id'],lambda x:x['source_revision_id']) for x in payload['current_health_context']],
             *[('activity_fact','activity',x,'provider_fact',lambda x:x['primary_revision_id'],lambda x:x['primary_revision_id']) for x in payload['current_activity_context']],
             *[('analysis_artifact','analysis_artifact',x,'prior_model_output',lambda x:None,lambda x:x['revision_no']) for x in payload['relevant_analysis_artifacts']],
             *[('prior_mail_response','mail_response_artifact',x,'prior_model_output',lambda x:None,lambda x:x['revision_no']) for x in payload['prior_mail_responses']],
@@ -221,8 +268,13 @@ class MailContextBuilder:
             *[('quality_state','data_quality_issue',x,'derived_statistic',lambda x:x['source_revision_id'],lambda x:x['id']) for x in payload['data_quality']],
         )
         expected={(role,item['id']):(typ,item,trust,source_revision(item),entity_revision(item)) for role,typ,item,trust,source_revision,entity_revision in specs}
+        health_source_count=0
+        for summary in payload['current_health_context']:
+            for source in summary['sources']:
+                health_source_count+=1
+                expected[('health_fact',source['id'])]=('daily_health',summary,'provider_fact',source['source_revision_id'],source['source_revision_id'])
         actual={(entry['input_role'],entry['source_entity_id']):entry for entry in manifest}
-        if len(expected)!=len(specs) or len(actual)!=len(manifest) or set(actual)!=set(expected):
+        if len(expected)!=len(specs)+health_source_count or len(actual)!=len(manifest) or set(actual)!=set(expected):
             raise MailContextError("mail_input_manifest_bijection_invalid")
         for key,(typ,item,trust,source_revision,entity_revision) in expected.items():
             entry=actual[key]
@@ -238,7 +290,7 @@ class MailContextBuilder:
             'trigger_bytes':len(payload['trigger_message']['latest_authored_text'].encode()),
             'thread_body_bytes':sum(len(item['body_text'].encode()) for item in payload['thread_context']),
             'thread_messages':len(payload['thread_context']),
-            'completed_days':len({item['local_date'] for item in payload['current_health_context']}),
+            'completed_days':0 if not payload['current_health_context'] else payload['current_health_context'][0]['completed_days'],
             'prior_responses':len(payload['prior_mail_responses']),
             'related_artifacts':len(payload['relevant_analysis_artifacts']),
         }
@@ -276,7 +328,7 @@ class MailContextBuilder:
         allowed={
           'thread_context':{'id','provider_message_id','timestamp_utc','subject','body_text','body_sha256','actor_role','direction','source_revision_id','value_origin','content_instruction_trust'},
           'active_user_facts':{'id','fact_key','value','scope','effective_from_utc','expires_at_utc','confidence'},
-          'current_health_context':{'id','local_date','values','source_revision_id'},
+          'current_health_context':{'window','completed_days','source_count','sources','aggregate_sha256','metrics'},
           'current_activity_context':{'id','provider_activity_id','name','sport','sub_sport','start_time_utc','end_time_utc','local_date','elapsed_seconds','timer_seconds','distance_m','primary_revision_id','provider_state'},
           'relevant_analysis_artifacts':{'id','subject_id','artifact_kind','period_start_local_date','period_end_local_date','revision_no','generated_by_run_id','schema_version','structured_content_json','user_visible_text','content_sha256','is_current','supersedes_artifact_id','created_at_utc'},
           'prior_mail_responses':{'id','subject_id','mail_thread_id','in_reply_to_mail_message_id','response_kind','revision_no','generated_by_mail_agent_run_id','schema_version','structured_content_json','user_visible_text','content_sha256','is_current','supersedes_mail_response_artifact_id','created_at_utc','trust_class'},

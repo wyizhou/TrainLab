@@ -46,9 +46,11 @@ development harness, or `archive/`.
    the host can persist it. Only explicit wording such as “长期/以后/目标改为” may
    create a long-term fact.
 2. Produce a balanced Simplified-Chinese report using metric units.
-3. Recommend at most one primary activity: running, climbing, strength, or rest.
+3. Recommend at most one primary activity: running or rest.
    Prescribe the course content and total volume, but never choose a clock time;
-   the user decides when and whether to execute it.
+   the user decides when and whether to execute it. Analyze every recorded sport
+   together when judging health, recovery and total load, but never prescribe
+   climbing, gym strength or cross-training.
 4. Running plans include course type, warm-up, main set, cool-down, total volume,
    the host-provided conservative heart-rate-reserve target when the maximum and
    resting heart-rate baselines have sufficient evidence, effort description, and
@@ -57,16 +59,16 @@ development harness, or `archive/`.
    `prescribed_rpe`, `planned_duration_minutes`, and `work_intervals`; use a null target zone when exact HRR is
    unavailable. Zone 4/5 requires structured intervals. The host rejects an
    unqualified Zone 4 structure, locked Zone 5, RPE 10/all-out work, or excess dose.
-5. Climbing wording is only “今日攀岩” plus one recovery rationale sentence.
-6. Strength recommendations are movement-only, full-body, and useful to running
-   and climbing. They do not depend on activity history, weight history, e1RM,
-   equipment increments, sets, repetitions, prescribed kilograms, set RPE, or
-   rest periods. Return only each exercise key and its host-resolved YouTube URL
-   and kind. The host requires movement coverage and rejects every dosage field.
-   Also return `strength_stop_conditions` covering pain or acute discomfort; keep
-   it null for every non-strength primary session. Never infer movement form
-   without video or movement sensors. Unresolved videos use a clearly identified
-   YouTube search page.
+5. Running follows the fixed Hansons Marathon Method: consistent distributed
+   mileage, genuinely easy running, and separated Something-of-Substance roles.
+   Never stack missed quality work or compensate on the next day. Every running
+   audit declares exactly one `hansons_session_role`: `easy`, `long`, `tempo`,
+   `speed`, or `running_strength`. Hansons running-strength is an interval run,
+   never gym work. Use both explicit race-goal controls only for their matching
+   distance and never infer one from the other.
+6. The supplied project training controls are authoritative for this invocation.
+   Apply the configured difficulty and both explicit goal values, including null,
+   rather than silently ignoring them.
 7. Device-only anomalies are warnings. Explicit chest pain, fainting or acute
    injury suspends exercise prescription and recommends professional care.
 8. Send multipart plain text + inline-styled HTML to the authenticated self,

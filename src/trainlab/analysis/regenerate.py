@@ -10,13 +10,14 @@ from typing import Any, Mapping, Protocol
 from .config import AnalysisConfig
 from .context import ANALYSIS_INPUT_SCHEMA_SHA256, ANALYSIS_INPUT_SCHEMA_VERSION, AnalysisContextBuilder, ContextBuildRequest, ContextSource
 from .contracts import AnalysisDelivery, AnalysisError, AnalysisReceipt, AnalysisRequest, AnalysisWarning
-from .daily import _safe_code, _safety_base, daily_primary_item_contract
+from .daily import _safe_code, _safety_base, _validate_with_bounded_corrections, daily_primary_item_contract
 from .harness import SchemaEvidence, resolve_harness_bundle
 from .publisher import AnalysisPublisher, RunEvidence
 from .quality_gate import QualityGate, QualityGateRequest
 from .result_validation import AnalysisResultValidationError, ResultValidationExpectation
 from .run_state import AnalysisRunCoordinator, AnalysisRunStateError
 from .stable_views import StableViewRepository
+from .training_difficulty import training_control_contracts
 from .weekly import _periods, _prior_artifact_state, _plan_adherence, weekly_plan_contract
 
 _REASONS = frozenset({"source_revision_changed", "policy_version_changed", "harness_version_changed", "quality_issue_resolved", "explicit_user_request", "operator_correction"})
@@ -237,7 +238,7 @@ class RegenerateRoute:
         route_feature = regeneration_contract(
             source, str(request.regeneration_reason_code)
         )
-        features = (
+        route_features = (
             (feature, route_feature)
             if feature is not None
             else (
@@ -247,15 +248,27 @@ class RegenerateRoute:
                 route_feature,
             )
         )
+        features = (
+            *route_features,
+            *training_control_contracts(self.config),
+        )
         built = self.context_builder.build(context_request, ContextSource(snapshot=snapshot), quality_gate=gate, harness_bundle=bundle, deterministic_features=features, plan_adherence=None if shape == "daily" else _plan_adherence(snapshot, periods["review"]))
         result = self.runner.execute(bundle, built.canonical_json.encode("utf-8"))
         safety = {} if shape == "daily" else { (date.fromisoformat(periods["plan"]["start_local_date"]) + timedelta(days=i)).isoformat(): _safety_base(subject_id, (date.fromisoformat(periods["plan"]["start_local_date"]) + timedelta(days=i)).isoformat(), request.requested_at_utc, snapshot) for i in range(7) }
-        expected = ResultValidationExpectation(prepared.decision.run_key, "regenerate", subject_id, periods, built.context["input_manifest"], gate.as_dict(), _safety_base(subject_id, periods["advice"]["start_local_date"], request.requested_at_utc, snapshot) if shape == "daily" else {}, weekly_safety_request_bases=safety or None, prior_artifact_state=None if shape != "weekly" else _prior_artifact_state(snapshot, periods["review"]), regeneration_source_shape=shape, regeneration_source_artifact_id=str(source["artifact_id"]))
+        expected = ResultValidationExpectation(prepared.decision.run_key, "regenerate", subject_id, periods, built.context["input_manifest"], gate.as_dict(), _safety_base(subject_id, periods["advice"]["start_local_date"], request.requested_at_utc, snapshot) if shape == "daily" else {}, weekly_safety_request_bases=safety or None, prior_artifact_state=None if shape != "weekly" else _prior_artifact_state(snapshot, periods["review"]), regeneration_source_shape=shape, regeneration_source_artifact_id=str(source["artifact_id"]), training_difficulty_level=self.config.training_difficulty_level)
         validator = self.validator
         if validator is None:
             from .result_validation import AnalysisResultValidator
             validator = AnalysisResultValidator()
-        try: accepted = validator.validate(result.output_bytes, expected)
+        try:
+            accepted, result = _validate_with_bounded_corrections(
+                runner=self.runner,
+                bundle=bundle,
+                canonical_context=built.canonical_json.encode("utf-8"),
+                run_result=result,
+                validator=validator,
+                expectation=expected,
+            )
         except AnalysisResultValidationError as error:
             self.coordinator.finish(prepared, "rejected")
             return self._receipt(request, "rejected", started, run_key=prepared.decision.run_key, analysis_run_id=str(prepared.decision.run_id), target_periods=self._complete_target_periods(periods), quality=gate.state, errors=(self._error("service", error.code),))

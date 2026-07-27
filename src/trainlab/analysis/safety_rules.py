@@ -405,6 +405,15 @@ def _zone_selection(
 def _validate_primary_semantics(item: Mapping[str, Any]) -> None:
     kind = item["activity_kind"]
     if kind == "running":
+        role_course_types = {
+            "easy": {"easy"},
+            "long": {"long_easy"},
+            "tempo": {"steady"},
+            "speed": {"intervals"},
+            "running_strength": {"intervals"},
+        }
+        if item["course_type"] not in role_course_types[item["hansons_session_role"]]:
+            raise SafetyRuleError("training_safety_hansons_role_invalid")
         token_fields = {
             "warmup": "running_warmup",
             "main_set": "running_main_set",
@@ -519,6 +528,7 @@ def _running_output(
         key: deepcopy(source[key])
         for key in (
             "activity_kind",
+            "hansons_session_role",
             "course_type",
             "warmup",
             "main_set",
@@ -537,6 +547,7 @@ def _running_output(
     if fallback:
         output.update(
             {
+                "hansons_session_role": "easy",
                 "course_type": _POLICY["fallback"]["course_type"],
                 "main_set": "talk_test_easy",
                 "planned_duration_minutes": min(

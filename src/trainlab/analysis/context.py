@@ -69,9 +69,11 @@ _TRUST = frozenset(_POLICY["trust_classes"])
 _FACT_SCOPES = frozenset(_POLICY["fact_scopes"])
 _SAMPLE_METRICS = frozenset(_POLICY["technical_sample_metrics"])
 _MAX_ITEMS = int(_POLICY["maximum_manifest_items"])
+_MAX_SNAPSHOT_ITEMS = int(_POLICY["maximum_snapshot_items"])
 _MAX_SAMPLE_SUMMARIES = int(_POLICY["maximum_technical_sample_summaries"])
 _MAX_SAMPLE_ROWS = int(_POLICY["maximum_technical_sample_rows"])
 _PRUNE_CODES = tuple(_POLICY["pruning_order"])
+_COMPLETED_WINDOW_DAYS = int(_POLICY["completed_window_days"])
 _SECTIONS = (
     "coverage",
     "gaps",
@@ -189,6 +191,20 @@ def _json_value(
             )
         return
     _fail("analysis_context_json_type_invalid")
+
+
+def _json_compatible(value: Any) -> Any:
+    """Normalize accepted Python containers before JSON Schema validation."""
+    if isinstance(value, tuple):
+        return [_json_compatible(item) for item in value]
+    if isinstance(value, list):
+        return [_json_compatible(item) for item in value]
+    if isinstance(value, Mapping):
+        return {
+            key: _json_compatible(child)
+            for key, child in value.items()
+        }
+    return deepcopy(value)
 
 
 def _sha(value: Any) -> str:
@@ -379,8 +395,8 @@ class ContextBuildRequest:
             summary = _period(summary_day, summary_day)
             advice = _period(advice_day, advice_day)
             baseline = _period(
-                summary_day - timedelta(days=int(_POLICY["daily_baseline_days"])),
-                summary_day - timedelta(days=1),
+                summary_day - timedelta(days=_COMPLETED_WINDOW_DAYS - 1),
+                summary_day,
             )
         elif source_route == "weekly":
             if any(
@@ -404,8 +420,8 @@ class ContextBuildRequest:
             review = _period(review_start, review_end)
             plan = _period(plan_start, plan_start + timedelta(days=6))
             baseline = _period(
-                review_start - timedelta(days=int(_POLICY["weekly_baseline_days"])),
-                review_start - timedelta(days=1),
+                review_end - timedelta(days=_COMPLETED_WINDOW_DAYS - 1),
+                review_end,
             )
         else:
             if any(
@@ -439,7 +455,7 @@ class ContextBuildRequest:
                 _fail("analysis_context_revision_window_invalid")
             plan = _period(plan_start, plan_end)
             baseline = _period(
-                effective - timedelta(days=int(_POLICY["weekly_baseline_days"])),
+                effective - timedelta(days=_COMPLETED_WINDOW_DAYS),
                 effective - timedelta(days=1),
             )
         return {
@@ -668,7 +684,7 @@ def _sanitize_row(row: Mapping[str, Any]) -> dict[str, Any]:
             else:
                 output[target_key] = _parse_embedded_json(value)
         else:
-            output[target_key] = deepcopy(value)
+            output[target_key] = _json_compatible(value)
     _json_value(output, forbid_source_keys=True)
     return output
 
@@ -824,7 +840,7 @@ def _validate_snapshot(
     ):
         _fail("analysis_context_snapshot_subject_invalid")
     rows = _snapshot_rows(snapshot)
-    if len(rows) > _MAX_ITEMS:
+    if len(rows) > _MAX_SNAPSHOT_ITEMS:
         _fail("analysis_context_snapshot_limit_exceeded")
     for row in rows:
         if not isinstance(row, Mapping):
@@ -906,6 +922,360 @@ def _within(row: Mapping[str, Any], start: str, end: str) -> bool:
     return row_end >= start and row_start <= end
 
 
+def _compact_path_segment(value: object) -> str:
+    text = str(value)
+    if text.isdigit():
+        return "*"
+    return re.sub(r"[^A-Za-z0-9_.-]+", "_", text).strip("_")[:80] or "value"
+
+
+def _flatten_compact_values(
+    value: Any, *, prefix: str = "", depth: int = 0
+) -> list[tuple[str, Any]]:
+    """Keep scalar semantic values while excluding arrays/time-series payloads."""
+
+    if depth > 4:
+        return []
+    if value is None or isinstance(value, (str, bool, int, float)):
+        return [(prefix or "value", value)]
+    if isinstance(value, Mapping):
+        output: list[tuple[str, Any]] = []
+        for key in sorted(value, key=str):
+            segment = _compact_path_segment(key)
+            child_prefix = f"{prefix}.{segment}" if prefix else segment
+            output.extend(
+                _flatten_compact_values(
+                    value[key], prefix=child_prefix, depth=depth + 1
+                )
+            )
+        return output
+    # Lists and tuples commonly contain Garmin intraday series. They remain in
+    # the database/raw revision and are deliberately absent from default AI
+    # context.
+    return []
+
+
+def _observation_date(
+    row: Mapping[str, Any], fallback: tuple[str, str]
+) -> str:
+    start, end = _row_date_window(row, fallback)
+    return end if end >= start else start
+
+
+def _source_reference(
+    row: Mapping[str, Any], entity_type: str
+) -> tuple[str, str]:
+    identity = _row_identity(row, entity_type)
+    return identity, _row_revision(row, entity_type, identity)
+
+
+def _rounded(value: float) -> float:
+    rendered = round(float(value), 6)
+    return 0.0 if rendered == -0.0 else rendered
+
+
+def _numeric_summary(values: Sequence[float], dates: Sequence[str]) -> dict[str, Any]:
+    count = len(values)
+    average = sum(values) / count
+    if count < 4:
+        trend = "insufficient"
+    else:
+        middle = count // 2
+        earlier = sum(values[:middle]) / middle
+        later = sum(values[-middle:]) / middle
+        tolerance = max(abs(average) * 0.02, 1e-9)
+        trend = (
+            "increasing"
+            if later - earlier > tolerance
+            else "decreasing"
+            if earlier - later > tolerance
+            else "stable"
+        )
+    anomaly_dates: list[str] = []
+    if count >= 5:
+        variance = sum((value - average) ** 2 for value in values) / count
+        deviation = math.sqrt(variance)
+        if deviation > 0:
+            anomaly_dates = sorted(
+                {
+                    day
+                    for day, value in zip(dates, values, strict=True)
+                    if abs(value - average) >= 2 * deviation
+                }
+            )[:10]
+    return {
+        "average": _rounded(average),
+        "minimum": _rounded(min(values)),
+        "maximum": _rounded(max(values)),
+        "trend": trend,
+        "anomaly_dates": anomaly_dates,
+    }
+
+
+def _compact_series_content(
+    *, family: str, metric_key: str, unit: str | None,
+    observations: Sequence[Mapping[str, Any]],
+    window: tuple[str, str],
+) -> dict[str, Any]:
+    ordered = sorted(
+        observations,
+        key=lambda item: (
+            str(item["local_date"]),
+            str(item["source_id"]),
+            str(item["source_revision_id"]),
+            _canonical(item["value"]),
+        ),
+    )
+    observation_keys = {
+        (
+            str(item["local_date"]),
+            str(item["source_id"]),
+            str(item["source_revision_id"]),
+            _canonical(item["value"]),
+        )
+        for item in ordered
+    }
+    if len(observation_keys) != len(ordered):
+        _fail("analysis_context_duplicate_lineage")
+    source_ids = sorted({str(item["source_id"]) for item in ordered})
+    revision_ids = sorted(
+        {str(item["source_revision_id"]) for item in ordered}
+    )
+    material = [
+        {
+            "local_date": item["local_date"],
+            "source_id": str(item["source_id"]),
+            "source_revision_id": str(item["source_revision_id"]),
+            "value": item["value"],
+        }
+        for item in ordered
+    ]
+    digest = _sha(material)
+    latest = ordered[-1]
+    values = [item["value"] for item in ordered]
+    numeric = all(
+        not isinstance(value, bool) and isinstance(value, (int, float))
+        for value in values
+    )
+    content: dict[str, Any] = {
+        "family": family,
+        "metric_key": metric_key,
+        "unit": unit,
+        "window": {
+            "start_local_date": window[0],
+            "end_local_date": window[1],
+        },
+        "observation_count": len(ordered),
+        "coverage_days": len({str(item["local_date"]) for item in ordered}),
+        "source_count": len(source_ids),
+        "source_revision_count": len(revision_ids),
+        "source_ids": source_ids[:12],
+        "source_ids_truncated": len(source_ids) > 12,
+        "source_revision_ids": revision_ids[:12],
+        "source_revision_ids_truncated": len(revision_ids) > 12,
+        "aggregate_sha256": digest,
+        "latest": {
+            "local_date": latest["local_date"],
+            "value": latest["value"],
+        },
+        "value_kind": "numeric" if numeric else "categorical",
+    }
+    if numeric:
+        content.update(
+            _numeric_summary(
+                [float(value) for value in values],
+                [str(item["local_date"]) for item in ordered],
+            )
+        )
+    else:
+        counts: dict[str, int] = {}
+        canonical_values: dict[str, Any] = {}
+        for value in values:
+            key = _canonical(value)
+            counts[key] = counts.get(key, 0) + 1
+            canonical_values[key] = value
+        content["value_counts"] = [
+            {"value": canonical_values[key], "count": count}
+            for key, count in sorted(
+                counts.items(), key=lambda item: (-item[1], item[0])
+            )[:5]
+        ]
+    return content
+
+
+def _add_compact_observations(
+    candidates: list[_Candidate], *,
+    section: str, role: str, entity_type: str, family: str,
+    observations: Sequence[Mapping[str, Any]],
+    window: tuple[str, str],
+) -> None:
+    groups: dict[tuple[str, str | None], list[Mapping[str, Any]]] = {}
+    for observation in observations:
+        groups.setdefault(
+            (str(observation["metric_key"]), observation.get("unit")),
+            [],
+        ).append(observation)
+    for (metric_key, unit), rows in sorted(
+        groups.items(), key=lambda item: (item[0][0], str(item[0][1]))
+    ):
+        content = _compact_series_content(
+            family=family,
+            metric_key=metric_key,
+            unit=unit,
+            observations=rows,
+            window=window,
+        )
+        digest = str(content["aggregate_sha256"])
+        _add_row(
+            candidates,
+            section=section,
+            role=role,
+            entity_type=entity_type,
+            row=content,
+            fallback_window=window,
+            trust="derived_statistic",
+            origin="derived_statistic",
+            entity_id=f"{family}:{_sha([metric_key, unit])[:24]}",
+            revision_id=f"aggregate:{digest}",
+        )
+
+
+def _health_observations(
+    rows: Sequence[Mapping[str, Any]], window: tuple[str, str]
+) -> list[dict[str, Any]]:
+    output: list[dict[str, Any]] = []
+    for row in rows:
+        sanitized = _sanitize_row(row)
+        values = sanitized.get("values")
+        if not isinstance(values, Mapping):
+            continue
+        source_id, revision = _source_reference(row, "daily_health")
+        local_date = _observation_date(row, window)
+        for metric_key, value in _flatten_compact_values(values):
+            if value is None:
+                continue
+            output.append({
+                "metric_key": f"health.{metric_key}",
+                "unit": None,
+                "value": value,
+                "local_date": local_date,
+                "source_id": source_id,
+                "source_revision_id": revision,
+            })
+    return output
+
+
+def _sleep_observations(
+    rows: Sequence[Mapping[str, Any]], window: tuple[str, str]
+) -> list[dict[str, Any]]:
+    output: list[dict[str, Any]] = []
+    for row in rows:
+        source_id, revision = _source_reference(row, "sleep_session")
+        local_date = _observation_date(row, window)
+        sanitized = _sanitize_row(row)
+        values = sanitized.get("values")
+        if isinstance(values, Mapping):
+            for metric_key, value in _flatten_compact_values(values):
+                if value is None:
+                    continue
+                output.append({
+                    "metric_key": f"sleep.{metric_key}",
+                    "unit": None,
+                    "value": value,
+                    "local_date": local_date,
+                    "source_id": source_id,
+                    "source_revision_id": revision,
+                })
+        if row.get("session_type") is not None:
+            output.append({
+                "metric_key": "sleep.session_type",
+                "unit": None,
+                "value": row["session_type"],
+                "local_date": local_date,
+                "source_id": source_id,
+                "source_revision_id": revision,
+            })
+        if row.get("start_time_utc") and row.get("end_time_utc"):
+            duration = (
+                _utc(row["end_time_utc"]) - _utc(row["start_time_utc"])
+            ).total_seconds() / 60
+            if duration >= 0:
+                output.append({
+                    "metric_key": "sleep.session_duration",
+                    "unit": "min",
+                    "value": _rounded(duration),
+                    "local_date": local_date,
+                    "source_id": source_id,
+                    "source_revision_id": revision,
+                })
+    return output
+
+
+def _physiology_observations(
+    records: Sequence[Mapping[str, Any]],
+    metrics: Sequence[Mapping[str, Any]],
+    window: tuple[str, str],
+) -> list[dict[str, Any]]:
+    output: list[dict[str, Any]] = []
+    parents: dict[str, Mapping[str, Any]] = {
+        _identifier(row.get("id")): row for row in records
+    }
+    for identity, row in parents.items():
+        source_id, revision = _source_reference(row, "physiology_record")
+        local_date = _observation_date(row, window)
+        prefix = ".".join(
+            _compact_path_segment(row.get(key) or "unknown")
+            for key in ("domain", "record_type")
+        )
+        for key in ("status_key", "status_text"):
+            if row.get(key) is not None:
+                output.append({
+                    "metric_key": f"physiology.{prefix}.{key}",
+                    "unit": None,
+                    "value": row[key],
+                    "local_date": local_date,
+                    "source_id": source_id,
+                    "source_revision_id": revision,
+                })
+    for row in metrics:
+        parent = parents.get(_identifier(row.get("physiology_record_id")))
+        if parent is None:
+            continue
+        source_id, revision = _source_reference(
+            parent, "physiology_record"
+        )
+        local_date = _observation_date(parent, window)
+        prefix = ".".join(
+            _compact_path_segment(parent.get(key) or "unknown")
+            for key in ("domain", "record_type")
+        )
+        metric_key = _compact_path_segment(row.get("metric_key") or "value")
+        sanitized = _sanitize_row(row)
+        values: list[tuple[str, Any]] = []
+        for key in ("value_number", "value_text", "value_boolean"):
+            if sanitized.get(key) is not None:
+                values = [("", sanitized[key])]
+                break
+        if not values and sanitized.get("value") is not None:
+            values = _flatten_compact_values(sanitized["value"])
+        unit = row.get("canonical_unit") or row.get("raw_unit")
+        for suffix, value in values:
+            if value is None:
+                continue
+            full_key = f"physiology.{prefix}.{metric_key}"
+            if suffix:
+                full_key += f".{suffix}"
+            output.append({
+                "metric_key": full_key,
+                "unit": str(unit) if unit is not None else None,
+                "value": value,
+                "local_date": local_date,
+                "source_id": source_id,
+                "source_revision_id": revision,
+            })
+    return output
+
+
 def _prior_artifact_rows(snapshot: StableSnapshot) -> tuple[Mapping[str, Any], ...]:
     by_identity: dict[tuple[str, str], Mapping[str, Any]] = {}
     ordered_views = (
@@ -921,8 +1291,19 @@ def _prior_artifact_rows(snapshot: StableSnapshot) -> tuple[Mapping[str, Any], .
             existing = by_identity.get(key)
             if existing is None:
                 by_identity[key] = row
-            elif _sha(_sanitize_row(existing)) != _sha(_sanitize_row(row)):
-                _fail("analysis_context_duplicate_lineage")
+            else:
+                # ``v_analysis_history_context`` adds the trusted
+                # ``trust_class`` projection to the same immutable artifact
+                # row exposed by the two current-artifact views.  Projection
+                # metadata is not artifact content and must not make one
+                # underlying row look like conflicting lineage.
+                existing_content = dict(_sanitize_row(existing))
+                row_content = dict(_sanitize_row(row))
+                for projection_field in ("trust_class", "is_current"):
+                    existing_content.pop(projection_field, None)
+                    row_content.pop(projection_field, None)
+                if _sha(existing_content) != _sha(row_content):
+                    _fail("analysis_context_duplicate_lineage")
     return tuple(by_identity[key] for key in sorted(by_identity))
 
 
@@ -963,6 +1344,8 @@ def _base_candidates(
     fallback_window = _input_window(periods, source_route)
     complete_start, complete_end = _completed_window(periods, source_route)
     baseline_start = periods["baseline"]["start_local_date"]
+    baseline_end = periods["baseline"]["end_local_date"]
+    baseline_window = (baseline_start, baseline_end)
     candidates: list[_Candidate] = []
 
     gate_row = quality_gate.as_dict()
@@ -983,7 +1366,13 @@ def _base_candidates(
     candidates[-1].section = "quality_gate"
 
     for row in snapshot.coverage:
-        if _within(row, baseline_start, complete_end):
+        # The quality gate validates coverage across the complete repository
+        # snapshot, including the weekly baseline.  Repeating every baseline
+        # day/resource row in the model context is redundant and can dominate
+        # a 35-day Garmin snapshot.  Expose granular coverage only for the
+        # completed target window; baseline health and physiology observations
+        # remain available for trend analysis.
+        if _within(row, complete_start, complete_end):
             revision = (
                 _identifier(row["source_revision_id"])
                 if row.get("source_revision_id") is not None
@@ -1026,145 +1415,84 @@ def _base_candidates(
                 trust="provider_fact",
             )
 
-    for row in snapshot.views["v_current_daily_health"]:
-        if _within(row, baseline_start, complete_end):
-            _add_row(
-                candidates,
-                section="health",
-                role="health.daily",
-                entity_type="daily_health",
-                row=row,
-                fallback_window=fallback_window,
-                trust="provider_fact",
-                display_fields=_DISPLAY_FIELDS,
-            )
-    for row in snapshot.views["v_current_sleep_sessions"]:
-        if _within(row, baseline_start, complete_end):
-            _add_row(
-                candidates,
-                section="sleep",
-                role="sleep.session",
-                entity_type="sleep_session",
-                row=row,
-                fallback_window=fallback_window,
-                trust="provider_fact",
-                display_fields=_DISPLAY_FIELDS,
-            )
-
-    physiology_records = {
-        _identifier(row.get("id")): row
+    health_rows = [
+        row
+        for row in snapshot.views["v_current_daily_health"]
+        if _within(row, *baseline_window)
+    ]
+    sleep_rows = [
+        row
+        for row in snapshot.views["v_current_sleep_sessions"]
+        if _within(row, *baseline_window)
+    ]
+    physiology_records = [
+        row
         for row in snapshot.views["v_current_physiology_records"]
-        if _within(row, baseline_start, complete_end)
+        if _within(row, *baseline_window)
+    ]
+    physiology_ids = {
+        _identifier(row.get("id")) for row in physiology_records
     }
-    for identity, row in physiology_records.items():
-        origin = _origin(row.get("value_origin"), "provider_derived")
-        _add_row(
-            candidates,
-            section="physiology",
-            role="physiology.record",
-            entity_type="physiology_record",
-            row=row,
-            fallback_window=fallback_window,
-            trust=origin,
-            origin=origin,
-            entity_id=identity,
-            display_fields=_DISPLAY_FIELDS,
-        )
-    for row in snapshot.views["v_current_physiology_metrics"]:
-        parent = physiology_records.get(
-            _identifier(row.get("physiology_record_id"))
-        )
-        if parent is None:
-            continue
-        origin = _origin(row.get("value_origin"), "provider_derived")
-        _add_row(
-            candidates,
-            section="physiology",
-            role="physiology.metric",
-            entity_type="physiology_metric",
-            row=row,
-            fallback_window=_row_date_window(parent, fallback_window),
-            trust=origin,
-            origin=origin,
-            revision_id=_row_revision(
-                parent, "physiology_record", _identifier(parent.get("id"))
-            ),
-            display_fields=_DISPLAY_FIELDS,
-        )
+    physiology_metrics = [
+        row
+        for row in snapshot.views["v_current_physiology_metrics"]
+        if _identifier(row.get("physiology_record_id")) in physiology_ids
+    ]
+    _add_compact_observations(
+        candidates,
+        section="health",
+        role="health.aggregate_30d",
+        entity_type="health_metric_aggregate",
+        family="health",
+        observations=_health_observations(health_rows, baseline_window),
+        window=baseline_window,
+    )
+    _add_compact_observations(
+        candidates,
+        section="sleep",
+        role="sleep.aggregate_30d",
+        entity_type="sleep_metric_aggregate",
+        family="sleep",
+        observations=_sleep_observations(sleep_rows, baseline_window),
+        window=baseline_window,
+    )
+    _add_compact_observations(
+        candidates,
+        section="physiology",
+        role="physiology.aggregate_30d",
+        entity_type="physiology_metric_aggregate",
+        family="physiology",
+        observations=_physiology_observations(
+            physiology_records, physiology_metrics, baseline_window
+        ),
+        window=baseline_window,
+    )
 
-    feature_revisions = {
-        _identifier(revision, "analysis_context_feature_lineage_invalid")
-        for feature in deterministic_features
-        for revision in feature.get("input_revision_ids", ())
-    }
     activities: dict[str, Mapping[str, Any]] = {}
     for row in snapshot.views["v_current_activities"]:
-        if not _within(row, complete_start, complete_end):
+        if not _within(row, *baseline_window):
             continue
         identity = _identifier(row.get("id"))
         revision = _row_revision(row, "activity", identity)
         activities[identity] = row
-        can_prune_old = (
-            source_route == "weekly"
-            and row.get("local_date") != complete_end
-            and revision in feature_revisions
-        )
+        summary = _sanitize_row(row)
+        summary.update({
+            "source_count": 1,
+            "source_revision_count": 1,
+            "aggregate_sha256": _sha(_sanitize_row(row)),
+        })
         _add_row(
             candidates,
             section="activities",
             role="activity.summary",
             entity_type="activity",
-            row=row,
-            fallback_window=(complete_start, complete_end),
+            row=summary,
+            fallback_window=baseline_window,
             trust="provider_fact",
             entity_id=identity,
             revision_id=revision,
-            prune_stage=2 if can_prune_old else None,
             display_fields=_DISPLAY_FIELDS,
         )
-    for role, entity_type, view in (
-        ("activity.segment", "activity_segment", "v_activity_segments"),
-        (
-            "activity.metric_source",
-            "activity_metric_source",
-            "v_activity_metric_sources",
-        ),
-    ):
-        for row in snapshot.views[view]:
-            activity_id = _identifier(row.get("activity_id"))
-            activity = activities.get(activity_id)
-            if activity is None:
-                continue
-            _add_row(
-                candidates,
-                section="activities",
-                role=role,
-                entity_type=entity_type,
-                row=row,
-                fallback_window=_row_date_window(activity, fallback_window),
-                trust="provider_fact",
-                revision_id=(
-                    _identifier(row["source_revision_id"])
-                    if row.get("source_revision_id") is not None
-                    else _row_revision(activity, "activity", activity_id)
-                ),
-                prune_stage=1,
-                display_fields=_DISPLAY_FIELDS,
-            )
-    for row in snapshot.activity_stages:
-        identity = _identifier(row.get("id"))
-        if identity in activities:
-            _add_row(
-                candidates,
-                section="activities",
-                role="activity.stage_status",
-                entity_type="activity_stage_status",
-                row=row,
-                fallback_window=_row_date_window(activities[identity], fallback_window),
-                trust="provider_fact",
-                revision_id=_row_revision(activities[identity], "activity", identity),
-                entity_id=identity,
-            )
 
     if (
         not isinstance(source.technical_samples, tuple)
@@ -1627,7 +1955,7 @@ def _render(
             "applied_pruning_stages": sorted(
                 {int(item["stage"]) for item in omissions}
             ),
-            "omission_count": len(omissions),
+            "omission_count": _omission_count(omissions),
             "omissions": [deepcopy(dict(item)) for item in omissions],
         },
     }
@@ -1660,6 +1988,69 @@ def _omission(
     }
 
 
+def _omissions_for_selected(
+    selected: Sequence[_Candidate], stage: int
+) -> list[dict[str, Any]]:
+    if len(selected) < 64:
+        return [
+            _omission(
+                candidate,
+                stage=stage,
+                before_sha256=_sha(candidate.content),
+                after_sha256=None,
+            )
+            for candidate in selected
+        ]
+    grouped: dict[tuple[str, str], list[_Candidate]] = {}
+    for candidate in selected:
+        grouped.setdefault(
+            (candidate.input_role, candidate.entity_type), []
+        ).append(candidate)
+    omissions: list[dict[str, Any]] = []
+    for (role, entity_type), members in sorted(grouped.items()):
+        ordered = sorted(members, key=lambda item: item.original_ordinal)
+        if len(ordered) == 1:
+            omissions.append(
+                _omission(
+                    ordered[0],
+                    stage=stage,
+                    before_sha256=_sha(ordered[0].content),
+                    after_sha256=None,
+                )
+            )
+            continue
+        aggregate = _sha([
+            {
+                "entity_id": item.entity_id,
+                "revision_id": item.revision_id,
+                "original_ordinal": item.original_ordinal,
+                "before_sha256": _sha(item.content),
+            }
+            for item in ordered
+        ])
+        omissions.append({
+            "stage": stage,
+            "reason_code": _PRUNE_CODES[stage - 1],
+            "input_role": role,
+            "source_entity_type": entity_type,
+            "source_entity_id": (
+                f"group:{len(ordered)}:{ordered[0].original_ordinal}:"
+                f"{ordered[-1].original_ordinal}"
+            ),
+            "source_revision_id": f"aggregate:{aggregate}",
+            "original_ordinal": ordered[0].original_ordinal,
+            "before_sha256": aggregate,
+            "after_sha256": None,
+            "removed_fields": [],
+            "omitted_count": len(ordered),
+        })
+    return omissions
+
+
+def _omission_count(omissions: Sequence[Mapping[str, Any]]) -> int:
+    return sum(int(item.get("omitted_count", 1)) for item in omissions)
+
+
 def _prune(
     request: ContextBuildRequest,
     periods: Mapping[str, Any],
@@ -1685,15 +2076,7 @@ def _prune(
                 for candidate in remaining
                 if id(candidate) not in selected_ids
             ]
-            trial_omissions.extend(
-                _omission(
-                    candidate,
-                    stage=stage,
-                    before_sha256=_sha(candidate.content),
-                    after_sha256=None,
-                )
-                for candidate in selected
-            )
+            trial_omissions.extend(_omissions_for_selected(selected, stage))
             return trial_remaining, trial_omissions
         replacements: dict[int, _Candidate] = {}
         for candidate in selected:
@@ -1854,7 +2237,7 @@ def _validate_manifest_bindings(context: Mapping[str, Any]) -> None:
     omissions = limits.get("omissions")
     if (
         not isinstance(omissions, list)
-        or limits.get("omission_count") != len(omissions)
+        or limits.get("omission_count") != _omission_count(omissions)
         or [item.get("stage") for item in omissions]
         != sorted(item.get("stage") for item in omissions)
     ):
@@ -1865,6 +2248,8 @@ def _validate_manifest_bindings(context: Mapping[str, Any]) -> None:
         original = omission.get("original_ordinal")
         before = omission.get("before_sha256")
         key = (stage, original, str(before))
+        omitted_count = omission.get("omitted_count", 1)
+        grouped = "omitted_count" in omission
         if (
             isinstance(stage, bool)
             or not isinstance(stage, int)
@@ -1873,6 +2258,22 @@ def _validate_manifest_bindings(context: Mapping[str, Any]) -> None:
             or not isinstance(original, int)
             or key in seen_omissions
             or omission.get("reason_code") != _PRUNE_CODES[stage - 1]
+            or isinstance(omitted_count, bool)
+            or not isinstance(omitted_count, int)
+            or not 1 <= omitted_count <= _MAX_ITEMS
+            or (
+                grouped
+                and (
+                    omitted_count < 2
+                    or stage == 4
+                    or not str(omission.get("source_entity_id", "")).startswith(
+                        f"group:{omitted_count}:"
+                    )
+                    or not str(
+                        omission.get("source_revision_id", "")
+                    ).startswith("aggregate:")
+                )
+            )
         ):
             _fail("analysis_context_omission_invalid")
         seen_omissions.add(key)

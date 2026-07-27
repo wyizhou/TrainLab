@@ -30,6 +30,7 @@ STOP = [
 def running(**overrides):
     item = {
         "activity_kind": "running",
+        "hansons_session_role": "easy",
         "course_type": "easy",
         "warmup": "gentle_warmup",
         "main_set": "talk_test_easy",
@@ -45,7 +46,21 @@ def running(**overrides):
         "rationale": "recovery_appropriate",
     }
     item.update(overrides)
+    if "hansons_session_role" not in overrides:
+        item["hansons_session_role"] = {
+            "easy": "easy",
+            "long_easy": "long",
+            "steady": "tempo",
+            "intervals": "speed",
+        }[item["course_type"]]
     return item
+
+
+def test_hansons_role_must_match_the_controlled_running_course_type():
+    with pytest.raises(SafetyRuleError, match="training_safety_hansons_role_invalid"):
+        evaluate_training_safety(
+            request(running(hansons_session_role="speed", course_type="easy"))
+        )
 
 
 def climbing(**overrides):
@@ -809,6 +824,7 @@ def test_result_validator_rejects_quality_rpe_without_zone45_intervals():
     result = engine.evaluate(request(running(), zones=(zone_evidence(),)))
     item = result["primary_items"][0]
     item["course_type"] = "steady"
+    item["hansons_session_role"] = "tempo"
     item["prescribed_rpe"] = 9
     with pytest.raises(SafetyRuleError, match="result_running_rule_invalid"):
         engine.validate_result(result)

@@ -25,8 +25,8 @@ _DELIVERY_SHAPES: dict[str, tuple[tuple[str, str], ...]] = {
     "plan_revision": (("weekly_training_plan", "plan_revision"),),
 }
 _TITLES = {
-    "daily_summary": "每日总结",
-    "daily_advice": "今日建议",
+    "daily_summary": "昨日回顾",
+    "daily_advice": "今日安排",
     "weekly_summary": "每周总结",
     "weekly_plan": "未来七天计划",
     "plan_revision": "计划修订",
@@ -538,18 +538,24 @@ def render_delivery(pending: PendingDelivery) -> RenderedDelivery:
     idempotency_key = _safe_header(pending.idempotency_key)
     subject = _safe_header(f"[TrainLab] {pending.delivery_kind} | run-id {run_key} | idempotency {idempotency_key}")
     header_lines = (f"Run-ID: {run_key}", f"Idempotency-Key: {idempotency_key}")
-    plain_sections = ["TrainLab 分析报告", *header_lines]
+    daily = pending.delivery_kind == "daily_report"
+    plain_sections = [] if daily else ["TrainLab 分析报告", *header_lines]
     html_sections = [
         '<!doctype html><html><body style="margin:0;background:#f5f7fa;color:#172033;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;line-height:1.55">',
         '<main style="max-width:720px;margin:24px auto;padding:24px;background:#ffffff;border:1px solid #d9e0ea;border-radius:8px">',
-        '<h1 style="margin:0 0 16px;font-size:22px">TrainLab 分析报告</h1>',
-        f'<p style="margin:0 0 4px"><strong>Run-ID:</strong> {html.escape(run_key, quote=True)}</p>',
-        f'<p style="margin:0 0 20px"><strong>Idempotency-Key:</strong> {html.escape(idempotency_key, quote=True)}</p>',
     ]
+    if not daily:
+        html_sections.extend((
+            '<h1 style="margin:0 0 16px;font-size:22px">TrainLab 分析报告</h1>',
+            f'<p style="margin:0 0 4px"><strong>Run-ID:</strong> {html.escape(run_key, quote=True)}</p>',
+            f'<p style="margin:0 0 20px"><strong>Idempotency-Key:</strong> {html.escape(idempotency_key, quote=True)}</p>',
+        ))
     for artifact in pending.artifacts:
         title = _TITLES[artifact.content_role]
         text = artifact.user_visible_text.replace("\r\n", "\n").replace("\r", "\n")
-        plain_sections.extend(("", title, text))
+        if plain_sections:
+            plain_sections.append("")
+        plain_sections.extend((title, text))
         html_sections.extend((
             '<section style="margin:20px 0">',
             f'<h2 style="margin:0 0 8px;font-size:18px">{title}</h2>',

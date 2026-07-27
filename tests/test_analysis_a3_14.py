@@ -62,6 +62,12 @@ def test_accepted_artifacts_commit_before_pending_delivery_and_render_is_ephemer
     assert connection.execute("SELECT count(*) FROM analysis_artifacts").fetchone()[0] == 2
     assert "run-id analysis:1:daily:2026-07-24:one" in rendered.subject
     assert rendered.headers["X-TrainLab-Run-ID"] == "analysis:1:daily:2026-07-24:one"
+    assert rendered.plain_text.startswith("昨日回顾\n")
+    assert "\n今日安排\n" in rendered.plain_text
+    assert "TrainLab 分析报告" not in rendered.plain_text
+    assert "Run-ID:" not in rendered.plain_text
+    assert rendered.html.count("<h2") == 2
+    assert "<h1" not in rendered.html
     assert "body" not in {row[1] for row in connection.execute("PRAGMA table_info(analysis_deliveries)")}
 
 

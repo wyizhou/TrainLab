@@ -4,9 +4,25 @@
   "title": "TrainLab runtime input",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "run", "profile", "data_freshness", "health", "sleep", "activities", "feedback", "history", "compression", "exercise_catalog", "policy"],
+  "required": ["schema_version", "training_controls", "run", "profile", "data_freshness", "health", "sleep", "activities", "feedback", "history", "compression", "exercise_catalog", "policy"],
   "properties": {
     "schema_version": {"const": 1},
+    "training_controls": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract_version", "training_method", "allowed_future_activity_kinds", "training_difficulty_level", "training_difficulty_source", "marathon_target_finish_time", "marathon_target_finish_time_source", "half_marathon_target_finish_time", "half_marathon_target_finish_time_source"],
+      "properties": {
+        "contract_version": {"const": "1"},
+        "training_method": {"const": "hansons_marathon_method"},
+        "allowed_future_activity_kinds": {"const": ["running", "rest"]},
+        "training_difficulty_level": {"type": "integer", "minimum": 1, "maximum": 5},
+        "training_difficulty_source": {"enum": ["default", "project_global_config"]},
+        "marathon_target_finish_time": {"type": ["string", "null"], "pattern": "^(?!00:00$)[0-9]{2}:[0-5][0-9]$"},
+        "marathon_target_finish_time_source": {"enum": ["default", "project_global_config"]},
+        "half_marathon_target_finish_time": {"type": ["string", "null"], "pattern": "^(?!00:00$)[0-9]{2}:[0-5][0-9]$"},
+        "half_marathon_target_finish_time_source": {"enum": ["default", "project_global_config"]}
+      }
+    },
     "run": {
       "type": "object",
       "required": ["run_id", "slot", "as_of", "timezone", "window_start", "window_end", "plan_date"],

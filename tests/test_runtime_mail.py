@@ -61,6 +61,10 @@ def test_runtime_prompt_embeds_only_shared_and_runtime_harness(settings):
     assert "MUST attempt gmail/get_self" in prompt
     assert prompt.rfind("MUST attempt gmail/get_self") > prompt.rfind("</runtime-input>")
     assert "explicitly authorized this scheduled send to authenticated self" in prompt
+    assert payload["training_controls"]["training_method"] == "hansons_marathon_method"
+    assert payload["training_controls"]["allowed_future_activity_kinds"] == ["running", "rest"]
+    assert "marathon_target_finish_time" in payload["training_controls"]
+    assert "half_marathon_target_finish_time" in payload["training_controls"]
     connection.close()
 
 
@@ -146,7 +150,8 @@ def test_host_rejects_locked_or_excess_zone_5_prescription(settings):
     candidate["report_audit"]["heart_rate_target_used"] = True
     candidate["report_audit"]["running_plan"].update(
         {
-            "course_type": "短间歇跑",
+            "hansons_session_role": "speed",
+            "course_type": "汉森速度间歇跑",
             "target_zone": "zone_5",
             "prescribed_rpe": 9,
             "work_intervals": {
@@ -172,13 +177,11 @@ def test_host_rejects_locked_or_excess_zone_5_prescription(settings):
     connection.close()
 
 
-def test_host_enforces_movement_only_strength_session_and_resolved_links(settings):
+def test_host_rejects_future_gym_strength_session(settings):
     connection = connect(settings.database_path)
     moment = datetime(2026, 7, 23, 9, 0, tzinfo=ZoneInfo("Asia/Singapore"))
     result = run_analysis(settings, connection, slot="morning", as_of=moment)
-    selected = ["goblet_squat", "romanian_deadlift", "pull_up", "dumbbell_floor_press", "pallof_press"]
     payload = build_runtime_input(settings, connection, slot="morning", as_of=moment)
-    catalog = {item["key"]: item for item in payload["exercise_catalog"]}
     candidate = copy.deepcopy(result)
     candidate["report_audit"].update(
         {
@@ -191,22 +194,12 @@ def test_host_enforces_movement_only_strength_session_and_resolved_links(setting
             "strength_items": [],
         }
     )
-    for exercise in selected:
-        candidate["report_audit"]["strength_items"].append(
-            {
-                "exercise": exercise,
-                "youtube_url": catalog[exercise]["resolved_youtube"]["url"],
-                "youtube_kind": catalog[exercise]["resolved_youtube"]["kind"],
-            }
-        )
-    _validate_result(settings, candidate, payload["run"]["run_id"], payload)
-    candidate["report_audit"]["strength_items"][0]["weight_kg"] = 20
-    with pytest.raises(Exception, match="Additional properties are not allowed"):
+    with pytest.raises(Exception, match="not one of"):
         _validate_result(settings, candidate, payload["run"]["run_id"], payload)
     connection.close()
 
 
-def test_host_keeps_climbing_recommendation_brief_and_recovery_based(settings):
+def test_host_rejects_future_climbing_session(settings):
     connection = connect(settings.database_path)
     moment = datetime(2026, 7, 24, 9, 0, tzinfo=ZoneInfo("Asia/Singapore"))
     result = run_analysis(settings, connection, slot="morning", as_of=moment)
@@ -223,9 +216,7 @@ def test_host_keeps_climbing_recommendation_brief_and_recovery_based(settings):
             "heart_rate_target_used": False,
         }
     )
-    _validate_result(settings, candidate, payload["run"]["run_id"], payload)
-    candidate["report_audit"]["climbing_text"] = "今日攀岩。前臂、背部、肩部和核心恢复正常，安排30分钟。"
-    with pytest.raises(ValueError, match="forbidden duration"):
+    with pytest.raises(Exception, match="not one of"):
         _validate_result(settings, candidate, payload["run"]["run_id"], payload)
     connection.close()
 

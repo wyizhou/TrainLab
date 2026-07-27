@@ -169,6 +169,7 @@
       "additionalProperties": false,
       "required": [
         "activity_kind",
+        "hansons_session_role",
         "course_type",
         "warmup",
         "main_set",
@@ -188,6 +189,7 @@
       ],
       "properties": {
         "activity_kind": {"const": "running"},
+        "hansons_session_role": {"enum": ["easy", "long", "tempo", "speed", "running_strength"]},
         "course_type": {"enum": ["easy", "steady", "long_easy", "intervals"]},
         "warmup": {"$ref": "#/$defs/token"},
         "main_set": {"$ref": "#/$defs/token"},

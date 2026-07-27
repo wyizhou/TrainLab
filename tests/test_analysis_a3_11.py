@@ -20,6 +20,7 @@ from trainlab.analysis.runner import (
     RUNNER_ADAPTER_VERSION,
     _codex_compatible_output_schema,
     _command,
+    _supports_strict_structured_output,
 )
 import trainlab.analysis.runner as runner_module
 
@@ -81,7 +82,7 @@ def _fake_command(monkeypatch, program: str) -> None:
     monkeypatch.setattr(
         runner_module,
         "_command",
-        lambda executable: (sys.executable, "-c", program),
+        lambda executable, *args, **kwargs: (sys.executable, "-c", program),
     )
 
 
@@ -113,6 +114,11 @@ def test_generation_schema_adapts_only_codex_unsupported_constraints():
                 "propertyNames": {"maxLength": 10},
                 "additionalProperties": {"type": "string"},
             },
+            "items": {
+                "type": "array",
+                "items": {"type": "string"},
+                "uniqueItems": True,
+            },
         },
     }
 
@@ -129,8 +135,36 @@ def test_generation_schema_adapts_only_codex_unsupported_constraints():
         "type": "object",
         "additionalProperties": {"type": "string"},
     }
+    assert adapted["properties"]["items"] == {
+        "type": "array",
+        "items": {"type": "string"},
+    }
     assert "propertyNames" in source["properties"]["payload"]
     assert "maxProperties" in source["properties"]["payload"]
+    assert source["properties"]["items"]["uniqueItems"] is True
+
+
+def test_dynamic_extension_objects_fall_back_to_prompt_schema_validation():
+    dynamic = b'{"type":"object","additionalProperties":{"type":"string"}}'
+    closed = b'{"type":"object","additionalProperties":false,"properties":{},"required":[]}'
+    assert _supports_strict_structured_output(dynamic) is False
+    assert _supports_strict_structured_output(closed) is True
+    assert "--output-schema" not in _command(
+        ("codex",), structured_output=False
+    )
+    assert "--output-schema" in _command(
+        ("codex",), structured_output=True
+    )
+
+
+def test_correction_entry_accepts_only_sanitized_validation_codes(tmp_path):
+    runner = AnalysisCodexRunner(_config(tmp_path))
+    with pytest.raises(
+        AnalysisRunnerError, match="analysis_runner_correction_code_invalid"
+    ):
+        runner.execute_correction(
+            _bundle(tmp_path), b"{}", "raw model output with sensitive detail"
+        )
 
 
 def test_success_is_one_generation_in_private_workspace_and_cleans_it(tmp_path, monkeypatch, accepted_context):

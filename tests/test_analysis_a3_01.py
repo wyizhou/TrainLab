@@ -100,6 +100,7 @@ def test_import_boundary_is_empty_and_reproducible() -> None:
         "shadow.py",
         "stable_views.py",
         "status.py",
+        "training_difficulty.py",
         "weekly.py",
     }
     assert all(not imported for imported in first.values())

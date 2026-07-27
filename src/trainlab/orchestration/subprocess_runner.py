@@ -244,6 +244,11 @@ def _argv(call: DownstreamCall) -> tuple[str, ...]:
             for item in call.activity_ids: args.extend(("--activity-id", item))
             if call.repair_strategy: args.extend(("--strategy", call.repair_strategy))
             return tuple(args)
+        if call.mode == "audit":
+            args = list(base)
+            if call.health_from_local_date: args.extend(("--from", call.health_from_local_date))
+            if call.through_local_date: args.extend(("--through", call.through_local_date))
+            return tuple(args)
         return base
     if call.layer == "analysis":
         if type(call.subject_id) is not str or not _SUBJECT_ID.fullmatch(call.subject_id): raise SubprocessBoundaryError("subprocess_subject_required")

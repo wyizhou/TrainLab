@@ -33,7 +33,7 @@ def item(index: int, day: str) -> dict[str, object]:
 
 def running(zone: int = 4) -> dict[str, object]:
     return {
-        "activity_kind": "running", "course_type": "intervals",
+        "activity_kind": "running", "hansons_session_role": "speed", "course_type": "intervals",
         "warmup": "gentle_warmup", "main_set": "structured_intervals",
         "cooldown": "gentle_cooldown", "planned_duration_minutes": 30,
         "total_volume": "interval_session_by_duration", "target_zone": zone,
@@ -111,6 +111,8 @@ def test_revision_accepts_only_remaining_suffix_and_normalizes_safety() -> None:
     (lambda value: value["training_plan"].update(effective_local_date="2026-07-19"), "analysis_result_revision_lineage_mismatch"),
     (lambda value: value["training_plan"]["items"].pop(), "analysis_result_revision_item_cardinality_invalid"),
     (lambda value: value["training_plan"]["items"].__setitem__(0, item(0, "2026-07-21")), "analysis_result_revision_item_sequence_invalid"),
+    (lambda value: value["training_plan"]["items"][0].update(activity_kind="climbing", prescription={"activity_kind": "climbing"}), "analysis_result_schema_invalid"),
+    (lambda value: value["training_plan"]["items"][0].update(activity_kind="strength", prescription={"activity_kind": "strength"}), "analysis_result_schema_invalid"),
     (lambda value: value["training_plan"].update(original_plan_id="other"), "analysis_result_revision_lineage_mismatch"),
 ])
 def test_revision_dates_items_and_lineage_fail_closed(mutate, code: str) -> None:
@@ -136,7 +138,7 @@ def test_revision_enforces_red_flag_bpm_and_clock_time_rules() -> None:
     unsafe["training_plan"]["items"][0].update(
         activity_kind="running",
         prescription={
-            "activity_kind": "running", "course_type": "easy",
+            "activity_kind": "running", "hansons_session_role": "easy", "course_type": "easy",
             "warmup": "gentle_warmup", "main_set": "talk_test_easy",
             "cooldown": "gentle_cooldown", "planned_duration_minutes": 30,
             "total_volume": "easy_by_duration", "target_zone": None,

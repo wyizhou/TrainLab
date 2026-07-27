@@ -3,27 +3,27 @@
   "bundles": {
     "daily": [
       {"path": "harness/shared/HARNESS.md", "sha256": "109e198d097cf8acbe5b59ee3be027a89f457de196b5b0a78f7846d5fb55eb0c"},
-      {"path": "harness/analysis/HARNESS.md", "sha256": "f11f57885214afa633f604a5444ace5a67ab85c60575e7536a8ab2b6549cdb2c"},
-      {"path": "harness/analysis/daily.md", "sha256": "024213aa8366d6fe39a22ca0959af097e9928ebbfbec4dcadc6691dbc2006fc6"}
+      {"path": "harness/analysis/HARNESS.md", "sha256": "8c950d17090c67a002ed743b988c520ec0e848a30bd18045f6df1806935b8de3"},
+      {"path": "harness/analysis/daily.md", "sha256": "e1e87a4a64e9869a695a6878f7a7dc755594ff74f3705ca4f88df6b689c7843f"}
     ],
     "weekly": [
       {"path": "harness/shared/HARNESS.md", "sha256": "109e198d097cf8acbe5b59ee3be027a89f457de196b5b0a78f7846d5fb55eb0c"},
-      {"path": "harness/analysis/HARNESS.md", "sha256": "f11f57885214afa633f604a5444ace5a67ab85c60575e7536a8ab2b6549cdb2c"},
-      {"path": "harness/analysis/weekly.md", "sha256": "56d05f3056be7266ec79790181c4b5cd593cad0ebf4400123526fd00861c56d1"}
+      {"path": "harness/analysis/HARNESS.md", "sha256": "8c950d17090c67a002ed743b988c520ec0e848a30bd18045f6df1806935b8de3"},
+      {"path": "harness/analysis/weekly.md", "sha256": "48b07fe52b85a179c64b0292ccba814a47573e0b7cd946d9471d8356b0f33672"}
     ],
     "revise_plan": [
       {"path": "harness/shared/HARNESS.md", "sha256": "109e198d097cf8acbe5b59ee3be027a89f457de196b5b0a78f7846d5fb55eb0c"},
-      {"path": "harness/analysis/HARNESS.md", "sha256": "f11f57885214afa633f604a5444ace5a67ab85c60575e7536a8ab2b6549cdb2c"},
-      {"path": "harness/analysis/revise-plan.md", "sha256": "0697fd1da6d0124f218248186c7835c052fc33b1035d4dd2d2bca69b8a9181fa"}
+      {"path": "harness/analysis/HARNESS.md", "sha256": "8c950d17090c67a002ed743b988c520ec0e848a30bd18045f6df1806935b8de3"},
+      {"path": "harness/analysis/revise-plan.md", "sha256": "11e6a2bc08ff5dac20cab01f0f2eda63c643f60f586fcfe5af5e9c2cfea5ac4f"}
     ],
     "regenerate": [
       {"path": "harness/shared/HARNESS.md", "sha256": "109e198d097cf8acbe5b59ee3be027a89f457de196b5b0a78f7846d5fb55eb0c"},
-      {"path": "harness/analysis/HARNESS.md", "sha256": "f11f57885214afa633f604a5444ace5a67ab85c60575e7536a8ab2b6549cdb2c"},
-      {"path": "harness/analysis/regenerate.md", "sha256": "9190c5e239581666aa1dea480ef5dbce109d08eb7c1e34cc7273c02d46149334"}
+      {"path": "harness/analysis/HARNESS.md", "sha256": "8c950d17090c67a002ed743b988c520ec0e848a30bd18045f6df1806935b8de3"},
+      {"path": "harness/analysis/regenerate.md", "sha256": "467c625e90f10796161e381f06ce52b06bcb75f7ed61e950eecfa63d7ea12b69"}
     ],
     "delivery": [
       {"path": "harness/shared/HARNESS.md", "sha256": "109e198d097cf8acbe5b59ee3be027a89f457de196b5b0a78f7846d5fb55eb0c"},
-      {"path": "harness/analysis/HARNESS.md", "sha256": "f11f57885214afa633f604a5444ace5a67ab85c60575e7536a8ab2b6549cdb2c"},
+      {"path": "harness/analysis/HARNESS.md", "sha256": "8c950d17090c67a002ed743b988c520ec0e848a30bd18045f6df1806935b8de3"},
       {"path": "harness/analysis/delivery.md", "sha256": "1680deb7115fa344bd764bd3824ea9441120dd2461e740dda1a156700aafbad8"}
     ]
   }

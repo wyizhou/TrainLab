@@ -24,7 +24,12 @@ from .contracts import (
     AnalysisRequest,
     AnalysisWarning,
 )
-from .daily import _safe_code, _safety_base, daily_primary_item_contract
+from .daily import (
+    _safe_code,
+    _safety_base,
+    _validate_with_bounded_corrections,
+    daily_primary_item_contract,
+)
 from .features import adherence_statistics, snapshot_plan_matches
 from .harness import SchemaEvidence, resolve_harness_bundle
 from .publisher import AnalysisPublisher, RunEvidence
@@ -32,6 +37,7 @@ from .quality_gate import QualityGate, QualityGateRequest
 from .result_validation import AnalysisResultValidationError, ResultValidationExpectation
 from .run_state import AnalysisRunCoordinator, AnalysisRunStateError
 from .stable_views import StableViewRepository
+from .training_difficulty import training_control_contracts
 
 
 _SG = ZoneInfo("Asia/Singapore")
@@ -136,8 +142,6 @@ def weekly_plan_contract(prior_artifact_state: Mapping[str, str]) -> dict[str, A
         "clock_time_forbidden": True,
         "allowed_activity_kinds": list(daily["allowed_activity_kinds"]),
         "running_template": daily["running_template"],
-        "climbing_template": daily["climbing_template"],
-        "strength_template": daily["strength_template"],
         "rest_template": daily["rest_template"],
     }
 
@@ -333,7 +337,10 @@ class WeeklyRoute:
             ContextSource(snapshot=snapshot),
             quality_gate=gate,
             harness_bundle=bundle,
-            deterministic_features=(weekly_plan_contract(prior_state),),
+            deterministic_features=(
+                weekly_plan_contract(prior_state),
+                *training_control_contracts(self.config),
+            ),
             plan_adherence=adherence,
         )
         run_result = self.runner.execute(
@@ -366,7 +373,14 @@ class WeeklyRoute:
 
             validator = AnalysisResultValidator()
         try:
-            accepted = validator.validate(run_result.output_bytes, expectation)
+            accepted, run_result = _validate_with_bounded_corrections(
+                runner=self.runner,
+                bundle=bundle,
+                canonical_context=built.canonical_json.encode("utf-8"),
+                run_result=run_result,
+                validator=validator,
+                expectation=expectation,
+            )
         except AnalysisResultValidationError as error:
             self.coordinator.finish(prepared, "rejected")
             return self._receipt(

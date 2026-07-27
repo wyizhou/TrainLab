@@ -194,10 +194,10 @@ def test_policy_and_result_schema_are_versioned_and_match_collection_catalog() -
     assert CATALOG_VERSION == POLICY["catalog_version"] == "garmin-v3"
     assert set(CONDITIONAL) == expected_conditionals
     assert {"activity_inventory", "steps", "user_summary"} == set(REQUIRED)
-    assert QUALITY_GATE_POLICY_VERSION == "3"
+    assert QUALITY_GATE_POLICY_VERSION == "4"
     assert (
         QUALITY_GATE_POLICY_SHA256
-        == "80301a67ebf25777438ea60de765f223449cb5baa74f0d764687daae2aa62315"
+        == "7c4465b7443b67d5c5c9cf218e6cecb067a8d6f25d5d4c4ef3f78e4457a3f3cd"
     )
     result = QualityGate().evaluate(request(), snapshot())
     result.validate()

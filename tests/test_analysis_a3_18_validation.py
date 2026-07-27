@@ -31,7 +31,8 @@ def rest() -> dict[str, object]:
 
 def running(*, zone: int | None = None) -> dict[str, object]:
     return {
-        "activity_kind": "running", "course_type": "intervals" if zone else "easy",
+        "activity_kind": "running", "hansons_session_role": "speed" if zone else "easy",
+        "course_type": "intervals" if zone else "easy",
         "warmup": "gentle_warmup", "main_set": "structured_intervals" if zone else "talk_test_easy",
         "cooldown": "gentle_cooldown", "planned_duration_minutes": 40,
         "total_volume": "interval_session_by_duration" if zone else "easy_by_duration",
@@ -131,6 +132,48 @@ def test_weekly_first_run_has_exact_windows_plan_items_and_host_safety_normaliza
     assert accepted["safety"]["plan_items"][0]["primary_item"] == plan["items"][0]["prescription"]
 
 
+def test_weekly_prior_artifact_state_is_host_canonicalized() -> None:
+    value = output()
+    wrong = {"summary": "available", "plan": "available"}
+    value["artifacts"][0]["structured_content"]["prior_artifact_state"] = wrong
+    value["training_plan"]["prior_artifact_state"] = wrong
+    value["artifacts"][1]["structured_content"] = deepcopy(value["training_plan"])
+    accepted = validate(value).result
+    expected_state = {
+        "summary": "no_prior_artifact",
+        "plan": "no_prior_artifact",
+    }
+    assert accepted["training_plan"]["prior_artifact_state"] == expected_state
+    assert (
+        accepted["artifacts"][0]["structured_content"]["prior_artifact_state"]
+        == expected_state
+    )
+
+
+def test_weekly_duplicate_activity_kind_is_host_canonicalized() -> None:
+    value = output()
+    value["training_plan"]["items"][0]["activity_kind"] = "running"
+    value["artifacts"][1]["structured_content"] = deepcopy(value["training_plan"])
+    accepted = validate(value).result
+    assert accepted["training_plan"]["items"][0]["activity_kind"] == "rest"
+
+
+def test_weekly_plan_artifact_uses_the_canonical_top_level_plan() -> None:
+    value = output()
+    value["artifacts"][1]["structured_content"] = {}
+    accepted = validate(value).result
+    assert (
+        accepted["artifacts"][1]["structured_content"]
+        == accepted["training_plan"]
+    )
+
+
+def test_weekly_user_visible_text_cannot_narrate_raw_device_fields() -> None:
+    value = output()
+    value["artifacts"][0]["user_visible_text"] = "本周 Body Battery 有多次变化。"
+    code(value, "analysis_result_raw_device_narration_forbidden")
+
+
 @pytest.mark.parametrize("shape", ["weekly", "plan_revision"])
 def test_regeneration_validates_complete_weekly_and_plan_revision_shapes(shape: str) -> None:
     run_key = "analysis:1:regenerate:42:fixture"
@@ -168,9 +211,9 @@ def test_regeneration_validates_complete_weekly_and_plan_revision_shapes(shape: 
 @pytest.mark.parametrize("mutate,expected_code", [
     (lambda value: value["training_plan"]["items"].pop(), "analysis_result_schema_invalid"),
     (lambda value: value["training_plan"]["items"][0].update(stop_conditions={}), "analysis_result_schema_invalid"),
-    (lambda value: value["training_plan"]["items"].__setitem__(1, {**value["training_plan"]["items"][1], "item_index": 0}), "analysis_result_weekly_plan_artifact_mismatch"),
-    (lambda value: value["artifacts"][1].update(structured_content={}), "analysis_result_weekly_plan_artifact_mismatch"),
-    (lambda value: value["artifacts"][0]["structured_content"].update(prior_artifact_state={"summary": "available", "plan": "available"}), "analysis_result_weekly_prior_artifact_state_mismatch"),
+    (lambda value: value["training_plan"]["items"][0].update(activity_kind="climbing", prescription={"activity_kind": "climbing"}), "analysis_result_schema_invalid"),
+    (lambda value: value["training_plan"]["items"][0].update(activity_kind="strength", prescription={"activity_kind": "strength"}), "analysis_result_schema_invalid"),
+    (lambda value: value["training_plan"]["items"].__setitem__(1, {**value["training_plan"]["items"][1], "item_index": 0}), "analysis_result_weekly_item_sequence_invalid"),
 ])
 def test_weekly_shape_and_prior_state_fail_closed(mutate, expected_code: str) -> None:
     value = output(); mutate(value); code(value, expected_code)
@@ -305,6 +348,22 @@ def test_three_high_intensity_days_are_rejected_after_daily_safety_checks() -> N
 def test_high_intensity_running_days_need_at_least_48_hours_between_dates() -> None:
     prescriptions = [running(zone=4) if index in {0, 1} else rest() for index in range(7)]
     code(output(prescriptions=prescriptions), "analysis_result_weekly_high_intensity_recovery_insufficient", expectation(zones=True))
+
+
+def test_hansons_sos_roles_cannot_be_scheduled_on_consecutive_days() -> None:
+    tempo = running()
+    tempo.update(
+        hansons_session_role="tempo",
+        course_type="steady",
+        target_zone=3,
+        prescribed_rpe=6,
+    )
+    prescriptions = [deepcopy(tempo) if index in {0, 1} else rest() for index in range(7)]
+    code(
+        output(prescriptions=prescriptions),
+        "analysis_result_hansons_sos_recovery_insufficient",
+        expectation(zones=True),
+    )
 
 
 def test_red_flag_requires_the_entire_week_to_be_safety_suspended() -> None:
