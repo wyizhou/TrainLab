@@ -444,6 +444,22 @@ def test_generated_argv_round_trips_the_real_public_parsers() -> None:
     mail_parser().parse_args(list(mail[3:]))
 
 
+def test_mail_scheduler_invocation_with_fractional_seconds_is_safe_argv() -> None:
+    invocation = "20260727T155229.484382Z"
+    argv = runner_module._argv(
+        DownstreamCall(
+            "mail",
+            "run",
+            invocation,
+            None,
+            subject_id=1,
+            max_items=2,
+            deadline_seconds=30,
+        )
+    )
+    assert invocation in argv
+
+
 def _script(path: Path, source: str) -> None:
     path.write_text("#!" + sys.executable + "\n" + source)
     path.chmod(0o700)

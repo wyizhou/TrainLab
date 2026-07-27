@@ -25,6 +25,11 @@
 Gmail 仅使用当前 Codex 执行环境已注册的 `gmail` MCP；没有该精确绑定时，保持未启用
 并按 incident/认证流程处理，不能安装、认证或替换 transport。
 
+默认 Foundation 布局将数据库放在 `state/foundation/data.db`。因此部署配置中的
+`state_lock_path` 必须使用
+`state/foundation/state/locks/supervisor.lock`，使 Supervisor 的诊断锁位于数据库
+可信根内。不得通过放宽 LeaseManager 的路径校验来兼容旧的 `state/locks` 路径。
+
 ## 模板与最小权限
 
 使用 [trainlab-orchestrator-supervisor.service.template](../../deploy/systemd/trainlab-orchestrator-supervisor.service.template)
@@ -50,6 +55,9 @@ environment file 和配置都不能提供自定义 shell、SQL、收件人、日
 
 - `Type=notify` + `WatchdogSec=90s` 让 systemd 负责进程级存活监控；Supervisor 不尝试
   重启自身。
+- `TimeoutStartSec=120s` 为大数据库上的幂等 Foundation 自检保留明确上限；READY
+  仍只能在自检完成并取得唯一 lease 后发送。若启动超过该上限，应调查数据库或存储，
+  不得继续放宽超时掩盖故障。
 - `Restart=on-failure`、15 秒退避及 `StartLimitBurst=3` 避免快速崩溃循环。达到启动限制时
   不绕过 systemd 限制，先调查 journal、incident 与 lease。
 - `SIGTERM` 会先阻止领取新 workflow，通知活跃 executor 在 `TimeoutStopSec=90s` 内完成

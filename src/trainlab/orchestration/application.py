@@ -8,6 +8,8 @@ the adapters and its Layer-5-only receipt store explicitly.
 
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
@@ -65,7 +67,7 @@ class HealthWorkflowOutcome:
     next_retry_at_utc: str | None = None
 
 
-_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9:_-]{0,127}$")
+_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _SUBJECT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$")
 _MAIL_SUBJECT = re.compile(r"^[1-9][0-9]{0,18}$")
 _UTC = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z$")
@@ -305,7 +307,35 @@ class OrchestrationTool:
     def _health_receipt(self, request: WorkflowRequest, now: datetime, outcome: HealthWorkflowOutcome) -> WorkflowReceipt:
         if type(outcome) is not HealthWorkflowOutcome or outcome.status not in _WORKFLOW_STATUSES:
             raise OrchestrationApplicationError("orchestration_outcome_invalid")
-        return self._base(request, now, status=outcome.status, next_action=outcome.next_action, next_retry=outcome.next_retry_at_utc, incidents=outcome.incident_ids, warnings=outcome.warnings, errors=outcome.errors)
+        step_status = {
+            "succeeded": "succeeded",
+            "partial": "partial",
+            "deferred": "deferred",
+            "attention_required": "partial",
+            "failed": "failed",
+        }[outcome.status]
+        evidence = hashlib.sha256(json.dumps(
+            {
+                "invocation_id": request.invocation_id,
+                "status": outcome.status,
+                "next_action": outcome.next_action,
+                "next_retry_at_utc": outcome.next_retry_at_utc,
+                "incident_ids": outcome.incident_ids,
+                "warning_count": len(outcome.warnings),
+                "error_count": len(outcome.errors),
+            },
+            sort_keys=True, separators=(",", ":"),
+        ).encode("utf-8")).hexdigest()
+        step = WorkflowStepReceipt(
+            "health_check", "orchestration", "health_check", step_status,
+            None, request.invocation_id, evidence,
+            {
+                "incidents": len(outcome.incident_ids),
+                "warnings": len(outcome.warnings),
+                "errors": len(outcome.errors),
+            },
+        )
+        return self._base(request, now, status=outcome.status, steps=(step,), next_action=outcome.next_action, next_retry=outcome.next_retry_at_utc, incidents=outcome.incident_ids, warnings=outcome.warnings, errors=outcome.errors)
 
     def _failure(self, request: WorkflowRequest, now: datetime, code: str) -> WorkflowReceipt:
         return self._base(request, now, status="failed", next_action="operator_review", errors=_safe_error(code))

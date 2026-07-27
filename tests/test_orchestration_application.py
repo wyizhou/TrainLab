@@ -101,6 +101,17 @@ def test_health_requires_global_identity_and_injected_adapter() -> None:
     health = Health()
     receipt = tool(health_check=health).execute(request("health_check"))
     assert receipt.status == "succeeded" and health.requests
+    assert len(receipt.steps) == 1
+    assert receipt.steps[0].step_id == "health_check"
+    assert receipt.steps[0].status == "succeeded"
+    assert receipt.steps[0].layer == "orchestration"
+    assert len(receipt.steps[0].receipt_sha256 or "") == 64
+    interval = WorkflowRequest(
+        "health_check", None, None,
+        "host-7:20260727T000000.123456Z", "scheduled", None, (),
+        "2026-07-27T01:00:00Z", "2026-07-27T00:00:00Z",
+    )
+    assert tool(health_check=health).execute(interval).status == "succeeded"
     bad = WorkflowRequest("health_check", "7", None, "invoke-health", "scheduled", None, (), "2026-07-27T01:00:00Z", "2026-07-27T00:00:00Z")
     assert tool(health_check=health).execute(bad).errors[0]["code"] == "orchestration_request_invalid"
 

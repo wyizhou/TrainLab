@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import hashlib
+import math
 import os
 import re
 import sqlite3
@@ -408,7 +409,7 @@ class OrchestrationRepository:
             return self._step_by_id(conn, current.id)
 
     def record_health_check(self, *, check_kind: str, target_kind: str, status: str, checked_at_utc: datetime,
-                            target_id: str | None = None, metrics: Mapping[str, int | str | None] | None = None,
+                            target_id: str | None = None, metrics: Mapping[str, int | float | bool | str | None] | None = None,
                             threshold_version: str | None = None) -> int:
         _identifier(check_kind); _identifier(target_kind); _identifier(status); _utc_text(checked_at_utc)
         if target_id is not None: _identifier(target_id)
@@ -1042,12 +1043,13 @@ def _counts(values: Mapping[str, int]) -> None:
     for key, value in values.items():
         _code(key)
         if not isinstance(value, int) or isinstance(value, bool) or not 0 <= value <= 1_000_000_000: raise OrchestrationRepositoryError("orchestrator_controlled_counts_invalid")
-def _summary(values: Mapping[str, int | str | None]) -> str:
+def _summary(values: Mapping[str, int | float | bool | str | None]) -> str:
     for key, value in values.items():
         _code(key)
-        if not isinstance(value, (int, str, type(None))) or isinstance(value, bool): raise OrchestrationRepositoryError("orchestrator_metrics_invalid")
+        if not isinstance(value, (int, float, bool, str, type(None))): raise OrchestrationRepositoryError("orchestrator_metrics_invalid")
+        if isinstance(value, float) and not math.isfinite(value): raise OrchestrationRepositoryError("orchestrator_metrics_invalid")
         if isinstance(value, str): _code(value)
-    return json.dumps(dict(values), sort_keys=True, separators=(",", ":"))
+    return json.dumps(dict(values), sort_keys=True, separators=(",", ":"), allow_nan=False)
 def _validate_transition_payload(status: str, receipt: str | None, evidence: str | None, retry_value: datetime | None, at_value: datetime) -> None:
     retry = None if retry_value is None else _utc_text(retry_value)
     at = _utc_text(at_value)

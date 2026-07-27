@@ -22,6 +22,7 @@ class MailWorkflowError(ValueError):
 
 _POSITIVE = re.compile(r"^[1-9][0-9]{0,18}$")
 _IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9:_-]{0,127}$")
+_INVOCATION = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
@@ -35,6 +36,12 @@ def _positive(value: object, code: str) -> str:
 def _identifier(value: object, code: str) -> str:
     if not isinstance(value, str) or _IDENTIFIER.fullmatch(value) is None:
         raise MailWorkflowError(code)
+    return value
+
+
+def _invocation(value: object) -> str:
+    if not isinstance(value, str) or _INVOCATION.fullmatch(value) is None:
+        raise MailWorkflowError("mail_workflow_invocation_invalid")
     return value
 
 
@@ -191,7 +198,7 @@ class MailWorkflow:
         deadline_seconds: int,
     ) -> MailWorkflowOutcome:
         _positive(subject_id, "mail_workflow_subject_invalid")
-        _identifier(invocation_id, "mail_workflow_invocation_invalid")
+        _invocation(invocation_id)
         if (
             not isinstance(max_items, int)
             or isinstance(max_items, bool)

@@ -220,9 +220,20 @@ class ProductionOrchestrationApplication:
             else str(numeric) if item.workflow_kind == "mail"
             else subject_key
         )
-        invocation = "scheduled-" + hashlib.sha256(
-            item.workflow_key.encode()
-        ).hexdigest()[:24]
+        if item.workflow_kind == "mail":
+            prefix = f"mail-poll:{numeric}:"
+            if not item.workflow_key.startswith(prefix):
+                raise ValueError("orchestration_due_identity_invalid")
+            invocation = item.workflow_key.removeprefix(prefix)
+        elif item.workflow_kind == "health_check":
+            prefix = "health-check:"
+            if not item.workflow_key.startswith(prefix):
+                raise ValueError("orchestration_due_identity_invalid")
+            invocation = item.workflow_key.removeprefix(prefix)
+        else:
+            invocation = "scheduled-" + hashlib.sha256(
+                item.workflow_key.encode()
+            ).hexdigest()[:24]
         request = WorkflowRequest(
             item.workflow_kind, subject, item.logical_local_date, invocation,
             item.trigger_kind, None, (),

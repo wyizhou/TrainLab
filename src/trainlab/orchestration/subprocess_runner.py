@@ -80,6 +80,7 @@ _TIMEOUTS = {
     "mail": {mode: 300 for mode in _MODES["mail"]},
 }
 _ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9:_-]{0,127}$")
+_INVOCATION_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _SUBJECT_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$")
 _DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _MODE_FIELDS = {
@@ -196,7 +197,10 @@ def _argv(call: DownstreamCall) -> tuple[str, ...]:
     computed_hash = canonical_request_sha256(call)
     if call.request_sha256 is not None and (type(call.request_sha256) is not str or not re.fullmatch(r"[0-9a-f]{64}", call.request_sha256) or call.request_sha256 != computed_hash):
         raise SubprocessBoundaryError("subprocess_request_hash_invalid")
-    if call.invocation_id is not None and (type(call.invocation_id) is not str or not _ID.fullmatch(call.invocation_id)):
+    if call.invocation_id is not None and (
+        type(call.invocation_id) is not str
+        or not _INVOCATION_ID.fullmatch(call.invocation_id)
+    ):
         raise SubprocessBoundaryError("subprocess_invocation_invalid")
     for value in (call.max_items, call.max_threads, call.deadline_seconds):
         if value is not None and (type(value) is not int or not 1 <= value <= 10_000):
@@ -221,6 +225,10 @@ def _argv(call: DownstreamCall) -> tuple[str, ...]:
     def require(value: str | None, name: str) -> str:
         if type(value) is not str or not _ID.fullmatch(value):
             raise SubprocessBoundaryError(f"subprocess_{name}_required")
+        return value
+    def require_invocation(value: str | None) -> str:
+        if type(value) is not str or not _INVOCATION_ID.fullmatch(value):
+            raise SubprocessBoundaryError("subprocess_invocation_required")
         return value
     # The project entrypoint and every positional mode are frozen literals.
     prefix = (str(_EXECUTABLE),)
@@ -325,7 +333,7 @@ def _argv(call: DownstreamCall) -> tuple[str, ...]:
             )
         raise SubprocessBoundaryError("subprocess_mode_not_allowed")
     if type(call.subject_id) is not int or call.subject_id <= 0: raise SubprocessBoundaryError("subprocess_subject_required")
-    base = [str(_PYTHON), "-m", "trainlab.mail_agent.cli", "--subject-id", str(call.subject_id), "--invocation-id", require(call.invocation_id, "invocation"), call.mode.replace("_", "-")]
+    base = [str(_PYTHON), "-m", "trainlab.mail_agent.cli", "--subject-id", str(call.subject_id), "--invocation-id", require_invocation(call.invocation_id), call.mode.replace("_", "-")]
     fields = {"process": (("--message-id", call.mail_message_id),), "deliver_response": (("--response-id", call.mail_response_artifact_id),), "reconcile": (("--delivery-id", call.delivery_id),)}.get(call.mode, ())
     for flag, value in fields:
         base.extend((flag, require(value, "target")))

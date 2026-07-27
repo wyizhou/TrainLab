@@ -10,7 +10,7 @@ orchestrator:
   heartbeat_interval_seconds: 30
   daily_misfire_window_hours: 12
   weekly_misfire_window_hours: 24
-  state_lock_path: state/locks/supervisor.lock
+  state_lock_path: state/foundation/state/locks/supervisor.lock
   temp_root: state/tmp/orchestrator
   log_root: logs
   operational_alerts_enabled: true

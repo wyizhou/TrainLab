@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
 import threading
 
 import pytest
@@ -105,6 +107,18 @@ def test_api_and_cli_share_the_same_mail_tool_service_boundary(capsys: pytest.Ca
     assert spy.requests[0] == api_request
     assert spy.requests[1].mode == "status"
     assert json.loads(stdout)["run_key"] == "mail:7:status:inv-cli"
+
+
+def test_mail_cli_module_is_an_executable_entrypoint() -> None:
+    process = subprocess.run(
+        [sys.executable, "-m", "trainlab.mail_agent.cli", "--help"],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+    assert process.returncode == 0
+    assert "TrainLab fourth-layer mail tool" in process.stdout
 
 
 def test_cli_parser_exposes_only_frozen_arguments_and_builds_one_request() -> None:

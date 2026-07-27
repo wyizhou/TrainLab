@@ -77,3 +77,9 @@ def main(argv: list[str] | None = None, *, tool: MailTool | None = None, stdout:
     receipt = mail_cli_execute(args, tool=tool)
     print(receipt.json(), file=stdout or sys.stdout)
     return exit_code_for_status(receipt.status)
+
+
+if __name__ == "__main__":
+    from .runtime import create_mail_application
+
+    raise SystemExit(main(tool=MailTool(create_mail_application())))

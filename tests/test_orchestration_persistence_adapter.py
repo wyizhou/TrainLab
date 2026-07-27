@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from trainlab.foundation import FoundationConfig, FoundationRequest, FoundationTool
@@ -15,9 +15,21 @@ from trainlab.orchestration.persistence_adapter import (
     SqliteSubjectProjection,
 )
 from trainlab.orchestration.repository import OrchestrationRepository
+from trainlab.orchestration import LeaseManager
+from trainlab.orchestration.scheduling_config import SchedulerJobProjection
 
 
 NOW = datetime(2026, 7, 27, tzinfo=UTC)
+
+
+class Clock:
+    def now(self) -> datetime:
+        return NOW
+
+
+class Probe:
+    def is_absent(self, _pid: int) -> bool:
+        return True
 
 
 def database(tmp_path: Path) -> Path:
@@ -142,3 +154,65 @@ def test_deferred_receipt_can_resume_without_redefining_step(tmp_path: Path) -> 
     assert [event.to_state for event in final.step_events] == [
         "running", "deferred", "running", "deferred", "running", "succeeded",
     ]
+
+
+def test_scheduler_handoff_is_materialized_and_completed_by_exact_receipt(
+    tmp_path: Path,
+) -> None:
+    path = database(tmp_path)
+    repository = OrchestrationRepository(path)
+    projection = SchedulerJobProjection(
+        "health_check", "health_check", "Asia/Singapore", "interval", NOW,
+        None, 60, None, "none", None, "a" * 64,
+    )
+    repository.upsert_scheduler_job(
+        projection, is_enabled=True, updated_at_utc=NOW
+    )
+    lease = LeaseManager(
+        path, path.parent / "state/locks/supervisor.lock",
+        "host-one", 101, Clock(), Probe(), 90,
+    )
+    assert lease.acquire().state == "active"
+    workflow_key = "health-check:host-one:20260727T000000.000000Z"
+    assert repository.claim_scheduler_due(
+        job_key="health_check",
+        due_at_utc=NOW,
+        next_due_at_utc=NOW + timedelta(seconds=60),
+        now_utc=NOW,
+        owner_instance_id="host-one",
+        owner_pid=101,
+        workflow_key=workflow_key,
+        workflow_kind="health_check",
+        trigger_kind="scheduled",
+        subject_id=None,
+        logical_local_date=None,
+        deadline_at_utc=NOW + timedelta(hours=1),
+    )
+    request = WorkflowRequest(
+        "health_check", None, None,
+        "host-one:20260727T000000.000000Z", "scheduled", None, (),
+        "2026-07-27T01:00:00Z", "2026-07-27T00:00:00Z",
+    )
+    receipt = WorkflowReceipt(
+        f"run:{workflow_key}", workflow_key, "health_check", "succeeded",
+        "scheduled", "2026-07-27T00:00:00Z",
+        "2026-07-27T00:00:00Z", "2026-07-27T00:00:01Z", None, (
+            WorkflowStepReceipt(
+                "health_check", "orchestration", "health_check", "succeeded",
+                None, "host-one:20260727T000000.000000Z", "b" * 64,
+                {"incidents": 0, "warnings": 0, "errors": 0},
+            ),
+        ),
+        "none", None, (), (), (),
+    )
+
+    RepositoryReceiptStore(
+        repository, SqliteSubjectProjection(path), clock=lambda: NOW
+    ).record_orchestration_receipt(request, receipt)
+
+    aggregate = repository.load_workflow_definition(workflow_key)
+    assert aggregate is not None
+    assert aggregate.workflow.domain_state == "succeeded"
+    assert aggregate.scheduler_handoff_lineage_json is not None
+    assert repository.get_workflow(workflow_key).status == "succeeded"
+    assert lease.release().state == "stopped"

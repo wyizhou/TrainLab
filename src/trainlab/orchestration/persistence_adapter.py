@@ -91,8 +91,15 @@ class RepositoryReceiptStore:
     ) -> None:
         if receipt.workflow_key != receipt.workflow_run_id.removeprefix("run:"):
             raise OrchestrationPersistenceError("orchestration_persistence_identity_invalid")
-        existing = self._repository.load_workflow_definition(receipt.workflow_key)
         handoff = self._repository.get_scheduler_handoff(receipt.workflow_key)
+        # A scheduler claim first creates a handoff-only run row.  It is not a
+        # malformed workflow definition; the exact receipt below materializes
+        # that row atomically while preserving its scheduler lineage.
+        existing = (
+            None
+            if handoff is not None
+            else self._repository.load_workflow_definition(receipt.workflow_key)
+        )
         started = (
             _parse_utc(handoff.workflow.started_at_utc)
             if handoff is not None

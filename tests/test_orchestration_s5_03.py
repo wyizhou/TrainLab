@@ -122,11 +122,27 @@ def test_short_transactions_rollback_and_other_layer_tables_remain_unchanged(tmp
     with pytest.raises(OrchestrationRepositoryError, match="reference_invalid"):
         repo.record_incident(incident_key="bad-ref", category="database", severity="error", seen_at_utc=NOW, related_step_id=999999)
     assert repo.get_incident("bad-ref") is None
-    repo.record_health_check(check_kind="sqlite", target_kind="database", status="ready", checked_at_utc=NOW, metrics={"connections": 1})
+    health_id = repo.record_health_check(
+        check_kind="sqlite", target_kind="database", status="ready",
+        checked_at_utc=NOW,
+        metrics={"connections": 1, "wal_enabled": True, "load_ratio": 0.25},
+    )
     with sqlite3.connect(db_path) as conn:
         after = {name: conn.execute(f"SELECT count(*) FROM {name}").fetchone()[0] for name in before}
         assert after == before
         assert conn.execute("SELECT count(*) FROM orchestrator_runs WHERE workflow_key=?", (run.workflow_key,)).fetchone()[0] == 1
+        metrics = json.loads(conn.execute(
+            "SELECT metrics_json FROM service_health_checks WHERE id=?",
+            (health_id,),
+        ).fetchone()[0])
+        assert metrics == {
+            "connections": 1, "load_ratio": 0.25, "wal_enabled": True,
+        }
+    with pytest.raises(OrchestrationRepositoryError, match="metrics_invalid"):
+        repo.record_health_check(
+            check_kind="sqlite", target_kind="database", status="ready",
+            checked_at_utc=NOW, metrics={"load_ratio": float("nan")},
+        )
 
 
 def test_read_only_recovery_queries_do_not_commit_writes(tmp_path: Path) -> None:

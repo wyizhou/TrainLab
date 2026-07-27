@@ -44,6 +44,19 @@ def test_plain_mail_batch_never_invokes_analysis() -> None:
     assert [call.mode for call in runner.calls] == ["run"]
 
 
+def test_scheduler_fractional_second_invocation_is_preserved() -> None:
+    runner = Runner([result(mail_receipt(), "1")])
+    invocation = "20260727T155229.484382Z"
+    outcome = MailWorkflow(runner, Resolver()).execute(
+        subject_id=7,
+        invocation_id=invocation,
+        max_items=10,
+        deadline_seconds=120,
+    )
+    assert outcome.status == "succeeded"
+    assert runner.calls[0].invocation_id == invocation
+
+
 def test_exact_dependency_revises_once_then_resumes_original_message() -> None:
     runner = Runner([
         result(mail_receipt(action="invoke_analysis", pending=[{

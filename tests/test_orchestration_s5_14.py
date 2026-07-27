@@ -19,6 +19,7 @@ class Repo:
     def __init__(self):
         self.checks = []
         self.incidents = {}
+        self.incident_writes = []
 
     def record_health_check(self, **values):
         self.checks.append(values)
@@ -27,6 +28,7 @@ class Repo:
         return self.incidents.get(key)
 
     def record_incident(self, **values):
+        self.incident_writes.append(values)
         key = values["incident_key"]
         current = self.incidents.get(key)
         count = 1 if current is None else current.occurrence_count + 1
@@ -49,6 +51,10 @@ def test_catalog_records_only_metadata_and_deduplicates_incident() -> None:
     summary = monitor.record(observations, checked_at_utc=NOW)
     assert summary.status == "critical"
     assert summary.incident_keys == ("health:garmin:cursor", "health:mail:backlog")
+    assert all(
+        row["error_summary"] == "health_check_requires_attention"
+        for row in repo.incident_writes
+    )
     monitor.record(observations, checked_at_utc=NOW)
     assert repo.incidents["health:garmin:cursor"].occurrence_count == 2
     assert all("payload" not in str(row).lower() for row in repo.checks)

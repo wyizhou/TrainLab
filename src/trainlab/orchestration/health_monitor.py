@@ -131,7 +131,7 @@ class HealthMonitor:
                 severity=severity,
                 seen_at_utc=checked_at_utc,
                 error_code=f"{observation.check_kind}_{observation.status}",
-                error_summary="health check requires attention",
+                error_summary="health_check_requires_attention",
                 next_action="operator_review" if severity == "critical" else "retry",
             )
             incidents.append(incident_key)
