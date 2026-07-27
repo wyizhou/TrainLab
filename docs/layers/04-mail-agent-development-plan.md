@@ -1,7 +1,7 @@
 # 第四层：邮件 Agent 工具层详细开发需求清单
 
-状态：开发中（M4-01～13、M4-14A 已完成；v2.3 固定 recipient 投递离线终验通过；
-M4-14B、M4-15 真实验收与 IG-0～7 未完成）
+状态：单层已实现（M4-01～13、M4-14A 与 M4-15 真实 Gmail 验收已完成；
+M4-14B/X-04 和生产 cutover/IG-7 等待第五层 S5-10）
 适用契约：第四层 v2.3；直接基线为第一层 v2.4、第三层 v2、第五层 v1
 规划日期：2026-07-26
 本文件性质：后续开发的唯一逐项清单；不修改五层冻结大契约，也不替代它们。
@@ -16,7 +16,7 @@ M4-14B、M4-15 真实验收与 IG-0～7 未完成）
 | `01-data-foundation.md` | v2.4 | `9bf0a91e61bda47c9dba971c731ca6ec79e064b7f0ea4eb8124a5a216d67e396` |
 | `02-data-collection.md` | v1 | `c39ae1b82afcafe9f4fc3c54d1f851b4992c48021c5238038f078fab1ec885d6` |
 | `03-data-analysis.md` | v2.1 | `2bc279170dfd7f8fc50acaf96ca631bad0fcd65069f3402a0c6d1b67c0caa99a` |
-| `04-mail-agent.md` | v2.3 | `8d90aa7c3c871e9f76426a21b2344cba719ec4b2e95e091c1eef69243bcc935c` |
+| `04-mail-agent.md` | v2.3 | `95ff7a8541c3e803661f4d8543aea545c1f9115fc1990a3409cd574b56d8c8a4` |
 | `05-orchestration-monitoring.md` | v1.1 | `f46aca332f146fa2efffb4da8a03b48037989b7e4e4f31df9d562932e46db356` |
 
 第四层的唯一业务职责是：收件、原始归档、会话与用户事实、邮件 AI 回复及该回复的
@@ -36,16 +36,16 @@ M4-14B、M4-15 真实验收与 IG-0～7 未完成）
 以下不是第四层实现项，须由对应层完成并提供可验证证据。未满足时，第四层只能完成
 不依赖该条件的隔离开发，不得自行补建或绕过。
 
-- [ ] **EP-01｜第一层 v2.4 已初始化且兼容**：`foundation init` 已创建并验证 ready/
+- [x] **EP-01｜第一层 v2.4 已初始化且兼容**：`foundation init` 已创建并验证 ready/
   schema 标记、Gmail raw/revision、`mail_*`、`conversation_events`、`user_facts`、
   `mail_agent_*`、`mail_response_*`、`mail_deliveries`、`mail_delivery_artifacts`、
   `mail_poll_cursors` 及只读视图；证据为脱敏 `foundation init/status` receipt 与
   schema 版本。此项由第一层负责，第四层不得执行迁移或 DDL。
-- [ ] **EP-02｜固定 recipient 与安全目录可用**：本地、Git 忽略的
+- [x] **EP-02｜固定 recipient 与安全目录可用**：本地、Git 忽略的
   `config/trainlab.json` 已提供有效且唯一的 `mail.recipient_email`；数据、raw、state、
   tmp 权限符合冻结契约；证据为不回显地址的只读 verify/doctor。第四层不得通过 MCP
   获取或判断 Gmail 登录账号，也不要求它等于 recipient。
-- [ ] **EP-03｜第三层 v2 只读交接可用**：已提供 accepted/current
+- [x] **EP-03｜第三层 v2 只读交接可用**：已提供 accepted/current
   `analysis_*`、`training_*`、`analysis_delivery_*` 只读视图，以及可由第四层引用的
   精确 plan/artifact/delivery revision；证据为只读 fixture 或 contract test。第四层
   不得等待或伪造第三层结果。
@@ -53,7 +53,7 @@ M4-14B、M4-15 真实验收与 IG-0～7 未完成）
   `MailReceipt.next_action=invoke_analysis`，按“reason event → `revise-plan` → 传回精确
   新 revision → resume process”执行；证据为跨层 stub/integration contract。第四层
   不实现调度器。
-- [ ] **EP-05｜当前环境 Gmail MCP 已认证并受限**：当前 Codex 环境必须把
+- [x] **EP-05｜当前环境 Gmail MCP 已认证并受限**：当前 Codex 环境必须把
   `@artymclabin/gmail-mcp` 注册为唯一名称 `gmail`；项目不保存机器 command/cwd、
   token 或 OAuth 路径。缺失或不匹配时返回标准 auth/register 指引，实际宽工具面
   由第四层确定性 adapter 收敛为 route-specific allowlist。
@@ -102,20 +102,20 @@ flowchart LR
 
 ## 4. 集成门与验收门
 
-- [ ] **IG-0｜冻结基线门**：五份哈希、EP 状态、表所有权、禁止范围和“不代发
+- [x] **IG-0｜冻结基线门**：五份哈希、EP 状态、表所有权、禁止范围和“不代发
   第三层 artifact”均通过静态检查；失败即停止，不进入 W1。
-- [ ] **IG-1｜本地持久化与 adapter 门**：M4-02/03 的假 MCP fixture 能给出固定 recipient
+- [x] **IG-1｜本地持久化与 adapter 门**：M4-02/03 的假 MCP fixture 能给出固定 recipient
   配置结论、错误分类和无敏感日志；未通过时禁止 poll。
-- [ ] **IG-2｜收件但不生成/不发送门**：M4-04/05 能完成 overlap cursor、raw archive、
+- [x] **IG-2｜收件但不生成/不发送门**：M4-04/05 能完成 overlap cursor、raw archive、
   normalization、eligibility、防循环；不得调用 Codex 或 `send_email`。
-- [ ] **IG-3｜生成但不发送门**：M4-06..09 能从已归档 message 发布 immutable accepted
+- [x] **IG-3｜生成但不发送门**：M4-06..09 能从已归档 message 发布 immutable accepted
   response、事实、事件和输入血缘；失败不切换 current，不发邮件。
-- [ ] **IG-4｜精确回复投递与恢复门**：M4-10/11 证明固定 recipient、thread participant
+- [x] **IG-4｜精确回复投递与恢复门**：M4-10/11 证明固定 recipient、thread participant
   边界、查重、
   unknown→reconcile、label 独立恢复；禁止涉及 `analysis_delivery_*`。
 - [ ] **IG-5｜跨层计划修订门**：由 stub 第五层驱动完整依赖，不出现“计划已修改”的
   虚假回复，第三层自行投递新计划，第四层仅回复原 thread。
-- [ ] **IG-6｜真实环境验收门**：在受控账号完成只读 recipient-config/poll、明确授权的一次
+- [x] **IG-6｜真实环境验收门**：在受控账号完成只读 recipient-config/poll、明确授权的一次
   固定-recipient send、无标签 thread reply 发现和 send 中断 reconcile；证据脱敏。
 - [ ] **IG-7｜最终完成门**：M4-01..15 全部完成、覆盖矩阵无空项、shadow 对账与回滚
   演练通过，并由总控确认可进入第五层生产编排切换。
@@ -583,10 +583,12 @@ flowchart LR
   邮箱和数据库中均不存在重复 reply 或第三层 artifact 被第四层代发。
 - **集成顺序与失败回退**：W5 最后；任何差异/未知投递立即冻结 cutover、保持 backup
   与旧路径单一写入，先 reconcile/人工审查，再由独立切换任务决定恢复。
-- **当前进展（2026-07-27，未完成）**：已提供纯 metadata shadow comparator、
-  单 writer/cutover/rollback gate 和
-  [迁移回滚手册](04-mail-agent-migration-runbook.md)。这只是离线准备，不代表
-  real-Gmail read-only、固定-recipient send、send interruption reconcile 或 IG-6/IG-7 已完成。
+- **当前进展（2026-07-27）**：纯 metadata shadow comparator、single-writer/cutover/
+  rollback gate 和[迁移回滚手册](04-mail-agent-migration-runbook.md)已完成；真实 Gmail
+  read-only poll、固定-recipient send、重复调用 no-op、唯一 marker reconcile、无标签
+  tracked-thread poll 与标签恢复均通过，见
+  [脱敏验收记录](evidence/mail/M4-15-real-gmail-acceptance-2026-07-27.md)。IG-6 已完成。
+  M4-15 的生产 cutover 判定仍受 M4-14B/S5-10/X-04 和 IG-7 阻断，未启用第五层调度。
 
 ## 6. 大契约覆盖矩阵
 

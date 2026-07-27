@@ -222,3 +222,29 @@ def test_thread_evidence_has_poll_canonical_fields_and_keeps_provider_raw():
     assert raw_message["message_id"] == MESSAGE
     assert raw_message["internal_date_utc"] == "2026-07-24T00:00:00Z"
     assert raw_message["provider_raw"] == provider["messages"][0]
+
+
+def test_thread_evidence_normalizes_provider_rfc2822_date_to_utc():
+    provider = {
+        "threadId": THREAD,
+        "messages": [
+            {
+                "messageId": MESSAGE,
+                "threadId": THREAD,
+                "from": SELF,
+                "to": SELF,
+                "cc": "",
+                "bcc": "",
+                "subject": "TrainLab",
+                "date": "Sun, 26 Jul 2026 05:45:49 -0700",
+                "body": "hello",
+                "labelIds": ["TrainLab"],
+                "attachments": [],
+            }
+        ],
+    }
+
+    evidence = adapter(Client(responses=[provider])).read_thread_evidence(THREAD)
+
+    assert evidence.raw_payload["messages"][0]["internal_date_utc"] == "2026-07-26T12:45:49Z"
+    assert evidence.thread.messages[0].received_at_utc == "2026-07-26T12:45:49Z"

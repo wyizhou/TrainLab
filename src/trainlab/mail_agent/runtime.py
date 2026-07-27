@@ -177,7 +177,7 @@ class RuntimeMailApplicationService:
     ) -> MailApplicationService:
         poll = PollStage(MailPollService(
             repository, adapter,
-            MailPollConfig(foundation.raw_root / "gmail" / "json", foundation.state_root / "locks" / "mail.lock"),
+            MailPollConfig(foundation.raw_root, foundation.state_root / "locks" / "mail.lock"),
             clock=self._dependencies.clock,
         ))
         # Only process uses Codex.  A poll, delivery, reconcile or queue call

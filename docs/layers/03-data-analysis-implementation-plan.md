@@ -13,7 +13,7 @@
 | `01-data-foundation.md` | v2.4 | `9bf0a91e61bda47c9dba971c731ca6ec79e064b7f0ea4eb8124a5a216d67e396` |
 | `02-data-collection.md` | v1 | `c39ae1b82afcafe9f4fc3c54d1f851b4992c48021c5238038f078fab1ec885d6` |
 | `03-data-analysis.md` | v2.1 | `2bc279170dfd7f8fc50acaf96ca631bad0fcd65069f3402a0c6d1b67c0caa99a` |
-| `04-mail-agent.md` | v2.3 | `8d90aa7c3c871e9f76426a21b2344cba719ec4b2e95e091c1eef69243bcc935c` |
+| `04-mail-agent.md` | v2.3 | `95ff7a8541c3e803661f4d8543aea545c1f9115fc1990a3409cd574b56d8c8a4` |
 | `05-orchestration-monitoring.md` | v1.1 | `f46aca332f146fa2efffb4da8a03b48037989b7e4e4f31df9d562932e46db356` |
 
 本层唯一长期业务状态是第一层 SQLite 中的 `analysis_*`、`training_*`、`analysis_delivery_*`。本层进程必须按请求启动、完成后退出；第五层是唯一调度者。

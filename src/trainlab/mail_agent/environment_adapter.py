@@ -10,11 +10,17 @@ mailbox or starting a provider process.
 from __future__ import annotations
 
 import json
+import hashlib
+import hmac
+import os
 import re
+import secrets
 import sqlite3
+import stat
 import time
 from datetime import date, datetime, timezone
-from email.utils import getaddresses
+from email.utils import getaddresses, parsedate_to_datetime
+from pathlib import Path
 from typing import Any, Callable, Protocol
 
 from ..gmail_environment import (
@@ -31,6 +37,7 @@ from .gmail_adapter import (
     GmailThreadEvidence,
     SendReceipt,
 )
+from .contracts import utc_now
 
 
 _REQUIRED_TOOLS = frozenset(
@@ -48,6 +55,9 @@ _EMAIL = re.compile(
 _ID = re.compile(r"[A-Za-z0-9_-]{1,256}\Z")
 _KEY = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,255}\Z")
 _MARKER_PREFIX = "[TrainLab idempotency: "
+_IDENTITY_KEY_FILENAME = "gmail-recipient-identity.key"
+_IDENTITY_KEY_BYTES = 32
+_MAIL_SUBJECT_ID = 1
 
 
 class GmailEnvironmentAdapterError(GmailAdapterError):
@@ -246,6 +256,7 @@ class GmailEnvironmentRecipientAdapter:
         timeout_seconds: int = 60,
         sleep: Callable[[float], None] = time.sleep,
         jitter: Callable[[float], float] = lambda _delay: 0.0,
+        identity_state_root: Path | None = None,
     ) -> None:
         self._recipient = canonical_recipient_email(canonical_recipient)
         if not isinstance(timeout_seconds, int) or isinstance(timeout_seconds, bool) or not 1 <= timeout_seconds <= 300:
@@ -255,6 +266,7 @@ class GmailEnvironmentRecipientAdapter:
         self._timeout_seconds = timeout_seconds
         self._sleep = sleep
         self._jitter = jitter
+        self._identity_state_root = identity_state_root
         self._verified_identity_id: int | None = None
 
     @property
@@ -270,20 +282,140 @@ class GmailEnvironmentRecipientAdapter:
         the local identity row is merely the relational foreign-key anchor
         required by Foundation's mail tables.
         """
-        if not isinstance(subject_id, int) or isinstance(subject_id, bool) or subject_id <= 0:
+        if subject_id != _MAIL_SUBJECT_ID:
             raise GmailEnvironmentAdapterError("gmail_reply_subject_invalid")
-        try:
-            rows = connection.execute(
-                "SELECT id FROM subject_identities WHERE subject_id=? AND provider='gmail' "
-                "AND identity_kind='email' AND is_verified=1 ORDER BY id",
-                (subject_id,),
-            ).fetchall()
-        except sqlite3.Error:
-            raise GmailEnvironmentAdapterError("gmail_reply_identity_unavailable") from None
-        if len(rows) != 1 or not isinstance(rows[0][0], int):
+        if self._identity_state_root is None:
             raise GmailEnvironmentAdapterError("gmail_reply_identity_unavailable")
-        self._verified_identity_id = int(rows[0][0])
+        self._verified_identity_id = self._provision_identity(connection)
         return GmailIdentity(self._recipient)
+
+    def _provision_identity(self, connection: sqlite3.Connection) -> int:
+        """Atomically register the configured recipient as Foundation subject 1.
+
+        The configured address is used only to derive an HMAC in process.  It
+        is never persisted in plaintext or included in an error value.
+        """
+        if connection.in_transaction:
+            raise GmailEnvironmentAdapterError("gmail_reply_identity_unavailable")
+        try:
+            digest = hmac.new(self._identity_key(), self._recipient.encode("ascii"), hashlib.sha256).hexdigest()
+            connection.execute("BEGIN IMMEDIATE")
+            subject = connection.execute("SELECT id FROM data_subjects WHERE id=?", (_MAIL_SUBJECT_ID,)).fetchone()
+            if subject is None:
+                raise GmailEnvironmentAdapterError("gmail_reply_identity_unavailable")
+            conflicting = connection.execute(
+                "SELECT subject_id FROM subject_identities WHERE provider='gmail' "
+                "AND identity_kind='email' AND identity_hmac=?",
+                (digest,),
+            ).fetchone()
+            if conflicting is not None and conflicting[0] != _MAIL_SUBJECT_ID:
+                raise GmailEnvironmentAdapterError("gmail_reply_identity_conflict")
+            other = connection.execute(
+                "SELECT id FROM subject_identities WHERE subject_id=? AND provider='gmail' "
+                "AND identity_kind='email' AND identity_hmac<>?",
+                (_MAIL_SUBJECT_ID, digest),
+            ).fetchone()
+            if other is not None:
+                raise GmailEnvironmentAdapterError("gmail_reply_identity_conflict")
+            now = utc_now()
+            connection.execute(
+                "INSERT INTO subject_identities(subject_id,provider,identity_kind,identity_hmac,is_verified,first_seen_at_utc,last_seen_at_utc) "
+                "VALUES(?,'gmail','email',?,1,?,?) "
+                "ON CONFLICT(provider,identity_kind,identity_hmac) DO UPDATE SET "
+                "is_verified=1,last_seen_at_utc=excluded.last_seen_at_utc",
+                (_MAIL_SUBJECT_ID, digest, now, now),
+            )
+            row = connection.execute(
+                "SELECT id FROM subject_identities WHERE subject_id=? AND provider='gmail' "
+                "AND identity_kind='email' AND identity_hmac=? AND is_verified=1",
+                (_MAIL_SUBJECT_ID, digest),
+            ).fetchone()
+            if row is None or not isinstance(row[0], int):
+                raise GmailEnvironmentAdapterError("gmail_reply_identity_unavailable")
+            connection.commit()
+            return int(row[0])
+        except GmailEnvironmentAdapterError:
+            if connection.in_transaction:
+                connection.rollback()
+            raise
+        except (OSError, sqlite3.Error, UnicodeError):
+            if connection.in_transaction:
+                connection.rollback()
+            raise GmailEnvironmentAdapterError("gmail_reply_identity_unavailable") from None
+
+    def _identity_key(self) -> bytes:
+        root = self._identity_state_root
+        if root is None:
+            raise GmailEnvironmentAdapterError("gmail_reply_identity_unavailable")
+        try:
+            secrets_dir = root / "secrets"
+            try:
+                metadata = os.lstat(secrets_dir)
+            except FileNotFoundError:
+                try:
+                    secrets_dir.mkdir(mode=0o700, parents=False)
+                except FileExistsError:
+                    # Another one-shot invocation created the directory after
+                    # our lstat. Re-validate that winner instead of failing a
+                    # safe concurrent first start.
+                    pass
+                metadata = os.lstat(secrets_dir)
+            if not stat.S_ISDIR(metadata.st_mode) or stat.S_ISLNK(metadata.st_mode):
+                raise OSError("secrets_directory_invalid")
+            os.chmod(secrets_dir, 0o700)
+            key_path = secrets_dir / _IDENTITY_KEY_FILENAME
+            flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+            try:
+                descriptor = os.open(key_path, flags)
+            except FileNotFoundError:
+                temporary = secrets_dir / f".{_IDENTITY_KEY_FILENAME}.{secrets.token_hex(16)}.tmp"
+                temporary_created = False
+                try:
+                    descriptor = os.open(
+                        temporary,
+                        os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0),
+                        0o600,
+                    )
+                    temporary_created = True
+                    try:
+                        key = os.urandom(_IDENTITY_KEY_BYTES)
+                        offset = 0
+                        while offset < len(key):
+                            written = os.write(descriptor, key[offset:])
+                            if written <= 0:
+                                raise OSError("identity_key_write_failed")
+                            offset += written
+                        os.fsync(descriptor)
+                        os.fchmod(descriptor, 0o600)
+                    finally:
+                        os.close(descriptor)
+                    try:
+                        os.link(temporary, key_path, follow_symlinks=False)
+                    except FileExistsError:
+                        pass
+                    finally:
+                        os.unlink(temporary)
+                        temporary_created = False
+                    descriptor = os.open(key_path, flags)
+                finally:
+                    if temporary_created:
+                        try:
+                            os.unlink(temporary)
+                        except OSError:
+                            pass
+            try:
+                metadata = os.fstat(descriptor)
+                if not stat.S_ISREG(metadata.st_mode):
+                    raise OSError("identity_key_invalid")
+                os.fchmod(descriptor, 0o600)
+                key = os.read(descriptor, _IDENTITY_KEY_BYTES + 1)
+                if len(key) != _IDENTITY_KEY_BYTES:
+                    raise OSError("identity_key_invalid")
+                return key
+            finally:
+                os.close(descriptor)
+        except OSError:
+            raise GmailEnvironmentAdapterError("gmail_reply_identity_unavailable") from None
 
     def close(self) -> None:
         self._verified_identity_id = None
@@ -524,10 +656,17 @@ class GmailEnvironmentRecipientAdapter:
                 raise GmailEnvironmentAdapterError("gmail_reply_protocol_invalid")
             try:
                 parsed = datetime.fromisoformat(received.replace("Z", "+00:00"))
-                canonical_time = parsed.astimezone(timezone.utc).isoformat().replace("+00:00", "Z") if parsed.tzinfo else ""
             except ValueError:
-                canonical_time = ""
-            if not canonical_time or canonical_time != received:
+                try:
+                    parsed = parsedate_to_datetime(received)
+                except (TypeError, ValueError):
+                    parsed = None
+            canonical_time = (
+                parsed.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+                if parsed is not None and parsed.tzinfo is not None
+                else ""
+            )
+            if not canonical_time:
                 raise GmailEnvironmentAdapterError("gmail_reply_protocol_invalid")
             sender = row.get("from")
             to = row.get("to", [])
@@ -632,7 +771,7 @@ class GmailEnvironmentRecipientAdapter:
 
 
 def create_environment_adapter(
-    _foundation: object, *, recipient_address: str
+    foundation: object, *, recipient_address: str
 ) -> GmailEnvironmentRecipientAdapter:
     """Runtime factory used by the Mail composition root.
 
@@ -640,4 +779,7 @@ def create_environment_adapter(
     provider identity lookup.  The current environment's ``gmail`` binding is
     validated lazily on the first fixed tool call.
     """
-    return GmailEnvironmentRecipientAdapter(recipient_address)
+    state_root = getattr(foundation, "state_root", None)
+    if not isinstance(state_root, Path):
+        raise GmailEnvironmentAdapterError("gmail_reply_identity_unavailable")
+    return GmailEnvironmentRecipientAdapter(recipient_address, identity_state_root=state_root)
