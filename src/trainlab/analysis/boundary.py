@@ -24,7 +24,7 @@ FROZEN_CONTRACT_SHA256: dict[str, str] = {
     "docs/layers/01-data-foundation.md": "9bf0a91e61bda47c9dba971c731ca6ec79e064b7f0ea4eb8124a5a216d67e396",
     "docs/layers/02-data-collection.md": "c39ae1b82afcafe9f4fc3c54d1f851b4992c48021c5238038f078fab1ec885d6",
     "docs/layers/03-data-analysis.md": "2bc279170dfd7f8fc50acaf96ca631bad0fcd65069f3402a0c6d1b67c0caa99a",
-    "docs/layers/04-mail-agent.md": "977246c604dc939cce1d97869f584e463030476db64b0d20e07bb625faa12e17",
+    "docs/layers/04-mail-agent.md": "8d90aa7c3c871e9f76426a21b2344cba719ec4b2e95e091c1eef69243bcc935c",
     "docs/layers/05-orchestration-monitoring.md": "f46aca332f146fa2efffb4da8a03b48037989b7e4e4f31df9d562932e46db356",
 }
 

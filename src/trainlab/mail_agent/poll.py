@@ -311,6 +311,16 @@ class MailPollService:
 
     @staticmethod
     def _safe_adapter_code(code: object) -> str:
+        environment_mapping = {
+            "gmail_reply_auth_required": "auth_required",
+            "gmail_reply_forbidden": "forbidden",
+            "gmail_reply_rate_limited": "rate_limited",
+            "gmail_reply_timeout": "gmail_transport_failed",
+            "gmail_reply_transport_error": "gmail_transport_failed",
+            "gmail_reply_provider_error": "gmail_transport_failed",
+        }
+        if isinstance(code, str):
+            code = environment_mapping.get(code, code)
         allowed = {"auth_required", "gmail_transport_failed", "forbidden", "rate_limited", "identity_mismatch", "gmail_mapping_invalid", "gmail_tools_unavailable"}
         return code if isinstance(code, str) and code in allowed else "gmail_adapter_failed"
 
@@ -1038,7 +1048,10 @@ class MailPollService:
                 recipients = {item.strip().lower() for item in message.recipients}
                 decision = self.repository._classify_normalized_message_txn(
                     run_id, subject_id, message_id,
-                    CanonicalMessage(message.provider_message_id, sender == self_email, self_email in recipients,
+                    # The configured recipient is the authorized mailbox.  A
+                    # reply from it is private even when the Gmail login is a
+                    # distinct delivery account; unrelated recipients are not.
+                    CanonicalMessage(message.provider_message_id, sender == self_email, self_email in {sender, *recipients},
                                      frozenset(message.label_ids), message.subject, body, len(message.attachments),
                                      str(auto) if auto is not None else None,
                                      "mailer-daemon" in sender or "postmaster" in sender),

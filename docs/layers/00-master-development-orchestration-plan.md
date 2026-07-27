@@ -26,7 +26,7 @@
 | 第一层 | `01-data-foundation.md` | v2.4 | `9bf0a91e61bda47c9dba971c731ca6ec79e064b7f0ea4eb8124a5a216d67e396` |
 | 第二层 | `02-data-collection.md` | v1 | `c39ae1b82afcafe9f4fc3c54d1f851b4992c48021c5238038f078fab1ec885d6` |
 | 第三层 | `03-data-analysis.md` | v2.1 | `2bc279170dfd7f8fc50acaf96ca631bad0fcd65069f3402a0c6d1b67c0caa99a` |
-| 第四层 | `04-mail-agent.md` | v2.1 | `977246c604dc939cce1d97869f584e463030476db64b0d20e07bb625faa12e17` |
+| 第四层 | `04-mail-agent.md` | v2.3 | `8d90aa7c3c871e9f76426a21b2344cba719ec4b2e95e091c1eef69243bcc935c` |
 | 第五层 | `05-orchestration-monitoring.md` | v1.1 | `f46aca332f146fa2efffb4da8a03b48037989b7e4e4f31df9d562932e46db356` |
 
 上述哈希在本轮审计时与
@@ -44,7 +44,7 @@
 | 第一层 | FND-01～13，另含 3 个返修单元 | 无 | 清单内离线验收已记录 | 单层实现完成；后续只在显式 init/migrate/maintenance 时使用 |
 | 第二层 | L2-01～16 | L2-17～18（L2-17 实现已完成、待 E-04；L2-18 离线验收工具已完成） | G-02、G-03 已完成；G-01、G-04～06 待完成 | 开发中；离线采集、修复、质量门、CLI 和真实验收工具已完成，待迁移登记与真实账号 smoke |
 | 第三层 | A3-01～10 | A3-11～25 | IG/RAG/FCG 未正式完成 | 开发中；只读数据、质量、安全和 Context 已完成，生成/发布/投递/路由未完成 |
-| 第四层 | M4-01～08 | M4-09～15 | IG-0～7 未正式勾选 | 开发中；收件、归档、上下文、Mail Agent 和事实门已完成，发布/投递/恢复/集成未完成 |
+| 第四层 | M4-01～13、M4-14A | M4-14B、M4-15 | IG-0～7 未正式勾选 | 单层离线实现完成；待第五层跨层闭环与受控真实验收 |
 | 第五层 | S5-00～07 | S5-08～20 | G2～G4 未完成 | 开发中；Supervisor 底座、状态机、子进程和调度已完成，业务 workflow/监控/部署/切换未完成 |
 
 重要说明：
@@ -196,7 +196,7 @@ M4-14B → M4-15（真实授权和影子门开放后）
 - **禁止范围**：不发送第三层日报/周报/计划，不修改训练计划，不实现 scheduler。
 - **所有者与隔离**：第四层会话；M4-14A 只写 provider contract fixture，M4-14B 的
   端到端测试由总控 `X-04` 拥有。
-- **逐项验证**：accepted-before-send、thread/self identity、search-before-send、
+- **逐项验证**：accepted-before-send、固定 recipient/thread participant、search-before-send、
   unknown reconcile、label-only 恢复、输入血缘和隐私扫描。
 - **完成定义**：M4-13 离线层回归通过；M4-14 只有 A/B 都有证据才勾选。
 - **回退**：保留 accepted response 和 delivery unknown；不重新调用 Mail Agent 伪装修复。

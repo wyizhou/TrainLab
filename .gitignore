@@ -38,5 +38,6 @@ state/**/secrets/garmin/
 config/gmail_mcp.yaml
 config/trainlab.production.yaml
 config/rclone.conf
+config/trainlab.json
 credentials.json
 token.json

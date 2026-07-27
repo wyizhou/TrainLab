@@ -238,12 +238,12 @@ def main(argv: list[str] | None = None, *, mail_tool=None) -> int:
         print(receipt.json())
         return _GARMIN_EXIT[receipt.status]
     if args.command == "mail":
-        from .mail_agent.application import UnavailableMailApplicationService
         from .mail_agent.cli import mail_cli_execute
         from .mail_agent.contracts import MailTool, exit_code_for_status
+        from .mail_agent.runtime import create_mail_application
         receipt = mail_cli_execute(
             args,
-            tool=mail_tool or MailTool(UnavailableMailApplicationService()),
+            tool=mail_tool or MailTool(create_mail_application()),
         )
         print(receipt.json())
         return exit_code_for_status(receipt.status)

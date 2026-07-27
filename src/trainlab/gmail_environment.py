@@ -43,6 +43,10 @@ class GmailEnvironmentStatus:
     authenticated: bool | None
     code: str
     detail: str
+    # These defaults retain compatibility for injected status objects while
+    # allowing the inspected, verified registry binding to be used verbatim.
+    command: str = "npx"
+    args: tuple[str, ...] = (GMAIL_MCP_PACKAGE,)
 
 
 class _CompletedProcess(Protocol):
@@ -85,9 +89,7 @@ def inspect_gmail_environment(
     try:
         value = json.loads(process.stdout)
     except (TypeError, json.JSONDecodeError):
-        return GmailEnvironmentStatus(
-            False, None, "gmail_mcp_binding_invalid", GMAIL_MCP_SETUP_HINT
-        )
+        return GmailEnvironmentStatus(False, None, "gmail_mcp_binding_invalid", GMAIL_MCP_SETUP_HINT)
     if not isinstance(value, dict):
         return GmailEnvironmentStatus(
             False, None, "gmail_mcp_binding_invalid", GMAIL_MCP_SETUP_HINT
@@ -117,6 +119,8 @@ def inspect_gmail_environment(
         None,
         "gmail_mcp_available",
         f"current environment provides `{GMAIL_MCP_SERVER_NAME}` via `{GMAIL_MCP_PACKAGE}`",
+        command,
+        tuple(args),
     )
 
 
@@ -134,7 +138,7 @@ def probe_gmail_environment(
         return status
     client = None
     try:
-        client = client_factory("npx", [GMAIL_MCP_PACKAGE], timeout=timeout)
+        client = client_factory(status.command, list(status.args), timeout=timeout)
         tools = {
             str(item.get("name"))
             for item in client.list_tools()

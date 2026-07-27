@@ -25,6 +25,7 @@ class AcceptedDeliveryTarget:
     subject_id: int
     response_artifact_id: int
     trigger_message_id: int
+    trigger_provider_message_id: str
     provider_thread_id: str
     idempotency_key: str
     run_key: str
@@ -92,6 +93,7 @@ class MailDeliveryRepository:
             delivery_id=target.delivery_id,
             idempotency_key=target.idempotency_key,
             provider_thread_id=target.provider_thread_id,
+            in_reply_to_provider_message_id=target.trigger_provider_message_id,
             delivery_status="label_pending" if label_pending else target.status,
             thread_verified=True,
             authenticated_self_verified=identity_verified,
@@ -105,12 +107,15 @@ class MailDeliveryRepository:
         self.repository._verify_foundation_schema()
         rows = self.connection.execute(
             "SELECT d.id,d.status,d.idempotency_key,d.provider_thread_id,d.related_run_key,"
-            "r.id AS response_id,r.subject_id,r.in_reply_to_mail_message_id,r.user_visible_text,r.response_kind,"
+            "r.id AS response_id,r.subject_id,r.in_reply_to_mail_message_id,"
+            "trigger.provider_message_id AS trigger_provider_message_id,"
+            "r.user_visible_text,r.response_kind,"
             "t.provider_thread_id AS response_thread_id,mr.run_key "
             "FROM mail_deliveries d "
             "JOIN mail_delivery_artifacts a ON a.mail_delivery_id=d.id "
             "AND a.content_role='mail_response' AND a.ordinal=0 "
             "JOIN mail_response_artifacts r ON r.id=a.mail_response_artifact_id "
+            "JOIN mail_messages trigger ON trigger.id=r.in_reply_to_mail_message_id "
             "JOIN mail_agent_runs mr ON mr.id=r.generated_by_mail_agent_run_id "
             "JOIN mail_threads t ON t.id=r.mail_thread_id "
             "WHERE d.id=? AND r.subject_id=?",
@@ -133,6 +138,7 @@ class MailDeliveryRepository:
             int(row["subject_id"]),
             int(row["response_id"]),
             int(row["in_reply_to_mail_message_id"]),
+            str(row["trigger_provider_message_id"]),
             str(row["provider_thread_id"]),
             str(row["idempotency_key"]),
             str(row["run_key"]),
@@ -255,6 +261,77 @@ class MailDeliveryRepository:
                 (target.trigger_message_id,),
             )
             self._upsert_item(target, "send", "failed", error_code=error_code)
+
+    def reconcile_provider_receipt(
+        self,
+        subject_id: int,
+        delivery_id: int,
+        verified_identity_id: int,
+        *,
+        provider_message_id: str,
+        provider_thread_id: str,
+        sent_at_utc: str,
+    ) -> PersistedDeliveryReceipt:
+        """Record the one proven outcome of an uncertain prior send.
+
+        This is intentionally distinct from ``record_provider_receipt``:
+        the original ``send`` item remains failed evidence and is never
+        transitioned/retried.  Only a unique later provider lookup may add a
+        successful ``reconcile`` item and converge the delivery state.
+        """
+        with self.repository._write_transaction():
+            target = self._load_by_delivery_id(subject_id, delivery_id)
+            self._assert_identity(subject_id, verified_identity_id)
+            if provider_thread_id != target.provider_thread_id:
+                raise MailDeliveryRepositoryError("mail_delivery_thread_conflict")
+            if (
+                not self._safe_identifier(provider_message_id)
+                or not self._safe_identifier(provider_thread_id)
+                or not self._canonical_utc(sent_at_utc)
+            ):
+                raise MailDeliveryRepositoryError("mail_delivery_receipt_invalid")
+            outbound_id = self._persist_outbound_message(
+                target, provider_message_id, sent_at_utc
+            )
+            if target.status == "delivery_unknown":
+                changed = self.connection.execute(
+                    "UPDATE mail_deliveries SET mail_message_id=?,provider_thread_id=?,status='sent',"
+                    "sent_at_utc=?,last_verified_at_utc=?,error_code=NULL,error_summary=NULL,updated_at_utc=? "
+                    "WHERE id=? AND status='delivery_unknown'",
+                    (
+                        outbound_id, provider_thread_id, sent_at_utc,
+                        self._clock(), self._clock(), target.delivery_id,
+                    ),
+                ).rowcount
+                if changed != 1:
+                    raise MailDeliveryRepositoryError("mail_delivery_receipt_conflict")
+                changed = self.connection.execute(
+                    "UPDATE mail_messages SET processing_state='sent' "
+                    "WHERE id=? AND processing_state='delivery_unknown'",
+                    (target.trigger_message_id,),
+                ).rowcount
+                if changed != 1:
+                    raise MailDeliveryRepositoryError("mail_delivery_trigger_state_invalid")
+            elif target.status == "sent":
+                row = self.connection.execute(
+                    "SELECT mail_message_id,provider_thread_id,status FROM mail_deliveries WHERE id=?",
+                    (target.delivery_id,),
+                ).fetchone()
+                if row is None or tuple(row) != (outbound_id, provider_thread_id, "sent"):
+                    raise MailDeliveryRepositoryError("mail_delivery_receipt_conflict")
+            else:
+                raise MailDeliveryRepositoryError("mail_delivery_reconcile_state_invalid")
+            self._record_sent_event(target, outbound_id, "sent", sent_at_utc)
+            # Do not mutate the original failed ``send`` stage.  It records
+            # precisely why this recovery path was needed; delivery-level
+            # transient error columns clear only because Foundation's verified
+            # delivery invariant requires a successful current record.
+            # The original failed ``send`` evidence remains untouched.  The
+            # first verify record is the distinct successful provider
+            # reconciliation evidence for an unknown delivery.
+            self._upsert_item(target, "verify", "succeeded", outbound_id=outbound_id)
+            self._assert_verified_delivery(target)
+            return PersistedDeliveryReceipt(target.delivery_id, outbound_id, "sent", False)
 
     # MailDeliveryStore protocol used by MailResponseDeliveryService.
     def mark_delivery_sending(self, target: ServiceDeliveryTarget) -> None:

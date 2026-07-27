@@ -1,8 +1,8 @@
 # 第四层：邮件 Agent 工具层详细开发需求清单
 
-状态：开发中（M4-01～09、M4-13、M4-14A 已完成；M4-10～12
-仍待生产环境绑定闭环；M4-14B、M4-15 真实验收与 IG-0～7 未完成）
-适用契约：第四层 v2.1；直接基线为第一层 v2.4、第三层 v2、第五层 v1
+状态：开发中（M4-01～13、M4-14A 已完成；v2.3 固定 recipient 投递离线终验通过；
+M4-14B、M4-15 真实验收与 IG-0～7 未完成）
+适用契约：第四层 v2.3；直接基线为第一层 v2.4、第三层 v2、第五层 v1
 规划日期：2026-07-26
 本文件性质：后续开发的唯一逐项清单；不修改五层冻结大契约，也不替代它们。
 
@@ -16,7 +16,7 @@
 | `01-data-foundation.md` | v2.4 | `9bf0a91e61bda47c9dba971c731ca6ec79e064b7f0ea4eb8124a5a216d67e396` |
 | `02-data-collection.md` | v1 | `c39ae1b82afcafe9f4fc3c54d1f851b4992c48021c5238038f078fab1ec885d6` |
 | `03-data-analysis.md` | v2.1 | `2bc279170dfd7f8fc50acaf96ca631bad0fcd65069f3402a0c6d1b67c0caa99a` |
-| `04-mail-agent.md` | v2.1 | `977246c604dc939cce1d97869f584e463030476db64b0d20e07bb625faa12e17` |
+| `04-mail-agent.md` | v2.3 | `8d90aa7c3c871e9f76426a21b2344cba719ec4b2e95e091c1eef69243bcc935c` |
 | `05-orchestration-monitoring.md` | v1.1 | `f46aca332f146fa2efffb4da8a03b48037989b7e4e4f31df9d562932e46db356` |
 
 第四层的唯一业务职责是：收件、原始归档、会话与用户事实、邮件 AI 回复及该回复的
@@ -41,8 +41,10 @@
   `mail_agent_*`、`mail_response_*`、`mail_deliveries`、`mail_delivery_artifacts`、
   `mail_poll_cursors` 及只读视图；证据为脱敏 `foundation init/status` receipt 与
   schema 版本。此项由第一层负责，第四层不得执行迁移或 DDL。
-- [ ] **EP-02｜身份与安全目录可用**：第一层已有唯一 active subject 的 Gmail HMAC
-  identity；数据、raw、state、tmp 权限符合冻结契约；证据为只读 verify/doctor。
+- [ ] **EP-02｜固定 recipient 与安全目录可用**：本地、Git 忽略的
+  `config/trainlab.json` 已提供有效且唯一的 `mail.recipient_email`；数据、raw、state、
+  tmp 权限符合冻结契约；证据为不回显地址的只读 verify/doctor。第四层不得通过 MCP
+  获取或判断 Gmail 登录账号，也不要求它等于 recipient。
 - [ ] **EP-03｜第三层 v2 只读交接可用**：已提供 accepted/current
   `analysis_*`、`training_*`、`analysis_delivery_*` 只读视图，以及可由第四层引用的
   精确 plan/artifact/delivery revision；证据为只读 fixture 或 contract test。第四层
@@ -102,18 +104,19 @@ flowchart LR
 
 - [ ] **IG-0｜冻结基线门**：五份哈希、EP 状态、表所有权、禁止范围和“不代发
   第三层 artifact”均通过静态检查；失败即停止，不进入 W1。
-- [ ] **IG-1｜本地持久化与 adapter 门**：M4-02/03 的假 MCP fixture 能给出稳定
-  identity、错误分类和无敏感日志；未通过时禁止 poll。
+- [ ] **IG-1｜本地持久化与 adapter 门**：M4-02/03 的假 MCP fixture 能给出固定 recipient
+  配置结论、错误分类和无敏感日志；未通过时禁止 poll。
 - [ ] **IG-2｜收件但不生成/不发送门**：M4-04/05 能完成 overlap cursor、raw archive、
-  normalization、eligibility、防循环；不得调用 Codex 或 `send_html_self`。
+  normalization、eligibility、防循环；不得调用 Codex 或 `send_email`。
 - [ ] **IG-3｜生成但不发送门**：M4-06..09 能从已归档 message 发布 immutable accepted
   response、事实、事件和输入血缘；失败不切换 current，不发邮件。
-- [ ] **IG-4｜精确回复投递与恢复门**：M4-10/11 证明 self-only、thread 正确、查重、
+- [ ] **IG-4｜精确回复投递与恢复门**：M4-10/11 证明固定 recipient、thread participant
+  边界、查重、
   unknown→reconcile、label 独立恢复；禁止涉及 `analysis_delivery_*`。
 - [ ] **IG-5｜跨层计划修订门**：由 stub 第五层驱动完整依赖，不出现“计划已修改”的
   虚假回复，第三层自行投递新计划，第四层仅回复原 thread。
-- [ ] **IG-6｜真实环境验收门**：在受控账号完成只读 identity/poll、明确授权的一次
-  self-send、无标签 thread reply 发现和 send 中断 reconcile；证据脱敏。
+- [ ] **IG-6｜真实环境验收门**：在受控账号完成只读 recipient-config/poll、明确授权的一次
+  固定-recipient send、无标签 thread reply 发现和 send 中断 reconcile；证据脱敏。
 - [ ] **IG-7｜最终完成门**：M4-01..15 全部完成、覆盖矩阵无空项、shadow 对账与回滚
   演练通过，并由总控确认可进入第五层生产编排切换。
 
@@ -198,29 +201,32 @@ flowchart LR
   不作为本单元完成证据。未访问真实 Gmail/Codex，未改第一层 DDL、migration 或冻结
   契约。
 
-### [x] M4-03｜受限 Gmail MCP adapter 与身份/能力校验（旧自建映射基线；待环境绑定迁移）
+### [x] M4-03｜受限 Gmail MCP adapter 与固定 recipient/能力校验（旧自建映射基线已禁用；待环境绑定迁移）
 
 - **目的**：把 Gmail MCP 映射为最小、可审计的确定性 transport，拒绝任何通用 Gmail
   操作和身份漂移。
-- **依赖与起始快照**：M4-01、EP-02、EP-05；记录允许的 MCP mapping Schema、配置
-  路径哈希和 token 目录权限检查结果（不得记录 secret）。
-- **负责范围**：allowlist 验证、`get_self` HMAC 对账、stdio transport、
-  `search_messages/read_thread/send_html_self/create_or_apply_label` 适配、thread
-  标准化字段、错误归类与 3 次只读短重试。
-- **禁止触碰范围**：不开放任意 recipient/forward/delete/archive/spam/任意标签、
-  Drive/Calendar；不把 MCP 给 Codex；不由 adapter 解释业务 eligibility。
+- **依赖与起始快照**：M4-01、EP-02、EP-05；记录 `gmail` / `@artymclabin/gmail-mcp`
+  package、允许的实际 capability mapping Schema、adapter 版本与 recipient 配置有效性
+  结论（不得记录 recipient、credential 路径、token 或 secret）。
+- **负责范围**：server/package allowlist 验证、`config/trainlab.json` 固定 recipient
+  校验、当前环境 transport、固定 search/read/thread 标准化，以及 `send_email` 的
+  `to=[recipient]` / `threadId/inReplyTo` 映射；不传 `from`；错误归类与 3 次只读短重试。
+- **禁止触碰范围**：禁用旧自建 adapter；不开放任意 recipient/forward/delete/archive/
+  spam/任意标签、CC/BCC、任意 query、header 或 attachment；不把 MCP 给 Codex；不由
+  adapter 解释业务 eligibility。
 - **预期产物**：adapter 接口、capability probe、稳定 DTO、错误分类表、假 MCP server
   fixture、脱敏诊断。
-- **验证方法与证据**：工具名/配置/identity mismatch 拒绝；401 refresh 一次后
+- **验证方法与证据**：工具名/配置/recipient 缺失或无效拒绝；401 refresh 一次后
   auth_required、403 forbidden、429 短/长等待、5xx/transport timeout；确认 stdout/
   日志不含正文或凭据。
-- **完成定义**：所有网络调用可映射到稳定 typed result；账号不匹配时零搜索、零读取、
-  零发送。
+- **完成定义**：所有网络调用可映射到稳定 typed result；recipient 配置无效时零搜索、
+  零读取、零发送；不得通过 MCP identity probe 补全配置。
 - **集成顺序与失败回退**：W1 可与 M4-02 并行；adapter 合约不兼容时禁用 Gmail 路径并
   返回 failed/auth_required，不退化为直接 HTTP 或扩大权限。
 
   **返修验证（2026-07-23）**：adapter 严格拒绝 provider 的缺失或额外 tool（不忽略额外
-  工具）；`get_self/search/read_thread` 同为只读，均最多三次短重试。仅 transport 实现
+  工具）；旧 `get_self/search/read_thread` 仅为历史离线 fixture 名称，不能作为生产绑定。
+  当前 package search/thread-read capability 均最多三次短重试。仅 transport 实现
   `refresh_auth` 时才允许一次 401 refresh；否则首个 401 即 `auth_required`。stdio 路径
   对 JSON-RPC error 与 `tools/call.isError` 只提取数值 HTTP status/Retry-After，丢弃
   message/data/stderr/正文；initialize、list-tools 与 get-self 失败均关闭子进程/transport，
@@ -228,10 +234,10 @@ flowchart LR
   stdio 以 `DEVNULL` 隔离 provider stderr，避免 PIPE 回压；close 幂等地 terminate、必要时
   kill 后有界 wait 以回收子进程，并关闭 stdin/stdout/stderr。仅有界纯数字字符串可作为
   status/Retry-After，其余 metadata 一律丢弃。
-  `capability_probe` 仅提供 mapping schema version、配置路径 SHA-256、权限模式与布尔
-  结论；凭据路径拒绝自身及必要祖先 symlink、非普通文件和非目录父级，且只 stat、不读取。搜索仅有精确
-  run-id 查重与 TrainLab label + 至多 7 日窗口两种类型化 intent，不接受任意
-  query/label/tool/recipient。M4-01～03 聚焦测试 72 项及兼容 Gmail/runtime 回归共 87 项、
+  `capability_probe` 仅提供 mapping schema version 与布尔结论；不得
+  读取、stat 或记录凭据路径。搜索仅有固定 delivery marker 查重与 TrainLab label + 至多
+  7 日窗口两种类型化 intent，不接受任意 query/label/tool/recipient。M4-01～03 聚焦测试
+  72 项及兼容 Gmail/runtime 回归共 87 项、
   `compileall`、`git diff --check` 与五份冻结 SHA-256 均通过，且未访问真实 Gmail、Codex
   或网络。完整离线 pytest 336 项全部通过；因此勾选。
 
@@ -282,15 +288,15 @@ flowchart LR
   被确定性排除。
 - **依赖与起始快照**：M4-02、M4-04；起始输入为已规范化 canonical message、
   local delivery evidence、tracked-thread 状态和 label evidence。
-- **负责范围**：`tracked_thread_reply`/`labeled_new_request` 判定、self-to-self
-  actor 优先级、ignore/quarantine/store-only/queued 转换、稳定排序、acknowledgement、
+- **负责范围**：`tracked_thread_reply`/`labeled_new_request` 判定、固定 recipient +
+  单一一致 mailbox counterpart actor 优先级、ignore/quarantine/store-only/queued 转换、稳定排序、acknowledgement、
   自动回复/退信/附件-only 处理与 reason code。
 - **禁止触碰范围**：不得仅依赖可伪造 header 认定 outbound；不让 Codex 决定
   eligibility；不以主题文字扩大扫描范围。
 - **预期产物**：classifier、actor evidence model、queue selector、loop-prevention
   policy 和 reason-code 目录。
-- **验证方法与证据**：本地 delivery outbound、伪造 `X-TrainLab-Run-ID`、同 thread
-  多消息、普通私人邮件、仅主题、identity unknown、acknowledgement、auto-reply fixture。
+- **验证方法与证据**：本地 delivery outbound、伪造 header/subject/body marker、同 thread
+  多消息、普通私人邮件、仅主题、participant 边界未知、acknowledgement、auto-reply fixture。
 - **完成定义**：每个 eligible inbound 的处理资格可由本地证据复算；outbound 永不进入
   process 队列，同一 event type/message 只创建一次。
 - **集成顺序与失败回退**：W2 在 poll 后；分类不确定时 quarantine/operator_review，
@@ -342,7 +348,7 @@ flowchart LR
   同 invocation 先查 accepted 再恢复，绝不隐藏重试。
 
   **完成证据（2026-07-24）**：生产 runner 以 `shared → runtime → mail → route` 固定
-  顺序把 exact Harness、package identity 和经同包 Schema 验证的有界 context 全部放入
+  顺序把 exact Harness、package capability schema 和经同包 Schema 验证的有界 context 全部放入
   首轮 in-band 输入；隔离 HOME/CODEX_HOME、最小环境、read-only sandbox、固定
   output inode、严格 JSON/Schema/lineage/source/evidence 门禁均已覆盖。真实 subprocess
   测试证明 stdout/stderr 并发有界读取、timeout/nonzero/坏输出、TERM→KILL 进程组清理、
@@ -417,41 +423,50 @@ flowchart LR
   publish item 与消息状态推进；精确 replay 不重复写。M4-01～15 当前离线邮件回归
   501 项通过。未调用 Gmail/Codex，未修改 Foundation DDL。
 
-### [ ] M4-10｜确定性渲染与 `deliver-response`
+### [x] M4-10｜确定性渲染与 `deliver-response`
 
-- **目的**：只将已 accepted 的精确 mail response revision 安全地回复给 authenticated
-  self，并建立精确投递证据。
+- **目的**：只将已 accepted 的精确 mail response revision 安全地回复给固定
+  `mail.recipient_email`，并建立精确投递证据。
 - **依赖与起始快照**：M4-03、M4-09、EP-05；输入仅为 accepted response、已验证
   thread/subject 和 pending delivery。
-- **负责范围**：UTF-8 plain text、等义 inline HTML、确定性 subject、delivery run ID、
-  `X-TrainLab-Run-ID`、稳定 Message-ID 请求、send 前精确查询、thread reply/self-send、
-  TrainLab label、`mail_deliveries/mail_delivery_artifacts` 和 `mail_response_sent` event。
+- **负责范围**：UTF-8 plain text、等义 inline HTML、由本地 delivery idempotency key
+  派生的固定 subject/body marker、send 前受控精确查询、package `send_email` reply
+  （固定 `to=[recipient]`、不传 `from`、精确 `threadId/inReplyTo`）、recipient 参与、
+  单一一致 mailbox counterpart 且 CC/BCC 为空的 participant validation、TrainLab label、
+  `mail_deliveries/mail_delivery_artifacts` 和
+  `mail_response_sent` event。
 - **禁止触碰范围**：不重新调用 Mail Agent/Codex，不渲染/发送第三层 artifact，不允许
   recipient/CC/BCC/任意 thread/HTML 注入；不从用户原始 HTML 拼接内容。
 - **预期产物**：renderer、delivery service、idempotency key 实现、MCP DTO mapping、
   pending/sent/label-pending 状态处理。
 - **验证方法与证据**：HTML 禁止 script/event/javascript/form/iframe/tracker/remote CSS，
-  self-only、new/reply thread、already_sent、精确 artifact relation、label failure 不重发、
+  recipient 配置、recipient 参与/单一一致 counterpart/CC-BCC 为空、固定 to、不传 from、
+  精确 threadId/inReplyTo、拒绝 CC/BCC/header/query/attachment、new/reply thread、
+  already_sent、精确 artifact relation、label failure 不重发、
   provider receipt 原子记账测试。
 - **完成定义**：`mail:response:<response_artifact_id>:<thread_id>` 最多一个 sent；历史
   delivery 永远指向实际发送 revision，current 改变不漂移。
 - **集成顺序与失败回退**：W3；发送前失败可按规则重试，发送结果不确定立即交 M4-11，
   绝不重新生成或盲发。
-- **当前进展（2026-07-27，未完成）**：确定性 renderer、受限 delivery service 和
-  SQLite 原子投递证据链已经完成并通过离线集成测试。尚未完成当前环境 `gmail`
-  （`@artymclabin/gmail-mcp`）的生产 adapter：该 package 的 `reply_all` 不支持冻结
-  契约要求的自定义 `X-TrainLab-Run-ID` 与稳定 Message-ID，因此不得用旧本机
-  config/credential adapter 冒充完成。
+- **完成证据（2026-07-27）**：确定性 renderer、受限 delivery service、生产
+  environment adapter/application composition 和 SQLite 原子投递证据链已完成并通过
+  离线集成测试。当前环境
+  `gmail`（`@artymclabin/gmail-mcp`）使用 `send_email`，固定
+  `to=[config/trainlab.json:mail.recipient_email]`、不传 `from`、精确
+  `threadId/inReplyTo`；recipient 可以不同于 MCP 登录账号；
+  不使用 `reply_all`（它会排除 self 而导致空收件人），不要求自定义 header 或稳定
+  Message-ID。查重、participant/CC/BCC 校验、固定 recipient、label-only 恢复和原子
+  provider receipt 均有脱敏 fixture 覆盖；未调用真实 Gmail。
 
-### [ ] M4-11｜`reconcile`、重试预算、错误恢复与并发治理
+### [x] M4-11｜`reconcile`、重试预算、错误恢复与并发治理
 
 - **目的**：使中断、provider 不确定结果和跨调用延期可从持久化证据恢复，而不重复回复
   或发送。
 - **依赖与起始快照**：M4-02、M4-03、M4-04、M4-09、M4-10；记录 run/item/delivery 的
   原状态、deadline 与 `next_retry_at_utc`。
 - **负责范围**：read retry/backoff/jitter、429 Retry-After、401 refresh once、403、
-  send unknown→reconcile、delivery run-id 搜索/唯一匹配验证、label 独立重试、crash
-  recovery、partial/deferred/auth_required/lock_busy/rejected/failed 映射。
+  send unknown→reconcile、固定 delivery marker 的受控搜索/唯一匹配验证、label 独立
+  重试、crash recovery、partial/deferred/auth_required/lock_busy/rejected/failed 映射。
 - **禁止触碰范围**：不由第五层/本层直接改第三层 plan；不将 unknown 当普通网络失败
   重发；不无限等待/轮询；不让 status 访问 Gmail/Codex。
 - **预期产物**：retry policy、reconcile service、recovery decision table、timeout/
@@ -462,11 +477,13 @@ flowchart LR
   `duplicate_delivery_conflict/operator_review`，不会再发送。
 - **集成顺序与失败回退**：W4；恢复逻辑失败时保持原 delivery/item 状态和原始证据，
   返回受控 next action 给第五层，而非新建 invocation 绕过幂等。
-- **当前进展（2026-07-27，未完成）**：有限 retry/backoff/deadline、401/403/429
-  决策、unknown 零/一/多匹配和 label-only 恢复已实现并离线验证；尚未接入生产
-  environment adapter/application composition，unknown 不会被重新发送。
+- **完成证据（2026-07-27）**：有限 retry/backoff/deadline、401/403/429 决策、
+  unknown 零/一/多匹配、label-only 恢复和 v2.3 `gmail` environment adapter 已完成并
+  离线验证。只有唯一、完整且通过 thread/recipient/marker 校验的 provider 证据才能
+  将 unknown 收敛为 sent；零匹配保持 deferred/operator review，多匹配进入冲突，
+  两者均不会重新发送。原 send 失败证据永久保留。
 
-### [ ] M4-12｜CLI/API 编排、`run` 组合与只读 `status`
+### [x] M4-12｜CLI/API 编排、`run` 组合与只读 `status`
 
 - **目的**：将内部可恢复阶段暴露为一致的一次性工具，供第五层可靠调用而不泄露业务
   正文或内部实现。
@@ -486,10 +503,11 @@ flowchart LR
   因单 item 失败回滚已完成 item 或无限循环。
 - **集成顺序与失败回退**：W4；CLI 出现语义差异时停用有问题 mode 并保留更细粒度
   mode，禁止用 shell 包装或 stdout 文本兼容。
-- **当前进展（2026-07-27，未完成）**：六种 mode 的统一 application service、
-  有界 `run`、只读 `status`、顶层 `trainlab mail` CLI 和 fail-closed receipt 已完成。
-  默认 CLI 仍明确返回 `mail_application_dependencies_unavailable`，直到 M4-10/11
-  的生产组合根完成；不得把该安全失败误记为交付完成。
+- **完成证据（2026-07-27）**：六种 mode 的统一 application service、有界 `run`、
+  只读 `status`、顶层 `trainlab mail` CLI、fail-closed receipt 和 v2.3 生产组合根已
+  完成。除 `status` 外均严格读取项目通用 `config/trainlab.json` 并校验固定 recipient；
+  配置缺失/无效或当前环境 `gmail` 绑定不符合规范时安全失败。`status` 不构造
+  Gmail/Codex，所有 mode 均为一次性进程；未执行真实外部调用。
 
 ### [x] M4-13｜自动化验证、隐私回归与质量审计工具
 
@@ -552,7 +570,7 @@ flowchart LR
 - **依赖与起始快照**：IG-0..5、EP-01..05；记录生产备份 ID、tracked thread 清单
   哈希、旧入口状态、Harness/Schema/config/adapter 版本和第五层 shadow 计划。
 - **负责范围**：隔离数据库 shadow poll、message/delivery idempotency 对账、受控
-  real-Gmail read-only smoke、明确授权的一次 self-send、无标签 reply、send receipt
+  real-Gmail read-only smoke、明确授权的一次固定-recipient send、无标签 reply、send receipt
   interruption reconcile、切换/runbook/rollback evidence。
 - **禁止触碰范围**：不删除或改名现有 `trainlab run`；不同时让新旧流程处理同一
   provider message；不自行启用第五层调度；无明确授权不得真实发送。
@@ -568,7 +586,7 @@ flowchart LR
 - **当前进展（2026-07-27，未完成）**：已提供纯 metadata shadow comparator、
   单 writer/cutover/rollback gate 和
   [迁移回滚手册](04-mail-agent-migration-runbook.md)。这只是离线准备，不代表
-  real-Gmail read-only、self-send、send interruption reconcile 或 IG-6/IG-7 已完成。
+  real-Gmail read-only、固定-recipient send、send interruption reconcile 或 IG-6/IG-7 已完成。
 
 ## 6. 大契约覆盖矩阵
 

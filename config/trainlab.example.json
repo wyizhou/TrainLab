@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "mail": {
+    "recipient_email": "your-email@example.com"
+  }
+}

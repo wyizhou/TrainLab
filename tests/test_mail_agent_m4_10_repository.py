@@ -13,6 +13,7 @@ from trainlab.mail_agent.fact_gate import FactGateDecision
 from trainlab.mail_agent.gmail_adapter import SendReceipt
 from trainlab.mail_agent.publisher import MailResponsePublisher
 from trainlab.mail_agent.repository import MailRepository
+from trainlab.mail_agent.stages import ReconcileStage
 
 NOW = "2026-07-24T00:00:00Z"
 LATER = "2026-07-24T00:01:00Z"
@@ -83,7 +84,7 @@ def test_delivery_service_and_sqlite_repository_form_one_real_chain(tmp_path: Pa
         def search_run_id(self, **_):
             return ()
 
-        def send_html_self(self, **kwargs):
+        def send_html_recipient(self, **kwargs):
             assert kwargs["thread_id"] == "thread-1"
             return SendReceipt("out-1", "thread-1", False)
 
@@ -105,3 +106,41 @@ def test_delivery_service_and_sqlite_repository_form_one_real_chain(tmp_path: Pa
     assert conn.execute(
         "SELECT processing_state FROM mail_messages WHERE id=?", (message,)
     ).fetchone()[0] == "sent"
+
+
+def test_unknown_delivery_reconcile_records_provider_evidence_without_reopening_send(tmp_path: Path) -> None:
+    conn, subject, identity, message, delivery = prepared(tmp_path)
+    store = MailDeliveryRepository(MailRepository(conn, clock=lambda: NOW), clock=lambda: LATER)
+    store.claim_pending_delivery(subject, delivery)
+    store.record_delivery_unknown(subject, delivery, error_code="mail_item_failed")
+
+    class Adapter:
+        verified_identity_id = identity
+
+        def prepare(self, connection, requested_subject):
+            assert connection is conn and requested_subject == subject
+
+        def search_run_id(self, *, run_id):
+            assert run_id == f"mail:response:1:thread-1"
+            return ({"message_id": "out-1", "thread_id": "thread-1"},)
+
+        def apply_trainlab_label(self, *, message_id, thread_id):
+            assert (message_id, thread_id) == ("out-1", "thread-1")
+
+    receipt = ReconcileStage(MailRepository(conn, clock=lambda: NOW), store, Adapter()).execute(
+        MailRequest("reconcile", subject, "reconcile-1", NOW, mail_delivery_ids=(str(delivery),))
+    )
+    assert receipt.status == "succeeded", receipt.errors
+    assert conn.execute("SELECT status FROM mail_deliveries WHERE id=?", (delivery,)).fetchone()[0] == "sent"
+    assert conn.execute("SELECT processing_state FROM mail_messages WHERE id=?", (message,)).fetchone()[0] == "sent"
+    # The failed send remains immutable recovery evidence; success is a
+    # separate reconcile record and no delivery retry was permitted.
+    assert conn.execute(
+        "SELECT status,error_code FROM mail_agent_items WHERE mail_delivery_id=? AND stage='send'", (delivery,)
+    ).fetchone()[:] == ("failed", "mail_item_failed")
+    assert conn.execute(
+        "SELECT status FROM mail_agent_items WHERE mail_delivery_id=? AND logical_item_kind='delivery' AND stage='verify'", (delivery,)
+    ).fetchone()[0] == "succeeded"
+    assert conn.execute(
+        "SELECT count(*) FROM conversation_events WHERE mail_delivery_id=? AND event_type='mail_response_sent'", (delivery,)
+    ).fetchone()[0] == 1

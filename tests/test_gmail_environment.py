@@ -72,6 +72,14 @@ def test_exact_current_environment_binding_is_accepted():
     assert status.available is True
     assert status.code == "gmail_mcp_available"
     assert GMAIL_MCP_PACKAGE in status.detail
+    assert status.command == "npx" and status.args == (GMAIL_MCP_PACKAGE,)
+
+
+def test_verified_registry_command_is_preserved_for_the_caller():
+    status = inspect_gmail_environment(runner=runner(binding(transport={**binding()["transport"], "command": "/opt/runtime/npx"})))
+    assert status.available is True
+    assert status.command == "/opt/runtime/npx"
+    assert status.args == (GMAIL_MCP_PACKAGE,)
 
 
 def test_missing_binding_has_actionable_standard_setup_hint():

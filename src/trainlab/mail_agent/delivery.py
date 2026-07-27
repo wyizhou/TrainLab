@@ -39,6 +39,7 @@ class AcceptedDeliveryTarget:
     delivery_id: int
     idempotency_key: str
     provider_thread_id: str
+    in_reply_to_provider_message_id: str
     delivery_status: str
     thread_verified: bool
     authenticated_self_verified: bool
@@ -60,7 +61,7 @@ class RestrictedMailDeliveryAdapter(Protocol):
 
     def search_run_id(self, *, run_id: str, max_results: int = 10) -> tuple[dict[str, Any], ...]: ...
 
-    def send_html_self(
+    def send_html_recipient(
         self,
         *,
         run_id: str,
@@ -68,6 +69,7 @@ class RestrictedMailDeliveryAdapter(Protocol):
         plain_text: str,
         html: str,
         thread_id: str | None = None,
+        in_reply_to_provider_message_id: str | None = None,
     ) -> SendReceipt: ...
 
     def apply_trainlab_label(
@@ -113,6 +115,15 @@ class MailDeliveryStore(Protocol):
 
 def _safe_adapter_code(error: Exception) -> str:
     if isinstance(error, GmailAdapterError):
+        environment_mapping = {
+            "gmail_reply_auth_required": "auth_required",
+            "gmail_reply_forbidden": "forbidden",
+            "gmail_reply_rate_limited": "rate_limited",
+            "gmail_reply_timeout": "gmail_transport_failed",
+            "gmail_reply_transport_error": "gmail_transport_failed",
+            "gmail_reply_provider_error": "gmail_transport_failed",
+        }
+        code = environment_mapping.get(error.code, error.code)
         allowed = {
             "auth_required",
             "forbidden",
@@ -121,7 +132,7 @@ def _safe_adapter_code(error: Exception) -> str:
             "gmail_send_result_invalid",
             "gmail_adapter_not_prepared",
         }
-        return error.code if error.code in allowed else "gmail_delivery_provider_failed"
+        return code if code in allowed else "gmail_delivery_provider_failed"
     return "gmail_delivery_provider_failed"
 
 
@@ -214,6 +225,8 @@ class MailResponseDeliveryService:
             or target.response_artifact_id != response_artifact_id
             or not target.thread_verified
             or not target.authenticated_self_verified
+            or not isinstance(target.in_reply_to_provider_message_id, str)
+            or not target.in_reply_to_provider_message_id
             or target.idempotency_key
             != f"mail:response:{response_artifact_id}:{target.provider_thread_id}"
         ):
@@ -300,12 +313,13 @@ class MailResponseDeliveryService:
         self, target: AcceptedDeliveryTarget, rendered: RenderedMail) -> MailDeliveryResult:
         self._store.mark_delivery_sending(target)
         try:
-            receipt = self._adapter.send_html_self(
+            receipt = self._adapter.send_html_recipient(
                 run_id=rendered.delivery_run_id,
                 subject=rendered.subject,
                 plain_text=rendered.plain_text,
                 html=rendered.html,
                 thread_id=target.provider_thread_id,
+                in_reply_to_provider_message_id=target.in_reply_to_provider_message_id,
             )
         except Exception as error:
             code = _safe_adapter_code(error)

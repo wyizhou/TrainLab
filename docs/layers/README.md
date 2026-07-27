@@ -23,7 +23,7 @@
 | 1. 数据基础层 | [v2.4](01-data-foundation.md) | [13 个主单元＋3 个返修单元](01-data-foundation-development.md) | 单层已实现 | 一次性幂等 init；第五层启动时可调用，ready 后严格 no-op；定义五层共享存储 |
 | 2. 数据采集层 | [v1](02-data-collection.md) | [18 个单元](02-data-collection-development-plan.md) | 开发中：16/18（L2-17 待 E-04；L2-18 待真实 smoke） | 一次性 Garmin tools；全量、增量、当天快照、修复、补漏和入库，不含调度 |
 | 3. 数据分析层 | [v2](03-data-analysis.md) | [25 个单元](03-data-analysis-implementation-plan.md) | 开发中：10/25 | 一次性分析 Agent tools；分析结果先落库，再通过受限 Gmail MCP 主动发送 |
-| 4. 邮件 Agent 层 | [v2](04-mail-agent.md) | [15 个单元](04-mail-agent-development-plan.md) | 开发中：8/15 | 一次性入站邮件 Agent tools；收件、归档、用户事实、AI 回复和回复投递 |
+| 4. 邮件 Agent 层 | [v2.3](04-mail-agent.md) | [15 个单元](04-mail-agent-development-plan.md) | 开发中：13/15（M4-14A 已完成） | 一次性入站邮件 Agent tools；M4-14B 待跨层编排，M4-15 待真实验收 |
 | 5. 总调度与服务监控层 | [v1](05-orchestration-monitoring.md) | [21 个单元](05-orchestration-monitoring-development-plan.md) | 开发中：8/21 | 唯一常驻服务；时间调度、跨层编排、重试恢复、健康监控和运维告警 |
 
 ## 跨层规则

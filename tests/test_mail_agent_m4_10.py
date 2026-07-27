@@ -20,6 +20,7 @@ def target(**changes: object) -> AcceptedDeliveryTarget:
         "delivery_id": 99,
         "idempotency_key": "mail:response:23:thread-7",
         "provider_thread_id": "thread-7",
+        "in_reply_to_provider_message_id": "message-7",
         "delivery_status": "pending",
         "thread_verified": True,
         "authenticated_self_verified": True,
@@ -55,7 +56,7 @@ class Adapter:
         if self.search_error: raise self.search_error
         return self.matches
 
-    def send_html_self(self, **kwargs):
+    def send_html_recipient(self, **kwargs):
         self.calls.append(("send", kwargs))
         if self.send_error: raise self.send_error
         return self.receipt

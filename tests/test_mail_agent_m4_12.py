@@ -6,6 +6,7 @@ import threading
 import pytest
 
 from trainlab.cli import main as root_main
+from trainlab.foundation import FoundationConfig, FoundationRequest, FoundationTool
 from trainlab.mail_agent.application import MailApplicationService, MailApplicationStages
 from trainlab.mail_agent.cli import main as mail_main
 from trainlab.mail_agent.contracts import MailCounts, MailReceipt, MailRequest, MailTool
@@ -91,11 +92,30 @@ def test_cli_stdout_is_one_receipt_and_root_registration_uses_injected_tool(caps
     assert value["mode"] == "status" and value["status"] == "unchanged"
 
 
-def test_root_without_composition_fails_closed_and_no_background_thread(capsys) -> None:
+def test_root_status_needs_no_mail_configuration_or_background_thread(
+    capsys, monkeypatch, tmp_path
+) -> None:
+    data_root = tmp_path / "foundation"
+    foundation = FoundationConfig(
+        data_root,
+        data_root / "data.db",
+        data_root / "raw",
+        data_root / "state",
+        data_root / "state" / "foundation-ready.json",
+        data_root / "state" / "locks" / "foundation.lock",
+    )
+    assert FoundationTool(foundation).execute(
+        FoundationRequest("init", "mail-status-fixture", NOW)
+    ).ready
+    monkeypatch.setattr(
+        "trainlab.mail_agent.runtime.FoundationConfig.load",
+        lambda _root: foundation,
+    )
     before={item.ident for item in threading.enumerate()}
     code=root_main(["mail","--subject-id","7","--invocation-id","offline","status"])
     value=json.loads(capsys.readouterr().out)
-    assert code == 22 and value["errors"][0]["code"] == "mail_application_dependencies_unavailable"
+    assert code == 0 and value["mode"] == "status"
+    assert value["status"] in {"succeeded", "unchanged"}
     assert {item.ident for item in threading.enumerate()} == before
 
 

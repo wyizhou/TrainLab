@@ -1,12 +1,12 @@
 # 第四层：邮件 Agent 工具层开发契约
 
-状态：已冻结
+状态：已冻结（v2.3 固定 recipient 投递修订已接受；M4-10～12 离线终验通过）
 
-契约版本：2.1
+契约版本：2.3
 
 冻结日期：2026-07-26
 
-实现状态：尚未开始
+实现状态：M4-01～13、M4-14A 已完成；M4-14B、M4-15 和真实环境验收尚未完成
 
 依赖契约：
 
@@ -31,9 +31,14 @@ npx @artymclabin/gmail-mcp auth
 codex mcp add gmail -- npx @artymclabin/gmail-mcp
 ```
 
-下文 `get_self/search_messages/read_thread/send_html_self/create_or_apply_label`
-是旧自建 adapter 的迁移基线，不再是新实现可直接假定的工具名。新 adapter 必须
-按实际 package Schema 做固定逻辑能力映射；Codex Agent 仍不得取得 Gmail 工具。
+下文出现的 `get_self/search_messages/read_thread/send_html_self/create_or_apply_label`
+均是**已禁用的旧自建 adapter 迁移基线**，不是新实现可调用的工具名。新 adapter
+只能绑定当前执行环境的 `gmail` MCP（包为 `@artymclabin/gmail-mcp`），并按该 package
+实际 Schema 做固定逻辑能力映射；其中 thread 回复使用 package 的 `send_email`，固定
+`to=[config/trainlab.json:mail.recipient_email]`、精确 `threadId/inReplyTo`。发送账号由
+MCP/provider 管理，项目不读取、判断或绑定其登录身份。Codex
+Agent 仍不得取得 Gmail 工具。不得通过旧本机 command、cwd、credential 或自建 adapter
+回退来规避 package 能力边界。
 
 ## 1. 目标
 
@@ -43,7 +48,7 @@ codex mcp add gmail -- npx @artymclabin/gmail-mcp
 返回结构化 receipt，然后退出。
 
 本层只负责入站交互：检查 TrainLab 已跟踪 thread 中的新回复，以及用户主动发给
-自己并带 TrainLab 标签的新邮件；保存原始/规范化消息，结合相关健康、活动、计划
+固定 `mail.recipient_email` 并带 TrainLab 标签的新邮件；保存原始/规范化消息，结合相关健康、活动、计划
 与历史会话调用 Codex Exec，保存并发送回复。第三层主动生成的日报、周报、训练
 建议和计划修订由第三层自己发送，第四层不重复投递。
 
@@ -62,7 +67,7 @@ codex mcp add gmail -- npx @artymclabin/gmail-mcp
 - 投递第三层主动生成的日报、周报、训练建议或计划修订。
 - 让邮件 AI 直接修改 current training plan。
 - 允许模型直接访问 Gmail MCP、SQLite、文件系统、网络、凭据或 shell。
-- 向已认证本人以外的地址发送、转发、抄送或密送邮件。
+- 向固定 `mail.recipient_email` 以外的地址发送、转发、抄送或密送邮件。
 - 处理任意 Gmail 标签、删除邮件、移动邮件、归档、标为垃圾邮件或修改云端正文。
 - 默认解析附件内容或把附件发送给模型。
 - 医疗诊断、治疗建议或把设备指标当作医疗结论。
@@ -74,7 +79,7 @@ codex mcp add gmail -- npx @artymclabin/gmail-mcp
 → 加载配置、Schema、Shared/Mail Harness
 → 验证第一层 ready/schema version 和 Gmail MCP allowlist
 → 获取邮件写入锁并建立 mail agent run
-→ get_self 校验 Gmail identity
+→ 校验固定 recipient 配置与 Gmail MCP allowlist
 → 扫描 TrainLab 标签流和 tracked thread 流
 → 原始 Gmail MCP JSON 先落盘并生成 source revision
 → 规范化 thread/message，建立去重和待处理 item
@@ -99,10 +104,10 @@ Gmail 请求、Codex 执行、HTML 渲染和长时间校验不得占用 SQLite �
 3. 第五层可调用组合 `run`，但内部仍按消息和阶段持久化，进程中断后从已完成阶段
    恢复，不重新抓取、重新生成或重复发送。
 4. Gmail MCP 只能由确定性 Python 宿主调用；Codex Agent 没有 Gmail 工具权限。
-5. Gmail MCP 只暴露当前账号验证、消息搜索、thread 读取、self-send 和 TrainLab
-   标签应用五类受限能力，不暴露通用 Gmail 修改能力。
-6. 所有发送固定为 authenticated self；邮件正文、模型输出或调用参数不能改变
-   recipient、label 或 Gmail identity。
+5. Gmail MCP 只暴露消息搜索、thread 读取、固定 recipient 发送和 TrainLab 标签应用
+   四类受限能力，不暴露通用 Gmail 修改能力。
+6. 所有发送固定为本地忽略配置 `config/trainlab.json` 的 `mail.recipient_email`；邮件
+   正文、模型输出或调用参数不能改变 recipient、label 或 provider 发送身份。
 7. TrainLab 标签用于发现用户主动发起的新邮件，但已跟踪 thread 的回复即使没有
    标签也必须检查。
 8. Gmail provider message ID 是消息幂等身份，thread ID 是会话身份；邮件主题不是
@@ -123,11 +128,15 @@ Gmail 请求、Codex 执行、HTML 渲染和长时间校验不得占用 SQLite �
     `prior_model_output`。
 17. 同一 inbound message 最多触发一次相同事件和一条 current 回复链；显式重生成
     产生新 revision。
-18. 发送前必须按 idempotency key/run ID 查询 Gmail；发送结果不确定时先 reconcile，
-    不能盲目再次发送。
-19. 第三层和第四层只共享 Shared Harness、Codex 适配器、上下文/Schema 通用组件，
+18. 发送前必须以本地 delivery idempotency key、固定 subject/body marker 和受控搜索
+    查重；发送结果不确定时先 reconcile，不能盲目再次发送。package `send_email` 不支持
+    自定义 MIME headers，因此不得要求或伪造 `X-TrainLab-Run-ID`、自定义/稳定 Message-ID。
+19. 回复前必须验证 thread 包含 `mail.recipient_email`，CC/BCC 均为空，且可见地址仅为
+    recipient 与同一一致 mailbox counterpart；缺失、无法解析或出现第三方地址时拒绝
+    投递并进入 operator review。MCP 登录账号不是授权依据，也不要求等于 recipient。
+20. 第三层和第四层只共享 Shared Harness、Codex 适配器、上下文/Schema 通用组件，
     不共同写任何业务表。
-20. 不固定模型名称，不保存隐藏推理、完整 prompt、原始模型协议响应或凭据。
+21. 不固定模型名称，不保存隐藏推理、完整 prompt、原始模型协议响应或凭据。
 
 ## 4. 总体架构
 
@@ -271,11 +280,10 @@ Receipt 不包含 AI 回复文本。CLI 和 Python API 必须调用同一 applic
 
 | 逻辑能力 | 当前映射工具 | 用途 |
 |---|---|---|
-| 验证本人 | `get_self` | 返回并校验 authenticated account |
-| 搜索邮件 | `search_messages` | TrainLab 标签、run ID 和恢复查重 |
-| 读取 thread | `read_thread` | 获取已跟踪会话的消息顺序和正文 |
-| 发送给本人 | `send_html_self` | multipart self-send 或 thread reply |
-| 应用标签 | `create_or_apply_label` | 仅创建/应用 TrainLab |
+| 搜索邮件 | package 实际 search capability | 代码生成的 TrainLab 标签、固定 marker 和恢复查重 |
+| 读取 thread | package 实际 thread-read capability | 获取已跟踪会话的消息顺序、正文和 recipient/counterpart 证据 |
+| 固定目标回复 | `send_email` | 仅在 recipient + 一致 mailbox counterpart 已验证 thread 中回复；固定 `to=[mail.recipient_email]` 和精确 `threadId/inReplyTo`，不传 from/CC/BCC/header/attachment |
+| 应用标签 | package 实际 label capability（如可用） | 仅创建/应用 TrainLab；不可用时受控 deferred，不扩大能力 |
 
 禁止暴露：
 
@@ -288,32 +296,36 @@ Receipt 不包含 AI 回复文本。CLI 和 Python API 必须调用同一 applic
 
 每次需要 Gmail 的调用必须：
 
-1. 验证 mapping Schema 和工具名称恰好匹配 allowlist。
-2. `get_self` 取得账号并与 `subject_identities(provider=gmail)` 的 HMAC 对账。
-3. 验证配置只允许 `authenticated_self_only=true`、`label=TrainLab`。
-4. 验证 OAuth/token 路径在允许的敏感目录且文件权限 `0600`。
-5. 确认 transport 是部署配置允许的 stdio MCP，环境变量不包含未批准秘密。
-6. 验证工具响应可以映射到稳定 adapter 类型。
+1. 验证 server name 恰为 `gmail`、package 恰为 `@artymclabin/gmail-mcp`，且实际
+   Schema 仅映射本契约所需的固定能力；旧自建 adapter 一律拒绝。
+2. 读取本地、Git 忽略的 `config/trainlab.json`，验证 `mail.recipient_email` 存在、
+   规范化且唯一；不得经 MCP 获取、判断或绑定 Gmail 登录账号。
+3. 验证配置只允许固定 `recipient_email`、`label=TrainLab`。
+4. 不读取、保存或校验 token/OAuth 路径、凭据内容或文件权限；这些完全属于当前 Codex
+   Gmail MCP 运行环境，项目不得绑定或复制。
+5. 确认 transport 是当前执行环境启用的 MCP，环境变量不包含未批准秘密。
+6. 验证工具响应可以映射到稳定 adapter 类型，并拒绝任意 recipient、自由 query、
+   attachment 或 header 参数。
 
-账号不匹配时立即 failed，不搜索、不读取、不发送，也不自动把另一 Gmail identity
-绑定到现有 subject。
+recipient 配置缺失或无效时立即 failed，不搜索、不读取、不发送；不得从 Gmail MCP、
+邮件正文或调用参数猜测、补全或替换 recipient。
 
 ### 7.2 目标 adapter 数据
 
-为可靠识别 thread 和防循环，`read_thread` 的标准化结果至少需要：
+为可靠识别 thread 和防循环，package thread-read capability 的标准化结果至少需要：
 
 - provider message ID 和 thread ID。
 - internal UTC time。
 - `From`、`To` 的规范身份判断结果。
 - `Subject`。
-- `Message-ID`、`In-Reply-To`、`References`。
-- `X-TrainLab-Run-ID`。
+- 若 provider 给出，保存 `Message-ID`、`In-Reply-To`、`References` 作为只读链路线索；
+  它们不是发送幂等前置条件。
 - label IDs。
 - plain text、HTML 存在标记和附件元数据。
 
-当前迁移基线若缺少这些 header 或附件元数据，实施任务必须先扩展受限 MCP adapter，
-但不能因此开放通用 Gmail 工具。原始 MIME/HTML 仍按第一层原始对象规则保存，
-模型默认只接收规范化 plain text。
+缺少 header 或附件元数据时不得扩展为通用 Gmail 工具，或改用旧 adapter。原始
+MIME/HTML 若 package 可返回则按第一层原始对象规则保存；模型默认只接收规范化 plain
+text，且附件永不进入模型。
 
 ## 8. 工具路由
 
@@ -330,7 +342,7 @@ Receipt 不包含 AI 回复文本。CLI 和 Python API 必须调用同一 applic
 
 一个消息失败不阻断后续消息，除非发生：
 
-- Gmail identity mismatch。
+- recipient 配置无效或 thread participant 边界不成立。
 - credential/数据库权限错误。
 - Schema version 不兼容。
 - 单写入锁或磁盘完整性错误。
@@ -375,10 +387,11 @@ revision，生成或完成最终回复。
 ### 8.4 `deliver-response`
 
 - 只接受 accepted 的精确 `mail_response_artifact_id`。
-- 校验 triggering message、thread 和 subject identity。
+- 校验 triggering message、thread 和固定 recipient 配置。
 - 确定性渲染 plain text + inline-styled HTML。
-- 发送前搜索精确 delivery run ID。
-- 回复时使用原 Gmail thread ID。
+- 发送前按本地 delivery idempotency key 派生的固定 subject/body marker 做受控精确搜索。
+- 使用 package `send_email`，固定 `to=[config/trainlab.json:mail.recipient_email]`，不传
+  `from`，并传入数据库已验证的原 Gmail `threadId/inReplyTo`。
 - 成功后应用 TrainLab 标签并保存 message/thread/provider receipt。
 - 创建只关联该精确回复 revision 的 `mail_delivery_artifacts`。
 - 更新 conversation event 为 `mail_response_sent`。
@@ -396,11 +409,12 @@ revision，生成或完成最终回复。
 
 固定顺序：
 
-1. 使用不可变 delivery run ID 和精确 subject 搜索。
-2. 找到唯一匹配则读取 thread、验证 self、内容角色和时间范围。
+1. 使用本地 delivery idempotency key 派生的固定 subject/body marker 搜索。
+2. 找到唯一匹配则读取 thread、验证 recipient + 一致 mailbox counterpart、CC/BCC 为空、
+   内容哈希和时间范围。
 3. 补记 sent/provider IDs 和精确 artifact relation。
 4. 标签缺失时只补应用 TrainLab。
-5. 没找到才允许同一 delivery 重新进入 send。
+5. 找不到匹配仍保持 unknown/deferred，继续对账或要求 operator review；不得重新发送。
 6. 多个匹配标记 `duplicate_delivery_conflict`，停止并要求 operator review。
 
 `reconcile` 不调用 Codex、不产生新回复 revision。
@@ -426,18 +440,19 @@ revision，生成或完成最终回复。
 1. `tracked_thread_reply`：位于 TrainLab 已发送或已登记 thread 中、不是已知
    TrainLab outbound 的新用户消息。即使消息或 thread 当前没有 TrainLab label，
    仍然 eligible。
-2. `labeled_new_request`：用户主动发给 authenticated self、属于新/未跟踪 thread，
-   并且 Gmail thread/message 带 TrainLab 标签。
+2. `labeled_new_request`：用户主动发给固定 `mail.recipient_email`、属于新/未跟踪
+   thread，并且 Gmail thread/message 带 TrainLab 标签。
 
-首版账号是 self-to-self 模式。由于 From 和 To 可能相同，actor 判定优先证据：
+首版使用固定 recipient + 单一一致 mailbox counterpart 模式；actor 判定优先证据：
 
 1. provider message ID 已存在于 `mail_deliveries/mail_messages` 的 TrainLab
    outbound 记录 → `actor_role=trainlab`。
 2. provider message ID 不匹配任何投递，位于 tracked thread 的新消息 →
    `actor_role=user`。
-3. 带 TrainLab 标签的新 self message，且无 TrainLab delivery/run ID 证据 →
+3. 带 TrainLab 标签、recipient 参与且无第三方的新增消息，且无本地 TrainLab delivery/固定 marker
+   对账证据 →
    `actor_role=user`。
-4. 只有可伪造的 `X-TrainLab-Run-ID` 文本但无本地 delivery 证据 → `unknown`，
+4. 只有可伪造的 header、subject 或正文 marker 但无本地 delivery 证据 → `unknown`，
    不能直接当作 TrainLab outbound。
 
 ### 9.2 必须忽略或隔离
@@ -445,7 +460,7 @@ revision，生成或完成最终回复。
 - 第四层自己已经发送并登记的消息。
 - 相同 provider message ID 已完成的重复搜索结果。
 - 未跟踪且没有 TrainLab 标签的普通私人邮件。
-- sender/recipient identity 不能证明为 authenticated self 的消息。
+- thread 缺少 recipient、CC/BCC 非空、mailbox counterpart 不一致或出现第三方地址的消息。
 - 只有主题包含 “TrainLab” 但没有标签或 tracked thread 证据的邮件。
 - 草稿、垃圾邮件、Trash 或不完整 provider 对象。
 - 自动回复、退信和 vacation response，除非未来有独立策略。
@@ -471,7 +486,7 @@ ignored 需要 reason code，不删除、不回复、不创建长期事实。身
 处理顺序：
 
 1. 保存 Gmail MCP 原始 message/thread JSON 到受控临时文件。
-2. 验证 JSON、大小、provider IDs 和 self identity。
+2. 验证 JSON、大小、provider IDs、recipient 参与和 participant 边界。
 3. fsync 后原子重命名到 `raw/gmail/json/YYYY/MM/<sha256>.json`。
 4. 创建 `raw_objects/source_revisions`。
 5. 确定性提取 thread、message、headers、plain text 和附件元数据。
@@ -644,7 +659,7 @@ Codex 只能返回 fact candidates，最终是否写入 `user_facts` 由宿主�
 不得裁剪：
 
 - triggering message。
-- self/thread/provider identity 结论。
+- recipient/thread/provider participant 边界结论。
 - active medical/safety constraints。
 - current plan（当问题与训练有关）。
 - data quality 和来源限制。
@@ -715,7 +730,7 @@ Mail Harness 负责：
 - intent、reply action、事实候选和计划修订依赖。
 - thread 和用户 authored text 语义。
 - prompt injection 和历史 AI 边界。
-- self-only、TrainLab label 和禁止工具授权。
+- 固定 recipient、TrainLab label 和禁止工具授权。
 - 简体中文、用户可见回复及安全披露。
 
 回复 HTML 渲染、Gmail 发送和 reconcile 是确定性宿主行为，不加载 Mail Harness，
@@ -796,7 +811,7 @@ Codex 输出符合 `mail_agent_result.schema.json`：
 - trigger message/current revision 与请求一致。
 - message eligible 且 actor 是 user。
 - thread 属于 tracked reply 或 labeled new request。
-- response 只会发送给 authenticated self。
+- response 只会发送给本地 `config/trainlab.json` 的固定 `mail.recipient_email`。
 - 不是对 TrainLab outbound 的自动再次回复。
 
 ### 18.2 内容和安全
@@ -841,10 +856,9 @@ accepted reply、inputs、conversation events 和 accepted user facts在同一�
 
 - UTF-8 plain text。
 - 语义相同的 inline-styled HTML。
-- 确定性 subject。
-- 安全 delivery run ID。
-- `X-TrainLab-Run-ID`。
-- 稳定 Message-ID 请求。
+- 确定性 subject marker 和正文 marker；二者均由 host 从本地 delivery idempotency key
+  确定性生成，且不接受模型、用户或调用方覆盖。
+- 可审计但不含健康数据的 delivery marker；它不是 MIME header。
 
 HTML 禁止：
 
@@ -855,10 +869,15 @@ HTML 禁止：
 
 ### 19.3 发送
 
-- 调用 `send_html_self` 前按精确 run ID 搜索。
-- 回复使用数据库已验证 thread ID。
+- 调用 package `send_email` 前，以固定 subject/body marker 做受控精确搜索，并结合本地
+  `mail_deliveries` idempotency key 查重。
+- 回复使用数据库已验证 thread ID，且必须再次验证 recipient 参与、CC/BCC 为空、仅有
+  一个一致 mailbox counterpart；无法得到完整证据或出现第三方地址时不发送。
+- `send_email` 的 `to` 强制为 `mail.recipient_email`，不传 `from`，且只允许已验证的
+  `threadId/inReplyTo`；不接受 CC、BCC、自定义 header、Message-ID、任意 query 或
+  attachment 参数。
 - 发送成功后调用/确认 TrainLab label。
-- provider 返回的 message/thread ID 与本地 delivery 原子记录。
+- provider 返回的精确 message/thread ID、固定 marker 搜索结果和本地 delivery 原子记录。
 - 发送成功不修改第三层 artifact 或原 mail response。
 
 如果 Gmail MCP 在 send 后超时，状态必须是 `delivery_unknown`，不能立即重发。
@@ -892,14 +911,18 @@ mail:<subject>:process:<provider_message_id>:<source_revision>:<invocation_id>
 mail:response:<response_artifact_id>:<thread_id>
 ```
 
-- run ID 进入 subject 和 `X-TrainLab-Run-ID`。
-- 搜索、provider message ID、本地 delivery 三者共同验证。
+- 本地 `mail:response:<response_artifact_id>:<thread_id>` 是唯一投递幂等身份；固定
+  subject/body marker 由该 key 派生。
+- 本地 delivery、固定 marker 的受控搜索、provider message/thread ID 和精确
+  response revision 四者共同验证。仅凭 subject、正文 marker 或 provider header 不能
+  认定已发送。
 - 相同 idempotency key 最多一个 sent delivery。
 
 ### 20.4 防循环
 
 - 本地 delivery 的 provider message ID 永远标为 TrainLab outbound。
-- 只有本地 delivery 证据，不能只靠可伪造 header，才能认定 TrainLab 发送。
+- 只有本地 delivery 证据与受控 provider 结果相互印证，才能认定 TrainLab 发送；不能
+  只靠可伪造 header、subject 或正文 marker。
 - TrainLab outbound 不进入 process 队列。
 - acknowledgement 默认不回复。
 - 一封 AI 回复被用户引用不使引用中的旧文本重新成为事实。
@@ -971,38 +994,46 @@ MCP adapter 必须把 HTTP/transport 错误标准化为 code；不能要求第�
 
 ## 23. 配置契约
 
-目标配置至少包含：
+项目统一配置文件 `config/trainlab.json`（本地、Git 忽略）至少包含：
 
-```yaml
-mail_agent:
-  timezone: Asia/Singapore
-  label: TrainLab
-  gmail_mcp_config: config/gmail_mcp.yaml
-  input_schema: harness/schemas/mail_agent_input.schema.json
-  output_schema: harness/schemas/mail_agent_result.schema.json
-  harness_root: harness
-  max_items_per_run: 20
-  max_threads_per_poll: 50
-  poll_overlap_hours: 48
-  max_context_bytes: 1000000
-  max_thread_messages: 20
-  max_thread_body_bytes: 131072
-  max_trigger_body_bytes: 65536
-  max_prior_responses: 5
-  codex_timeout_seconds: 600
-  mcp_timeout_seconds: 30
-  max_read_attempts: 3
-  lock_path: state/locks/mail-agent.lock
-  temp_root: state/tmp/mail-agent
+```json
+{
+  "mail": {
+    "recipient_email": "operator-provided-email",
+    "label": "TrainLab"
+  },
+  "mail_agent": {
+    "timezone": "Asia/Singapore",
+    "input_schema": "harness/schemas/mail_agent_input.schema.json",
+    "output_schema": "harness/schemas/mail_agent_result.schema.json",
+    "harness_root": "harness",
+    "max_items_per_run": 20,
+    "max_threads_per_poll": 50,
+    "poll_overlap_hours": 48,
+    "max_context_bytes": 1000000,
+    "max_thread_messages": 20,
+    "max_thread_body_bytes": 131072,
+    "max_trigger_body_bytes": 65536,
+    "max_prior_responses": 5,
+    "codex_timeout_seconds": 600,
+    "mcp_timeout_seconds": 30,
+    "max_read_attempts": 3,
+    "lock_path": "state/locks/mail-agent.lock",
+    "temp_root": "state/tmp/mail-agent"
+  }
+}
 ```
 
 规则：
 
 - `label` 固定 TrainLab。
-- recipient 不在配置中自由填写；由 get_self + subject identity 确定。
+- `mail.recipient_email` 是唯一允许的明文 recipient；仅由本地 `config/trainlab.json`
+  提供且 Git 忽略。`send_email.to` 只能由宿主固定为该单元素列表；不传 `from`、CC、BCC、
+  header、query 或 attachment。不得通过 MCP 获取/判断 Gmail 登录账号，也不要求它等于
+  recipient。
 - 不含调度时间、间隔、星期规则或 cron。
 - 不含模型名称。
-- credential 配置只保存外部 owner-only 路径，不保存 secret/token 内容。
+- 不保存 credential、token 或 OAuth 路径/内容。
 - Harness/Schema/MCP mapping 路径必须位于允许位置，邮件和 request 不能覆盖。
 - 临时目录 `0700`，临时文件 `0600`。
 - poll/search query 由代码生成，不能由模型或用户邮件传入。
@@ -1011,7 +1042,7 @@ mail_agent:
 
 每次运行至少检查：
 
-- Gmail identity 与 subject 绑定。
+- 本地 recipient 配置存在、有效且未被 request/MCP 覆盖。
 - provider message/thread ID 完整和唯一。
 - thread 消息时间总体有序。
 - raw JSON 哈希、大小和路径。
@@ -1033,7 +1064,7 @@ mail_agent:
 - direction/actor 无法确定。
 - label 搜索达到上限但窗口未拆分完成。
 - 引用链、Message-ID 或 In-Reply-To 缺失。
-- 同一 delivery run ID 在 Gmail 中找到多个结果。
+- 同一固定 delivery marker 在 Gmail 中找到多个结果。
 - 已发送内容无法关联到 accepted artifact revision。
 - 新出现的 MIME/附件类型未映射。
 
@@ -1044,13 +1075,13 @@ mail_agent:
 
 - Gmail token、OAuth client secret、授权 URL 和账号密码不得进入数据库、上下文、
   Harness、日志、receipt 或测试夹具。
-- authenticated email 明文只在受限 Gmail 配置/MCP 运行中使用；数据库身份使用
-  第一层 HMAC。
+- recipient email 明文只存在于本地、Git 忽略的 `config/trainlab.json` 和受限发送调用中；
+  不写入数据库、日志、receipt、Harness 或测试夹具。
 - 邮件、健康、活动、用户事实、AI 回复和投递内容均为敏感数据。
 - 日常日志不得打印 subject/body/HTML；debug 也只记录哈希、大小和受控 ID。
 - 精确 GPS、生殖健康、孕期、血压等只在问题确实需要且策略允许时进入有界上下文。
 - 用户邮件中的链接、HTML、附件、代码和 prompt 都不执行。
-- 不能因邮件写着“转发给某人”就改变 self-only。
+- 不能因邮件写着“转发给某人”就改变固定 recipient 或 recipient/counterpart 边界。
 - 不向模型提供 Gmail credential path 或 MCP transport env。
 - Mail Agent 输出不能授权工具或修改 Harness。
 - accepted input/output snapshot 按数据库最高敏感级别保护。
@@ -1068,11 +1099,12 @@ mail_agent:
 
 目标迁移：
 
-1. 保留受限 Gmail MCP 的 self、search、read-thread、send-self 和 TrainLab label
+1. 保留受限 Gmail MCP 的 search、read-thread、固定-recipient send 和 TrainLab label
    能力。
 2. 将收件、thread 读取和交互回复所需的 Gmail MCP 能力收敛到第四层确定性
    Python adapter；第三层只保留自身 artifact 自投递所需的受限 Gmail MCP 能力。
-3. 扩展 thread 标准化 header，满足 identity、reply chain 和防循环。
+3. 以 package thread-read 标准化 participant 与可用 header，满足 identity、reply chain
+   和防循环；不得为缺失 header 开放通用工具。
 4. 把 poll、消息 archive、会话事件和用户事实迁入第四层。
 5. 把邮件 AI 回复迁入 Mail Harness + `mail_response_*`。
 6. 第三层先持久化 analysis/plan，再自行发送；第四层只关联其精确 artifact 和
@@ -1101,7 +1133,7 @@ mail_agent:
 ### 27.2 Gmail 发现
 
 - tracked thread 有无 TrainLab label 的新回复。
-- 用户主动 self-send 并应用 TrainLab 标签。
+- 用户主动发给固定 recipient 并应用 TrainLab 标签。
 - 普通无标签私人邮件 ignored。
 - 主题含 TrainLab 但无 eligibility ignored。
 - provider message 重复搜索 no-op。
@@ -1111,9 +1143,10 @@ mail_agent:
 
 ### 27.3 身份和防循环
 
-- self identity 与 subject 匹配/不匹配。
+- 本地 `mail.recipient_email` 存在/缺失/无效，及 thread 缺 recipient、CC/BCC 非空、
+  counterpart 不一致或出现第三方地址时拒绝。
 - TrainLab outbound 不进入 process。
-- 用户伪造 X-TrainLab header 不能冒充本地 delivery。
+- 用户伪造 header、subject 或正文 marker 不能冒充本地 delivery。
 - acknowledgement 默认 store-only。
 - 自动回复/退信 ignored。
 - 相同 thread 的多条用户消息按稳定顺序处理。
@@ -1147,14 +1180,14 @@ mail_agent:
 
 ### 27.7 投递和恢复
 
-- plain + inline HTML self-send。
+- plain + inline HTML 固定-recipient send。
 - 新 thread 和 reply thread。
 - TrainLab label。
 - send 前查重。
 - send 后数据库中断由 reconcile 补记。
 - send 超时不盲目重发。
 - label 失败只重试标签。
-- 同一 run ID 多个 Gmail 结果进入 operator review。
+- 同一固定 delivery marker 多个 Gmail 结果进入 operator review。
 - mail_delivery_artifacts 只指向精确 mail response revision；第三层使用自己的
   analysis_delivery_artifacts。
 
@@ -1169,9 +1202,9 @@ mail_agent:
 
 ### 27.9 受控真实账号验收
 
-- get_self 和 identity 验证。
-- 一封显式测试 TrainLab 自发邮件被发现但只生成草稿/accepted response。
-- 明确授权后执行一次真实 self-send。
+- 本地 `mail.recipient_email` 配置验证；不调用 MCP identity probe。
+- 一封显式测试、发给固定 recipient 的 TrainLab 邮件被发现但只生成草稿/accepted response。
+- 明确授权后执行一次真实固定-recipient send。
 - 在同一 thread 回复并确认即使回复无标签也能发现。
 - 完全相同 invocation 重跑无重复回复。
 - 人工制造 send receipt 中断并用 reconcile 恢复。
@@ -1184,8 +1217,9 @@ mail_agent:
 1. Python API、CLI、MailRequest/MailReceipt Schema 实现且一致。
 2. 所有工具一次性退出，没有 daemon、timer、Webhook 或轮询循环。
 3. run/poll/process/deliver/reconcile/status 使用同一 application service 和状态机。
-4. Gmail MCP 能力严格限制为 self/search/thread/self-send/TrainLab label。
-5. Gmail identity 与第一层 subject identity 对账。
+4. Gmail MCP 能力严格限制为 search/thread/fixed-recipient send/TrainLab label。
+5. `mail.recipient_email` 仅从本地、Git 忽略的 `config/trainlab.json` 读取；不调用 MCP
+   获取或判断 Gmail 登录身份，且不要求 recipient 等于该身份。
 6. tracked thread 无标签回复和 TrainLab 标签新邮件都能可靠发现。
 7. 原始 Gmail JSON 先落盘，message/thread/revision 幂等可重建。
 8. inbound/outbound/self-copy 和 TrainLab 防循环规则通过。
@@ -1196,7 +1230,7 @@ mail_agent:
 13. accepted mail response 先保存后发送，重生成新增 revision。
 14. 第三层 accepted artifact 和 analysis delivery 可作为回复上下文，但第四层
     不重新渲染或发送它们。
-15. delivery self-only、multipart、inline HTML、TrainLab label 和 thread 正确。
+15. delivery fixed-recipient、multipart、inline HTML、TrainLab label 和 thread 正确。
 16. idempotency、send unknown 和 reconcile 不产生重复邮件。
 17. `mail_agent_items` 和 poll cursor 支持中断恢复，不跨失败窗口。
 18. 错误、receipt 和日志不泄露正文、健康 payload、凭据或 hidden reasoning。
