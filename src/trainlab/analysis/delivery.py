@@ -31,6 +31,18 @@ _TITLES = {
     "weekly_plan": "未来七天计划",
     "plan_revision": "计划修订",
 }
+_DELIVERY_PRESENTATION = {
+    "daily_report": ("每日训练简报", "恢复状态与今日安排"),
+    "weekly_report": ("每周训练报告", "本周回顾与未来七天计划"),
+    "plan_revision": ("训练计划更新", "根据最新情况调整"),
+}
+_ROLE_PRESENTATION = {
+    "daily_summary": ("#2563eb", "#eff6ff"),
+    "daily_advice": ("#059669", "#ecfdf5"),
+    "weekly_summary": ("#7c3aed", "#f5f3ff"),
+    "weekly_plan": ("#ea580c", "#fff7ed"),
+    "plan_revision": ("#ea580c", "#fff7ed"),
+}
 
 
 class AnalysisDeliveryError(RuntimeError):
@@ -537,32 +549,44 @@ def render_delivery(pending: PendingDelivery) -> RenderedDelivery:
     run_key = _safe_header(pending.run_key)
     idempotency_key = _safe_header(pending.idempotency_key)
     subject = _safe_header(f"[TrainLab] {pending.delivery_kind} | run-id {run_key} | idempotency {idempotency_key}")
-    header_lines = (f"Run-ID: {run_key}", f"Idempotency-Key: {idempotency_key}")
-    daily = pending.delivery_kind == "daily_report"
-    plain_sections = [] if daily else ["TrainLab 分析报告", *header_lines]
+    report_title, report_subtitle = _DELIVERY_PRESENTATION[pending.delivery_kind]
+    plain_sections = [report_title]
     html_sections = [
-        '<!doctype html><html><body style="margin:0;background:#f5f7fa;color:#172033;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;line-height:1.55">',
-        '<main style="max-width:720px;margin:24px auto;padding:24px;background:#ffffff;border:1px solid #d9e0ea;border-radius:8px">',
+        '<!doctype html><html><body style="margin:0;padding:0;background:#f1f5f9;color:#172033;'
+        'font-family:-apple-system,BlinkMacSystemFont,Segoe UI,PingFang SC,Hiragino Sans GB,Microsoft YaHei,sans-serif;'
+        'line-height:1.65">',
+        '<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">'
+        f'{html.escape(report_subtitle, quote=True)}</div>',
+        '<main style="max-width:680px;margin:0 auto;padding:24px 12px">',
+        '<header style="padding:28px 28px 24px;background:#172554;border-radius:18px 18px 0 0;color:#ffffff">',
+        '<div style="margin:0 0 8px;font-size:12px;font-weight:700;letter-spacing:1.8px;color:#bfdbfe">'
+        'TRAINLAB</div>',
+        f'<div style="margin:0;font-size:26px;font-weight:750;line-height:1.3">{html.escape(report_title, quote=True)}</div>',
+        f'<div style="margin-top:8px;font-size:14px;color:#dbeafe">{html.escape(report_subtitle, quote=True)}</div>',
+        '</header>',
+        '<div style="padding:8px 22px 22px;background:#ffffff;border:1px solid #dbe3ee;border-top:0;'
+        'border-radius:0 0 18px 18px">',
     ]
-    if not daily:
-        html_sections.extend((
-            '<h1 style="margin:0 0 16px;font-size:22px">TrainLab 分析报告</h1>',
-            f'<p style="margin:0 0 4px"><strong>Run-ID:</strong> {html.escape(run_key, quote=True)}</p>',
-            f'<p style="margin:0 0 20px"><strong>Idempotency-Key:</strong> {html.escape(idempotency_key, quote=True)}</p>',
-        ))
     for artifact in pending.artifacts:
         title = _TITLES[artifact.content_role]
         text = artifact.user_visible_text.replace("\r\n", "\n").replace("\r", "\n")
-        if plain_sections:
-            plain_sections.append("")
+        accent, tint = _ROLE_PRESENTATION[artifact.content_role]
+        plain_sections.append("")
         plain_sections.extend((title, text))
         html_sections.extend((
-            '<section style="margin:20px 0">',
-            f'<h2 style="margin:0 0 8px;font-size:18px">{title}</h2>',
-            f'<div style="white-space:pre-wrap">{html.escape(text, quote=True)}</div>',
+            f'<section style="margin:18px 0 0;padding:20px;border-left:4px solid {accent};'
+            f'border-radius:10px;background:{tint}">',
+            f'<h2 style="margin:0 0 10px;font-size:18px;line-height:1.4;color:{accent}">{title}</h2>',
+            '<div style="font-size:16px;line-height:1.75;color:#1e293b;white-space:pre-wrap;overflow-wrap:anywhere">'
+            f'{html.escape(text, quote=True)}</div>',
             '</section>',
         ))
-    html_sections.append('</main></body></html>')
+    html_sections.extend((
+        '<footer style="margin:22px 2px 0;padding-top:16px;border-top:1px solid #e2e8f0;'
+        'font-size:12px;line-height:1.6;color:#64748b">'
+        '建议会结合近期健康、恢复与训练记录动态调整。请以当天真实感受为准。</footer>',
+        '</div></main></body></html>',
+    ))
     return RenderedDelivery(
         subject=subject,
         headers={"X-TrainLab-Run-ID": run_key, "X-TrainLab-Idempotency-Key": idempotency_key},
