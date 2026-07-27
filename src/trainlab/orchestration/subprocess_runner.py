@@ -66,7 +66,19 @@ _EXIT_BY_LAYER = {
     "analysis": {"succeeded": 0, "unchanged": 0, "partial": 10, "deferred": 11, "lock_busy": 12, "rejected": 20, "failed": 21},
     "mail": {"succeeded": 0, "unchanged": 0, "partial": 10, "deferred": 11, "lock_busy": 12, "auth_required": 20, "rejected": 21, "failed": 22},
 }
-_TIMEOUTS = {layer: {mode: 300 for mode in modes} for layer, modes in _MODES.items()}
+_TIMEOUTS = {
+    "foundation": {mode: 60 for mode in _MODES["foundation"]},
+    "garmin": {
+        "full": 86_400,
+        "incremental": 3_600,
+        "snapshot": 900,
+        "repair": 3_600,
+        "audit": 1_800,
+        "status": 60,
+    },
+    "analysis": {mode: 900 for mode in _MODES["analysis"]},
+    "mail": {mode: 300 for mode in _MODES["mail"]},
+}
 _ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9:_-]{0,127}$")
 _SUBJECT_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$")
 _DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")

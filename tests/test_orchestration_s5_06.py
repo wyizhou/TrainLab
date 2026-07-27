@@ -1128,3 +1128,17 @@ def test_mail_discovery_progress_accepts_bounded_new_ids_in_all_business_fields(
     monkeypatch.setattr(runner_module, "_PYTHON", child)
     result = SubprocessRunner().run(request)
     assert result.kind == "accepted"
+
+
+def test_provider_timeouts_are_fixed_and_cover_incremental_runtime() -> None:
+    assert runner_module._TIMEOUTS["garmin"] == {
+        "full": 86_400,
+        "incremental": 3_600,
+        "snapshot": 900,
+        "repair": 3_600,
+        "audit": 1_800,
+        "status": 60,
+    }
+    assert set(runner_module._TIMEOUTS) == {
+        "foundation", "garmin", "analysis", "mail",
+    }

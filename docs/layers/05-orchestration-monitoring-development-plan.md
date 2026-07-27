@@ -449,6 +449,10 @@ flowchart LR
 - **集成顺序与失败回退：** W5；任何不确定发送先 reconcile；失败后停用新调度并回到 shadow/旧入口，保留证据。
 - **当前门禁（2026-07-27）：** 验收代码、步骤和证据模板已就绪；因涉及真实
   Garmin/Gmail/systemd 副作用，尚未获得本次独立部署授权，保持未勾选。
+- **本机验收记录（2026-07-27）：** 已获本机受控测试授权并执行至数据质量门；
+  因 40 类 `unmapped_field_signature` 与 2 条历史 `fit_missing` 返回 No-Go，
+  未进入分析、发信或服务切换。证据见
+  [orchestration-acceptance-2026-07-27.md](../runbooks/orchestration-acceptance-2026-07-27.md)。
 
 ### [ ] S5-20 / 生产切换、唯一调度与回滚演练
 
