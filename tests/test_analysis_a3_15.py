@@ -74,6 +74,33 @@ def test_invalid_current_environment_binding_fails_before_client_start():
     assert not client.calls and not client.closed
 
 
+def test_verified_current_environment_binding_is_used_verbatim():
+    client = FakeClient(tools=REQUIRED - {"modify_email"})
+    calls = []
+    status = GmailEnvironmentStatus(
+        True, None, "gmail_mcp_available", "safe",
+        "registered-npx", ("@artymclabin/gmail-mcp",),
+    )
+    value = GmailDeliveryGateway(
+        "self@example.com",
+        inspector=lambda: status,
+        client_factory=lambda *args, **kwargs: (
+            calls.append((args, kwargs)) or client
+        ),
+    )
+    with pytest.raises(
+        GmailDeliveryError,
+        match="^gmail_delivery_capability_mismatch$",
+    ):
+        deliver(value)
+    assert calls == [
+        (
+            ("registered-npx", ["@artymclabin/gmail-mcp"]),
+            {"timeout": 60},
+        )
+    ]
+
+
 def test_missing_required_capability_fails_closed_and_closes():
     client = FakeClient(tools=REQUIRED - {"modify_email"})
     with pytest.raises(GmailDeliveryError, match="^gmail_delivery_capability_mismatch$"):

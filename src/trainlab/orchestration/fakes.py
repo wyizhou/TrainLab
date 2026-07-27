@@ -117,7 +117,7 @@ class FakeGmailTransport:
         self.operations.append({"operation": "get_self"})
         return self.self_email
 
-    def search_alert(self, idempotency_key: str) -> bool:
+    def search_alert(self, idempotency_key: str, subject: str | None = None) -> bool:
         self.operations.append({"operation": "search_alert", "idempotency_key": idempotency_key})
         return idempotency_key in self.known_idempotency_keys
 
@@ -125,6 +125,19 @@ class FakeGmailTransport:
         self.operations.append({"operation": "send_html_self", "idempotency_key": idempotency_key})
         self.known_idempotency_keys.add(idempotency_key)
         return {"provider_message_id": "synthetic-alert-message", "subject": subject, "html": html}
+
+    def send_html(self, *, recipient: str, idempotency_key: str, subject: str, html: str) -> dict[str, str]:
+        self.operations.append({
+            "operation": "send_html",
+            "recipient": recipient,
+            "idempotency_key": idempotency_key,
+        })
+        self.known_idempotency_keys.add(idempotency_key)
+        return {
+            "provider_message_id": "synthetic-alert-message",
+            "subject": subject,
+            "html": html,
+        }
 
     def apply_trainlab_label(self, provider_message_id: str) -> None:
         self.operations.append({"operation": "apply_trainlab_label", "provider_message_id": provider_message_id})

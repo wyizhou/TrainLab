@@ -17,7 +17,7 @@ M4-14B/X-04 和生产 cutover/IG-7 等待第五层 S5-10）
 | `02-data-collection.md` | v1 | `c39ae1b82afcafe9f4fc3c54d1f851b4992c48021c5238038f078fab1ec885d6` |
 | `03-data-analysis.md` | v2.1 | `2bc279170dfd7f8fc50acaf96ca631bad0fcd65069f3402a0c6d1b67c0caa99a` |
 | `04-mail-agent.md` | v2.3 | `95ff7a8541c3e803661f4d8543aea545c1f9115fc1990a3409cd574b56d8c8a4` |
-| `05-orchestration-monitoring.md` | v1.1 | `f46aca332f146fa2efffb4da8a03b48037989b7e4e4f31df9d562932e46db356` |
+| `05-orchestration-monitoring.md` | v1.1 | `885b48747584756c2aebbbe4a9028bbe5d59607a7336955c1f1212853fc03340` |
 
 第四层的唯一业务职责是：收件、原始归档、会话与用户事实、邮件 AI 回复及该回复的
 投递/对账。它是被第五层调用后即退出的工具，不是常驻服务。

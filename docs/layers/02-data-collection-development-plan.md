@@ -17,7 +17,7 @@
 | 2 | `docs/layers/02-data-collection.md` | `c39ae1b82afcafe9f4fc3c54d1f851b4992c48021c5238038f078fab1ec885d6` |
 | 3 | `docs/layers/03-data-analysis.md` | `2bc279170dfd7f8fc50acaf96ca631bad0fcd65069f3402a0c6d1b67c0caa99a` |
 | 4 | `docs/layers/04-mail-agent.md` | `95ff7a8541c3e803661f4d8543aea545c1f9115fc1990a3409cd574b56d8c8a4` |
-| 5 | `docs/layers/05-orchestration-monitoring.md` | `f46aca332f146fa2efffb4da8a03b48037989b7e4e4f31df9d562932e46db356` |
+| 5 | `docs/layers/05-orchestration-monitoring.md` | `885b48747584756c2aebbbe4a9028bbe5d59607a7336955c1f1212853fc03340` |
 
 第二层只负责 Garmin Connect 的采集、归档、解析、投影、质量状态和其运行表。
 它是一次性 Python API/CLI tool，不能实现常驻进程、定时、邮件、AI 分析或第五层

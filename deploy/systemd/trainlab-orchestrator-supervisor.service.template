@@ -1,0 +1,57 @@
+[Unit]
+Description=TrainLab orchestration Supervisor (sole business scheduler)
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=5min
+StartLimitBurst=3
+
+[Service]
+Type=notify
+NotifyAccess=main
+User=@SERVICE_USER@
+Group=@SERVICE_GROUP@
+WorkingDirectory=@PROJECT_ROOT@
+EnvironmentFile=-@ENV_FILE@
+ExecStart=@PROJECT_ROOT@/.venv/bin/trainlab supervisor run
+KillSignal=SIGTERM
+KillMode=control-group
+TimeoutStartSec=60s
+TimeoutStopSec=90s
+SendSIGKILL=yes
+Restart=on-failure
+RestartSec=15s
+WatchdogSec=90s
+WatchdogSignal=SIGABRT
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectHome=read-only
+ProtectSystem=strict
+ProtectControlGroups=yes
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectProc=invisible
+ProcSubset=pid
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+RemoveIPC=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+DevicePolicy=closed
+ReadWritePaths=@DATA_ROOT@ @STATE_ROOT@ @LOG_ROOT@
+LimitNOFILE=256
+TasksMax=64
+MemoryMax=1G
+CPUQuota=100%
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=trainlab-orchestrator
+
+[Install]
+WantedBy=multi-user.target

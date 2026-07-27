@@ -1,6 +1,6 @@
 # 第五层：总调度与服务监控层详细开发需求清单
 
-状态：开发中（S5-00～07 已完成；S5-08～20 与 G2～G4 未完成）
+状态：开发实现已完成至 S5-18；S5-19 受控真实验收与 S5-20 生产切换待独立授权
 
 清单版本：1
 
@@ -22,7 +22,7 @@
 | [第二层](02-data-collection.md) | v1 | `c39ae1b82afcafe9f4fc3c54d1f851b4992c48021c5238038f078fab1ec885d6` |
 | [第三层](03-data-analysis.md) | v2.1 | `2bc279170dfd7f8fc50acaf96ca631bad0fcd65069f3402a0c6d1b67c0caa99a` |
 | [第四层](04-mail-agent.md) | v2.3 | `95ff7a8541c3e803661f4d8543aea545c1f9115fc1990a3409cd574b56d8c8a4` |
-| [第五层](05-orchestration-monitoring.md) | v1.1 | `f46aca332f146fa2efffb4da8a03b48037989b7e4e4f31df9d562932e46db356` |
+| [第五层](05-orchestration-monitoring.md) | v1.1 | `885b48747584756c2aebbbe4a9028bbe5d59607a7336955c1f1212853fc03340` |
 
 实施开始前必须重新计算以上哈希。任一哈希变化即停止后续单元，先由总控重新冻结
 影响范围；不得根据旧清单猜测新的共享边界。
@@ -33,7 +33,8 @@
 - 不实现 Garmin API/FIT 解析、第三层模型分析或第四层收件/回复逻辑。
 - 不改变任何下层 CLI、request/receipt、Harness、Gmail MCP allowlist 或模型选择。
 - 不把 systemd timer 直接指向第二至第四层，避免双重调度。
-- 不发送业务日报、周报、计划修订或邮件回复；第五层只发送独立、确定性、self-only 的运维告警。
+- 不发送业务日报、周报、计划修订或邮件回复；第五层只向项目固定配置地址发送独立、
+  确定性的运维告警。
 
 ## 2. 外部前置条件与本层起始快照
 
@@ -107,7 +108,7 @@ flowchart LR
 
 集成门 G2：Supervisor、executor、下层适配和重试恢复可在合成 fixture 中端到端运行。
 
-真实环境验收门 G3：P5-01 至 P5-05 满足，且取得明确的 Gmail self-send 授权。
+真实环境验收门 G3：P5-01 至 P5-05 满足，且取得向项目固定配置地址发信的明确授权。
 
 最终完成门 G4：本层所有单元完成、影子对账、受控真实验收、切换与回滚演练均通过。
 
@@ -296,11 +297,11 @@ flowchart LR
 - 总控验收通过：S5-07 focused 测试 `26/26` 通过，S5-00..07 全量回归通过。
 - 总控 hidden probes 通过：invalid heartbeat、mixed invalid、cross-subject 和 handoff
   场景均按预期 fail closed 或保持受控绑定。
-- S5-08 仍为 `[ ]`，尚未启动；本次仅收口 S5-07 验收文档。
+- 本段仅记录 2026-07-24 当时的 S5-07 验收快照；S5-08 的最新状态见下节。
 
-### [ ] S5-08 / Morning workflow：增量同步、质量门与有限 repair
+### [x] S5-08 / Morning workflow：增量同步、质量门与有限 repair
 
-- **当前状态：** 未启动。
+- **当前状态：** 已完成离线实现与回归；真实外部调用留待 S5-19。
 - **目的：** 实现每天 07:00 的 `morning` 编排：第二层 incremental、receipt/质量检查、可预算 repair、第三层 daily。
 - **依赖与起始快照：** S5-05 至 S5-07、S5-11；P5-02、P5-03；第二层和第三层
   fake receipt。
@@ -311,7 +312,7 @@ flowchart LR
 - **完成定义：** 在数据允许时只调用一次 daily，日期正确；数据 blocked 时不调用 Codex 且生成可恢复原因。
 - **集成顺序与失败回退：** W4；下层失败保留原 workflow 和 step，按 receipt retry/reconcile，不新建第二份日报。
 
-### [ ] S5-09 / Sunday workflow：一次同步复用、daily 与 weekly
+### [x] S5-09 / Sunday workflow：一次同步复用、daily 与 weekly
 
 - **目的：** 实现周日 07:00 在一次 collection 快照上依次执行 daily 和 weekly，避免重复 Garmin 抓取。
 - **依赖与起始快照：** S5-08；P5-02、P5-03。
@@ -322,7 +323,7 @@ flowchart LR
 - **完成定义：** weekly 的 `as_of` 等于周日逻辑日期，daily/weekly 下层 invocation 和 delivery 都可独立追踪。
 - **集成顺序与失败回退：** W4；任一分析 step 的 partial 仅恢复其 own delivery/step，不回滚另一个 accepted artifact。
 
-### [ ] S5-10 / Mail workflow 与计划修订依赖链
+### [x] S5-10 / Mail workflow 与计划修订依赖链
 
 - **目的：** 定期调用第四层 `mail run`，并编排 `invoke_analysis → revise-plan → resume process` 的跨层闭环。
 - **依赖与起始快照：** S5-05 至 S5-07、S5-11；P5-03、P5-04。
@@ -334,7 +335,7 @@ flowchart LR
 - **完成定义：** 一次计划修改只触发一个 reason event、一个第三层 revise-plan 和一个必要的第四层回复恢复；不产生重复计划邮件。
 - **集成顺序与失败回退：** W4；依赖不满足时 mail item 保持 awaiting_analysis/deferred，不能假装计划已修改或重新处理用户原文。
 
-### [ ] S5-11 / Receipt 分流、重试预算与跨调用恢复
+### [x] S5-11 / Receipt 分流、重试预算与跨调用恢复
 
 - **目的：** 把第二至第四层的 `succeeded/unchanged/partial/deferred/lock_busy/auth_required/rejected/failed` 统一映射为确定的 workflow 行为。
 - **依赖与起始快照：** S5-05、S5-06；三类下层 receipt fake。
@@ -345,7 +346,7 @@ flowchart LR
 - **完成定义：** 所有下层状态均有单一可测试处理路径；同一失败不会以新 invocation 绕过幂等。
 - **集成顺序与失败回退：** W3；无法分类的 receipt 一律 attention_required 并保存脱敏证据。
 
-### [ ] S5-12 / 第三层分析投递恢复
+### [x] S5-12 / 第三层分析投递恢复
 
 - **目的：** 对已 accepted 但 `partial + retry_delivery` 的第三层分析结果，只恢复精确 delivery。
 - **依赖与起始快照：** S5-11；P5-03。
@@ -356,7 +357,7 @@ flowchart LR
 - **完成定义：** 分析邮件恢复不创建新 artifact 或第二封同幂等键邮件。
 - **集成顺序与失败回退：** W4；未知状态先 reconcile，仍无法确认时 deferred/incident，不盲目 send。
 
-### [ ] S5-13 / 第四层回复投递恢复
+### [x] S5-13 / 第四层回复投递恢复
 
 - **目的：** 对第四层已经 accepted 的邮件回复恢复 `deliver-response/reconcile`，不重新调用 Mail Agent。
 - **依赖与起始快照：** S5-11；P5-04。
@@ -367,7 +368,7 @@ flowchart LR
 - **完成定义：** 回复恢复只能引用已 accepted 的精确 response revision，绝不重复生成 AI 回复。
 - **集成顺序与失败回退：** W4；无法验证 provider 结果时保留 delivery_unknown 并建立 incident。
 
-### [ ] S5-14 / 服务、数据与下层新鲜度健康检查
+### [x] S5-14 / 服务、数据与下层新鲜度健康检查
 
 - **目的：** 实现第一至第五层状态、数据库/磁盘、cursor/gap、artifact/delivery、mail backlog、lease/heartbeat 和日志的只读健康检查。
 - **依赖与起始快照：** S5-03、S5-04、S5-06；P5-01 至 P5-04 可分阶段接入。
@@ -378,18 +379,19 @@ flowchart LR
 - **完成定义：** 每项检查只有状态/计数/时间进入监控表，并能稳定触发或关闭对应 incident。
 - **集成顺序与失败回退：** W3；检查异常本身不能阻塞已在运行的 executor，除非检测到数据库/身份/权限等明确安全阻断。
 
-### [ ] S5-15 / Incident 生命周期与独立运维 Gmail 告警
+### [x] S5-15 / Incident 生命周期与独立运维 Gmail 告警
 
-- **目的：** 对可操作故障建立去重 incident，并以确定性、self-only 模板发送及恢复运维告警。
+- **目的：** 对可操作故障建立去重 incident，并以确定性模板向项目固定配置地址发送及恢复运维告警。
 - **依赖与起始快照：** S5-03、S5-11、S5-14；P5-05 在真实发送前可用 fake Gmail transport。
 - **负责范围：** incident key、severity/state、acknowledge/suppress/resolve、告警 idempotency、运维模板、受限 Gmail MCP adapter 和 reconcile。
 - **禁止触碰范围：** 不调用 Codex，不发送业务内容，不写 `analysis_delivery_*`/`mail_delivery_*`，不读 inbox/thread，不更改 recipient。
 - **预期产物：** incident manager、alert renderer、operational alert delivery service、fixture tests。
-- **验证方法与证据：** 覆盖相同故障去重、连续计数、恢复关闭、suppression、self identity mismatch、send unknown、Gmail 不可用和正文脱敏扫描。
+- **验证方法与证据：** 覆盖相同故障去重、连续计数、恢复关闭、suppression、固定
+  recipient 不可覆盖、send unknown、Gmail 不可用和正文脱敏扫描。
 - **完成定义：** 同一 open incident 最多一封相同告警；告警失败仍完整保留本地 incident，恢复不会发送重复业务邮件。
 - **集成顺序与失败回退：** W4；Gmail 故障时只记录/更新 incident，等待 reconcile 或未来第二渠道，不递归产生告警风暴。
 
-### [ ] S5-16 / Supervisor CLI、Doctor、日志与人工操作审计
+### [x] S5-16 / Supervisor CLI、Doctor、日志与人工操作审计
 
 - **目的：** 提供受限的 `supervisor run/doctor` 与 `orchestrate run/retry/reconcile/status` 入口，并实现脱敏日志与人工操作审计。
 - **依赖与起始快照：** S5-04 至 S5-07、S5-14、S5-15。
@@ -400,7 +402,7 @@ flowchart LR
 - **完成定义：** 所有人工恢复仍经过同一 workflow 状态机，且无 CLI 能越权改下层业务表。
 - **集成顺序与失败回退：** W3；CLI 错误只返回脱敏错误并不启动子进程。
 
-### [ ] S5-17 / systemd、Watchdog、停止、升级与回滚部署资产
+### [x] S5-17 / systemd、Watchdog、停止、升级与回滚部署资产
 
 - **目的：** 将 Supervisor 作为 Linux 唯一常驻业务服务部署，并建立安全启动、停止、重启、升级和回滚资产。
 - **依赖与起始快照：** S5-04、S5-16；P5-05、P5-06。
@@ -411,7 +413,7 @@ flowchart LR
 - **完成定义：** 部署资产明确要求 Supervisor 唯一调度，且任意失败都有不启用/回滚路径。
 - **集成顺序与失败回退：** W3；真实 systemd 安装留到 G3/G4，不通过静态审查不得进入真实主机。
 
-### [ ] S5-18 / Shadow 编排集成与旧入口对账
+### [x] S5-18 / Shadow 编排集成与旧入口对账
 
 - **目的：** 在不产生真实外部副作用的条件下，让第五层读取冻结状态、生成 workflow 计划并与人工/旧入口结果对账。
 - **依赖与起始快照：** S5-08 至 S5-17；P5-06。
@@ -422,16 +424,31 @@ flowchart LR
 - **完成定义：** 对账可解释全部差异，且证明新旧调度不会在同一生产对象上并发写入。
 - **集成顺序与失败回退：** W5；发现未解释差异则停止切换，保留旧入口并修复对应单元。
 
+**S5-08 至 S5-18 完成证据（2026-07-27）：**
+
+- typed morning/Sunday/mail workflow、统一 Python API、跨层 receipt 分流、精确
+  delivery recovery 和第五层 domain receipt 持久化均已实现；
+- 固定只读 health probes 覆盖 Foundation、SQLite/WAL、磁盘/inode、Garmin、
+  Analysis、Mail、lease/heartbeat 和日志，只保存计数、时间与状态；
+- incident/alert 状态机、当前环境 `gmail`/`@artymclabin/gmail-mcp` 边界、固定
+  配置收件人、确定性模板与 unknown reconcile 已由 fake 验证；
+- 根 CLI、Supervisor cooperative loop、sd_notify/watchdog、人工操作审计、脱敏
+  日志、systemd 模板、部署/回滚手册和 Shadow 对账均已交付；
+- `tests/test_orchestration*.py` 全部通过；未安装 systemd、未切换旧调度、未执行
+  真实 Garmin/Gmail/Codex 副作用。
+
 ### [ ] S5-19 / 受控真实环境验收
 
-- **目的：** 在有限日期窗、已认证 self-only 账号和明确授权下验证真实 provider、Gmail 告警、systemd 和恢复行为。
+- **目的：** 在有限日期窗、已认证 Gmail 账号、固定配置收件人和明确授权下验证真实 provider、Gmail 告警、systemd 和恢复行为。
 - **依赖与起始快照：** S5-18；G3；P5-01 至 P5-05 已实现并通过各自 smoke test。
 - **负责范围：** 受控验收计划、最小 workflow、真实 receipt/日志证据、故障注入记录和清理确认。
-- **禁止触碰范围：** 不执行 full sync、不发送非 self 邮件、不修改历史数据、不在未授权时真实发信。
+- **禁止触碰范围：** 不执行 full sync、不向项目固定配置地址之外发信、不修改历史数据、不在未授权时真实发信。
 - **预期产物：** 受控验收 runbook、证据清单、结果记录和已知限制。
 - **验证方法与证据：** 一个 daily、一个 Sunday、一个 TrainLab 邮件回复、一个 plan revision、一个 collection deferred、analysis/mail delivery unknown、Supervisor 重启和一个运维告警。
 - **完成定义：** 所有真实副作用均有精确 run/delivery ID，且无重复同步、artifact、计划或邮件。
 - **集成顺序与失败回退：** W5；任何不确定发送先 reconcile；失败后停用新调度并回到 shadow/旧入口，保留证据。
+- **当前门禁（2026-07-27）：** 验收代码、步骤和证据模板已就绪；因涉及真实
+  Garmin/Gmail/systemd 副作用，尚未获得本次独立部署授权，保持未勾选。
 
 ### [ ] S5-20 / 生产切换、唯一调度与回滚演练
 
@@ -443,6 +460,8 @@ flowchart LR
 - **验证方法与证据：** 验证旧调度已停、新 Supervisor 是唯一 lease owner、daily/weekly/mail 均按预期、回滚恢复旧入口且无重复副作用。
 - **完成定义：** 生产切换由明确批准完成；任意回滚可在不丢失运行/incident 历史的条件下执行。
 - **集成顺序与失败回退：** 最后执行；go/no-go 任一项失败立即保持/恢复旧入口，不清除第五层审计证据。
+- **当前门禁（2026-07-27）：** 切换与回滚手册已就绪；未获生产切换授权，未停
+  旧入口、未启用 Supervisor，保持未勾选。
 
 ## 5. 大契约覆盖矩阵
 
@@ -462,7 +481,7 @@ flowchart LR
 | 10.2 邮件 reply 恢复 | S5-13 | deliver-response/reconcile 无重生成 |
 | 11 重试与预算 | S5-11 | budget/backoff/incident tests |
 | 12 服务与数据健康检查 | S5-14 | check catalog 与阈值 fixture |
-| 13 incident 与运维告警 | S5-15 | 去重/self-only/unknown reconcile |
+| 13 incident 与运维告警 | S5-15 | 去重/固定配置收件人/unknown reconcile |
 | 14 第五层运行数据 | S5-03 | repository 约束与重启恢复 |
 | 15 lease、锁与并发 | S5-04、S5-05 | 双实例/接管/冲突测试 |
 | 16 子进程管理 | S5-06 | timeout/kill/receipt 欺骗测试 |
@@ -489,7 +508,7 @@ CLI 在 fake 下层环境端到端通过；没有真实网络、Gmail 或 Codex 
 
 ### G3：真实环境验收门
 
-P5-01 至 P5-05 已满足，具有独立备份、受控账号、明确 self-only 发信授权和回滚
+P5-01 至 P5-05 已满足，具有独立备份、受控账号、明确固定收件人发信授权和回滚
 窗口。仅允许执行 S5-19 的最小验收矩阵。
 
 ### G4：最终完成门

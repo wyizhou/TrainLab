@@ -1,0 +1,144 @@
+from __future__ import annotations
+
+import sqlite3
+from datetime import UTC, datetime
+from pathlib import Path
+
+from trainlab.foundation import FoundationConfig, FoundationRequest, FoundationTool
+from trainlab.orchestration.contracts import (
+    WorkflowReceipt,
+    WorkflowRequest,
+    WorkflowStepReceipt,
+)
+from trainlab.orchestration.persistence_adapter import (
+    RepositoryReceiptStore,
+    SqliteSubjectProjection,
+)
+from trainlab.orchestration.repository import OrchestrationRepository
+
+
+NOW = datetime(2026, 7, 27, tzinfo=UTC)
+
+
+def database(tmp_path: Path) -> Path:
+    root = tmp_path / "foundation"
+    config = FoundationConfig(
+        root, root / "data.db", root / "raw", root / "state",
+        root / "state/ready.json", root / "state/locks/foundation.lock",
+    )
+    assert FoundationTool(config).execute(
+        FoundationRequest("init", "persist-fixture", "2026-07-27T00:00:00Z")
+    ).status == "initialized"
+    connection = sqlite3.connect(config.database_path)
+    connection.execute(
+        "INSERT INTO data_subjects(subject_key,timezone,is_active,created_at_utc) VALUES(?,?,1,?)",
+        ("subject-7", "Asia/Singapore", "2026-07-27T00:00:00Z"),
+    )
+    connection.commit(); connection.close()
+    return config.database_path
+
+
+def test_receipt_materializes_and_transitions_domain_state(tmp_path: Path) -> None:
+    path = database(tmp_path)
+    repository = OrchestrationRepository(path)
+    request = WorkflowRequest(
+        "morning", "subject-7", "2026-07-27", "invoke-1", "manual", None, (),
+        "2026-07-27T02:00:00Z", "2026-07-27T00:00:00Z",
+    )
+    receipt = WorkflowReceipt(
+        "run:morning:abc", "morning:abc", "morning", "succeeded", "manual",
+        None, "2026-07-27T00:00:00Z", "2026-07-27T00:01:00Z",
+        "2026-07-27", (
+            WorkflowStepReceipt(
+                "daily", "analysis", "daily", "succeeded", "analysis-1",
+                "invoke-analysis", "a" * 64, {"artifacts": 1},
+            ),
+        ), "none", None, (), (), (),
+    )
+    store = RepositoryReceiptStore(
+        repository, SqliteSubjectProjection(path), clock=lambda: NOW
+    )
+    store.record_orchestration_receipt(request, receipt)
+    aggregate = repository.load_workflow_definition("morning:abc")
+    assert aggregate is not None
+    assert aggregate.workflow.domain_state == "succeeded"
+    assert aggregate.steps[0].domain_state == "succeeded"
+    store.record_orchestration_receipt(request, receipt)
+    assert len(repository.load_workflow_definition("morning:abc").step_events) == 2
+
+
+def test_deferred_receipt_can_resume_without_redefining_step(tmp_path: Path) -> None:
+    path = database(tmp_path)
+    repository = OrchestrationRepository(path)
+    request = WorkflowRequest(
+        "morning", "subject-7", "2026-07-27", "invoke-1", "manual", None, (),
+        "2026-07-27T02:00:00Z", "2026-07-27T00:00:00Z",
+    )
+    step = WorkflowStepReceipt(
+        "daily", "analysis", "daily", "deferred", None,
+        "invoke-analysis", "a" * 64, {"deferred": 1},
+    )
+    deferred = WorkflowReceipt(
+        "run:morning:abc", "morning:abc", "morning", "deferred", "manual",
+        None, "2026-07-27T00:00:00Z", "2026-07-27T00:01:00Z",
+        "2026-07-27", (step,), "retry",
+        "2026-07-27T00:05:00Z", (), (), (),
+    )
+    store = RepositoryReceiptStore(
+        repository, SqliteSubjectProjection(path), clock=lambda: NOW
+    )
+    store.record_orchestration_receipt(request, deferred)
+    first = repository.load_workflow_definition("morning:abc")
+    assert first is not None
+    assert first.workflow.domain_state == "deferred"
+    assert first.steps[0].domain_state == "deferred"
+    store.record_orchestration_receipt(request, deferred)
+    replay = repository.load_workflow_definition("morning:abc")
+    assert replay is not None
+    assert replay.workflow_events == first.workflow_events
+    assert replay.step_events == first.step_events
+
+    revised_deferred = WorkflowReceipt(
+        "run:morning:abc", "morning:abc", "morning", "deferred", "recovery",
+        None, "2026-07-27T00:05:00Z", "2026-07-27T00:05:30Z",
+        "2026-07-27", (
+            WorkflowStepReceipt(
+                "daily", "analysis", "daily", "deferred", None,
+                "invoke-analysis", "c" * 64, {"deferred": 2},
+            ),
+        ), "retry", "2026-07-27T00:07:00Z", (), (), (),
+    )
+    store.record_orchestration_receipt(request, revised_deferred)
+    revised = repository.load_workflow_definition("morning:abc")
+    assert revised is not None
+    assert revised.workflow.domain_state == "deferred"
+    assert revised.steps[0].domain_state == "deferred"
+    assert revised.step_events[-1].receipt_sha256 == "c" * 64
+    assert revised.step_events[-1].next_retry_at_utc == "2026-07-27T00:07:00Z"
+    assert revised.step_events[-1].controlled_counts == (("deferred", 2),)
+
+    resumed_request = WorkflowRequest(
+        "morning", "subject-7", "2026-07-27", "invoke-1", "recovery", None, (),
+        "2026-07-27T02:00:00Z", "2026-07-27T00:05:00Z",
+    )
+    succeeded = WorkflowReceipt(
+        "run:morning:abc", "morning:abc", "morning", "succeeded", "recovery",
+        None, "2026-07-27T00:07:00Z", "2026-07-27T00:08:00Z",
+        "2026-07-27", (
+            WorkflowStepReceipt(
+                "daily", "analysis", "daily", "succeeded", None,
+                "invoke-analysis", "b" * 64, {"artifacts": 1},
+            ),
+        ), "none", None, (), (), (),
+    )
+    store.record_orchestration_receipt(resumed_request, succeeded)
+    final = repository.load_workflow_definition("morning:abc")
+    assert final is not None
+    assert final.workflow.domain_state == "succeeded"
+    assert final.steps[0].domain_state == "succeeded"
+    assert [event.to_state for event in final.workflow_events] == [
+        "running", "deferred", "running", "deferred", "running", "succeeded",
+    ]
+    assert [event.to_state for event in final.step_events] == [
+        "running", "deferred", "running", "deferred", "running", "succeeded",
+    ]

@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import subprocess
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any, Callable, Protocol
 
 from .mcp import StdioMCPClient
@@ -105,7 +104,7 @@ def inspect_gmail_environment(
         and isinstance(transport, dict)
         and transport.get("type") == "stdio"
         and isinstance(command, str)
-        and Path(command).name in {"npx", "npx.cmd"}
+        and command in {"npx", "npx.cmd"}
         and args == [GMAIL_MCP_PACKAGE]
         and env in (None, {})
         and cwd is None

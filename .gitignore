@@ -39,5 +39,6 @@ config/gmail_mcp.yaml
 config/trainlab.production.yaml
 config/rclone.conf
 config/trainlab.json
+config/orchestration.yaml
 credentials.json
 token.json

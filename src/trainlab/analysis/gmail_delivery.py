@@ -296,7 +296,11 @@ class GmailDeliveryGateway:
         sent_id: str | None = None
         sent_thread_id: str | None = None
         try:
-            client = self._client_factory("npx", [GMAIL_MCP_PACKAGE], timeout=self._timeout_seconds)
+            client = self._client_factory(
+                status.command,
+                list(status.args),
+                timeout=self._timeout_seconds,
+            )
             available = self._available_tools(client)
             if not _REQUIRED_TOOLS.issubset(available):
                 raise GmailDeliveryError("gmail_delivery_capability_mismatch")
@@ -365,7 +369,11 @@ class GmailDeliveryGateway:
             raise GmailDeliveryError(code)
         client: GmailDeliveryClient | None = None
         try:
-            client = self._client_factory("npx", [GMAIL_MCP_PACKAGE], timeout=self._timeout_seconds)
+            client = self._client_factory(
+                status.command,
+                list(status.args),
+                timeout=self._timeout_seconds,
+            )
             if not _REQUIRED_TOOLS.issubset(self._available_tools(client)):
                 raise GmailDeliveryError("gmail_delivery_capability_mismatch")
             matches = _search_matches(

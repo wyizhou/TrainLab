@@ -220,6 +220,8 @@ def _parser() -> argparse.ArgumentParser:
     garmin_sub.add_parser("status")
     from .mail_agent.cli import add_root_subparser
     add_root_subparser(subparsers)
+    from .orchestration.cli import add_root_subparsers as add_orchestration_subparsers
+    add_orchestration_subparsers(subparsers)
     return parser
 
 
@@ -247,6 +249,13 @@ def main(argv: list[str] | None = None, *, mail_tool=None) -> int:
         )
         print(receipt.json())
         return exit_code_for_status(receipt.status)
+    if args.command in {"supervisor", "orchestrate"}:
+        from .orchestration.cli import execute as execute_orchestration
+        from .orchestration.production import create_cli_runtime
+        application, operations = create_cli_runtime()
+        return execute_orchestration(
+            args, application=application, operations=operations
+        )
     if args.command == "run" and args.analysis_only:
         if args.slot != "morning":
             _parser().error("--analysis-only requires --slot morning")

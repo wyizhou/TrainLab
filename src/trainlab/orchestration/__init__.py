@@ -1,8 +1,4 @@
-"""Fifth-layer frozen contracts and synthetic test doubles.
-
-This package deliberately contains no scheduler, subprocess runner, provider client,
-or database write path.  Those belong to later fifth-layer units.
-"""
+"""TrainLab fifth-layer orchestration, recovery, monitoring, and operations."""
 
 from .contracts import (
     FROZEN_CONTRACT_HASHES,
@@ -75,6 +71,43 @@ from .due_scheduler import (
     SchedulerIncident,
     SchedulerTick,
 )
+from .analysis_workflows import (
+    AnalysisWorkflowRequest,
+    AnalysisWorkflowResult,
+    MorningWorkflowService,
+    SundayWorkflowService,
+)
+from .application import HealthWorkflowOutcome, OrchestrationTool
+from .delivery_recovery import (
+    DeliveryRecoveryDecision,
+    plan_analysis_delivery_recovery,
+    plan_mail_delivery_recovery,
+)
+from .health_monitor import (
+    HealthCheckSummary,
+    HealthMonitor,
+    HealthObservation,
+)
+from .health_workflow import HealthThresholds, HealthWorkflow
+from .incident_alerts import (
+    GmailMcpAlertBoundary,
+    IncidentManager,
+    OperationalAlertService,
+)
+from .mail_workflow import (
+    MailWorkflow,
+    MailWorkflowOutcome,
+    PlanRevisionDependency,
+    SqlitePlanRevisionResolver,
+)
+from .outcome_routing import (
+    OutcomeDecision,
+    RetryPolicy,
+    route_outcome,
+)
+from .persistence_adapter import RepositoryReceiptStore, SqliteSubjectProjection
+from .shadow import ShadowComparator, ShadowReport, ShadowStep
+from .supervisor import SupervisorReceipt, SupervisorRuntime
 
 __all__ = [
     "FROZEN_CONTRACT_HASHES",
@@ -133,6 +166,37 @@ __all__ = [
     "SchedulerError",
     "SchedulerIncident",
     "SchedulerTick",
+    "AnalysisWorkflowRequest",
+    "AnalysisWorkflowResult",
+    "MorningWorkflowService",
+    "SundayWorkflowService",
+    "HealthWorkflowOutcome",
+    "OrchestrationTool",
+    "DeliveryRecoveryDecision",
+    "plan_analysis_delivery_recovery",
+    "plan_mail_delivery_recovery",
+    "HealthCheckSummary",
+    "HealthMonitor",
+    "HealthObservation",
+    "HealthThresholds",
+    "HealthWorkflow",
+    "GmailMcpAlertBoundary",
+    "IncidentManager",
+    "OperationalAlertService",
+    "MailWorkflow",
+    "MailWorkflowOutcome",
+    "PlanRevisionDependency",
+    "SqlitePlanRevisionResolver",
+    "OutcomeDecision",
+    "RetryPolicy",
+    "route_outcome",
+    "RepositoryReceiptStore",
+    "SqliteSubjectProjection",
+    "ShadowComparator",
+    "ShadowReport",
+    "ShadowStep",
+    "SupervisorReceipt",
+    "SupervisorRuntime",
     "WorkflowReceipt",
     "WorkflowRequest",
     "WorkflowStepReceipt",
