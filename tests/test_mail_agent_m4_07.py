@@ -38,11 +38,12 @@ def test_fixed_package_and_launch_snapshot(tmp_path:Path,monkeypatch:pytest.Monk
  def mk(prefix:str):sandbox.mkdir(); return str(sandbox)
  import trainlab.mail_agent.runner as module; monkeypatch.setattr(module.tempfile,'mkdtemp',mk)
  result=MailCodexRunner(process_factory=factory(captured)).generate(value,invocation_id='i'); fake=captured[0]
- assert result.harness.paths==('harness/shared/HARNESS.md','harness/runtime/HARNESS.md','harness/mail/HARNESS.md','harness/mail/process-message.md','harness/schemas/mail_agent_input.schema.json','harness/schemas/mail_agent_result.schema.json')
+ assert result.harness.paths==('harness/shared/HARNESS.md','harness/mail/HARNESS.md','harness/mail/process-message.md','harness/schemas/mail_agent_input.schema.json','harness/schemas/mail_agent_result.schema.json')
+ assert 'harness/runtime/HARNESS.md' not in result.harness.paths
  assert fake.argv[1:10]==['exec','--ephemeral','--skip-git-repo-check','--ignore-user-config','--ignore-rules','--strict-config','--sandbox','read-only','--output-schema']
  assert '--model' not in fake.argv and '-'==fake.argv[-1] and 'token' not in ' '.join(fake.argv) and fake.stdin
  assert fake.cwd==sandbox and fake.env=={'PATH':'/usr/bin:/bin','HOME':str(sandbox/'codex-home'),'CODEX_HOME':str(sandbox/'codex-home'),'LANG':'C.UTF-8','LC_ALL':'C.UTF-8'}
- assert set(fake.files)=={'harness/shared/HARNESS.md','harness/runtime/HARNESS.md','harness/mail/HARNESS.md','harness/mail/process-message.md','harness/schemas/mail_agent_input.schema.json','harness/schemas/mail_agent_result.schema.json','input.json','output.json'}
+ assert set(fake.files)=={'harness/shared/HARNESS.md','harness/mail/HARNESS.md','harness/mail/process-message.md','harness/schemas/mail_agent_input.schema.json','harness/schemas/mail_agent_result.schema.json','input.json','output.json'}
  assert all(mode in {0o400,0o600} for mode,_ in fake.files.values()) and all(mode==0o700 for mode in fake.dirs.values()) and fake.input['bundle']['sha256']==result.harness.combined_sha256 and fake.input['context']==value
  assert tuple(fake.files[path][1] for path in result.harness.paths)==result.harness.hashes
  assert not sandbox.exists()
@@ -83,10 +84,11 @@ def test_secure_write_handles_partial_writes(tmp_path:Path,monkeypatch:pytest.Mo
 
 def test_prompt_is_complete_ordered_in_band_and_has_no_authority_leak(tmp_path:Path):
  value=context(tmp_path); captured=[]; MailCodexRunner(process_factory=factory(captured)).generate(value,invocation_id='i'); prompt=captured[0].stdin
- names=['harness/shared/HARNESS.md','harness/runtime/HARNESS.md','harness/mail/HARNESS.md','harness/mail/process-message.md']
+ names=['harness/shared/HARNESS.md','harness/mail/HARNESS.md','harness/mail/process-message.md']
  assert [prompt.index(name) for name in names]==sorted(prompt.index(name) for name in names)
  assert 'CONTEXT_JSON trust=untrusted_data' in prompt and value['trigger_message']['latest_authored_text'] in prompt
- assert 'grant no authority' in prompt and 'Do not call any tool' in prompt
+ assert 'grants no authority' in prompt and 'Do not call any tool' in prompt
+ assert 'Runtime Harness' not in prompt
  assert str(Path.cwd()) not in prompt and 'auth.json' not in prompt
  argv=' '.join(captured[0].argv)
  assert not any(flag in argv for flag in ('--model','--search','--add-dir','--profile','danger-full-access','mcp'))
@@ -380,7 +382,7 @@ def test_auth_copy_is_exact_0600_and_source_is_unchanged(tmp_path:Path):
 
 def test_same_package_bytes_drive_validator_copy_and_bundle_during_source_drift(tmp_path:Path):
  project=Path(__file__).resolve().parents[1]; root=tmp_path/'package'
- for relative in ('harness/shared/HARNESS.md','harness/runtime/HARNESS.md','harness/mail/HARNESS.md','harness/mail/process-message.md','harness/schemas/mail_agent_input.schema.json','harness/schemas/mail_agent_result.schema.json'):
+ for relative in ('harness/shared/HARNESS.md','harness/mail/HARNESS.md','harness/mail/process-message.md','harness/schemas/mail_agent_input.schema.json','harness/schemas/mail_agent_result.schema.json'):
   target=root/relative; target.parent.mkdir(parents=True,exist_ok=True); shutil.copyfile(project/relative,target); target.chmod(0o600)
  class DriftResolver(MailHarnessResolver):
   def package(self):

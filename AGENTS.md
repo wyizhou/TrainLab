@@ -1,6 +1,9 @@
 # TrainLab production agent entry
 
-Always load `harness/shared/HARNESS.md` and `harness/runtime/HARNESS.md`.
+Always load `harness/shared/HARNESS.md`. For analysis work, also load
+`harness/analysis/HARNESS.md`; for mail work, also load
+`harness/mail/HARNESS.md`. `harness/runtime/HARNESS.md` is historical
+compatibility evidence, not a default production Harness.
 Never load files under `archive/` or any development Harness.
 Run production analysis only through `trainlab run`.
 

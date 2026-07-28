@@ -13,3 +13,6 @@
 当前的 Gmail MCP 接入说明继续保留在
 [`references/gmail_mcp_setup.md`](../../references/gmail_mcp_setup.md)，因为它仍为当前
 `gmail` MCP 集成的参考资料。
+
+`harness/runtime/HARNESS.md` 与其输入/输出 schemas 也保留为旧 Runtime 路线的历史
+证据；当前分析和邮件路线不加载它们。

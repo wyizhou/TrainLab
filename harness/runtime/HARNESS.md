@@ -1,15 +1,16 @@
 ---
 name: trainlab-runtime
 version: 1
-status: active
+status: historical
 ---
 
-# Runtime harness
+# Historical Runtime Harness
 
-This is the legacy production runtime extension. Load `shared/HARNESS.md` first,
-then apply this file in order. Its source, Drive, mailbox and sending rules are
-specific to the current `trainlab run` path and are not part of the production
-analysis Harness.
+This is retained as historical compatibility evidence for the former runtime
+route. It is not a default production Harness and new production routes must
+not load it. For historical route examination: Load `shared/HARNESS.md` first,
+then apply this file in order. Its source, Drive, mailbox and sending
+rules are not part of the production analysis or mail Harnesses.
 
 - Source paths are exactly `source/Health.xlsx`, `source/HealthFit/*.fit`, and
   root `data.db`.
