@@ -1,80 +1,101 @@
 # TrainLab
 
-TrainLab 是一个本地优先、双阶段 Agent Harness：开发阶段负责同步、
-导入、回归与生产验收；运行阶段只接收经过 Schema 限界的七天上下文，并通过
-Gmail 向已认证账号本人发送带内联样式的中文训练邮件。
+TrainLab 是一个本地优先的 Garmin 训练分析系统。它采集健康与运动数据，
+生成跑步训练总结和计划，通过 Gmail 发送结果并处理回复；所有长期运行、
+定时调度、失败恢复和服务监控统一由 Supervisor 管理。
 
-当前生产运行器仅为 Codex，使用不指定模型名称的 `codex exec --ephemeral`，并在
-临时目录中进行无状态运行。失败后系统先按 run-id 查询 Gmail：若已经发送则补记
-回执，若没有发送则记录失败，不调用其他模型。
+## 当前架构
 
-## 固定数据路径
+1. **数据基础层**：一次性初始化 SQLite、原始数据目录和共享 Schema。
+2. **Garmin 采集层**：提供全量、增量、当天快照、审计和修复工具；执行完即退出。
+3. **分析层**：通过生产 Harness 调用 Codex，生成每日总结、周总结和
+   Hansons Marathon Method 跑步计划，并保存输入血缘和版本。
+4. **邮件层**：读取带 `TrainLab` 标签的邮件、保存会话并生成回复。
+5. **Supervisor**：唯一常驻业务服务，负责调度以上一次性工具、重试恢复、
+   质量门禁和运维告警。
 
-- 健康表：`source/Health.xlsx`
-- 运动文件：`source/HealthFit/*.fit`
-- SQLite：`data.db`
+第三层只通过 `trainlab run` 进入生产分析。分析结果和邮件发送均具备幂等记录，
+失败后不会盲目重复发送。
 
-Excel 指标和 FIT 传感器均采用通用键值模型。文件内容 SHA-256、FIT session UUID/
-后备指纹和 Excel 自然键共同保证增量导入与重命名去重；原始证据不会被覆盖。
+## 本地数据
 
-## 本地开发与诊断
+以下路径属于本地运行状态，已从 Git 排除，不得提交或在清理时删除：
+
+- `data.db*`：结构化数据
+- `raw/`：Garmin 原始 JSON 和 FIT
+- `state/`：同步游标、运行状态、锁和认证文件
+- `source/`、`test_data/`：本地迁移资料和私有测试样本
+- `config/trainlab.json`、`config/foundation.yaml`、`config/garmin.yaml`：
+  用户配置
+
+原始数据不可变；规范化表可以从原始文件和解析器版本重新生成。
+
+## 安装与检查
 
 ```sh
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.lock
 .venv/bin/python -m pip install -e .
-.venv/bin/trainlab ingest
-.venv/bin/trainlab prepare --slot morning
-.venv/bin/trainlab run --slot morning
 .venv/bin/pytest
 ```
 
-默认 `mail.mode: fake`，测试邮件保存在忽略提交的 `state/fake_gmail.json`。即使没有
-新数据也会生成邮件；命令行只输出内部 JSON 回执，不输出报告正文。
+常用的一次性检查：
 
-公共命令为 `trainlab doctor|sync|ingest|prepare|run|watchdog`；`scheduler`、
-`deploy` 和 `finalize-production` 用于运维及生产切换。
+```sh
+.venv/bin/trainlab foundation status
+.venv/bin/trainlab garmin status
+.venv/bin/trainlab supervisor doctor
+.venv/bin/trainlab orchestrate status --json
+```
 
-## 生产状态与部署门
+首次使用 Garmin：
 
-生产调度默认关闭。必须先完成以下项目，`trainlab doctor` 才会通过：
+```sh
+.venv/bin/trainlab foundation init
+.venv/bin/trainlab garmin auth
+.venv/bin/trainlab garmin sync full --health-from 2022-01-01
+```
 
-1. 按 `references/rclone_setup.md` 安装锁定版本 rclone 并填写远端目录。
-2. 按实际情况填写 `config/profile.yaml`；其中没有固定训练时间，系统不会指定几点训练。
-   心率 Zone 与进阶门槛不属于个人参数，统一保存在 `config/running_policy.yaml`，详见
-   `references/heart_rate_zone_policy.zh-CN.md`。全部跑步编排、恢复、攀岩、力量和
-   反馈默认策略汇总见 `references/default_strategy_summary.zh-CN.md`。力量建议采用
-   不依赖历史的动作模式，只给有益于跑步和攀岩的动作及已检查链接，不输出组次或公斤数。
-3. 按 `references/gmail_mcp_setup.md` 为 Codex 和确定性 watchdog 客户端绑定
-   TrainLab 受限 Gmail MCP 五项能力；运行代理不暴露通用 Gmail 工具。
-4. 将 `mail.mode` 改为 `mcp`，将 `production.enabled` 改为 `true`。
-5. 完成 Codex 真实 self-send/搜索/标签测试和 watchdog 故障—恢复测试，
-   将证据写入 `state/production_acceptance.json`。
-6. 执行 `trainlab finalize-production`。只有此命令会把开发 Harness 标为过期并移入
-   `archive/`；随后 `trainlab deploy --enable` 才允许启用 launchd/systemd 定时器。
+后续采集由 Supervisor 调用增量、快照、审计和修复接口。下层工具自身不包含
+daemon、cron 或持续轮询。
 
-当前生产验收已在 Ubuntu Linux 环境完成，开发 Harness 已标记过期并归档。运行入口
-只加载共享 Harness 与运行 Harness；`archive/` 不会进入定时分析上下文。生产运行器
-当前仅启用 Codex，其他运行器以后需要按自身行为单独验收。
+## 配置
 
-Google Drive OAuth 首次配置、候选验证和回滚流程见
-`docs/runbooks/google-drive-bootstrap.md`；Gmail 生产绑定及验收流程见
-`docs/runbooks/gmail-production.md`。Linux 实测兼容经验见
-`docs/runbooks/linux-production-observations.md`；该文档只记录特定版本的观察结果，
-不是未来模型或运行器的强制配置。所有手册均禁止记录任何凭据值。
+项目通用用户配置说明见 [`config/README.md`](config/README.md)。训练难度、
+马拉松目标时间和半马目标时间是权威用户变量，每次分析都会明确传给 AI。
 
-## 目标分层架构
+Gmail 必须使用当前 Codex 环境中名为 `gmail` 的 MCP 服务，支持的实现为
+`@artymclabin/gmail-mcp`。项目不复制或绑定特定机器的 Gmail token。
 
-新一代 Garmin 数据基础、采集、分析、邮件监控和服务监控采用分层文档逐层冻结。
-当前生产实现继续按上述入口运行，只有完成开发、迁移和验收后才切换。文档状态和
-入口见 [`docs/layers/README.md`](docs/layers/README.md)；第一层数据基础契约
-v2.4、第二层数据采集契约 v1、第三层数据分析契约 v2、第四层邮件 Agent 契约 v2
-与第五层总调度和服务监控契约 v1 已冻结。第一层以一次性幂等 init 存在；第五层
-Supervisor 启动时可以调用，环境 ready 后只返回 `already_initialized` 且严格 no-op；
-显式迁移属于独立维护操作。
-第二层是执行完即退出的 Garmin 全量、增量、当天快照、修复和补漏工具。第三层同样
-由第五层被动调用，负责日总结、周总结/未来七天计划和正式计划修订；结果先落库，
-再通过受限 Gmail MCP 主动发送。第四层只负责检查 TrainLab thread/标签邮件、保存
-会话与用户事实并生成和发送回复，不重复投递第三层产物。第五层是唯一常驻业务服务，
-负责每天 07:00、星期日、邮件检查、跨层恢复、健康监控和独立运维告警。目标分层
-实现已进入开发，但尚未完成跨层集成、受控真实验收和生产切换；当前生产入口保持不变。
+## 运行与部署
+
+手工触发工作流：
+
+```sh
+.venv/bin/trainlab orchestrate run morning --date YYYY-MM-DD
+.venv/bin/trainlab orchestrate run weekly --as-of YYYY-MM-DD
+.venv/bin/trainlab orchestrate run mail
+```
+
+新五层架构的唯一常驻入口为：
+
+```sh
+.venv/bin/trainlab supervisor run
+```
+
+Linux 部署使用
+[`deploy/systemd/trainlab-orchestrator-supervisor.service.template`](deploy/systemd/trainlab-orchestrator-supervisor.service.template)，
+步骤见 [`docs/runbooks/orchestration-deployment.md`](docs/runbooks/orchestration-deployment.md)。
+
+仓库中仍保留旧 Google Drive、scheduler、watchdog、launchd 和多服务 systemd
+兼容入口，供尚未完成的生产切换与回滚使用；它们不属于新五层架构。远程切换和
+回滚验证通过后，再用独立任务淘汰这些兼容文件。
+
+## 文档入口
+
+- [五层冻结契约与状态](docs/layers/README.md)
+- [Garmin 采集手册](docs/runbooks/garmin-collection.md)
+- [分析受控验收](docs/runbooks/analysis-controlled-acceptance.md)
+- [Gmail 生产配置](docs/runbooks/gmail-production.md)
+- [Supervisor 部署](docs/runbooks/orchestration-deployment.md)
+- [Supervisor 受控验收](docs/runbooks/orchestration-controlled-acceptance.md)

@@ -1,30 +1,19 @@
-# TrainLab 分层开发文档
+# TrainLab 五层冻结契约
 
-本目录记录 TrainLab 目标架构的分层开发契约。当前生产实现仍按项目根目录
-`README.md` 和生产 Harness 运行；目标架构只有在完成迁移、测试和生产切换后
-才替代现有实现。
+本目录只保留当前架构的冻结契约、迁移手册和验收证据。已经完成的开发清单、
+Todo 和临时基线报告由 Git 历史保存，不再作为当前文档维护。冻结契约正文中的
+“实现状态”是契约冻结时的历史快照；下表单独记录当前仓库的实现与验收现状。
 
-跨层开发顺序、共享文件边界和验收归属统一见
-[五层总控开发编排方案](00-master-development-orchestration-plan.md)。
+| 层 | 冻结契约 | 当前仓库现状 | 运行边界 |
+|---|---|---|---|
+| 1. 数据基础层 | [v2.4](01-data-foundation.md) | 当前实现与离线回归已存在 | 一次性幂等 init；ready 后严格 no-op |
+| 2. Garmin 采集层 | [v1](02-data-collection.md) | 当前实现、真实采集与回归证据已存在 | 全量、增量、快照、审计和修复；执行后退出 |
+| 3. 数据分析层 | [v2](03-data-analysis.md) | 当前实现与受控验收证据已存在 | 被动调用；结果先落库，再投递邮件 |
+| 4. 邮件 Agent 层 | [v2.3](04-mail-agent.md) | 当前实现与真实 Gmail 验收证据已存在 | 只处理收件和回复，不重复发送分析产物 |
+| 5. 总调度与监控层 | [v1](05-orchestration-monitoring.md) | 本机实现与验收证据已存在；远程切换待完成 | 新架构唯一常驻服务，负责调度、恢复和告警 |
 
-## 状态定义
-
-- `讨论中`：边界或关键决策尚未冻结。
-- `已冻结`：需求与共享契约已经确认，可以进入后续需求切分。
-- `已拆分`：已经形成可独立开发、独立验证的逐项清单，但尚未开始实现。
-- `开发中`：已经按冻结契约拆分并实施。
-- `单层已实现`：本层开发单元和离线证据已完成，但不代表跨层、真实环境或生产切换完成。
-- `已验证`：实现、迁移和端到端验收均已通过。
-
-## 分层文档
-
-| 层 | 大契约 | 详细开发清单 | 状态 | 说明 |
-|---|---|---|---|---|
-| 1. 数据基础层 | [v2.4](01-data-foundation.md) | [13 个主单元＋3 个返修单元](01-data-foundation-development.md) | 单层已实现 | 一次性幂等 init；第五层启动时可调用，ready 后严格 no-op；定义五层共享存储 |
-| 2. 数据采集层 | [v1](02-data-collection.md) | [18 个单元](02-data-collection-development-plan.md) | 开发中：16/18（L2-17 待 E-04；L2-18 待真实 smoke） | 一次性 Garmin tools；全量、增量、当天快照、修复、补漏和入库，不含调度 |
-| 3. 数据分析层 | [v2](03-data-analysis.md) | [25 个单元](03-data-analysis-implementation-plan.md) | 开发中：10/25 | 一次性分析 Agent tools；分析结果先落库，再通过受限 Gmail MCP 主动发送 |
-| 4. 邮件 Agent 层 | [v2.3](04-mail-agent.md) | [15 个单元](04-mail-agent-development-plan.md) | 单层已实现（M4-14A、IG-6 已完成） | 真实 Gmail 闭环已通过；M4-14B/X-04 与生产 cutover 等待第五层 S5-10 |
-| 5. 总调度与服务监控层 | [v1](05-orchestration-monitoring.md) | [21 个单元](05-orchestration-monitoring-development-plan.md) | 开发中：8/21 | 唯一常驻服务；时间调度、跨层编排、重试恢复、健康监控和运维告警 |
+五份冻结契约由自动化测试校验 SHA-256。修改契约必须作为明确的版本升级，
+不能在普通代码或文档整理中顺带改动。
 
 ## 跨层规则
 
@@ -48,3 +37,13 @@
 12. 第五层是唯一常驻业务服务，只负责调度、编排、监控和运维告警；所有业务修复
     必须调用对应层接口，不能直接修改下层状态。
 13. 主动分析邮件、交互回复邮件和运维告警分别由第三、第四、第五层独立记录与发送。
+
+## 当前验收与运维文档
+
+- [第一层最终验收](../runbooks/foundation-final-acceptance.md)
+- [Garmin 采集](../runbooks/garmin-collection.md)
+- [分析受控验收](../runbooks/analysis-controlled-acceptance.md)
+- [邮件迁移](04-mail-agent-migration-runbook.md)
+- [真实 Gmail 验收证据](evidence/mail/M4-15-real-gmail-acceptance-2026-07-27.md)
+- [Supervisor 受控验收](../runbooks/orchestration-controlled-acceptance.md)
+- [Supervisor 部署](../runbooks/orchestration-deployment.md)

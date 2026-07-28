@@ -11,6 +11,7 @@ dist/
 # A deliberately sanitized snapshot can still be added explicitly with git -f.
 source/
 test_data/
+raw/
 data.db
 data.db-wal
 data.db-shm
@@ -36,6 +37,8 @@ logs/*
 .env.*
 state/**/secrets/garmin/
 config/gmail_mcp.yaml
+config/foundation.yaml
+config/garmin.yaml
 config/trainlab.production.yaml
 config/rclone.conf
 config/trainlab.json

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "trainlab"
 version = "0.1.0"
-description = "Model-independent Agent Harness for Apple Health and workout analysis"
+description = "Local-first Garmin training analysis, mail agent, and supervised orchestration"
 requires-python = ">=3.12"
 dependencies = [
   "cryptography==46.0.5",
