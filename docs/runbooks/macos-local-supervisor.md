@@ -9,7 +9,9 @@
 绑定检查。确认当前 Codex 环境已注册启用名为 `gmail` 的 MCP，且使用 `@artymclabin/gmail-mcp`。
 不要把 token、密码、邮箱地址或配置内容写入 plist、日志或发布记录。
 
-macOS 不能从外置卷直接启动进程；因此安装脚本会解析虚拟环境 Python 的真实可执行文件，拒绝任何仍位于 `/Volumes` 下、非普通文件或不可执行的结果。LaunchAgent 固定以该 Python 执行 `-m trainlab supervisor run`，并通过 `__PYVENV_LAUNCHER__` 指回项目外置卷中的虚拟环境；这不是 shell wrapper。
+macOS 不能在 launchd 启动阶段从外置卷访问程序、工作目录或日志；因此安装脚本会解析虚拟环境 Python 的真实可执行文件，拒绝任何仍位于 `/Volumes` 下、非普通文件或不可执行的结果。LaunchAgent 固定以该 Python 执行 `-m trainlab supervisor run`，并通过 `__PYVENV_LAUNCHER__` 指回项目外置卷中的虚拟环境；这不是 shell wrapper。
+
+LaunchAgent 的工作目录固定在 `~/Library/Application Support/TrainLab`，日志固定在 `~/Library/Logs/TrainLab`，二者均由安装脚本以 `0700` 创建，日志以 `0600` 预创建。进程启动后只通过受控的 `TRAINLAB_PROJECT_ROOT` 绝对路径定位外置卷项目；该路径仍必须通过 `pyproject.toml` 与 `harness` 标记校验，不能因环境变量而放宽项目根校验。
 
 安装脚本还会把安装时当前受控环境中可用的绝对 PATH 目录写入 LaunchAgent；下层只继承清理后的 `PATH` 与 locale，不继承 HOME、token、密码或其他凭据环境变量。Gmail 仍通过当前环境的 `gmail` MCP 解析，不绑定机器专属的 npx 路径。
 
@@ -28,8 +30,9 @@ macOS 不能从外置卷直接启动进程；因此安装脚本会解析虚拟�
 ```
 
 脚本仅写入 `~/Library/LaunchAgents/com.trainlab.orchestrator-supervisor.plist`，随后由当前登录用户的
-launchd bootstrap 并 kickstart。无需 sudo，也没有 shell wrapper。标准输出和错误日志分别位于项目的
-`logs/supervisor.launchd.out.log` 与 `logs/supervisor.launchd.err.log`；安装时会预创建为 `0600`。
+launchd bootstrap 并 kickstart。无需 sudo，也没有 shell wrapper。标准输出和错误日志分别位于
+`~/Library/Logs/TrainLab/supervisor.launchd.out.log` 与
+`~/Library/Logs/TrainLab/supervisor.launchd.err.log`；安装时会预创建为 `0600`。
 
 ## 人工观察、停止与回滚
 

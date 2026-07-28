@@ -20,15 +20,18 @@ def test_macos_launchagent_has_one_fixed_supervisor_argv_and_safe_lifecycle() ->
     assert document["ProgramArguments"] == [
         "@PYTHON_EXECUTABLE@", "-m", "trainlab", "supervisor", "run",
     ]
-    assert document["WorkingDirectory"] == "@PROJECT_ROOT@"
+    assert document["WorkingDirectory"] == "@LAUNCH_WORKING_DIRECTORY@"
     assert document["EnvironmentVariables"] == {
         "PYTHONUNBUFFERED": "1", "TZ": "Asia/Singapore", "PATH": "@RUNTIME_PATH@",
         "__PYVENV_LAUNCHER__": "@PROJECT_ROOT@/.venv/bin/python",
+        "TRAINLAB_PROJECT_ROOT": "@PROJECT_ROOT@",
     }
     assert document["RunAtLoad"] is True
     assert document["KeepAlive"] == {"SuccessfulExit": False}
     assert document["ThrottleInterval"] == 15
     assert document["Umask"] == 63
+    assert document["StandardOutPath"] == "@LAUNCH_LOG_DIRECTORY@/supervisor.launchd.out.log"
+    assert document["StandardErrorPath"] == "@LAUNCH_LOG_DIRECTORY@/supervisor.launchd.err.log"
     flattened = "\n".join(str(value) for value in document.values()).lower()
     for forbidden in ("garmin", "analysis", "mail run", "sh -c", "bash -c", "sudo", "codex", "npx"):
         assert forbidden not in flattened
@@ -45,6 +48,10 @@ def test_macos_deployment_scripts_are_shell_valid_and_only_manage_the_one_label(
     install = INSTALL.read_text(encoding="utf-8")
     assert "@RUNTIME_PATH@" in install
     assert "@PYTHON_EXECUTABLE@" in install
+    assert "@LAUNCH_WORKING_DIRECTORY@" in install
+    assert "@LAUNCH_LOG_DIRECTORY@" in install
+    assert "$HOME/Library/Application Support/TrainLab" in install
+    assert "$HOME/Library/Logs/TrainLab" in install
     assert "real_python" in install and "resolve(strict=True)" in install and "/Volumes/*" in install
     assert "touch \"$stdout_log\" \"$stderr_log\"" in install
     assert "chmod 600 \"$stdout_log\" \"$stderr_log\"" in install

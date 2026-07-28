@@ -17,6 +17,8 @@ project_root=$(CDPATH= cd -- "$script_dir/../.." && pwd -P)
 template="$script_dir/$label.plist.template"
 launch_agents="$HOME/Library/LaunchAgents"
 target="$launch_agents/$label.plist"
+launch_working_directory="$HOME/Library/Application Support/TrainLab"
+launch_log_directory="$HOME/Library/Logs/TrainLab"
 uid=$(id -u)
 
 [ -x "$project_root/.venv/bin/python" ] || { echo "missing project virtual environment" >&2; exit 65; }
@@ -33,10 +35,10 @@ esac
 [ -f "$real_python" ] && [ -x "$real_python" ] && [ ! -L "$real_python" ] || { echo "resolved Python is not a regular executable" >&2; exit 65; }
 runtime_path=$(PYTHONPATH="$project_root/src" "$project_root/.venv/bin/python" -c 'from trainlab.runtime_environment import bounded_runtime_path; print(bounded_runtime_path())')
 [ -n "$runtime_path" ] || { echo "no usable runtime PATH" >&2; exit 65; }
-mkdir -p "$project_root/logs"
-chmod 700 "$project_root/logs"
-stdout_log="$project_root/logs/supervisor.launchd.out.log"
-stderr_log="$project_root/logs/supervisor.launchd.err.log"
+mkdir -p "$launch_working_directory" "$launch_log_directory"
+chmod 700 "$launch_working_directory" "$launch_log_directory"
+stdout_log="$launch_log_directory/supervisor.launchd.out.log"
+stderr_log="$launch_log_directory/supervisor.launchd.err.log"
 touch "$stdout_log" "$stderr_log"
 chmod 600 "$stdout_log" "$stderr_log"
 mkdir -p "$launch_agents"
@@ -57,7 +59,9 @@ trap 'rm -f "$temporary"' EXIT HUP INT TERM
 escaped_root=$(printf '%s' "$project_root" | sed 's/[\\&|]/\\&/g')
 escaped_path=$(printf '%s' "$runtime_path" | sed 's/[\\&|]/\\&/g')
 escaped_python=$(printf '%s' "$real_python" | sed 's/[\\&|]/\\&/g')
-sed -e "s|@PROJECT_ROOT@|$escaped_root|g" -e "s|@RUNTIME_PATH@|$escaped_path|g" -e "s|@PYTHON_EXECUTABLE@|$escaped_python|g" "$template" > "$temporary"
+escaped_working_directory=$(printf '%s' "$launch_working_directory" | sed 's/[\\&|]/\\&/g')
+escaped_log_directory=$(printf '%s' "$launch_log_directory" | sed 's/[\\&|]/\\&/g')
+sed -e "s|@PROJECT_ROOT@|$escaped_root|g" -e "s|@RUNTIME_PATH@|$escaped_path|g" -e "s|@PYTHON_EXECUTABLE@|$escaped_python|g" -e "s|@LAUNCH_WORKING_DIRECTORY@|$escaped_working_directory|g" -e "s|@LAUNCH_LOG_DIRECTORY@|$escaped_log_directory|g" "$template" > "$temporary"
 plutil -lint "$temporary" >/dev/null
 chmod 600 "$temporary"
 

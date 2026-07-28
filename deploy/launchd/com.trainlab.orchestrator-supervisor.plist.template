@@ -13,7 +13,7 @@
     <string>run</string>
   </array>
   <key>WorkingDirectory</key>
-  <string>@PROJECT_ROOT@</string>
+  <string>@LAUNCH_WORKING_DIRECTORY@</string>
   <key>EnvironmentVariables</key>
   <dict>
     <key>PYTHONUNBUFFERED</key>
@@ -24,6 +24,8 @@
     <string>@RUNTIME_PATH@</string>
     <key>__PYVENV_LAUNCHER__</key>
     <string>@PROJECT_ROOT@/.venv/bin/python</string>
+    <key>TRAINLAB_PROJECT_ROOT</key>
+    <string>@PROJECT_ROOT@</string>
   </dict>
   <key>RunAtLoad</key>
   <true/>
@@ -39,8 +41,8 @@
   <key>Umask</key>
   <integer>63</integer>
   <key>StandardOutPath</key>
-  <string>@PROJECT_ROOT@/logs/supervisor.launchd.out.log</string>
+  <string>@LAUNCH_LOG_DIRECTORY@/supervisor.launchd.out.log</string>
   <key>StandardErrorPath</key>
-  <string>@PROJECT_ROOT@/logs/supervisor.launchd.err.log</string>
+  <string>@LAUNCH_LOG_DIRECTORY@/supervisor.launchd.err.log</string>
 </dict>
 </plist>

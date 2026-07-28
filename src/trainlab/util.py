@@ -11,7 +11,20 @@ from zoneinfo import ZoneInfo
 
 
 def project_root(start: Path | None = None) -> Path:
-    current = (start or Path.cwd()).resolve()
+    if start is None:
+        configured = os.environ.get("TRAINLAB_PROJECT_ROOT")
+        if configured is not None:
+            candidate = Path(configured)
+            if not candidate.is_absolute():
+                raise RuntimeError("TrainLab project root environment invalid")
+            try:
+                current = candidate.resolve(strict=True)
+            except (OSError, RuntimeError) as exc:
+                raise RuntimeError("TrainLab project root environment invalid") from None
+        else:
+            current = Path.cwd().resolve()
+    else:
+        current = start.resolve()
     for candidate in (current, *current.parents):
         if (candidate / "pyproject.toml").is_file() and (candidate / "harness").is_dir():
             return candidate
