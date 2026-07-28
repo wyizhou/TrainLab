@@ -17,7 +17,9 @@ from pathlib import Path
 from typing import Any, Literal
 import yaml
 from jsonschema import Draft202012Validator
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from .backup import decrypt_container, encrypt_container, require_key
+from .config import read_owner_only_bytes
+from .schema import validate_schema_manifest as _validate_schema_manifest
 
 
 class _PinnedConnection(sqlite3.Connection):
@@ -177,33 +179,7 @@ class FoundationConfig:
         argument.  It may be readable by the owner, but neither it nor its
         containing directory may be group/other writable.
         """
-        parent=path.parent
-        for directory in (parent,):
-            info=directory.lstat()
-            if not (stat.S_ISDIR(info.st_mode) and not stat.S_ISLNK(info.st_mode) and info.st_uid==os.getuid() and stat.S_IMODE(info.st_mode)&0o022==0):
-                raise ValueError("unsafe_foundation_configuration")
-        before=path.lstat()
-        if not (stat.S_ISREG(before.st_mode) and not stat.S_ISLNK(before.st_mode) and before.st_uid==os.getuid() and stat.S_IMODE(before.st_mode)&0o022==0):
-            raise ValueError("unsafe_foundation_configuration")
-        fd=-1
-        try:
-            fd=os.open(path,os.O_RDONLY|getattr(os,"O_NOFOLLOW",0))
-            opened=os.fstat(fd)
-            if (opened.st_dev,opened.st_ino)!=(before.st_dev,before.st_ino):
-                raise ValueError("unsafe_foundation_configuration")
-            chunks=[]; total=0
-            while True:
-                block=os.read(fd,65536)
-                if not block: break
-                total += len(block)
-                if total>1024*1024: raise ValueError("invalid_foundation_configuration")
-                chunks.append(block)
-            after=path.lstat()
-            if (after.st_dev,after.st_ino)!=(opened.st_dev,opened.st_ino):
-                raise ValueError("unsafe_foundation_configuration")
-            return b"".join(chunks)
-        finally:
-            if fd>=0: os.close(fd)
+        return read_owner_only_bytes(path)
 
     @classmethod
     def load(cls, project_root: Path) -> "FoundationConfig":
@@ -418,65 +394,8 @@ VIEWS = {
 
 
 def validate_schema_manifest(conn: sqlite3.Connection, manifest: dict[str, Any]) -> list[str]:
-    """Read-only validation of the static contract manifest against SQLite metadata."""
-    errors: list[str] = []
-    actual_tables = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-    actual_views = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='view'")}
-    actual_triggers = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='trigger'")}
-    if set(manifest["tables"]) != actual_tables:
-        errors.append("table_set_mismatch")
-    if set(manifest["views"]) != actual_views:
-        errors.append("view_set_mismatch")
-    if set(manifest.get("triggers", {})) != actual_triggers:
-        errors.append("trigger_set_mismatch")
-    for name, spec in manifest["tables"].items():
-        if name not in actual_tables:
-            continue
-        table_info = list(conn.execute(f"PRAGMA table_info({name})"))
-        columns = {row[1] for row in table_info}
-        primary_key = [row[1] for row in sorted((row for row in table_info if row[5]), key=lambda row: row[5])]
-        if not set(spec["columns"]) <= columns:
-            errors.append(f"columns:{name}")
-        foreign = {row[3]: row[2] for row in conn.execute(f"PRAGMA foreign_key_list({name})")}
-        if any(foreign.get(column) != target for column, target in spec.get("fk", {}).items()):
-            errors.append(f"fk:{name}")
-        sql = re.sub(r"\s+", "", conn.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name=?", (name,)).fetchone()[0]).lower()
-        indexes = []
-        for item in conn.execute(f"PRAGMA index_list({name})"):
-            index_name, unique, partial = item[1], item[2], item[4]
-            cols = [row[2] for row in conn.execute(f"PRAGMA index_info({index_name})")]
-            index_sql_row = conn.execute("SELECT sql FROM sqlite_master WHERE type='index' AND name=?", (index_name,)).fetchone()
-            indexes.append((cols, bool(unique), bool(partial), "" if not index_sql_row else index_sql_row[0] or ""))
-        for fields in spec.get("unique", []):
-            if fields != primary_key and not any(unique and cols == fields for cols, unique, partial, statement in indexes):
-                errors.append(f"unique:{name}:{','.join(fields)}")
-        for fields in spec.get("current_unique", []):
-            if not any(unique and partial and cols == fields and "whereis_current=1" in re.sub(r"\s+", "", statement).lower() for cols, unique, partial, statement in indexes):
-                errors.append(f"current_unique:{name}:{','.join(fields)}")
-        for fields in spec.get("active_unique", []):
-            if not any(unique and partial and cols == fields and "whereis_active=1" in re.sub(r"\s+", "", statement).lower() for cols, unique, partial, statement in indexes):
-                errors.append(f"active_unique:{name}:{','.join(fields)}")
-        for partial_spec in spec.get("partial_unique", []):
-            fields = partial_spec["columns"]
-            where = re.sub(r"\s+", "", partial_spec["where"]).lower()
-            if not any(unique and partial and cols == fields and f"where{where}" in re.sub(r"\s+", "", statement).lower() for cols, unique, partial, statement in indexes):
-                errors.append(f"partial_unique:{name}:{','.join(fields)}")
-        for column, choices in spec.get("enums", {}).items():
-            match = re.search(re.escape(column.lower()) + r"text.*?check\(([^)]*)\)", sql)
-            if match is None or not all(f"'{choice}'" in match.group(1) for choice in choices):
-                errors.append(f"enum:{name}:{column}")
-    for name, spec in manifest["views"].items():
-        if name not in actual_views:
-            continue
-        sql = re.sub(r"\s+", "", conn.execute("SELECT sql FROM sqlite_master WHERE type='view' AND name=?", (name,)).fetchone()[0]).lower()
-        normal = lambda value: re.sub(r"\s+", "", value).lower()
-        if normal(spec["source"]) not in sql or ("filter" in spec and normal(spec["filter"]) not in sql) or ("order" in spec and normal(spec["order"]) not in sql) or ("trust_marker" in spec and normal(spec["trust_marker"]) not in sql):
-            errors.append(f"view:{name}")
-    for name, spec in manifest.get("triggers", {}).items():
-        row = conn.execute("SELECT tbl_name,sql FROM sqlite_master WHERE type='trigger' AND name=?", (name,)).fetchone()
-        if row is None or row[0] != spec["table"] or re.sub(r"\s+", "", spec["token"]).lower() not in re.sub(r"\s+", "", row[1]).lower():
-            errors.append(f"trigger:{name}")
-    return errors
+    """Compatibility export for the schema module's read-only validator."""
+    return _validate_schema_manifest(conn, manifest)
 
 
 class FoundationTool:
@@ -1160,7 +1079,7 @@ class FoundationTool:
 
     @staticmethod
     def _manifest_path() -> Path:
-        return Path(__file__).resolve().parents[2] / "harness" / "schemas" / "foundation_schema_manifest.json"
+        return Path(__file__).resolve().parents[3] / "harness" / "schemas" / "foundation_schema_manifest.json"
 
     def _manifest(self) -> dict[str, Any]:
         return json.loads(self._manifest_path().read_text(encoding="utf-8"))
@@ -2080,23 +1999,20 @@ class FoundationTool:
 
     def backup_encrypted(self, destination: Path, key: bytes | Any) -> Path:
         """Authenticated encrypted backup; key is injected only as 32-byte bytes/callable."""
-        secret = key() if callable(key) else key
-        if not isinstance(secret, bytes) or len(secret) != 32:
-            raise ValueError("backup_key_must_be_32_bytes")
+        require_key(key)
         destination = destination.resolve()
         if destination.exists():
             raise FileExistsError("backup_destination_exists")
         with tempfile.TemporaryDirectory(dir=destination.parent if destination.parent.exists() else None) as temporary:
             plain = Path(temporary) / "backup.sqlite"
             self.backup_database(plain)
-            nonce = os.urandom(12)
-            ciphertext = AESGCM(secret).encrypt(nonce, plain.read_bytes(), BACKUP_MAGIC + BACKUP_VERSION)
+            container = encrypt_container(plain.read_bytes(), key, os.urandom(12))
             destination.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
             fd, name = tempfile.mkstemp(dir=destination.parent, prefix=".backup-")
             try:
                 os.chmod(name, 0o600)
                 with os.fdopen(fd, "wb") as handle:
-                    handle.write(BACKUP_MAGIC + BACKUP_VERSION + nonce + ciphertext)
+                    handle.write(container)
                     handle.flush()
                     os.fsync(handle.fileno())
                 try:
@@ -2113,15 +2029,11 @@ class FoundationTool:
 
     @staticmethod
     def restore_encrypted(source: Path, destination: Path, key: bytes | Any) -> Path:
-        secret = key() if callable(key) else key
-        if not isinstance(secret, bytes) or len(secret) != 32:
-            raise ValueError("backup_key_must_be_32_bytes")
+        require_key(key)
         if destination.exists():
             raise FileExistsError("restore_destination_exists")
         payload = source.read_bytes()
-        if len(payload) < len(BACKUP_MAGIC) + 1 + 12 or payload[:4] != BACKUP_MAGIC or payload[4:5] != BACKUP_VERSION:
-            raise ValueError("invalid_backup_container")
-        plain = AESGCM(secret).decrypt(payload[5:17], payload[17:], BACKUP_MAGIC + BACKUP_VERSION)
+        plain = decrypt_container(payload, key)
         destination.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         fd, name = tempfile.mkstemp(dir=destination.parent, prefix=".restore-")
         try:
@@ -2370,7 +2282,7 @@ def main(argv: list[str] | None = None) -> int:
     migrate.add_argument("--target-version", type=int, required=True)
     parser.add_argument("--invocation-id", default=f"foundation-{int(time.time()*1000)}")
     args = parser.parse_args(argv)
-    from .util import project_root
+    from ..util import project_root
     safe_invocation=args.invocation_id if isinstance(args.invocation_id,str) and _INVOCATION_RE.fullmatch(args.invocation_id) else ""
     try:
         tool=FoundationTool(FoundationConfig.load(project_root()))
