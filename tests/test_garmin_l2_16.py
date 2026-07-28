@@ -7,7 +7,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from trainlab import cli
+from trainlab import cli as root_cli
+from trainlab.garmin import cli
 from trainlab.garmin import GarminConfig, SyncReceipt
 
 
@@ -38,7 +39,7 @@ def _receipt(mode: str = "incremental", status: str = "succeeded") -> SyncReceip
 
 
 def test_garmin_help_has_only_one_shot_command_tree() -> None:
-    parser = cli._parser()
+    parser = root_cli._parser()
     help_text = parser.format_help()
     assert "garmin" in help_text
     garmin = next(item for item in parser._subparsers._group_actions if item.dest == "command").choices["garmin"]
@@ -74,9 +75,9 @@ def test_invalid_request_is_rejected_before_provider_or_configuration(monkeypatc
 @pytest.mark.parametrize("status,code", [("succeeded", 0), ("partial", 10), ("deferred", 11), ("lock_busy", 12), ("auth_required", 20), ("failed", 21)])
 def test_every_receipt_status_has_stable_exit_code(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], status: str, code: int) -> None:
     parsed = SimpleNamespace(command="garmin", garmin_mode="sync", garmin_sync_mode="incremental")
-    monkeypatch.setattr(cli, "_parser", lambda: SimpleNamespace(parse_args=lambda _argv: parsed))
-    monkeypatch.setattr(cli, "garmin_cli_execute", lambda _args: _receipt(status=status))
-    assert cli.main([]) == code
+    monkeypatch.setattr(root_cli, "_parser", lambda: SimpleNamespace(parse_args=lambda _argv: parsed))
+    monkeypatch.setattr(root_cli, "garmin_cli_execute", lambda _args: _receipt(status=status))
+    assert root_cli.main([]) == code
     lines = capsys.readouterr().out.splitlines()
     assert len(lines) == 1
     assert json.loads(lines[0])["status"] == status

@@ -11,7 +11,8 @@ from types import SimpleNamespace
 import pytest
 from jsonschema import Draft202012Validator
 
-from trainlab import cli
+from trainlab import cli as root_cli
+from trainlab.garmin import cli
 from trainlab.foundation import FoundationConfig, FoundationRequest, FoundationTool
 from trainlab.garmin import GarminCollectionTool, GarminConfig, GarminError, SyncReceipt, SyncRequest
 from trainlab.garmin_client import GarminConnectTransport, TokenStore
@@ -26,9 +27,9 @@ def receipt(status: str) -> SyncReceipt:
 @pytest.mark.parametrize(("status","code"),[("succeeded",0),("partial",10),("deferred",11),("lock_busy",12),("auth_required",20),("failed",21)])
 def test_main_exit_matrix_one_receipt_json(monkeypatch,capsys,status,code):
     args=SimpleNamespace(command="garmin",garmin_mode="sync",garmin_sync_mode="incremental")
-    monkeypatch.setattr(cli,"_parser",lambda:SimpleNamespace(parse_args=lambda _:args))
-    monkeypatch.setattr(cli,"garmin_cli_execute",lambda _:receipt(status))
-    assert cli.main([])==code
+    monkeypatch.setattr(root_cli,"_parser",lambda:SimpleNamespace(parse_args=lambda _:args))
+    monkeypatch.setattr(root_cli,"garmin_cli_execute",lambda _:receipt(status))
+    assert root_cli.main([])==code
     lines=capsys.readouterr().out.splitlines(); assert len(lines)==1
     schema=json.loads((Path(__file__).parents[1]/"harness/schemas/garmin_sync_receipt.schema.json").read_text())
     assert not list(Draft202012Validator(schema).iter_errors(json.loads(lines[0])))
