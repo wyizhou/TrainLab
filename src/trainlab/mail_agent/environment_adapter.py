@@ -196,8 +196,16 @@ def _thread_has_authorized_recipient_target(
         participants.update(sender); participants.update(recipients)
         if observed_message == message_id:
             exact_found = True
-            if marker is not None and (not isinstance(message.get("body"), str) or marker not in message["body"]):
-                raise GmailEnvironmentAdapterError("gmail_reply_idempotency_unverified")
+            if marker is not None:
+                # Search alone is not proof: require the exact marker in an
+                # provider representation of this exact message.  The Gmail
+                # MCP may normalize the sent HTML into ``body`` on reads.
+                bodies = (
+                    message.get("htmlBody"), message.get("html_body"),
+                    message.get("body"),
+                )
+                if not any(isinstance(body, str) and marker in body for body in bodies):
+                    raise GmailEnvironmentAdapterError("gmail_reply_idempotency_unverified")
     if not exact_found:
         raise GmailEnvironmentAdapterError("gmail_reply_target_not_in_thread")
     # The fixed recipient is allowed to converse only with one consistent
@@ -497,13 +505,20 @@ class GmailEnvironmentRecipientAdapter:
         message_id = _identifier(in_reply_to_provider_message_id, code="gmail_reply_message_id_invalid")
         exact_thread = _identifier(thread_id, code="gmail_reply_thread_id_invalid")
         title = _text(subject, code="gmail_reply_subject_invalid", maximum=998)
-        if "\n" in title or run_id not in title:
+        if "\n" in title:
             raise GmailEnvironmentAdapterError("gmail_reply_subject_invalid")
         plain = _text(plain_text, code="gmail_reply_body_invalid")
         rendered_html = _text(html, code="gmail_reply_body_invalid")
         marker = _marker(run_id)
-        marked_plain = f"{plain}\n\n{marker}"
-        marked_html = f"{rendered_html}<p>{marker}</p>"
+        if marker in plain or marker in rendered_html:
+            raise GmailEnvironmentAdapterError("gmail_reply_idempotency_invalid")
+        # The marker remains searchable in the sent HTML but is never exposed
+        # in the subject or multipart plain-text alternative.
+        marked_plain = plain
+        marked_html = (
+            f'{rendered_html}<span style="display:none!important;max-height:0;'
+            f'overflow:hidden;opacity:0;mso-hide:all;">{marker}</span>'
+        )
         client = self._open_client()
         try:
             matches = _search_ids(

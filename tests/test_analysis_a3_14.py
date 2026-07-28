@@ -6,7 +6,11 @@ import json
 
 import pytest
 
-from trainlab.analysis.delivery import AnalysisDeliveryFactory, render_delivery
+from trainlab.analysis.delivery import (
+    AnalysisDeliveryError,
+    AnalysisDeliveryFactory,
+    render_delivery,
+)
 from trainlab.analysis.publisher import AnalysisPublisher
 
 
@@ -31,8 +35,8 @@ def database() -> sqlite3.Connection:
 
 def accepted() -> dict[str, object]:
     return {"run_key": "analysis:1:daily:2026-07-24:one", "subject_id": 1, "mode": "daily", "status": "accepted", "artifacts": [
-        {"artifact_kind": "daily_summary", "period": {"start_local_date": "2026-07-23", "end_local_date": "2026-07-23"}, "structured_content": {"summary": "ok"}, "user_visible_text": "昨日恢复稳定。"},
-        {"artifact_kind": "daily_training_advice", "period": {"start_local_date": "2026-07-24", "end_local_date": "2026-07-24"}, "structured_content": {"advice": "easy"}, "user_visible_text": "今日轻松训练。"},
+        {"artifact_kind": "daily_summary", "period": {"start_local_date": "2026-07-23", "end_local_date": "2026-07-23"}, "structured_content": {"overall_state": "稳定", "data_completeness": "partial", "decision_factors": ["活动记录未确认"], "activity_evidence": "unconfirmed", "plan_evidence": "available"}, "user_visible_text": "昨日恢复稳定。"},
+        {"artifact_kind": "daily_training_advice", "period": {"start_local_date": "2026-07-24", "end_local_date": "2026-07-24"}, "structured_content": {"primary_item": {"activity_kind": "running", "hansons_session_role": "easy", "course_type": "easy", "warmup": "轻柔热身", "main_set": "轻松跑", "cooldown": "逐步放松", "planned_duration_minutes": 30, "prescribed_rpe": 4, "target_bpm_range": None, "stop_conditions": ["acute_pain"]}, "configured_difficulty_level": 2, "selected_session_difficulty_level": 2, "difficulty_adjustment_reason": None, "confidence": "一般", "confidence_reason": "数据有限", "data_limitation": None}, "user_visible_text": "今日轻松训练。"},
     ]}
 
 
@@ -60,20 +64,16 @@ def test_accepted_artifacts_commit_before_pending_delivery_and_render_is_ephemer
     assert connection.execute("SELECT status FROM analysis_deliveries").fetchone()[0] == "pending"
     assert connection.execute("SELECT count(*) FROM analysis_delivery_artifacts").fetchone()[0] == 2
     assert connection.execute("SELECT count(*) FROM analysis_artifacts").fetchone()[0] == 2
-    assert "run-id analysis:1:daily:2026-07-24:one" in rendered.subject
-    assert rendered.headers["X-TrainLab-Run-ID"] == "analysis:1:daily:2026-07-24:one"
-    assert rendered.plain_text.startswith("每日训练简报\n\n昨日回顾\n")
+    assert rendered.subject == "TrainLab｜每日训练简报｜2026年7月24日"
+    assert rendered.plain_text.startswith("每日训练简报\n日期：2026年7月24日\n\n昨日回顾\n")
     assert "\n今日安排\n" in rendered.plain_text
     assert "TrainLab 分析报告" not in rendered.plain_text
     assert "Run-ID:" not in rendered.plain_text
-    assert rendered.html.count("<h2") == 2
-    assert "<h1" not in rendered.html
+    assert "<h1" in rendered.html
     assert "每日训练简报" in rendered.html
-    assert "恢复状态与今日安排" in rendered.html
-    assert "border-left:4px solid #2563eb" in rendered.html
-    assert "border-left:4px solid #059669" in rendered.html
-    assert "Run-ID:" not in rendered.html
-    assert "Idempotency-Key:" not in rendered.html
+    assert "昨日状态与今日安排" in rendered.html
+    assert "analysis:1:daily" not in rendered.html
+    assert all(marker not in rendered.html for marker in ("data-field=", "data-repeat=", "data-optional=", "data-variant=", "data-od-id="))
     assert "body" not in {row[1] for row in connection.execute("PRAGMA table_info(analysis_deliveries)")}
 
 
@@ -150,15 +150,15 @@ def test_weekly_report_binds_exact_summary_and_plan_revisions() -> None:
         "period_start_local_date,period_end_local_date,revision_no,"
         "generated_by_run_id,schema_version,structured_content_json,"
         "user_visible_text,content_sha256,is_current,created_at_utc) "
-        "VALUES(?,1,?,?,?,?,1,'1','{}',?,?,1,'2026-07-26T00:00:00Z')",
+            "VALUES(?,1,?,?,?,?,1,'1',?,?,?,1,'2026-07-26T00:00:00Z')",
         (
             (
                 11, "weekly_summary", "2026-07-19", "2026-07-25", 1,
-                "本周总结。", "b" * 64,
+                json.dumps({"summary": "本周稳定。"}), "本周总结。", "b" * 64,
             ),
             (
                 12, "weekly_training_plan", "2026-07-26", "2026-08-01", 1,
-                "未来七天计划。", "c" * 64,
+                json.dumps({"period": {"start_local_date": "2026-07-26", "end_local_date": "2026-08-01"}, "timezone": "Asia/Singapore", "objective": {}, "constraints": {}, "items": [{"item_index": i, "local_date": f"2026-07-{26 + i:02d}" if i < 6 else "2026-08-01", "activity_kind": "rest", "prescription": {"activity_kind": "rest"}, "rationale_text": "恢复", "stop_conditions": []} for i in range(7)]}), "未来七天计划。", "c" * 64,
             ),
         ),
     )
@@ -180,7 +180,134 @@ def test_weekly_report_binds_exact_summary_and_plan_revisions() -> None:
     rendered = render_delivery(pending)
     assert "每周总结" in rendered.plain_text
     assert "未来七天计划" in rendered.plain_text
-    assert rendered.plain_text.startswith("每周训练报告\n")
+    assert rendered.plain_text.startswith("每周训练报告\n日期：2026年7月26日")
     assert "每周训练报告" in rendered.html
+    assert "先稳定恢复，再延续训练节奏" not in rendered.html
     assert "Run-ID:" not in rendered.plain_text
     assert "Idempotency-Key:" not in rendered.html
+
+
+def test_rest_day_omits_running_steps_and_malformed_structured_content_fails_closed() -> None:
+    connection = database()
+    receipt = published(connection)
+    rest = {"primary_item": {"activity_kind": "rest"}, "configured_difficulty_level": 2, "selected_session_difficulty_level": 1, "difficulty_adjustment_reason": "恢复优先", "confidence": "一般", "confidence_reason": "恢复优先", "data_limitation": None}
+    connection.execute("UPDATE analysis_artifacts SET structured_content_json=? WHERE id=?", (json.dumps(rest), receipt.artifact_ids["daily_training_advice"]))
+    connection.commit()
+    rendered = render_delivery(AnalysisDeliveryFactory(connection).create_pending(publish_receipt=receipt, delivery_kind="daily_report"))
+    assert "休息日" in rendered.html
+    assert "热身</td>" not in rendered.html and "主训练</td>" not in rendered.html and "放松</td>" not in rendered.html
+    connection.execute("UPDATE analysis_artifacts SET structured_content_json='[' WHERE id=?", (receipt.artifact_ids["daily_summary"],))
+    connection.commit()
+    with pytest.raises(Exception, match="artifact_content_invalid"):
+        AnalysisDeliveryFactory(connection).create_pending(publish_receipt=receipt, delivery_kind="daily_report")
+
+
+def test_plan_revision_uses_weekly_design_for_only_its_existing_plan_items() -> None:
+    connection = database()
+    connection.execute("UPDATE analysis_runs SET run_key='analysis:1:weekly:2026-07-26:revision',analysis_kind='weekly' WHERE id=1")
+    plan = {"period": {"start_local_date": "2026-07-26", "end_local_date": "2026-08-01"}, "timezone": "Asia/Singapore", "objective": {}, "constraints": {}, "items": [
+        {"item_index": index, "local_date": f"2026-07-{26 + index:02d}" if index < 6 else "2026-08-01", "activity_kind": "rest", "prescription": {"activity_kind": "rest"}, "rationale_text": "修订后恢复", "stop_conditions": []}
+        for index in range(7)
+    ]}
+    connection.execute("INSERT INTO analysis_artifacts(id,subject_id,artifact_kind,period_start_local_date,period_end_local_date,revision_no,generated_by_run_id,schema_version,structured_content_json,user_visible_text,content_sha256,is_current,created_at_utc) VALUES(12,1,'weekly_training_plan','2026-07-26','2026-08-01',1,1,'1',?,'修订计划。',?,1,'2026-07-26T00:00:00Z')", (json.dumps(plan), "c" * 64))
+    connection.commit()
+    pending = AnalysisDeliveryFactory(connection).create_pending(publish_receipt={"run_id": 1, "artifact_ids": {"weekly_training_plan": 12}}, delivery_kind="plan_revision")
+    rendered = render_delivery(pending)
+    assert rendered.subject == "TrainLab｜训练计划更新｜2026年7月26日"
+    assert "训练计划修订" in rendered.html and rendered.html.count("修订后恢复") == 7
+    assert all(marker not in rendered.html for marker in ("data-field=", "data-repeat=", "data-optional=", "data-variant=", "data-od-id="))
+    first = pending.artifacts[0].structured_content_json["items"][0]
+    first["activity_kind"] = "running"
+    first["prescription"] = {
+        "activity_kind": "running",
+        "hansons_session_role": "easy",
+        "course_type": "easy",
+        "warmup": "gentle_warmup",
+        "main_set": "talk_test_easy",
+        "cooldown": "gentle_cooldown",
+        "planned_duration_minutes": 30,
+        "prescribed_rpe": 4,
+        "target_bpm_range": None,
+        "stop_conditions": ["chest_pain"],
+    }
+    first["stop_conditions"] = ["acute_pain"]
+    rendered = render_delivery(pending)
+    assert "出现胸痛" in rendered.html
+    assert "出现急性疼痛" not in rendered.html
+    first["prescription"]["course_type"] = "intervals"
+    with pytest.raises(AnalysisDeliveryError, match="artifact_content_invalid"):
+        render_delivery(pending)
+
+
+def test_delivery_fails_closed_for_missing_daily_contract_and_weekly_date_gap() -> None:
+    connection = database()
+    receipt = published(connection)
+    summary_id = receipt.artifact_ids["daily_summary"]
+    content = json.loads(
+        connection.execute(
+            "SELECT structured_content_json FROM analysis_artifacts WHERE id=?",
+            (summary_id,),
+        ).fetchone()[0]
+    )
+    content.pop("plan_evidence")
+    connection.execute(
+        "UPDATE analysis_artifacts SET structured_content_json=? WHERE id=?",
+        (json.dumps(content), summary_id),
+    )
+    connection.commit()
+    pending = AnalysisDeliveryFactory(connection).create_pending(
+        publish_receipt=receipt, delivery_kind="daily_report"
+    )
+    with pytest.raises(AnalysisDeliveryError, match="artifact_content_invalid"):
+        render_delivery(pending)
+
+    connection = database()
+    connection.execute(
+        "UPDATE analysis_runs SET run_key='analysis:1:weekly:2026-07-26:gap' WHERE id=1"
+    )
+    plan = {
+        "period": {
+            "start_local_date": "2026-07-26",
+            "end_local_date": "2026-08-01",
+        },
+        "timezone": "Asia/Singapore",
+        "objective": {},
+        "constraints": {},
+        "items": [
+            {
+                "item_index": index,
+                "local_date": (
+                    "2026-08-01"
+                    if index == 5
+                    else (
+                        f"2026-07-{26 + index:02d}"
+                        if index < 6
+                        else "2026-07-31"
+                    )
+                ),
+                "activity_kind": "rest",
+                "prescription": {"activity_kind": "rest"},
+                "rationale_text": "恢复",
+                "stop_conditions": [],
+            }
+            for index in range(7)
+        ],
+    }
+    connection.execute(
+        "INSERT INTO analysis_artifacts(id,subject_id,artifact_kind,period_start_local_date,"
+        "period_end_local_date,revision_no,generated_by_run_id,schema_version,"
+        "structured_content_json,user_visible_text,content_sha256,is_current,created_at_utc) "
+        "VALUES(12,1,'weekly_training_plan','2026-07-26','2026-08-01',1,1,'1',"
+        "?,'计划。',?,1,'2026-07-26T00:00:00Z')",
+        (json.dumps(plan), "c" * 64),
+    )
+    connection.commit()
+    pending = AnalysisDeliveryFactory(connection).create_pending(
+        publish_receipt={
+            "run_id": 1,
+            "artifact_ids": {"weekly_training_plan": 12},
+        },
+        delivery_kind="plan_revision",
+    )
+    with pytest.raises(AnalysisDeliveryError, match="artifact_content_invalid"):
+        render_delivery(pending)

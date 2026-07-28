@@ -12,7 +12,7 @@ from trainlab.mcp import MCPResponseError
 
 
 REQUIRED = {"search_emails", "send_email", "get_or_create_label", "modify_email"}
-SUBJECT = "[TrainLab] daily | idempotency analysis-delivery:v1:abc"
+SUBJECT = "TrainLab｜每日训练简报｜2026年7月24日"
 DATE = "Fri, 24 Jul 2026 00:00:00 +0000"
 
 
@@ -127,13 +127,26 @@ def test_no_match_sends_multipart_then_creates_and_applies_trainlab_label():
     receipt = deliver(gateway(client))
     assert receipt.status == "sent"
     assert (receipt.provider_message_id, receipt.provider_thread_id, receipt.label_id) == ("sent-1", "thread-1", "label-1")
-    assert client.calls == [
-        ("search_emails", {"query": 'in:sent "analysis-delivery:v1:abc"', "maxResults": 2}),
-        ("send_email", {"to": ["self@example.com"], "from": "self@example.com", "subject": SUBJECT, "body": "plain", "htmlBody": "<p>html</p>", "mimeType": "multipart/alternative"}),
-        ("get_or_create_label", {"name": "TrainLab"}),
-        ("modify_email", {"messageId": "sent-1", "addLabelIds": ["label-1"]}),
-    ]
+    assert client.calls[0] == ("search_emails", {"query": 'in:sent "analysis-delivery:v1:abc"', "maxResults": 2})
+    sent = client.calls[1][1]
+    assert sent["subject"] == SUBJECT and sent["body"] == "plain"
+    assert "TrainLab transport marker: analysis-delivery:v1:abc" in sent["htmlBody"]
+    assert "analysis-delivery:v1:abc" not in sent["body"]
+    assert [name for name, _ in client.calls] == ["search_emails", "send_email", "get_or_create_label", "modify_email"]
     assert all(name in REQUIRED for name, _ in client.calls)
+
+
+def test_caller_cannot_preinject_analysis_idempotency_key() -> None:
+    client = FakeClient()
+    value = gateway(client)
+    with pytest.raises(GmailDeliveryError, match="gmail_delivery_idempotency_invalid"):
+        value.deliver(
+            subject=SUBJECT,
+            idempotency_key="analysis-delivery:v1:abc",
+            plain_text="plain",
+            html="<p>analysis-delivery:v1:abc</p>",
+        )
+    assert client.calls == []
 
 
 def test_multiple_matches_are_ambiguous_and_never_send():

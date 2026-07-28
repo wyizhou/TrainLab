@@ -9,7 +9,7 @@ restricted ``GmailMCPAdapter`` and a repository implementation.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Literal, Protocol
+from typing import Any, Literal, Mapping, Protocol
 
 from .gmail_adapter import GmailAdapterError, SendReceipt
 from .renderer import MailRenderError, RenderedMail, render_mail_response
@@ -43,6 +43,9 @@ class AcceptedDeliveryTarget:
     delivery_status: str
     thread_verified: bool
     authenticated_self_verified: bool
+    structured_content: object = None
+    original_subject: str = ""
+    generated_at_utc: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -204,6 +207,9 @@ class MailResponseDeliveryService:
                 response_kind=target.response_kind,
                 user_visible_text=target.user_visible_text,
                 delivery_run_id=target.idempotency_key,
+                structured_content=target.structured_content,
+                original_subject=target.original_subject,
+                generated_at_utc=target.generated_at_utc,
             )
         except MailRenderError as error:
             self._store.mark_delivery_conflict(target, error_code=str(error))

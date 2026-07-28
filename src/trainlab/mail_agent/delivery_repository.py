@@ -30,6 +30,9 @@ class AcceptedDeliveryTarget:
     idempotency_key: str
     run_key: str
     user_visible_text: str
+    structured_content: object
+    original_subject: str
+    generated_at_utc: str
     response_kind: str
     status: str
 
@@ -90,6 +93,9 @@ class MailDeliveryRepository:
             response_artifact_id=target.response_artifact_id,
             response_kind=target.response_kind,
             user_visible_text=target.user_visible_text,
+            structured_content=target.structured_content,
+            original_subject=target.original_subject,
+            generated_at_utc=target.generated_at_utc,
             delivery_id=target.delivery_id,
             idempotency_key=target.idempotency_key,
             provider_thread_id=target.provider_thread_id,
@@ -109,7 +115,8 @@ class MailDeliveryRepository:
             "SELECT d.id,d.status,d.idempotency_key,d.provider_thread_id,d.related_run_key,"
             "r.id AS response_id,r.subject_id,r.in_reply_to_mail_message_id,"
             "trigger.provider_message_id AS trigger_provider_message_id,"
-            "r.user_visible_text,r.response_kind,"
+            "r.user_visible_text,r.structured_content_json,r.response_kind,r.created_at_utc,"
+            "trigger.subject AS original_subject,"
             "t.provider_thread_id AS response_thread_id,mr.run_key "
             "FROM mail_deliveries d "
             "JOIN mail_delivery_artifacts a ON a.mail_delivery_id=d.id "
@@ -133,6 +140,23 @@ class MailDeliveryRepository:
             or not row["user_visible_text"]
         ):
             raise MailDeliveryRepositoryError("mail_delivery_target_invalid")
+        try:
+            structured_content = json.loads(
+                row["structured_content_json"],
+                parse_constant=lambda _value: (_ for _ in ()).throw(ValueError()),
+            )
+        except (TypeError, ValueError, json.JSONDecodeError):
+            raise MailDeliveryRepositoryError("mail_delivery_target_invalid") from None
+        if not isinstance(structured_content, dict) or any(
+            not isinstance(key, str) for key in structured_content
+        ):
+            raise MailDeliveryRepositoryError("mail_delivery_target_invalid")
+        original_subject = row["original_subject"]
+        if original_subject is not None and not isinstance(original_subject, str):
+            raise MailDeliveryRepositoryError("mail_delivery_target_invalid")
+        generated_at_utc = row["created_at_utc"]
+        if not isinstance(generated_at_utc, str) or not generated_at_utc:
+            raise MailDeliveryRepositoryError("mail_delivery_target_invalid")
         return AcceptedDeliveryTarget(
             int(row["id"]),
             int(row["subject_id"]),
@@ -143,6 +167,9 @@ class MailDeliveryRepository:
             str(row["idempotency_key"]),
             str(row["run_key"]),
             str(row["user_visible_text"]),
+            structured_content,
+            original_subject or "",
+            generated_at_utc,
             str(row["response_kind"]),
             str(row["status"]),
         )

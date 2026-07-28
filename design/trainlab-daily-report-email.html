@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
+  <title>TrainLab · 每日训练简报</title>
+  <style>
+    :root {
+      --bg: oklch(0.970 0.012 210);
+      --surface: oklch(0.990 0.004 210);
+      --fg: oklch(0.240 0.040 250);
+      --muted: oklch(0.540 0.028 245);
+      --border: oklch(0.890 0.020 210);
+      --accent: oklch(0.530 0.100 180);
+    }
+    html, body { margin: 0 !important; padding: 0 !important; width: 100% !important; }
+    table, td { border-collapse: collapse; }
+    img { border: 0; display: block; }
+    a { color: inherit; }
+    .preheader {
+      display: none !important;
+      max-height: 0 !important;
+      overflow: hidden !important;
+      opacity: 0 !important;
+      color: transparent !important;
+      mso-hide: all !important;
+    }
+    @media screen and (max-width: 680px) {
+      .email-shell { width: 100% !important; }
+      .outer-pad { padding: 0 !important; }
+      .header-pad { padding: 28px 22px 24px !important; }
+      .content-pad { padding: 22px 18px 28px !important; }
+      .stack, .stack td { display: block !important; width: 100% !important; box-sizing: border-box !important; }
+      .stack-gap { height: 10px !important; }
+      .stat-cell { padding: 0 0 12px !important; border-right: 0 !important; }
+      .plan-pad { padding: 22px 18px !important; }
+      .step-label { width: 66px !important; }
+      .mobile-hide { display: none !important; }
+      h1 { font-size: 28px !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background:#F3F7F8;color:#142337;font-family:Aptos,-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;line-height:1.6;">
+  <div class="preheader" data-field="preheader">昨日恢复状态与今日轻松跑安排</div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;background:#F3F7F8;">
+    <tr>
+      <td class="outer-pad" align="center" style="padding:28px 12px;">
+        <!--[if mso]>
+        <table role="presentation" width="640" cellpadding="0" cellspacing="0" border="0"><tr><td>
+        <![endif]-->
+        <table class="email-shell" data-od-id="daily-email-shell" role="presentation" width="640" cellpadding="0" cellspacing="0" border="0" style="width:640px;max-width:640px;background:#FBFCFC;border:1px solid #D8E2E5;border-radius:18px;overflow:hidden;">
+          <tr>
+            <td class="header-pad" data-od-id="daily-header" style="padding:34px 36px 30px;background:#13263D;color:#F6FBFB;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="font-size:12px;line-height:1.2;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8FD8D0;">
+                    <span data-field="brand_name">TrainLab</span>
+                  </td>
+                  <td align="right" style="font-size:12px;line-height:1.2;letter-spacing:.02em;color:#B7C6D5;">
+                    <span data-field="display_date">2026年7月28日</span>
+                  </td>
+                </tr>
+              </table>
+              <h1 data-field="title" data-od-id="daily-title" style="margin:30px 0 8px;font-family:'Aptos Display','SF Pro Display','Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;font-size:32px;line-height:1.15;font-weight:600;letter-spacing:-.015em;color:#F6FBFB;">每日训练简报</h1>
+              <div data-field="subtitle" style="font-size:15px;line-height:1.55;color:#C8D5E0;">昨日状态与今日安排</div>
+            </td>
+          </tr>
+
+          <tr>
+            <td class="content-pad" data-od-id="daily-content" style="padding:28px 32px 34px;background:#FBFCFC;">
+              <table data-od-id="daily-status" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-bottom:1px solid #D8E2E5;">
+                <tr class="stack">
+                  <td class="stat-cell" width="33.33%" valign="top" style="padding:0 16px 18px 0;border-right:1px solid #D8E2E5;">
+                    <div style="font-size:11px;line-height:1.3;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#627184;">综合状态</div>
+                    <div data-field="overall_state" style="margin-top:6px;font-size:16px;line-height:1.45;font-weight:600;color:#142337;">恢复尚可</div>
+                  </td>
+                  <td class="stat-cell" width="33.33%" valign="top" style="padding:0 16px 18px;border-right:1px solid #D8E2E5;">
+                    <div style="font-size:11px;line-height:1.3;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#627184;">数据完整性</div>
+                    <div data-field="data_completeness" style="margin-top:6px;font-size:16px;line-height:1.45;font-weight:600;color:#142337;">部分完整</div>
+                  </td>
+                  <td class="stat-cell" width="33.33%" valign="top" style="padding:0 0 18px 16px;">
+                    <div style="font-size:11px;line-height:1.3;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#627184;">判断置信度</div>
+                    <div data-field="confidence" style="margin-top:6px;font-size:16px;line-height:1.45;font-weight:600;color:#142337;">一般</div>
+                  </td>
+                </tr>
+              </table>
+
+              <table data-od-id="daily-review" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin-top:28px;">
+                <tr>
+                  <td>
+                    <div style="font-size:12px;line-height:1.3;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#0B7F78;">昨日回顾 · <span data-field="summary_date">7月27日</span></div>
+                    <h2 style="margin:8px 0 10px;font-family:'Aptos Display','SF Pro Display','Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;font-size:22px;line-height:1.3;font-weight:600;letter-spacing:-.01em;color:#142337;">恢复信号改善，但暂不增加强度</h2>
+                    <div data-field="daily_summary_text" style="font-size:15px;line-height:1.75;color:#33445A;">
+                      昨日总体恢复尚可，睡眠表现较近期个人基线改善，静息心率也接近个人常态。恢复信号虽高于近期平均，但整体趋势仍偏弱，因此不宜贸然增加训练强度。昨日没有确认到活动记录，正式休息安排是否落实无法判断。
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+              <table data-optional="decision_factors" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin-top:18px;background:#F3F7F8;border:1px solid #D8E2E5;border-radius:12px;">
+                <tr>
+                  <td style="padding:16px 18px;">
+                    <div style="font-size:12px;line-height:1.4;font-weight:600;letter-spacing:.02em;color:#627184;">判断依据</div>
+                    <div data-repeat="decision_factors" style="margin-top:7px;font-size:14px;line-height:1.7;color:#33445A;">睡眠表现改善 · 静息心率接近常态 · 昨日活动证据尚未确认</div>
+                  </td>
+                </tr>
+              </table>
+
+              <table data-od-id="daily-plan" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin-top:28px;background:#13263D;border-radius:14px;color:#F6FBFB;">
+                <tr>
+                  <td class="plan-pad" style="padding:26px 24px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td>
+                          <div style="font-size:11px;line-height:1.3;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8FD8D0;">今日安排 · <span data-field="advice_date">7月28日</span></div>
+                          <h2 data-field="session_title" style="margin:8px 0 0;font-family:'Aptos Display','SF Pro Display','Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;font-size:24px;line-height:1.3;font-weight:600;letter-spacing:-.01em;color:#F6FBFB;">Hansons 轻松跑</h2>
+                        </td>
+                        <td align="right" valign="top">
+                          <span data-field="activity_kind" style="display:inline-block;padding:6px 10px;background:#0B7F78;border-radius:999px;font-size:12px;line-height:1.2;font-weight:600;letter-spacing:.02em;color:#F6FBFB;">跑步</span>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <table class="stack" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin-top:22px;border-top:1px solid #38506A;border-bottom:1px solid #38506A;">
+                      <tr>
+                        <td width="33.33%" style="padding:14px 12px 14px 0;">
+                          <div style="font-size:11px;line-height:1.3;letter-spacing:.02em;color:#AEBECC;">总训练量</div>
+                          <div data-field="total_volume" style="margin-top:4px;font-size:15px;font-weight:600;color:#F6FBFB;">30 分钟</div>
+                        </td>
+                        <td width="33.33%" style="padding:14px 12px;">
+                          <div style="font-size:11px;line-height:1.3;letter-spacing:.02em;color:#AEBECC;">课程角色</div>
+                          <div data-field="hansons_session_role" style="margin-top:4px;font-size:15px;font-weight:600;color:#F6FBFB;">Easy</div>
+                        </td>
+                        <td width="33.33%" style="padding:14px 0 14px 12px;">
+                          <div style="font-size:11px;line-height:1.3;letter-spacing:.02em;color:#AEBECC;">主观强度</div>
+                          <div data-field="effort_guidance" style="margin-top:4px;font-size:15px;font-weight:600;color:#F6FBFB;">RPE 4</div>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin-top:18px;">
+                      <tr>
+                        <td class="step-label" width="78" valign="top" style="padding:5px 12px 5px 0;font-size:12px;line-height:1.5;font-weight:600;color:#8FD8D0;">热身</td>
+                        <td data-field="warmup" style="padding:5px 0;font-size:14px;line-height:1.65;color:#DCE6EE;">轻柔活动，从步行与慢跑逐步进入状态。</td>
+                      </tr>
+                      <tr>
+                        <td class="step-label" width="78" valign="top" style="padding:5px 12px 5px 0;font-size:12px;line-height:1.5;font-weight:600;color:#8FD8D0;">主训练</td>
+                        <td data-field="main_work" style="padding:5px 0;font-size:14px;line-height:1.65;color:#DCE6EE;">以能够完整说句子的强度连续轻松跑。</td>
+                      </tr>
+                      <tr>
+                        <td class="step-label" width="78" valign="top" style="padding:5px 12px 5px 0;font-size:12px;line-height:1.5;font-weight:600;color:#8FD8D0;">放松</td>
+                        <td data-field="cooldown" style="padding:5px 0;font-size:14px;line-height:1.65;color:#DCE6EE;">逐渐降速，缓和冷身。</td>
+                      </tr>
+                    </table>
+
+                    <div data-field="daily_advice_text" style="margin-top:16px;font-size:14px;line-height:1.7;color:#DCE6EE;">今天的重点不是追求配速，而是用稳定、轻松的体感完成连续跑。</div>
+                  </td>
+                </tr>
+              </table>
+
+              <table data-optional="stop_conditions" data-od-id="daily-safety" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin-top:18px;background:#FFF5D9;border:1px solid #E9D49B;border-radius:12px;">
+                <tr>
+                  <td width="94" valign="top" style="padding:16px 0 16px 18px;font-size:12px;line-height:1.5;font-weight:600;letter-spacing:.02em;color:#7A5200;">停止条件</td>
+                  <td data-field="stop_conditions" style="padding:16px 18px 16px 12px;font-size:13px;line-height:1.65;color:#5D4A1B;">若出现急性疼痛、胸痛、晕厥或头晕、异常呼吸困难，请立即停止。</td>
+                </tr>
+              </table>
+
+              <table data-od-id="daily-judgement" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin-top:26px;">
+                <tr>
+                  <td style="padding-top:20px;border-top:1px solid #D8E2E5;">
+                    <div style="font-size:12px;line-height:1.3;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#627184;">判断说明</div>
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin-top:10px;">
+                      <tr>
+                        <td valign="top" width="120" style="padding:5px 10px 5px 0;font-size:13px;line-height:1.6;color:#627184;">难度设置</td>
+                        <td style="padding:5px 0;font-size:13px;line-height:1.6;color:#33445A;"><span data-field="configured_difficulty_level">3</span> → 当日课程 <span data-field="selected_session_difficulty_level">2</span></td>
+                      </tr>
+                      <tr data-optional="difficulty_adjustment_reason">
+                        <td valign="top" width="120" style="padding:5px 10px 5px 0;font-size:13px;line-height:1.6;color:#627184;">调整原因</td>
+                        <td data-field="difficulty_adjustment_reason" style="padding:5px 0;font-size:13px;line-height:1.6;color:#33445A;">恢复趋势仍偏弱，保留训练连续性但不增加刺激。</td>
+                      </tr>
+                      <tr>
+                        <td valign="top" width="120" style="padding:5px 10px 5px 0;font-size:13px;line-height:1.6;color:#627184;">置信度原因</td>
+                        <td data-field="confidence_reason" style="padding:5px 0;font-size:13px;line-height:1.6;color:#33445A;">睡眠、静息心率与恢复信号大体一致，但昨日活动证据未确认。</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <table data-optional="data_limitation" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin-top:20px;background:#F3F7F8;border-radius:10px;">
+                <tr>
+                  <td style="padding:14px 16px;font-size:12px;line-height:1.7;color:#627184;">
+                    <strong style="font-weight:600;color:#33445A;">数据说明：</strong>
+                    <span data-field="data_limitation">昨日活动记录缺失仅代表未确认，且部分历史活动存在数据质量警告。</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td data-od-id="daily-footer" style="padding:22px 32px;background:#EAF0F2;border-top:1px solid #D8E2E5;">
+              <div data-field="footer_note" style="font-size:12px;line-height:1.7;color:#627184;">建议会结合近期健康、恢复与训练记录动态调整。请以当天真实感受为准。</div>
+              <div style="margin-top:8px;font-size:11px;line-height:1.5;letter-spacing:.02em;color:#8290A0;">生成于 <span data-field="generated_at_local">2026-07-28 12:30</span></div>
+            </td>
+          </tr>
+        </table>
+        <!--[if mso]>
+        </td></tr></table>
+        <![endif]-->
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

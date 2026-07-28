@@ -29,7 +29,7 @@ def prepared(tmp_path: Path):
     conn.execute("INSERT INTO raw_objects(sha256,relative_path,media_type,size_bytes,provider,resource_kind,fetched_at_utc) VALUES(?,?,?,?,?,?,?)", ("a" * 64, "gmail/json/m.json", "application/json", 1, "gmail", "message_json", NOW)); raw = conn.execute("SELECT id FROM raw_objects").fetchone()[0]
     conn.execute("INSERT INTO source_revisions(provider,resource_kind,provider_object_id,revision_no,raw_object_id,payload_hash,is_current,parsed_at_utc) VALUES('gmail','message_json','m',1,?,?,1,?)", (raw, "b" * 64, NOW)); source = conn.execute("SELECT id FROM source_revisions").fetchone()[0]
     conn.execute("INSERT INTO mail_threads(subject_id,provider_thread_id,is_current) VALUES(?,'thread-1',1)", (subject,)); thread = conn.execute("SELECT id FROM mail_threads").fetchone()[0]
-    conn.execute("INSERT INTO mail_messages(mail_thread_id,provider_message_id,direction,actor_role,received_at_utc,body_text,body_sha256,source_revision_id,processing_state) VALUES(?,'m','inbound','user',?,'请求',?,?, 'analyzing')", (thread, NOW, "c" * 64, source)); message = conn.execute("SELECT id FROM mail_messages").fetchone()[0]
+    conn.execute("INSERT INTO mail_messages(mail_thread_id,provider_message_id,direction,actor_role,received_at_utc,subject,body_text,body_sha256,source_revision_id,processing_state) VALUES(?,'m','inbound','user',?,'本周训练','请求',?,?, 'analyzing')", (thread, NOW, "c" * 64, source)); message = conn.execute("SELECT id FROM mail_messages").fetchone()[0]
     conn.commit(); repo = MailRepository(conn, clock=lambda: NOW)
     run = repo.start_or_resume_run(MailRequest("process", subject, "inv", NOW, mail_message_ids=("m",)))
     context = {"run": {"id": run.id, "run_key": run.run_key}, "trigger_message": {"id": message, "thread_id": thread, "provider_thread_id": "thread-1", "timestamp_utc": NOW}, "input_manifest": [{"ordinal": 0, "input_role": "trigger_message", "source_entity_type": "mail_message", "source_entity_id": message, "source_revision_id": source, "input_sha256": "d" * 64, "trust_class": "user_asserted"}]}
@@ -106,6 +106,23 @@ def test_delivery_service_and_sqlite_repository_form_one_real_chain(tmp_path: Pa
     assert conn.execute(
         "SELECT processing_state FROM mail_messages WHERE id=?", (message,)
     ).fetchone()[0] == "sent"
+
+
+def test_load_target_includes_trigger_subject_and_rejects_non_object_json(tmp_path: Path) -> None:
+    conn, subject, identity, _, delivery = prepared(tmp_path)
+    store = MailDeliveryRepository(MailRepository(conn, clock=lambda: NOW), verified_identity_id=identity)
+    response = conn.execute(
+        "SELECT mail_response_artifact_id FROM mail_delivery_artifacts WHERE mail_delivery_id=?",
+        (delivery,),
+    ).fetchone()[0]
+    target = store.load_accepted_delivery_target(
+        subject_id=subject, response_artifact_id=response
+    )
+    assert target is not None
+    assert target.original_subject == "本周训练" and target.structured_content == {}
+    conn.execute("UPDATE mail_response_artifacts SET structured_content_json='[]' WHERE id=?", (response,))
+    with pytest.raises(MailDeliveryRepositoryError, match="mail_delivery_target_invalid"):
+        store.load_accepted_delivery_target(subject_id=subject, response_artifact_id=response)
 
 
 def test_unknown_delivery_reconcile_records_provider_evidence_without_reopening_send(tmp_path: Path) -> None:

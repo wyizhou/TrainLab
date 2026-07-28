@@ -13,6 +13,7 @@ from datetime import timezone
 from email.utils import parsedate_to_datetime
 import json
 import re
+from html import escape
 from typing import Any, Callable, Literal, Protocol
 
 from .gmail_environment import (
@@ -99,12 +100,24 @@ def _safe_header(value: object, *, code: str) -> str:
 
 
 def _query_for_key(key: str) -> str:
-    # Gmail does not reliably index an entire punctuation-heavy subject as one
-    # phrase.  Search the unique key embedded in that subject, then require the
-    # returned metadata to match the complete expected subject and self sender.
+    # Gmail does not reliably index a complete subject as one phrase. Search the
+    # unique transport marker in HTML, then require the returned metadata to
+    # match the complete user-visible subject and self sender.
     if '"' in key:
         raise GmailDeliveryError("gmail_delivery_idempotency_invalid")
     return f'in:sent "{key}"'
+
+
+def _with_transport_marker(html: str, key: str) -> str:
+    """Add a searchable but visually-hidden idempotency marker to HTML only."""
+    marker = (
+        '<div style="display:none!important;max-height:0;max-width:0;overflow:hidden;'
+        'opacity:0;color:transparent;font-size:0;line-height:0;mso-hide:all" '
+        'aria-hidden="true">TrainLab transport marker: '
+        f'{escape(key, quote=False)}</div>'
+    )
+    closing = re.search(r"</body\s*>", html, flags=re.IGNORECASE)
+    return html + marker if closing is None else html[:closing.start()] + marker + html[closing.start():]
 
 
 def _result_payload(value: Any) -> Any:
@@ -278,10 +291,13 @@ class GmailDeliveryGateway:
 
         subject = _safe_header(subject, code="gmail_delivery_subject_invalid")
         key = _safe_header(idempotency_key, code="gmail_delivery_idempotency_invalid")
-        if not _IDENTIFIER.fullmatch(key) or key not in subject:
+        if not _IDENTIFIER.fullmatch(key):
             raise GmailDeliveryError("gmail_delivery_idempotency_invalid")
         plain_text = _safe_text(plain_text, code="gmail_delivery_body_invalid")
         html = _safe_text(html, code="gmail_delivery_body_invalid")
+        if key in plain_text or key in html:
+            raise GmailDeliveryError("gmail_delivery_idempotency_invalid")
+        html = _with_transport_marker(html, key)
         query = _query_for_key(key)
 
         status = self._inspector()
@@ -361,7 +377,7 @@ class GmailDeliveryGateway:
 
         subject = _safe_header(subject, code="gmail_delivery_subject_invalid")
         key = _safe_header(idempotency_key, code="gmail_delivery_idempotency_invalid")
-        if not _IDENTIFIER.fullmatch(key) or key not in subject:
+        if not _IDENTIFIER.fullmatch(key):
             raise GmailDeliveryError("gmail_delivery_idempotency_invalid")
         status = self._inspector()
         if not isinstance(status, GmailEnvironmentStatus) or not status.available:

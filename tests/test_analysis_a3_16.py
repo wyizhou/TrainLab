@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
+import json
 
 import pytest
 
@@ -23,8 +24,10 @@ def database() -> sqlite3.Connection:
     CREATE TABLE analysis_runs(id INTEGER PRIMARY KEY,run_key TEXT NOT NULL,subject_id INTEGER NOT NULL);
     CREATE TABLE analysis_artifacts(
       id INTEGER PRIMARY KEY,subject_id INTEGER NOT NULL,artifact_kind TEXT NOT NULL,
+      period_start_local_date TEXT NOT NULL,period_end_local_date TEXT NOT NULL,
       revision_no INTEGER NOT NULL,generated_by_run_id INTEGER NOT NULL,
-      content_sha256 TEXT NOT NULL,user_visible_text TEXT NOT NULL,is_current INTEGER NOT NULL
+      content_sha256 TEXT NOT NULL,user_visible_text TEXT NOT NULL,structured_content_json TEXT NOT NULL,is_current INTEGER NOT NULL,
+      created_at_utc TEXT NOT NULL
     );
     CREATE TABLE analysis_deliveries(
       id INTEGER PRIMARY KEY,subject_id INTEGER NOT NULL,idempotency_key TEXT NOT NULL UNIQUE,
@@ -39,8 +42,8 @@ def database() -> sqlite3.Connection:
     );
     INSERT INTO data_subjects VALUES(1);
     INSERT INTO analysis_runs VALUES(1,'analysis:1:daily:2026-07-25:one',1);
-    INSERT INTO analysis_artifacts VALUES(11,1,'daily_summary',1,1,'a1','old summary',1);
-    INSERT INTO analysis_artifacts VALUES(12,1,'daily_training_advice',1,1,'a2','old advice',1);
+    INSERT INTO analysis_artifacts VALUES(11,1,'daily_summary','2026-07-24','2026-07-24',1,1,'a1','old summary','{"overall_state":"稳定","decision_factors":["恢复稳定"],"activity_evidence":"unconfirmed","plan_evidence":"available","data_completeness":"partial"}',1,'2026-07-25T00:00:00Z');
+    INSERT INTO analysis_artifacts VALUES(12,1,'daily_training_advice','2026-07-25','2026-07-25',1,1,'a2','old advice','{"primary_item":{"activity_kind":"rest"},"configured_difficulty_level":2,"selected_session_difficulty_level":1,"difficulty_adjustment_reason":"恢复优先","confidence":"一般","confidence_reason":"恢复优先","data_limitation":null}',1,'2026-07-25T00:00:00Z');
     """)
     return connection
 
@@ -60,7 +63,7 @@ def repository(connection: sqlite3.Connection) -> AnalysisDeliveryRepository:
 def test_load_is_exact_revision_and_current_drift_is_never_followed():
     connection = database(); delivery_id = pending(connection)
     connection.execute("UPDATE analysis_artifacts SET is_current=0 WHERE id=11")
-    connection.execute("INSERT INTO analysis_artifacts VALUES(13,1,'daily_summary',2,1,'a3','new current',1)")
+    connection.execute("INSERT INTO analysis_artifacts VALUES(13,1,'daily_summary','2026-07-24','2026-07-24',2,1,'a3','new current',?,1,?)", (json.dumps({"overall_state": "稳定", "decision_factors": ["恢复稳定"], "activity_evidence": "unconfirmed", "plan_evidence": "available", "data_completeness": "partial"}), NOW))
     loaded = repository(connection).load_pending(delivery_id, subject_id=1)
     assert [artifact.artifact_id for artifact in loaded.artifacts] == [11, 12]
     assert "old summary" in repository(connection).load_rendered(delivery_id).plain_text

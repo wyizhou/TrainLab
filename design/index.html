@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>TrainLab 邮件模板预览</title>
+  <style>
+    :root {
+      --bg: oklch(0.970 0.012 210);
+      --surface: oklch(0.990 0.004 210);
+      --fg: oklch(0.240 0.040 250);
+      --muted: oklch(0.540 0.028 245);
+      --border: oklch(0.890 0.020 210);
+      --accent: oklch(0.530 0.100 180);
+      --shell: oklch(0.205 0.040 250);
+      --accent-soft: oklch(0.930 0.040 180);
+      --shadow: 0 24px 70px oklch(0.200 0.030 250 / 0.14);
+      --font-display: "Aptos Display", "SF Pro Display", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      --font-body: Aptos, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    }
+    * { box-sizing: border-box; }
+    html { min-width: 320px; background: var(--bg); }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+    button, a { font: inherit; }
+    button:focus-visible, a:focus-visible {
+      outline: 3px solid color-mix(in oklch, var(--accent), transparent 40%);
+      outline-offset: 3px;
+    }
+    .app {
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr);
+      height: 100vh;
+      overflow: hidden;
+    }
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 34px 28px;
+      background: var(--shell);
+      color: oklch(0.970 0.006 220);
+      display: flex;
+      flex-direction: column;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .brand-mark {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 5px color-mix(in oklch, var(--accent), transparent 82%);
+    }
+    .sidebar h1 {
+      margin: 48px 0 14px;
+      max-width: 8ch;
+      font-family: var(--font-display);
+      font-size: clamp(34px, 4vw, 46px);
+      line-height: 1.05;
+      font-weight: 600;
+      letter-spacing: -.025em;
+    }
+    .sidebar-copy {
+      margin: 0;
+      max-width: 27ch;
+      color: oklch(0.790 0.020 235);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+    .template-nav {
+      display: grid;
+      gap: 8px;
+      margin-top: 42px;
+    }
+    .template-button {
+      min-height: 52px;
+      padding: 10px 12px;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      background: transparent;
+      color: oklch(0.760 0.018 235);
+      text-align: left;
+      cursor: pointer;
+      transition: background .18s ease, color .18s ease, transform .18s ease;
+    }
+    .template-button:hover {
+      background: oklch(1 0 0 / .06);
+      color: oklch(0.980 0.004 220);
+    }
+    .template-button:active { transform: translateY(1px); }
+    .template-button[aria-selected="true"] {
+      background: oklch(1 0 0 / .09);
+      border-color: oklch(1 0 0 / .12);
+      color: oklch(0.980 0.004 220);
+    }
+    .template-button strong {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: .01em;
+    }
+    .template-button span {
+      display: block;
+      margin-top: 2px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: .01em;
+      opacity: .68;
+    }
+    .sidebar-note {
+      margin-top: auto;
+      padding-top: 24px;
+      border-top: 1px solid oklch(1 0 0 / .09);
+      color: oklch(0.700 0.018 235);
+      font-size: 12px;
+      line-height: 1.65;
+    }
+    .workspace {
+      min-width: 0;
+      height: 100vh;
+      padding: 28px clamp(20px, 4vw, 56px) 48px;
+      display: flex;
+      flex-direction: column;
+    }
+    .toolbar {
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+    .current-meta {
+      min-width: 0;
+    }
+    .eyebrow {
+      font-size: 11px;
+      line-height: 1.2;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    .current-title {
+      margin: 5px 0 0;
+      font-family: var(--font-display);
+      font-size: 22px;
+      line-height: 1.25;
+      font-weight: 600;
+      letter-spacing: -.01em;
+    }
+    .toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 0 0 auto;
+    }
+    .viewport-switch {
+      display: flex;
+      padding: 4px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+    }
+    .viewport-button {
+      min-width: 74px;
+      min-height: 38px;
+      padding: 7px 12px;
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 550;
+      letter-spacing: .02em;
+      cursor: pointer;
+    }
+    .viewport-button[aria-pressed="true"] {
+      background: var(--shell);
+      color: oklch(0.980 0.004 220);
+      box-shadow: 0 3px 10px oklch(0.200 0.030 250 / .18);
+    }
+    .open-link {
+      min-height: 46px;
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 15px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+      color: var(--fg);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 550;
+      letter-spacing: .02em;
+    }
+    .open-link:hover { border-color: color-mix(in oklch, var(--accent), var(--border) 55%); }
+    .stage {
+      min-height: 0;
+      flex: 1 1 auto;
+      padding: clamp(20px, 3vw, 42px);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px),
+        color-mix(in oklch, var(--bg), var(--surface) 30%);
+      background-size: 28px 28px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      overflow: auto;
+    }
+    .frame-wrap {
+      width: 100%;
+      max-width: 760px;
+      min-height: 820px;
+      background: var(--surface);
+      border: 1px solid color-mix(in oklch, var(--border), var(--fg) 7%);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      transition: width .25s ease, max-width .25s ease;
+    }
+    .frame-wrap[data-viewport="mobile"] {
+      width: 390px;
+      max-width: 100%;
+    }
+    iframe {
+      display: block;
+      width: 100%;
+      height: 1180px;
+      border: 0;
+      background: var(--bg);
+    }
+    .frame-wrap[data-template="weekly"] iframe { height: 2100px; }
+    .frame-wrap[data-template="reply"] iframe { height: 1420px; }
+    @media (max-width: 920px) {
+      .app {
+        grid-template-columns: 1fr;
+        height: auto;
+        min-height: 100vh;
+        overflow: visible;
+      }
+      .sidebar {
+        position: relative;
+        height: auto;
+        padding: 24px 20px;
+      }
+      .sidebar h1 { max-width: none; margin-top: 28px; }
+      .sidebar-copy { max-width: 55ch; }
+      .template-nav { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 24px; }
+      .sidebar-note { display: none; }
+      .workspace {
+        height: auto;
+        min-height: 100vh;
+        padding-top: 22px;
+      }
+      .stage { min-height: 760px; }
+    }
+    @media (max-width: 640px) {
+      .template-nav { grid-template-columns: 1fr; }
+      .toolbar { align-items: flex-start; flex-direction: column; }
+      .toolbar-actions { width: 100%; flex-wrap: wrap; }
+      .viewport-switch { flex: 1 1 auto; }
+      .viewport-button { flex: 1 1 50%; }
+      .stage { min-height: 760px; padding: 12px; border-radius: 14px; }
+      .frame-wrap { border-radius: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app" data-od-id="email-preview-app">
+    <aside class="sidebar" data-od-id="preview-sidebar">
+      <div class="brand"><span class="brand-mark" aria-hidden="true"></span>TrainLab</div>
+      <h1 data-od-id="preview-heading">邮件设计系统</h1>
+      <p class="sidebar-copy">三类邮件共用一套信息层级：先给结论，再解释依据，最后明确限制与安全边界。</p>
+
+      <nav class="template-nav" aria-label="邮件模板">
+        <button class="template-button" type="button" data-template="daily" data-src="trainlab-daily-report-email.html" aria-selected="true" data-od-id="nav-daily">
+          <strong>每日训练简报</strong>
+          <span>daily_report</span>
+        </button>
+        <button class="template-button" type="button" data-template="weekly" data-src="trainlab-weekly-report-email.html" aria-selected="false" data-od-id="nav-weekly">
+          <strong>每周训练计划</strong>
+          <span>weekly_report</span>
+        </button>
+        <button class="template-button" type="button" data-template="reply" data-src="trainlab-mail-reply-email.html" aria-selected="false" data-od-id="nav-reply">
+          <strong>邮件回复</strong>
+          <span>mail_reply</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-note">640px 邮件骨架 · 移动端单列重排<br>无外部字体、脚本或远程图片依赖</div>
+    </aside>
+
+    <section class="workspace" data-od-id="preview-workspace">
+      <header class="toolbar" data-od-id="preview-toolbar">
+        <div class="current-meta">
+          <div class="eyebrow">设计预览</div>
+          <h2 class="current-title" id="current-title">每日训练简报</h2>
+        </div>
+        <div class="toolbar-actions">
+          <div class="viewport-switch" role="group" aria-label="预览宽度">
+            <button class="viewport-button" type="button" data-viewport="desktop" aria-pressed="true" data-od-id="viewport-desktop">桌面</button>
+            <button class="viewport-button" type="button" data-viewport="mobile" aria-pressed="false" data-od-id="viewport-mobile">手机</button>
+          </div>
+          <a class="open-link" id="open-template" href="trainlab-daily-report-email.html" target="_blank" rel="noreferrer" data-od-id="open-template">单独打开</a>
+        </div>
+      </header>
+
+      <div class="stage" data-od-id="preview-stage">
+        <div class="frame-wrap" id="frame-wrap" data-template="daily" data-viewport="desktop">
+          <iframe id="email-frame" title="每日训练简报预览" src="trainlab-daily-report-email.html"></iframe>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      var names = {
+        daily: '每日训练简报',
+        weekly: '每周训练计划',
+        reply: '邮件回复'
+      };
+      var nav = Array.prototype.slice.call(document.querySelectorAll('.template-button'));
+      var viewports = Array.prototype.slice.call(document.querySelectorAll('.viewport-button'));
+      var frame = document.getElementById('email-frame');
+      var wrap = document.getElementById('frame-wrap');
+      var title = document.getElementById('current-title');
+      var link = document.getElementById('open-template');
+      var STORE = 'trainlab-email-preview';
+
+      function selectTemplate(button) {
+        var template = button.getAttribute('data-template');
+        var src = button.getAttribute('data-src');
+        nav.forEach(function (item) {
+          item.setAttribute('aria-selected', String(item === button));
+        });
+        wrap.setAttribute('data-template', template);
+        frame.src = src;
+        frame.title = names[template] + '预览';
+        title.textContent = names[template];
+        link.href = src;
+        try { localStorage.setItem(STORE + ':template', template); } catch (_) {}
+      }
+
+      function selectViewport(button) {
+        var viewport = button.getAttribute('data-viewport');
+        viewports.forEach(function (item) {
+          item.setAttribute('aria-pressed', String(item === button));
+        });
+        wrap.setAttribute('data-viewport', viewport);
+        try { localStorage.setItem(STORE + ':viewport', viewport); } catch (_) {}
+      }
+
+      nav.forEach(function (button) {
+        button.addEventListener('click', function () { selectTemplate(button); });
+      });
+      viewports.forEach(function (button) {
+        button.addEventListener('click', function () { selectViewport(button); });
+      });
+
+      try {
+        var savedTemplate = localStorage.getItem(STORE + ':template');
+        var savedViewport = localStorage.getItem(STORE + ':viewport');
+        var templateButton = nav.find(function (item) { return item.getAttribute('data-template') === savedTemplate; });
+        var viewportButton = viewports.find(function (item) { return item.getAttribute('data-viewport') === savedViewport; });
+        if (templateButton) selectTemplate(templateButton);
+        if (viewportButton) selectViewport(viewportButton);
+      } catch (_) {}
+    })();
+  </script>
+</body>
+</html>

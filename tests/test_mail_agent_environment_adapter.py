@@ -85,10 +85,43 @@ def test_no_match_verifies_exact_self_thread_and_uses_only_fixed_arguments():
     assert client.calls == [
         ("search_emails", {"query": f'in:sent "{marker}"', "maxResults": 2}),
         ("get_thread", {"threadId": THREAD, "format": "full"}),
-        ("send_email", {"to": [SELF], "subject": f"Re: TrainLab · {KEY}", "body": f"plain\n\n{marker}", "htmlBody": f"<p>html</p><p>{marker}</p>", "mimeType": "multipart/alternative", "threadId": THREAD, "inReplyTo": MESSAGE}),
+        ("send_email", {"to": [SELF], "subject": f"Re: TrainLab · {KEY}", "body": "plain", "htmlBody": f'<p>html</p><span style="display:none!important;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">{marker}</span>', "mimeType": "multipart/alternative", "threadId": THREAD, "inReplyTo": MESSAGE}),
     ]
     assert client.closed and all(name in REQUIRED for name, _ in client.calls)
     assert all("attachments" not in arguments for _, arguments in client.calls)
+
+
+def test_subject_need_not_expose_run_id_and_marker_is_html_only():
+    client = Client(responses=["", self_thread(), "Email sent successfully with ID: sent-1"])
+    value = adapter(client)
+    value.send_html_recipient(
+        run_id=KEY,
+        subject="Re: 本周训练",
+        plain_text="plain",
+        html="<p>html</p>",
+        thread_id=THREAD,
+        in_reply_to_provider_message_id=MESSAGE,
+    )
+    payload = client.calls[-1][1]
+    assert payload["subject"] == "Re: 本周训练" and KEY not in payload["subject"]
+    assert payload["body"] == "plain" and KEY not in payload["body"]
+    assert KEY in payload["htmlBody"] and "display:none!important" in payload["htmlBody"]
+
+
+def test_caller_cannot_preinject_idempotency_marker() -> None:
+    marker = f"[TrainLab idempotency: {KEY}]"
+    client = Client(responses=[])
+    value = adapter(client)
+    with pytest.raises(GmailEnvironmentAdapterError, match="gmail_reply_idempotency_invalid"):
+        value.send_html_recipient(
+            run_id=KEY,
+            subject="Re: 本周训练",
+            plain_text="plain",
+            html=f"<p>{marker}</p>",
+            thread_id=THREAD,
+            in_reply_to_provider_message_id=MESSAGE,
+        )
+    assert client.calls == []
 
 
 def test_existing_marker_is_validated_in_exact_thread_and_never_sends():
