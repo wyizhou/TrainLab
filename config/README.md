@@ -1,19 +1,31 @@
 # TrainLab configuration
 
-`config/trainlab.json` is the project-wide local user configuration file.
-Future layers may add their own top-level sections to this same file.
+# TrainLab 配置
 
-The file is intentionally excluded from Git because it may contain personal
-settings. Copy the structure from `config/trainlab.example.json` and set
-`mail.recipient_email` to the one fixed address authorized to receive TrainLab
-mail. `training_difficulty_level` is an integer from 1 through 5 and defaults
-to 2 when omitted. `marathon_target_finish_time` and
-`half_marathon_target_finish_time` accept `HH:MM` duration strings or `null`;
-hours must use exactly two digits, minutes must be `00`–`59`, and `00:00` is
-invalid. `null` means that race distance has no configured finish-time target.
+`config/trainlab.json` 是项目范围的本地用户配置文件。后续层级如需增加用户可控
+变量，应在该文件中增加顶级字段；请从
+[`trainlab.example.json`](trainlab.example.json) 复制结构。
 
-These three training controls are authoritative user settings. Every analysis
-AI invocation receives their explicit values and configuration sources in its
-bounded context; they are not passive documentation. Operational settings such
-as `mail.recipient_email` remain host-only authorization and never enter an AI
-prompt. Credentials and OAuth tokens must never be stored in this file.
+它被 Git 排除，因为可能包含个人设置。`mail.recipient_email` 是唯一获授权接收
+TrainLab 邮件的固定地址。`training_difficulty_level` 为 1–5 的整数，缺省为 2。
+`marathon_target_finish_time` 与 `half_marathon_target_finish_time` 接受
+`HH:MM` 或 `null`：小时必须两位、分钟为 `00`–`59`、`00:00` 无效；`null` 表示
+该距离没有完赛目标。
+
+训练难度与两个完赛目标是权威用户设置。每次分析都会把明确值和配置来源放进受限
+上下文，而不是只作为静态说明。`mail.recipient_email` 等运行设置仅用于宿主授权，
+不会进入 AI prompt。凭据和 OAuth token 不得写入任何配置文件。
+
+## 配置职责矩阵
+
+| 类别 | 文件或位置 | 版本控制 | 用途 |
+|---|---|---|---|
+| 当前用户设置 | `config/trainlab.json`（本地） | 忽略 | 收件地址、训练难度、马拉松/半马目标 |
+| 当前用户设置模板 | `config/trainlab.example.json` | 跟踪 | 新机器初始化时复制的安全模板 |
+| 当前数据基础与 Garmin 设置 | `config/foundation.yaml`、`config/garmin.yaml`（本地） | 忽略 | Foundation 存储根、Garmin 区域和认证运行参数 |
+| 当前服务编排模板 | `config/orchestration.example.yaml` | 跟踪 | Supervisor 的示例调度与运维配置 |
+| 当前运行策略 | `config/analysis.yaml`、`compression.yaml`、`decision_policy.yaml`、`exercise_catalog.yaml`、`metric_catalog.yaml`、`profile.yaml`、`running_policy.yaml`、`strength_policy.yaml` | 跟踪 | 版本化的分析、压缩、指标与训练策略 |
+| Gmail MCP 模板 | `config/gmail_mcp.example.yaml` | 跟踪 | 当前环境 `gmail` MCP 的配置说明；不保存 token |
+| 旧链路/回滚兼容 | `config/production_acceptance.example.json`、`config/trainlab.yaml` | 跟踪 | 旧 Drive/运行时路径的受控验收或回滚兼容，不能作为新五层配置权威来源 |
+
+本目录不保存密码、OAuth client secret、refresh/access token 或任何认证文件。

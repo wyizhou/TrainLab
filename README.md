@@ -17,16 +17,25 @@ TrainLab 是一个本地优先的 Garmin 训练分析系统。它采集健康与
 第三层只通过 `trainlab run` 进入生产分析。分析结果和邮件发送均具备幂等记录，
 失败后不会盲目重复发送。
 
-## 本地数据
+## 本地数据与存储位置
 
-以下路径属于本地运行状态，已从 Git 排除，不得提交或在清理时删除：
+新五层架构的唯一权威存储根目录是 `state/foundation/`：
 
-- `data.db*`：结构化数据
-- `raw/`：Garmin 原始 JSON 和 FIT
-- `state/`：同步游标、运行状态、锁和认证文件
-- `source/`、`test_data/`：本地迁移资料和私有测试样本
-- `config/trainlab.json`、`config/foundation.yaml`、`config/garmin.yaml`：
-  用户配置
+| 路径 | 用途 | 清理规则 |
+|---|---|---|
+| `state/foundation/data.db` | 当前 SQLite 结构化数据 | 不提交、不手动删除 |
+| `state/foundation/raw/` | Garmin 原始 JSON 与 FIT | 不提交、不可变、不手动删除 |
+| `state/foundation/state/` | 同步游标、锁、运行记录和认证状态 | 不提交、不手动删除 |
+| `state/foundation/backups/` | 具名备份及其校验信息 | 不自动合并或删除 |
+
+根目录的 `data.db`、`raw/`、`source/` 以及 `state/` 下不属于
+`state/foundation/` 的旧运行资料，均是旧 Drive/迁移链路的兼容或回滚资产，
+不是当前架构的 canonical 数据源。它们在生产切换和回滚验证完成前保留；任何
+迁移或删除必须是带校验清单的独立任务。
+
+`test_data/` 是本地私有测试样本。`config/trainlab.json`、
+`config/foundation.yaml` 和 `config/garmin.yaml` 是本地用户配置。这些路径都已
+排除在 Git 之外，不得提交或在常规清理中删除。
 
 原始数据不可变；规范化表可以从原始文件和解析器版本重新生成。
 
@@ -93,9 +102,5 @@ Linux 部署使用
 
 ## 文档入口
 
-- [五层冻结契约与状态](docs/layers/README.md)
-- [Garmin 采集手册](docs/runbooks/garmin-collection.md)
-- [分析受控验收](docs/runbooks/analysis-controlled-acceptance.md)
-- [Gmail 生产配置](docs/runbooks/gmail-production.md)
-- [Supervisor 部署](docs/runbooks/orchestration-deployment.md)
-- [Supervisor 受控验收](docs/runbooks/orchestration-controlled-acceptance.md)
+完整的当前文档索引、验收证据和 legacy/rollback 材料见
+[docs/README.md](docs/README.md)。

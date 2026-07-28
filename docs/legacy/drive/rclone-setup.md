@@ -20,4 +20,4 @@ configuration belong outside the repository with mode 0600.
 
 The authorization, candidate-config validation, refresh check, atomic promotion,
 cleanup and rollback procedure is maintained in
-`docs/runbooks/google-drive-bootstrap.md`.
+[google-drive-bootstrap.md](google-drive-bootstrap.md).

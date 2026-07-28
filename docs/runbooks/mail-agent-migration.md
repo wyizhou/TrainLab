@@ -24,7 +24,7 @@ cursor 元数据。比较结果不得携带邮件正文、健康数据、OAuth �
 token、启用第五层调度或猜测验收结果。
 
 2026-07-27 已取得上述授权并完成真实验收，脱敏记录见
-[M4-15 真实 Gmail 验收记录](evidence/mail/M4-15-real-gmail-acceptance-2026-07-27.md)。
+[M4-15 真实 Gmail 验收记录](../layers/evidence/mail/M4-15-real-gmail-acceptance-2026-07-27.md)。
 本次只使用当前环境名为 `gmail`、包为 `@artymclabin/gmail-mcp` 的绑定；没有读取
 provider 登录身份，也没有把 recipient、token 或邮件正文写入验收文档。
 
