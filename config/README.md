@@ -1,5 +1,3 @@
-# TrainLab configuration
-
 # TrainLab 配置
 
 `config/trainlab.json` 是项目范围的本地用户配置文件。后续层级如需增加用户可控
