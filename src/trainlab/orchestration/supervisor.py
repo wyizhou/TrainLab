@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import os
 import socket
+import threading
 from typing import Callable, Protocol
 
 
@@ -109,7 +110,16 @@ class SupervisorRuntime:
             tick = self._queue.tick(self._config)
             self._notify_incidents(getattr(tick, "incidents", ()))
             if getattr(tick, "status", None) == "claimed" and getattr(tick, "claim", None) is not None:
-                self._dispatch(tick.claim)
+                outcome = self._dispatch_with_keepalive(tick.claim)
+                if outcome == "stopped":
+                    self._notify("stopped")
+                    return SupervisorReceipt("stopped", 1, 1)
+                if outcome == "lease_lost":
+                    self._notify("lease_lost")
+                    return SupervisorReceipt("lease_lost", 1, 1)
+                if outcome == "failed":
+                    self._notify("error")
+                    return SupervisorReceipt("failed", 1, 1, "supervisor_keepalive_or_dispatch_failed")
                 self._notify("active")
                 return SupervisorReceipt("active", 1, 1)
             self._notify(str(getattr(tick, "status", "idle")))
@@ -117,6 +127,64 @@ class SupervisorRuntime:
         except Exception:
             self._notify("error")
             return SupervisorReceipt("failed", 1, 0, "supervisor_cycle_failed")
+
+    def _dispatch_with_keepalive(self, claim: object) -> str:
+        """Dispatch exactly one synchronous claim while renewing its lease.
+
+        The helper thread has authority only to heartbeat this existing lease.
+        It never dispatches business work and is joined before this method
+        returns, so no keepalive survives a completed, failed, or stopped run.
+        """
+        interval = self._keepalive_interval()
+        if interval is None:
+            return "failed"
+        stop = threading.Event()
+        lease_lost = threading.Event()
+        keepalive_failed = threading.Event()
+
+        def renew() -> None:
+            while not stop.wait(interval):
+                if self._stopped:
+                    return
+                try:
+                    renewed = self._supervisor.heartbeat()
+                except Exception:
+                    keepalive_failed.set()
+                    return
+                if getattr(renewed, "state", None) != "active":
+                    lease_lost.set()
+                    return
+
+        worker = threading.Thread(target=renew, name="trainlab-lease-keepalive", daemon=False)
+        worker.start()
+        dispatch_failed = False
+        try:
+            self._dispatch(claim)
+        except Exception:
+            dispatch_failed = True
+        finally:
+            stop.set()
+            worker.join()
+        if self._stopped:
+            return "stopped"
+        if lease_lost.is_set():
+            return "lease_lost"
+        if keepalive_failed.is_set() or dispatch_failed:
+            return "failed"
+        return "active"
+
+    def _keepalive_interval(self) -> float | None:
+        interval = getattr(self._config, "heartbeat_interval_seconds", None)
+        ttl = getattr(self._config, "lease_ttl_seconds", None)
+        if (
+            isinstance(interval, bool)
+            or isinstance(ttl, bool)
+            or not isinstance(interval, (int, float))
+            or not isinstance(ttl, (int, float))
+            or not 0 < interval < ttl
+        ):
+            return None
+        return float(interval)
 
     def run(self, *, max_cycles: int | None = None, wait: Callable[[float], None] | None = None, wait_seconds: float = 1.0) -> SupervisorReceipt:
         if max_cycles is not None and (type(max_cycles) is not int or max_cycles < 1):

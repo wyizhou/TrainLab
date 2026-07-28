@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import threading
 
 from trainlab.orchestration.cli import _supervisor_exit_code, add_root_subparsers, dispatch, execute
 from trainlab.orchestration.operations import OperatorOperations, RedactingAuditLogger
@@ -119,18 +120,95 @@ class Watchdog:
     def notify(self, value): self.states.append(value)
 
 
+class RuntimeConfig:
+    lease_ttl_seconds = 90
+    heartbeat_interval_seconds = 1
+
+
 def test_supervisor_is_cooperative_and_has_no_hidden_background_loop() -> None:
     lease, queue, watchdog, calls, incidents = (
         Lease(), Queue(), Watchdog(), [], []
     )
     runtime = SupervisorRuntime(
-        lease, queue, object(), dispatch=calls.append, watchdog=watchdog,
+        lease, queue, RuntimeConfig(), dispatch=calls.append, watchdog=watchdog,
         incident_notifier=incidents.append,
     )
     result = runtime.run(max_cycles=2, wait=lambda _: None)
     assert result.cycles == 2 and result.dispatched == 1 and calls == ["fixed-workflow"]
     assert incidents == ["scheduler:test"]
     assert watchdog.states and runtime.stop().status == "stopped" and lease.stopped and queue.stopped
+
+
+class BlockingLease(Lease):
+    def __init__(self, *, lose_on: int | None = None, raise_on: int | None = None):
+        super().__init__(); self.count = 0; self.lose_on = lose_on; self.raise_on = raise_on; self.renewed = threading.Event(); self.second_heartbeat = threading.Event()
+    def heartbeat(self):
+        self.count += 1
+        if self.count >= 2:
+            self.second_heartbeat.set()
+        if self.raise_on == self.count:
+            raise RuntimeError("renewal failed")
+        if self.lose_on == self.count:
+            return LeaseResult("passive")
+        if self.count >= 3:
+            self.renewed.set()
+        return LeaseResult("active")
+
+
+class SingleClaimQueue(Queue):
+    def tick(self, config):
+        if self.claimed:
+            return type("Tick", (), {"status": "idle", "claim": None, "incidents": ()})()
+        self.claimed = True
+        return type("Tick", (), {"status": "claimed", "claim": "one", "incidents": ()})()
+
+
+class FastRuntimeConfig:
+    lease_ttl_seconds = 90
+    heartbeat_interval_seconds = 0.001
+
+
+def _no_keepalive_thread() -> bool:
+    return not any(item.name == "trainlab-lease-keepalive" and item.is_alive() for item in threading.enumerate())
+
+
+def test_dispatch_keepalive_renews_while_a_synchronous_dispatch_is_blocked() -> None:
+    lease, queue = BlockingLease(), SingleClaimQueue()
+    release = threading.Event()
+    dispatched: list[object] = []
+    def dispatch(claim):
+        dispatched.append(claim)
+        assert lease.renewed.wait(1)
+        release.set()
+    result = SupervisorRuntime(lease, queue, FastRuntimeConfig(), dispatch=dispatch).run_once()
+    assert result.status == "active" and result.dispatched == 1 and dispatched == ["one"]
+    assert lease.count >= 3 and release.is_set() and _no_keepalive_thread()
+
+
+def test_keepalive_lease_loss_or_failure_stops_after_current_dispatch_and_reaps_thread() -> None:
+    for lease, expected in ((BlockingLease(lose_on=2), "lease_lost"), (BlockingLease(raise_on=2), "failed")):
+        queue = SingleClaimQueue()
+        completed = threading.Event()
+        def dispatch(_claim):
+            assert lease.second_heartbeat.wait(1)
+            completed.set()
+        runtime = SupervisorRuntime(lease, queue, FastRuntimeConfig(), dispatch=dispatch)
+        result = runtime.run(max_cycles=2, wait=lambda _: None)
+        assert result.status == expected and result.dispatched == 1 and completed.is_set()
+        assert _no_keepalive_thread() and queue.claimed
+
+
+def test_dispatch_exception_and_stop_reap_the_keepalive_thread() -> None:
+    for action, expected in (("raise", "failed"), ("stop", "stopped")):
+        lease, queue = BlockingLease(), SingleClaimQueue()
+        runtime: SupervisorRuntime
+        def dispatch(_claim):
+            if action == "raise":
+                raise RuntimeError("dispatch failed")
+            runtime.request_stop()
+        runtime = SupervisorRuntime(lease, queue, FastRuntimeConfig(), dispatch=dispatch)
+        result = runtime.run_once()
+        assert result.status == expected and result.dispatched == 1 and _no_keepalive_thread()
 
 
 def test_log_schema_rejects_secrets_and_rotates(tmp_path) -> None:
