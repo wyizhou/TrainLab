@@ -17,6 +17,8 @@ from typing import Any, Literal, Mapping
 
 from jsonschema import Draft202012Validator, FormatChecker
 
+from trainlab.runtime_environment import bounded_runtime_path
+
 
 Layer = Literal["foundation", "garmin", "analysis", "mail"]
 ResultKind = Literal["accepted", "untrusted", "timeout_unknown"]
@@ -26,7 +28,7 @@ _EXECUTABLE = _ROOT / ".venv/bin/trainlab"
 _PYTHON = _ROOT / ".venv/bin/python"
 _MAX_OUTPUT = 1_048_576
 _GRACE_SECONDS = 2
-_ENV = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "LC_ALL": "C.UTF-8", "TZ": "Asia/Singapore"}
+_ENV = {"LANG": "C.UTF-8", "LC_ALL": "C.UTF-8", "TZ": "Asia/Singapore"}
 _SCHEMAS = {
     "foundation": _ROOT / "harness/schemas/foundation_receipt.schema.json",
     "garmin": _ROOT / "harness/schemas/garmin_sync_receipt.schema.json",
@@ -583,7 +585,7 @@ class SubprocessRunner:
         argv = _argv(call)
         request_hash = canonical_request_sha256(call)
         try:
-            process = subprocess.Popen(argv, cwd=self._root, env=dict(_ENV), stdin=subprocess.DEVNULL,
+            process = subprocess.Popen(argv, cwd=self._root, env=self._environment(), stdin=subprocess.DEVNULL,
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False, close_fds=True,
                 start_new_session=True, text=False)
         except OSError:
@@ -624,6 +626,11 @@ class SubprocessRunner:
         if receipt is None:
             return DownstreamResult("untrusted", digest, None, None, request_hash, process.returncode)
         return DownstreamResult("accepted", None, receipt, digest, request_hash, process.returncode)
+
+    @staticmethod
+    def _environment() -> dict[str, str]:
+        """Create the only environment inherited by lower-layer tools."""
+        return {"PATH": bounded_runtime_path(), **_ENV}
 
     def _communicate_bounded(self, process: subprocess.Popen[bytes], timeout: int) -> tuple[bytes, bytes]:
         """Drain both pipes concurrently and kill before an unbounded buffer forms."""

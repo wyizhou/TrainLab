@@ -97,6 +97,14 @@ def _local_operator_id() -> str:
     return f"uid-{uid}"
 
 
+def _supervisor_exit_code(result: object) -> int:
+    """Give a service manager a reliable failure signal for Supervisor exits."""
+    if not isinstance(result, dict):
+        return 1
+    status = result.get("status")
+    return 0 if status in {"active", "claimed", "idle", "stopped"} else 1
+
+
 def dispatch(args: argparse.Namespace, *, application: OrchestrationCliApplication | None, operations: OperatorOperations | None = None) -> tuple[int, dict[str, Any]]:
     """Execute exactly one constrained operation and return a data-free receipt."""
     try:
@@ -105,7 +113,8 @@ def dispatch(args: argparse.Namespace, *, application: OrchestrationCliApplicati
             if application is None:
                 return 2, _receipt("rejected", error_code="orchestration_application_required")
             if args.supervisor_mode == "run":
-                return 0, _receipt("accepted", result=application.supervisor_run())
+                result = application.supervisor_run()
+                return _supervisor_exit_code(result), _receipt("accepted", result=result)
             if args.supervisor_mode == "doctor":
                 return 0, _receipt("accepted", result=application.doctor())
         if command != "orchestrate":

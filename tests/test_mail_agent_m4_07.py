@@ -42,11 +42,18 @@ def test_fixed_package_and_launch_snapshot(tmp_path:Path,monkeypatch:pytest.Monk
  assert 'harness/runtime/HARNESS.md' not in result.harness.paths
  assert fake.argv[1:10]==['exec','--ephemeral','--skip-git-repo-check','--ignore-user-config','--ignore-rules','--strict-config','--sandbox','read-only','--output-schema']
  assert '--model' not in fake.argv and '-'==fake.argv[-1] and 'token' not in ' '.join(fake.argv) and fake.stdin
- assert fake.cwd==sandbox and fake.env=={'PATH':'/usr/bin:/bin','HOME':str(sandbox/'codex-home'),'CODEX_HOME':str(sandbox/'codex-home'),'LANG':'C.UTF-8','LC_ALL':'C.UTF-8'}
+ assert fake.cwd==sandbox and fake.env=={'PATH':module.bounded_runtime_path(),'HOME':str(sandbox/'codex-home'),'CODEX_HOME':str(sandbox/'codex-home'),'LANG':'C.UTF-8','LC_ALL':'C.UTF-8'}
  assert set(fake.files)=={'harness/shared/HARNESS.md','harness/mail/HARNESS.md','harness/mail/process-message.md','harness/schemas/mail_agent_input.schema.json','harness/schemas/mail_agent_result.schema.json','input.json','output.json'}
  assert all(mode in {0o400,0o600} for mode,_ in fake.files.values()) and all(mode==0o700 for mode in fake.dirs.values()) and fake.input['bundle']['sha256']==result.harness.combined_sha256 and fake.input['context']==value
  assert tuple(fake.files[path][1] for path in result.harness.paths)==result.harness.hashes
  assert not sandbox.exists()
+
+def test_default_codex_discovery_resolves_a_symlink_before_validation(tmp_path:Path,monkeypatch:pytest.MonkeyPatch):
+ import trainlab.mail_agent.runner as module
+ target=make_executable(tmp_path/'real-codex',"exit 0\\n")
+ link=tmp_path/'codex'; link.symlink_to(target)
+ monkeypatch.setattr(module.shutil,'which',lambda name: str(link))
+ assert MailCodexRunner().executable == target.resolve()
 
 @pytest.mark.parametrize('payload,code',[('not-json','single_json'),('{}\n{}','single_json'),('{} trailing','single_json'),(output()[:-1]+'x'*300000+'}','output_unsafe')])
 def test_rejects_bad_output_offline(tmp_path:Path,payload:str,code:str):

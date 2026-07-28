@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 
-from trainlab.orchestration.cli import add_root_subparsers, dispatch, execute
+from trainlab.orchestration.cli import _supervisor_exit_code, add_root_subparsers, dispatch, execute
 from trainlab.orchestration.operations import OperatorOperations, RedactingAuditLogger
 from trainlab.orchestration.supervisor import SupervisorRuntime, SystemdNotifier
 
@@ -29,6 +29,20 @@ def test_public_surface_is_fixed_and_output_is_payload_free() -> None:
     assert receipt["result"] == {"workflow_kind": "morning", "status": "queued"}
     output = []; assert execute(parser().parse_args(["supervisor", "doctor"]), application=app, write=output.append) == 0
     assert len(output) == 1 and "secret" not in output[0] and "token" not in output[0]
+
+
+def test_supervisor_exit_code_distinguishes_clean_stop_from_abnormal_termination() -> None:
+    for status in ("active", "claimed", "idle", "stopped"):
+        assert _supervisor_exit_code({"status": status}) == 0
+    for status in ("failed", "passive", "lease_lost", "blocked", "unknown"):
+        assert _supervisor_exit_code({"status": status}) == 1
+    assert _supervisor_exit_code(None) == 1
+
+    args = parser().parse_args(["supervisor", "run"])
+    app = App()
+    app.supervisor_run = lambda: {"status": "lease_lost"}  # type: ignore[method-assign]
+    code, receipt = dispatch(args, application=app)
+    assert code == 1 and receipt["result"] == {"status": "lease_lost"}
 
 
 def test_invalid_inputs_and_unknown_command_are_rejected_without_application_call() -> None:

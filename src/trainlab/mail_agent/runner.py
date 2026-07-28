@@ -19,6 +19,8 @@ from typing import Any, Callable, Protocol
 
 from jsonschema import Draft202012Validator, FormatChecker
 
+from trainlab.runtime_environment import bounded_runtime_path
+
 from .context import MailContextBuilder, MailContextError
 
 _ROOT = Path(__file__).resolve().parents[3]
@@ -36,7 +38,6 @@ _MAX_PROMPT = 1_250_000
 _MAX_CAPTURE = 131_072
 _MAX_CAPTURE_TOTAL = 196_608
 _MAX_PACKAGE_FILE = 2_000_000
-_ENV_PATH = "/usr/bin:/bin"
 _PROMPT_HEADER = """TRAINLAB MAIL ROUTE — SINGLE IN-BAND REQUEST
 The framed Harness text and JSON context below are the complete bounded input.
 Do not call any tool and do not read files, environment variables, credentials,
@@ -555,7 +556,15 @@ class MailCodexRunner:
             raise MailRunnerError("mail_codex_auth_invalid", stage="configuration")
         self.root = root
         self.timeout_seconds = timeout_seconds
-        self.executable = executable or Path("/usr/local/bin/codex")
+        discovered = shutil.which("codex") if executable is None else None
+        if discovered is not None:
+            try:
+                discovered_path = Path(discovered).resolve(strict=True)
+            except (OSError, RuntimeError):
+                discovered_path = None
+        else:
+            discovered_path = None
+        self.executable = executable or discovered_path
         self.auth_source = auth_source
         self.process_factory = process_factory
         self.resolver = MailHarnessResolver(root)
@@ -565,6 +574,8 @@ class MailCodexRunner:
 
     def _validated_executable(self) -> str:
         path = self.executable
+        if path is None:
+            raise MailRunnerError("mail_codex_executable_invalid", stage="configuration")
         try:
             info = os.stat(path, follow_symlinks=False)
             mode = stat.S_IMODE(info.st_mode)
@@ -1072,7 +1083,7 @@ class MailCodexRunner:
             output_identity = _secure_write(output, b"", 0o600)
             argv = self._argv(work / _OUTPUT, output)
             env = {
-                "PATH": _ENV_PATH,
+                "PATH": bounded_runtime_path(),
                 "HOME": str(home),
                 "CODEX_HOME": str(home),
                 "LANG": "C.UTF-8",
