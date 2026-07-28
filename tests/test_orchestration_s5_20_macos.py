@@ -18,11 +18,12 @@ def test_macos_launchagent_has_one_fixed_supervisor_argv_and_safe_lifecycle() ->
     document = plistlib.loads(TEMPLATE.read_bytes())
     assert document["Label"] == "com.trainlab.orchestrator-supervisor"
     assert document["ProgramArguments"] == [
-        "@PROJECT_ROOT@/.venv/bin/trainlab", "supervisor", "run",
+        "@PYTHON_EXECUTABLE@", "-m", "trainlab", "supervisor", "run",
     ]
     assert document["WorkingDirectory"] == "@PROJECT_ROOT@"
     assert document["EnvironmentVariables"] == {
         "PYTHONUNBUFFERED": "1", "TZ": "Asia/Singapore", "PATH": "@RUNTIME_PATH@",
+        "__PYVENV_LAUNCHER__": "@PROJECT_ROOT@/.venv/bin/python",
     }
     assert document["RunAtLoad"] is True
     assert document["KeepAlive"] == {"SuccessfulExit": False}
@@ -39,13 +40,18 @@ def test_macos_deployment_scripts_are_shell_valid_and_only_manage_the_one_label(
         text = script.read_text(encoding="utf-8")
         assert "com.trainlab.orchestrator-supervisor" in text
         assert "launchctl" in text
-        assert "@RUNTIME_PATH@" in INSTALL.read_text(encoding="utf-8")
         assert "sudo" not in text
         assert "trainlab supervisor run" not in text
+    install = INSTALL.read_text(encoding="utf-8")
+    assert "@RUNTIME_PATH@" in install
+    assert "@PYTHON_EXECUTABLE@" in install
+    assert "real_python" in install and "resolve(strict=True)" in install and "/Volumes/*" in install
+    assert "touch \"$stdout_log\" \"$stderr_log\"" in install
+    assert "chmod 600 \"$stdout_log\" \"$stderr_log\"" in install
     assert shutil.which("plutil") is not None
 
 
 def test_macos_runbook_explains_the_single_service_and_non_destructive_rollback() -> None:
     text = RUNBOOK.read_text(encoding="utf-8")
-    for required in ("唯一", "LaunchAgent", "supervisor run", "--replace", "回滚", "不会删除日志、数据库、原始健康数据、FIT 文件或凭据"):
+    for required in ("唯一", "LaunchAgent", "-m trainlab supervisor run", "__PYVENV_LAUNCHER__", "外置卷", "--replace", "回滚", "不会删除日志、数据库、原始健康数据、FIT 文件或凭据"):
         assert required in text

@@ -6,7 +6,9 @@
   <string>com.trainlab.orchestrator-supervisor</string>
   <key>ProgramArguments</key>
   <array>
-    <string>@PROJECT_ROOT@/.venv/bin/trainlab</string>
+    <string>@PYTHON_EXECUTABLE@</string>
+    <string>-m</string>
+    <string>trainlab</string>
     <string>supervisor</string>
     <string>run</string>
   </array>
@@ -20,6 +22,8 @@
     <string>Asia/Singapore</string>
     <key>PATH</key>
     <string>@RUNTIME_PATH@</string>
+    <key>__PYVENV_LAUNCHER__</key>
+    <string>@PROJECT_ROOT@/.venv/bin/python</string>
   </dict>
   <key>RunAtLoad</key>
   <true/>

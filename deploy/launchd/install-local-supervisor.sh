@@ -19,12 +19,26 @@ launch_agents="$HOME/Library/LaunchAgents"
 target="$launch_agents/$label.plist"
 uid=$(id -u)
 
-[ -x "$project_root/.venv/bin/trainlab" ] || { echo "missing project virtual environment" >&2; exit 65; }
+[ -x "$project_root/.venv/bin/python" ] || { echo "missing project virtual environment" >&2; exit 65; }
 [ -f "$template" ] || { echo "missing launchd template" >&2; exit 65; }
+python_link="$project_root/.venv/bin/python"
+real_python=$(PYTHONPATH= "$python_link" -c 'from pathlib import Path; import sys; print(Path(sys.executable).resolve(strict=True))')
+case "$real_python" in
+  /*) ;;
+  *) echo "resolved Python is not absolute" >&2; exit 65 ;;
+esac
+case "$real_python" in
+  /Volumes/*) echo "resolved Python cannot be launched from an external volume" >&2; exit 65 ;;
+esac
+[ -f "$real_python" ] && [ -x "$real_python" ] && [ ! -L "$real_python" ] || { echo "resolved Python is not a regular executable" >&2; exit 65; }
 runtime_path=$(PYTHONPATH="$project_root/src" "$project_root/.venv/bin/python" -c 'from trainlab.runtime_environment import bounded_runtime_path; print(bounded_runtime_path())')
 [ -n "$runtime_path" ] || { echo "no usable runtime PATH" >&2; exit 65; }
 mkdir -p "$project_root/logs"
 chmod 700 "$project_root/logs"
+stdout_log="$project_root/logs/supervisor.launchd.out.log"
+stderr_log="$project_root/logs/supervisor.launchd.err.log"
+touch "$stdout_log" "$stderr_log"
+chmod 600 "$stdout_log" "$stderr_log"
 mkdir -p "$launch_agents"
 chmod 700 "$launch_agents"
 
@@ -42,7 +56,8 @@ temporary=$(mktemp "$launch_agents/.${label}.XXXXXX")
 trap 'rm -f "$temporary"' EXIT HUP INT TERM
 escaped_root=$(printf '%s' "$project_root" | sed 's/[\\&|]/\\&/g')
 escaped_path=$(printf '%s' "$runtime_path" | sed 's/[\\&|]/\\&/g')
-sed -e "s|@PROJECT_ROOT@|$escaped_root|g" -e "s|@RUNTIME_PATH@|$escaped_path|g" "$template" > "$temporary"
+escaped_python=$(printf '%s' "$real_python" | sed 's/[\\&|]/\\&/g')
+sed -e "s|@PROJECT_ROOT@|$escaped_root|g" -e "s|@RUNTIME_PATH@|$escaped_path|g" -e "s|@PYTHON_EXECUTABLE@|$escaped_python|g" "$template" > "$temporary"
 plutil -lint "$temporary" >/dev/null
 chmod 600 "$temporary"
 
