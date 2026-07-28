@@ -17,10 +17,9 @@ Run these commands independently in each deployment environment. Do not copy a
 token, credential file, Codex home, executable path, or working directory from
 another machine.
 
-`trainlab doctor` verifies the exact enabled binding and performs a harmless
-authenticated `list_email_labels` probe without retaining its payload. Missing,
-disabled, differently named, or incompatible bindings fail closed with the
-setup instructions above.
+Use `codex mcp get gmail --json` to verify the exact enabled binding before
+running a mailbox workflow. Missing, disabled, differently named, or
+incompatible bindings fail closed with the setup instructions above.
 
 ## Permission boundary
 
@@ -34,9 +33,8 @@ surface wholesale:
 - sending always performs an exact idempotency search first;
 - delete, Trash, spam, forwarding and unrelated mailbox changes are forbidden.
 
-The legacy TrainLab-specific Gmail wrapper remains compatibility-only until its
-callers are migrated. New third-, fourth- and fifth-layer code must use the
-environment binding and must not import or extend that wrapper.
+Third-, fourth- and fifth-layer code uses the environment binding directly; the
+retired TrainLab-specific Gmail wrapper is not part of the shipped project.
 
 ## Acceptance
 

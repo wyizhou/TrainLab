@@ -45,15 +45,9 @@ def _revision_receipt(status: str = "partial") -> AnalysisReceipt:
     )
 
 
-def test_analysis_only_bypasses_legacy_runtime_and_prints_only_receipt(monkeypatch, capsys):
+def test_analysis_only_uses_only_its_current_runtime_and_prints_one_receipt(monkeypatch, capsys):
     calls: list[tuple[str, object]] = []
 
-    def forbidden(*_args: object, **_kwargs: object):
-        raise AssertionError("legacy runtime must not be called")
-
-    monkeypatch.setattr(cli, "load_settings", forbidden)
-    monkeypatch.setattr(cli, "connect", forbidden)
-    monkeypatch.setattr(cli, "run_analysis", forbidden)
     monkeypatch.setattr(runtime, "run_analysis_only", lambda **kwargs: calls.append(("run", kwargs)) or _receipt())
 
     assert cli.main(["run", "--slot", "morning", "--analysis-only", "--invocation-id", "invocation"]) == 10
@@ -79,8 +73,7 @@ def test_analysis_only_bypasses_legacy_runtime_and_prints_only_receipt(monkeypat
     ["run", "--slot", "morning", "--analysis-only", "--invocation-id", "invocation", "--revise-plan", "--plan-id", "0", "--reason-event-id", "9"],
     ["run", "--slot", "morning", "--analysis-only", "--invocation-id", "invocation", "--retry-delivery", "1", "--revise-plan", "--plan-id", "7", "--reason-event-id", "9"],
 ])
-def test_analysis_only_validates_before_legacy_loading(monkeypatch, argv):
-    monkeypatch.setattr(cli, "load_settings", lambda: (_ for _ in ()).throw(AssertionError("legacy settings loaded")))
+def test_analysis_only_rejects_invalid_invocations_before_runtime_call(argv):
     with pytest.raises(SystemExit, match="2"):
         cli.main(argv)
 

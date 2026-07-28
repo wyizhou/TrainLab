@@ -1,4 +1,7 @@
-# Linux production observations
+# Historical Linux production observations
+
+> Historical pre-five-layer deployment record. It may mention retired Drive,
+> watchdog and multi-service behavior; it is not a current deployment runbook.
 
 Status: non-normative compatibility notes
 Observed environment: Ubuntu 24.04, systemd user services, Codex CLI 0.144.6,

@@ -8,6 +8,8 @@
 | 子目录 | 内容 | 当前状态 |
 |---|---|---|
 | [drive/](drive/) | Google Drive、rclone、旧 `source/` 同步 | 仅用于迁移排查与受控回滚 |
+| [garmin/](garmin/) | 早期 Garmin shadow 对账记录 | 仅作历史对账说明，不恢复旧命令 |
+| [operations/](operations/) | 早期多服务部署观测 | 仅作历史环境记录 |
 | [training/](training/) | Apple Health、旧心率/训练策略 | 仅作历史说明；当前分析以 Garmin 与 Hansons 规则为准 |
 
 当前的 Gmail MCP 接入说明继续保留在

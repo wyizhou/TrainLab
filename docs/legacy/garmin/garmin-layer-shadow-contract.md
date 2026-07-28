@@ -1,4 +1,7 @@
-# Garmin Layer Contract and Shadow Rollback Checklist
+# Historical Garmin shadow contract
+
+> Historical record only. The old Drive `sync` and `ingest` commands described
+> below have been retired; this document cannot be used to restart them.
 
 L2-17 is a provider-side boundary check. It does not authorize a migration,
 real Garmin request, legacy daemon shutdown, fifth-layer scheduler, or any
@@ -11,8 +14,7 @@ change of canonical ownership.
   write `garmin_sync_*` tables.
 - The analysis layer reads bounded stable views and quality facts only. It must
   not import a Garmin provider/client or make Garmin calls.
-- The old `trainlab sync` and `trainlab ingest` commands remain available and
-  unchanged while shadow evidence is collected.
+- The old `trainlab sync` and `trainlab ingest` commands are no longer shipped.
 - A reconciliation report is aggregate-only. It includes date windows, counts,
   hashes and controlled difference codes; it never includes raw payloads, FIT
   contents, GPS, health samples, tokens, account details, or email data.
@@ -35,12 +37,10 @@ change of canonical ownership.
 - [ ] Legacy database/raw backup is verified and restorable.
 - [ ] New Garmin state database/raw directory backup is verified and restorable.
 - [ ] No `investigate` report is unresolved for the intended cutover window.
-- [ ] Old `sync` and `ingest` commands have a passing offline regression.
+- [ ] Historical legacy evidence is retained separately from current Garmin data.
 - [ ] New collector is still disabled from production scheduling.
 - [ ] Fifth layer has no direct Garmin-table write path.
 - [ ] A named operator, approved time window and explicit cutover authorization exist.
-- [ ] A tested rollback command/runbook restores scheduling to the legacy path
-  without deleting Garmin raw evidence.
+- [ ] Any recovery uses a named data backup without deleting Garmin raw evidence.
 
-If any item is missing, remain in shadow mode. Do not delete data, change a
-canonical owner, or stop the legacy daemon.
+If any item is missing, do not alter current canonical ownership or delete data.

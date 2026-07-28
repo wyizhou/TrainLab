@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import re
 from pathlib import Path
@@ -107,15 +108,26 @@ def test_mail_layer_may_read_canonical_facts_but_cannot_call_or_modify_garmin() 
     assert "v_current_activities" in context
 
 
-def test_legacy_sync_and_ingest_commands_still_parse_without_routing_change() -> None:
+@pytest.mark.parametrize("command", ("doctor", "sync", "ingest", "prepare", "scheduler", "watchdog", "deploy", "finalize-production", "status"))
+def test_retired_legacy_root_commands_are_not_registered(command: str) -> None:
     parser = cli._parser()
-    sync = parser.parse_args(["sync"])
-    ingest = parser.parse_args(["ingest"])
-    assert (sync.command, sync.daemon) == ("sync", False)
-    assert (ingest.command, ingest.daemon) == ("ingest", False)
+    with pytest.raises(SystemExit):
+        parser.parse_args([command])
     source = (ROOT / "src/trainlab/cli.py").read_text(encoding="utf-8")
-    assert "if args.command == \"sync\":" in source
-    assert "if args.command == \"ingest\":" in source
+    assert "from .sync import" not in source
+    assert "from .ingest import" not in source
+
+
+def test_current_root_commands_are_the_only_registered_surface() -> None:
+    parser = cli._parser()
+    action = next(item for item in parser._actions if isinstance(item, argparse._SubParsersAction))
+    assert set(action.choices) == {
+        "foundation", "garmin", "run", "mail", "supervisor", "orchestrate"
+    }
+    assert parser.parse_args(["foundation", "status"]).command == "foundation"
+    assert parser.parse_args([
+        "run", "--slot", "morning", "--analysis-only", "--invocation-id", "contract",
+    ]).command == "run"
 
 
 def test_shadow_report_is_schema_valid_deterministic_and_payload_free() -> None:

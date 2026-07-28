@@ -29,9 +29,8 @@ TrainLab 是一个本地优先的 Garmin 训练分析系统。它采集健康与
 | `state/foundation/backups/` | 具名备份及其校验信息 | 不自动合并或删除 |
 
 根目录的 `data.db`、`raw/`、`source/` 以及 `state/` 下不属于
-`state/foundation/` 的旧运行资料，均是旧 Drive/迁移链路的兼容或回滚资产，
-不是当前架构的 canonical 数据源。它们在生产切换和回滚验证完成前保留；任何
-迁移或删除必须是带校验清单的独立任务。
+`state/foundation/` 的旧运行资料不是当前架构的 canonical 数据源。它们保留在
+本机仅供历史排查或具名备份恢复；任何迁移或删除必须是带校验清单的独立任务。
 
 `test_data/` 是本地私有测试样本。`config/trainlab.json`、
 `config/foundation.yaml` 和 `config/garmin.yaml` 是本地用户配置。这些路径都已
@@ -96,9 +95,9 @@ Linux 部署使用
 [`deploy/systemd/trainlab-orchestrator-supervisor.service.template`](deploy/systemd/trainlab-orchestrator-supervisor.service.template)，
 步骤见 [`docs/runbooks/orchestration-deployment.md`](docs/runbooks/orchestration-deployment.md)。
 
-仓库中仍保留旧 Google Drive、scheduler、watchdog、launchd 和多服务 systemd
-兼容入口，供尚未完成的生产切换与回滚使用；它们不属于新五层架构。远程切换和
-回滚验证通过后，再用独立任务淘汰这些兼容文件。
+仓库只保留当前五层工具与唯一的 Supervisor systemd 模板。旧 Google Drive、
+scheduler、watchdog、launchd 和多服务 systemd 实现已经退役；历史数据并不会
+因此被删除。
 
 ## 文档入口
 

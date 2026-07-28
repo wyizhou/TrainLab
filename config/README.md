@@ -22,8 +22,7 @@ TrainLab 邮件的固定地址。`training_difficulty_level` 为 1–5 的整数
 | 当前用户设置模板 | `config/trainlab.example.json` | 跟踪 | 新机器初始化时复制的安全模板 |
 | 当前数据基础与 Garmin 设置 | `config/foundation.yaml`、`config/garmin.yaml`（本地） | 忽略 | Foundation 存储根、Garmin 区域和认证运行参数 |
 | 当前服务编排模板 | `config/orchestration.example.yaml` | 跟踪 | Supervisor 的示例调度与运维配置 |
-| 当前运行策略 | `config/analysis.yaml`、`compression.yaml`、`decision_policy.yaml`、`exercise_catalog.yaml`、`metric_catalog.yaml`、`profile.yaml`、`running_policy.yaml`、`strength_policy.yaml` | 跟踪 | 版本化的分析、压缩、指标与训练策略 |
+| 当前分析策略 | `config/analysis.yaml` | 跟踪 | 分析层的版本化质量与训练策略 |
 | Gmail MCP 模板 | `config/gmail_mcp.example.yaml` | 跟踪 | 当前环境 `gmail` MCP 的配置说明；不保存 token |
-| 旧链路/回滚兼容 | `config/production_acceptance.example.json`、`config/trainlab.yaml` | 跟踪 | 旧 Drive/运行时路径的受控验收或回滚兼容，不能作为新五层配置权威来源 |
 
 本目录不保存密码、OAuth client secret、refresh/access token 或任何认证文件。
