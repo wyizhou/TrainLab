@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from .contracts import *  # noqa: F403
+from .contracts import _FONT_GRADE_DISPLAY
 
 class FitCollectionMixin:
     def _fit_temp_dir(self) -> Path:
