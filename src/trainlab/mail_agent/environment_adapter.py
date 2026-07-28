@@ -23,12 +23,12 @@ from email.utils import getaddresses, parsedate_to_datetime
 from pathlib import Path
 from typing import Any, Callable, Protocol
 
-from ..gmail_environment import (
+from ..integrations.gmail_environment import (
     GMAIL_MCP_PACKAGE,
     GmailEnvironmentStatus,
     inspect_gmail_environment,
 )
-from ..mcp import MCPResponseError, StdioMCPClient, normalize_tool_result
+from ..integrations.mcp import MCPResponseError, StdioMCPClient, normalize_tool_result
 from .gmail_adapter import (
     GmailAdapterError,
     GmailIdentity,

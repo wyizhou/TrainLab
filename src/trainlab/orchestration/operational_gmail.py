@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from trainlab.analysis.gmail_delivery import (
+from trainlab.integrations.gmail_delivery import (
     GmailDeliveryError,
     GmailDeliveryGateway,
 )

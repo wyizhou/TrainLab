@@ -18,12 +18,12 @@ from .config import load_analysis_config
 from .contracts import AnalysisDelivery, AnalysisError, AnalysisRequest, AnalysisReceipt, build_run_key
 from .delivery import AnalysisDeliveryFactory, AnalysisDeliveryRepository
 from .delivery_service import AnalysisDeliveryService, DeliveryExecution
-from .gmail_delivery import GmailDeliveryError, GmailDeliveryGateway
+from ..integrations.gmail_delivery import GmailDeliveryError, GmailDeliveryGateway
+from ..integrations.project_config import configured_recipient_email as _recipient_email
 from .publisher import AnalysisPublisher
 from .run_state import AnalysisRunCoordinator, AnalysisRunRepository, SubjectLockManager
 from .runner import AnalysisCodexRunner
 from .stable_views import StableViewRepository
-from ..mail_agent.runtime import _recipient_email
 
 
 _SINGAPORE = ZoneInfo("Asia/Singapore")

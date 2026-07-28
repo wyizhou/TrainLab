@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from typing import Callable, Literal, Protocol
 
 from .delivery import AnalysisDeliveryRepository, AnalysisDeliveryState
-from .gmail_delivery import GmailDeliveryError, GmailDeliveryReceipt
+from ..integrations.gmail_delivery import GmailDeliveryError, GmailDeliveryReceipt
 
 
 DeliveryMode = Literal["retry_delivery", "reconcile_delivery"]

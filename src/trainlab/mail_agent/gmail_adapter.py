@@ -19,7 +19,7 @@ from typing import Any, Callable, Protocol
 import yaml
 from jsonschema import Draft202012Validator
 
-from ..mcp import MCPResponseError, StdioMCPClient, dotted_get, format_template, normalize_tool_result
+from ..integrations.mcp import MCPResponseError, StdioMCPClient, dotted_get, format_template, normalize_tool_result
 
 _TOOLS = {
     "get_self": "get_self",

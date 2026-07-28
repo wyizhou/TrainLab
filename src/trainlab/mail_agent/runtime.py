@@ -8,8 +8,6 @@ closes every owned resource before returning its receipt.
 
 from __future__ import annotations
 
-import json
-import re
 import sqlite3
 from dataclasses import dataclass
 from datetime import datetime
@@ -18,6 +16,7 @@ from typing import Any, Callable, Protocol
 from zoneinfo import ZoneInfo
 
 from trainlab.foundation import FoundationConfig, FoundationRequest, FoundationTool
+from trainlab.integrations.project_config import configured_recipient_email
 from trainlab.util import project_root
 
 from .application import MailApplicationService, MailApplicationStages
@@ -36,7 +35,6 @@ from .stages import (
     ReconcileStage, StatusStage,
 )
 
-_EMAIL = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 _LOCAL_TZ = ZoneInfo("Asia/Singapore")
 
 
@@ -72,22 +70,8 @@ def _receipt(request: MailRequest, code: str) -> MailReceipt:
 
 
 def _recipient_email(root: Path) -> str:
-    """Read the sole fixed recipient authority from the ignored local config."""
-    try:
-        value = json.loads((root / "config" / "trainlab.json").read_text(encoding="utf-8"))
-        email = value["mail"]["recipient_email"]
-    except (OSError, TypeError, ValueError, KeyError):
-        raise ValueError("mail_runtime_configuration_invalid") from None
-    if (
-        not isinstance(value, dict)
-        or value.get("schema_version") != 1
-        or not isinstance(value.get("mail"), dict)
-        or not isinstance(email, str)
-        or email != email.strip()
-        or not _EMAIL.fullmatch(email)
-    ):
-        raise ValueError("mail_runtime_configuration_invalid")
-    return email.lower()
+    """Compatibility facade for the shared project configuration reader."""
+    return configured_recipient_email(root)
 
 
 def _default_environment_factory() -> MailEnvironmentFactory | None:

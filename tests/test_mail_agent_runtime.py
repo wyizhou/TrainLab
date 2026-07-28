@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from trainlab.mail_agent.contracts import MailRequest
 from trainlab.mail_agent.runtime import _recipient_email
+from trainlab.integrations.project_config import configured_recipient_email
 from trainlab.mail_agent.stages import MissingDependencyStage, PreparedStage
 
 
@@ -29,6 +30,7 @@ def test_recipient_config_is_strict_and_not_an_environment_variable(tmp_path) ->
         encoding="utf-8",
     )
     assert _recipient_email(tmp_path) == "authorized@example.com"
+    assert configured_recipient_email(tmp_path) == "authorized@example.com"
     (config / "trainlab.json").write_text(
         '{"schema_version":1,"mail":{"recipient_email":"bad address"}}', encoding="utf-8"
     )
