@@ -18,3 +18,7 @@
 
 `harness/runtime/HARNESS.md` 与其输入/输出 schemas 也保留为旧 Runtime 路线的历史
 证据；当前分析和邮件路线不加载它们。
+
+本机旧根数据库、旧 `source/` 输入和退役私有配置存放在被 Git 忽略的
+`state/legacy/root-runtime-2026-07-28/`，目录内的
+`MOVE-MANIFEST.sha256` 用于验证搬迁与回滚；它不是当前数据源。

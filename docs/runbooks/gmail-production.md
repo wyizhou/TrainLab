@@ -28,7 +28,8 @@ surface wholesale:
 
 - analysis generation has no Gmail tools;
 - each delivery or inbox route uses a fixed adapter allowlist;
-- recipients remain authenticated-self only;
+- recipients remain fixed to `mail.recipient_email` in the project-wide
+  `config/trainlab.json`;
 - labels remain fixed to `TrainLab`;
 - sending always performs an exact idempotency search first;
 - delete, Trash, spam, forwarding and unrelated mailbox changes are forbidden.

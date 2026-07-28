@@ -29,7 +29,7 @@ rules are not part of the production analysis or mail Harnesses.
 ## Non-normative compatibility notes
 
 Linux production observations are recorded in
-`docs/runbooks/linux-production-observations.md`. They document issues seen with
+`docs/legacy/operations/linux-production-observations.md`. They document issues seen with
 specific tool and provider versions, but do not create requirements for future
 runner adapters. Each new runner must be validated against the shared schemas and
 safety boundaries on its own behavior.

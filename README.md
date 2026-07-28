@@ -28,9 +28,10 @@ TrainLab 是一个本地优先的 Garmin 训练分析系统。它采集健康与
 | `state/foundation/state/` | 同步游标、锁、运行记录和认证状态 | 不提交、不手动删除 |
 | `state/foundation/backups/` | 具名备份及其校验信息 | 不自动合并或删除 |
 
-根目录的 `data.db`、`raw/`、`source/` 以及 `state/` 下不属于
-`state/foundation/` 的旧运行资料不是当前架构的 canonical 数据源。它们保留在
-本机仅供历史排查或具名备份恢复；任何迁移或删除必须是带校验清单的独立任务。
+旧根目录数据库、`source/` 输入和退役的私有配置已原样收纳到本机
+`state/legacy/root-runtime-2026-07-28/`，并附带 SHA-256 搬迁清单。它们不是当前
+架构的 canonical 数据源，只供历史排查或单独授权的回滚；不得覆盖
+`state/foundation/`。
 
 `test_data/` 是本地私有测试样本。`config/trainlab.json`、
 `config/foundation.yaml` 和 `config/garmin.yaml` 是本地用户配置。这些路径都已
