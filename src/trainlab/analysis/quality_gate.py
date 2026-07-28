@@ -69,6 +69,7 @@ _PLAN_ITEM_FIELDS = frozenset(
         "item_index",
         "local_date",
         "activity_kind",
+        "prescription_json",
         "rationale_text",
     }
 )
@@ -894,6 +895,7 @@ class QualityGate:
                     or index < 0
                     or index in indices
                     or item.get("activity_kind") not in _PLAN_KINDS
+                    or not isinstance(item.get("prescription_json"), str)
                     or not (
                         item.get("rationale_text") is None
                         or isinstance(item.get("rationale_text"), str)

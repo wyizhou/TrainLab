@@ -746,6 +746,7 @@ def revision_snapshot() -> StableSnapshot:
                 "item_index": 2,
                 "local_date": "2026-07-18",
                 "activity_kind": "rest",
+                "prescription_json": "{}",
                 "rationale_text": None,
             },
         ),
@@ -805,6 +806,19 @@ def test_plan_reason_lineage_shape_and_subject_ownership_are_strict() -> None:
         source, views={**source.views, "v_training_plan_items": ()}
     )
     assert "plan_incomplete" in blocker_codes(gate.evaluate(req, missing_item))
+    legacy_item_shape = replace(
+        source,
+        views={
+            **source.views,
+            "v_training_plan_items": tuple(
+                {key: value for key, value in row.items() if key != "prescription_json"}
+                for row in source.views["v_training_plan_items"]
+            ),
+        },
+    )
+    assert "plan_incomplete" in blocker_codes(
+        gate.evaluate(req, legacy_item_shape)
+    )
     bad_reason = replace(
         source,
         plan_reasons=tuple(
