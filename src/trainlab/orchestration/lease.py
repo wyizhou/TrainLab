@@ -8,9 +8,11 @@ from __future__ import annotations
 
 import os
 import re
+import sqlite3
 import stat
 import hashlib
 import secrets
+import time
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -83,6 +85,10 @@ class LeaseManager:
         clock: Clock,
         probe: ProcessProbe,
         ttl_seconds: int = 90,
+        *,
+        heartbeat_retry_seconds: float | None = None,
+        sleep: Callable[[float], None] = time.sleep,
+        monotonic: Callable[[], float] = time.monotonic,
     ) -> None:
         if not isinstance(instance_id, str) or not _IDENTITY.fullmatch(instance_id):
             raise LeaseError("lease_instance_id_invalid")
@@ -90,6 +96,15 @@ class LeaseManager:
             raise LeaseError("lease_pid_invalid")
         if isinstance(ttl_seconds, bool) or not isinstance(ttl_seconds, int) or not 1 <= ttl_seconds <= 3600:
             raise LeaseError("lease_ttl_invalid")
+        retry_budget = ttl_seconds / 3 if heartbeat_retry_seconds is None else heartbeat_retry_seconds
+        if (
+            isinstance(retry_budget, bool)
+            or not isinstance(retry_budget, (int, float))
+            or not 0 < retry_budget <= ttl_seconds / 3
+        ):
+            raise LeaseError("lease_heartbeat_retry_invalid")
+        if not callable(sleep) or not callable(monotonic):
+            raise LeaseError("lease_heartbeat_retry_invalid")
         self.db = Path(database_path)
         self.repository = OrchestrationRepository(self.db)
         self.lock = Path(lock_path)
@@ -98,6 +113,10 @@ class LeaseManager:
         self.clock = clock
         self.probe = probe
         self.ttl = ttl_seconds
+        # Ten seconds is deliberately well below the production 90-second
+        # lease.  Smaller TTLs retain the same one-third safety margin.
+        self._heartbeat_retry_seconds = min(float(retry_budget), 10.0)
+        self._sleep, self._monotonic = sleep, monotonic
         self._owns_lock = False
         self._evidence: _LockEvidence | None = None
         self._claim: _ClaimToken | None = None
@@ -200,15 +219,27 @@ class LeaseManager:
     def heartbeat(self) -> LeaseResult:
         if self._claim is None:
             return LeaseResult("passive", None, None)
-        now = _utc(self.clock.now())
-        expiry = now + timedelta(seconds=self.ttl)
-        try:
-            with self._tx() as conn:
-                return self._heartbeat_in_transaction(conn, now, expiry)
-        except LeaseError:
-            raise
-        except Exception as exc:
-            raise LeaseError("lease_database_unavailable") from exc
+        deadline = self._monotonic() + self._heartbeat_retry_seconds
+        attempt = 0
+        while True:
+            now = _utc(self.clock.now())
+            expiry = now + timedelta(seconds=self.ttl)
+            try:
+                with self._tx() as conn:
+                    return self._heartbeat_in_transaction(conn, now, expiry)
+            except LeaseError:
+                raise
+            except sqlite3.OperationalError as exc:
+                if not _sqlite_busy(exc) or self._monotonic() >= deadline:
+                    raise LeaseError("lease_database_unavailable") from exc
+                remaining = deadline - self._monotonic()
+                delay = min(0.05 * (2 ** min(attempt, 4)), remaining)
+                if delay <= 0:
+                    raise LeaseError("lease_database_unavailable") from exc
+                self._sleep(delay)
+                attempt += 1
+            except Exception as exc:
+                raise LeaseError("lease_database_unavailable") from exc
 
     def release(self) -> LeaseResult:
         error: Exception | None = None
@@ -465,6 +496,16 @@ def _utc(value: datetime) -> datetime:
 
 def _text(value: datetime) -> str:
     return value.isoformat().replace("+00:00", "Z")
+
+
+def _sqlite_busy(error: sqlite3.OperationalError) -> bool:
+    """Recognize only SQLite's transient writer-contention responses."""
+    return str(error).lower() in {
+        "database is locked",
+        "database is busy",
+        "database table is locked",
+        "database schema is locked",
+    }
 
 
 def _parse(value: object) -> datetime:

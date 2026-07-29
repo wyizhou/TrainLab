@@ -158,6 +158,7 @@ class MailWorkflowOutcome:
     revised_artifact_id: str | None = None
     analysis_delivery_id: str | None = None
     error_code: str | None = None
+    next_retry_at_utc: str | None = None
 
 
 def _accepted(result: DownstreamResult) -> Mapping[str, Any]:
@@ -229,6 +230,23 @@ class MailWorkflow:
         next_action = mail_receipt.get("next_action")
         status = mail_receipt.get("status")
         if next_action != "invoke_analysis":
+            if status in {"lock_busy", "deferred"}:
+                retry_at = mail_receipt.get("next_retry_at_utc")
+                if not isinstance(retry_at, str) or not retry_at.endswith("Z"):
+                    return MailWorkflowOutcome(
+                        "attention_required",
+                        "operator_review",
+                        tuple(calls),
+                        tuple(hashes),
+                        error_code="mail_workflow_retry_invalid",
+                    )
+                return MailWorkflowOutcome(
+                    "deferred",
+                    str(next_action or "continue_poll"),
+                    tuple(calls),
+                    tuple(hashes),
+                    next_retry_at_utc=retry_at,
+                )
             return MailWorkflowOutcome(
                 "succeeded" if status in {"succeeded", "unchanged"} else str(status),
                 str(next_action),

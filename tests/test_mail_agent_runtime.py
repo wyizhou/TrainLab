@@ -4,8 +4,15 @@ These tests deliberately do not create a Gmail MCP client or a Codex process.
 """
 from __future__ import annotations
 
+import sqlite3
+
+from trainlab.foundation import FoundationConfig, FoundationRequest, FoundationTool
 from trainlab.mail_agent.contracts import MailRequest
-from trainlab.mail_agent.runtime import _recipient_email
+from trainlab.mail_agent.runtime import (
+    MailRuntimeDependencies,
+    RuntimeMailApplicationService,
+    _recipient_email,
+)
 from trainlab.integrations.project_config import configured_recipient_email
 from trainlab.mail_agent.stages import MissingDependencyStage, PreparedStage
 
@@ -46,6 +53,60 @@ def test_missing_adapter_stage_is_a_standard_fail_closed_receipt() -> None:
     receipt = MissingDependencyStage().execute(request())
     assert receipt.status == "failed"
     assert receipt.errors[0]["code"] == "mail_environment_adapter_unavailable"
+
+
+def test_active_foundation_snapshot_defers_mail_without_starting_gmail(
+    tmp_path, monkeypatch
+) -> None:
+    root = tmp_path / "project"
+    data = root / "data"
+    foundation = FoundationConfig(
+        data,
+        data / "data.db",
+        data / "raw",
+        data / "state",
+        data / "state" / "foundation-ready.json",
+        data / "state" / "locks" / "foundation.lock",
+    )
+    tool = FoundationTool(foundation)
+    assert tool.execute(FoundationRequest("init", "mail-runtime-init", NOW)).ready
+    writer = sqlite3.connect(foundation.database_path)
+    writer.execute("PRAGMA wal_autocheckpoint=0")
+    writer.execute(
+        "INSERT INTO data_subjects(subject_key,timezone,is_active,created_at_utc)"
+        " VALUES('mail-runtime-subject','Asia/Singapore',1,?)",
+        (NOW,),
+    )
+    writer.commit()
+    holder = tool._connect(foundation.database_path, readonly=True)
+    assert list(data.glob(".foundation-readonly-*"))
+    monkeypatch.setattr(
+        "trainlab.mail_agent.runtime.project_root", lambda supplied: root
+    )
+    monkeypatch.setattr(
+        "trainlab.mail_agent.runtime.FoundationConfig.load", lambda supplied: foundation
+    )
+    adapter_calls = []
+    service = RuntimeMailApplicationService(
+        root=root,
+        dependencies=MailRuntimeDependencies(
+            environment_factory=lambda *args, **kwargs: adapter_calls.append(
+                (args, kwargs)
+            ),
+            clock=lambda: "2026-07-27T00:02:00Z",
+        ),
+    )
+    try:
+        receipt = service.execute(request("status"))
+    finally:
+        holder.close()
+        writer.close()
+    assert receipt.status == "lock_busy"
+    assert receipt.next_action == "continue_poll"
+    assert receipt.next_retry_at_utc == "2026-07-27T00:07:00Z"
+    assert receipt.warnings[0]["code"] == "foundation_lock_busy"
+    assert receipt.errors == ()
+    assert adapter_calls == []
 
 
 class _Adapter:

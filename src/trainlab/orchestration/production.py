@@ -214,7 +214,64 @@ class ProductionOrchestrationApplication:
         foundation, config, repository, subjects = self._components()
         numeric, subject_key = self._active_subject(foundation.database_path)
         if item.workflow_kind == "recovery":
-            return self.reconcile(item.workflow_key)
+            decision = item.recovery
+            if (
+                decision is None
+                or decision.workflow_key != item.workflow_key
+                or decision.action not in {
+                    "start_workflow", "resume_workflow", "resume_step"
+                }
+            ):
+                return self.reconcile(item.workflow_key)
+            aggregate = repository.load_workflow_definition(item.workflow_key)
+            if aggregate is None:
+                raise ValueError("orchestration_recovery_workflow_missing")
+            workflow = aggregate.workflow
+            kind = workflow.workflow_kind
+            if kind == "mail":
+                prefix = f"mail-poll:{numeric}:"
+                if not item.workflow_key.startswith(prefix):
+                    raise ValueError("orchestration_due_identity_invalid")
+                subject = str(numeric)
+                invocation = item.workflow_key.removeprefix(prefix)
+            elif kind == "health_check":
+                prefix = "health-check:"
+                if not item.workflow_key.startswith(prefix):
+                    raise ValueError("orchestration_due_identity_invalid")
+                subject = None
+                invocation = item.workflow_key.removeprefix(prefix)
+            elif kind in {"morning", "weekly"}:
+                subject = subject_key
+                invocation = "scheduled-" + hashlib.sha256(
+                    item.workflow_key.encode()
+                ).hexdigest()[:24]
+            else:
+                raise ValueError("orchestration_due_identity_invalid")
+            request = WorkflowRequest(
+                kind,
+                subject,
+                workflow.logical_local_date,
+                invocation,
+                workflow.trigger_kind,
+                (
+                    None
+                    if workflow.parent_workflow_run_id is None
+                    else str(workflow.parent_workflow_run_id)
+                ),
+                (),
+                (
+                    workflow.deadline_at_utc.isoformat().replace("+00:00", "Z")
+                    if workflow.deadline_at_utc is not None
+                    else (
+                        item.due_at_utc
+                        + timedelta(seconds=config.workflow_deadline_seconds)
+                    ).isoformat().replace("+00:00", "Z")
+                ),
+                workflow.started_at_utc.isoformat().replace("+00:00", "Z"),
+            )
+            return self._tool(
+                foundation, config, repository, subjects
+            ).execute(request).as_json_dict()
         subject = (
             None if item.workflow_kind == "health_check"
             else str(numeric) if item.workflow_kind == "mail"
@@ -245,6 +302,40 @@ class ProductionOrchestrationApplication:
         return self._tool(
             foundation, config, repository, subjects
         ).execute(request).as_json_dict()
+
+    @staticmethod
+    def _observe_business_failure(
+        repository: OrchestrationRepository, item: DueItem, outcome: object,
+        *, seen_at_utc: datetime,
+    ) -> str | None:
+        """Persist a payload-free incident for a completed failed workflow.
+
+        A workflow receipt is a business outcome, not a Supervisor or lease
+        failure.  The stable incident key deduplicates retry/restart sightings
+        while the workflow reference keeps it visible to operators.
+        """
+        if (
+            not isinstance(outcome, dict)
+            or outcome.get("status") != "failed"
+            or item.workflow_kind not in {"morning", "weekly", "mail", "health_check"}
+        ):
+            return None
+        workflow = repository.get_workflow(item.workflow_key)
+        if workflow is None:
+            raise RuntimeError("supervisor_workflow_failure_not_persisted")
+        digest = hashlib.sha256(item.workflow_key.encode("utf-8")).hexdigest()[:32]
+        incident_key = f"workflow:failed:{item.workflow_kind}:{digest}"
+        repository.record_incident(
+            incident_key=incident_key,
+            category="workflow",
+            severity="error",
+            seen_at_utc=seen_at_utc,
+            error_code="workflow_execution_failed",
+            error_summary="workflow_execution_failed",
+            next_action="operator_review",
+            related_workflow_run_id=workflow.id,
+        )
+        return incident_key
 
     def supervisor_run(self) -> object:
         # Idempotent bootstrap is the only normal first-layer mutation.
@@ -282,6 +373,11 @@ class ProductionOrchestrationApplication:
                 if (alerts := self._alert_service(config, repository)) is None
                 else lambda incident_key: alerts.deliver(
                     incident_key, event="open"
+                )
+            ),
+            business_failure_handler=lambda item, outcome: (
+                self._observe_business_failure(
+                    repository, item, outcome, seen_at_utc=datetime.now(UTC)
                 )
             ),
         )

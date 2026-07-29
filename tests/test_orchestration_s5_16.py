@@ -186,7 +186,10 @@ def test_dispatch_keepalive_renews_while_a_synchronous_dispatch_is_blocked() -> 
 
 
 def test_keepalive_lease_loss_or_failure_stops_after_current_dispatch_and_reaps_thread() -> None:
-    for lease, expected in ((BlockingLease(lose_on=2), "lease_lost"), (BlockingLease(raise_on=2), "failed")):
+    for lease, expected, error_code in (
+        (BlockingLease(lose_on=2), "lease_lost", None),
+        (BlockingLease(raise_on=2), "failed", "supervisor_keepalive_failed"),
+    ):
         queue = SingleClaimQueue()
         completed = threading.Event()
         def dispatch(_claim):
@@ -194,12 +197,16 @@ def test_keepalive_lease_loss_or_failure_stops_after_current_dispatch_and_reaps_
             completed.set()
         runtime = SupervisorRuntime(lease, queue, FastRuntimeConfig(), dispatch=dispatch)
         result = runtime.run(max_cycles=2, wait=lambda _: None)
-        assert result.status == expected and result.dispatched == 1 and completed.is_set()
+        assert result.status == expected and result.error_code == error_code
+        assert result.dispatched == 1 and completed.is_set()
         assert _no_keepalive_thread() and queue.claimed
 
 
 def test_dispatch_exception_and_stop_reap_the_keepalive_thread() -> None:
-    for action, expected in (("raise", "failed"), ("stop", "stopped")):
+    for action, expected, error_code in (
+        ("raise", "failed", "supervisor_dispatch_failed"),
+        ("stop", "stopped", None),
+    ):
         lease, queue = BlockingLease(), SingleClaimQueue()
         runtime: SupervisorRuntime
         def dispatch(_claim):
@@ -208,7 +215,44 @@ def test_dispatch_exception_and_stop_reap_the_keepalive_thread() -> None:
             runtime.request_stop()
         runtime = SupervisorRuntime(lease, queue, FastRuntimeConfig(), dispatch=dispatch)
         result = runtime.run_once()
-        assert result.status == expected and result.dispatched == 1 and _no_keepalive_thread()
+        assert result.status == expected and result.error_code == error_code
+        assert result.dispatched == 1 and _no_keepalive_thread()
+
+
+def test_completed_business_failure_is_recorded_and_does_not_stop_supervisor() -> None:
+    lease, queue = Lease(), SingleClaimQueue()
+    observed: list[tuple[object, object]] = []
+    incidents: list[str] = []
+    runtime = SupervisorRuntime(
+        lease,
+        queue,
+        RuntimeConfig(),
+        dispatch=lambda _claim: {"status": "failed"},
+        business_failure_handler=lambda claim, outcome: (
+            observed.append((claim, outcome)) or "workflow:failed:morning:fixed"
+        ),
+        incident_notifier=incidents.append,
+    )
+
+    result = runtime.run(max_cycles=2, wait=lambda _: None)
+
+    assert result.status == "idle" and result.cycles == 2 and result.dispatched == 1
+    assert observed == [("one", {"status": "failed"})]
+    assert incidents == ["workflow:failed:morning:fixed"]
+
+
+def test_business_failure_persistence_error_remains_a_supervisor_failure() -> None:
+    runtime = SupervisorRuntime(
+        Lease(),
+        SingleClaimQueue(),
+        RuntimeConfig(),
+        dispatch=lambda _claim: {"status": "failed"},
+        business_failure_handler=lambda _claim, _outcome: (_ for _ in ()).throw(RuntimeError()),
+    )
+
+    result = runtime.run_once()
+
+    assert result.status == "failed"
 
 
 def test_log_schema_rejects_secrets_and_rotates(tmp_path) -> None:

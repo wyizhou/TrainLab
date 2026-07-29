@@ -97,6 +97,36 @@ def test_mail_uses_only_fixed_limits_and_numeric_subject() -> None:
     assert rejected.errors[0]["code"] == "orchestration_request_invalid"
 
 
+def test_mail_lock_contention_is_persisted_as_deferred_not_failed() -> None:
+    retry_at = "2026-07-27T00:05:00Z"
+
+    class DeferredMail:
+        def execute(self, **kwargs):
+            call = DownstreamCall(
+                "mail",
+                "run",
+                kwargs["invocation_id"],
+                None,
+                subject_id=kwargs["subject_id"],
+                max_items=kwargs["max_items"],
+                deadline_seconds=kwargs["deadline_seconds"],
+            )
+            return MailWorkflowOutcome(
+                "deferred",
+                "continue_poll",
+                (call,),
+                ("c" * 64,),
+                next_retry_at_utc=retry_at,
+            )
+
+    receipt = tool(mail=DeferredMail()).execute(request("mail", subject="7"))
+    assert receipt.status == "deferred"
+    assert receipt.next_retry_at_utc == retry_at
+    assert receipt.steps[0].status == "deferred"
+    assert receipt.steps[0].receipt_sha256 == "c" * 64
+    assert receipt.errors == ()
+
+
 def test_health_requires_global_identity_and_injected_adapter() -> None:
     health = Health()
     receipt = tool(health_check=health).execute(request("health_check"))

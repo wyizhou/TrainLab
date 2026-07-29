@@ -5,10 +5,12 @@ from __future__ import annotations
 import json
 from dataclasses import replace
 from hashlib import sha256
+import os
 from pathlib import Path
 import stat
 import sys
 import time
+from types import SimpleNamespace
 
 import pytest
 
@@ -21,6 +23,7 @@ from trainlab.analysis.runner import (
     _codex_compatible_output_schema,
     _command,
     _supports_strict_structured_output,
+    _trusted_codex_home,
 )
 import trainlab.analysis.runner as runner_module
 
@@ -84,6 +87,14 @@ def _fake_command(monkeypatch, program: str) -> None:
         "_command",
         lambda executable, *args, **kwargs: (sys.executable, "-c", program),
     )
+
+
+def _codex_home(root: Path) -> Path:
+    home = root / "operator-home"
+    home.mkdir(mode=0o700)
+    codex_home = home / ".codex"
+    codex_home.mkdir(mode=0o700)
+    return codex_home
 
 
 def test_launch_profile_has_no_model_and_explicitly_disables_tools():
@@ -187,7 +198,8 @@ def test_success_is_one_generation_in_private_workspace_and_cleans_it(tmp_path, 
         )
         return original(*args, **kwargs)
 
-    monkeypatch.setenv("CODEX_HOME", "/trusted/codex-home")
+    codex_home = _codex_home(tmp_path)
+    monkeypatch.setenv("CODEX_HOME", str(codex_home))
     _fake_command(monkeypatch, "import sys; sys.stdout.buffer.write(b'{\\\"ok\\\":true}')")
     result = AnalysisCodexRunner(config, process_factory=factory).execute(bundle, accepted_context)
 
@@ -202,9 +214,9 @@ def test_success_is_one_generation_in_private_workspace_and_cleans_it(tmp_path, 
     assert schema_exists is True
     assert schema_mode == 0o600
     assert kwargs["env"]["HOME"] == str(kwargs["cwd"])
-    assert kwargs["env"]["CODEX_HOME"] == "/trusted/codex-home"
+    assert kwargs["env"]["CODEX_HOME"] == str(codex_home)
     assert "CODEX_HOME" not in result.audit
-    assert "/trusted/codex-home" not in repr(result.audit)
+    assert str(codex_home) not in repr(result.audit)
     assert list(config.temp_root.iterdir()) == []
 
 
@@ -218,8 +230,7 @@ def test_stdin_contains_complete_verified_harness_and_context(tmp_path, monkeypa
         "sys.stdout.buffer.write(b'{}')"
     )
     _fake_command(monkeypatch, program)
-    monkeypatch.delenv("CODEX_HOME", raising=False)
-    monkeypatch.setenv("HOME", "/parent-home")
+    monkeypatch.setenv("CODEX_HOME", str(_codex_home(tmp_path)))
     result = AnalysisCodexRunner(config).execute(bundle, accepted_context)
     payload = received.read_bytes()
     assert b"trusted analysis harness" in payload
@@ -228,7 +239,7 @@ def test_stdin_contains_complete_verified_harness_and_context(tmp_path, monkeypa
     assert result.output_bytes == b"{}"
 
 
-def test_codex_home_falls_back_to_parent_home_without_audit_leak(tmp_path, monkeypatch, accepted_context):
+def test_codex_home_uses_effective_account_when_environment_is_absent(tmp_path, monkeypatch, accepted_context):
     config = _config(tmp_path)
     seen = []
     original = runner_module.subprocess.Popen
@@ -237,12 +248,52 @@ def test_codex_home_falls_back_to_parent_home_without_audit_leak(tmp_path, monke
         seen.append(kwargs["env"])
         return original(*args, **kwargs)
 
+    codex_home = _codex_home(tmp_path)
     monkeypatch.delenv("CODEX_HOME", raising=False)
-    monkeypatch.setenv("HOME", "/parent-home")
+    monkeypatch.delenv("HOME", raising=False)
+    monkeypatch.setattr(
+        runner_module.pwd,
+        "getpwuid",
+        lambda uid: SimpleNamespace(pw_dir=str(codex_home.parent)),
+    )
     _fake_command(monkeypatch, "import sys; sys.stdout.buffer.write(b'{}')")
     result = AnalysisCodexRunner(config, process_factory=factory).execute(_bundle(tmp_path), accepted_context)
-    assert seen[0]["CODEX_HOME"] == "/parent-home/.codex"
-    assert "/parent-home/.codex" not in repr(result.audit)
+    assert seen[0]["CODEX_HOME"] == str(codex_home)
+    assert str(codex_home) not in repr(result.audit)
+
+
+def test_codex_home_rejects_group_writable_configured_directory(tmp_path, monkeypatch):
+    codex_home = _codex_home(tmp_path)
+    codex_home.chmod(0o720)
+    monkeypatch.setenv("CODEX_HOME", str(codex_home))
+    with pytest.raises(AnalysisRunnerError, match="^analysis_runner_auth_home_unavailable$"):
+        _trusted_codex_home()
+
+
+def test_codex_home_rejects_directory_not_owned_by_service_user(tmp_path, monkeypatch):
+    codex_home = _codex_home(tmp_path)
+    different_uid = os.getuid() + 1
+    monkeypatch.setenv("CODEX_HOME", str(codex_home))
+    monkeypatch.setattr(runner_module.os, "getuid", lambda: different_uid)
+    with pytest.raises(AnalysisRunnerError, match="^analysis_runner_auth_home_unavailable$"):
+        _trusted_codex_home()
+
+
+def test_codex_home_rejects_symlinked_account_auth_directory(tmp_path, monkeypatch):
+    home = tmp_path / "operator-home"
+    home.mkdir(mode=0o700)
+    target = tmp_path / "auth-target"
+    target.mkdir(mode=0o700)
+    (home / ".codex").symlink_to(target, target_is_directory=True)
+    monkeypatch.delenv("CODEX_HOME", raising=False)
+    monkeypatch.delenv("HOME", raising=False)
+    monkeypatch.setattr(
+        runner_module.pwd,
+        "getpwuid",
+        lambda uid: SimpleNamespace(pw_dir=str(home)),
+    )
+    with pytest.raises(AnalysisRunnerError, match="^analysis_runner_auth_home_unavailable$"):
+        _trusted_codex_home()
 
 
 def test_nonzero_is_stable_and_never_exposes_stderr(tmp_path, monkeypatch, accepted_context):

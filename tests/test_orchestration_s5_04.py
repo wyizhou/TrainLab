@@ -45,8 +45,8 @@ def foundation_root(tmp_path: Path) -> Path:
     return root
 
 
-def manager(root: Path, clock: FakeClock, instance: str, pid: int, probe: FakeProbe | None = None, ttl: int = 10) -> LeaseManager:
-    return LeaseManager(root / "data.db", root / "state" / "locks" / f"{instance}.lock", instance, pid, clock, probe or FakeProbe(), ttl)
+def manager(root: Path, clock: FakeClock, instance: str, pid: int, probe: FakeProbe | None = None, ttl: int = 10, **kwargs) -> LeaseManager:
+    return LeaseManager(root / "data.db", root / "state" / "locks" / f"{instance}.lock", instance, pid, clock, probe or FakeProbe(), ttl, **kwargs)
 
 
 def lease_row(root: Path):
@@ -116,6 +116,70 @@ def test_s5_04_database_busy_rolls_back_and_never_claims(tmp_path: Path) -> None
     finally:
         blocker.rollback(); blocker.close()
     assert lease_row(root) is None
+
+
+def test_s5_04_heartbeat_retries_only_transient_sqlite_contention(tmp_path: Path) -> None:
+    root = foundation_root(tmp_path)
+    clock = FakeClock(datetime(2026, 7, 24, tzinfo=UTC))
+    blocker = sqlite3.connect(root / "data.db", timeout=0)
+    lease = manager(root, clock, "one", 1, heartbeat_retry_seconds=0.1)
+    assert lease.acquire().state == "active"
+    blocker.execute("BEGIN EXCLUSIVE")
+    elapsed = [0.0]
+
+    def monotonic() -> float:
+        return elapsed[0]
+
+    def release_after_first_backoff(delay: float) -> None:
+        elapsed[0] += delay
+        blocker.rollback()
+
+    lease._monotonic = monotonic
+    lease._sleep = release_after_first_backoff
+    try:
+        assert lease.heartbeat().state == "active"
+    finally:
+        blocker.close()
+
+
+def test_s5_04_heartbeat_busy_beyond_budget_still_fails_closed(tmp_path: Path) -> None:
+    root = foundation_root(tmp_path)
+    clock = FakeClock(datetime(2026, 7, 24, tzinfo=UTC))
+    blocker = sqlite3.connect(root / "data.db", timeout=0)
+    lease = manager(root, clock, "one", 1, heartbeat_retry_seconds=0.1)
+    assert lease.acquire().state == "active"
+    blocker.execute("BEGIN EXCLUSIVE")
+    elapsed = [0.0]
+    lease._monotonic = lambda: elapsed[0]
+    lease._sleep = lambda delay: elapsed.__setitem__(0, elapsed[0] + delay)
+    try:
+        with pytest.raises(LeaseError, match="database_unavailable"):
+            lease.heartbeat()
+    finally:
+        blocker.rollback()
+        blocker.close()
+
+
+def test_s5_04_heartbeat_does_not_retry_non_busy_sqlite_errors(tmp_path: Path) -> None:
+    root = foundation_root(tmp_path)
+    clock = FakeClock(datetime(2026, 7, 24, tzinfo=UTC))
+    lease = manager(root, clock, "one", 1, heartbeat_retry_seconds=0.1)
+    assert lease.acquire().state == "active"
+
+    class BrokenTransaction:
+        def __enter__(self):
+            raise sqlite3.OperationalError("disk I/O error")
+
+        def __exit__(self, *_args):
+            return False
+
+    retries: list[float] = []
+    lease._tx = lambda: BrokenTransaction()
+    lease._sleep = retries.append
+
+    with pytest.raises(LeaseError, match="database_unavailable"):
+        lease.heartbeat()
+    assert retries == []
 
 
 def test_s5_04_local_lock_is_only_evidence_and_unknown_not_deleted(tmp_path: Path) -> None:

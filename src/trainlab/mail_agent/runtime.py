@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import sqlite3
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Callable, Protocol
 from zoneinfo import ZoneInfo
@@ -36,6 +36,7 @@ from .stages import (
 )
 
 _LOCAL_TZ = ZoneInfo("Asia/Singapore")
+_FOUNDATION_RETRY_DELAY = timedelta(minutes=5)
 
 
 class MailEnvironmentFactory(Protocol):
@@ -66,6 +67,50 @@ def _receipt(request: MailRequest, code: str) -> MailReceipt:
         status="failed", counts=MailCounts(failed=1),
         errors=({"stage": "prepare", "code": code, "summary": "mail environment is not ready"},),
         started_at_utc=request.requested_at_utc, completed_at_utc=utc_now(),
+    )
+
+
+def _foundation_lock_busy_receipt(
+    request: MailRequest, *, observed_at_utc: str
+) -> MailReceipt:
+    requested = datetime.fromisoformat(
+        observed_at_utc.replace("Z", "+00:00")
+    )
+    retry_at = (requested + _FOUNDATION_RETRY_DELAY).isoformat().replace(
+        "+00:00", "Z"
+    )
+    run_key = (
+        request.run_key
+        if request.mode == "status" and request.run_key
+        else request.stable_run_key
+    )
+    return MailReceipt(
+        run_key=run_key,
+        invocation_id=request.invocation_id,
+        mode=request.mode,
+        status="lock_busy",
+        next_action="continue_poll",
+        next_retry_at_utc=retry_at,
+        warnings=(
+            {
+                "stage": "prepare",
+                "code": "foundation_lock_busy",
+                "summary": "foundation reader is temporarily busy",
+            },
+        ),
+        started_at_utc=request.requested_at_utc,
+        completed_at_utc=utc_now(),
+    )
+
+
+def _foundation_temporarily_busy(status: object) -> bool:
+    if getattr(status, "status", None) == "lock_busy":
+        return True
+    errors = getattr(status, "errors", ())
+    return any(
+        isinstance(item, dict)
+        and item.get("summary") == "sqlite_create_cleanup_blocker"
+        for item in errors
     )
 
 
@@ -121,6 +166,10 @@ class RuntimeMailApplicationService:
             status = FoundationTool(foundation).execute(
                 FoundationRequest("status", "mail-runtime-status", request.requested_at_utc)
             )
+            if _foundation_temporarily_busy(status):
+                return _foundation_lock_busy_receipt(
+                    request, observed_at_utc=self._dependencies.clock()
+                )
             if not status.ready:
                 return _receipt(request, "mail_foundation_not_ready")
             connection = sqlite3.connect(foundation.database_path)

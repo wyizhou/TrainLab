@@ -13,8 +13,19 @@ def result(receipt: dict, digest: str) -> DownstreamResult:
     return DownstreamResult("accepted", None, receipt, digest * 64, "b" * 64, 0)
 
 
-def mail_receipt(*, status: str = "succeeded", action: str = "none", pending: list | None = None) -> dict:
-    return {"status": status, "next_action": action, "pending_dependencies": pending or []}
+def mail_receipt(
+    *,
+    status: str = "succeeded",
+    action: str = "none",
+    pending: list | None = None,
+    next_retry_at_utc: str | None = None,
+) -> dict:
+    return {
+        "status": status,
+        "next_action": action,
+        "pending_dependencies": pending or [],
+        "next_retry_at_utc": next_retry_at_utc,
+    }
 
 
 @dataclass
@@ -55,6 +66,27 @@ def test_scheduler_fractional_second_invocation_is_preserved() -> None:
     )
     assert outcome.status == "succeeded"
     assert runner.calls[0].invocation_id == invocation
+
+
+def test_foundation_lock_busy_defers_mail_workflow_for_bounded_retry() -> None:
+    retry_at = "2026-07-27T00:05:00Z"
+    runner = Runner([
+        result(mail_receipt(
+            status="lock_busy",
+            action="continue_poll",
+            next_retry_at_utc=retry_at,
+        ), "1"),
+    ])
+    outcome = MailWorkflow(runner, Resolver()).execute(
+        subject_id=7,
+        invocation_id="mail-lock-busy",
+        max_items=10,
+        deadline_seconds=120,
+    )
+    assert outcome.status == "deferred"
+    assert outcome.next_action == "continue_poll"
+    assert outcome.next_retry_at_utc == retry_at
+    assert [call.mode for call in runner.calls] == ["run"]
 
 
 def test_exact_dependency_revises_once_then_resumes_original_message() -> None:

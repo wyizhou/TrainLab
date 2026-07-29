@@ -291,18 +291,35 @@ class OrchestrationTool:
     def _mail_receipt(self, request: WorkflowRequest, now: datetime, outcome: MailWorkflowOutcome) -> WorkflowReceipt:
         if outcome.status not in _WORKFLOW_STATUSES:
             raise OrchestrationApplicationError("orchestration_outcome_invalid")
+        if outcome.status == "deferred" and outcome.next_retry_at_utc is None:
+            raise OrchestrationApplicationError("orchestration_outcome_invalid")
         if len(outcome.calls) != len(outcome.receipt_sha256s) and outcome.status == "succeeded":
             raise OrchestrationApplicationError("orchestration_outcome_invalid")
         steps = tuple(
             WorkflowStepReceipt(
                 step_id=f"mail:{index}", layer=call.layer, mode=call.mode,
-                status="succeeded" if index < len(outcome.receipt_sha256s) else "pending",
+                status=(
+                    "deferred"
+                    if outcome.status == "deferred"
+                    and index == len(outcome.receipt_sha256s) - 1
+                    else "succeeded"
+                    if index < len(outcome.receipt_sha256s)
+                    else "pending"
+                ),
                 downstream_run_id=None, downstream_invocation_id=call.invocation_id,
                 receipt_sha256=outcome.receipt_sha256s[index] if index < len(outcome.receipt_sha256s) else None,
             ) for index, call in enumerate(outcome.calls)
         )
         errors = _safe_error(outcome.error_code) if outcome.error_code else ()
-        return self._base(request, now, status=outcome.status, steps=steps, next_action=outcome.next_action, errors=errors)
+        return self._base(
+            request,
+            now,
+            status=outcome.status,
+            steps=steps,
+            next_action=outcome.next_action,
+            next_retry=outcome.next_retry_at_utc,
+            errors=errors,
+        )
 
     def _health_receipt(self, request: WorkflowRequest, now: datetime, outcome: HealthWorkflowOutcome) -> WorkflowReceipt:
         if type(outcome) is not HealthWorkflowOutcome or outcome.status not in _WORKFLOW_STATUSES:

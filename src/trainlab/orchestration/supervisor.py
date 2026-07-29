@@ -78,13 +78,15 @@ class SupervisorRuntime:
         queue: Queue,
         config: object,
         *,
-        dispatch: Callable[[object], None],
+        dispatch: Callable[[object], object],
         watchdog: WatchdogNotifier | None = None,
         incident_notifier: Callable[[str], None] | None = None,
+        business_failure_handler: Callable[[object, object], str | None] | None = None,
     ) -> None:
         self._supervisor, self._queue, self._config = supervisor, queue, config
         self._dispatch, self._watchdog = dispatch, watchdog
         self._incident_notifier = incident_notifier
+        self._business_failure_handler = business_failure_handler
         self._stopped = False
         self._started = False
 
@@ -117,9 +119,12 @@ class SupervisorRuntime:
                 if outcome == "lease_lost":
                     self._notify("lease_lost")
                     return SupervisorReceipt("lease_lost", 1, 1)
-                if outcome == "failed":
+                if outcome == "dispatch_failed":
                     self._notify("error")
-                    return SupervisorReceipt("failed", 1, 1, "supervisor_keepalive_or_dispatch_failed")
+                    return SupervisorReceipt("failed", 1, 1, "supervisor_dispatch_failed")
+                if outcome == "keepalive_failed":
+                    self._notify("error")
+                    return SupervisorReceipt("failed", 1, 1, "supervisor_keepalive_failed")
                 self._notify("active")
                 return SupervisorReceipt("active", 1, 1)
             self._notify(str(getattr(tick, "status", "idle")))
@@ -137,7 +142,7 @@ class SupervisorRuntime:
         """
         interval = self._keepalive_interval()
         if interval is None:
-            return "failed"
+            return "keepalive_failed"
         stop = threading.Event()
         lease_lost = threading.Event()
         keepalive_failed = threading.Event()
@@ -159,7 +164,11 @@ class SupervisorRuntime:
         worker.start()
         dispatch_failed = False
         try:
-            self._dispatch(claim)
+            result = self._dispatch(claim)
+            if self._business_failure_handler is not None:
+                incident_key = self._business_failure_handler(claim, result)
+                if isinstance(incident_key, str):
+                    self._notify_incident_key(incident_key)
         except Exception:
             dispatch_failed = True
         finally:
@@ -169,8 +178,10 @@ class SupervisorRuntime:
             return "stopped"
         if lease_lost.is_set():
             return "lease_lost"
-        if keepalive_failed.is_set() or dispatch_failed:
-            return "failed"
+        if keepalive_failed.is_set():
+            return "keepalive_failed"
+        if dispatch_failed:
+            return "dispatch_failed"
         return "active"
 
     def _keepalive_interval(self) -> float | None:
@@ -228,9 +239,14 @@ class SupervisorRuntime:
             key = getattr(incident, "incident_key", None)
             if not isinstance(key, str):
                 continue
-            try:
-                self._incident_notifier(key)
-            except Exception:
-                # The queue already persisted the incident. Alert failure is
-                # reconciled later and must not break lease safety.
-                continue
+            self._notify_incident_key(key)
+
+    def _notify_incident_key(self, key: str) -> None:
+        if self._incident_notifier is None:
+            return
+        try:
+            self._incident_notifier(key)
+        except Exception:
+            # The incident is already durable. Alert failure is reconciled
+            # later and must not break lease safety.
+            return

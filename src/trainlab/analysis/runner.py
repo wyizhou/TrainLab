@@ -14,6 +14,7 @@ from hashlib import sha256
 import json
 import os
 from pathlib import Path
+import pwd
 import selectors
 import signal
 import stat
@@ -267,22 +268,52 @@ def _prompt(
     return b"".join(sections)
 
 
+def _secure_owned_directory(path: Path) -> Path:
+    """Return a current-user-owned, non-link directory without exposing it.
+
+    Authentication state is an operator-owned local boundary.  The analysis
+    child may receive only a directory that already exists, is owned by the
+    effective service user, is not writable by that user's group or others,
+    and contains no symlink indirection in its supplied path.
+    """
+
+    if not path.is_absolute():
+        raise AnalysisRunnerError("analysis_runner_auth_home_unavailable")
+    try:
+        resolved = path.resolve(strict=True)
+        metadata = path.stat()
+    except OSError as error:
+        raise AnalysisRunnerError("analysis_runner_auth_home_unavailable") from error
+    if (
+        resolved != path
+        or not stat.S_ISDIR(metadata.st_mode)
+        or metadata.st_uid != os.getuid()
+        or stat.S_IMODE(metadata.st_mode) & 0o022
+    ):
+        raise AnalysisRunnerError("analysis_runner_auth_home_unavailable")
+    return resolved
+
+
 def _trusted_codex_home() -> str:
-    """Use only the parent process' Codex auth location, never its config.
+    """Locate safe Codex auth state for the effective OS user.
 
     ``HOME`` is intentionally replaced with the isolated workspace below, so
     the CLI cannot discover user configuration or MCP servers.  Codex auth is
-    instead supplied through its dedicated home variable.  This path is never
+    instead supplied through its dedicated home variable.  LaunchAgents may
+    omit both ``HOME`` and ``CODEX_HOME``; in that case the account database,
+    rather than inherited environment, is authoritative.  This path is never
     included in result metadata or an exception.
     """
 
     configured = os.environ.get("CODEX_HOME")
     if configured:
-        return configured
-    parent_home = os.environ.get("HOME")
-    if not parent_home:
+        return str(_secure_owned_directory(Path(configured)))
+    try:
+        account_home = Path(pwd.getpwuid(os.getuid()).pw_dir)
+    except (KeyError, OSError, AttributeError) as error:
         raise AnalysisRunnerError("analysis_runner_auth_home_unavailable")
-    return str(Path(parent_home) / ".codex")
+    home = _secure_owned_directory(account_home)
+    return str(_secure_owned_directory(home / ".codex"))
 
 
 def _command(
