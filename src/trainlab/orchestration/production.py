@@ -177,6 +177,9 @@ class ProductionOrchestrationApplication:
                 runner, SqlitePlanRevisionResolver(foundation.database_path)
             ),
             health_check=health,
+            mail_deadline_seconds=min(
+                config.workflow_deadline_seconds, 900
+            ),
         )
 
     def run_workflow(

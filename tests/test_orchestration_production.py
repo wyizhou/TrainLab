@@ -68,6 +68,35 @@ def test_doctor_uses_loaded_configuration_for_alert_gate(
     assert ("alert_recipient" in result["checks"]) is alerts_enabled
 
 
+def test_mail_workflow_uses_configured_workflow_deadline(
+    tmp_path, monkeypatch
+) -> None:
+    captured = {}
+
+    def tool_factory(**kwargs):
+        captured.update(kwargs)
+        return SimpleNamespace()
+
+    monkeypatch.setattr(production, "project_root", lambda _root: tmp_path)
+    monkeypatch.setattr(production, "OrchestrationTool", tool_factory)
+    foundation = SimpleNamespace(
+        database_path=tmp_path / "data.db",
+        state_root=tmp_path / "state",
+        data_root=tmp_path,
+    )
+    config = SimpleNamespace(
+        operational_alerts_enabled=False,
+        workflow_deadline_seconds=3600,
+        log_root=tmp_path / "logs",
+    )
+
+    production.ProductionOrchestrationApplication(tmp_path)._tool(
+        foundation, config, object(), object()
+    )
+
+    assert captured["mail_deadline_seconds"] == 900
+
+
 @pytest.mark.parametrize(
     ("kind", "workflow_key", "expected_subject", "expected_invocation"),
     (
