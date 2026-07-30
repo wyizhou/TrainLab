@@ -44,4 +44,6 @@ config/rclone.conf
 config/trainlab.json
 config/orchestration.yaml
 credentials.json
+gmail-mcp.credentials.json
 token.json
+gcp-oauth.keys.json
