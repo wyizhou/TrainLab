@@ -48,14 +48,46 @@ python3 -m venv .venv
 .venv/bin/pytest
 ```
 
+仓库质量门使用 `requirements.lock` 中固定版本的 Ruff 与 mypy。当前采用增量静态
+检查，只覆盖新拆出的高类型完整度模块和质量脚本，避免把历史全仓格式化混入功能
+变更：
+
+```sh
+.venv/bin/python scripts/verify_repository_quality.py all
+.venv/bin/ruff check src/trainlab/foundation/readiness.py \
+  src/trainlab/orchestration/workflow_incidents.py \
+  src/trainlab/process_liveness.py \
+  scripts/verify_repository_quality.py tests/test_repository_quality.py
+.venv/bin/ruff format --check src/trainlab/foundation/readiness.py \
+  src/trainlab/orchestration/workflow_incidents.py \
+  src/trainlab/process_liveness.py \
+  scripts/verify_repository_quality.py tests/test_repository_quality.py
+.venv/bin/mypy src/trainlab/foundation/readiness.py \
+  src/trainlab/orchestration/workflow_incidents.py \
+  src/trainlab/process_liveness.py \
+  scripts/verify_repository_quality.py
+```
+
+质量脚本离线校验冻结契约哈希、本地 Markdown 链接和三组设计稿/运行时邮件模板
+字节同步。GitHub Actions 在 Linux 运行质量门和除 macOS 专属文件外的完整测试，
+在 macOS 单独运行 `plutil`/LaunchAgent 静态验收；配置见
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml)。
+
 常用的一次性检查：
 
 ```sh
 .venv/bin/trainlab foundation status
+.venv/bin/trainlab foundation verify
 .venv/bin/trainlab garmin status
 .venv/bin/trainlab supervisor doctor
 .venv/bin/trainlab orchestrate status --json
 ```
+
+`foundation status` 是日常快速就绪检查，只读取发布后的 ready marker、受支持
+Schema 版本以及固定路径/权限摘要，不打开 SQLite。`foundation verify` 才执行完整
+Schema、迁移收据、SQLite integrity 和外键检查，因此可能扫描整个数据库，适合显式
+维护或验收，不应放进每分钟调用路径。Supervisor 每次健康周期只做轻量 SQLite
+readiness；完整 SQLite 深检只在首次或距离上次至少 24 小时时运行。
 
 首次使用 Garmin：
 
@@ -84,6 +116,7 @@ Gmail 必须使用当前 Codex 环境中名为 `gmail` 的 MCP 服务，支持�
 .venv/bin/trainlab orchestrate run morning --date YYYY-MM-DD
 .venv/bin/trainlab orchestrate run weekly --as-of YYYY-MM-DD
 .venv/bin/trainlab orchestrate run mail
+.venv/bin/trainlab orchestrate retry WORKFLOW_RUN_ID
 ```
 
 新五层架构的唯一常驻入口为：
@@ -92,13 +125,35 @@ Gmail 必须使用当前 Codex 环境中名为 `gmail` 的 MCP 服务，支持�
 .venv/bin/trainlab supervisor run
 ```
 
-Linux 部署使用
+开发机或 SSH 容器中可用一个脱离终端的本地进程进行短期观察；这不是服务器服务管理器，
+不会自动重启：
+
+```sh
+install -d -m 700 logs
+install -m 600 /dev/null logs/supervisor.local.out.log
+install -m 600 /dev/null logs/supervisor.local.err.log
+nohup .venv/bin/trainlab supervisor run \
+  >>logs/supervisor.local.out.log \
+  2>>logs/supervisor.local.err.log </dev/null &
+```
+
+启动前必须确认没有第二个 Supervisor；启动后只验证一次唯一进程、唯一 lease 和
+`orchestrate status`，不要并行启动旧 scheduler。长期 Linux 服务器部署使用
 [`deploy/systemd/trainlab-orchestrator-supervisor.service.template`](deploy/systemd/trainlab-orchestrator-supervisor.service.template)，
 步骤见 [`docs/runbooks/orchestration-deployment.md`](docs/runbooks/orchestration-deployment.md)。
+macOS 本机使用当前的单 Supervisor LaunchAgent，步骤见
+[`docs/runbooks/macos-local-supervisor.md`](docs/runbooks/macos-local-supervisor.md)。
 
-仓库只保留当前五层工具与唯一的 Supervisor systemd 模板。旧 Google Drive、
-scheduler、watchdog、launchd 和多服务 systemd 实现已经退役；历史数据并不会
-因此被删除。
+仓库只保留当前五层工具以及单 Supervisor 的 systemd/launchd 部署资产。旧 Google
+Drive、旧 scheduler/watchdog、下层独立 launchd 和多服务 systemd 实现已经退役；
+历史数据并不会因此被删除。
+
+workflow 执行失败会生成去重 incident。mail/health-check 的后续成功轮询会关闭严格
+匹配的更早失败。morning/weekly 的终态失败不会被定时器自动重做；操作员通过已审计
+的 `orchestrate retry` 显式重试时，系统保留原失败 run，并创建一个带父 run 引用的
+新 manual run。只有这个新 run 成功后，才关闭同一 subject、同一逻辑日期且仍为
+`open` 的旧 workflow 失败。已确认、已抑制、安全/数据质量或其他人工保留事件不会
+自动关闭；恢复告警使用独立幂等记录。
 
 ## 文档入口
 

@@ -96,6 +96,22 @@ def test_fnd11_first_init_and_ready_init_are_identity_preserving_full_tree_noop(
     assert tree_evidence(root) == before
 
 
+def test_fnd11_status_never_opens_the_database(
+    tmp_path: Path,
+) -> None:
+    root=tmp_path / "fast-ready"; tool=FoundationTool(config(root))
+    assert tool.execute(request("init")).status == "initialized"
+    before=tree_evidence(root)
+
+    def forbidden_connect(*args, **kwargs):
+        raise AssertionError("status and ready init must not open SQLite")
+
+    tool._connect=forbidden_connect  # type: ignore[method-assign]
+    status=tool.execute(request("status", "fast-status"))
+    assert (status.status,status.ready,status.verified_count) == ("ready",True,1)
+    assert tree_evidence(root) == before
+
+
 @pytest.mark.parametrize(("mode","expected"), [("status","ready"),("verify","ready"),("init","already_initialized")])
 def test_fnd11_ready_modes_preserve_live_wal_sidecars_and_mtimes(
     tmp_path: Path, mode: str, expected: str
@@ -141,10 +157,13 @@ def test_fnd11_ready_filesystem_anomaly_is_rejected_without_repair(
     assert not (root / "state" / "locks" / "foundation.lock").exists()
 
 
-@pytest.mark.parametrize("mode", ["status","verify","init"])
+@pytest.mark.parametrize(
+    ("mode","expected"),
+    [("status","ready"),("verify","incompatible"),("init","incompatible")],
+)
 @pytest.mark.parametrize("mutation", ["implementation","initialized_timestamp","updated_timestamp","foreign_key"])
-def test_fnd11_complete_ready_compatibility_checks_are_read_only(
-    tmp_path: Path, mode: str, mutation: str
+def test_fnd11_deep_compatibility_checks_are_explicit_and_read_only(
+    tmp_path: Path, mode: str, expected: str, mutation: str
 ) -> None:
     root=tmp_path / f"{mode}-{mutation}"; tool=FoundationTool(config(root))
     assert tool.execute(request("init")).status == "initialized"
@@ -160,7 +179,11 @@ def test_fnd11_complete_ready_compatibility_checks_are_read_only(
     conn.commit(); conn.close()
     before=tree_evidence(root)
     receipt=tool.execute(request(mode))
-    assert receipt.status == "incompatible" and receipt.next_action == "operator_review" and not receipt.ready
+    assert receipt.status == expected
+    assert receipt.ready is (expected in {"ready","already_initialized"})
+    assert receipt.next_action == (
+        "operator_review" if expected == "incompatible" else "none"
+    )
     assert tree_evidence(root) == before
 
 

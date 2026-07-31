@@ -40,6 +40,12 @@ class ReceiptStore(Protocol):
     ) -> None: ...
 
 
+class OperatorRetryAuthorizer(Protocol):
+    """Read-only proof that a manual child is an allowed operator retry."""
+
+    def permits_operator_retry(self, request: WorkflowRequest) -> bool: ...
+
+
 class AnalysisWorkflowExecutor(Protocol):
     def execute(self, request: AnalysisWorkflowRequest) -> AnalysisWorkflowResult: ...
 
@@ -132,6 +138,7 @@ class OrchestrationTool:
         clock: callable,
         subject_authorizer: SubjectAuthorizer | None,
         receipt_store: ReceiptStore | None,
+        operator_retry_authorizer: OperatorRetryAuthorizer | None = None,
         morning: AnalysisWorkflowExecutor | None = None,
         weekly: AnalysisWorkflowExecutor | None = None,
         mail: MailWorkflowExecutor | None = None,
@@ -146,6 +153,7 @@ class OrchestrationTool:
         self._clock = clock
         self._subjects = subject_authorizer
         self._store = receipt_store
+        self._retry_authorizer = operator_retry_authorizer
         self._morning, self._weekly = morning, weekly
         self._mail, self._health = mail, health_check
         self._mail_max_items, self._mail_deadline_seconds = mail_max_items, mail_deadline_seconds
@@ -210,7 +218,24 @@ class OrchestrationTool:
                 raise OrchestrationApplicationError("orchestration_request_invalid")
         else:
             logical = _date(request.logical_local_date)
-            if requested.astimezone(_SINGAPORE).date() != logical:
+            is_operator_retry = (
+                request.trigger_kind == "manual"
+                and request.parent_workflow_run_id is not None
+                and self._retry_authorizer is not None
+                and self._retry_authorizer.permits_operator_retry(request)
+            )
+            if (
+                request.trigger_kind == "manual"
+                and request.parent_workflow_run_id is not None
+                and not is_operator_retry
+            ):
+                raise OrchestrationApplicationError(
+                    "orchestration_request_invalid"
+                )
+            if (
+                requested.astimezone(_SINGAPORE).date() != logical
+                and not is_operator_retry
+            ):
                 raise OrchestrationApplicationError("orchestration_request_invalid")
             if request.workflow_kind == "weekly" and logical.weekday() != 6:
                 raise OrchestrationApplicationError("orchestration_request_invalid")

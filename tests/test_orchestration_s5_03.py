@@ -52,6 +52,8 @@ def test_workflow_step_uniqueness_recovery_and_status_guards(tmp_path: Path) -> 
     repo, _ = repository(tmp_path)
     first = workflow(repo)
     assert repo.get_workflow(first.workflow_key) == first and repo.recent_workflows() == (first,)
+    assert repo.get_workflow_by_id(first.id) == first
+    assert repo.get_workflow_by_id(first.id + 1000) is None
     with pytest.raises(OrchestrationRepositoryError, match="workflow_key_conflict"):
         workflow(repo)
     step = repo.create_step(workflow_key=first.workflow_key, step_key="garmin_incremental", ordinal=0, layer_no=2, tool_mode="incremental", request_sha256=HASH, invocation_id="invoke-1", downstream_run_id="garmin-run-1")
@@ -112,6 +114,305 @@ def test_incident_dedup_state_lifecycle_alert_fk_and_read_only_recovery(tmp_path
         repo.transition_alert_delivery(alert.idempotency_key, "pending")
     with pytest.raises(OrchestrationRepositoryError, match="not_found"):
         repo.create_alert_delivery(incident_key="not-found", idempotency_key="ops:nope")
+
+
+def test_success_resolves_only_earlier_open_mail_failures_for_same_subject(
+    tmp_path: Path,
+) -> None:
+    repo, db_path = repository(tmp_path)
+    with sqlite3.connect(db_path) as connection:
+        connection.executemany(
+            "INSERT INTO data_subjects"
+            "(subject_key,timezone,is_active,created_at_utc) "
+            "VALUES(?,?,1,?)",
+            (
+                ("subject-one", "Asia/Singapore", "2026-07-23T00:00:00Z"),
+                ("subject-two", "Asia/Singapore", "2026-07-23T00:00:00Z"),
+            ),
+        )
+        connection.commit()
+        subject_one, subject_two = (
+            row[0]
+            for row in connection.execute(
+                "SELECT id FROM data_subjects ORDER BY id"
+            ).fetchall()
+        )
+
+    def completed(key: str, subject_id: int, status: str, second: int):
+        run = repo.create_workflow(
+            workflow_key=key,
+            workflow_kind="mail",
+            trigger_kind="scheduled",
+            subject_id=subject_id,
+            started_at_utc=NOW + timedelta(seconds=second),
+        )
+        return repo.transition_workflow(
+            run.workflow_key,
+            status,
+            at_utc=NOW + timedelta(seconds=second + 1),
+        )
+
+    matching = completed("mail:failed:matching", subject_one, "failed", 1)
+    other_subject = completed(
+        "mail:failed:other-subject", subject_two, "failed", 3
+    )
+    acknowledged = completed(
+        "mail:failed:acknowledged", subject_one, "failed", 5
+    )
+    safety = completed("mail:failed:safety", subject_one, "failed", 7)
+    wrong_code = completed("mail:failed:wrong-code", subject_one, "failed", 9)
+    for run, incident_key, category, error_code in (
+        (
+            matching,
+            "workflow:failed:mail:matching",
+            "workflow",
+            "workflow_execution_failed",
+        ),
+        (
+            other_subject,
+            "workflow:failed:mail:other-subject",
+            "workflow",
+            "workflow_execution_failed",
+        ),
+        (
+            acknowledged,
+            "workflow:failed:mail:acknowledged",
+            "workflow",
+            "workflow_execution_failed",
+        ),
+        (
+            safety,
+            "safety:mail:matching",
+            "safety",
+            "workflow_execution_failed",
+        ),
+        (
+            wrong_code,
+            "workflow:failed:mail:wrong-code",
+            "workflow",
+            "provider_unavailable",
+        ),
+    ):
+        repo.record_incident(
+            incident_key=incident_key,
+            category=category,
+            severity="error",
+            seen_at_utc=NOW + timedelta(seconds=11),
+            error_code=error_code,
+            next_action="operator_review",
+            related_workflow_run_id=run.id,
+        )
+    repo.transition_incident(
+        "workflow:failed:mail:acknowledged",
+        "acknowledged",
+        at_utc=NOW + timedelta(seconds=12),
+    )
+    success = completed("mail:succeeded:current", subject_one, "succeeded", 13)
+    future = completed("mail:failed:future", subject_one, "failed", 15)
+    repo.record_incident(
+        incident_key="workflow:failed:mail:future",
+        category="workflow",
+        severity="error",
+        seen_at_utc=NOW + timedelta(seconds=17),
+        error_code="workflow_execution_failed",
+        related_workflow_run_id=future.id,
+    )
+
+    recovered = repo.resolve_retryable_workflow_failures(
+        success.workflow_key, at_utc=NOW + timedelta(seconds=18)
+    )
+
+    assert tuple(item.incident_key for item in recovered) == (
+        "workflow:failed:mail:matching",
+    )
+    assert repo.get_incident("workflow:failed:mail:matching").state == "resolved"
+    for key in (
+        "workflow:failed:mail:other-subject",
+        "workflow:failed:mail:acknowledged",
+        "safety:mail:matching",
+        "workflow:failed:mail:wrong-code",
+        "workflow:failed:mail:future",
+    ):
+        assert repo.get_incident(key).state != "resolved"
+
+
+@pytest.mark.parametrize("workflow_kind", ("morning", "weekly"))
+def test_analysis_success_recovery_is_scoped_to_subject_and_logical_date(
+    tmp_path: Path, workflow_kind: str
+) -> None:
+    repo, db_path = repository(tmp_path)
+    with sqlite3.connect(db_path) as connection:
+        connection.executemany(
+            "INSERT INTO data_subjects"
+            "(subject_key,timezone,is_active,created_at_utc) "
+            "VALUES(?,?,1,?)",
+            (
+                ("subject-one", "Asia/Singapore", "2026-07-23T00:00:00Z"),
+                ("subject-two", "Asia/Singapore", "2026-07-23T00:00:00Z"),
+            ),
+        )
+        connection.commit()
+        subject_one, subject_two = (
+            row[0]
+            for row in connection.execute(
+                "SELECT id FROM data_subjects ORDER BY id"
+            ).fetchall()
+        )
+
+    def completed(
+        suffix: str, subject_id: int, logical_date: str, status: str, second: int
+    ):
+        run = repo.create_workflow(
+            workflow_key=f"{workflow_kind}:{suffix}",
+            workflow_kind=workflow_kind,
+            trigger_kind="manual",
+            subject_id=subject_id,
+            logical_local_date=logical_date,
+            started_at_utc=NOW + timedelta(seconds=second),
+        )
+        return repo.transition_workflow(
+            run.workflow_key,
+            status,
+            at_utc=NOW + timedelta(seconds=second + 1),
+        )
+
+    matching = completed(
+        "failed-matching", subject_one, "2026-07-23", "failed", 1
+    )
+    other_date = completed(
+        "failed-other-date", subject_one, "2026-07-24", "failed", 3
+    )
+    other_subject = completed(
+        "failed-other-subject", subject_two, "2026-07-23", "failed", 5
+    )
+    for suffix, run in (
+        ("matching", matching),
+        ("other-date", other_date),
+        ("other-subject", other_subject),
+    ):
+        repo.record_incident(
+            incident_key=f"workflow:failed:{workflow_kind}:{suffix}",
+            category="workflow",
+            severity="error",
+            seen_at_utc=NOW + timedelta(seconds=7),
+            error_code="workflow_execution_failed",
+            related_workflow_run_id=run.id,
+        )
+    success = completed(
+        "succeeded-current", subject_one, "2026-07-23", "succeeded", 9
+    )
+
+    recovered = repo.resolve_retryable_workflow_failures(
+        success.workflow_key, at_utc=NOW + timedelta(seconds=11)
+    )
+
+    assert tuple(item.incident_key for item in recovered) == (
+        f"workflow:failed:{workflow_kind}:matching",
+    )
+    assert repo.get_incident(
+        f"workflow:failed:{workflow_kind}:other-date"
+    ).state == "open"
+    assert repo.get_incident(
+        f"workflow:failed:{workflow_kind}:other-subject"
+    ).state == "open"
+
+
+def test_health_success_resolves_only_open_workflow_execution_failures(
+    tmp_path: Path,
+) -> None:
+    repo, _ = repository(tmp_path)
+    failed = repo.create_workflow(
+        workflow_key="health:failed",
+        workflow_kind="health_check",
+        trigger_kind="scheduled",
+        started_at_utc=NOW,
+    )
+    failed = repo.transition_workflow(
+        failed.workflow_key, "failed", at_utc=NOW + timedelta(seconds=1)
+    )
+    repo.record_incident(
+        incident_key="workflow:failed:health:one",
+        category="workflow",
+        severity="error",
+        seen_at_utc=NOW + timedelta(seconds=2),
+        error_code="workflow_execution_failed",
+        related_workflow_run_id=failed.id,
+    )
+    repo.record_incident(
+        incident_key="health:sqlite:warning",
+        category="health",
+        severity="warning",
+        seen_at_utc=NOW + timedelta(seconds=2),
+        error_code="sqlite_unready",
+        related_workflow_run_id=failed.id,
+    )
+    success = repo.create_workflow(
+        workflow_key="health:succeeded",
+        workflow_kind="health_check",
+        trigger_kind="scheduled",
+        started_at_utc=NOW + timedelta(seconds=3),
+    )
+    success = repo.transition_workflow(
+        success.workflow_key,
+        "succeeded",
+        at_utc=NOW + timedelta(seconds=4),
+    )
+
+    recovered = repo.resolve_retryable_workflow_failures(
+        success.workflow_key, at_utc=NOW + timedelta(seconds=5)
+    )
+
+    assert tuple(item.incident_key for item in recovered) == (
+        "workflow:failed:health:one",
+    )
+    assert repo.get_incident("health:sqlite:warning").state == "open"
+
+
+def test_workflow_recovery_pages_through_more_than_two_hundred_incidents(
+    tmp_path: Path,
+) -> None:
+    repo, db_path = repository(tmp_path)
+    failed = repo.create_workflow(
+        workflow_key="health:failed:batch",
+        workflow_kind="health_check",
+        trigger_kind="scheduled",
+        started_at_utc=NOW,
+    )
+    failed = repo.transition_workflow(
+        failed.workflow_key, "failed", at_utc=NOW + timedelta(seconds=1)
+    )
+    seen = "2026-07-23T00:00:02Z"
+    with sqlite3.connect(db_path) as connection:
+        connection.executemany(
+            "INSERT INTO operational_incidents "
+            "(incident_key,category,severity,state,related_workflow_run_id,"
+            "first_seen_at_utc,last_seen_at_utc,occurrence_count,error_code,"
+            "next_action) VALUES(?, 'workflow', 'error', 'open', ?, ?, ?, 1, "
+            "'workflow_execution_failed', 'retry')",
+            (
+                (f"workflow:failed:health:batch:{index}", failed.id, seen, seen)
+                for index in range(205)
+            ),
+        )
+        connection.commit()
+    success = repo.create_workflow(
+        workflow_key="health:succeeded:batch",
+        workflow_kind="health_check",
+        trigger_kind="scheduled",
+        started_at_utc=NOW + timedelta(seconds=3),
+    )
+    success = repo.transition_workflow(
+        success.workflow_key,
+        "succeeded",
+        at_utc=NOW + timedelta(seconds=4),
+    )
+
+    recovered = repo.resolve_retryable_workflow_failures(
+        success.workflow_key, at_utc=NOW + timedelta(seconds=5)
+    )
+
+    assert len(recovered) == 205
+    assert all(item.state == "resolved" for item in recovered)
 
 
 def test_short_transactions_rollback_and_other_layer_tables_remain_unchanged(tmp_path: Path) -> None:

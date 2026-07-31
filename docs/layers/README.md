@@ -45,6 +45,7 @@ Todo 和临时基线报告由 Git 历史保存，不再作为当前文档维护�
 - [分析受控验收](../runbooks/analysis-controlled-acceptance.md)
 - [邮件迁移](../runbooks/mail-agent-migration.md)
 - [真实 Gmail 验收证据](evidence/mail/M4-15-real-gmail-acceptance-2026-07-27.md)
-- [第五层本机验收证据](evidence/orchestration/S5-local-acceptance-2026-07-27.md)
+- [第五层本机 No-Go 历史证据](evidence/orchestration/S5-local-acceptance-2026-07-27.md)
+- [第五层当前本机部署基线](evidence/orchestration/S5-local-deployment-baseline-2026-07-31.md)
 - [Supervisor 受控验收](../runbooks/orchestration-controlled-acceptance.md)
 - [Supervisor 部署](../runbooks/orchestration-deployment.md)

@@ -6,7 +6,11 @@ import threading
 
 from trainlab.orchestration.cli import _supervisor_exit_code, add_root_subparsers, dispatch, execute
 from trainlab.orchestration.operations import OperatorOperations, RedactingAuditLogger
-from trainlab.orchestration.supervisor import SupervisorRuntime, SystemdNotifier
+from trainlab.orchestration.supervisor import (
+    BusinessIncidentEvents,
+    SupervisorRuntime,
+    SystemdNotifier,
+)
 
 
 class App:
@@ -239,6 +243,29 @@ def test_completed_business_failure_is_recorded_and_does_not_stop_supervisor() -
     assert result.status == "idle" and result.cycles == 2 and result.dispatched == 1
     assert observed == [("one", {"status": "failed"})]
     assert incidents == ["workflow:failed:morning:fixed"]
+
+
+def test_business_incident_open_and_recovery_notifications_are_routed_separately() -> None:
+    opened: list[str] = []
+    recovered: list[str] = []
+    runtime = SupervisorRuntime(
+        Lease(),
+        SingleClaimQueue(),
+        RuntimeConfig(),
+        dispatch=lambda _claim: {"status": "succeeded"},
+        business_failure_handler=lambda _claim, _outcome: BusinessIncidentEvents(
+            opened=("workflow:failed:mail:one",),
+            recovered=("workflow:failed:mail:older",),
+        ),
+        incident_notifier=opened.append,
+        incident_recovery_notifier=recovered.append,
+    )
+
+    result = runtime.run_once()
+
+    assert result.status == "active"
+    assert opened == ["workflow:failed:mail:one"]
+    assert recovered == ["workflow:failed:mail:older"]
 
 
 def test_business_failure_persistence_error_remains_a_supervisor_failure() -> None:

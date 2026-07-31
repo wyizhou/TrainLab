@@ -295,7 +295,28 @@ def _read_private_lock_at(parent_fd: int, name: str) -> tuple[dict[str, object],
     finally: os.close(fd)
     try: after = os.stat(name, dir_fd=parent_fd, follow_symlinks=False)
     except OSError as error: raise AnalysisRunStateError("analysis_lock_busy") from error
-    if (before.st_dev,before.st_ino)!=(opened.st_dev,opened.st_ino) or (after.st_dev,after.st_ino)!=(opened.st_dev,opened.st_ino) or opened.st_uid != os.getuid() or stat.S_IMODE(opened.st_mode)!=0o600: raise AnalysisRunStateError("analysis_lock_busy")
+    before_identity = (
+        before.st_dev,
+        before.st_ino,
+        before.st_size,
+        before.st_mtime_ns,
+        before.st_ctime_ns,
+    )
+    opened_identity = (
+        opened.st_dev,
+        opened.st_ino,
+        opened.st_size,
+        opened.st_mtime_ns,
+        opened.st_ctime_ns,
+    )
+    after_identity = (
+        after.st_dev,
+        after.st_ino,
+        after.st_size,
+        after.st_mtime_ns,
+        after.st_ctime_ns,
+    )
+    if before_identity != opened_identity or after_identity != opened_identity or opened.st_uid != os.getuid() or stat.S_IMODE(opened.st_mode)!=0o600: raise AnalysisRunStateError("analysis_lock_busy")
     try: payload=json.loads(raw.decode("utf-8"))
     except (UnicodeDecodeError,json.JSONDecodeError) as error: raise AnalysisRunStateError("analysis_lock_busy") from error
     if not isinstance(payload,dict) or set(payload) != _LOCK_KEYS or not isinstance(payload.get("pid"),int) or payload["pid"] <= 0 or not isinstance(payload.get("run_key"),str) or not _valid_utc(payload.get("started_at_utc")):
@@ -345,11 +366,29 @@ def _claim_private_lock_at(
     if not canonical or "/" in canonical or not re.fullmatch(r"[A-Za-z0-9_-]+", purpose):
         raise AnalysisRunStateError("analysis_lock_busy")
     claim = f".{canonical}.{purpose}.{secrets.token_hex(16)}.claim"
+    source_fd = -1
     try:
+        source_fd = os.open(
+            canonical,
+            os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0),
+            dir_fd=parent_fd,
+        )
+        held = os.fstat(source_fd)
+        if (
+            not stat.S_ISREG(held.st_mode)
+            or held.st_uid != os.getuid()
+            or stat.S_IMODE(held.st_mode) != 0o600
+            or (held.st_dev, held.st_ino)
+            != (expected_info.st_dev, expected_info.st_ino)
+        ):
+            raise AnalysisRunStateError("analysis_lock_busy")
         os.rename(canonical, claim, src_dir_fd=parent_fd, dst_dir_fd=parent_fd)
         os.fsync(parent_fd)
-    except OSError as error:
+    except (OSError, AnalysisRunStateError) as error:
         raise AnalysisRunStateError("analysis_lock_busy") from error
+    finally:
+        if source_fd >= 0:
+            os.close(source_fd)
     try:
         payload, claimed = _read_private_lock_at(parent_fd, claim)
     except (FileNotFoundError, AnalysisRunStateError) as error:
@@ -383,6 +422,8 @@ def _claim_private_lock_at(
     if (
         payload != expected_payload
         or (claimed.st_dev, claimed.st_ino) != (expected_info.st_dev, expected_info.st_ino)
+        or claimed.st_size != expected_info.st_size
+        or claimed.st_mtime_ns != expected_info.st_mtime_ns
     ):
         # Restore the visible canonical name only with a create-only hardlink;
         # the retained claim is also a durable blocker for any later acquire.

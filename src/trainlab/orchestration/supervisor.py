@@ -69,6 +69,14 @@ class SupervisorReceipt:
         return {"schema_version": "1", "status": self.status, "cycles": self.cycles, "dispatched": self.dispatched, "error_code": self.error_code}
 
 
+@dataclass(frozen=True, slots=True)
+class BusinessIncidentEvents:
+    """Durable incident changes emitted by one completed business workflow."""
+
+    opened: tuple[str, ...] = ()
+    recovered: tuple[str, ...] = ()
+
+
 class SupervisorRuntime:
     """Cooperatively driven Supervisor with no hidden background lifecycle."""
 
@@ -81,11 +89,15 @@ class SupervisorRuntime:
         dispatch: Callable[[object], object],
         watchdog: WatchdogNotifier | None = None,
         incident_notifier: Callable[[str], None] | None = None,
-        business_failure_handler: Callable[[object, object], str | None] | None = None,
+        incident_recovery_notifier: Callable[[str], None] | None = None,
+        business_failure_handler: Callable[
+            [object, object], str | BusinessIncidentEvents | None
+        ] | None = None,
     ) -> None:
         self._supervisor, self._queue, self._config = supervisor, queue, config
         self._dispatch, self._watchdog = dispatch, watchdog
         self._incident_notifier = incident_notifier
+        self._incident_recovery_notifier = incident_recovery_notifier
         self._business_failure_handler = business_failure_handler
         self._stopped = False
         self._started = False
@@ -166,9 +178,14 @@ class SupervisorRuntime:
         try:
             result = self._dispatch(claim)
             if self._business_failure_handler is not None:
-                incident_key = self._business_failure_handler(claim, result)
-                if isinstance(incident_key, str):
-                    self._notify_incident_key(incident_key)
+                events = self._business_failure_handler(claim, result)
+                if isinstance(events, str):
+                    self._notify_incident_key(events)
+                elif isinstance(events, BusinessIncidentEvents):
+                    for key in events.opened:
+                        self._notify_incident_key(key)
+                    for key in events.recovered:
+                        self._notify_recovery_key(key)
         except Exception:
             dispatch_failed = True
         finally:
@@ -249,4 +266,14 @@ class SupervisorRuntime:
         except Exception:
             # The incident is already durable. Alert failure is reconciled
             # later and must not break lease safety.
+            return
+
+    def _notify_recovery_key(self, key: str) -> None:
+        if self._incident_recovery_notifier is None:
+            return
+        try:
+            self._incident_recovery_notifier(key)
+        except Exception:
+            # Recovery is already durable and the alert has its own
+            # idempotency key, so notification failure cannot undo it.
             return

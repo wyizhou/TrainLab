@@ -7,6 +7,7 @@ import pytest
 from trainlab.foundation import FoundationConfig, FoundationRequest, FoundationTool
 from trainlab.mail_agent.context import MailContextBuilder
 from trainlab.mail_agent.runner import AcceptedRecord, MailCodexRunner, MailHarnessResolver, MailResultValidator, MailRunnerError, MailRejection, MemoryAcceptedStore, _FileIdentity, _safe_output_read, _secure_write
+from trainlab.process_liveness import process_is_running
 
 NOW='2026-07-24T00:00:00Z'
 def fixture(tmp_path:Path):
@@ -277,7 +278,7 @@ wait
  assert time.monotonic()-started<5 and pidfile.exists()
  for raw_pid in pidfile.read_text().split():
   pid=int(raw_pid)
-  with pytest.raises(ProcessLookupError):os.kill(pid,0)
+  assert not process_is_running(pid)
 
 @pytest.mark.parametrize('body,code',[
  ("while IFS= read -r line; do :; done; exit 7\n",'nonzero'),
@@ -298,7 +299,7 @@ def test_cleanup_failure_precedes_concurrent_capture_overflow(tmp_path:Path,monk
  monkeypatch.setattr(runner,'_terminate_group',fail_cleanup)
  with pytest.raises(MailRunnerError,match='cleanup_failed'):runner.generate(value,invocation_id='i')
  assert pidfile.exists()
- with pytest.raises(ProcessLookupError):os.kill(int(pidfile.read_text()),0)
+ assert not process_is_running(int(pidfile.read_text()))
  assert not any(thread.name.startswith('trainlab-mail-capture-') for thread in threading.enumerate())
 
 def test_capture_reader_exception_is_explicit_and_cleans_process(tmp_path:Path,monkeypatch:pytest.MonkeyPatch):
@@ -312,7 +313,7 @@ def test_capture_reader_exception_is_explicit_and_cleans_process(tmp_path:Path,m
  monkeypatch.setattr(runner,'_capture_read',fail_read)
  with pytest.raises(MailRunnerError,match='capture_read_failed'):runner.generate(value,invocation_id='i')
  assert pids
- with pytest.raises(ProcessLookupError):os.kill(pids[0],0)
+ assert not process_is_running(pids[0])
  assert runner.rejections[-1].code=='mail_codex_capture_read_failed' and 'private' not in str(runner.rejections[-1])
  assert not any(thread.name.startswith('trainlab-mail-capture-') for thread in threading.enumerate())
 
@@ -349,7 +350,7 @@ exit 0
  auth=make_auth(tmp_path/'auth-source.json')
  MailCodexRunner(executable=executable,auth_source=auth,timeout_seconds=3).generate(value,invocation_id='i')
  child=int(pidfile.read_text())
- with pytest.raises(ProcessLookupError):os.kill(child,0)
+ assert not process_is_running(child)
 
 @pytest.mark.parametrize('kind',('symlink','hardlink','mode'))
 def test_executable_identity_rejections(tmp_path:Path,kind:str):

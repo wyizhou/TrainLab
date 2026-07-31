@@ -10,7 +10,8 @@
 - [Garmin 采集](runbooks/garmin-collection.md)
 - [Gmail 生产配置](runbooks/gmail-production.md)
 - [邮件 Agent 迁移与回滚](runbooks/mail-agent-migration.md)
-- [Supervisor 部署](runbooks/orchestration-deployment.md)
+- [Linux Supervisor systemd 部署](runbooks/orchestration-deployment.md)
+- [macOS 本机单 Supervisor 部署](runbooks/macos-local-supervisor.md)
 - [Supervisor 受控验收](runbooks/orchestration-controlled-acceptance.md)
 
 ## 冻结契约与验收证据

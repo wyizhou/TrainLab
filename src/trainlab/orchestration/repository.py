@@ -418,6 +418,34 @@ class OrchestrationRepository:
         with self._transaction() as conn:
             return int(conn.execute("INSERT INTO service_health_checks (check_kind,target_kind,target_id,status,metrics_json,threshold_version,checked_at_utc) VALUES (?,?,?,?,?,?,?)", (check_kind, target_kind, target_id, status, summary, threshold_version, _utc_text(checked_at_utc))).lastrowid)
 
+    def latest_health_check_at(
+        self, *, check_kind: str, target_kind: str,
+        target_id: str | None = None,
+    ) -> datetime | None:
+        """Return only the latest validated probe timestamp for cadence control."""
+        _identifier(check_kind); _identifier(target_kind)
+        if target_id is not None:
+            _identifier(target_id)
+
+        def read(conn: sqlite3.Connection) -> datetime | None:
+            if target_id is None:
+                row = conn.execute(
+                    "SELECT checked_at_utc FROM service_health_checks "
+                    "WHERE check_kind=? AND target_kind=? AND target_id IS NULL "
+                    "ORDER BY checked_at_utc DESC,id DESC LIMIT 1",
+                    (check_kind, target_kind),
+                ).fetchone()
+            else:
+                row = conn.execute(
+                    "SELECT checked_at_utc FROM service_health_checks "
+                    "WHERE check_kind=? AND target_kind=? AND target_id=? "
+                    "ORDER BY checked_at_utc DESC,id DESC LIMIT 1",
+                    (check_kind, target_kind, target_id),
+                ).fetchone()
+            return None if row is None else _parse_utc(str(row[0]))
+
+        return self._readonly(read)
+
     def record_incident(self, *, incident_key: str, category: str, severity: Literal["info", "warning", "error", "critical"],
                         seen_at_utc: datetime, error_code: str | None = None, error_summary: str | None = None,
                         next_action: str | None = None, related_workflow_run_id: int | None = None,
@@ -461,6 +489,97 @@ class OrchestrationRepository:
             conn.execute("UPDATE operational_incidents SET state=?,resolved_at_utc=? WHERE id=?", (state, resolved, current.id))
             return self._incident_by_id(conn, current.id)
 
+    def resolve_retryable_workflow_failures(
+        self, workflow_key: str, *, at_utc: datetime
+    ) -> tuple[IncidentRecord, ...]:
+        """Resolve only earlier open workflow failures recovered by a success.
+
+        Matching is intentionally narrower than the generic incident surface:
+        mail is scoped to one subject, health to its workflow kind, and
+        morning/weekly to one subject and logical date.  Acknowledged,
+        suppressed, safety, data-quality, and unrelated incidents are never
+        candidates.
+        """
+        _identifier(workflow_key)
+        timestamp = _utc_text(at_utc)
+        with self._transaction() as conn:
+            workflow = self._validated_run_by_key(conn, workflow_key)
+            if workflow.status != "succeeded":
+                raise OrchestrationRepositoryError(
+                    "workflow_recovery_requires_success"
+                )
+            clauses = [
+                "i.category='workflow'",
+                "i.state='open'",
+                "i.error_code='workflow_execution_failed'",
+                "i.related_workflow_run_id IS NOT NULL",
+                "r.id<?",
+            ]
+            parameters: list[object] = [workflow.id]
+            if workflow.workflow_kind == "mail":
+                if workflow.subject_id is None:
+                    return ()
+                clauses.extend(("r.workflow_kind='mail'", "r.subject_id=?"))
+                parameters.append(workflow.subject_id)
+            elif workflow.workflow_kind == "health_check":
+                clauses.append("r.workflow_kind='health_check'")
+            elif workflow.workflow_kind in {"morning", "weekly"}:
+                if (
+                    workflow.subject_id is None
+                    or workflow.logical_local_date is None
+                ):
+                    return ()
+                clauses.extend(
+                    (
+                        "r.workflow_kind=?",
+                        "r.subject_id=?",
+                        "r.logical_local_date=?",
+                    )
+                )
+                parameters.extend(
+                    (
+                        workflow.workflow_kind,
+                        workflow.subject_id,
+                        workflow.logical_local_date,
+                    )
+                )
+            else:
+                return ()
+            recovered: list[IncidentRecord] = []
+            resolved_at = _parse_utc(timestamp)
+            last_incident_id = 0
+            while True:
+                rows = conn.execute(
+                    "SELECT i.id,i.incident_key,i.category,i.severity,i.state,"
+                    "i.related_workflow_run_id,i.related_step_id,"
+                    "i.first_seen_at_utc,i.last_seen_at_utc,i.occurrence_count,"
+                    "i.resolved_at_utc,i.error_code,i.error_summary,i.next_action "
+                    "FROM operational_incidents AS i "
+                    "JOIN orchestrator_runs AS r "
+                    "ON r.id=i.related_workflow_run_id WHERE "
+                    + " AND ".join((*clauses, "i.id>?"))
+                    + " ORDER BY i.id ASC LIMIT 200",
+                    (*parameters, last_incident_id),
+                ).fetchall()
+                if not rows:
+                    break
+                last_incident_id = int(rows[-1][0])
+                for row in rows:
+                    incident = self._incident_from_row(row)
+                    if resolved_at < _parse_utc(incident.last_seen_at_utc):
+                        continue
+                    changed = conn.execute(
+                        "UPDATE operational_incidents "
+                        "SET state='resolved',resolved_at_utc=? "
+                        "WHERE id=? AND state='open'",
+                        (timestamp, incident.id),
+                    ).rowcount
+                    if changed == 1:
+                        recovered.append(
+                            self._incident_by_id(conn, incident.id)
+                        )
+            return tuple(recovered)
+
     def create_alert_delivery(self, *, incident_key: str, idempotency_key: str) -> AlertDeliveryRecord:
         _identifier(incident_key); _identifier(idempotency_key)
         with self._transaction() as conn:
@@ -490,6 +609,31 @@ class OrchestrationRepository:
     def get_workflow(self, workflow_key: str) -> WorkflowRunRecord | None:
         _identifier(workflow_key)
         return self._readonly(lambda conn: self._validated_run_by_key(conn, workflow_key, missing_none=True))
+
+    def get_workflow_by_id(self, workflow_run_id: int) -> WorkflowRunRecord | None:
+        """Return one validated workflow without weakening key-based identity."""
+        if (
+            type(workflow_run_id) is not int
+            or isinstance(workflow_run_id, bool)
+            or workflow_run_id <= 0
+        ):
+            raise OrchestrationRepositoryError("orchestrator_workflow_id_invalid")
+
+        def query(conn: sqlite3.Connection) -> WorkflowRunRecord | None:
+            row = conn.execute(
+                "SELECT workflow_key FROM orchestrator_runs WHERE id=?",
+                (workflow_run_id,),
+            ).fetchone()
+            if row is None:
+                return None
+            workflow = self._validated_run_by_key(conn, str(row[0]))
+            if workflow.id != workflow_run_id:
+                raise OrchestrationRepositoryError(
+                    "orchestrator_run_summary_row_mismatch"
+                )
+            return workflow
+
+        return self._readonly(query)
 
     def get_scheduler_job(self, job_key: str) -> SchedulerJobRecord | None:
         _identifier(job_key)

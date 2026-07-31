@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  linux-quality:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install locked project dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.lock
+          python -m pip install -e .
+      - name: Verify repository invariants
+        run: python scripts/verify_repository_quality.py all
+      - name: Lint maintained modules
+        run: |
+          ruff check src/trainlab/foundation/readiness.py \
+            src/trainlab/orchestration/workflow_incidents.py \
+            src/trainlab/process_liveness.py \
+            scripts/verify_repository_quality.py \
+            tests/test_repository_quality.py
+          ruff format --check src/trainlab/foundation/readiness.py \
+            src/trainlab/orchestration/workflow_incidents.py \
+            src/trainlab/process_liveness.py \
+            scripts/verify_repository_quality.py \
+            tests/test_repository_quality.py
+      - name: Type-check maintained modules
+        run: |
+          mypy src/trainlab/foundation/readiness.py \
+            src/trainlab/orchestration/workflow_incidents.py \
+            src/trainlab/process_liveness.py \
+            scripts/verify_repository_quality.py
+      - name: Compile Python sources
+        run: python -m compileall -q src scripts
+
+  linux-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install locked project dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.lock
+          python -m pip install -e .
+      - name: Run Linux test suite
+        run: python -m pytest --ignore=tests/test_orchestration_s5_20_macos.py
+
+  macos-launchd:
+    runs-on: macos-14
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install locked project dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.lock
+          python -m pip install -e .
+      - name: Validate the macOS LaunchAgent assets
+        run: python -m pytest tests/test_orchestration_s5_20_macos.py

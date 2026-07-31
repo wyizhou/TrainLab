@@ -76,15 +76,22 @@ def test_e2_directory_swap_is_busy(tmp_path: Path, monkeypatch: pytest.MonkeyPat
 def test_e2_reader_replacement_busy(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, kind: str) -> None:
     candidate = path(tmp_path); lock = MailWriteLock(candidate, "mail:1:poll:x"); lock.acquire(); original = os.open; changed = False
     _pid, raw, _inode = lock._read_existing(lock._parent_fd or -1)
+    # Keep the original object referenced so filesystems cannot immediately
+    # recycle its inode and turn the "different_inode" case into an identical
+    # metadata object before the reader opens the replacement.
+    original_fd = os.open(candidate, os.O_RDONLY)
     def guarded(name, *args, **kwargs):
         nonlocal changed
         if name == "mail.lock" and not changed:
             changed = True; candidate.unlink()
             if kind == "symlink": candidate.symlink_to(tmp_path / "other")
             else: candidate.write_bytes(raw) ; os.chmod(candidate, 0o600)
-        return original(name, *args, **kwargs)
+            return original(name, *args, **kwargs)
     monkeypatch.setattr(os, "open", guarded)
-    with pytest.raises(MailLockBusyError): lock._read_existing(lock._parent_fd or -1)
+    try:
+        with pytest.raises(MailLockBusyError): lock._read_existing(lock._parent_fd or -1)
+    finally:
+        os.close(original_fd)
     assert candidate.is_symlink() if kind == "symlink" else candidate.read_bytes() == raw
     if lock._parent_fd is not None: os.close(lock._parent_fd); lock._parent_fd=None; lock._held=False
 

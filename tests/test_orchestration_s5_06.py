@@ -13,6 +13,7 @@ import pytest
 
 from trainlab.orchestration import DownstreamCall, SubprocessRunner
 from trainlab.orchestration.subprocess_runner import SubprocessBoundaryError
+from trainlab.process_liveness import process_is_running
 import trainlab.orchestration.subprocess_runner as runner_module
 
 
@@ -472,8 +473,8 @@ def _raw_child(path: Path, payload: bytes, exit_code: int = 0) -> None:
 def _assert_pid_gone(pid: int) -> None:
     until = time.monotonic() + 3
     while time.monotonic() < until:
-        try: os.kill(pid, 0)
-        except ProcessLookupError: return
+        if not process_is_running(pid):
+            return
         time.sleep(0.05)
     pytest.fail("detached_stdio_grandchild_survived")
 
@@ -761,8 +762,8 @@ def test_real_output_limit_and_process_group_kill(monkeypatch: pytest.MonkeyPatc
     pid = int(child_pid.read_text())
     until = time.monotonic() + 3
     while time.monotonic() < until:
-        try: os.kill(pid, 0)
-        except ProcessLookupError: break
+        if not process_is_running(pid):
+            break
         time.sleep(0.05)
     else: pytest.fail("orphaned_grandchild_survived_process_group_cleanup")
     assert [thread for thread in threading.enumerate() if thread.name.startswith("trainlab-reader-")] == readers_before
@@ -776,8 +777,8 @@ def test_normal_parent_exit_with_pipe_inheriting_grandchild_is_reclaimed(monkeyp
     assert result.kind == "untrusted"
     pid = int(child_pid.read_text()); until = time.monotonic() + 3
     while time.monotonic() < until:
-        try: os.kill(pid, 0)
-        except ProcessLookupError: break
+        if not process_is_running(pid):
+            break
         time.sleep(0.05)
     else: pytest.fail("normal_parent_left_pipe_inheriting_grandchild")
 
@@ -818,8 +819,8 @@ def test_grandchild_inheriting_one_stream_is_reclaimed(monkeypatch: pytest.Monke
     assert SubprocessRunner(grace_seconds=1).run(call()).kind == "untrusted"
     pid = int(pid_file.read_text()); until = time.monotonic() + 3
     while time.monotonic() < until:
-        try: os.kill(pid, 0)
-        except ProcessLookupError: break
+        if not process_is_running(pid):
+            break
         time.sleep(.05)
     else: pytest.fail("inherited_stream_grandchild_survived")
     assert [item for item in threading.enumerate() if item.name.startswith("trainlab-reader-")] == before

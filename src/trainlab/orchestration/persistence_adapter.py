@@ -86,6 +86,35 @@ class RepositoryReceiptStore:
         self._subjects = subjects
         self._clock = clock
 
+    def permits_operator_retry(self, request: WorkflowRequest) -> bool:
+        """Validate a manual retry parent before any lower-layer execution."""
+        if (
+            request.trigger_kind != "manual"
+            or request.workflow_kind not in {"morning", "weekly"}
+            or request.parent_workflow_run_id is None
+            or not request.parent_workflow_run_id.isdecimal()
+            or int(request.parent_workflow_run_id) <= 0
+            or request.subject_id is None
+            or request.logical_local_date is None
+        ):
+            return False
+        subject = self._subjects.resolve(request.subject_id)
+        if subject is None:
+            return False
+        try:
+            parent = self._repository.get_workflow_by_id(
+                int(request.parent_workflow_run_id)
+            )
+        except Exception:
+            return False
+        return bool(
+            parent is not None
+            and parent.status == "failed"
+            and parent.workflow_kind == request.workflow_kind
+            and parent.subject_id == subject
+            and parent.logical_local_date == request.logical_local_date
+        )
+
     def record_orchestration_receipt(
         self, request: WorkflowRequest, receipt: WorkflowReceipt
     ) -> None:
@@ -112,6 +141,13 @@ class RepositoryReceiptStore:
         if request.parent_workflow_run_id is not None:
             if not request.parent_workflow_run_id.isdecimal() or int(request.parent_workflow_run_id) <= 0:
                 raise OrchestrationPersistenceError("orchestration_persistence_parent_invalid")
+            if (
+                request.trigger_kind == "manual"
+                and not self.permits_operator_retry(request)
+            ):
+                raise OrchestrationPersistenceError(
+                    "orchestration_persistence_parent_invalid"
+                )
             parent = int(request.parent_workflow_run_id)
         command_hash = handoff.materialization_command_sha256 if handoff else _digest(request.as_json_dict())
         evidence_hash = handoff.materialization_evidence_sha256 if handoff else _digest({

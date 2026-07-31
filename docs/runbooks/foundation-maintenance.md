@@ -15,8 +15,8 @@ network listener.
 | Command | Permitted effect | Successful status | Exit |
 |---|---|---|---:|
 | `trainlab foundation init` | Create an empty Foundation or resume an exact reviewed initialization checkpoint | `initialized`; `already_initialized` when ready | 0 |
-| `trainlab foundation status` | Read-only compatibility, integrity, foreign-key, marker, receipt, path, and permission check | `ready` | 0 |
-| `trainlab foundation verify` | Read-only full verification | `ready` | 0 |
+| `trainlab foundation status` | Fast read-only ready marker, supported schema version, fixed path, and permission summary; does not open SQLite | `ready` | 0 |
+| `trainlab foundation verify` | Full read-only database, schema manifest, migration receipt, integrity, and foreign-key verification | `ready` | 0 |
 | `trainlab foundation migrate --target-version VERSION` | Explicit schema maintenance under the single-writer lock | `initialized` or `already_initialized` | 0 |
 
 Other exit mappings are `incompatible` → 10, `lock_busy` → 11, and `failed` →
@@ -31,9 +31,19 @@ Other exit mappings are `incompatible` → 10, `lock_busy` → 11, and `failed` 
 4. A later Layer-5 startup bootstrap calls `foundation init` once and proceeds
    only when it receives `already_initialized` for the supported ready schema.
 
-Repeated init on a ready Foundation is a lock-free full-tree no-op. Any ready
-marker, filesystem, migration receipt, schema, integrity, or foreign-key
-anomaly returns `incompatible/operator_review`; init does not repair it.
+Repeated init on a ready Foundation does not mutate it or acquire the writer
+lock, but it deliberately performs the full read-only compatibility
+verification before Supervisor startup. It may therefore scan a large
+database. Any ready marker, filesystem, migration receipt, schema, integrity,
+or foreign-key anomaly returns `incompatible/operator_review`; init does not
+repair it.
+
+Ordinary consumer calls and each Supervisor health cycle use the bounded
+`status`/SQLite readiness paths. They must not substitute `verify` for every
+poll. The health workflow runs a full SQLite integrity and foreign-key check
+on its first observation and then only when the latest recorded attempt is at
+least 24 hours old. Explicit migration, restore, acceptance, or incident
+investigation may still require an immediate `verify`.
 
 ## Explicit migration
 

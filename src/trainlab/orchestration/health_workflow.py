@@ -39,6 +39,7 @@ class HealthWorkflowError(ValueError):
 
 class HealthRepository(Protocol):
     def record_health_check(self, **values: object) -> object: ...
+    def latest_health_check_at(self, **values: object) -> datetime | None: ...
     def record_incident(self, **values: object) -> object: ...
     def get_incident(self, incident_key: str) -> object: ...
     def transition_incident(self, incident_key: str, state: str, *, at_utc: datetime) -> object: ...
@@ -58,15 +59,19 @@ class HealthThresholds:
     maximum_open_gaps: int = 0
     maximum_delivery_attention: int = 0
     maximum_mail_backlog: int = 0
+    sqlite_deep_check_interval_seconds: int = 86_400
 
     def __post_init__(self) -> None:
         for value in (
             self.minimum_free_percent, self.minimum_free_inode_percent,
             self.maximum_cursor_lag_days, self.maximum_open_gaps,
             self.maximum_delivery_attention, self.maximum_mail_backlog,
+            self.sqlite_deep_check_interval_seconds,
         ):
             if type(value) is not int or not 0 <= value <= 100_000_000:
                 raise HealthWorkflowError("health_threshold_invalid")
+        if self.sqlite_deep_check_interval_seconds < 60:
+            raise HealthWorkflowError("health_threshold_invalid")
 
 
 class HealthWorkflow:
@@ -150,7 +155,12 @@ class HealthWorkflow:
         try:
             connection = _readonly_connection(self._database)
             tables = _tables(connection)
-            observations = [self._foundation(connection, tables), self._sqlite(connection)]
+            observations = [
+                self._foundation(connection, tables),
+                self._sqlite_readiness(connection),
+            ]
+            if self._sqlite_deep_check_due(now):
+                observations.append(self._sqlite_integrity(connection))
             if _EXPECTED_TABLES.issubset(tables):
                 observations.extend((
                     self._garmin(connection, now),
@@ -164,7 +174,7 @@ class HealthWorkflow:
         except Exception:
             observations = [
                 HealthObservation("foundation", "schema", "unavailable", {"database_available": False}),
-                HealthObservation("sqlite", "quick_check", "unavailable", {"database_available": False}),
+                HealthObservation("sqlite", "readiness", "unavailable", {"database_available": False}),
                 HealthObservation("garmin", "cursor", "unavailable", {"database_available": False}),
                 HealthObservation("analysis", "delivery", "unavailable", {"database_available": False}),
                 HealthObservation("mail", "backlog", "unavailable", {"database_available": False}),
@@ -186,12 +196,57 @@ class HealthWorkflow:
         ready = row[0] == "ready" and type(row[1]) is int and row[1] >= 1 and marker_present
         return HealthObservation("foundation", "schema", "ready" if ready else "critical", {"ready": ready, "schema_version": int(row[1]) if type(row[1]) is int else 0, "ready_marker_present": marker_present})
 
-    def _sqlite(self, conn: sqlite3.Connection) -> HealthObservation:
-        quick = tuple(str(item[0]) for item in conn.execute("PRAGMA quick_check"))
+    def _sqlite_readiness(self, conn: sqlite3.Connection) -> HealthObservation:
+        readable = conn.execute("SELECT 1").fetchone() == (1,)
         journal = conn.execute("PRAGMA journal_mode").fetchone()
         journal_mode = str(journal[0]).lower() if journal else "unknown"
         wal = self._database.with_name(f"{self._database.name}-wal")
-        return HealthObservation("sqlite", "quick_check", "ready" if quick == ("ok",) else "critical", {"quick_check_ok": quick == ("ok",), "journal_mode_wal": journal_mode == "wal", "wal_present": wal.is_file()})
+        ready = readable and journal_mode == "wal"
+        return HealthObservation(
+            "sqlite",
+            "readiness",
+            "ready" if ready else "critical",
+            {
+                "database_readable": readable,
+                "journal_mode_wal": journal_mode == "wal",
+                "wal_present": wal.is_file(),
+            },
+        )
+
+    def _sqlite_deep_check_due(self, now: datetime) -> bool:
+        latest = self._repository.latest_health_check_at(
+            check_kind="sqlite", target_kind="integrity", target_id=None
+        )
+        if latest is None or latest > now:
+            return True
+        elapsed = (now - latest).total_seconds()
+        return elapsed >= self._thresholds.sqlite_deep_check_interval_seconds
+
+    @staticmethod
+    def _sqlite_integrity(conn: sqlite3.Connection) -> HealthObservation:
+        try:
+            integrity = conn.execute("PRAGMA integrity_check(1)").fetchone()
+            foreign_key = conn.execute("PRAGMA foreign_key_check").fetchone()
+        except sqlite3.DatabaseError:
+            return HealthObservation(
+                "sqlite",
+                "integrity",
+                "unavailable",
+                {"integrity_available": False},
+                threshold_version="health-v2",
+            )
+        integrity_ok = integrity is not None and tuple(integrity) == ("ok",)
+        foreign_key_ok = foreign_key is None
+        return HealthObservation(
+            "sqlite",
+            "integrity",
+            "ready" if integrity_ok and foreign_key_ok else "critical",
+            {
+                "integrity_ok": integrity_ok,
+                "foreign_key_ok": foreign_key_ok,
+            },
+            threshold_version="health-v2",
+        )
 
     def _disk(self) -> HealthObservation:
         try:

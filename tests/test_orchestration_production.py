@@ -9,6 +9,7 @@ import pytest
 from trainlab.orchestration import production
 from trainlab.orchestration.due_scheduler import DueItem
 from trainlab.orchestration.recovery_planner import RecoveryDecision
+from trainlab.orchestration.workflow_incidents import WorkflowIncidentCoordinator
 
 
 @pytest.mark.parametrize("alerts_enabled", [False, True])
@@ -242,16 +243,26 @@ def test_completed_failed_workflow_creates_safe_deduplicated_incident() -> None:
     )
     calls: list[dict[str, object]] = []
     repository = SimpleNamespace(
-        get_workflow=lambda key: SimpleNamespace(id=41) if key == item.workflow_key else None,
+        get_workflow=lambda key: (
+            SimpleNamespace(id=41, workflow_kind="morning")
+            if key == item.workflow_key
+            else None
+        ),
         record_incident=lambda **values: calls.append(values),
     )
 
-    incident_key = production.ProductionOrchestrationApplication._observe_business_failure(
-        repository, item, {"status": "failed", "errors": [{"code": "untrusted"}]},
+    events = WorkflowIncidentCoordinator(repository).observe(
+        workflow_key=item.workflow_key,
+        workflow_kind=item.workflow_kind,
+        outcome={"status": "failed", "errors": [{"code": "untrusted"}]},
         seen_at_utc=datetime(2026, 7, 28, 23, 36, tzinfo=UTC),
     )
 
-    assert incident_key == "workflow:failed:morning:5a38501f5c035749e5f701bcc925850b"
+    assert events is not None
+    assert events.opened == (
+        "workflow:failed:morning:5a38501f5c035749e5f701bcc925850b",
+    )
+    assert events.recovered == ()
 
     assert calls == [{
         "incident_key": "workflow:failed:morning:"
@@ -281,10 +292,10 @@ def test_deferred_mail_workflow_does_not_create_operational_incident() -> None:
         record_incident=lambda **values: calls.append(values),
     )
 
-    incident_key = production.ProductionOrchestrationApplication._observe_business_failure(
-        repository,
-        item,
-        {
+    events = WorkflowIncidentCoordinator(repository).observe(
+        workflow_key=item.workflow_key,
+        workflow_kind=item.workflow_kind,
+        outcome={
             "status": "deferred",
             "next_action": "continue_poll",
             "next_retry_at_utc": "2026-07-29T02:08:10Z",
@@ -292,5 +303,124 @@ def test_deferred_mail_workflow_does_not_create_operational_incident() -> None:
         seen_at_utc=datetime(2026, 7, 29, 2, 3, 11, tzinfo=UTC),
     )
 
-    assert incident_key is None
+    assert events is None
     assert calls == []
+
+
+def test_operator_retry_executes_a_new_child_attempt(
+    tmp_path, monkeypatch
+) -> None:
+    captured = {}
+    failed = SimpleNamespace(
+        id=41,
+        status="failed",
+        workflow_kind="morning",
+        subject_id=7,
+        logical_local_date="2026-07-26",
+    )
+
+    class Repository:
+        def get_workflow_by_id(self, run_id):
+            return failed if run_id == 41 else None
+
+        def get_workflow(self, _workflow_key):
+            return None
+
+    class Tool:
+        def execute(self, request):
+            captured["request"] = request
+            workflow_key = f"manual:morning:{request.invocation_id}"
+            return SimpleNamespace(
+                workflow_key=workflow_key,
+                workflow_kind="morning",
+                as_json_dict=lambda: {
+                    "workflow_key": workflow_key,
+                    "workflow_kind": "morning",
+                    "status": "succeeded",
+                },
+            )
+
+    class Coordinator:
+        def __init__(self, repository):
+            captured["coordinator_repository"] = repository
+
+        def observe(self, **values):
+            captured["observation"] = values
+            return None
+
+    repository = Repository()
+    foundation = SimpleNamespace(database_path=tmp_path / "data.db")
+    config = SimpleNamespace(
+        workflow_deadline_seconds=3600,
+        operational_alerts_enabled=False,
+    )
+    monkeypatch.setattr(production, "project_root", lambda _root: tmp_path)
+    monkeypatch.setattr(production, "WorkflowIncidentCoordinator", Coordinator)
+    app = production.ProductionOrchestrationApplication(tmp_path)
+    monkeypatch.setattr(
+        app,
+        "_components",
+        lambda: (foundation, config, repository, object()),
+    )
+    monkeypatch.setattr(app, "_active_subject", lambda _path: (7, "subject-7"))
+    monkeypatch.setattr(app, "_tool", lambda *_args: Tool())
+    monkeypatch.setattr(app, "_alert_service", lambda *_args: None)
+
+    result = app.retry("41")
+
+    request = captured["request"]
+    assert result["status"] == "succeeded"
+    assert request.workflow_kind == "morning"
+    assert request.subject_id == "subject-7"
+    assert request.logical_local_date == "2026-07-26"
+    assert request.trigger_kind == "manual"
+    assert request.parent_workflow_run_id == "41"
+    assert request.invocation_id.startswith("retry-41-")
+    assert captured["observation"]["workflow_key"].startswith(
+        "manual:morning:retry-41-"
+    )
+
+
+@pytest.mark.parametrize(
+    "workflow",
+    (
+        None,
+        SimpleNamespace(
+            id=41,
+            status="succeeded",
+            workflow_kind="morning",
+            subject_id=7,
+            logical_local_date="2026-07-26",
+        ),
+        SimpleNamespace(
+            id=41,
+            status="failed",
+            workflow_kind="mail",
+            subject_id=7,
+            logical_local_date=None,
+        ),
+    ),
+)
+def test_operator_retry_rejects_nonrecoverable_workflows(
+    tmp_path, monkeypatch, workflow
+) -> None:
+    repository = SimpleNamespace(
+        get_workflow_by_id=lambda _run_id: workflow,
+        get_workflow=lambda _key: workflow,
+    )
+    foundation = SimpleNamespace(database_path=tmp_path / "data.db")
+    config = SimpleNamespace(workflow_deadline_seconds=3600)
+    monkeypatch.setattr(production, "project_root", lambda _root: tmp_path)
+    app = production.ProductionOrchestrationApplication(tmp_path)
+    monkeypatch.setattr(
+        app,
+        "_components",
+        lambda: (foundation, config, repository, object()),
+    )
+    monkeypatch.setattr(app, "_active_subject", lambda _path: (7, "subject-7"))
+
+    assert app.retry("41") == {
+        "schema_version": "1",
+        "status": "rejected",
+        "error_code": "workflow_not_recoverable",
+    }

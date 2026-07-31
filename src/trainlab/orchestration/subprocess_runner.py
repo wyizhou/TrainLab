@@ -17,6 +17,7 @@ from typing import Any, Literal, Mapping
 
 from jsonschema import Draft202012Validator, FormatChecker
 
+from trainlab.process_liveness import process_group_has_live_members
 from trainlab.runtime_environment import bounded_runtime_path
 
 
@@ -712,13 +713,7 @@ class SubprocessRunner:
 
     @staticmethod
     def _process_group_exists(pgid: int) -> bool:
-        try:
-            os.killpg(pgid, 0)
-        except ProcessLookupError:
-            return False
-        except OSError:
-            return True
-        return True
+        return process_group_has_live_members(pgid)
 
     def _wait_process_group_gone(self, pgid: int) -> bool:
         deadline = time.monotonic() + self._grace

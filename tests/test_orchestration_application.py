@@ -34,6 +34,16 @@ class Store:
         self.rows.append((request, receipt))
 
 
+class RetryAuthorizer:
+    def __init__(self, allowed: bool = True):
+        self.allowed = allowed
+        self.requests = []
+
+    def permits_operator_retry(self, request):
+        self.requests.append(request)
+        return self.allowed
+
+
 class Analysis:
     def __init__(self): self.requests = []
     def execute(self, request):
@@ -86,6 +96,78 @@ def test_weekly_requires_sunday_and_routes_to_sunday_adapter() -> None:
     assert receipt.status == "succeeded" and weekly.requests[0].workflow_kind == "sunday"
     invalid = request("weekly", logical="2026-07-26")
     assert tool(weekly=Analysis()).execute(invalid).errors[0]["code"] == "orchestration_request_invalid"
+
+
+@pytest.mark.parametrize(
+    ("kind", "logical"),
+    (("morning", "2026-07-26"), ("weekly", "2026-07-26")),
+)
+def test_operator_retry_can_preserve_an_earlier_logical_date(
+    kind: str, logical: str
+) -> None:
+    analysis = Analysis()
+    retry_authorizer = RetryAuthorizer()
+    retry = WorkflowRequest(
+        kind,
+        "subject-7",
+        logical,
+        f"retry-{kind}",
+        "manual",
+        "41",
+        (),
+        "2026-07-27T01:00:00Z",
+        "2026-07-27T00:00:00Z",
+    )
+    adapter = tool(
+        operator_retry_authorizer=retry_authorizer,
+        **({"morning": analysis} if kind == "morning" else {"weekly": analysis}),
+    )
+
+    receipt = adapter.execute(retry)
+
+    assert receipt.status == "succeeded"
+    assert receipt.workflow_key == f"manual:{kind}:retry-{kind}"
+    assert analysis.requests[0].logical_local_date == logical
+    assert retry_authorizer.requests == [retry]
+
+    unparented = WorkflowRequest(
+        kind,
+        "subject-7",
+        logical,
+        f"rerun-{kind}",
+        "manual",
+        None,
+        (),
+        "2026-07-27T01:00:00Z",
+        "2026-07-27T00:00:00Z",
+    )
+    rejected = tool(
+        **({"morning": Analysis()} if kind == "morning" else {"weekly": Analysis()})
+    ).execute(unparented)
+    assert rejected.errors[0]["code"] == "orchestration_request_invalid"
+
+
+def test_untrusted_parent_is_rejected_before_analysis_execution() -> None:
+    analysis = Analysis()
+    retry = WorkflowRequest(
+        "morning",
+        "subject-7",
+        "2026-07-26",
+        "retry-forged-parent",
+        "manual",
+        "999",
+        (),
+        "2026-07-27T01:00:00Z",
+        "2026-07-27T00:00:00Z",
+    )
+
+    receipt = tool(
+        operator_retry_authorizer=RetryAuthorizer(False), morning=analysis
+    ).execute(retry)
+
+    assert receipt.status == "failed"
+    assert receipt.errors[0]["code"] == "orchestration_request_invalid"
+    assert analysis.requests == []
 
 
 def test_mail_uses_only_fixed_limits_and_numeric_subject() -> None:

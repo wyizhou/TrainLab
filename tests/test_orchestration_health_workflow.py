@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from hashlib import sha256
 import sqlite3
 from pathlib import Path
@@ -21,6 +21,19 @@ class Repository:
     def record_health_check(self, **values: object) -> int:
         self.checks.append(values)
         return len(self.checks)
+
+    def latest_health_check_at(
+        self, *, check_kind: str, target_kind: str,
+        target_id: str | None = None,
+    ) -> datetime | None:
+        values = [
+            item["checked_at_utc"]
+            for item in self.checks
+            if item["check_kind"] == check_kind
+            and item["target_kind"] == target_kind
+            and item.get("target_id") == target_id
+        ]
+        return None if not values else max(values)  # type: ignore[arg-type,return-value]
 
     def get_incident(self, incident_key: str):
         return self.incidents.get(incident_key)
@@ -55,6 +68,7 @@ def foundation_database(root: Path, *, include_cursor: bool = True) -> Path:
     (root / "logs").mkdir()
     conn = sqlite3.connect(database)
     try:
+        conn.execute("PRAGMA journal_mode=WAL")
         conn.executescript("""
         CREATE TABLE foundation_state(id INTEGER PRIMARY KEY,state TEXT,schema_version INTEGER);
         CREATE TABLE garmin_sync_cursors(complete_through_local_date TEXT);
@@ -88,12 +102,18 @@ def test_health_workflow_records_only_metadata_and_never_changes_foundation_data
 
     assert outcome.status == "succeeded"
     assert outcome.next_action == "none"
-    assert len(repository.checks) == 8
+    assert len(repository.checks) == 9
     assert sha256(database.read_bytes()).hexdigest() == before
     assert all("body" not in str(check).lower() and "payload" not in str(check).lower() for check in repository.checks)
     assert {check["check_kind"] for check in repository.checks} == {
         "foundation", "sqlite", "garmin", "analysis", "mail", "supervisor", "disk", "logs",
     }
+    sqlite_targets = {
+        str(check["target_kind"])
+        for check in repository.checks
+        if check["check_kind"] == "sqlite"
+    }
+    assert sqlite_targets == {"readiness", "integrity"}
 
 
 def test_health_workflow_reports_counts_and_times_but_not_lower_layer_content(tmp_path: Path) -> None:
@@ -187,3 +207,39 @@ def test_health_workflow_routes_open_and_recovery_alerts_without_affecting_resul
     second = workflow.execute(request())
     assert second.status == "succeeded"
     assert ("health:garmin:cursor", "recovery") in alerts.calls
+
+
+def test_sqlite_deep_integrity_check_runs_at_daily_cadence(
+    tmp_path: Path,
+) -> None:
+    database = foundation_database(tmp_path)
+    repository = Repository()
+    current = [NOW]
+    workflow = HealthWorkflow(
+        database_path=database,
+        state_directory=tmp_path / "state",
+        log_directory=tmp_path / "logs",
+        storage_directory=tmp_path,
+        repository=repository,
+        clock=lambda: current[0],
+    )
+
+    assert workflow.execute(request()).status == "succeeded"
+    assert sum(
+        item["check_kind"] == "sqlite" and item["target_kind"] == "integrity"
+        for item in repository.checks
+    ) == 1
+
+    current[0] += timedelta(minutes=1)
+    assert workflow.execute(request()).status == "succeeded"
+    assert sum(
+        item["check_kind"] == "sqlite" and item["target_kind"] == "integrity"
+        for item in repository.checks
+    ) == 1
+
+    current[0] += timedelta(days=1)
+    workflow.execute(request())
+    assert sum(
+        item["check_kind"] == "sqlite" and item["target_kind"] == "integrity"
+        for item in repository.checks
+    ) == 2

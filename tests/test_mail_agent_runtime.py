@@ -55,7 +55,7 @@ def test_missing_adapter_stage_is_a_standard_fail_closed_receipt() -> None:
     assert receipt.errors[0]["code"] == "mail_environment_adapter_unavailable"
 
 
-def test_active_foundation_snapshot_defers_mail_without_starting_gmail(
+def test_fast_foundation_status_allows_read_only_mail_status_during_snapshot(
     tmp_path, monkeypatch
 ) -> None:
     root = tmp_path / "project"
@@ -101,10 +101,10 @@ def test_active_foundation_snapshot_defers_mail_without_starting_gmail(
     finally:
         holder.close()
         writer.close()
-    assert receipt.status == "lock_busy"
-    assert receipt.next_action == "continue_poll"
-    assert receipt.next_retry_at_utc == "2026-07-27T00:07:00Z"
-    assert receipt.warnings[0]["code"] == "foundation_lock_busy"
+    assert receipt.status == "unchanged"
+    assert receipt.next_action == "operator_review"
+    assert receipt.next_retry_at_utc is None
+    assert receipt.warnings == ()
     assert receipt.errors == ()
     assert adapter_calls == []
 

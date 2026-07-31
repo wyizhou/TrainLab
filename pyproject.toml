@@ -16,7 +16,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest==8.4.2", "pytest-cov==6.2.1"]
+dev = [
+  "mypy==2.3.0",
+  "pytest==8.4.2",
+  "pytest-cov==6.2.1",
+  "ruff==0.16.1",
+]
 
 [project.scripts]
 trainlab = "trainlab.cli:main"
@@ -33,3 +38,18 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.mypy]
+python_version = "3.12"
+check_untyped_defs = true
+follow_imports = "skip"
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true

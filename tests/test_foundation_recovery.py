@@ -117,14 +117,16 @@ def test_ready_marker_and_state_disagreements_are_not_repaired(tmp_path: Path) -
     assert state(third)[0] == "ready"
 
 
-def test_status_requires_ready_db_matching_marker_and_manifest(tmp_path: Path) -> None:
+def test_status_is_bounded_while_verify_checks_the_complete_manifest(tmp_path: Path) -> None:
     root = tmp_path / "status"
     tool = FoundationTool(config(root)); assert tool.execute(request()).status == "initialized"
     conn = sqlite3.connect(root / "data.db")
     conn.execute("CREATE TABLE out_of_contract (id INTEGER)")
     conn.commit(); conn.close()
-    receipt = tool.execute(request("status"))
-    assert receipt.status == "incompatible" and not receipt.ready
+    status = tool.execute(request("status"))
+    verify = tool.execute(request("verify"))
+    assert status.status == "ready" and status.ready
+    assert verify.status == "incompatible" and not verify.ready
 
 
 def test_version_corruption_permissions_and_status_matrix_preserve_evidence(tmp_path: Path) -> None:

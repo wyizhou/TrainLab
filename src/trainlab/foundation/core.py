@@ -19,6 +19,11 @@ import yaml
 from jsonschema import Draft202012Validator
 from .backup import decrypt_container, encrypt_container, require_key
 from .config import read_owner_only_bytes
+from .readiness import (
+    read_full_verification,
+    read_published_status,
+    verify_foundation,
+)
 from .schema import validate_schema_manifest as _validate_schema_manifest
 
 
@@ -1154,74 +1159,67 @@ class FoundationTool:
         return state
 
     def _read_status(self, root: Path, receipt: FoundationReceipt) -> None:
-        paths = self._paths(root)
-        db_kind = self._lstat_kind(paths["db"], False)
-        if db_kind is None:
-            receipt.status, receipt.next_action = "incompatible", "explicit_migrate"
-            return
-        if db_kind != "ok":
-            receipt.status, receipt.next_action = "incompatible", "operator_review"
-            receipt.warnings.append({"code": "foundation_filesystem_unsafe", "summary": "database object is unsafe"})
-            return
-        try:
-            conn = self._connect(paths["db"], readonly=True)
-        except sqlite3.DatabaseError as exc:
-            raise CorruptFoundationError("cannot_open_sqlite") from exc
-        try:
-            state = self._read_foundation_state(conn)
-            receipt.foundation_schema_version = int(state["schema_version"])
-            if receipt.foundation_schema_version > FOUNDATION_SCHEMA_VERSION:
-                raise IncompatibleError("higher_schema_version")
-            if receipt.foundation_schema_version < FOUNDATION_SCHEMA_VERSION:
-                receipt.status, receipt.next_action = "incompatible", "explicit_migrate"
-                receipt.warnings.append({"code": "foundation_schema_upgrade_required", "summary": "run explicit foundation migrate"})
-                return
-            expected_hash = self._manifest_hash()
-            errors: list[str] = []
-            if state["state"] != "ready":
-                errors.append("database_not_ready")
-            if state["manifest_sha256"] != expected_hash:
-                errors.append("database_manifest_mismatch")
-            if state["implementation_version"] != "foundation-v3":
-                errors.append("database_implementation_version_mismatch")
-            if not _canonical_utc(state["initialized_at_utc"]) or not _canonical_utc(state["updated_at_utc"]):
-                errors.append("database_timestamp_mismatch")
-            if not self._migration_receipt_valid(conn, expected_hash):
-                errors.append("migration_receipt_mismatch")
-            marker_error = self._marker_error(paths, expected_hash)
-            if marker_error:
-                errors.append(marker_error)
-            errors.extend(self._required_objects_and_permissions(paths))
-            errors.extend(validate_schema_manifest(conn, self._manifest()))
-            if [row[0] for row in conn.execute("PRAGMA integrity_check")] != ["ok"]:
-                errors.append("sqlite_integrity_mismatch")
-            if conn.execute("PRAGMA foreign_key_check").fetchone() is not None:
-                errors.append("sqlite_foreign_key_mismatch")
-            receipt.ready = not errors
-            if errors:
-                receipt.warnings.append({"code": "foundation_not_ready", "summary": errors[0]})
-            receipt.status = "ready" if receipt.ready else "incompatible"
-            receipt.next_action = "none" if receipt.ready else "operator_review"
-            receipt.verified_count = 1
-        except sqlite3.DatabaseError as exc:
-            raise CorruptFoundationError("sqlite_metadata_read_failed") from exc
-        finally:
-            conn.close()
+        """Read the bounded published-readiness summary without opening SQLite.
+
+        ``status`` is used on every ordinary consumer invocation.  Its frozen
+        contract is therefore deliberately limited to the owner-controlled
+        ready marker, supported schema version, and fixed path permissions.
+        Page, relational, migration-receipt, and complete manifest checks
+        belong to the explicit ``verify`` maintenance path.
+        """
+        read_published_status(
+            self,
+            root,
+            receipt,
+            supported_schema_version=FOUNDATION_SCHEMA_VERSION,
+            canonical_utc=_canonical_utc,
+        )
+
+    def _read_verification(
+        self, root: Path, receipt: FoundationReceipt
+    ) -> None:
+        """Run the complete, explicit Foundation compatibility verification."""
+        read_full_verification(
+            self,
+            root,
+            receipt,
+            supported_schema_version=FOUNDATION_SCHEMA_VERSION,
+            canonical_utc=_canonical_utc,
+            validate_manifest=validate_schema_manifest,
+            incompatible_error=IncompatibleError,
+            corrupt_error=CorruptFoundationError,
+        )
 
     def _verify(self, root: Path, receipt: FoundationReceipt) -> None:
-        self._read_status(root, receipt)
-        if receipt.status != "ready":
-            return
-        receipt.status, receipt.next_action = "ready", "none"
-        receipt.verified_count = len(TABLES) + len(VIEWS) + 1
+        verify_foundation(
+            self,
+            root,
+            receipt,
+            supported_schema_version=FOUNDATION_SCHEMA_VERSION,
+            verified_object_count=len(TABLES) + len(VIEWS) + 1,
+            canonical_utc=_canonical_utc,
+            validate_manifest=validate_schema_manifest,
+            incompatible_error=IncompatibleError,
+            corrupt_error=CorruptFoundationError,
+        )
 
     def _init(self, root: Path, receipt: FoundationReceipt) -> None:
         paths = self._paths(root)
-        # A compatible ready database is the common bootstrap path.  Its
-        # preflight is genuinely read-only: no lock directory, lock file, WAL,
-        # journal, or directory timestamp is touched.
+        # A compatible ready database is the common bootstrap path. Its
+        # preflight is read-only and lock-free, but deliberately performs the
+        # complete verification before a long-running Supervisor starts.
         if paths["db"].exists():
-            self._read_status(root, receipt)
+            self._verify(root, receipt)
+            if any(
+                warning.get("summary") == "marker_missing"
+                for warning in receipt.warnings
+            ):
+                # A missing marker can be either an exact interrupted init
+                # checkpoint or operator evidence from a previously ready
+                # store.  Inspect the database deeply before deciding whether
+                # acquiring the writer lock is permitted.
+                receipt.warnings.clear()
+                self._read_verification(root, receipt)
             if receipt.ready:
                 receipt.status, receipt.next_action = "already_initialized", "none"
                 return
@@ -1232,8 +1230,14 @@ class FoundationTool:
                 # the writer lock or open SQLite read-write merely because a
                 # normal bootstrap invoked init.
                 return
-            if receipt.status == "incompatible" and receipt.next_action == "operator_review" and not any(
-                warning.get("summary") == "database_not_ready" for warning in receipt.warnings
+            recoverable_summaries = {"database_not_ready", "marker_missing"}
+            if (
+                receipt.status == "incompatible"
+                and receipt.next_action == "operator_review"
+                and not any(
+                    warning.get("summary") in recoverable_summaries
+                    for warning in receipt.warnings
+                )
             ):
                 # Any inconsistent ready environment is operator evidence, not
                 # an init recovery checkpoint. Preserve it without a writer lock.
@@ -1410,14 +1414,14 @@ class FoundationTool:
             if schema_version != FOUNDATION_SCHEMA_VERSION:
                 if state["state"] == "ready" and schema_version < FOUNDATION_SCHEMA_VERSION:
                     conn.close()
-                    self._read_status(self.data_root, receipt)
+                    self._verify(self.data_root, receipt)
                     return
                 raise IncompatibleError("unsupported_initializing_schema_version")
             expected_hash = self._manifest_hash()
             if state["state"] == "ready":
                 # init is a strict no-op only for an entirely valid ready store.
                 conn.close()
-                self._read_status(self.data_root, receipt)
+                self._verify(self.data_root, receipt)
                 if receipt.ready:
                     receipt.status, receipt.next_action = "already_initialized", "none"
                     return

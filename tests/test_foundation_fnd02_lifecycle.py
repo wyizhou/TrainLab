@@ -78,13 +78,16 @@ def test_fnd02_ready_init_is_byte_and_mtime_noop_and_sets_sqlite_contract(tmp_pa
         conn.close()
 
 
-@pytest.mark.parametrize("mode", ["status", "verify", "init"])
+@pytest.mark.parametrize(
+    ("mode","expected"),
+    [("status","ready"),("verify","incompatible"),("init","incompatible")],
+)
 @pytest.mark.parametrize(
     "mutation",
     ["missing", "extra", "version", "description", "code_revision", "content_sha256", "noncanonical_utc"],
 )
-def test_fnd02_ready_migration_receipt_tamper_is_incompatible_and_read_only(
-    tmp_path: Path, mode: str, mutation: str
+def test_fnd02_migration_receipt_tamper_requires_explicit_verify(
+    tmp_path: Path, mode: str, expected: str, mutation: str
 ) -> None:
     root=tmp_path / f"{mode}-{mutation}"; tool=FoundationTool(config(root))
     assert tool.execute(request()).status == "initialized"
@@ -114,10 +117,15 @@ def test_fnd02_ready_migration_receipt_tamper_is_incompatible_and_read_only(
     receipt=tool.execute(request(mode))
     after=(db.read_bytes(),db.stat().st_mtime_ns,marker.read_bytes(),marker.stat().st_mtime_ns,_tree(raw))
 
-    assert receipt.status == "incompatible"
-    assert receipt.next_action == "operator_review"
-    assert not receipt.ready
-    assert receipt.warnings == [{"code":"foundation_not_ready","summary":"migration_receipt_mismatch"}]
+    assert receipt.status == expected
+    if expected == "incompatible":
+        assert receipt.next_action == "operator_review"
+        assert not receipt.ready
+        assert receipt.warnings == [{"code":"foundation_not_ready","summary":"migration_receipt_mismatch"}]
+    else:
+        assert receipt.next_action == "none"
+        assert receipt.ready
+        assert receipt.warnings == []
     assert after == before
 
 

@@ -120,7 +120,28 @@ class MailWriteLock:
             if len(data) != info.st_size:
                 raise MailLockBusyError("mail_lock_record_invalid")
             after = os.stat(target, dir_fd=directory_fd, follow_symlinks=False)
-            if (info.st_dev, info.st_ino) != (before.st_dev, before.st_ino) or (info.st_dev, info.st_ino) != (after.st_dev, after.st_ino):
+            before_identity = (
+                before.st_dev,
+                before.st_ino,
+                before.st_size,
+                before.st_mtime_ns,
+                before.st_ctime_ns,
+            )
+            opened_identity = (
+                info.st_dev,
+                info.st_ino,
+                info.st_size,
+                info.st_mtime_ns,
+                info.st_ctime_ns,
+            )
+            after_identity = (
+                after.st_dev,
+                after.st_ino,
+                after.st_size,
+                after.st_mtime_ns,
+                after.st_ctime_ns,
+            )
+            if before_identity != opened_identity or after_identity != opened_identity:
                 raise MailLockBusyError("mail_lock_replaced")
         except (OSError, FileNotFoundError) as exc:
             raise MailLockBusyError("mail_lock_busy") from exc

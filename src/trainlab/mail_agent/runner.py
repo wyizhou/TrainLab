@@ -19,6 +19,7 @@ from typing import Any, Callable, Protocol
 
 from jsonschema import Draft202012Validator, FormatChecker
 
+from trainlab.process_liveness import process_group_has_live_members
 from trainlab.runtime_environment import bounded_runtime_path
 
 from .context import MailContextBuilder, MailContextError
@@ -286,7 +287,45 @@ def _stable_secure_read(path: Path, identity: _FileIdentity, limit: int, code: s
                 or after.st_ctime_ns != before.st_ctime_ns
             ):
                 raise MailRunnerError(code, stage="output")
-            return b"".join(chunks)
+            first_read = b"".join(chunks)
+            os.lseek(fd, 0, os.SEEK_SET)
+            confirmation: list[bytes] = []
+            confirmed_total = 0
+            while True:
+                block = os.read(
+                    fd, min(65_536, limit + 1 - confirmed_total)
+                )
+                if not block:
+                    break
+                confirmed_total += len(block)
+                if confirmed_total > limit:
+                    raise MailRunnerError(code, stage="output")
+                confirmation.append(block)
+            final = os.fstat(fd)
+            if (
+                b"".join(confirmation) != first_read
+                or confirmed_total != total
+                or (
+                    final.st_dev,
+                    final.st_ino,
+                    final.st_uid,
+                    stat.S_IMODE(final.st_mode),
+                    final.st_size,
+                    final.st_mtime_ns,
+                    final.st_ctime_ns,
+                )
+                != (
+                    after.st_dev,
+                    after.st_ino,
+                    after.st_uid,
+                    stat.S_IMODE(after.st_mode),
+                    after.st_size,
+                    after.st_mtime_ns,
+                    after.st_ctime_ns,
+                )
+            ):
+                raise MailRunnerError(code, stage="output")
+            return first_read
         finally:
             os.close(fd)
     except MailRunnerError:
@@ -731,11 +770,7 @@ class MailCodexRunner:
                 process.wait(timeout=0)
             except Exception:
                 pass
-            try:
-                os.killpg(pid, 0)
-            except ProcessLookupError:
-                return
-            except OSError:
+            if not process_group_has_live_members(pid):
                 return
             time.sleep(0.01)
         try:
@@ -750,11 +785,7 @@ class MailCodexRunner:
                 process.wait(timeout=0)
             except Exception:
                 pass
-            try:
-                os.killpg(pid, 0)
-            except ProcessLookupError:
-                return
-            except OSError:
+            if not process_group_has_live_members(pid):
                 return
             time.sleep(0.01)
         raise MailRunnerError("mail_codex_cleanup_failed", stage="process")

@@ -37,3 +37,6 @@ incident 和 delivery 审计记录。回滚不删除已同步 Garmin 原始数�
 
 代码、离线测试、Shadow 工具、systemd 模板、部署和回滚步骤可在开发环境完成。
 真实 S5-19 与 S5-20 是显式授权的部署操作，不属于普通代码开发的默认权限。
+当前本机运行模型和仍保留的门禁记录在
+[2026-07-31 本机部署基线](../layers/evidence/orchestration/S5-local-deployment-baseline-2026-07-31.md)；
+该记录不会把 2026-07-27 No-Go 或远程生产切换改写为 Go。

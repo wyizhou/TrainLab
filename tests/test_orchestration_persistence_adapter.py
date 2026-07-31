@@ -156,6 +156,201 @@ def test_deferred_receipt_can_resume_without_redefining_step(tmp_path: Path) -> 
     ]
 
 
+def test_failed_schedule_is_preserved_and_manual_child_proves_recovery(
+    tmp_path: Path,
+) -> None:
+    path = database(tmp_path)
+    repository = OrchestrationRepository(path)
+    store = RepositoryReceiptStore(
+        repository, SqliteSubjectProjection(path), clock=lambda: NOW
+    )
+    scheduled = WorkflowRequest(
+        "morning",
+        "subject-7",
+        "2026-07-27",
+        "scheduled-morning",
+        "scheduled",
+        None,
+        (),
+        "2026-07-27T02:00:00Z",
+        "2026-07-27T00:00:00Z",
+    )
+    failed_step = WorkflowStepReceipt(
+        "daily",
+        "analysis",
+        "daily",
+        "failed",
+        None,
+        "analysis-failed",
+        None,
+    )
+    failed_receipt = WorkflowReceipt(
+        "run:morning:7:2026-07-27",
+        "morning:7:2026-07-27",
+        "morning",
+        "failed",
+        "scheduled",
+        "2026-07-27T00:00:00Z",
+        "2026-07-27T00:00:00Z",
+        "2026-07-27T00:01:00Z",
+        "2026-07-27",
+        (failed_step,),
+        "operator_review",
+        None,
+        (),
+        (),
+        ({"code": "orchestration_execution_failed"},),
+    )
+    store.record_orchestration_receipt(scheduled, failed_receipt)
+    failed = repository.get_workflow("morning:7:2026-07-27")
+    assert failed is not None and failed.status == "failed"
+    incident = repository.record_incident(
+        incident_key="workflow:failed:morning:scheduled",
+        category="workflow",
+        severity="error",
+        seen_at_utc=NOW + timedelta(minutes=2),
+        error_code="workflow_execution_failed",
+        next_action="operator_review",
+        related_workflow_run_id=failed.id,
+    )
+
+    replayed_success = WorkflowReceipt(
+        failed_receipt.workflow_run_id,
+        failed_receipt.workflow_key,
+        "morning",
+        "succeeded",
+        "recovery",
+        None,
+        "2026-07-27T00:03:00Z",
+        "2026-07-27T00:04:00Z",
+        "2026-07-27",
+        (
+            WorkflowStepReceipt(
+                "daily",
+                "analysis",
+                "daily",
+                "succeeded",
+                None,
+                "analysis-failed",
+                "a" * 64,
+            ),
+        ),
+        "none",
+        None,
+        (),
+        (),
+        (),
+    )
+    store.record_orchestration_receipt(scheduled, replayed_success)
+    assert repository.get_workflow(failed.workflow_key).status == "failed"
+
+    retry_request = WorkflowRequest(
+        "morning",
+        "subject-7",
+        "2026-07-27",
+        "retry-41",
+        "manual",
+        str(failed.id),
+        (),
+        "2026-07-28T02:00:00Z",
+        "2026-07-28T00:00:00Z",
+    )
+    retry_receipt = WorkflowReceipt(
+        "run:manual:morning:retry-41",
+        "manual:morning:retry-41",
+        "morning",
+        "succeeded",
+        "manual",
+        None,
+        "2026-07-28T00:00:00Z",
+        "2026-07-28T00:01:00Z",
+        "2026-07-27",
+        (
+            WorkflowStepReceipt(
+                "daily",
+                "analysis",
+                "daily",
+                "succeeded",
+                None,
+                "analysis-retry",
+                "b" * 64,
+            ),
+        ),
+        "none",
+        None,
+        (),
+        (),
+        (),
+    )
+    store.record_orchestration_receipt(retry_request, retry_receipt)
+    recovered_run = repository.get_workflow(retry_receipt.workflow_key)
+    assert recovered_run is not None
+    assert recovered_run.status == "succeeded"
+    assert recovered_run.parent_workflow_run_id == failed.id
+    recovered = repository.resolve_retryable_workflow_failures(
+        recovered_run.workflow_key, at_utc=NOW + timedelta(days=1, minutes=2)
+    )
+    assert tuple(item.incident_key for item in recovered) == (
+        incident.incident_key,
+    )
+    assert repository.get_workflow(failed.workflow_key).status == "failed"
+
+
+def test_operator_retry_parent_must_match_subject_kind_and_logical_date(
+    tmp_path: Path,
+) -> None:
+    path = database(tmp_path)
+    with sqlite3.connect(path) as connection:
+        connection.execute(
+            "INSERT INTO data_subjects"
+            "(subject_key,timezone,is_active,created_at_utc) VALUES(?,?,1,?)",
+            ("subject-8", "Asia/Singapore", "2026-07-27T00:00:00Z"),
+        )
+        connection.commit()
+    repository = OrchestrationRepository(path)
+    parent = repository.create_workflow(
+        workflow_key="morning:7:2026-07-27",
+        workflow_kind="morning",
+        trigger_kind="scheduled",
+        subject_id=1,
+        logical_local_date="2026-07-27",
+        started_at_utc=NOW,
+    )
+    parent = repository.transition_workflow(
+        parent.workflow_key,
+        "failed",
+        at_utc=NOW + timedelta(minutes=1),
+    )
+    store = RepositoryReceiptStore(
+        repository, SqliteSubjectProjection(path), clock=lambda: NOW
+    )
+
+    def retry(kind: str, subject: str, logical: str) -> WorkflowRequest:
+        return WorkflowRequest(
+            kind,
+            subject,
+            logical,
+            f"retry-{kind}-{subject}-{logical}",
+            "manual",
+            str(parent.id),
+            (),
+            "2026-07-28T02:00:00Z",
+            "2026-07-28T00:00:00Z",
+        )
+
+    assert store.permits_operator_retry(
+        retry("morning", "subject-7", "2026-07-27")
+    )
+    assert not store.permits_operator_retry(
+        retry("morning", "subject-8", "2026-07-27")
+    )
+    assert not store.permits_operator_retry(
+        retry("morning", "subject-7", "2026-07-26")
+    )
+    assert not store.permits_operator_retry(
+        retry("weekly", "subject-7", "2026-07-27")
+    )
+
 def test_scheduler_handoff_is_materialized_and_completed_by_exact_receipt(
     tmp_path: Path,
 ) -> None:

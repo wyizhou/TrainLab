@@ -35,7 +35,12 @@ from .scheduling_config import (
     SchedulingProjectionService,
 )
 from .subprocess_runner import SubprocessRunner
-from .supervisor import SupervisorRuntime, SystemdNotifier
+from .supervisor import (
+    BusinessIncidentEvents,
+    SupervisorRuntime,
+    SystemdNotifier,
+)
+from .workflow_incidents import WorkflowIncidentCoordinator
 
 
 _SG = ZoneInfo("Asia/Singapore")
@@ -167,10 +172,12 @@ class ProductionOrchestrationApplication:
             )
         except (ImportError, TypeError):
             health = None
+        receipt_store = RepositoryReceiptStore(repository, subjects)
         return OrchestrationTool(
             clock=lambda: datetime.now(UTC),
             subject_authorizer=subjects,
-            receipt_store=RepositoryReceiptStore(repository, subjects),
+            receipt_store=receipt_store,
+            operator_retry_authorizer=receipt_store,
             morning=MorningWorkflowService(runner),
             weekly=SundayWorkflowService(runner),
             mail=MailWorkflow(
@@ -209,9 +216,20 @@ class ProductionOrchestrationApplication:
             (now + timedelta(seconds=config.workflow_deadline_seconds)).isoformat().replace("+00:00", "Z"),
             now.isoformat().replace("+00:00", "Z"),
         )
-        return self._tool(
+        receipt = self._tool(
             foundation, config, repository, subjects
-        ).execute(request).as_json_dict()
+        ).execute(request)
+        outcome = receipt.as_json_dict()
+        events = WorkflowIncidentCoordinator(repository).observe(
+            workflow_key=receipt.workflow_key,
+            workflow_kind=receipt.workflow_kind,
+            outcome=outcome,
+            seen_at_utc=datetime.now(UTC),
+        )
+        self._notify_business_incidents(
+            self._alert_service(config, repository), events
+        )
+        return outcome
 
     def _execute_due(self, item: DueItem) -> object:
         foundation, config, repository, subjects = self._components()
@@ -307,38 +325,23 @@ class ProductionOrchestrationApplication:
         ).execute(request).as_json_dict()
 
     @staticmethod
-    def _observe_business_failure(
-        repository: OrchestrationRepository, item: DueItem, outcome: object,
-        *, seen_at_utc: datetime,
-    ) -> str | None:
-        """Persist a payload-free incident for a completed failed workflow.
-
-        A workflow receipt is a business outcome, not a Supervisor or lease
-        failure.  The stable incident key deduplicates retry/restart sightings
-        while the workflow reference keeps it visible to operators.
-        """
-        if (
-            not isinstance(outcome, dict)
-            or outcome.get("status") != "failed"
-            or item.workflow_kind not in {"morning", "weekly", "mail", "health_check"}
+    def _notify_business_incidents(
+        alerts: OperationalAlertService | None,
+        events: BusinessIncidentEvents | None,
+    ) -> None:
+        if alerts is None or events is None:
+            return
+        for keys, event in (
+            (events.opened, "open"),
+            (events.recovered, "recovery"),
         ):
-            return None
-        workflow = repository.get_workflow(item.workflow_key)
-        if workflow is None:
-            raise RuntimeError("supervisor_workflow_failure_not_persisted")
-        digest = hashlib.sha256(item.workflow_key.encode("utf-8")).hexdigest()[:32]
-        incident_key = f"workflow:failed:{item.workflow_kind}:{digest}"
-        repository.record_incident(
-            incident_key=incident_key,
-            category="workflow",
-            severity="error",
-            seen_at_utc=seen_at_utc,
-            error_code="workflow_execution_failed",
-            error_summary="workflow_execution_failed",
-            next_action="operator_review",
-            related_workflow_run_id=workflow.id,
-        )
-        return incident_key
+            for incident_key in keys:
+                try:
+                    alerts.deliver(incident_key, event=event)
+                except Exception:
+                    # The incident transition is already durable. Alert
+                    # reconciliation must not invalidate the workflow result.
+                    continue
 
     def supervisor_run(self) -> object:
         # Idempotent bootstrap is the only normal first-layer mutation.
@@ -368,19 +371,31 @@ class ProductionOrchestrationApplication:
         queue = DueQueueService(
             repository, lease, _Clock(), subject_id=numeric, host_id=instance
         )
+        alerts = self._alert_service(config, repository)
+        incidents = WorkflowIncidentCoordinator(repository)
         runtime = SupervisorRuntime(
             supervisor, queue, config, dispatch=self._execute_due,
             watchdog=SystemdNotifier(),
             incident_notifier=(
                 None
-                if (alerts := self._alert_service(config, repository)) is None
+                if alerts is None
                 else lambda incident_key: alerts.deliver(
                     incident_key, event="open"
                 )
             ),
+            incident_recovery_notifier=(
+                None
+                if alerts is None
+                else lambda incident_key: alerts.deliver(
+                    incident_key, event="recovery"
+                )
+            ),
             business_failure_handler=lambda item, outcome: (
-                self._observe_business_failure(
-                    repository, item, outcome, seen_at_utc=datetime.now(UTC)
+                incidents.observe(
+                    workflow_key=item.workflow_key,
+                    workflow_kind=item.workflow_kind,
+                    outcome=outcome,
+                    seen_at_utc=datetime.now(UTC),
                 )
             ),
         )
@@ -444,13 +459,58 @@ class ProductionOrchestrationApplication:
         return {"schema_version": "1", "status": "checked", "decisions": decisions}
 
     def retry(self, workflow_run_id: str) -> object:
-        result = self.reconcile(workflow_run_id)
-        decisions = result.get("decisions", [])
-        if len(decisions) != 1:
-            return {"schema_version": "1", "status": "rejected", "error_code": "workflow_not_recoverable"}
-        # The Supervisor recovery queue remains the only executor; a manual
-        # retry records intent and reports the exact durable decision.
-        return {"schema_version": "1", "status": "queued", "decision": decisions[0]}
+        foundation, config, repository, subjects = self._components()
+        numeric, subject_key = self._active_subject(foundation.database_path)
+        workflow = (
+            repository.get_workflow_by_id(int(workflow_run_id))
+            if workflow_run_id.isdecimal()
+            else repository.get_workflow(workflow_run_id)
+        )
+        if (
+            workflow is None
+            or workflow.status != "failed"
+            or workflow.workflow_kind not in {"morning", "weekly"}
+            or workflow.subject_id != numeric
+            or workflow.logical_local_date is None
+        ):
+            return {
+                "schema_version": "1",
+                "status": "rejected",
+                "error_code": "workflow_not_recoverable",
+            }
+
+        now = datetime.now(UTC)
+        invocation = (
+            f"retry-{workflow.id}-"
+            + now.strftime("%Y%m%dT%H%M%S.%fZ")
+        )
+        request = WorkflowRequest(
+            workflow.workflow_kind,
+            subject_key,
+            workflow.logical_local_date,
+            invocation,
+            "manual",
+            str(workflow.id),
+            (),
+            (
+                now + timedelta(seconds=config.workflow_deadline_seconds)
+            ).isoformat().replace("+00:00", "Z"),
+            now.isoformat().replace("+00:00", "Z"),
+        )
+        receipt = self._tool(
+            foundation, config, repository, subjects
+        ).execute(request)
+        outcome = receipt.as_json_dict()
+        events = WorkflowIncidentCoordinator(repository).observe(
+            workflow_key=receipt.workflow_key,
+            workflow_kind=receipt.workflow_kind,
+            outcome=outcome,
+            seen_at_utc=datetime.now(UTC),
+        )
+        self._notify_business_incidents(
+            self._alert_service(config, repository), events
+        )
+        return outcome
 
 
 def create_cli_runtime(root: Path | None = None):
