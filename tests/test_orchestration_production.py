@@ -12,6 +12,21 @@ from trainlab.orchestration.recovery_planner import RecoveryDecision
 from trainlab.orchestration.workflow_incidents import WorkflowIncidentCoordinator
 
 
+@pytest.mark.parametrize(("running", "expected_absent"), ((True, False), (False, True)))
+def test_production_process_probe_uses_zombie_aware_liveness(
+    monkeypatch, running: bool, expected_absent: bool
+) -> None:
+    observed = []
+    monkeypatch.setattr(
+        production,
+        "process_is_running",
+        lambda pid: observed.append(pid) is None and running,
+    )
+
+    assert production._ProcessProbe().is_absent(7013) is expected_absent
+    assert observed == [7013]
+
+
 @pytest.mark.parametrize("alerts_enabled", [False, True])
 def test_doctor_uses_loaded_configuration_for_alert_gate(
     tmp_path, monkeypatch, alerts_enabled: bool

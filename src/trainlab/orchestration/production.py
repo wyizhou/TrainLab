@@ -16,15 +16,16 @@ from zoneinfo import ZoneInfo
 
 from trainlab.foundation import FoundationConfig, FoundationRequest, FoundationTool
 from trainlab.gmail_environment import inspect_gmail_environment
+from trainlab.process_liveness import process_is_running
 from trainlab.util import project_root
 
 from .analysis_workflows import MorningWorkflowService, SundayWorkflowService
 from .application import OrchestrationTool
 from .contracts import WorkflowRequest, verify_frozen_contracts
 from .due_scheduler import DueItem, DueQueueService
+from .incident_alerts import OperationalAlertService
 from .lease import LeaseManager, Supervisor
 from .mail_workflow import MailWorkflow, SqlitePlanRevisionResolver
-from .incident_alerts import OperationalAlertService
 from .operational_gmail import CurrentEnvironmentOperationalGmail
 from .operations import OperatorOperations
 from .persistence_adapter import RepositoryReceiptStore, SqliteSubjectProjection
@@ -42,7 +43,6 @@ from .supervisor import (
 )
 from .workflow_incidents import WorkflowIncidentCoordinator
 
-
 _SG = ZoneInfo("Asia/Singapore")
 _CONFIG = Path("config/orchestration.yaml")
 _RECIPIENT = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
@@ -55,13 +55,7 @@ class _Clock:
 
 class _ProcessProbe:
     def is_absent(self, pid: int) -> bool:
-        try:
-            os.kill(pid, 0)
-        except ProcessLookupError:
-            return True
-        except (OSError, PermissionError):
-            return False
-        return False
+        return not process_is_running(pid)
 
 
 class ProductionOrchestrationApplication:
