@@ -42,7 +42,7 @@ def database() -> sqlite3.Connection:
     INSERT INTO data_subjects VALUES(1,'subject',1);
     INSERT INTO analysis_artifacts VALUES(81,'weekly_training_plan',1);
     INSERT INTO training_plans VALUES(
-      41,1,81,'2026-07-20','2026-07-26','Asia/Singapore','active'
+      41,1,81,'2026-07-20','2026-07-26','Asia/Hong_Kong','active'
     );
     """)
     connection.execute(
@@ -69,7 +69,7 @@ def config(tmp_path: Path) -> AnalysisConfig:
     schema = tmp_path / "result.json"
     schema.write_text("{}")
     return AnalysisConfig(
-        "1", tmp_path, "Asia/Singapore", tmp_path, schema, schema, 1_000_000,
+        "1", tmp_path, "Asia/Hong_Kong", tmp_path, schema, schema, 1_000_000,
         14, 28, 7, 60, 60, tmp_path / "lock", tmp_path,
     )
 

@@ -55,7 +55,7 @@ def _evidence() -> dict[str, object]:
     ]
     result: dict[str, object] = {
         "schema_version": "1", "authorization_id": "authz-" + "a" * 32, "approved_modes": ["auth", "incremental", "snapshot", "repair", "audit", "status"],
-        "approved_window": {"timezone": "Asia/Singapore", "from_local_date": "2026-07-20", "through_local_date": "2026-07-22"}, "backup_evidence_sha256": H,
+        "approved_window": {"timezone": "Asia/Hong_Kong", "from_local_date": "2026-07-20", "through_local_date": "2026-07-22"}, "backup_evidence_sha256": H,
         "prerequisites": {"e01_e04_verified": True, "named_operator_registered": True, "backup_restore_verified": True, "shadow_window_registered": True, "legacy_path_independent_verified": True, "credential_permissions_verified": True, "bounded_activity_window_verified": True, "canonical_owner_unchanged": True},
         "operations": operations,
         "total_elapsed_seconds": 36.2,

@@ -26,7 +26,7 @@ from .runner import AnalysisCodexRunner
 from .stable_views import StableViewRepository
 
 
-_SINGAPORE = ZoneInfo("Asia/Singapore")
+_HONG_KONG = ZoneInfo("Asia/Hong_Kong")
 _SUBJECT_KEY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$")
 def _utc_now() -> str:
     return datetime.now(UTC).isoformat(timespec="microseconds").replace("+00:00", "Z")
@@ -54,7 +54,7 @@ def build_daily_request(
     if not isinstance(invocation_id, str) or not invocation_id:
         raise ValueError("analysis_invocation_id_required")
     summary = _strict_date(summary_date)
-    current = (now or datetime.now(UTC)).astimezone(_SINGAPORE).date()
+    current = (now or datetime.now(UTC)).astimezone(_HONG_KONG).date()
     summary = summary or current - timedelta(days=1)
     if summary >= current:
         raise ValueError("analysis_summary_date_must_be_before_today")
@@ -87,7 +87,7 @@ def build_weekly_request(
         raise ValueError("analysis_subject_id_invalid")
     if not isinstance(invocation_id, str) or not invocation_id:
         raise ValueError("analysis_invocation_id_required")
-    current = (now or datetime.now(UTC)).astimezone(_SINGAPORE).date()
+    current = (now or datetime.now(UTC)).astimezone(_HONG_KONG).date()
     as_of = _strict_date(as_of_date) or current
     if as_of > current:
         raise ValueError("analysis_weekly_as_of_date_in_future")

@@ -18,7 +18,7 @@ class GarminRepository:
         row = conn.execute("SELECT id FROM data_subjects WHERE subject_key=?", (self.config.subject_key,)).fetchone()
         if row:
             return int(row[0])
-        conn.execute("INSERT INTO data_subjects(subject_key,timezone,created_at_utc) VALUES(?,?,?)", (self.config.subject_key, "Asia/Singapore", utc_now()))
+        conn.execute("INSERT INTO data_subjects(subject_key,timezone,created_at_utc) VALUES(?,?,?)", (self.config.subject_key, "Asia/Hong_Kong", utc_now()))
         return int(conn.execute("SELECT last_insert_rowid()").fetchone()[0])
 
     def start_run(self, conn: sqlite3.Connection, request: SyncRequest, subject_id: int, receipt: SyncReceipt) -> int:

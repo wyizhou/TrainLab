@@ -27,7 +27,7 @@ def _adapter_methods() -> set[str]:
 
 
 def test_catalog_is_versioned_complete_and_lints_against_pinned_client() -> None:
-    assert CATALOG_VERSION == "garmin-v3"
+    assert CATALOG_VERSION == "garmin-v4"
     assert ADAPTER_VERSION == "garminconnect-0.3.6"
     assert not catalog_lint(adapter_methods=_adapter_methods())
 

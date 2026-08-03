@@ -184,7 +184,7 @@ class GarminCollectionBase:
                 self._account_basics(conn, run, subject, actual_through, request, receipt)
                 self._account_b1(conn, run, subject, actual_through, request, receipt)
                 selected = set(request.resource_kinds)
-                if not selected or selected.intersection(HEALTH_RESOURCES):
+                if not selected or selected.intersection(COLLECTED_HEALTH_RESOURCES):
                     self._health(conn, run, subject, actual_start, actual_through, request, receipt)
                 activity_scope = {
                     "activity_inventory", "activity_summary", "activity_fit",
@@ -244,7 +244,7 @@ class GarminCollectionBase:
     ) -> CollectionModePlan:
         selected = set(request.resource_kinds)
         health_resources = tuple(
-            resource for resource in HEALTH_RESOURCES
+            resource for resource in COLLECTED_HEALTH_RESOURCES
             if not selected or resource in selected
         )
         cursors = {
@@ -283,7 +283,7 @@ class GarminCollectionBase:
         """
         selected = set(request.resource_kinds)
         return tuple(
-            resource for resource in HEALTH_RESOURCES
+            resource for resource in COLLECTED_HEALTH_RESOURCES
             if not selected or resource in selected
         )
 
@@ -418,7 +418,7 @@ class GarminCollectionBase:
             if start > through:
                 continue
             resource = str(gap["resource_kind"])
-            if resource in HEALTH_RESOURCES:
+            if resource in COLLECTED_HEALTH_RESOURCES:
                 scoped = replace(
                     request,
                     resource_kinds=(resource,),

@@ -80,7 +80,7 @@ def test_launcher_restarts_serially_with_bounded_backoff(tmp_path: Path) -> None
     for argv, cwd, environment in factory.calls:
         assert argv == (str(root / ".venv/bin/trainlab"), "supervisor", "run")
         assert cwd == root
-        assert environment["TZ"] == "Asia/Singapore"
+        assert environment["TZ"] == "Asia/Hong_Kong"
         assert environment["PYTHONUNBUFFERED"] == "1"
     lock = root / "state/foundation/state/locks/local-supervisor.lock"
     assert lock.read_text(encoding="ascii").strip() == str(os.getpid())

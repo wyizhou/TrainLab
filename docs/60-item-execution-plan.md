@@ -1,6 +1,7 @@
 # TrainLab 第三层 Harness：60 项执行计划
 
-状态：设计决策已逐项确认；本文是实施顺序、验收条件和回滚边界，不代表功能已经全部实现。
+状态：60 项执行文档已落地；当前实现正在按验收门收口，完成项以本地回归测试和
+本文件末尾的实施收据为准。正式环境不启用 14 天测试监督器。
 
 ## 使用规则
 
@@ -66,7 +67,7 @@
 | 33 | 事实分为 `long_term`、`temporary`、`message_only`，并保留 pending/active/expired/suspended/revoked 等状态 | 状态迁移表有测试 |
 | 34 | 用户明确报告的当前安全症状立即作为安全事实生效，即使日期未知；系统同时追问补充信息 | 不因缺少日期而忽略安全事实 |
 | 35 | 提供邮件和只读 CLI 浏览 active/pending/future/expired/revoked 事实；修改/停用/撤销追加 revision，不物理删除 | FACT-ID 和历史可追溯 |
-| 36 | 来源保留 provider_fact、provider_derived、user_asserted、derived_statistic、prior_model_output、unknown；删除未使用的 `provider_predicted` | acceptance_state 与 origin 分离 |
+| 36 | 新采集来源统一使用 provider_fact/provider_derived/user_asserted/derived_statistic/prior_model_output/unknown；`provider_predicted` 不再由当前采集器产生，但保留为历史兼容读取值 | acceptance_state 与 origin 分离 |
 | 37 | 冲突按职责解决：raw 不覆写、质量过滤不改原值、用户症状控制安全、确认 HRR 为正式区间、AI 历史输出最低优先级 | 冲突矩阵测试通过 |
 | 38 | Garmin VO₂ Max 原样保存；TrainLab 另算 HRR 主方法、历史阈值代理、Tanaka 低置信度对比 | Garmin 值不被本地替换 |
 | 39 | HRR 使用 28 个有效健康日 RHR 稳健中位数、180 天跑步最大心率证据、90 天阈值跑证据及质量过滤 | 证据窗口和置信度可解释 |
@@ -118,3 +119,24 @@
 - 本地 `state/`、SQLite、原始 JSON/FIT 不因 Git 清理、迁移、测试或文档任务被删除。
 - 未通过配置验证、数据质量 gate、安全 gate、上下文硬上限或幂等检查时，不生成可能误导的正式建议。
 - 任何真实 Gmail 发送、远程部署或历史强制推送都必须有明确的当前任务授权，并在操作后重新核验。
+
+## 实施收据（2026-08-03）
+
+本次落地已把 60 项执行边界写入当前代码、配置、Harness、部署模板、README、
+回归测试和本文件。核心实现包括：香港时间 09:00 日报与周一周报、D+1 睡眠/恢复
+白名单、运动 FIT 主来源与天气关联、健康白名单、append-only revision、7/28/90/180
+天窗口、默认脱敏与显式 FIT 例外、HRR/历史阈值代理/Tanaka 三值区间、用户确认和事实
+浏览、配置每次重读、邮件幂等/失败边界以及测试环境监督器的非生产边界。
+
+本地验收使用 `.venv/bin/pytest` 和 `compileall`；新增 FIT 上下文、心率区间、Garmin
+采集边界、事实浏览及邮件上下文的回归测试通过。生产分析没有绕过入口，未发送真实
+邮件，未启动持续监督器。
+
+数据保留门已复核：项目根目录及 `state/` 中现有 FIT、SQLite、原始 JSON 和运行状态
+均保留在本机，并由 `.gitignore` 排除；Git 可追踪内容不包含这些个人数据。历史可写
+分支的敏感对象已清理；GitHub 托管的旧 `refs/pull/*` 仍可能保留不可写的旧 PR 对象，
+因此公开前仍需按仓库清理流程请求 GitHub 解除/清除这些引用，不能把当前仓库宣称为
+已完成公开脱敏。
+
+第 60 项的“连续 14 天无故障”是测试环境运行门，不在本次短时执行中虚假标记为已
+通过；正式部署仍必须在该门通过后另行获得授权。

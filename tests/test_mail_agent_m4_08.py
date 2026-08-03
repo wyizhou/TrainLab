@@ -184,7 +184,7 @@ def _add_plan(
         "subject_id,analysis_artifact_id,plan_start_local_date,"
         "plan_end_local_date,timezone,status,objective_json,"
         "constraints_json,created_at_utc) "
-        "VALUES(?,?,?,?,'Asia/Singapore',?,'{}','{}',?)",
+        "VALUES(?,?,?,?,'Asia/Hong_Kong',?,'{}','{}',?)",
         (
             subject_id,
             artifact_id,

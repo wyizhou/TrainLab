@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import argparse
+import json
+import sqlite3
 
 from .foundation import main as foundation_main
 from .garmin.cli import garmin_cli_execute
@@ -64,6 +66,12 @@ def _parser() -> argparse.ArgumentParser:
     from .orchestration.cli import add_root_subparsers as add_orchestration_subparsers
 
     add_mail_subparser(subparsers)
+    facts = subparsers.add_parser("facts", help="read-only user-fact browser")
+    facts.add_argument("--subject-id", type=int, required=True)
+    facts.add_argument(
+        "--status", choices=["all", "active", "pending", "future", "expired", "revoked"], default="all"
+    )
+    facts.add_argument("--as-of-utc")
     add_orchestration_subparsers(subparsers)
     return parser
 
@@ -221,6 +229,22 @@ def main(argv: list[str] | None = None, *, mail_tool=None) -> int:
         receipt = mail_cli_execute(args, tool=mail_tool or MailTool(create_mail_application()))
         print(receipt.json())
         return exit_code_for_status(receipt.status)
+    if args.command == "facts":
+        from .foundation import FoundationConfig
+        from .mail_agent.repository import MailRepository
+        from .util import project_root
+
+        root = project_root()
+        foundation = FoundationConfig.load(root)
+        connection = sqlite3.connect(foundation.database_path)
+        try:
+            rows = MailRepository(connection).browse_facts(
+                args.subject_id, status=args.status, as_of_utc=args.as_of_utc
+            )
+            print(json.dumps(list(rows), ensure_ascii=False, sort_keys=True))
+            return 0
+        finally:
+            connection.close()
     if args.command in {"supervisor", "orchestrate"}:
         from .orchestration.cli import execute as execute_orchestration
         from .orchestration.production import create_cli_runtime

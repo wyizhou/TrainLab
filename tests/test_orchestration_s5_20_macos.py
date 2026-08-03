@@ -22,7 +22,7 @@ def test_macos_launchagent_has_one_fixed_supervisor_argv_and_safe_lifecycle() ->
     ]
     assert document["WorkingDirectory"] == "@LAUNCH_WORKING_DIRECTORY@"
     assert document["EnvironmentVariables"] == {
-        "PYTHONUNBUFFERED": "1", "TZ": "Asia/Singapore", "PATH": "@RUNTIME_PATH@",
+        "PYTHONUNBUFFERED": "1", "TZ": "Asia/Hong_Kong", "PATH": "@RUNTIME_PATH@",
         "__PYVENV_LAUNCHER__": "@PROJECT_ROOT@/.venv/bin/python",
         "TRAINLAB_PROJECT_ROOT": "@PROJECT_ROOT@",
     }

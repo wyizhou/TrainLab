@@ -29,7 +29,7 @@ _EXECUTABLE = _ROOT / ".venv/bin/trainlab"
 _PYTHON = _ROOT / ".venv/bin/python"
 _MAX_OUTPUT = 1_048_576
 _GRACE_SECONDS = 2
-_ENV = {"LANG": "C.UTF-8", "LC_ALL": "C.UTF-8", "TZ": "Asia/Singapore"}
+_ENV = {"LANG": "C.UTF-8", "LC_ALL": "C.UTF-8", "TZ": "Asia/Hong_Kong"}
 _SCHEMAS = {
     "foundation": _ROOT / "harness/schemas/foundation_receipt.schema.json",
     "garmin": _ROOT / "harness/schemas/garmin_sync_receipt.schema.json",

@@ -113,7 +113,8 @@ SQLite 读取快照完成后立即结束只读事务。Codex 执行、特征计�
 5. 正常分析只读取第一层 current canonical 视图、质量状态和 accepted 历史产物，
    不重新解析 FIT，不直接扫描原始 Garmin JSON 或 Gmail MIME/HTML。
 6. Garmin 已提供的睡眠、恢复、训练状态、Training Effect、VO₂ Max 等结果作为
-   `provider_derived` 或 `provider_predicted` 事实进入上下文，不由本层冒充 Garmin
+   `provider_derived` 事实进入上下文，不由本层冒充 Garmin；历史上已存在的
+   `provider_predicted` 只作为兼容读取值，不再由当前采集器产生。
    算法重新计算。
 7. 本层只确定性计算跨来源、跨周期和 TrainLab 自身语义，例如趋势、计划与实际
    匹配、训练间隔、完成情况和数据质量特征。
@@ -175,7 +176,7 @@ trainlab analyze status [--run-key RUN_KEY]
 规则：
 
 - 不提供 `--daemon`、`--schedule`、`--watch` 或轮询参数。
-- 所有日期均为 `Asia/Singapore` 本地日期，格式严格为 `YYYY-MM-DD`。
+- 所有日期均为 `Asia/Hong_Kong` 本地日期，格式严格为 `YYYY-MM-DD`。
 - `daily` 的 `summary-date` 默认是调用日的昨天，必须是已经结束的日期。
 - `daily` 的 `advice-date` 默认是 `summary-date + 1 天`，正常调度即调用当天。
 - `weekly` 的 `as-of` 默认是调用当天；复盘范围固定为 `as-of - 7 天` 至
@@ -588,7 +589,7 @@ Context Builder 使用稳定排序和稳定 JSON 序列化生成
 |---|---|---|
 | `provider_fact` | Garmin 传感器、活动、设置或规范化来源事实 | 可以，但仍受质量状态约束 |
 | `provider_derived` | Garmin 训练准备度、睡眠分数、Training Effect 等算法结果 | 可以引用为 Garmin 结论，不能表述为直接测量 |
-| `provider_predicted` | 比赛预测、预测能力等 | 只能表述为预测 |
+| `provider_predicted` | 历史兼容的比赛预测等值 | 只能表述为预测；新采集统一标记 `provider_derived` |
 | `user_asserted` | 用户明确陈述且已由第四层接纳的事实/偏好 | 可以按有效期和作用域使用 |
 | `derived_statistic` | 第三层确定性计算的趋势、匹配或汇总 | 可以引用并说明计算窗口 |
 | `prior_model_output` | 历史总结、建议或计划 | 仅作参考，不能覆盖更高等级证据 |
@@ -1065,7 +1066,7 @@ analysis:<subject>:regenerate:<artifact_id>:<invocation_id>
 
 ```yaml
 analysis:
-  timezone: Asia/Singapore
+  timezone: Asia/Hong_Kong
   harness_root: harness
   input_schema: harness/schemas/analysis_input.schema.json
   output_schema: harness/schemas/analysis_result.schema.json
@@ -1267,7 +1268,7 @@ watchdog 设置在目标架构中必须拆分。第三层只读取分析、策�
 
 - 第二层短日期 incremental 成功后运行 daily smoke test。
 - 完全相同 invocation 重跑为 unchanged。
-- Sunday-like as-of 运行 weekly 并验证过去/未来日期。
+- Monday as-of 运行 weekly 并验证前一周（周一至周日）和当前周日期。
 - 在受控已认证账号上验证 artifact 落库后才发送、同一 delivery 重试为
   already_sent、发送失败不回滚 artifact。
 - 工具退出后无 daemon、timer、后台线程或监听端口。

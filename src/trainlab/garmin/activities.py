@@ -60,27 +60,28 @@ class ActivityCollectionMixin:
                         date.fromisoformat(str(activity["local_date"])), receipt,
                     )
                 selected = set(request.resource_kinds)
-                collect_l2_12 = collect_fit or bool(
-                    selected.intersection(
-                        ACTIVITY_ENRICHMENT_RESOURCES | {"activity_details_fallback"}
+                # Normal production collection keeps the activity surface
+                # bounded: ORIGINAL FIT is the canonical activity source and
+                # weather is the only automatic enrichment.  Other endpoint
+                # roles remain available only when explicitly requested for a
+                # repair or investigation.
+                if not selected and collect_fit:
+                    enrichments = DEFAULT_ACTIVITY_ENRICHMENTS
+                else:
+                    enrichments = tuple(
+                        (resource, role)
+                        for resource, role in ACTIVITY_ENRICHMENTS
+                        if resource in selected
                     )
-                )
-                if collect_l2_12:
-                    for resource, role in ACTIVITY_ENRICHMENTS:
-                        if not selected or resource in selected:
-                            self._collect_activity_enrichment(
-                                conn, run, subject, activity_id, int(activity["id"]),
-                                str(activity["sport"]), date.fromisoformat(str(activity["local_date"])),
-                                resource, role, receipt,
-                            )
-                fallback_requested = (
-                    "activity_details_fallback" in selected
-                    or (
-                        not selected
-                        and collect_fit
-                        and fit_outcome in {"not_available", "not_supported", "invalid"}
+                for resource, role in enrichments:
+                    self._collect_activity_enrichment(
+                        conn, run, subject, activity_id, int(activity["id"]),
+                        str(activity["sport"]), date.fromisoformat(str(activity["local_date"])),
+                        resource, role, receipt,
                     )
-                )
+                # The chart/details endpoint is deliberately not a normal
+                # fallback.  It may be fetched only by an explicit request.
+                fallback_requested = "activity_details_fallback" in selected
                 if fallback_requested and not self._has_active_fit(conn, int(activity["id"])):
                     self._collect_activity_chart_fallback(
                         conn, run, subject, activity_id, int(activity["id"]),
@@ -624,9 +625,11 @@ class ActivityCollectionMixin:
                 "cycling", "running", "rowing", "ski", "multisport", "triathlon",
             ))
         if resource == "activity_weather":
-            return not any(token in normalized for token in (
-                "indoor", "strength", "pool", "yoga",
-            ))
+            # Keep a weather observation attempt for every activity. Indoor,
+            # pool and strength activities may legitimately produce a null or
+            # not-available result, but skipping the provider call would make
+            # the all-activity weather policy impossible to audit.
+            return True
         return True
 
     @staticmethod

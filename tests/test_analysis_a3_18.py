@@ -19,8 +19,8 @@ def request(invocation: str = "weekly-one") -> AnalysisRequest:
         "weekly",
         "subject",
         invocation,
-        "2026-07-26T00:00:00Z",
-        as_of_local_date="2026-07-26",
+        "2026-07-27T00:00:00Z",
+        as_of_local_date="2026-07-27",
     )
 
 
@@ -28,7 +28,7 @@ def config(tmp_path: Path) -> AnalysisConfig:
     schema = tmp_path / "result.json"
     schema.write_text("{}")
     return AnalysisConfig(
-        "1", tmp_path, "Asia/Singapore", tmp_path, schema, schema, 1_000_000,
+        "1", tmp_path, "Asia/Hong_Kong", tmp_path, schema, schema, 1_000_000,
         14, 28, 7, 60, 60, tmp_path / "lock", tmp_path,
     )
 
@@ -42,7 +42,7 @@ class Coordinator:
             decision=RunDecision(
                 "started",
                 7,
-                "analysis:subject:weekly:2026-07-26:weekly-one",
+                "analysis:subject:weekly:2026-07-27:weekly-one",
                 "started",
                 ("run_created",),
             )
@@ -59,9 +59,9 @@ def _coverage() -> tuple[dict[str, object], ...]:
             "subject_id": 1,
             "provider": "garmin",
             "resource_kind": "activity_inventory",
-            "local_date": f"2026-07-{19 + index:02d}",
+            "local_date": f"2026-07-{20 + index:02d}",
             "availability_state": "empty",
-            "observed_at_utc": "2026-07-26T00:00:00Z",
+            "observed_at_utc": "2026-07-27T00:00:00Z",
             "source_revision_id": f"coverage-{index}",
             "current_revision": True,
         }
@@ -199,20 +199,20 @@ def route(tmp_path: Path, *, gate: Gate | None = None, delivery: Delivery | None
         validator=validator,
         subject_resolver=lambda _: 1,
         harness_resolver=lambda *_: bundle,
-        clock=lambda: "2026-07-26T00:00:00Z",
+        clock=lambda: "2026-07-27T00:00:00Z",
     )
     return service, coordinator, context, runner, validator, publisher, pending
 
 
 def test_weekly_window_is_rolling_not_iso_week() -> None:
-    assert _periods("2026-07-26") == (
+    assert _periods("2026-07-27") == (
         {
-            "start_local_date": "2026-07-19",
-            "end_local_date": "2026-07-25",
+            "start_local_date": "2026-07-20",
+            "end_local_date": "2026-07-26",
         },
         {
-            "start_local_date": "2026-07-26",
-            "end_local_date": "2026-08-01",
+            "start_local_date": "2026-07-27",
+            "end_local_date": "2026-08-02",
         },
     )
 
@@ -232,12 +232,12 @@ def test_ready_weekly_route_publishes_plan_and_only_seeds_pending_delivery(
     assert coordinator.finished == ["succeeded"]
     assert validator.expectation.target_periods == {
         "review": {
-            "start_local_date": "2026-07-19",
-            "end_local_date": "2026-07-25",
+            "start_local_date": "2026-07-20",
+            "end_local_date": "2026-07-26",
         },
         "plan": {
-            "start_local_date": "2026-07-26",
-            "end_local_date": "2026-08-01",
+            "start_local_date": "2026-07-27",
+            "end_local_date": "2026-08-02",
         },
     }
     assert validator.expectation.prior_artifact_state == {
@@ -245,8 +245,8 @@ def test_ready_weekly_route_publishes_plan_and_only_seeds_pending_delivery(
         "plan": "no_prior_artifact",
     }
     assert set(validator.expectation.weekly_safety_request_bases) == {
-        f"2026-07-{day:02d}" for day in range(26, 32)
-    } | {"2026-08-01"}
+        f"2026-07-{day:02d}" for day in range(27, 32)
+    } | {"2026-08-01", "2026-08-02"}
     assert context.kwargs["plan_adherence"]
     assert {
         item["key"] for item in context.kwargs["deterministic_features"]
@@ -283,7 +283,7 @@ def test_same_invocation_is_unchanged_without_generation(tmp_path: Path) -> None
         decision=RunDecision(
             "unchanged",
             7,
-            "analysis:subject:weekly:2026-07-26:weekly-one",
+            "analysis:subject:weekly:2026-07-27:weekly-one",
             "succeeded",
             ("existing_succeeded",),
         )

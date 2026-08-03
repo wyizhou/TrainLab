@@ -239,7 +239,7 @@ def test_static_policy_and_schemas_are_versioned_strict_and_self_validating():
     Draft202012Validator.check_schema(schema)
     Draft202012Validator(schema).validate(policy)
     assert TRAINING_SAFETY_POLICY_VERSION == "1.0.1-a3-09"
-    assert TRAINING_SAFETY_POLICY_SHA256 == "71adbcf18ff547cfbd0d1c55da646a8427a17178fe3adcec5895c32610c24937"
+    assert TRAINING_SAFETY_POLICY_SHA256 == "bf8b78e19514672e80b7f03ddcaa11f736523d992353082f83dc1b493755cce9"
     for name in ("training_safety_request.schema.json", "training_safety_result.schema.json"):
         loaded = json.loads((root / "schemas" / name).read_text())
         Draft202012Validator.check_schema(loaded)

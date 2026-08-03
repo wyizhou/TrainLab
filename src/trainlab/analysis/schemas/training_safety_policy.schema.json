@@ -24,7 +24,7 @@
   "properties": {
     "schema_version": {"const": "1"},
     "policy_version": {"type": "string", "minLength": 1, "maxLength": 64},
-    "timezone": {"const": "Asia/Singapore"},
+    "timezone": {"const": "Asia/Hong_Kong"},
     "zone_boundary_policy": {"const": "inclusive_contiguous_no_overlap"},
     "zone_source_priority": {
       "const": ["garmin_sport_zones", "user_zones", "hrr"]

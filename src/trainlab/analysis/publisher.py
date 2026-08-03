@@ -21,7 +21,7 @@ class AnalysisPublishError(RuntimeError):
     """A controlled publication failure; no partial publication is retained."""
 
 
-_SG = ZoneInfo("Asia/Singapore")
+_SG = ZoneInfo("Asia/Hong_Kong")
 _TRUST = frozenset({
     "provider_fact",
     "provider_derived",
@@ -511,7 +511,7 @@ class AnalysisPublisher:
         if (
             end - start != timedelta(days=6)
             or not start <= effective <= end
-            or value.get("timezone") != "Asia/Singapore"
+            or value.get("timezone") != "Asia/Hong_Kong"
             or not isinstance(value.get("objective"), Mapping)
             or not isinstance(value.get("constraints"), Mapping)
         ):
@@ -585,7 +585,7 @@ class AnalysisPublisher:
             row is None or row["artifact_subject_id"] != subject_id
             or row["status"] != "active" or row["is_current"] != 1
             or row["artifact_kind"] != "weekly_training_plan"
-            or row["timezone"] != "Asia/Singapore"
+            or row["timezone"] != "Asia/Hong_Kong"
             or row["plan_start_local_date"] != row["period_start_local_date"]
             or row["plan_end_local_date"] != row["period_end_local_date"]
         ):
@@ -669,7 +669,7 @@ class AnalysisPublisher:
             end = date.fromisoformat(str(period["end_local_date"]))
         except (KeyError, TypeError, ValueError) as error:
             raise AnalysisPublishError("analysis_publish_weekly_plan_period_invalid") from error
-        if end - start != timedelta(days=6) or value.get("timezone") != "Asia/Singapore":
+        if end - start != timedelta(days=6) or value.get("timezone") != "Asia/Hong_Kong":
             raise AnalysisPublishError("analysis_publish_weekly_plan_period_invalid")
         if not isinstance(value.get("objective"), Mapping) or not isinstance(value.get("constraints"), Mapping):
             raise AnalysisPublishError("analysis_publish_weekly_plan_invalid")

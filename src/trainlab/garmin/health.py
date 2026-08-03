@@ -780,7 +780,7 @@ class HealthCollectionMixin:
         return True
 
     def _health(self, conn: sqlite3.Connection, run: int, subject: int, start: date, through: date, request: SyncRequest, receipt: SyncReceipt) -> None:
-        selected = set(request.resource_kinds) or set(HEALTH_RESOURCES)
+        selected = set(request.resource_kinds) or set(COLLECTED_HEALTH_RESOURCES)
         from ..garmin_catalog import RESOURCE_CATALOG
         # Compatibility doubles used by pre-range tests expose only the old
         # one-day protocol. Real pinned transport always provides fetch_range.
@@ -790,7 +790,7 @@ class HealthCollectionMixin:
             self._health_range(conn, run, subject, resource, start, through, request, receipt)
         selected -= range_resources
         for day in (start + timedelta(i) for i in range((through - start).days + 1)):
-            for resource in HEALTH_RESOURCES:
+            for resource in COLLECTED_HEALTH_RESOURCES:
                 if resource not in selected: continue
                 key = f"garmin:health:{resource}:{day}"
                 if self._health_item_completed(conn, run, resource, key):
@@ -1891,14 +1891,14 @@ class HealthCollectionMixin:
                 None,
             )
             # These endpoints are daily/range provider summaries. A missing
-            # timestamp means the requested Singapore day boundary, never an
+            # timestamp means the requested Hong Kong day boundary, never an
             # invented high-frequency sample time.
             stamp = self._timestamp_utc(timestamp_value, day, allow_day_boundary=True)
             self._assert_sample_day(stamp, day)
             cursor = conn.execute(
                 """INSERT INTO physiology_records(subject_id,domain,record_type,provider_record_id,effective_at_utc,local_date,value_origin,extras_json,source_revision_id)
                    VALUES(?,?,?,?,?,?,?,?,?)""",
-                (subject, "garmin", resource, str(index), stamp, self._local_day(stamp), "provider_predicted" if resource == "race_predictions" else "provider_derived", "{}", revision),
+                (subject, "garmin", resource, str(index), stamp, self._local_day(stamp), "provider_derived", "{}", revision),
             )
             record_id = int(cursor.lastrowid)
             for field, value, spec in scalars:

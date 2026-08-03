@@ -39,7 +39,7 @@ def repository(tmp_path: Path) -> tuple[sqlite3.Connection, StableViewRepository
     conn.executemany("INSERT INTO user_facts(subject_id,fact_key,fact_value_json,scope,is_active) VALUES(?,?,?,?,1)", [(1,"one","{}","long_term"),(2,"two","{}","long_term")])
     conn.executemany("INSERT INTO analysis_runs(id,run_key,subject_id,analysis_kind,status,started_at_utc) VALUES(?,?,?,?,?,?)", [(1,"daily-run-1",1,"daily","succeeded","2026-07-22T00:00:00Z"),(2,"daily-run-2",2,"daily","succeeded","2026-07-22T00:00:00Z"),(3,"daily-run-3",1,"daily","succeeded","2026-07-01T00:00:00Z")])
     conn.executemany("INSERT INTO analysis_artifacts(id,subject_id,artifact_kind,period_start_local_date,period_end_local_date,revision_no,generated_by_run_id,schema_version,structured_content_json,user_visible_text,content_sha256,is_current,created_at_utc) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)", [(1,1,"weekly_summary","2026-07-22","2026-07-22",1,1,"1","{}","x","b"*64,1,"2026-07-22T00:00:00Z"),(2,2,"weekly_summary","2026-07-22","2026-07-22",1,2,"1","{}","x","c"*64,1,"2026-07-22T00:00:00Z"),(3,1,"weekly_summary","2026-07-01","2026-07-01",1,3,"1","{}","x","d"*64,1,"2026-07-01T00:00:00Z"),(4,1,"weekly_training_plan","2026-07-22","2026-07-28",1,1,"1","{}","x","e"*64,1,"2026-07-22T00:00:00Z")])
-    conn.execute("INSERT INTO training_plans(id,subject_id,analysis_artifact_id,plan_start_local_date,plan_end_local_date,timezone,status,created_at_utc) VALUES(1,1,4,'2026-07-22','2026-07-28','Asia/Singapore','active','2026-07-22T00:00:00Z')")
+    conn.execute("INSERT INTO training_plans(id,subject_id,analysis_artifact_id,plan_start_local_date,plan_end_local_date,timezone,status,created_at_utc) VALUES(1,1,4,'2026-07-22','2026-07-28','Asia/Hong_Kong','active','2026-07-22T00:00:00Z')")
     conn.execute("INSERT INTO training_plan_items(training_plan_id,item_index,local_date,activity_kind) VALUES(1,0,'2026-07-22','rest')")
     conn.execute("INSERT INTO resource_coverage(subject_id,provider,resource_kind,local_date,availability_state,observed_at_utc) VALUES(1,'garmin','daily','2026-07-22','fetched','2026-07-22T00:00:00Z')")
     conn.execute("INSERT INTO resource_coverage(subject_id,provider,resource_kind,local_date,availability_state,observed_at_utc) VALUES(1,'garmin','activity_inventory','2026-07-22','fetched','2026-07-22T00:01:00Z')")
@@ -63,7 +63,7 @@ def test_real_foundation_allowlist_subject_isolation_and_stable_snapshot(tmp_pat
     assert [row["provider_activity_id"] for row in first.views["v_current_activities"]] == ["one"]
     assert all("extras_json" not in row and "source_map_json" not in row for rows in first.views.values() for row in rows)
     assert conn.execute("PRAGMA query_only").fetchone()[0] == 0
-    assert first.subject_context is not None and first.subject_context.__dict__ == {"subject_id": 1, "timezone": "Asia/Singapore", "provider": "garmin", "identity_kind": "account", "verified": True}
+    assert first.subject_context is not None and first.subject_context.__dict__ == {"subject_id": 1, "timezone": "Asia/Hong_Kong", "provider": "garmin", "identity_kind": "account", "verified": True}
     assert [item.operation for item in first.audit] == [f"view:{name}" for name in first.views] + ["coverage", "cursors", "gaps", "activity_stage", "quality", "facts", "capabilities", "plan_reasons"]
     assert all(item.subject_id == 1 and item.start_local_date == "2026-07-22" and item.end_local_date == "2026-07-22" for item in first.audit)
     assert all("sql" not in item.__dict__ and "payload" not in item.__dict__ for item in first.audit)
@@ -111,7 +111,7 @@ def test_snapshot_excludes_items_from_superseded_overlapping_plan(
     conn.execute(
         "INSERT INTO training_plans(id,subject_id,analysis_artifact_id,plan_start_local_date,"
         "plan_end_local_date,timezone,status,created_at_utc) "
-        "VALUES(2,1,5,'2026-07-22','2026-07-28','Asia/Singapore','superseded',"
+        "VALUES(2,1,5,'2026-07-22','2026-07-28','Asia/Hong_Kong','superseded',"
         "'2026-07-21T00:00:00Z')"
     )
     conn.execute(

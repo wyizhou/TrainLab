@@ -41,7 +41,7 @@ _MAX_SNAPSHOT_ROWS = 8_000
 _SPECS: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     ("v_current_daily_health", "SELECT id,subject_id,local_date,values_json,source_revision_id FROM v_current_daily_health WHERE subject_id=? AND local_date BETWEEN ? AND ? ORDER BY local_date,id", ("subject", "date", "date")),
     ("v_current_physiology_records", "SELECT id,subject_id,domain,record_type,effective_at_utc,period_start_utc,period_end_utc,local_date,value_origin,status_key,status_text,source_revision_id FROM v_current_physiology_records WHERE subject_id=? AND COALESCE(local_date,substr(effective_at_utc,1,10)) BETWEEN ? AND ? ORDER BY COALESCE(local_date,substr(effective_at_utc,1,10)),id", ("subject", "date", "date")),
-    ("v_current_physiology_metrics", "SELECT m.id,r.subject_id,m.physiology_record_id,m.metric_key,m.value_number,m.value_text,m.value_boolean,m.value_json,m.raw_unit,m.canonical_unit,m.value_origin FROM v_current_physiology_metrics m JOIN physiology_records r ON r.id=m.physiology_record_id WHERE r.subject_id=? AND COALESCE(r.local_date,substr(r.effective_at_utc,1,10)) BETWEEN ? AND ? ORDER BY COALESCE(r.local_date,substr(r.effective_at_utc,1,10)),m.metric_key,m.id", ("subject", "date", "date")),
+    ("v_current_physiology_metrics", "SELECT m.id,r.subject_id,r.domain,r.record_type,r.effective_at_utc,m.physiology_record_id,m.metric_key,m.value_number,m.value_text,m.value_boolean,m.value_json,m.raw_unit,m.canonical_unit,m.value_origin FROM v_current_physiology_metrics m JOIN physiology_records r ON r.id=m.physiology_record_id WHERE r.subject_id=? AND COALESCE(r.local_date,substr(r.effective_at_utc,1,10)) BETWEEN ? AND ? ORDER BY COALESCE(r.local_date,substr(r.effective_at_utc,1,10)),m.metric_key,m.id", ("subject", "date", "date")),
     ("v_current_sleep_sessions", "SELECT id,subject_id,session_type,start_time_utc,end_time_utc,values_json,source_revision_id FROM v_current_sleep_sessions WHERE subject_id=? AND start_time_utc<? AND end_time_utc>? ORDER BY start_time_utc,id", ("subject", "end_utc", "start_utc")),
     ("v_current_activities", "SELECT id,subject_id,provider_activity_id,name,sport,sub_sport,start_time_utc,end_time_utc,local_date,elapsed_seconds,timer_seconds,distance_m,primary_revision_id,provider_state FROM v_current_activities WHERE subject_id=? AND local_date BETWEEN ? AND ? ORDER BY local_date,start_time_utc,id", ("subject", "date", "date")),
     ("v_activity_segments", "SELECT s.id,a.subject_id,s.activity_id,s.segment_type,s.segment_index,s.start_time_utc,s.end_time_utc,s.duration_seconds,s.distance_m,s.source_revision_id FROM v_activity_segments s JOIN activities a ON a.id=s.activity_id WHERE a.subject_id=? AND a.local_date BETWEEN ? AND ? ORDER BY a.local_date,s.activity_id,s.segment_index,s.id", ("subject", "date", "date")),
@@ -341,9 +341,9 @@ class StableViewRepository:
             if len(subject_rows) != 1 or len(identity_rows) != 1:
                 raise StableViewError("analysis_snapshot_subject_context_invalid")
             subject, identity = subject_rows[0], identity_rows[0]
-            if subject["id"] != subject_id or subject["is_active"] != 1 or subject["timezone"] != "Asia/Singapore" or identity["subject_id"] != subject_id or identity["provider"] != "garmin" or identity["identity_kind"] != "account" or identity["is_verified"] != 1:
+            if subject["id"] != subject_id or subject["is_active"] != 1 or subject["timezone"] != "Asia/Hong_Kong" or identity["subject_id"] != subject_id or identity["provider"] != "garmin" or identity["identity_kind"] != "account" or identity["is_verified"] != 1:
                 raise StableViewError("analysis_snapshot_subject_context_invalid")
-            subject_context = StableSubjectContext(subject_id, "Asia/Singapore", "garmin", "account", True)
+            subject_context = StableSubjectContext(subject_id, "Asia/Hong_Kong", "garmin", "account", True)
             self._snapshot_after_subject_context()
         # These views are intentionally queried independently: a missing
         # projection is schema incompatibility, never silently interpreted as empty.

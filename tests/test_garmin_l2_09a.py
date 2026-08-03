@@ -233,7 +233,7 @@ def test_account_identity_conflict_and_hmac_secret_isolation(tmp_path: Path) -> 
     assert same == tool._identity_hmac("fixture-account")
     assert same != other._identity_hmac("fixture-account")
     with sqlite3.connect(config.database_path) as conn:
-        conn.execute("INSERT INTO data_subjects(subject_key,timezone,created_at_utc) VALUES('other','Asia/Singapore','2026-01-01T00:00:00Z')")
+        conn.execute("INSERT INTO data_subjects(subject_key,timezone,created_at_utc) VALUES('other','Asia/Hong_Kong','2026-01-01T00:00:00Z')")
         other_subject = conn.execute("SELECT id FROM data_subjects WHERE subject_key='other'").fetchone()[0]
         conn.execute("DELETE FROM subject_identities WHERE provider='garmin'")
         conn.execute("INSERT INTO subject_identities(subject_id,provider,identity_kind,identity_hmac,is_verified,first_seen_at_utc,last_seen_at_utc) VALUES(?, 'garmin','account',?,1,'2026-01-01T00:00:00Z','2026-01-01T00:00:00Z')", (other_subject, same))

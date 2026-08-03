@@ -1,7 +1,7 @@
 orchestrator:
-  timezone: Asia/Singapore
-  morning_time: "07:00"
-  weekly_day: sunday
+  timezone: Asia/Hong_Kong
+  morning_time: "09:00"
+  weekly_day: monday
   mail_poll_interval_seconds: 300
   health_check_interval_seconds: 60
   workflow_deadline_seconds: 3600

@@ -27,9 +27,10 @@ from .result_validation import AnalysisResultValidationError, ResultValidationEx
 from .run_state import AnalysisRunCoordinator, AnalysisRunStateError
 from .stable_views import StableViewRepository
 from .training_difficulty import training_control_contracts
+from .heart_rate_zones_store import zone_evidence_from_snapshot
 
 
-_SG = ZoneInfo("Asia/Singapore")
+_SG = ZoneInfo("Asia/Hong_Kong")
 
 
 class PendingDailyDelivery(Protocol):
@@ -170,7 +171,7 @@ def _safety_base(subject_id: int, advice_date: str, as_of_utc: str, snapshot: ob
     # exact BPM is impossible.  This is intentionally not inferred from health
     # rows or a model claim.
     return {"schema_version": "1", "subject_id": subject_id, "advice_local_date": advice_date,
-            "as_of_utc": as_of_utc, "zone_evidence": [],
+            "as_of_utc": as_of_utc, "zone_evidence": zone_evidence_from_snapshot(snapshot),
             "safety_signals": _accepted_user_safety_signals(snapshot, subject_id=subject_id, as_of_utc=as_of_utc),
             "quality_sessions": [], "substitution": None}
 
@@ -252,7 +253,8 @@ class DailyRoute:
             {"summary": {"start_local_date": request.summary_local_date, "end_local_date": request.summary_local_date},
              "advice": {"start_local_date": request.advice_local_date, "end_local_date": request.advice_local_date}},
             built.context["input_manifest"], gate.as_dict(), _safety_base(context_request.subject_id, request.advice_local_date, request.requested_at_utc, snapshot),
-            training_difficulty_level=self.config.training_difficulty_level)
+            training_difficulty_level=self.config.training_difficulty_level,
+            available_training_weekdays=self.config.available_training_weekdays)
         validator = self.validator
         if validator is None:
             from .result_validation import AnalysisResultValidator

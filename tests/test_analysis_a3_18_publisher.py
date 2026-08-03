@@ -48,7 +48,7 @@ def plan_items() -> list[dict[str, object]]:
 def accepted(run_key: str = "analysis:1:weekly:2026-07-26:one") -> dict[str, object]:
     period = {"start_local_date": "2026-07-26", "end_local_date": "2026-08-01"}
     training_plan = {
-        "period": period, "timezone": "Asia/Singapore", "objective": {"focus": "consistent"},
+        "period": period, "timezone": "Asia/Hong_Kong", "objective": {"focus": "consistent"},
         "constraints": {}, "prior_artifact_state": {"summary": "no_prior_artifact", "plan": "no_prior_artifact"},
         "items": plan_items(),
     }
@@ -102,7 +102,7 @@ def test_weekly_pair_plan_and_seven_items_publish_atomically() -> None:
     assert receipt.training_plan_id is not None and receipt.superseded_plan_ids == ()
     assert conn.execute("SELECT count(*) FROM analysis_artifact_relations WHERE relation_type='paired_with'").fetchone()[0] == 2
     plan = conn.execute("SELECT * FROM training_plans WHERE id=?", (receipt.training_plan_id,)).fetchone()
-    assert plan["status"] == "active" and plan["timezone"] == "Asia/Singapore"
+    assert plan["status"] == "active" and plan["timezone"] == "Asia/Hong_Kong"
     items = conn.execute("SELECT item_index,local_date,activity_kind FROM training_plan_items WHERE training_plan_id=? ORDER BY item_index", (receipt.training_plan_id,)).fetchall()
     assert [(row["item_index"], row["local_date"], row["activity_kind"]) for row in items] == [
         (0, "2026-07-26", "rest"), (1, "2026-07-27", "running"), (2, "2026-07-28", "strength"),
@@ -135,7 +135,7 @@ def test_weekly_regeneration_rebuilds_pair_and_full_plan_with_direct_lineage() -
         "INSERT INTO training_plans(id,subject_id,analysis_artifact_id,"
         "plan_start_local_date,plan_end_local_date,timezone,status,"
         "objective_json,constraints_json,created_at_utc) "
-        "VALUES(9,1,8,'2026-07-26','2026-08-01','Asia/Singapore',"
+        "VALUES(9,1,8,'2026-07-26','2026-08-01','Asia/Hong_Kong',"
         "'active','{}','{}','2026-07-20T00:00:00Z')"
     )
     conn.commit()
@@ -194,7 +194,7 @@ def test_plan_revision_artifact_regeneration_rebuilds_one_complete_plan() -> Non
         "INSERT INTO training_plans(id,subject_id,analysis_artifact_id,"
         "plan_start_local_date,plan_end_local_date,timezone,status,"
         "objective_json,constraints_json,created_at_utc) "
-        "VALUES(9,1,8,'2026-07-26','2026-08-01','Asia/Singapore',"
+        "VALUES(9,1,8,'2026-07-26','2026-08-01','Asia/Hong_Kong',"
         "'active','{}','{}','2026-07-20T00:00:00Z')"
     )
     conn.commit()
@@ -230,7 +230,7 @@ def test_weekly_prior_relations_and_overlapping_plans_are_preserved_then_superse
     conn = database()
     conn.execute("INSERT INTO analysis_runs(id,run_key,subject_id,analysis_kind,status) VALUES(2,'old',1,'weekly','succeeded')")
     conn.execute("INSERT INTO analysis_artifacts(id,subject_id,artifact_kind,period_start_local_date,period_end_local_date,revision_no,generated_by_run_id,schema_version,structured_content_json,user_visible_text,content_sha256,is_current,created_at_utc) VALUES(8,1,'weekly_training_plan','2026-07-20','2026-07-26',1,2,'1','{}','旧计划','c',1,'2026-07-20T00:00:00Z')")
-    conn.execute("INSERT INTO training_plans(id,subject_id,analysis_artifact_id,plan_start_local_date,plan_end_local_date,timezone,status,objective_json,constraints_json,created_at_utc) VALUES(9,1,8,'2026-07-20','2026-07-26','Asia/Singapore','active','{}','{}','2026-07-20T00:00:00Z')")
+    conn.execute("INSERT INTO training_plans(id,subject_id,analysis_artifact_id,plan_start_local_date,plan_end_local_date,timezone,status,objective_json,constraints_json,created_at_utc) VALUES(9,1,8,'2026-07-20','2026-07-26','Asia/Hong_Kong','active','{}','{}','2026-07-20T00:00:00Z')")
     conn.commit()
     rows = manifest(prior_artifact_id=8)
     receipt = AnalysisPublisher(conn).publish(run_id=1, accepted=accepted(), input_manifest=rows, run_evidence=evidence(rows))
@@ -300,7 +300,7 @@ def test_plan_supersession_failure_restores_existing_active_plan() -> None:
     conn = database()
     conn.execute("INSERT INTO analysis_runs(id,run_key,subject_id,analysis_kind,status) VALUES(2,'old',1,'weekly','succeeded')")
     conn.execute("INSERT INTO analysis_artifacts(id,subject_id,artifact_kind,period_start_local_date,period_end_local_date,revision_no,generated_by_run_id,schema_version,structured_content_json,user_visible_text,content_sha256,is_current,created_at_utc) VALUES(8,1,'weekly_training_plan','2026-07-20','2026-07-26',1,2,'1','{}','旧计划','c',1,'2026-07-20T00:00:00Z')")
-    conn.execute("INSERT INTO training_plans(id,subject_id,analysis_artifact_id,plan_start_local_date,plan_end_local_date,timezone,status,objective_json,constraints_json,created_at_utc) VALUES(9,1,8,'2026-07-20','2026-07-26','Asia/Singapore','active','{}','{}','2026-07-20T00:00:00Z')")
+    conn.execute("INSERT INTO training_plans(id,subject_id,analysis_artifact_id,plan_start_local_date,plan_end_local_date,timezone,status,objective_json,constraints_json,created_at_utc) VALUES(9,1,8,'2026-07-20','2026-07-26','Asia/Hong_Kong','active','{}','{}','2026-07-20T00:00:00Z')")
     conn.commit()
     rows = manifest()
     with pytest.raises(RuntimeError):

@@ -17,6 +17,47 @@ TrainLab 是一个本地优先的 Garmin 训练分析系统。它采集健康与
 第三层只通过 `trainlab run` 进入生产分析。分析结果和邮件发送均具备幂等记录，
 失败后不会盲目重复发送。
 
+当前已确认的 60 项执行清单、验收门和实施顺序见
+[`docs/60-item-execution-plan.md`](docs/60-item-execution-plan.md)。
+
+### 时间、采集和日报边界
+
+- 数据库时间戳统一保存为 UTC；业务日期使用 `Asia/Hong_Kong`。
+- 日报每天香港时间 09:00 发送：报告日 D 包含 D 白天、D→D+1 主睡眠和
+  D+1 早晨恢复白名单信号；睡眠仍未完成也会发送并披露缺失/进行中状态。
+- 周报每周一 09:00 发送，回顾刚结束的周一至周日并规划当前周。
+- 运动保留所有类型，但原始运动主来源是增量同步的 ORIGINAL FIT；天气按每个
+  活动 ID 请求一次并与活动关联，天气缺失不阻止活动入库。健康默认只采集睡眠、
+  全天/静息心率、HRV、脉搏血氧、跑步 VO₂ Max 和体重。
+- FIT 原文件和健康 JSON 在本地永久保留；SQLite 只保存可重建的规范化投影和有界
+  特征。默认分析不会把完整 FIT 或每秒 sample stream 交给 AI，只有用户明确指定
+  活动 ID 时才会解码指定 FIT，并受 1.1 MiB 上限和默认脱敏规则约束；未明确绑定
+  的活动不会被展开。
+
+### 跑步心率区间（需用户确认）
+
+TrainLab 被动计算一份追加式候选：HRR 为主方法，历史阈值心率代理仅作一致性
+校验，Tanaka 年龄公式仅作低置信度备用。计算不会自动改写 Garmin 数据或自动生效，
+结果会通过邮件请求二次确认；确认后新增 revision，AI 只使用最新确认 revision。
+
+HRR 公式：
+
+`心率储备 = 最大心率 − 静息心率`
+
+`目标心率 = 静息心率 + 强度百分比 × 心率储备`
+
+默认证据窗口为静息心率最近 28 个有效健康日、最大心率最近 180 天跑步、阈值
+代理最近 90 天跑步；天气、暂停、传感器异常和明显失真会被质量过滤。最大心率
+候选必须来自至少两次独立跑步的持续高心率证据，不能由单点尖峰或 Conconi 断言
+产生。Tanaka 公式为 `208 − 0.7 × 年龄`，仅是群体预测，不能自动解锁高强度精确
+处方。
+
+相关研究：[HRR 与 VO₂ reserve](https://pubmed.ncbi.nlm.nih.gov/9139182/)、
+[持续运动下的关系](https://pubmed.ncbi.nlm.nih.gov/22034854/)、
+[Conconi 跑步有效性](https://www.tandfonline.com/doi/abs/10.1080/026404197367173)、
+[阈值复现](https://pubmed.ncbi.nlm.nih.gov/10190774/)和
+[Tanaka 最大心率](https://pubmed.ncbi.nlm.nih.gov/11153730/)。
+
 ## 本地数据与存储位置
 
 新五层架构的唯一权威存储根目录是 `state/foundation/`：
@@ -86,6 +127,8 @@ python3 -m venv .venv
 .venv/bin/trainlab garmin status
 .venv/bin/trainlab supervisor doctor
 .venv/bin/trainlab orchestrate status --json
+# 只读浏览事实：active/pending/future/expired/revoked
+.venv/bin/trainlab facts --subject-id 1 --status active
 ```
 
 `foundation status` 是日常快速就绪检查，只读取发布后的 ready marker、受支持

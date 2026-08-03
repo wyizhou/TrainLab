@@ -4,6 +4,10 @@ from __future__ import annotations
 from .contracts import *  # noqa: F403
 from .contracts import _FONT_GRADE_DISPLAY
 
+# Raw FIT remains the lossless source of record.  SQLite keeps a deterministic
+# activity-level sample sketch so normal analysis cannot grow without bound.
+FIT_MAX_SQLITE_RECORDS = 2_000
+
 class FitCollectionMixin:
     def _fit_temp_dir(self) -> Path:
         parent = self.config.raw_root.parent
@@ -580,7 +584,7 @@ class FitCollectionMixin:
     def _project_fit(self, conn: sqlite3.Connection, activity: int, fit: bytes, revision: int) -> None:
         directory = self._fit_temp_dir(); path = directory / "project.fit"
         try:
-            self._write_temp_file(path, fit); indexes: dict[str, int] = {}; sport = ""
+            self._write_temp_file(path, fit); indexes: dict[str, int] = {}; sport = ""; record_count = 0
             metric_ranges: dict[tuple[str, str, int | None, str], list[str | None]] = {}
             workout_steps: dict[int, dict[str, Any]] = {}
             exercise_titles: dict[tuple[str, int | None], str] = {}
@@ -599,6 +603,9 @@ class FitCollectionMixin:
                         title = values.get("wkt_step_name")
                         if category is not None and isinstance(title, str) and title:
                             exercise_titles[(str(category), values.get("exercise_name"))] = title
+                    elif frame.name == "record":
+                        record_count += 1
+            sample_stride = max(1, math.ceil(record_count / FIT_MAX_SQLITE_RECORDS))
             with fitdecode.FitReader(path, check_crc=True) as reader:
                 for frame in reader:
                     if not isinstance(frame, fitdecode.FitDataMessage): continue
@@ -630,10 +637,14 @@ class FitCollectionMixin:
                                 else:
                                     existing[1] = stamp
                         extras["_field_metadata"] = metadata
+                        extras["_sample_storage"] = "bounded_fit_sketch"
+                        extras["_sample_stride"] = sample_stride
+                        extras["_record_count"] = record_count
                         lat = values.get("position_lat"); lon = values.get("position_long")
                         if isinstance(lat, (int, float)): lat = lat * 180.0 / (2 ** 31)
                         if isinstance(lon, (int, float)): lon = lon * 180.0 / (2 ** 31)
-                        conn.execute("INSERT OR IGNORE INTO activity_samples(activity_id,source_revision_id,stream_kind,sample_index,timestamp_utc,latitude,longitude,distance_m,speed_mps,altitude_m,heart_rate_bpm,cadence_rpm,power_w,temperature_c,extras_json) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (activity, revision, "fit_record", index, stamp, lat, lon, values.get("distance"), self._fit_optional(values.get("enhanced_speed"), values.get("speed")), self._fit_optional(values.get("enhanced_altitude"), values.get("altitude")), values.get("heart_rate"), values.get("cadence"), values.get("power"), values.get("temperature"), json.dumps(extras, sort_keys=True, allow_nan=False)))
+                        if index % sample_stride == 0:
+                            conn.execute("INSERT OR IGNORE INTO activity_samples(activity_id,source_revision_id,stream_kind,sample_index,timestamp_utc,latitude,longitude,distance_m,speed_mps,altitude_m,heart_rate_bpm,cadence_rpm,power_w,temperature_c,extras_json) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (activity, revision, "fit_record", index, stamp, lat, lon, values.get("distance"), self._fit_optional(values.get("enhanced_speed"), values.get("speed")), self._fit_optional(values.get("enhanced_altitude"), values.get("altitude")), values.get("heart_rate"), values.get("cadence"), values.get("power"), values.get("temperature"), json.dumps(extras, sort_keys=True, allow_nan=False)))
                     elif name in {"lap", "split", "set", "workout_step", "length", "interval"}:
                         if name == "set":
                             kind = "strength_rest" if str(values.get("set_type") or "").endswith("rest") else "strength_active"

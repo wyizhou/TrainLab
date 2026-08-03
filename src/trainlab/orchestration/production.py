@@ -19,7 +19,7 @@ from trainlab.gmail_environment import inspect_gmail_environment
 from trainlab.process_liveness import process_is_running
 from trainlab.util import project_root
 
-from .analysis_workflows import MorningWorkflowService, SundayWorkflowService
+from .analysis_workflows import MondayWorkflowService, MorningWorkflowService
 from .application import OrchestrationTool
 from .contracts import WorkflowRequest, verify_frozen_contracts
 from .due_scheduler import DueItem, DueQueueService
@@ -43,7 +43,7 @@ from .supervisor import (
 )
 from .workflow_incidents import WorkflowIncidentCoordinator
 
-_SG = ZoneInfo("Asia/Singapore")
+_SG = ZoneInfo("Asia/Hong_Kong")
 _CONFIG = Path("config/orchestration.yaml")
 _RECIPIENT = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
@@ -173,7 +173,7 @@ class ProductionOrchestrationApplication:
             receipt_store=receipt_store,
             operator_retry_authorizer=receipt_store,
             morning=MorningWorkflowService(runner),
-            weekly=SundayWorkflowService(runner),
+            weekly=MondayWorkflowService(runner),
             mail=MailWorkflow(
                 runner, SqlitePlanRevisionResolver(foundation.database_path)
             ),

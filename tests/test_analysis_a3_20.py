@@ -87,15 +87,15 @@ def test_regeneration_windows_follow_the_target_artifact_kind() -> None:
     assert advice["advice"]["start_local_date"] == "2026-07-25"
     summary = RegenerateRoute._target_periods({
         "shape": "weekly", "kind": "weekly_summary",
-        "start": "2026-07-14", "end": "2026-07-20",
+        "start": "2026-07-13", "end": "2026-07-19",
     })
     assert summary["review"] == {
-        "start_local_date": "2026-07-14",
-        "end_local_date": "2026-07-20",
+        "start_local_date": "2026-07-13",
+        "end_local_date": "2026-07-19",
     }
     assert summary["plan"] == {
-        "start_local_date": "2026-07-21",
-        "end_local_date": "2026-07-27",
+        "start_local_date": "2026-07-20",
+        "end_local_date": "2026-07-26",
     }
 
 

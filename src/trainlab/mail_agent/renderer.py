@@ -115,7 +115,7 @@ def _local_timestamp(value: object) -> tuple[str, str]:
         raise MailRenderError("mail_response_timestamp_invalid") from None
     if parsed.tzinfo is None:
         raise MailRenderError("mail_response_timestamp_invalid")
-    local = parsed.astimezone(ZoneInfo("Asia/Singapore"))
+    local = parsed.astimezone(ZoneInfo("Asia/Hong_Kong"))
     return f"{local.year}年{local.month}月{local.day}日", local.strftime("%Y-%m-%d %H:%M")
 
 

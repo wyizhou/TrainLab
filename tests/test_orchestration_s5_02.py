@@ -11,7 +11,7 @@ from trainlab.orchestration import AtomicConfigStore, ControlledClock, Orchestra
 
 def payload(**overrides: object) -> dict:
     values: dict[str, object] = {
-        "timezone": "Asia/Singapore", "morning_time": "07:00", "weekly_day": "sunday",
+        "timezone": "Asia/Hong_Kong", "morning_time": "09:00", "weekly_day": "monday",
         "mail_poll_interval_seconds": 300, "health_check_interval_seconds": 60,
         "workflow_deadline_seconds": 3600, "max_parallel_read_checks": 4,
         "lease_ttl_seconds": 90, "heartbeat_interval_seconds": 30,
@@ -39,7 +39,7 @@ def test_owner_only_static_config_hash_and_no_command_surface(tmp_path: Path) ->
     loader, path = load(tmp_path)
     first = loader.load(path); second = loader.load(path)
     assert first.config_sha256 == second.config_sha256 and len(first.config_sha256) == 64
-    assert first.timezone == "Asia/Singapore" and first.morning_time == "07:00" and first.weekly_day == "sunday"
+    assert first.timezone == "Asia/Hong_Kong" and first.morning_time == "09:00" and first.weekly_day == "monday"
     for forbidden in ("command", "argv", "recipient", "model", "cron", "secret_token"):
         bad = payload(**{forbidden: "unsafe"})
         bad_root, bad_path = config_file(tmp_path / forbidden, bad)
@@ -47,7 +47,7 @@ def test_owner_only_static_config_hash_and_no_command_surface(tmp_path: Path) ->
             OrchestrationConfigLoader(bad_root).load(bad_path)
 
 
-@pytest.mark.parametrize("field,value", [("timezone", "UTC"), ("morning_time", "06:00"), ("weekly_day", "monday")])
+@pytest.mark.parametrize("field,value", [("timezone", "UTC"), ("morning_time", "08:00"), ("weekly_day", "sunday")])
 def test_fixed_timezone_time_and_weekday_cannot_be_overridden(tmp_path: Path, field: str, value: str) -> None:
     with pytest.raises(OrchestrationConfigError, match="schema_invalid"):
         loader, path = load(tmp_path, payload(**{field: value})); loader.load(path)
@@ -119,27 +119,27 @@ def test_atomic_reload_keeps_last_valid_snapshot_and_returns_incident(tmp_path: 
     assert failed.incident.previous_config_sha256 == original.config_sha256
 
 
-def test_singapore_projection_handles_utc_boundary_sunday_and_repeat_0700(tmp_path: Path) -> None:
+def test_hong_kong_projection_handles_utc_boundary_monday_and_repeat_0900(tmp_path: Path) -> None:
     loader, path = load(tmp_path); snapshot = loader.load(path); service = SchedulingProjectionService()
-    before = datetime(2026, 7, 18, 22, 59, tzinfo=UTC)  # Sunday 06:59 Singapore.
+    before = datetime(2026, 7, 20, 0, 59, tzinfo=UTC)  # Monday 08:59 Hong Kong.
     jobs = {job.job_key: job for job in service.project(snapshot, before)}
-    assert jobs["morning"].next_due_at_utc == datetime(2026, 7, 18, 23, 0, tzinfo=UTC)
+    assert jobs["morning"].next_due_at_utc == datetime(2026, 7, 20, 1, 0, tzinfo=UTC)
     assert jobs["weekly"].next_due_at_utc == jobs["morning"].next_due_at_utc
-    assert jobs["weekly"].depends_on_job_key == "morning" and jobs["weekly"].logical_local_date == "2026-07-19"
+    assert jobs["weekly"].depends_on_job_key == "morning" and jobs["weekly"].logical_local_date == "2026-07-20"
     assert jobs["morning"].collection_strategy == "own_incremental"
     assert jobs["weekly"].collection_strategy == "reuse_morning_collection"
-    exact = datetime(2026, 7, 18, 23, 0, tzinfo=UTC)
+    exact = datetime(2026, 7, 20, 1, 0, tzinfo=UTC)
     repeat = service.project(snapshot, exact)
     assert {job.job_key: job.next_due_at_utc for job in repeat}["morning"] == exact
-    assert service.logical_local_date(datetime(2026, 7, 18, 16, 0, tzinfo=UTC)) == "2026-07-19"
+    assert service.logical_local_date(datetime(2026, 7, 20, 16, 0, tzinfo=UTC)) == "2026-07-21"
 
 
 def test_projection_is_utc_deterministic_across_wall_clock_jumps_and_has_intervals(tmp_path: Path) -> None:
     loader, path = load(tmp_path); snapshot = loader.load(path); service = SchedulingProjectionService()
     forward = service.project(snapshot, datetime(2026, 3, 29, 0, 0, tzinfo=UTC))
     backward = service.project(snapshot, datetime(2026, 3, 28, 23, 0, tzinfo=UTC))
-    assert {job.job_key: job.next_due_at_utc for job in forward}["morning"] == datetime(2026, 3, 29, 23, 0, tzinfo=UTC)
-    assert {job.job_key: job.next_due_at_utc for job in backward}["morning"] == datetime(2026, 3, 28, 23, 0, tzinfo=UTC)
+    assert {job.job_key: job.next_due_at_utc for job in forward}["morning"] == datetime(2026, 3, 29, 1, 0, tzinfo=UTC)
+    assert {job.job_key: job.next_due_at_utc for job in backward}["morning"] == datetime(2026, 3, 29, 1, 0, tzinfo=UTC)
     jobs = {job.job_key: job for job in forward}
     assert jobs["mail_poll"].next_due_at_utc == datetime(2026, 3, 29, 0, 5, tzinfo=UTC)
     assert jobs["health_check"].next_due_at_utc == datetime(2026, 3, 29, 0, 1, tzinfo=UTC)

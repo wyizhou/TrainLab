@@ -16,11 +16,11 @@ from typing import Any, Literal, Mapping
 ORCHESTRATION_SCHEMA_VERSION = "1"
 
 FROZEN_CONTRACT_HASHES: Mapping[str, str] = {
-    "01-data-foundation.md": "9bf0a91e61bda47c9dba971c731ca6ec79e064b7f0ea4eb8124a5a216d67e396",
-    "02-data-collection.md": "c39ae1b82afcafe9f4fc3c54d1f851b4992c48021c5238038f078fab1ec885d6",
-    "03-data-analysis.md": "2bc279170dfd7f8fc50acaf96ca631bad0fcd65069f3402a0c6d1b67c0caa99a",
-    "04-mail-agent.md": "95ff7a8541c3e803661f4d8543aea545c1f9115fc1990a3409cd574b56d8c8a4",
-    "05-orchestration-monitoring.md": "885b48747584756c2aebbbe4a9028bbe5d59607a7336955c1f1212853fc03340",
+    "01-data-foundation.md": "b60d5222c86253d3e1c309d80526ad7e2f30d63b5f6256b8b924f3ffa04e6ea3",
+    "02-data-collection.md": "01df60d9525bb3017cabc73b7bc82c5dceb30167372bd9cf5ae9e65387406b34",
+    "03-data-analysis.md": "2658381d4e9ce39782202d2c93e480c36ed2b19475d92365aded8a1eb29afc55",
+    "04-mail-agent.md": "9b570dede5d2c3ae5de94f30ca00c722eeeb75067dfe1ebc1324c492d45f76e4",
+    "05-orchestration-monitoring.md": "4fc288c4da1042d589053d76571a631c5a5e0e73dbe3daad4a2ca1d89127f898",
 }
 
 

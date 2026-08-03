@@ -74,7 +74,7 @@ def test_fast_foundation_status_allows_read_only_mail_status_during_snapshot(
     writer.execute("PRAGMA wal_autocheckpoint=0")
     writer.execute(
         "INSERT INTO data_subjects(subject_key,timezone,is_active,created_at_utc)"
-        " VALUES('mail-runtime-subject','Asia/Singapore',1,?)",
+        " VALUES('mail-runtime-subject','Asia/Hong_Kong',1,?)",
         (NOW,),
     )
     writer.commit()

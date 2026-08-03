@@ -55,6 +55,12 @@ def training_difficulty_contract(config: AnalysisConfig) -> dict[str, Any]:
         "default_level": 2,
         "configuration_source": source,
         "configuration_key": "project_global.training_difficulty_level",
+        "configuration_sha256": config.project_config_sha256,
+        "training_schedule": {
+            "available_training_weekdays": None if config.available_training_weekdays is None else list(config.available_training_weekdays),
+            "preferred_long_run_weekday": config.preferred_long_run_weekday,
+            "unlisted_days": "rest_only" if config.available_training_weekdays is not None else "unconstrained",
+        },
         "assessment_factors": [
             "training_intensity",
             "total_training_volume",
@@ -108,9 +114,16 @@ def race_goal_contract(config: AnalysisConfig) -> dict[str, Any]:
         "input_revision_ids": [],
         "contract_version": "1",
         "configuration_keys": [
+            "project_global.active_race_goal",
             "project_global.marathon_target_finish_time",
+            "project_global.marathon_race_date",
             "project_global.half_marathon_target_finish_time",
+            "project_global.half_marathon_race_date",
         ],
+        "active_race_goal": {
+            "value": config.active_race_goal,
+            "configuration_source": config.active_race_goal_source,
+        },
         "marathon": _race_goal(
             config.marathon_target_finish_time,
             config.marathon_target_finish_time_source,
@@ -123,6 +136,16 @@ def race_goal_contract(config: AnalysisConfig) -> dict[str, Any]:
             distance_key="half_marathon",
             distance_km=21.0975,
         ),
+        "race_dates": {
+            "marathon": {
+                "value": config.marathon_race_date,
+                "configuration_source": config.marathon_race_date_source,
+            },
+            "half_marathon": {
+                "value": config.half_marathon_race_date,
+                "configuration_source": config.half_marathon_race_date_source,
+            },
+        },
         "cross_inference": "forbidden",
         "cycle_assumption": "goal_does_not_imply_active_race_cycle",
         "usage": "pace_anchor_only_when_route_and_evidence_support_it",

@@ -22,7 +22,7 @@ from trainlab.orchestration.repository import WorkflowRunRecord, WorkflowStepRec
 from trainlab.orchestration.workflow_definition_store import WorkflowDefinitionAggregate
 
 
-NOW = datetime(2026, 7, 24, 0, 0, tzinfo=UTC)  # Friday 08:00 Singapore
+NOW = datetime(2026, 7, 24, 0, 0, tzinfo=UTC)  # Friday 08:00 Hong Kong
 HASH = "a" * 64
 
 
@@ -37,7 +37,7 @@ class Lease:
 
 
 def snapshot(tmp_path: Path) -> OrchestrationConfigSnapshot:
-    return OrchestrationConfigSnapshot("Asia/Singapore", "07:00", "sunday", 300, 600, 3600, 1, 90, 30, 12, 24, tmp_path / "lock", tmp_path / "tmp", tmp_path / "logs", False, HASH)
+    return OrchestrationConfigSnapshot("Asia/Hong_Kong", "09:00", "monday", 300, 600, 3600, 1, 90, 30, 12, 24, tmp_path / "lock", tmp_path / "tmp", tmp_path / "logs", False, "a" * 64)
 
 
 def repo(tmp_path: Path, now: datetime = NOW) -> tuple[OrchestrationRepository, Lease]:
@@ -47,20 +47,20 @@ def repo(tmp_path: Path, now: datetime = NOW) -> tuple[OrchestrationRepository, 
     result = OrchestrationRepository(root / "data.db")
     lease = Lease()
     with result._transaction() as conn:
-        conn.execute("INSERT INTO data_subjects(id,subject_key,timezone,is_active,created_at_utc) VALUES (7,'test-subject','Asia/Singapore',1,?)", (now.isoformat().replace("+00:00", "Z"),))
+        conn.execute("INSERT INTO data_subjects(id,subject_key,timezone,is_active,created_at_utc) VALUES (7,'test-subject','Asia/Hong_Kong',1,?)", (now.isoformat().replace("+00:00", "Z"),))
         conn.execute("INSERT INTO scheduler_leases (lease_key,owner_instance_id,owner_pid,acquired_at_utc,heartbeat_at_utc,expires_at_utc) VALUES (?,?,?,?,?,?)", ("supervisor", lease.instance, lease.pid, now.isoformat().replace("+00:00", "Z"), now.isoformat().replace("+00:00", "Z"), (now + timedelta(hours=2)).isoformat().replace("+00:00", "Z")))
     return result, lease
 
 
 def jobs(result: OrchestrationRepository, config: OrchestrationConfigSnapshot, now: datetime, *, morning: datetime | None = None, weekly: datetime | None = None, mail: datetime | None = None, health: datetime | None = None) -> None:
-    values = (("morning", "morning", "daily_at", morning, "2026-07-24", None, None, "own_incremental", timedelta(hours=12)), ("weekly", "weekly", "weekly_at", weekly, "2026-07-26", None, "morning", "reuse_morning_collection", timedelta(hours=24)), ("mail_poll", "mail", "interval", mail, None, config.mail_poll_interval_seconds, None, "none", None), ("health_check", "health_check", "interval", health, None, config.health_check_interval_seconds, None, "none", None))
+    values = (("morning", "morning", "daily_at", morning, "2026-07-24", None, None, "own_incremental", timedelta(hours=12)), ("weekly", "weekly", "weekly_at", weekly, "2026-07-27", None, "morning", "reuse_morning_collection", timedelta(hours=24)), ("mail_poll", "mail", "interval", mail, None, config.mail_poll_interval_seconds, None, "none", None), ("health_check", "health_check", "interval", health, None, config.health_check_interval_seconds, None, "none", None))
     for key, kind, schedule, due, logical, interval, dep, strategy, window in values:
         if due is not None:
-            result.upsert_scheduler_job(SchedulerJobProjection(key, kind, "Asia/Singapore", schedule, due, logical, interval, dep, strategy, window, config.config_sha256), is_enabled=True, updated_at_utc=now)
+            result.upsert_scheduler_job(SchedulerJobProjection(key, kind, "Asia/Hong_Kong", schedule, due, logical, interval, dep, strategy, window, config.config_sha256), is_enabled=True, updated_at_utc=now)
 
 
-def test_exact_0700_claim_is_stable_and_second_tick_is_noop(tmp_path: Path) -> None:
-    now = datetime(2026, 7, 23, 23, 0, tzinfo=UTC)  # 07:00 SGT
+def test_exact_0900_claim_is_stable_and_second_tick_is_noop(tmp_path: Path) -> None:
+    now = datetime(2026, 7, 24, 1, 0, tzinfo=UTC)  # 09:00 Hong Kong
     result, lease = repo(tmp_path, now); config = snapshot(tmp_path)
     jobs(result, config, now, morning=now)
     queue = DueQueueService(result, lease, ControlledClock(now), subject_id=7, host_id="host")
@@ -68,20 +68,20 @@ def test_exact_0700_claim_is_stable_and_second_tick_is_noop(tmp_path: Path) -> N
     assert first.status == "claimed" and first.claim and first.claim.workflow_key == "morning:7:2026-07-24"
     assert queue.tick(config).status == "idle"
     saved = result.get_scheduler_job("morning")
-    assert saved and saved.last_due_at_utc == "2026-07-23T23:00:00Z"
+    assert saved and saved.last_due_at_utc == "2026-07-24T01:00:00Z"
 
 
-def test_sunday_weekly_and_morning_have_fixed_order_and_singapore_dates(tmp_path: Path) -> None:
-    now = datetime(2026, 7, 25, 23, 0, tzinfo=UTC)  # Sunday 07:00 SGT
+def test_monday_weekly_and_morning_have_fixed_order_and_hong_kong_dates(tmp_path: Path) -> None:
+    now = datetime(2026, 7, 27, 1, 0, tzinfo=UTC)  # Monday 09:00 Hong Kong
     result, _ = repo(tmp_path, now); config = snapshot(tmp_path)
     jobs(result, config, now, morning=now, weekly=now)
     value = DueEvaluator().evaluate(config, result.scheduler_jobs(), now_utc=now, subject_id=7, host_id="host")
-    assert [(item.workflow_kind, item.logical_local_date) for item in value.items] == [("morning", "2026-07-26"), ("weekly", "2026-07-26")]
+    assert [(item.workflow_kind, item.logical_local_date) for item in value.items] == [("morning", "2026-07-27"), ("weekly", "2026-07-27")]
 
 
 @pytest.mark.parametrize("hours, expected", [(5, "claimed"), (13, "idle")])
 def test_daily_misfire_is_bounded_and_expiry_has_incident(tmp_path: Path, hours: int, expected: str) -> None:
-    due = datetime(2026, 7, 23, 23, 0, tzinfo=UTC)
+    due = datetime(2026, 7, 24, 1, 0, tzinfo=UTC)
     now = due + timedelta(hours=hours)
     result, lease = repo(tmp_path, now); config = snapshot(tmp_path)
     jobs(result, config, now, morning=due)
@@ -138,7 +138,7 @@ def test_running_workflow_is_reconcile_first_and_never_creates_another_key(tmp_p
 
 
 def test_claim_survives_crash_and_new_lease_reclaims_same_handoff(tmp_path: Path) -> None:
-    now = datetime(2026, 7, 23, 23, 0, tzinfo=UTC)
+    now = datetime(2026, 7, 24, 1, 0, tzinfo=UTC)
     result, lease = repo(tmp_path, now); config = snapshot(tmp_path)
     jobs(result, config, now, morning=now)
     first = DueQueueService(result, lease, ControlledClock(now), subject_id=7, host_id="host").tick(config)
@@ -155,7 +155,7 @@ def test_claim_survives_crash_and_new_lease_reclaims_same_handoff(tmp_path: Path
 
 
 def test_two_evaluators_same_lease_only_one_durable_handoff(tmp_path: Path) -> None:
-    now = datetime(2026, 7, 23, 23, 0, tzinfo=UTC)
+    now = datetime(2026, 7, 24, 1, 0, tzinfo=UTC)
     result, lease = repo(tmp_path, now); config = snapshot(tmp_path)
     jobs(result, config, now, morning=now)
     one = DueQueueService(result, lease, ControlledClock(now), subject_id=7, host_id="host")
@@ -175,7 +175,7 @@ def test_two_evaluators_same_lease_only_one_durable_handoff(tmp_path: Path) -> N
     ],
 )
 def test_static_job_mapping_tamper_is_incident_and_no_claim(tmp_path: Path, mutation: str) -> None:
-    now = datetime(2026, 7, 23, 23, 0, tzinfo=UTC)
+    now = datetime(2026, 7, 24, 1, 0, tzinfo=UTC)
     result, lease = repo(tmp_path, now); config = snapshot(tmp_path)
     jobs(result, config, now, morning=now)
     with result._transaction() as conn:
@@ -185,7 +185,7 @@ def test_static_job_mapping_tamper_is_incident_and_no_claim(tmp_path: Path, muta
 
 
 def test_incident_sink_failure_prevents_other_due_claims(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    now = datetime(2026, 7, 23, 23, 0, tzinfo=UTC)
+    now = datetime(2026, 7, 24, 1, 0, tzinfo=UTC)
     result, lease = repo(tmp_path, now); config = snapshot(tmp_path)
     jobs(result, config, now, morning=now, mail=now)
     with result._transaction() as conn:
@@ -211,7 +211,7 @@ def test_loop_wait_is_positive_and_callback_can_stop(tmp_path: Path) -> None:
 
 @pytest.mark.parametrize(("kind", "hours"), [("morning", 12), ("weekly", 24)])
 def test_misfire_window_exact_boundary_is_inclusive(tmp_path: Path, kind: str, hours: int) -> None:
-    due = datetime(2026, 7, 25, 23, 0, tzinfo=UTC) if kind == "weekly" else datetime(2026, 7, 23, 23, 0, tzinfo=UTC)
+    due = datetime(2026, 7, 27, 1, 0, tzinfo=UTC) if kind == "weekly" else datetime(2026, 7, 24, 1, 0, tzinfo=UTC)
     now = due + timedelta(hours=hours)
     result, _ = repo(tmp_path, now); config = snapshot(tmp_path)
     jobs(result, config, now, **{kind: due})
@@ -243,7 +243,7 @@ def test_deferred_retry_waits_then_reuses_original_workflow_step_and_invocation(
 
 
 def test_handoff_materialization_is_exact_one_way_ack(tmp_path: Path) -> None:
-    now = datetime(2026, 7, 23, 23, 0, tzinfo=UTC)
+    now = datetime(2026, 7, 24, 1, 0, tzinfo=UTC)
     result, lease = repo(tmp_path, now); config = snapshot(tmp_path)
     jobs(result, config, now, morning=now)
     item = DueQueueService(result, lease, ControlledClock(now), subject_id=7, host_id="host").tick(config).claim
@@ -283,7 +283,7 @@ def test_invalid_heartbeat_snapshot_run_is_controlled_and_never_waits(tmp_path: 
 
 
 def test_mixed_invalid_and_valid_due_is_fail_closed(tmp_path: Path) -> None:
-    now = datetime(2026, 7, 23, 23, 0, tzinfo=UTC)
+    now = datetime(2026, 7, 24, 1, 0, tzinfo=UTC)
     result, lease = repo(tmp_path, now); config = snapshot(tmp_path)
     jobs(result, config, now, morning=now, mail=now)
     with result._transaction() as conn:
@@ -295,7 +295,7 @@ def test_mixed_invalid_and_valid_due_is_fail_closed(tmp_path: Path) -> None:
 
 
 def test_completed_wrong_subject_existing_key_cannot_consume_due(tmp_path: Path) -> None:
-    now = datetime(2026, 7, 23, 23, 0, tzinfo=UTC)
+    now = datetime(2026, 7, 24, 1, 0, tzinfo=UTC)
     result, lease = repo(tmp_path, now); config = snapshot(tmp_path)
     jobs(result, config, now, morning=now)
     result.create_workflow(workflow_key="morning:7:2026-07-24", workflow_kind="morning", trigger_kind="scheduled", started_at_utc=now, logical_local_date="2026-07-24", subject_id=None, deadline_at_utc=now + timedelta(hours=1))
@@ -314,7 +314,7 @@ def test_active_wrong_subject_recovery_is_controlled(tmp_path: Path) -> None:
 
 
 def test_handoff_binding_tamper_rejected_and_lineage_survives_state_change(tmp_path: Path) -> None:
-    now = datetime(2026, 7, 23, 23, 0, tzinfo=UTC)
+    now = datetime(2026, 7, 24, 1, 0, tzinfo=UTC)
     result, lease = repo(tmp_path, now); config = snapshot(tmp_path)
     jobs(result, config, now, morning=now)
     item = DueQueueService(result, lease, ControlledClock(now), subject_id=7, host_id="host").tick(config).claim; assert item
@@ -334,7 +334,7 @@ def test_handoff_binding_tamper_rejected_and_lineage_survives_state_change(tmp_p
 
 
 def test_corrupt_existing_workflow_is_controlled_and_does_not_advance(tmp_path: Path) -> None:
-    now = datetime(2026, 7, 23, 23, 0, tzinfo=UTC)
+    now = datetime(2026, 7, 24, 1, 0, tzinfo=UTC)
     result, lease = repo(tmp_path, now); config = snapshot(tmp_path)
     jobs(result, config, now, morning=now)
     result.create_workflow(workflow_key="morning:7:2026-07-24", workflow_kind="morning", trigger_kind="scheduled", started_at_utc=now, logical_local_date="2026-07-24", subject_id=7, deadline_at_utc=now + timedelta(hours=1))

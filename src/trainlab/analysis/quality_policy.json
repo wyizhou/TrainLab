@@ -1,6 +1,6 @@
 {
   "version": "4",
-  "catalog_version": "garmin-v3",
+  "catalog_version": "garmin-v4",
   "routes": [
     "daily_summary",
     "weekly_summary",
@@ -8,9 +8,7 @@
     "revise_plan"
   ],
   "required_resources": [
-    {"resource_kind": "activity_inventory", "cursor_required": false},
-    {"resource_kind": "steps", "cursor_required": true},
-    {"resource_kind": "user_summary", "cursor_required": true}
+    {"resource_kind": "activity_inventory", "cursor_required": false}
   ],
   "conditional_resources": [
     {"resource_kind": "all_day_events", "cursor_required": true},

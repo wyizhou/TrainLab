@@ -17,6 +17,10 @@ data.db
 data.db-wal
 data.db-shm
 data.db-journal
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
 state/*
 !state/.gitkeep
 logs/*

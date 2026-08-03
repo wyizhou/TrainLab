@@ -6,6 +6,8 @@ import json
 import re
 import stat
 from dataclasses import dataclass
+from datetime import date
+from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
@@ -13,7 +15,7 @@ import yaml
 from jsonschema import Draft202012Validator
 
 
-CONFIG_SCHEMA_VERSION = "1"
+CONFIG_SCHEMA_VERSION = "2"
 MAX_CONTEXT_BYTES = 1_100_000
 MAX_CODEX_TIMEOUT_SECONDS = 600
 MAX_DELIVERY_TIMEOUT_SECONDS = 180
@@ -45,6 +47,15 @@ class AnalysisConfig:
     marathon_target_finish_time_source: str = "default"
     half_marathon_target_finish_time: str | None = None
     half_marathon_target_finish_time_source: str = "default"
+    active_race_goal: str | None = None
+    active_race_goal_source: str = "default"
+    marathon_race_date: str | None = None
+    marathon_race_date_source: str = "default"
+    half_marathon_race_date: str | None = None
+    half_marathon_race_date_source: str = "default"
+    available_training_weekdays: tuple[int, ...] | None = None
+    preferred_long_run_weekday: int | None = None
+    project_config_sha256: str = ""
 
 
 @dataclass(frozen=True)
@@ -57,6 +68,15 @@ class ProjectTrainingControls:
     marathon_target_finish_time_source: str
     half_marathon_target_finish_time: str | None
     half_marathon_target_finish_time_source: str
+    active_race_goal: str | None = None
+    active_race_goal_source: str = "default"
+    marathon_race_date: str | None = None
+    marathon_race_date_source: str = "default"
+    half_marathon_race_date: str | None = None
+    half_marathon_race_date_source: str = "default"
+    available_training_weekdays: tuple[int, ...] | None = None
+    preferred_long_run_weekday: int | None = None
+    project_config_sha256: str = ""
 
     def as_context(self) -> dict[str, Any]:
         return {
@@ -69,6 +89,15 @@ class ProjectTrainingControls:
             "marathon_target_finish_time_source": self.marathon_target_finish_time_source,
             "half_marathon_target_finish_time": self.half_marathon_target_finish_time,
             "half_marathon_target_finish_time_source": self.half_marathon_target_finish_time_source,
+            "active_race_goal": self.active_race_goal,
+            "active_race_goal_source": self.active_race_goal_source,
+            "marathon_race_date": self.marathon_race_date,
+            "marathon_race_date_source": self.marathon_race_date_source,
+            "half_marathon_race_date": self.half_marathon_race_date,
+            "half_marathon_race_date_source": self.half_marathon_race_date_source,
+            "available_training_weekdays": None if self.available_training_weekdays is None else list(self.available_training_weekdays),
+            "preferred_long_run_weekday": self.preferred_long_run_weekday,
+            "project_config_sha256": self.project_config_sha256,
         }
 
 
@@ -117,17 +146,79 @@ def _finish_time(payload: dict[str, Any], key: str) -> tuple[str | None, str]:
     return value, "project_global_config"
 
 
+_RACE_GOALS = {"marathon", "half_marathon"}
+
+
+def _race_goal(payload: dict[str, Any]) -> tuple[str | None, str]:
+    if "active_race_goal" not in payload or payload["active_race_goal"] is None:
+        return None, "default" if "active_race_goal" not in payload else "project_global_config"
+    value = payload["active_race_goal"]
+    if not isinstance(value, str) or value not in _RACE_GOALS:
+        raise AnalysisConfigurationError("analysis_project_config_invalid:active_race_goal")
+    return value, "project_global_config"
+
+
+def _race_date(payload: dict[str, Any], key: str) -> tuple[str | None, str]:
+    if key not in payload or payload[key] is None:
+        return None, "default" if key not in payload else "project_global_config"
+    value = payload[key]
+    if not isinstance(value, str):
+        raise AnalysisConfigurationError(f"analysis_project_config_invalid:{key}")
+    try:
+        parsed = date.fromisoformat(value)
+    except ValueError:
+        raise AnalysisConfigurationError(f"analysis_project_config_invalid:{key}") from None
+    if parsed.isoformat() != value:
+        raise AnalysisConfigurationError(f"analysis_project_config_invalid:{key}")
+    return value, "project_global_config"
+
+
+def _weekdays(payload: dict[str, Any]) -> tuple[int, ...] | None:
+    if "available_training_weekdays" not in payload or payload["available_training_weekdays"] is None:
+        return None
+    value = payload["available_training_weekdays"]
+    if isinstance(value, str):
+        parts = [part.strip() for part in value.split(",") if part.strip()]
+        if not parts:
+            raise AnalysisConfigurationError("analysis_project_config_invalid:available_training_weekdays")
+        try:
+            values = [int(part) for part in parts]
+        except ValueError:
+            raise AnalysisConfigurationError("analysis_project_config_invalid:available_training_weekdays") from None
+    elif isinstance(value, list):
+        values = value
+    else:
+        raise AnalysisConfigurationError("analysis_project_config_invalid:available_training_weekdays")
+    if any(isinstance(item, bool) or not isinstance(item, int) or item < 1 or item > 7 for item in values):
+        raise AnalysisConfigurationError("analysis_project_config_invalid:available_training_weekdays")
+    result = tuple(sorted(set(values)))
+    if len(result) != len(values):
+        raise AnalysisConfigurationError("analysis_project_config_invalid:available_training_weekdays")
+    return result
+
+
+def _preferred_long_run_weekday(payload: dict[str, Any], available: tuple[int, ...] | None) -> int | None:
+    value = payload.get("preferred_long_run_weekday")
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1 or value > 7:
+        raise AnalysisConfigurationError("analysis_project_config_invalid:preferred_long_run_weekday")
+    if available is not None and value not in available:
+        raise AnalysisConfigurationError("analysis_project_config_invalid:preferred_long_run_weekday")
+    return value
+
+
 def load_project_training_controls(project_root: Path) -> ProjectTrainingControls:
     """Load model-visible training controls without exposing mail routing."""
 
     path = project_root / "config" / "trainlab.json"
     if not path.exists():
-        return ProjectTrainingControls(2, "default", None, "default", None, "default")
+        return ProjectTrainingControls(2, "default", None, "default", None, "default", project_config_sha256=sha256(b"missing").hexdigest())
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         raise AnalysisConfigurationError("analysis_project_config_invalid:root") from None
-    if not isinstance(payload, dict) or payload.get("schema_version") != 1:
+    if not isinstance(payload, dict) or payload.get("schema_version") not in {1, 2}:
         raise AnalysisConfigurationError("analysis_project_config_invalid:schema_version")
     if "training_difficulty_level" not in payload:
         level, difficulty_source = 2, "default"
@@ -148,6 +239,12 @@ def load_project_training_controls(project_root: Path) -> ProjectTrainingControl
     half_marathon, half_marathon_source = _finish_time(
         payload, "half_marathon_target_finish_time"
     )
+    active_goal, active_goal_source = _race_goal(payload)
+    marathon_date, marathon_date_source = _race_date(payload, "marathon_race_date")
+    half_date, half_date_source = _race_date(payload, "half_marathon_race_date")
+    available = _weekdays(payload)
+    preferred_long_run = _preferred_long_run_weekday(payload, available)
+    canonical = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return ProjectTrainingControls(
         level,
         difficulty_source,
@@ -155,6 +252,15 @@ def load_project_training_controls(project_root: Path) -> ProjectTrainingControl
         marathon_source,
         half_marathon,
         half_marathon_source,
+        active_goal,
+        active_goal_source,
+        marathon_date,
+        marathon_date_source,
+        half_date,
+        half_date_source,
+        available,
+        preferred_long_run,
+        sha256(canonical.encode("utf-8")).hexdigest(),
     )
 
 
@@ -205,4 +311,13 @@ def load_analysis_config(project_root: Path, config_path: Path) -> AnalysisConfi
         marathon_target_finish_time_source=controls.marathon_target_finish_time_source,
         half_marathon_target_finish_time=controls.half_marathon_target_finish_time,
         half_marathon_target_finish_time_source=controls.half_marathon_target_finish_time_source,
+        active_race_goal=controls.active_race_goal,
+        active_race_goal_source=controls.active_race_goal_source,
+        marathon_race_date=controls.marathon_race_date,
+        marathon_race_date_source=controls.marathon_race_date_source,
+        half_marathon_race_date=controls.half_marathon_race_date,
+        half_marathon_race_date_source=controls.half_marathon_race_date_source,
+        available_training_weekdays=controls.available_training_weekdays,
+        preferred_long_run_weekday=controls.preferred_long_run_weekday,
+        project_config_sha256=controls.project_config_sha256,
     )

@@ -21,7 +21,7 @@ from .contracts import WorkflowRequest
 from .health_monitor import HealthMonitor, HealthObservation
 
 
-_SINGAPORE = ZoneInfo("Asia/Singapore")
+_HONG_KONG = ZoneInfo("Asia/Hong_Kong")
 _EXPECTED_TABLES = frozenset({
     "foundation_state", "garmin_sync_cursors", "garmin_sync_gaps",
     "analysis_deliveries", "mail_messages", "mail_poll_cursors",
@@ -344,7 +344,7 @@ def _lag_days(value: object, now: datetime) -> int | None:
         cursor = date.fromisoformat(value)
     except ValueError:
         return None
-    return max(0, (now.astimezone(_SINGAPORE).date() - cursor).days)
+    return max(0, (now.astimezone(_HONG_KONG).date() - cursor).days)
 
 
 def _warning(item: HealthObservation) -> dict[str, str]:

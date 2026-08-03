@@ -23,7 +23,7 @@ _ACTIVE_ISSUES = frozenset({"open", "acknowledged"})
 _SAFE_ENTITY_CHARS = frozenset(
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.:-"
 )
-_LOCAL_TZ = ZoneInfo("Asia/Singapore")
+_LOCAL_TZ = ZoneInfo("Asia/Hong_Kong")
 
 
 class GarminQualityError(ValueError):
@@ -149,7 +149,7 @@ def _append_unique(target: list[QualityReason], reason: QualityReason) -> None:
 def _subject_valid(connection: sqlite3.Connection, subject_id: int) -> bool:
     rows = _rows(
         connection,
-        "SELECT id FROM data_subjects WHERE id=? AND is_active=1 AND timezone='Asia/Singapore'",
+        "SELECT id FROM data_subjects WHERE id=? AND is_active=1 AND timezone='Asia/Hong_Kong'",
         (subject_id,),
     )
     return len(rows) == 1

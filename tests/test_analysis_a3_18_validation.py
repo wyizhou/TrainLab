@@ -75,7 +75,7 @@ def plan_item(index: int, prescription: dict[str, object] | None = None) -> dict
 def output(*, prior: dict[str, str] | None = None, prescriptions: list[dict[str, object]] | None = None) -> dict[str, object]:
     prior = prior or {"summary": "no_prior_artifact", "plan": "no_prior_artifact"}
     items = [plan_item(index, prescriptions[index] if prescriptions else None) for index in range(7)]
-    training_plan = {"period": PLAN, "timezone": "Asia/Singapore", "objective": {"focus": "恢复"},
+    training_plan = {"period": PLAN, "timezone": "Asia/Hong_Kong", "objective": {"focus": "恢复"},
                      "constraints": {"clock_time_forbidden": True}, "prior_artifact_state": prior, "items": items}
     return {
         "schema_version": "1", "run_key": RUN_KEY, "mode": "weekly", "subject_id": 1, "status": "accepted",

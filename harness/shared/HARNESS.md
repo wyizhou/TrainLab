@@ -7,7 +7,7 @@ status: active
 # Shared contract
 
 - Preserve raw values, units and provenance. Never rewrite source health data.
-- Store timestamps in UTC and derive calendar behavior with `Asia/Singapore`.
+- Store timestamps in UTC and derive calendar behavior with `Asia/Hong_Kong`.
 - OAuth client secrets, refresh/access tokens, account passwords, authorization
   URLs and credential file contents are operational secrets. They never enter
   prompts, reports, logs, committed files or Harness text.

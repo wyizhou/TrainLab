@@ -94,7 +94,7 @@
       "required": ["period", "timezone", "objective", "constraints", "prior_artifact_state", "items"],
       "properties": {
         "period": {"$ref": "#/$defs/period"},
-        "timezone": {"const": "Asia/Singapore"},
+        "timezone": {"const": "Asia/Hong_Kong"},
         "objective": {"type": "object", "maxProperties": 64, "additionalProperties": {"$ref": "#/$defs/json_value"}},
         "constraints": {"type": "object", "maxProperties": 64, "additionalProperties": {"$ref": "#/$defs/json_value"}},
         "prior_artifact_state": {"$ref": "#/$defs/prior_artifact_state"},
@@ -106,7 +106,7 @@
       "required": ["period", "timezone", "objective", "constraints", "original_plan_id", "original_artifact_id", "reason_event_id", "effective_local_date", "items"],
       "properties": {
         "period": {"$ref": "#/$defs/period"},
-        "timezone": {"const": "Asia/Singapore"},
+        "timezone": {"const": "Asia/Hong_Kong"},
         "objective": {"type": "object", "maxProperties": 64, "additionalProperties": {"$ref": "#/$defs/json_value"}},
         "constraints": {"type": "object", "maxProperties": 64, "additionalProperties": {"$ref": "#/$defs/json_value"}},
         "original_plan_id": {"type": "string", "minLength": 1, "maxLength": 192},

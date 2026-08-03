@@ -22,7 +22,7 @@ from . import (
 
 _GARMIN_EXIT = {"succeeded": 0, "partial": 10, "deferred": 11, "lock_busy": 12, "auth_required": 20, "failed": 21}
 _GARMIN_MODES = frozenset({"auth", "full", "incremental", "snapshot", "repair", "audit", "status"})
-_GARMIN_LOCAL_TZ = ZoneInfo("Asia/Singapore")
+_GARMIN_LOCAL_TZ = ZoneInfo("Asia/Hong_Kong")
 
 
 def _garmin_failed_receipt(mode: str, code: str):

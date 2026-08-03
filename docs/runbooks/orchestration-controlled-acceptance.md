@@ -12,7 +12,7 @@
 - 收件人来自项目固定配置，不接受命令行覆盖；
 - 旧调度保持运行，新 Supervisor 不启用定时领取。
 
-按顺序人工触发并保存脱敏 receipt：一次 morning、一次 Sunday、一封带 TrainLab
+按顺序人工触发并保存脱敏 receipt：一次 morning、一次 Monday weekly、一封带 TrainLab
 标签的测试邮件、一次计划修订、一种 deferred、两种 delivery unknown/reconcile、
 一次 Supervisor 重启模拟及一封运维告警。每项必须记录 workflow、invocation、
 artifact/delivery ID 和是否产生外部副作用。未知发送结果先 reconcile，禁止重发。

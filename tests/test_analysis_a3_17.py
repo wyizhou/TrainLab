@@ -28,7 +28,7 @@ def request(invocation: str = "one") -> AnalysisRequest:
 
 def config(tmp_path: Path) -> AnalysisConfig:
     schema = tmp_path / "result.json"; schema.write_text("{}")
-    return AnalysisConfig("1", tmp_path, "Asia/Singapore", tmp_path, schema, schema, 1000000, 14, 28, 7, 60, 60, tmp_path / "lock", tmp_path)
+    return AnalysisConfig("1", tmp_path, "Asia/Hong_Kong", tmp_path, schema, schema, 1000000, 14, 28, 7, 60, 60, tmp_path / "lock", tmp_path)
 
 
 class Coordinator:

@@ -41,7 +41,7 @@ def _config(tmp_path: Path, *, maximum: int = 1024, timeout: int = 2) -> Analysi
     return AnalysisConfig(
         schema_version="1",
         project_root=tmp_path,
-        timezone="Asia/Singapore",
+        timezone="Asia/Hong_Kong",
         harness_root=tmp_path / "harness",
         input_schema=tmp_path / "input.json",
         output_schema=output_schema,

@@ -1,4 +1,4 @@
-"""S5-08/09 typed morning and Sunday workflow orchestration.
+"""S5-08/09 typed morning and Monday workflow orchestration.
 
 This module owns neither lower-layer persistence nor business payloads.  It
 only builds fixed :class:`DownstreamCall` values and turns data-free receipt
@@ -17,7 +17,7 @@ from zoneinfo import ZoneInfo
 from .subprocess_runner import DownstreamCall, DownstreamResult
 
 
-SINGAPORE = ZoneInfo("Asia/Singapore")
+HONG_KONG = ZoneInfo("Asia/Hong_Kong")
 _TERMINAL_GOOD = frozenset({"succeeded", "unchanged"})
 _RETRYABLE = frozenset({"partial", "deferred", "lock_busy"})
 
@@ -32,12 +32,14 @@ class DownstreamExecutor(Protocol):
 
 @dataclass(frozen=True, slots=True)
 class AnalysisWorkflowRequest:
-    """The fixed identity of a morning or Sunday analysis workflow."""
+    """The fixed identity of a morning or Monday analysis workflow."""
     workflow_key: str
     subject_id: str
     logical_local_date: str
     requested_at_utc: datetime
-    workflow_kind: Literal["morning", "sunday"] = "morning"
+    # ``sunday`` remains accepted only for replaying old receipts; production
+    # scheduling and all new requests use ``monday``.
+    workflow_kind: Literal["morning", "monday", "sunday"] = "morning"
 
 
 @dataclass(frozen=True, slots=True)
@@ -85,12 +87,14 @@ def _validate(request: AnalysisWorkflowRequest) -> tuple[date, datetime]:
     if type(request) is not AnalysisWorkflowRequest:
         raise AnalysisWorkflowError("analysis_workflow_request_invalid")
     if (not request.workflow_key or not request.subject_id
-            or request.workflow_kind not in {"morning", "sunday"}):
+            or request.workflow_kind not in {"morning", "monday", "sunday"}):
         raise AnalysisWorkflowError("analysis_workflow_request_invalid")
     logical = _date(request.logical_local_date)
     now = _utc(request.requested_at_utc)
-    if now.astimezone(SINGAPORE).date() != logical:
+    if now.astimezone(HONG_KONG).date() != logical:
         raise AnalysisWorkflowError("analysis_workflow_logical_date_mismatch")
+    if request.workflow_kind == "monday" and logical.weekday() != 0:
+        raise AnalysisWorkflowError("analysis_workflow_monday_required")
     if request.workflow_kind == "sunday" and logical.weekday() != 6:
         raise AnalysisWorkflowError("analysis_workflow_sunday_required")
     return logical, now
@@ -215,12 +219,12 @@ class MorningWorkflowService:
         return _stop(request, steps, quality, daily_step.status)
 
 
-class SundayWorkflowService(MorningWorkflowService):
-    """Sunday collection snapshot followed by independent daily and weekly calls."""
+class MondayWorkflowService(MorningWorkflowService):
+    """Monday collection snapshot followed by independent daily and weekly calls."""
 
     def execute(self, request: AnalysisWorkflowRequest) -> AnalysisWorkflowResult:
-        if request.workflow_kind != "sunday":
-            raise AnalysisWorkflowError("analysis_workflow_sunday_kind_required")
+        if request.workflow_kind not in {"monday", "sunday"}:
+            raise AnalysisWorkflowError("analysis_workflow_monday_kind_required")
         logical, _ = _validate(request)
         if request.workflow_key in self._completed:
             return self._completed[request.workflow_key]
@@ -248,3 +252,8 @@ class SundayWorkflowService(MorningWorkflowService):
         # accepted artifact and recovery targets only the unfinished step.
         bad = weekly if weekly.status not in _TERMINAL_GOOD else item
         return _stop(request, steps, quality, bad.status)
+
+
+# Compatibility alias for old callers and historical receipts.  New routing
+# must use ``MondayWorkflowService`` and the ``monday`` workflow kind.
+SundayWorkflowService = MondayWorkflowService

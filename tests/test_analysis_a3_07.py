@@ -123,7 +123,7 @@ def snapshot(
         reasons,
         (),
         subject_context
-        or StableSubjectContext(1, "Asia/Singapore", "garmin", "account", True),
+        or StableSubjectContext(1, "Asia/Hong_Kong", "garmin", "account", True),
     )
 
 
@@ -191,22 +191,22 @@ def test_policy_and_result_schema_are_versioned_and_match_collection_catalog() -
         for kind, spec in RESOURCE_CATALOG.items()
         if spec.requestable and spec.scope in {"daily", "range"} and spec.conditional
     }
-    assert CATALOG_VERSION == POLICY["catalog_version"] == "garmin-v3"
+    assert CATALOG_VERSION == POLICY["catalog_version"] == "garmin-v4"
     assert set(CONDITIONAL) == expected_conditionals
-    assert {"activity_inventory", "steps", "user_summary"} == set(REQUIRED)
+    assert {"activity_inventory"} == set(REQUIRED)
     assert QUALITY_GATE_POLICY_VERSION == "4"
     assert (
         QUALITY_GATE_POLICY_SHA256
-        == "7c4465b7443b67d5c5c9cf218e6cecb067a8d6f25d5d4c4ef3f78e4457a3f3cd"
+        == "71627bcb1bc5d6e63c211c9af9274ed7ae4e00bd20c993f3005730097689810c"
     )
     result = QualityGate().evaluate(request(), snapshot())
     result.validate()
     assert result.as_dict()["schema_version"] == "1"
 
 
-def test_request_requires_canonical_as_of_and_uses_singapore_date_at_23z() -> None:
+def test_request_requires_canonical_as_of_and_uses_hong_kong_date_at_23z() -> None:
     gate = QualityGate()
-    crossing_as_of = "2026-07-15T23:30:00Z"  # 2026-07-16 in Singapore.
+    crossing_as_of = "2026-07-15T23:30:00Z"  # 2026-07-16 in Hong Kong.
     source = snapshot(window=("2026-07-16",))
     source = replace(
         source,
@@ -365,34 +365,22 @@ def test_optional_unavailable_requires_matching_coverage_for_every_day() -> None
     )
 
 
-def test_required_coverage_cursor_partial_and_catalog_fail_closed() -> None:
+def test_required_activity_coverage_and_catalog_fail_closed() -> None:
     gate = QualityGate()
     base = snapshot()
     missing = replace(
         base,
-        coverage=tuple(row for row in base.coverage if row["resource_kind"] != "steps"),
+        coverage=tuple(row for row in base.coverage if row["resource_kind"] != "activity_inventory"),
     )
     assert "coverage_missing" in blocker_codes(gate.evaluate(request(), missing))
     partial = replace(
         base,
-        coverage=coverage_with(base, "user_summary", "2026-07-16", availability_state="partial"),
+        coverage=coverage_with(base, "activity_inventory", "2026-07-16", availability_state="partial"),
     )
     assert "coverage_partial" in blocker_codes(gate.evaluate(request(), partial))
-    hole = replace(
-        base,
-        cursors=tuple(
-            {**row, "complete_through_local_date": "2026-07-15"}
-            if row["resource_kind"] == "steps"
-            else row
-            for row in base.cursors
-        ),
-    )
-    assert "cursor_hole" in blocker_codes(gate.evaluate(request(), hole))
-    catalog = replace(
-        base,
-        cursors=tuple({**row, "catalog_version": "garmin-v2"} for row in base.cursors),
-    )
-    assert "cursor_catalog_unknown" in blocker_codes(gate.evaluate(request(), catalog))
+    # Activity inventory is coverage-bound rather than cursor-bound.  Health
+    # cursors are checked only when that optional resource is explicitly
+    # supported and selected by a future route.
     forged = replace(
         base,
         coverage=(
@@ -420,7 +408,7 @@ def test_newer_completed_coverage_replaces_old_partial_or_error_history(
     base = snapshot()
     historical = coverage_row(
         base,
-        "steps",
+        "activity_inventory",
         "2026-07-16",
         availability_state=historical_state,
         record_count=historical_count,
@@ -439,7 +427,7 @@ def test_newer_error_supersedes_old_fetched_coverage() -> None:
     base = snapshot()
     newer_error = coverage_row(
         base,
-        "steps",
+        "activity_inventory",
         "2026-07-16",
         availability_state="error",
         record_count=0,
@@ -454,7 +442,7 @@ def test_newer_error_supersedes_old_fetched_coverage() -> None:
 def test_repeated_semantically_identical_latest_coverage_coalesces() -> None:
     gate = QualityGate()
     base = snapshot()
-    duplicate = coverage_row(base, "steps", "2026-07-16")
+    duplicate = coverage_row(base, "activity_inventory", "2026-07-16")
     source = replace(base, coverage=(*base.coverage, duplicate))
     result = gate.evaluate(request(), source)
     assert result.state == "ready_with_warnings"
@@ -466,7 +454,7 @@ def test_conflicting_latest_coverage_tie_blocks_ambiguous() -> None:
     base = snapshot()
     conflicting = coverage_row(
         base,
-        "steps",
+        "activity_inventory",
         "2026-07-16",
         availability_state="error",
         record_count=0,
@@ -481,14 +469,14 @@ def test_snapshot_partial_then_completed_sync_uses_latest_and_ignores_future() -
     base = snapshot()
     snapshot_partial = coverage_row(
         base,
-        "user_summary",
+        "activity_inventory",
         "2026-07-16",
         availability_state="partial",
         observed_at_utc="2026-07-15T16:00:00Z",
     )
     future_error = coverage_row(
         base,
-        "user_summary",
+        "activity_inventory",
         "2026-07-16",
         availability_state="error",
         record_count=0,
@@ -518,7 +506,7 @@ def test_future_coverage_with_malformed_state_or_count_does_not_affect_current_a
     base = snapshot()
     future = coverage_row(
         base,
-        "steps",
+        "activity_inventory",
         "2026-07-16",
         observed_at_utc="2026-07-22T00:00:01Z",
         **changes,
@@ -533,7 +521,7 @@ def test_future_coverage_with_malformed_local_date_is_ignored_before_date_valida
     base = snapshot()
     future_bad_date = coverage_row(
         base,
-        "steps",
+        "activity_inventory",
         "2026-07-16",
         local_date="not-a-local-date",
         observed_at_utc="2026-07-15T00:00:01Z",
@@ -550,7 +538,7 @@ def test_future_coverage_with_malformed_local_date_is_ignored_before_date_valida
         replace(base, coverage=(future_bad_date,)),
         ("not-a-local-date",),
         datetime(2026, 7, 15, tzinfo=timezone.utc),
-        {"steps": "supported"},
+        {"activity_inventory": "supported"},
         blockers,  # type: ignore[arg-type]
         warnings,  # type: ignore[arg-type]
     )
@@ -562,7 +550,7 @@ def test_future_coverage_with_malformed_timestamp_remains_fail_closed() -> None:
     base = snapshot()
     malformed_timestamp = coverage_row(
         base,
-        "steps",
+        "activity_inventory",
         "2026-07-16",
         availability_state="invalid-state",
         observed_at_utc="not-a-timestamp",
@@ -731,7 +719,7 @@ def revision_snapshot() -> StableSnapshot:
                 "analysis_artifact_id": 70,
                 "plan_start_local_date": "2026-07-16",
                 "plan_end_local_date": "2026-07-22",
-                "timezone": "Asia/Singapore",
+                "timezone": "Asia/Hong_Kong",
                 "status": "active",
                 "objective_json": "{}",
                 "constraints_json": "{}",

@@ -26,6 +26,7 @@ from .features import (
     CONFLICT_POLICY_VERSION,
     FEATURE_LIBRARY_VERSION,
 )
+from .fit_context import ExplicitFitContextError, build_explicit_fit_context
 from .harness import HarnessBundle
 from .quality_gate import (
     QUALITY_GATE_POLICY_SHA256,
@@ -62,7 +63,7 @@ CONTEXT_POLICY_VERSION = str(_POLICY["policy_version"])
 CONTEXT_POLICY_SHA256 = sha256(_POLICY_BYTES).hexdigest()
 DEFAULT_MAX_CONTEXT_BYTES = int(_POLICY["default_max_context_bytes"])
 
-_SG = ZoneInfo("Asia/Singapore")
+_SG = ZoneInfo("Asia/Hong_Kong")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _RUN_KEY = re.compile(r"^[A-Za-z0-9_.:%-]{1,256}$")
 _TRUST = frozenset(_POLICY["trust_classes"])
@@ -73,7 +74,10 @@ _MAX_SNAPSHOT_ITEMS = int(_POLICY["maximum_snapshot_items"])
 _MAX_SAMPLE_SUMMARIES = int(_POLICY["maximum_technical_sample_summaries"])
 _MAX_SAMPLE_ROWS = int(_POLICY["maximum_technical_sample_rows"])
 _PRUNE_CODES = tuple(_POLICY["pruning_order"])
-_COMPLETED_WINDOW_DAYS = int(_POLICY["completed_window_days"])
+_BASELINE_WINDOW_DAYS = int(_POLICY.get("baseline_window_days", _POLICY["completed_window_days"]))
+_SHORT_WINDOW_DAYS = int(_POLICY.get("short_window_days", 7))
+_TREND_WINDOW_DAYS = int(_POLICY.get("trend_window_days", 90))
+_COMPLETED_WINDOW_DAYS = _BASELINE_WINDOW_DAYS
 _SECTIONS = (
     "coverage",
     "gaps",
@@ -340,6 +344,10 @@ class ContextBuildRequest:
     reason_event_id: int | None = None
     artifact_id: int | None = None
     max_context_bytes: int = DEFAULT_MAX_CONTEXT_BYTES
+    # Raw FIT is opt-in and must be bound to exact stable activity IDs.  The
+    # default empty tuple keeps the production context compact and FIT-free.
+    explicit_fit_activity_ids: tuple[str | int, ...] = ()
+    explicit_fit_include_gps: bool = False
 
     def source_route(self) -> SourceRoute:
         if self.route == "regenerate":
@@ -368,6 +376,18 @@ class ContextBuildRequest:
             or not 1 <= self.max_context_bytes <= DEFAULT_MAX_CONTEXT_BYTES
             or not isinstance(self.run_key, str)
             or _RUN_KEY.fullmatch(self.run_key) is None
+            or not isinstance(self.explicit_fit_activity_ids, tuple)
+            or any(
+                isinstance(value, bool)
+                or not isinstance(value, (str, int))
+                or not str(value)
+                or len(str(value)) > 192
+                for value in self.explicit_fit_activity_ids
+            )
+            or len(set(str(value) for value in self.explicit_fit_activity_ids))
+            != len(self.explicit_fit_activity_ids)
+            or len(self.explicit_fit_activity_ids) > 16
+            or not isinstance(self.explicit_fit_include_gps, bool)
         ):
             _fail("analysis_context_request_invalid")
         as_of = _utc(self.as_of_utc)
@@ -469,7 +489,6 @@ class ContextBuildRequest:
 
     def repository_window(self) -> tuple[str, str]:
         periods = self.validated_periods()
-        start = periods["baseline"]["start_local_date"]
         source = self.source_route()
         if source == "daily":
             end = periods["advice"]["end_local_date"]
@@ -477,6 +496,7 @@ class ContextBuildRequest:
             end = periods["review"]["end_local_date"]
         else:
             end = periods["plan"]["end_local_date"]
+        start = (date.fromisoformat(end) - timedelta(days=_TREND_WINDOW_DAYS - 1)).isoformat()
         return start, end
 
 
@@ -506,6 +526,9 @@ class TechnicalSampleRequest:
 class ContextSource:
     snapshot: StableSnapshot
     technical_samples: tuple[dict[str, Any], ...] = ()
+    # Each row is an already decoded, locally selected FIT payload.  It is
+    # never populated by the ordinary repository seam.
+    explicit_fit_messages: tuple[Mapping[str, Any], ...] = ()
 
 
 class StableContextRepository(Protocol):
@@ -523,6 +546,10 @@ class StableContextRepository(Protocol):
         *,
         limit: int,
     ) -> dict[str, Any]: ...
+
+    def explicit_fit_messages(
+        self, subject_id: int, activity_ids: tuple[str | int, ...]
+    ) -> tuple[Mapping[str, Any], ...]: ...
 
 
 def load_context_source(
@@ -560,7 +587,25 @@ def load_context_source(
         )
         for sample in technical_sample_requests
     )
-    return ContextSource(snapshot=snapshot, technical_samples=samples)
+    explicit: tuple[Mapping[str, Any], ...] = ()
+    if request.explicit_fit_activity_ids:
+        loader = getattr(repository, "explicit_fit_messages", None)
+        if not callable(loader):
+            _fail("analysis_explicit_fit_loader_unavailable")
+        try:
+            loaded = loader(request.subject_id, request.explicit_fit_activity_ids)
+        except Exception as error:
+            if isinstance(error, ContextBuildError):
+                raise
+            _fail("analysis_explicit_fit_loader_failed")
+        if not isinstance(loaded, tuple) or any(not isinstance(row, Mapping) for row in loaded):
+            _fail("analysis_explicit_fit_loader_invalid")
+        explicit = loaded
+    return ContextSource(
+        snapshot=snapshot,
+        technical_samples=samples,
+        explicit_fit_messages=explicit,
+    )
 
 
 @dataclass
@@ -832,7 +877,7 @@ def _validate_snapshot(
         or snapshot.subject_context
         != StableSubjectContext(
             subject_id=request.subject_id,
-            timezone="Asia/Singapore",
+            timezone="Asia/Hong_Kong",
             provider="garmin",
             identity_kind="account",
             verified=True,
@@ -906,15 +951,22 @@ def _completed_window(periods: Mapping[str, Any], source_route: SourceRoute) -> 
     return effective, effective
 
 
-def _input_window(periods: Mapping[str, Any], source_route: SourceRoute) -> tuple[str, str]:
-    start = periods["baseline"]["start_local_date"]
+def _trend_window(periods: Mapping[str, Any], source_route: SourceRoute) -> tuple[str, str]:
+    """Return the compact 90-day trend window without widening target dates."""
     if source_route == "daily":
-        end = periods["summary"]["end_local_date"]
+        end = periods["advice"]["end_local_date"]
     elif source_route == "weekly":
         end = periods["review"]["end_local_date"]
     else:
         end = periods["plan"]["end_local_date"]
-    return start, end
+    return (
+        (date.fromisoformat(end) - timedelta(days=_TREND_WINDOW_DAYS - 1)).isoformat(),
+        end,
+    )
+
+
+def _input_window(periods: Mapping[str, Any], source_route: SourceRoute) -> tuple[str, str]:
+    return _trend_window(periods, source_route)
 
 
 def _within(row: Mapping[str, Any], start: str, end: str) -> bool:
@@ -1152,10 +1204,61 @@ def _health_observations(
         source_id, revision = _source_reference(row, "daily_health")
         local_date = _observation_date(row, window)
         for metric_key, value in _flatten_compact_values(values):
-            if value is None:
+            if value is None or not _health_metric_allowed(metric_key):
                 continue
             output.append({
                 "metric_key": f"health.{metric_key}",
+                "unit": None,
+                "value": value,
+                "local_date": local_date,
+                "source_id": source_id,
+                "source_revision_id": revision,
+            })
+    return output
+
+
+def _health_metric_allowed(metric_key: str) -> bool:
+    """Apply the health whitelist at the analysis boundary as well as ingest."""
+    key = metric_key.casefold().replace(" ", "_").replace("-", "_")
+    allowed_tokens = (
+        "heart_rate", "heartrate", "resting_heart_rate", "restingheartrate",
+        "hrv", "heart_rate_variability", "spo2", "pulse_ox",
+        "vo2_max", "vo2max", "max_vo2", "weight", "body_weight",
+    )
+    return any(token in key for token in allowed_tokens)
+
+
+_MORNING_RECOVERY_TOKENS = frozenset({
+    "sleep", "sleep_score", "resting_heart_rate", "restingheart rate",
+    "heart_rate", "heartrate", "hrv", "spo2", "pulse_ox", "vo2_max",
+    "vo2max", "weight", "body_weight",
+})
+
+
+def _morning_recovery_observations(
+    rows: Sequence[Mapping[str, Any]], window: tuple[str, str]
+) -> list[dict[str, Any]]:
+    """Keep only D+1 morning recovery signals for a daily report.
+
+    This is deliberately a path allowlist.  Steps, calories, distance and
+    same-day activity fields are not allowed to enter the daily morning slice
+    even when an old database row happens to contain them.
+    """
+    output: list[dict[str, Any]] = []
+    for row in rows:
+        local_date = _observation_date(row, window)
+        if local_date != window[1]:
+            continue
+        values = _sanitize_row(row).get("values")
+        if not isinstance(values, Mapping):
+            continue
+        source_id, revision = _source_reference(row, "daily_health")
+        for metric_key, value in _flatten_compact_values(values):
+            first = metric_key.split(".", 1)[0].casefold().replace(" ", "_")
+            if value is None or not any(token in first or token in metric_key.casefold() for token in _MORNING_RECOVERY_TOKENS):
+                continue
+            output.append({
+                "metric_key": f"morning_recovery.{metric_key}",
                 "unit": None,
                 "value": value,
                 "local_date": local_date,
@@ -1346,6 +1449,7 @@ def _base_candidates(
     baseline_start = periods["baseline"]["start_local_date"]
     baseline_end = periods["baseline"]["end_local_date"]
     baseline_window = (baseline_start, baseline_end)
+    trend_window = _trend_window(periods, source_route)
     candidates: list[_Candidate] = []
 
     gate_row = quality_gate.as_dict()
@@ -1423,7 +1527,8 @@ def _base_candidates(
     sleep_rows = [
         row
         for row in snapshot.views["v_current_sleep_sessions"]
-        if _within(row, *baseline_window)
+        if _observation_date(row, trend_window) <= baseline_end
+        and _observation_date(row, trend_window) >= baseline_start
     ]
     physiology_records = [
         row
@@ -1441,25 +1546,81 @@ def _base_candidates(
     _add_compact_observations(
         candidates,
         section="health",
-        role="health.aggregate_30d",
+        role="health.aggregate_28d",
         entity_type="health_metric_aggregate",
         family="health",
         observations=_health_observations(health_rows, baseline_window),
         window=baseline_window,
     )
+    trend_health_rows = [
+        row for row in snapshot.views["v_current_daily_health"]
+        if _within(row, *trend_window)
+    ]
+    _add_compact_observations(
+        candidates,
+        section="health",
+        role="health.trend_90d",
+        entity_type="health_metric_trend",
+        family="health_trend",
+        observations=_health_observations(trend_health_rows, trend_window),
+        window=trend_window,
+    )
+    if source_route == "daily":
+        advice_day = periods["advice"]["end_local_date"]
+        morning_window = (advice_day, advice_day)
+        _add_compact_observations(
+            candidates,
+            section="health",
+            role="health.morning_recovery",
+            entity_type="morning_recovery_aggregate",
+            family="morning_recovery",
+            observations=_morning_recovery_observations(
+                trend_health_rows, morning_window
+            ),
+            window=morning_window,
+        )
     _add_compact_observations(
         candidates,
         section="sleep",
-        role="sleep.aggregate_30d",
+        role="sleep.aggregate_28d",
         entity_type="sleep_metric_aggregate",
         family="sleep",
         observations=_sleep_observations(sleep_rows, baseline_window),
         window=baseline_window,
     )
+    trend_sleep_rows = [
+        row for row in snapshot.views["v_current_sleep_sessions"]
+        if _within(row, *trend_window)
+    ]
+    _add_compact_observations(
+        candidates,
+        section="sleep",
+        role="sleep.trend_90d",
+        entity_type="sleep_metric_trend",
+        family="sleep_trend",
+        observations=_sleep_observations(trend_sleep_rows, trend_window),
+        window=trend_window,
+    )
+    if source_route == "daily":
+        advice_day = periods["advice"]["end_local_date"]
+        morning_window = (advice_day, advice_day)
+        morning_sleep_rows = [
+            row for row in trend_sleep_rows
+            if _observation_date(row, trend_window) == advice_day
+        ]
+        _add_compact_observations(
+            candidates,
+            section="sleep",
+            role="sleep.morning_recovery",
+            entity_type="morning_sleep_aggregate",
+            family="morning_sleep",
+            observations=_sleep_observations(morning_sleep_rows, morning_window),
+            window=morning_window,
+        )
     _add_compact_observations(
         candidates,
         section="physiology",
-        role="physiology.aggregate_30d",
+        role="physiology.aggregate_28d",
         entity_type="physiology_metric_aggregate",
         family="physiology",
         observations=_physiology_observations(
@@ -1467,10 +1628,34 @@ def _base_candidates(
         ),
         window=baseline_window,
     )
+    trend_physiology_records = [
+        row for row in snapshot.views["v_current_physiology_records"]
+        if _within(row, *trend_window)
+    ]
+    trend_ids = {_identifier(row.get("id")) for row in trend_physiology_records}
+    trend_physiology_metrics = [
+        row for row in snapshot.views["v_current_physiology_metrics"]
+        if _identifier(row.get("physiology_record_id")) in trend_ids
+    ]
+    _add_compact_observations(
+        candidates,
+        section="physiology",
+        role="physiology.trend_90d",
+        entity_type="physiology_metric_trend",
+        family="physiology_trend",
+        observations=_physiology_observations(
+            trend_physiology_records, trend_physiology_metrics, trend_window
+        ),
+        window=trend_window,
+    )
 
     activities: dict[str, Mapping[str, Any]] = {}
+    activity_window = (
+        (date.fromisoformat(complete_end) - timedelta(days=_SHORT_WINDOW_DAYS - 1)).isoformat(),
+        complete_end,
+    )
     for row in snapshot.views["v_current_activities"]:
-        if not _within(row, *baseline_window):
+        if not _within(row, *activity_window):
             continue
         identity = _identifier(row.get("id"))
         revision = _row_revision(row, "activity", identity)
@@ -1487,12 +1672,47 @@ def _base_candidates(
             role="activity.summary",
             entity_type="activity",
             row=summary,
-            fallback_window=baseline_window,
+            fallback_window=activity_window,
             trust="provider_fact",
             entity_id=identity,
             revision_id=revision,
             display_fields=_DISPLAY_FIELDS,
         )
+
+    # A raw FIT payload can enter the model context only when the host binds
+    # exact activity IDs on this request.  Normal routes leave both values
+    # empty, so no file or decoded sample stream is reachable here.
+    if source.explicit_fit_messages or request.explicit_fit_activity_ids:
+        try:
+            explicit = build_explicit_fit_context(
+                request.explicit_fit_activity_ids,
+                source.explicit_fit_messages,
+                include_gps=request.explicit_fit_include_gps,
+                max_bytes=request.max_context_bytes,
+            )
+        except ExplicitFitContextError as error:
+            _fail(str(error))
+        entries = explicit["activities"]
+        for entry in entries:
+            activity_id = str(entry["activity_id"])
+            activity = activities.get(activity_id)
+            if activity is None:
+                _fail("fit_context_activity_not_in_snapshot")
+            active_revision = activity.get("active_fit_revision_id")
+            if active_revision is None or str(active_revision) != str(entry["source_revision_id"]):
+                _fail("fit_context_revision_not_current")
+            local_day = str(activity.get("local_date"))
+            _add_row(
+                candidates,
+                section="activities",
+                role="activity.explicit_fit",
+                entity_type="activity_fit_explicit",
+                row=entry,
+                fallback_window=(local_day, local_day),
+                trust="provider_fact",
+                entity_id=activity_id,
+                revision_id=str(entry["source_revision_id"]),
+            )
 
     if (
         not isinstance(source.technical_samples, tuple)
@@ -1940,7 +2160,7 @@ def _render(
         },
         "subject": {
             "subject_id": request.subject_id,
-            "timezone": "Asia/Singapore",
+            "timezone": "Asia/Hong_Kong",
             "provider": "garmin",
             "identity_kind": "account",
             "verified": True,

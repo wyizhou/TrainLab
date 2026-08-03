@@ -1727,8 +1727,11 @@ class MailRepository:
             "e.subject_id AS event_subject_id "
             "FROM user_facts f "
             "LEFT JOIN conversation_events e ON e.id=f.source_event_id "
-            "WHERE f.subject_id=? AND f.is_active=1",
-            (run["subject_id"],),
+            "WHERE f.subject_id=? AND f.is_active=1 "
+            "AND f.superseded_by_fact_id IS NULL "
+            "AND (f.effective_from_utc IS NULL OR f.effective_from_utc<=?) "
+            "AND (f.expires_at_utc IS NULL OR f.expires_at_utc>?)",
+            (run["subject_id"], as_of_utc, as_of_utc),
         ).fetchall():
             value, _ = _strict_json(
                 row["fact_value_json"],
@@ -1841,6 +1844,71 @@ class MailRepository:
             tuple(facts),
             dependency,
         )
+
+    def browse_facts(
+        self,
+        subject_id: int,
+        *,
+        status: str = "all",
+        as_of_utc: str | None = None,
+    ) -> tuple[dict[str, Any], ...]:
+        """Read-only fact browser for CLI/mail command responses.
+
+        State is derived from the append-only rows; this method never updates
+        or deletes a fact.  ``pending`` is an accepted future fact, while
+        ``future`` is an alias useful for human-facing filters.  A superseded
+        row is exposed as ``revoked`` so the historical decision remains
+        visible without pretending it is active.
+        """
+        if isinstance(subject_id, bool) or not isinstance(subject_id, int) or subject_id <= 0:
+            raise MailRepositoryError("mail_fact_subject_invalid")
+        as_of = as_of_utc or self._clock()
+        if not _canonical_utc(as_of):
+            raise MailRepositoryError("mail_fact_as_of_invalid")
+        allowed = {"all", "active", "pending", "future", "expired", "revoked"}
+        if status not in allowed:
+            raise MailRepositoryError("mail_fact_status_invalid")
+        rows = self.connection.execute(
+            "SELECT f.id,f.subject_id,f.fact_key,f.fact_value_json,f.scope,"
+            "f.effective_from_utc,f.expires_at_utc,f.source_event_id,"
+            "f.confidence,f.is_active,f.superseded_by_fact_id "
+            "FROM user_facts f WHERE f.subject_id=? ORDER BY f.id",
+            (subject_id,),
+        ).fetchall()
+        result: list[dict[str, Any]] = []
+        for row in rows:
+            value, _ = _strict_json(
+                row["fact_value_json"], require_object=False,
+                max_bytes=16_384, error_code="mail_fact_value_invalid",
+            )
+            effective = row["effective_from_utc"]
+            expires = row["expires_at_utc"]
+            if row["superseded_by_fact_id"] is not None or not bool(row["is_active"]):
+                state = "revoked"
+            elif effective is not None and effective > as_of:
+                state = "pending"
+            elif expires is not None and expires <= as_of:
+                state = "expired"
+            else:
+                state = "active"
+            if status not in {"all", "future"} and state != status:
+                continue
+            if status == "future" and state != "pending":
+                continue
+            result.append({
+                "id": int(row["id"]),
+                "subject_id": int(row["subject_id"]),
+                "fact_key": row["fact_key"],
+                "value": value,
+                "scope": row["scope"],
+                "effective_from_utc": effective,
+                "expires_at_utc": expires,
+                "source_event_id": row["source_event_id"],
+                "confidence": row["confidence"],
+                "state": state,
+                "superseded_by_fact_id": row["superseded_by_fact_id"],
+            })
+        return tuple(result)
 
     def gate_mail_result(
         self,

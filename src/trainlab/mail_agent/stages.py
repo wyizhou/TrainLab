@@ -17,6 +17,7 @@ from .contracts import MailCounts, MailReceipt, MailRequest, utc_now
 from .delivery import MailResponseDeliveryService
 from .delivery_repository import MailDeliveryRepository
 from .fact_gate import FactGate
+from .fact_browser import parse_fact_browser_command, render_fact_browser_text
 from .poll import MailPollService
 from .publisher import MailResponsePublisher
 from .recovery import DeliveryCandidate, reconcile_unknown_delivery, recover_label_only
@@ -146,10 +147,52 @@ class ProcessStage:
             # Context construction is read-only.  Only after it has succeeded
             # do we claim the message for generation.
             self.repository.set_message_processing_state(request.subject_id, message_id, "analyzing")
-            generation = self.runner.generate(
-                context, invocation_id=request.invocation_id,
-                regeneration_reason=request.regeneration_reason_code,
-            )
+            command = parse_fact_browser_command(context["trigger_message"].get("latest_authored_text"))
+            if command is not None:
+                # FACTS/事实 is a deterministic read-only command.  It still
+                # uses the normal gate/publisher path, but never invokes Codex
+                # and never creates or changes a fact.
+                rows = self.repository.browse_facts(
+                    request.subject_id, status=command.status,
+                )
+                trigger_manifest = next(
+                    item for item in context["input_manifest"]
+                    if item["input_role"] == "trigger_message"
+                )
+                generation_result = {
+                    "schema_version": "1",
+                    "run_key": context["run"]["run_key"],
+                    "trigger_message_id": message_id,
+                    "intent": "feedback",
+                    "action": "reply",
+                    "response": {
+                        "response_kind": "fact_browser",
+                        "subject_intent": "浏览当前事实",
+                        "structured_content": {"title": "事实浏览"},
+                        "user_visible_text": render_fact_browser_text(
+                            rows, status=command.status
+                        ),
+                        "requires_thread_reply": True,
+                    },
+                    "fact_candidates": [],
+                    "plan_revision_request": None,
+                    "source_usage": [{
+                        "ordinal": trigger_manifest["ordinal"],
+                        "input_role": "trigger_message",
+                        "source_entity_id": message_id,
+                    }],
+                    "data_limitations": [],
+                    "safety": {"red_flag": False, "exercise_suspended": False},
+                    "warnings": [],
+                }
+                generation = type("FactBrowserGeneration", (), {
+                    "result": generation_result,
+                })()
+            else:
+                generation = self.runner.generate(
+                    context, invocation_id=request.invocation_id,
+                    regeneration_reason=request.regeneration_reason_code,
+                )
             decision = self.repository.gate_mail_result(
                 run.id, generation.result, context, gate=self.gate,
             )

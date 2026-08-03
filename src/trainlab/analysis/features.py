@@ -173,7 +173,7 @@ def activity_distribution(activities:Iterable[Mapping[str,Any]],*,end_local_date
  return tuple(output)
 
 def snapshot_metric_statistics(snapshot:StableSnapshot,*,metric:str,unit:str,end_local_date:str,window_days:int)->tuple[DeterministicFeature,...]:
- if not isinstance(snapshot,StableSnapshot) or not snapshot.subject_context or snapshot.subject_context.timezone!="Asia/Singapore":_fail("feature_snapshot_invalid")
+ if not isinstance(snapshot,StableSnapshot) or not snapshot.subject_context or snapshot.subject_context.timezone!="Asia/Hong_Kong":_fail("feature_snapshot_invalid")
  sid=snapshot.subject_context.subject_id; records={_id(r):r for r in _rows(snapshot.views.get("v_current_physiology_records",()))}
  coverage=_rows(snapshot.coverage); extracted=[];resources=set()
  for m in _rows(snapshot.views.get("v_current_physiology_metrics",())):
@@ -357,7 +357,7 @@ def quality_session_intervals(activities:Iterable[Mapping[str,Any]])->tuple[dict
  for x in all_rows:
   _rev(x)
   if x.get("current_revision") is not True or x.get("is_formal_training") is not True:_fail("feature_interval_lineage_invalid")
-  local=_date(x.get("local_date"));derived=_utc(x.get("start_time_utc")).astimezone(ZoneInfo("Asia/Singapore")).date()
+  local=_date(x.get("local_date"));derived=_utc(x.get("start_time_utc")).astimezone(ZoneInfo("Asia/Hong_Kong")).date()
   if local!=derived:_fail("feature_activity_local_date_mismatch")
  selected=sorted((x for x in all_rows if _kind(x.get("sport"))=="running" and x.get("quality_session") is True),key=lambda x:(_utc(x.get("start_time_utc")),_id(x)))
  out=[]
@@ -395,8 +395,8 @@ def revision_impact(*,old_revision_id:str,new_revision_id:str,changed_metrics:It
    for field in ("source_window_start_utc","source_window_end_utc"):
     if x.get(field) is not None:_utc(x[field])
    if x.get("source_window_start_utc") and x.get("source_window_end_utc") and _utc(x["source_window_start_utc"])>_utc(x["source_window_end_utc"]):_fail("feature_period_invalid")
-   if start is None and x.get("source_window_start_utc"):start=_utc(x["source_window_start_utc"]).astimezone(ZoneInfo("Asia/Singapore")).date().isoformat()
-   if end is None and x.get("source_window_end_utc"):end=_utc(x["source_window_end_utc"]).astimezone(ZoneInfo("Asia/Singapore")).date().isoformat()
+   if start is None and x.get("source_window_start_utc"):start=_utc(x["source_window_start_utc"]).astimezone(ZoneInfo("Asia/Hong_Kong")).date().isoformat()
+   if end is None and x.get("source_window_end_utc"):end=_utc(x["source_window_end_utc"]).astimezone(ZoneInfo("Asia/Hong_Kong")).date().isoformat()
    if start is not None and end is not None and _date(start)>_date(end):_fail("feature_period_invalid")
    row_metric=_norm(str(x.get("metric",""))) if x.get("metric") is not None else None
    item={"artifact_id":artifact_id,"analysis_run_id":run_id,"plan_id":plan_id if kind=="plan" else None,"period_start_local_date":start,"period_end_local_date":end,"source_window_start_utc":x.get("source_window_start_utc"),"source_window_end_utc":x.get("source_window_end_utc"),"metric":x.get("metric"),"input_revision_ids":tuple(sorted(map(str,lineage)))}

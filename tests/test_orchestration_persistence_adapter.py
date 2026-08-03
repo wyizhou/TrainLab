@@ -44,7 +44,7 @@ def database(tmp_path: Path) -> Path:
     connection = sqlite3.connect(config.database_path)
     connection.execute(
         "INSERT INTO data_subjects(subject_key,timezone,is_active,created_at_utc) VALUES(?,?,1,?)",
-        ("subject-7", "Asia/Singapore", "2026-07-27T00:00:00Z"),
+        ("subject-7", "Asia/Hong_Kong", "2026-07-27T00:00:00Z"),
     )
     connection.commit(); connection.close()
     return config.database_path
@@ -304,7 +304,7 @@ def test_operator_retry_parent_must_match_subject_kind_and_logical_date(
         connection.execute(
             "INSERT INTO data_subjects"
             "(subject_key,timezone,is_active,created_at_utc) VALUES(?,?,1,?)",
-            ("subject-8", "Asia/Singapore", "2026-07-27T00:00:00Z"),
+            ("subject-8", "Asia/Hong_Kong", "2026-07-27T00:00:00Z"),
         )
         connection.commit()
     repository = OrchestrationRepository(path)
@@ -357,7 +357,7 @@ def test_scheduler_handoff_is_materialized_and_completed_by_exact_receipt(
     path = database(tmp_path)
     repository = OrchestrationRepository(path)
     projection = SchedulerJobProjection(
-        "health_check", "health_check", "Asia/Singapore", "interval", NOW,
+        "health_check", "health_check", "Asia/Hong_Kong", "interval", NOW,
         None, 60, None, "none", None, "a" * 64,
     )
     repository.upsert_scheduler_job(

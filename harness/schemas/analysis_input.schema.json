@@ -45,7 +45,7 @@
       "required": ["subject_id", "timezone", "provider", "identity_kind", "verified"],
       "properties": {
         "subject_id": {"type": "integer", "minimum": 1},
-        "timezone": {"const": "Asia/Singapore"},
+        "timezone": {"const": "Asia/Hong_Kong"},
         "provider": {"const": "garmin"},
         "identity_kind": {"const": "account"},
         "verified": {"const": true}

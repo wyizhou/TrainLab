@@ -19,7 +19,7 @@
     <key>PYTHONUNBUFFERED</key>
     <string>1</string>
     <key>TZ</key>
-    <string>Asia/Singapore</string>
+    <string>Asia/Hong_Kong</string>
     <key>PATH</key>
     <string>@RUNTIME_PATH@</string>
     <key>__PYVENV_LAUNCHER__</key>

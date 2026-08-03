@@ -211,7 +211,7 @@ foundation:
 17. 邮件原始内容、规范化消息、会话事件和用户事实分层保存；模型推断不能伪装
     成用户明确陈述。
 18. 所有规范化数值使用固定公制单位，同时保留原始值、原始单位和来源。
-19. UTC 是存储时间，`Asia/Singapore` 是本地日期与调度日历。
+19. UTC 是存储时间，`Asia/Hong_Kong` 是本地日期与调度日历。
 20. 第三层只写 daily、weekly、plan revision、regeneration 的 `analysis_*`、
     `training_*` 和 `analysis_delivery_*`；第四层只写 Gmail、会话、用户事实、
     邮件 Agent 运行、邮件回复和 `mail_delivery_*`。
@@ -307,7 +307,7 @@ raw/
 | 数据 | 规范 |
 |---|---|
 | 精确时间 | UTC ISO-8601 文本，带 `Z` 或明确 `+00:00`，保留可用的毫秒 |
-| 本地日期 | `YYYY-MM-DD`，按 `Asia/Singapore` 派生 |
+| 本地日期 | `YYYY-MM-DD`，按 `Asia/Hong_Kong` 派生 |
 | 时长 | 秒，`REAL` |
 | 距离/海拔 | 米 |
 | 速度 | 米/秒 |

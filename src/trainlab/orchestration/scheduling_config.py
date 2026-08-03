@@ -20,7 +20,7 @@ import yaml
 from jsonschema import Draft202012Validator
 
 
-SINGAPORE = ZoneInfo("Asia/Singapore")
+HONG_KONG = ZoneInfo("Asia/Hong_Kong")
 _SECRET_MARKERS = ("secret", "token", "password", "credential", "oauth", "client_id", "client_secret")
 
 
@@ -225,12 +225,12 @@ class AtomicConfigStore:
 
 
 class SchedulingProjectionService:
-    """Pure Singapore-time projection calculations; no wall-clock or storage access."""
+    """Pure Hong Kong-time projection calculations; no wall-clock or storage access."""
 
     def project(self, snapshot: OrchestrationConfigSnapshot, now_utc: datetime) -> tuple[SchedulerJobProjection, ...]:
         now = _utc(now_utc)
         morning = _next_daily_morning(now)
-        weekly = _next_sunday_morning(now)
+        weekly = _next_monday_morning(now)
         return (
             SchedulerJobProjection("morning", "morning", snapshot.timezone, "daily_at", morning, _local_date(morning), None, None, "own_incremental", timedelta(hours=snapshot.daily_misfire_window_hours), snapshot.config_sha256),
             SchedulerJobProjection("weekly", "weekly", snapshot.timezone, "weekly_at", weekly, _local_date(weekly), None, "morning", "reuse_morning_collection", timedelta(hours=snapshot.weekly_misfire_window_hours), snapshot.config_sha256),
@@ -254,24 +254,29 @@ def _utc(value: datetime) -> datetime:
 
 
 def _local_date(value: datetime) -> str:
-    return value.astimezone(SINGAPORE).date().isoformat()
+    return value.astimezone(HONG_KONG).date().isoformat()
 
 
 def _next_daily_morning(now_utc: datetime) -> datetime:
-    local = now_utc.astimezone(SINGAPORE)
-    due = datetime.combine(local.date(), time(7, 0), SINGAPORE)
+    local = now_utc.astimezone(HONG_KONG)
+    due = datetime.combine(local.date(), time(9, 0), HONG_KONG)
     if local > due:
         due += timedelta(days=1)
     return due.astimezone(UTC)
 
 
-def _next_sunday_morning(now_utc: datetime) -> datetime:
-    local = now_utc.astimezone(SINGAPORE)
-    days = (6 - local.weekday()) % 7
-    due = datetime.combine(local.date() + timedelta(days=days), time(7, 0), SINGAPORE)
+def _next_monday_morning(now_utc: datetime) -> datetime:
+    local = now_utc.astimezone(HONG_KONG)
+    days = (0 - local.weekday()) % 7
+    due = datetime.combine(local.date() + timedelta(days=days), time(9, 0), HONG_KONG)
     if local > due:
         due += timedelta(days=7)
     return due.astimezone(UTC)
+
+
+# Compatibility name for callers that imported the old private helper.  The
+# projection itself is now unambiguously Monday at 09:00 Hong Kong time.
+_next_sunday_morning = _next_monday_morning
 
 
 def _require_owner_only(path: Path) -> None:

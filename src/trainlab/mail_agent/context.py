@@ -11,7 +11,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 from .repository import InputDraft
 
 MAX_TRIGGER_BYTES=65_536; MAX_THREAD_BYTES=131_072; MAX_THREAD_MESSAGES=20
-MAX_PRIOR_RESPONSES=5; MAX_COMPLETED_DAYS=30; MAX_ARTIFACTS=8; MAX_CONTEXT_BYTES=1_000_000
+MAX_PRIOR_RESPONSES=5; MAX_COMPLETED_DAYS=28; MAX_ARTIFACTS=8; MAX_CONTEXT_BYTES=1_000_000
 MAX_EXTENSION_DAYS=30; MAX_FACTS=100; MAX_EVENTS=100; MAX_QUALITY=100
 _EXTENSION_REASONS=frozenset({'explicit_earlier_date','explicit_date_range','plan_history_question'})
 _BAD_KEY=re.compile(r"(?:lat(?:itude)?|lon(?:gitude)?|gps|geo(?:location)?|address|location|token|secret|password|credential|authori[sz]|refresh)",re.I)
@@ -61,6 +61,15 @@ def _flatten_health(value:Any,prefix:str="",depth:int=0)->list[tuple[str,Any]]:
         out.extend(_flatten_health(value[key],f"{prefix}.{part}" if prefix else part,depth+1))
     return out
 
+def _health_metric_allowed(metric_key: str) -> bool:
+    """Keep the mail model on the reviewed health whitelist."""
+    key = metric_key.casefold().replace(" ", "_").replace("-", "_")
+    return any(token in key for token in (
+        "heart_rate", "heartrate", "hrv", "heart_rate_variability",
+        "spo2", "pulse_ox", "vo2_max", "vo2max", "max_vo2",
+        "weight", "body_weight",
+    ))
+
 def _health_window_summary(rows:list[dict[str,Any]],start:date,end:date)->dict[str,Any]|None:
     if not rows:return None
     groups:dict[str,list[dict[str,Any]]]={}
@@ -72,7 +81,7 @@ def _health_window_summary(rows:list[dict[str,Any]],start:date,end:date)->dict[s
         sources.append({"id":row["id"],"source_revision_id":row["source_revision_id"],"local_date":row["local_date"]})
         if isinstance(values,dict):
             for key,value in _flatten_health(values):
-                if value is not None:groups.setdefault(f"health.{key}",[]).append({"local_date":row["local_date"],"value":value})
+                if value is not None and _health_metric_allowed(key):groups.setdefault(f"health.{key}",[]).append({"local_date":row["local_date"],"value":value})
     metrics=[]
     for key,observations in sorted(groups.items()):
         observations=sorted(observations,key=lambda item:(item["local_date"],_j(item["value"])))
@@ -141,14 +150,28 @@ class MailContextBuilder:
                 omissions.append({"kind":"thread_message_untrusted_excluded","entity_id":r['id']}); continue
             thread.append(_safe({"id":r['id'],"provider_message_id":r['provider_message_id'],"timestamp_utc":r['received_at_utc'] or r['sent_at_utc'],"subject":r['subject'],"body_text":body,"body_sha256":r['body_sha256'],"actor_role":r['actor_role'],"direction":r['direction'],"source_revision_id":r['source_revision_id'],"value_origin":origin,"content_instruction_trust":"untrusted_content"}))
         thread.reverse()
-        start=requested or asof-timedelta(days=MAX_COMPLETED_DAYS)
-        health_source_rows=[dict(r) for r in self.connection.execute("SELECT d.* FROM v_current_daily_health d JOIN source_revisions r ON r.id=d.source_revision_id AND r.is_current=1 AND r.provider='garmin' AND r.resource_kind IN ('user_summary','intensity_minutes','hydration') AND r.provider_object_id=d.local_date WHERE d.subject_id=? AND d.local_date BETWEEN ? AND ? AND d.local_date<? ORDER BY d.local_date,d.id",(sid,str(start),str(asof),str(asof)))]
-        health_summary=_health_window_summary(health_source_rows,start,asof-timedelta(days=1))
+        # Keep the health baseline and activity evidence on their independent
+        # bounded windows.  The mail contract exposes the latest 28 completed
+        # health days, while activity summaries are limited to the latest 7
+        # completed days by default.  An explicit user-requested start date is
+        # an intentional extension and applies to both views.
+        health_start=requested or asof-timedelta(days=MAX_COMPLETED_DAYS)
+        activity_start=requested or asof-timedelta(days=7)
+        # Cross-entity quality/artifact queries use the wider of the two
+        # windows so an issue is not hidden merely because it belongs to a
+        # different bounded source.
+        start=min(health_start, activity_start)
+        # Mail context follows the same health allowlist as the production
+        # analysis boundary.  Legacy rows for steps, calories, hydration or
+        # other broad Garmin summaries stay in SQLite but are not exposed to
+        # the model.
+        health_source_rows=[dict(r) for r in self.connection.execute("SELECT d.* FROM v_current_daily_health d JOIN source_revisions r ON r.id=d.source_revision_id AND r.is_current=1 AND r.provider='garmin' AND r.resource_kind IN ('heart_rates','rhr','hrv','spo2') AND r.provider_object_id=d.local_date WHERE d.subject_id=? AND d.local_date BETWEEN ? AND ? AND d.local_date<? ORDER BY d.local_date,d.id",(sid,str(health_start),str(asof),str(asof)))]
+        health_summary=_health_window_summary(health_source_rows,health_start,asof-timedelta(days=1))
         health=[] if health_summary is None else [health_summary]
         if not requested:
-            n=self.connection.execute("SELECT count(DISTINCT local_date) FROM v_current_daily_health WHERE subject_id=? AND local_date<?",(sid,str(start))).fetchone()[0]
-            if n:omissions.append({"kind":"completed_days_omitted","count":n,"before_local_date":str(start)})
-        acts=[_safe(dict(r)) for r in self.connection.execute("SELECT a.id,a.provider_activity_id,a.name,a.sport,a.sub_sport,a.start_time_utc,a.end_time_utc,a.local_date,a.elapsed_seconds,a.timer_seconds,a.distance_m,a.primary_revision_id,a.provider_state FROM v_current_activities a JOIN source_revisions r ON r.id=a.primary_revision_id AND r.is_current=1 AND r.provider='garmin' AND r.resource_kind='activity_summary' AND r.provider_object_id=a.provider_activity_id WHERE a.subject_id=? AND a.provider_state IN ('active','suspected_missing') AND a.local_date BETWEEN ? AND ? AND a.local_date<? AND EXISTS(SELECT 1 FROM activity_source_revisions ar WHERE ar.activity_id=a.id AND ar.source_revision_id=a.primary_revision_id AND ar.source_role='summary_json' AND ar.is_active=1) ORDER BY a.local_date,a.start_time_utc,a.id",(sid,str(start),str(asof),str(asof)))]
+            n=self.connection.execute("SELECT count(DISTINCT local_date) FROM v_current_daily_health WHERE subject_id=? AND local_date<?",(sid,str(health_start))).fetchone()[0]
+            if n:omissions.append({"kind":"completed_days_omitted","count":n,"before_local_date":str(health_start)})
+        acts=[_safe(dict(r)) for r in self.connection.execute("SELECT a.id,a.provider_activity_id,a.name,a.sport,a.sub_sport,a.start_time_utc,a.end_time_utc,a.local_date,a.elapsed_seconds,a.timer_seconds,a.distance_m,a.primary_revision_id,a.provider_state FROM v_current_activities a JOIN source_revisions r ON r.id=a.primary_revision_id AND r.is_current=1 AND r.provider='garmin' AND r.resource_kind='activity_summary' AND r.provider_object_id=a.provider_activity_id WHERE a.subject_id=? AND a.provider_state IN ('active','suspected_missing') AND a.local_date BETWEEN ? AND ? AND a.local_date<? AND EXISTS(SELECT 1 FROM activity_source_revisions ar WHERE ar.activity_id=a.id AND ar.source_revision_id=a.primary_revision_id AND ar.source_role='summary_json' AND ar.is_active=1) ORDER BY a.local_date,a.start_time_utc,a.id",(sid,str(activity_start),str(asof),str(asof)))]
         facts=[]
         for r in self.connection.execute("SELECT f.* FROM v_active_user_facts f JOIN conversation_events e ON e.id=f.source_event_id AND e.subject_id=f.subject_id WHERE f.subject_id=? AND f.scope IN ('temporary','long_term') AND f.superseded_by_fact_id IS NULL AND (f.effective_from_utc IS NULL OR f.effective_from_utc<=?) AND (f.expires_at_utc IS NULL OR f.expires_at_utc>?) ORDER BY f.fact_key,f.id LIMIT ?",(sid,f'{asof}T23:59:59Z',f'{asof}T00:00:00Z',MAX_FACTS+1)):
             facts.append(_safe({"id":r['id'],"fact_key":r['fact_key'],"value":_loads(r['fact_value_json']),"scope":r['scope'],"effective_from_utc":r['effective_from_utc'],"expires_at_utc":r['expires_at_utc'],"confidence":r['confidence']}))
@@ -202,7 +225,7 @@ class MailContextBuilder:
         if plans:add('current_plan','training_plan',plans[0],'prior_model_output',None,entity_revision=plans[0]['artifact_revision_no'])
         for x in events:add('conversation_event','conversation_event',x,'derived_statistic',None,entity_revision=x['id'],instruction='untrusted_content')
         for x in quality:add('quality_state','data_quality_issue',x,'derived_statistic',x.get('source_revision_id'),entity_revision=x['id'])
-        payload={"schema_version":self.schema_version,"run":_safe({"id":run['id'],"run_key":run['run_key'],"invocation_id":run['invocation_id'],"request_kind":run['request_kind']}),"trigger_message":trig,"thread_context":thread,"conversation_events":events,"active_user_facts":facts,"current_health_context":health,"current_activity_context":acts,"current_training_plan":plans[0] if plans else None,"relevant_analysis_artifacts":artifacts,"prior_mail_responses":prior,"data_quality":quality,"policies":_safe({"version":self.policy_version,"timezone":"Asia/Singapore","sensitive_field_policy":"recursive_minimization"}),"input_manifest":entries,"context_limits":{"trigger_bytes":len(trig['latest_authored_text'].encode()),"thread_body_bytes":used,"thread_messages":len(thread),"completed_days":0 if not health else health[0]['completed_days'],"prior_responses":len(prior),"related_artifacts":len(artifacts),"max_bytes":MAX_CONTEXT_BYTES,"date_extension_reason":reason,"omissions":omissions}}
+        payload={"schema_version":self.schema_version,"run":_safe({"id":run['id'],"run_key":run['run_key'],"invocation_id":run['invocation_id'],"request_kind":run['request_kind']}),"trigger_message":trig,"thread_context":thread,"conversation_events":events,"active_user_facts":facts,"current_health_context":health,"current_activity_context":acts,"current_training_plan":plans[0] if plans else None,"relevant_analysis_artifacts":artifacts,"prior_mail_responses":prior,"data_quality":quality,"policies":_safe({"version":self.policy_version,"timezone":"Asia/Hong_Kong","sensitive_field_policy":"recursive_minimization"}),"input_manifest":entries,"context_limits":{"trigger_bytes":len(trig['latest_authored_text'].encode()),"thread_body_bytes":used,"thread_messages":len(thread),"completed_days":0 if not health else health[0]['completed_days'],"prior_responses":len(prior),"related_artifacts":len(artifacts),"max_bytes":MAX_CONTEXT_BYTES,"date_extension_reason":reason,"omissions":omissions}}
         def remove_manifest(role:str, entity:int)->None:
             entries[:]=[m for m in entries if not (m['input_role']==role and m['source_entity_id']==entity)]
             dbmanifest[:]=[m for m in dbmanifest if not (m.input_role==role and m.source_entity_id==entity)]

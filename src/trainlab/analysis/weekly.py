@@ -40,7 +40,7 @@ from .stable_views import StableViewRepository
 from .training_difficulty import training_control_contracts
 
 
-_SG = ZoneInfo("Asia/Singapore")
+_SG = ZoneInfo("Asia/Hong_Kong")
 
 
 class PendingWeeklyDelivery(Protocol):
@@ -78,11 +78,15 @@ def _default_dates(request: AnalysisRequest) -> AnalysisRequest:
     as_of = date.fromisoformat(request.as_of_local_date) if request.as_of_local_date else local_today
     if as_of > local_today:
         raise ValueError("analysis_weekly_as_of_in_future")
+    if as_of.weekday() != 0:
+        raise ValueError("analysis_weekly_monday_required")
     return replace(request, as_of_local_date=as_of.isoformat())
 
 
 def _periods(as_of_local_date: str) -> tuple[dict[str, str], dict[str, str]]:
     as_of = date.fromisoformat(as_of_local_date)
+    if as_of.weekday() != 0:
+        raise ValueError("analysis_weekly_monday_required")
     return (
         {
             "start_local_date": (as_of - timedelta(days=7)).isoformat(),
@@ -138,7 +142,7 @@ def weekly_plan_contract(prior_artifact_state: Mapping[str, str]) -> dict[str, A
         "prior_artifact_state": dict(prior_artifact_state),
         "days": 7,
         "items_per_day": 1,
-        "timezone": "Asia/Singapore",
+        "timezone": "Asia/Hong_Kong",
         "clock_time_forbidden": True,
         "allowed_activity_kinds": list(daily["allowed_activity_kinds"]),
         "running_template": daily["running_template"],
@@ -366,6 +370,7 @@ class WeeklyRoute:
             {},
             weekly_safety_request_bases=safety_bases,
             prior_artifact_state=prior_state,
+            available_training_weekdays=self.config.available_training_weekdays,
         )
         validator = self.validator
         if validator is None:

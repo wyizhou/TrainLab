@@ -74,6 +74,7 @@ from .due_scheduler import (
 from .analysis_workflows import (
     AnalysisWorkflowRequest,
     AnalysisWorkflowResult,
+    MondayWorkflowService,
     MorningWorkflowService,
     SundayWorkflowService,
 )
@@ -168,6 +169,7 @@ __all__ = [
     "SchedulerTick",
     "AnalysisWorkflowRequest",
     "AnalysisWorkflowResult",
+    "MondayWorkflowService",
     "MorningWorkflowService",
     "SundayWorkflowService",
     "HealthWorkflowOutcome",

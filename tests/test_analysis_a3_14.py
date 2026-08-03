@@ -158,7 +158,7 @@ def test_weekly_report_binds_exact_summary_and_plan_revisions() -> None:
             ),
             (
                 12, "weekly_training_plan", "2026-07-26", "2026-08-01", 1,
-                json.dumps({"period": {"start_local_date": "2026-07-26", "end_local_date": "2026-08-01"}, "timezone": "Asia/Singapore", "objective": {}, "constraints": {}, "items": [{"item_index": i, "local_date": f"2026-07-{26 + i:02d}" if i < 6 else "2026-08-01", "activity_kind": "rest", "prescription": {"activity_kind": "rest"}, "rationale_text": "恢复", "stop_conditions": []} for i in range(7)]}), "未来七天计划。", "c" * 64,
+                json.dumps({"period": {"start_local_date": "2026-07-26", "end_local_date": "2026-08-01"}, "timezone": "Asia/Hong_Kong", "objective": {}, "constraints": {}, "items": [{"item_index": i, "local_date": f"2026-07-{26 + i:02d}" if i < 6 else "2026-08-01", "activity_kind": "rest", "prescription": {"activity_kind": "rest"}, "rationale_text": "恢复", "stop_conditions": []} for i in range(7)]}), "未来七天计划。", "c" * 64,
             ),
         ),
     )
@@ -205,7 +205,7 @@ def test_rest_day_omits_running_steps_and_malformed_structured_content_fails_clo
 def test_plan_revision_uses_weekly_design_for_only_its_existing_plan_items() -> None:
     connection = database()
     connection.execute("UPDATE analysis_runs SET run_key='analysis:1:weekly:2026-07-26:revision',analysis_kind='weekly' WHERE id=1")
-    plan = {"period": {"start_local_date": "2026-07-26", "end_local_date": "2026-08-01"}, "timezone": "Asia/Singapore", "objective": {}, "constraints": {}, "items": [
+    plan = {"period": {"start_local_date": "2026-07-26", "end_local_date": "2026-08-01"}, "timezone": "Asia/Hong_Kong", "objective": {}, "constraints": {}, "items": [
         {"item_index": index, "local_date": f"2026-07-{26 + index:02d}" if index < 6 else "2026-08-01", "activity_kind": "rest", "prescription": {"activity_kind": "rest"}, "rationale_text": "修订后恢复", "stop_conditions": []}
         for index in range(7)
     ]}
@@ -270,7 +270,7 @@ def test_delivery_fails_closed_for_missing_daily_contract_and_weekly_date_gap() 
             "start_local_date": "2026-07-26",
             "end_local_date": "2026-08-01",
         },
-        "timezone": "Asia/Singapore",
+        "timezone": "Asia/Hong_Kong",
         "objective": {},
         "constraints": {},
         "items": [

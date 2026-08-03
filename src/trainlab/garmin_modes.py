@@ -12,6 +12,12 @@ from typing import Literal, Mapping, Sequence
 
 CollectionMode = Literal["full", "incremental", "snapshot"]
 
+# Incremental runs deliberately re-read the last fourteen completed local
+# dates.  The cursor still prevents false continuity, while immutable source
+# hashes make unchanged overlap idempotent and changed provider payloads
+# append a revision.
+INCREMENTAL_LOOKBACK_DAYS = 14
+
 
 @dataclass(frozen=True)
 class ResourceDateWindow:

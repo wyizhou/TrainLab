@@ -1,10 +1,10 @@
 analysis:
-  timezone: Asia/Singapore
+  timezone: Asia/Hong_Kong
   harness_root: harness
   input_schema: harness/schemas/analysis_input.schema.json
   output_schema: harness/schemas/analysis_result.schema.json
   max_context_bytes: 1100000
-  completed_window_days: 30
+  completed_window_days: 28
   max_recent_daily_artifacts: 7
   codex_timeout_seconds: 600
   delivery_timeout_seconds: 180

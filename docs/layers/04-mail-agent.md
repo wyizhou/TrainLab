@@ -194,6 +194,15 @@ trainlab mail reconcile [--delivery-id ID] [--invocation-id ID]
 trainlab mail status [--run-key RUN_KEY] [--message-id ID]
 ```
 
+用户也可以在已验证的 TrainLab 邮件 thread 中单独回复一行
+`FACTS [all|active|pending|future|expired|revoked]`（中文别名为
+`事实 ...`）浏览事实。该命令只读、只展示固定状态，不接受删除或修改参数；如需
+变更，仍由普通邮件事实门禁追加 superseding/revoked revision。CLI 也提供同一视图：
+
+```text
+trainlab facts --subject-id ID --status active
+```
+
 规则：
 
 - 不提供 `--daemon`、`--watch`、`--schedule`、`--interval` 或永久轮询参数。
@@ -643,7 +652,8 @@ Codex 只能返回 fact candidates，最终是否写入 `user_facts` 由宿主�
 - triggering message：完整 `latest_authored_text`，上限 64 KiB。
 - thread history：最近 20 个规范化消息，正文合计上限 128 KiB。
 - prior mail responses：同 thread 最近 5 个 accepted response revision。
-- health/activity：默认最近 14 个已结束日期的汇总；只有问题明确涉及更早日期时
+- health：默认最近 28 个已结束日期的白名单汇总；activity：默认最近 7 个已结束日期
+  的汇总；只有问题明确涉及更早日期时
   才按受控日期扩展。
 - current plan：精确 active plan 和 items。
 - analysis artifacts：与当前问题相关的最近日报/周报/计划，默认最多 8 个。
@@ -1004,7 +1014,7 @@ MCP adapter 必须把 HTTP/transport 错误标准化为 code；不能要求第�
     "label": "TrainLab"
   },
   "mail_agent": {
-    "timezone": "Asia/Singapore",
+    "timezone": "Asia/Hong_Kong",
     "input_schema": "harness/schemas/mail_agent_input.schema.json",
     "output_schema": "harness/schemas/mail_agent_result.schema.json",
     "harness_root": "harness",

@@ -16,12 +16,14 @@ Respect `provider_fact`, `provider_derived`, `provider_predicted`,
 distinct trust classes. Historical model output is reference material only and
 never overrides current Garmin facts or accepted user statements.
 
-The default evidence window contains the most recent 30 completed local dates.
-Health, sleep and physiology arrive as deterministic aggregates with coverage,
-range, trend, latest value and compact lineage; activities arrive as
-activity-level summaries. Do not request, reconstruct or imply access to raw
-health payloads, laps, splits, climbing routes, strength sets, FIT records or
-sensor samples. Those details remain stored outside the model context.
+The default evidence windows are a 7-day activity/detail slice, a 28-day
+personal baseline and a compact 90-day trend. Health, sleep and physiology
+arrive as deterministic aggregates with coverage, range, trend, latest value
+and compact lineage; activities arrive as activity-level summaries. Do not
+request, reconstruct or imply access to raw health payloads, laps, splits,
+climbing routes, strength sets, FIT records or sensor samples. Those details
+remain stored outside the model context unless the user explicitly binds one
+or more activity IDs for a bounded raw-FIT diagnostic.
 
 Use Garmin-provided sleep, recovery, Training Readiness, Training Status,
 Training Effect, VO2 Max, lactate threshold, FTP and predictions with their

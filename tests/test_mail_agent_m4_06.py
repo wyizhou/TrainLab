@@ -150,20 +150,20 @@ def test_schema_strict_types_formats_enums_ranges_and_manifest_semantics(tmp_pat
     with pytest.raises(MailContextError, match='fragment'): MailContextBuilder(conn, shared_harness_version='shared', mail_harness_version='mail')._validate_manifest(bad)
 
 
-def test_health_context_is_a_thirty_completed_day_aggregate_with_full_lineage(tmp_path: Path) -> None:
+def test_health_context_is_a_twenty_eight_completed_day_aggregate_with_full_lineage(tmp_path: Path) -> None:
     conn, subject, run = fixture(tmp_path)
-    first_day = date(2026, 6, 24)
-    for offset in range(30):
+    first_day = date(2026, 6, 26)
+    for offset in range(28):
         local_date = first_day + timedelta(days=offset)
         conn.execute(
             """INSERT INTO source_revisions(
                    provider,resource_kind,provider_object_id,revision_no,payload_hash,
                    is_current,parsed_at_utc
-               ) VALUES('garmin','user_summary',?,1,?,1,?)""",
+               ) VALUES('garmin','rhr',?,1,?,1,?)""",
             (str(local_date), f"{offset:064x}", NOW),
         )
         revision = conn.execute(
-            "SELECT id FROM source_revisions WHERE provider='garmin' AND resource_kind='user_summary' AND provider_object_id=?",
+            "SELECT id FROM source_revisions WHERE provider='garmin' AND resource_kind='rhr' AND provider_object_id=?",
             (str(local_date),),
         ).fetchone()[0]
         conn.execute(
@@ -181,18 +181,18 @@ def test_health_context_is_a_thirty_completed_day_aggregate_with_full_lineage(tm
     result = build(conn, subject, run)
     assert len(result.payload["current_health_context"]) == 1
     summary = result.payload["current_health_context"][0]
-    assert summary["window"] == {"start": "2026-06-24", "end": "2026-07-23"}
-    assert summary["completed_days"] == 30
-    assert summary["source_count"] == 30
-    assert len(summary["sources"]) == 30
+    assert summary["window"] == {"start": "2026-06-26", "end": "2026-07-23"}
+    assert summary["completed_days"] == 28
+    assert summary["source_count"] == 28
+    assert len(summary["sources"]) == 28
     assert "values" not in summary and "values_json" not in summary
     metric = next(item for item in summary["metrics"] if item["metric_key"] == "health.restingHeartRate")
-    assert metric["observation_count"] == 30
-    assert metric["coverage_days"] == 30
+    assert metric["observation_count"] == 28
+    assert metric["coverage_days"] == 28
     assert metric["minimum"] == 50
     assert metric["maximum"] == 52
     health_manifest = [item for item in result.payload["input_manifest"] if item["input_role"] == "health_fact"]
-    assert len(health_manifest) == 30
+    assert len(health_manifest) == 28
     assert {item["input_sha256"] for item in health_manifest} == {hashlib.sha256(
         json.dumps(summary, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()}
@@ -268,7 +268,7 @@ def test_current_collection_states_reject_even_when_manifest_hash_is_recomputed(
     quality['status'] = 'resolved'; entry['input_sha256'] = digest(quality)
     assert any(list(error.path) == ['data_quality', 0, 'status'] for error in validator.iter_errors(bad))
 
-    plan = {'id': 4, 'subject_id': 1, 'analysis_artifact_id': 2, 'plan_start_local_date': '2026-07-20', 'plan_end_local_date': '2026-07-26', 'timezone': 'Asia/Singapore', 'status': 'active', 'objective_json': '{}', 'constraints_json': '{}', 'created_at_utc': NOW, 'artifact_revision_no': 1, 'items': [{'id': offset + 10, 'training_plan_id': 4, 'item_index': offset, 'local_date': f'2026-07-{20 + offset:02d}', 'activity_kind': 'rest', 'prescription_json': '{}', 'rationale_text': None, 'stop_conditions_json': '{}'} for offset in range(7)]}
+    plan = {'id': 4, 'subject_id': 1, 'analysis_artifact_id': 2, 'plan_start_local_date': '2026-07-20', 'plan_end_local_date': '2026-07-26', 'timezone': 'Asia/Hong_Kong', 'status': 'active', 'objective_json': '{}', 'constraints_json': '{}', 'created_at_utc': NOW, 'artifact_revision_no': 1, 'items': [{'id': offset + 10, 'training_plan_id': 4, 'item_index': offset, 'local_date': f'2026-07-{20 + offset:02d}', 'activity_kind': 'rest', 'prescription_json': '{}', 'rationale_text': None, 'stop_conditions_json': '{}'} for offset in range(7)]}
     bad = json.loads(result.canonical_json); bad['current_training_plan'] = plan; entry = add_manifest(bad, 'current_plan', 'training_plan', plan, 'prior_model_output', None, 1)
     plan['status'] = 'superseded'; entry['input_sha256'] = digest(plan)
     assert any(list(error.path) == ['current_training_plan'] for error in validator.iter_errors(bad))

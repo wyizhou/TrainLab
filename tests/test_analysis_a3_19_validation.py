@@ -72,7 +72,7 @@ def expectation() -> ResultValidationExpectation:
 
 def output() -> dict[str, object]:
     plan = {
-        "period": PERIOD, "timezone": "Asia/Singapore", "objective": {}, "constraints": {},
+        "period": PERIOD, "timezone": "Asia/Hong_Kong", "objective": {}, "constraints": {},
         "original_plan_id": "41", "original_artifact_id": "81", "reason_event_id": "91",
         "effective_local_date": "2026-07-22", "items": [item(index, day) for index, day in enumerate(DAYS[2:])],
     }

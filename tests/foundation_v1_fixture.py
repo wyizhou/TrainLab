@@ -15,6 +15,18 @@ from trainlab.foundation import (
     VIEWS,
 )
 
+# The migration fixtures model the published Singapore-era schema exactly;
+# the active schema now uses Hong Kong business time.  Keeping this explicit
+# snapshot lets compatibility tests continue to prove admission of the old
+# database without weakening the current production contract.
+LEGACY_TABLES = dict(TABLES)
+LEGACY_TABLES["data_subjects"] = LEGACY_TABLES["data_subjects"].replace(
+    "DEFAULT 'Asia/Hong_Kong'", "DEFAULT 'Asia/Singapore'"
+)
+LEGACY_TABLES["training_plans"] = LEGACY_TABLES["training_plans"].replace(
+    "CHECK(timezone='Asia/Hong_Kong')", "CHECK(timezone='Asia/Singapore')"
+)
+
 
 UTC = "2026-07-23T00:00:00Z"
 V1_SCHEMA_SUPPORT_SQL = (
@@ -69,7 +81,7 @@ def create_published_v1_database(root: Path) -> FoundationTool:
     try:
         conn.execute("CREATE TABLE foundation_state (id INTEGER PRIMARY KEY CHECK(id=1), state TEXT NOT NULL CHECK(state IN ('initializing','ready')), schema_version INTEGER NOT NULL, manifest_sha256 TEXT NOT NULL, initialized_at_utc TEXT, updated_at_utc TEXT NOT NULL, implementation_version TEXT NOT NULL)")
         conn.execute("CREATE TABLE schema_migrations (version INTEGER PRIMARY KEY, description TEXT NOT NULL, applied_at_utc TEXT NOT NULL, code_revision TEXT NOT NULL DEFAULT 'foundation-v1', content_sha256 TEXT NOT NULL)")
-        for name,definition in TABLES.items():
+        for name,definition in LEGACY_TABLES.items():
             if name == "foundation_state":
                 continue
             legacy_definition = (

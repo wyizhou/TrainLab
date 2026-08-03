@@ -30,19 +30,27 @@ from zoneinfo import ZoneInfo
 import fitdecode
 from jsonschema import Draft202012Validator
 from ..garmin_catalog import (
+    ACTIVITY_COLLECTION_ALLOWLIST,
     CATALOG_VERSION,
+    COLLECTED_HEALTH_RESOURCES,
+    DEFAULT_ACTIVITY_ENRICHMENTS,
     EXTRA_ROLES,
     HEALTH_RESOURCES,
     RESOURCE_CATALOG,
 )
-from ..garmin_modes import CollectionModePlan, ResourceDateWindow, build_collection_mode_plan
+from ..garmin_modes import (
+    INCREMENTAL_LOOKBACK_DAYS,
+    CollectionModePlan,
+    ResourceDateWindow,
+    build_collection_mode_plan,
+)
 
 COLLECTOR_VERSION = "1"
 GARMINCONNECT_VERSION = "0.3.6"
 PARSER_VERSION = "fitdecode-0.11.0"
 ACCOUNT_PROFILE_SEMANTIC_VERSION = "account-profile-v1"
 DEVICE_REFERENCE_SEMANTIC_VERSION = "device-reference-v1"
-TZ = ZoneInfo("Asia/Singapore")
+TZ = ZoneInfo("Asia/Hong_Kong")
 
 # Provider JSON is untrusted input.  These bounds are deliberately well above
 # reviewed Garmin responses while keeping parser/field-catalog work finite.
@@ -110,10 +118,13 @@ ADVANCED_PHYSIOLOGY_METRICS: dict[str, dict[str, tuple[str, str | None, str | No
         "overallScore": ("garmin.endurance_score", "score", "score", "provider_derived", "/overallScore"),
     },
     "hill_score": {"hillScore": ("garmin.hill_score", "score", "score", "provider_derived", "/hillScore")},
-    "race_predictions": {"predictionSeconds": ("garmin.race_prediction.seconds", "s", "s", "provider_predicted", "/predictionSeconds"), "time": ("garmin.race_prediction.seconds", "s", "s", "provider_predicted", "/time")},
+    # Garmin predictions are retained as provider-derived observations.  The
+    # active collection contract does not mint a separate provider_predicted
+    # trust class; the prediction semantics remain in the metric key/source.
+    "race_predictions": {"predictionSeconds": ("garmin.race_prediction.seconds", "s", "s", "provider_derived", "/predictionSeconds"), "time": ("garmin.race_prediction.seconds", "s", "s", "provider_derived", "/time")},
     "fitness_age": {"fitnessAge": ("garmin.fitness_age.years", "year", "year", "provider_derived", "/fitnessAge")},
-    "menstrual_day": {"cycleLength": ("garmin.menstrual.cycle_length_days", "day", "day", "provider_derived", "/cycleLength"), "periodLength": ("garmin.menstrual.period_length_days", "day", "day", "provider_derived", "/periodLength"), "predictedCycleLength": ("garmin.menstrual.predicted_cycle_length_days", "day", "day", "provider_predicted", "/predictedCycleLength")},
-    "menstrual": {"cycleLength": ("garmin.menstrual.cycle_length_days", "day", "day", "provider_derived", "/cycleLength"), "periodLength": ("garmin.menstrual.period_length_days", "day", "day", "provider_derived", "/periodLength"), "predictedCycleLength": ("garmin.menstrual.predicted_cycle_length_days", "day", "day", "provider_predicted", "/predictedCycleLength")},
+    "menstrual_day": {"cycleLength": ("garmin.menstrual.cycle_length_days", "day", "day", "provider_derived", "/cycleLength"), "periodLength": ("garmin.menstrual.period_length_days", "day", "day", "provider_derived", "/periodLength"), "predictedCycleLength": ("garmin.menstrual.predicted_cycle_length_days", "day", "day", "provider_derived", "/predictedCycleLength")},
+    "menstrual": {"cycleLength": ("garmin.menstrual.cycle_length_days", "day", "day", "provider_derived", "/cycleLength"), "periodLength": ("garmin.menstrual.period_length_days", "day", "day", "provider_derived", "/periodLength"), "predictedCycleLength": ("garmin.menstrual.predicted_cycle_length_days", "day", "day", "provider_derived", "/predictedCycleLength")},
     "nutrition_food_log": {"calories": ("garmin.nutrition.calories_kcal", "kcal", "kcal", "user_entered", "/calories"), "protein": ("garmin.nutrition.protein_g", "g", "g", "user_entered", "/protein"), "carbohydrates": ("garmin.nutrition.carbohydrates_g", "g", "g", "user_entered", "/carbohydrates"), "fat": ("garmin.nutrition.fat_g", "g", "g", "user_entered", "/fat")},
     "nutrition_meals": {"calories": ("garmin.nutrition.calories_kcal", "kcal", "kcal", "user_entered", "/calories"), "protein": ("garmin.nutrition.protein_g", "g", "g", "user_entered", "/protein"), "carbohydrates": ("garmin.nutrition.carbohydrates_g", "g", "g", "user_entered", "/carbohydrates"), "fat": ("garmin.nutrition.fat_g", "g", "g", "user_entered", "/fat")},
     "nutrition_settings": {"calorieGoal": ("garmin.nutrition.calorie_goal_kcal", "kcal", "kcal", "user_entered", "/calorieGoal")},
@@ -546,7 +557,7 @@ class GarminConfig:
     history_start_date: str | None
     subject_key: str = "default"
     region: Literal["global", "cn"] = "cn"
-    lookback_days: int = 14
+    lookback_days: int = INCREMENTAL_LOOKBACK_DAYS
     max_repair_items_per_incremental: int = 100
     request_min_interval_ms: int = 500
     request_interval_jitter_ms: int = 0

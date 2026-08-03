@@ -77,7 +77,7 @@ _ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _SUBJECT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$")
 _MAIL_SUBJECT = re.compile(r"^[1-9][0-9]{0,18}$")
 _UTC = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z$")
-_SINGAPORE = ZoneInfo("Asia/Singapore")
+_HONG_KONG = ZoneInfo("Asia/Hong_Kong")
 _WORKFLOW_STATUSES = frozenset({
     "succeeded", "partial", "deferred", "attention_required", "failed",
 })
@@ -233,11 +233,11 @@ class OrchestrationTool:
                     "orchestration_request_invalid"
                 )
             if (
-                requested.astimezone(_SINGAPORE).date() != logical
+                requested.astimezone(_HONG_KONG).date() != logical
                 and not is_operator_retry
             ):
                 raise OrchestrationApplicationError("orchestration_request_invalid")
-            if request.workflow_kind == "weekly" and logical.weekday() != 6:
+            if request.workflow_kind == "weekly" and logical.weekday() != 0:
                 raise OrchestrationApplicationError("orchestration_request_invalid")
 
     def _route(self, request: WorkflowRequest, now: datetime) -> WorkflowReceipt:
@@ -251,7 +251,7 @@ class OrchestrationTool:
         if request.workflow_kind == "weekly":
             if self._weekly is None:
                 raise OrchestrationApplicationError("orchestration_dependency_missing")
-            outcome = self._weekly.execute(self._analysis_request_instance(request, "sunday"))
+            outcome = self._weekly.execute(self._analysis_request_instance(request, "monday"))
             return self._analysis_receipt(request, now, outcome)
         if request.workflow_kind == "mail":
             if self._mail is None:

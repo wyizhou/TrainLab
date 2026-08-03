@@ -1,8 +1,13 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "training_difficulty_level": 2,
+  "active_race_goal": null,
   "marathon_target_finish_time": null,
+  "marathon_race_date": null,
   "half_marathon_target_finish_time": null,
+  "half_marathon_race_date": null,
+  "available_training_weekdays": null,
+  "preferred_long_run_weekday": null,
   "mail": {
     "recipient_email": "your-email@example.com"
   }

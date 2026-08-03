@@ -58,7 +58,7 @@ def test_success_uses_frozen_no_shell_boundary_and_hashes_receipt(monkeypatch: p
     result = SubprocessRunner().run(call())
     assert result.kind == "accepted" and result.receipt_sha256 and len(result.request_sha256) == 64
     assert captured["shell"] is False and captured["close_fds"] is True and captured["start_new_session"] is True
-    assert captured["env"] == {"PATH": runner_module.bounded_runtime_path(), "LANG": "C.UTF-8", "LC_ALL": "C.UTF-8", "TZ": "Asia/Singapore"}
+    assert captured["env"] == {"PATH": runner_module.bounded_runtime_path(), "LANG": "C.UTF-8", "LC_ALL": "C.UTF-8", "TZ": "Asia/Hong_Kong"}
     assert "secret" not in repr(result)
 
 

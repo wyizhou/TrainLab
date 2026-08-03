@@ -27,7 +27,7 @@ def _database(tmp_path):
         CREATE TABLE reconciliation_results(entity_type TEXT, entity_id INTEGER, result TEXT);
         """
     )
-    conn.execute("INSERT INTO data_subjects VALUES(1,'Asia/Singapore',1)")
+    conn.execute("INSERT INTO data_subjects VALUES(1,'Asia/Hong_Kong',1)")
     for spec in RESOURCE_CATALOG.values():
         if not (spec.cursor_eligible and spec.scope in {"daily", "range"}):
             continue
@@ -96,7 +96,7 @@ def test_optional_capability_warns_but_required_unavailable_blocks(tmp_path):
 def test_subject_isolation_and_integrity_facts(tmp_path):
     path = _database(tmp_path)
     conn = sqlite3.connect(path)
-    conn.execute("INSERT INTO data_subjects VALUES(2,'Asia/Singapore',1)")
+    conn.execute("INSERT INTO data_subjects VALUES(2,'Asia/Hong_Kong',1)")
     # An unscoped / other-subject activity issue must not poison subject 1.
     conn.execute("INSERT INTO activities VALUES(20,2,'garmin','2026-07-20','active')")
     conn.execute("INSERT INTO data_quality_issues VALUES('activity',20,'error','open')")

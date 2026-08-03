@@ -1,12 +1,14 @@
 {
   "schema_version": "1",
-  "policy_version": "2.0.0-compact-30d",
+  "policy_version": "2.1.0-compact-7-28-90d",
   "default_max_context_bytes": 1100000,
   "maximum_manifest_items": 4000,
   "maximum_snapshot_items": 8000,
   "maximum_technical_sample_summaries": 16,
   "maximum_technical_sample_rows": 1600,
-  "completed_window_days": 30,
+  "completed_window_days": 28,
+  "short_window_days": 7,
+  "trend_window_days": 90,
   "maximum_recent_daily_artifacts": 7,
   "pruning_order": [
     "optional_activity_extras",

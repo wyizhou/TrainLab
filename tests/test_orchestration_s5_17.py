@@ -74,7 +74,7 @@ def test_s5_17_templates_and_runbook_do_not_admit_sensitive_or_arbitrary_configu
     material = "\n".join((UNIT.read_text(encoding="utf-8"), ENVIRONMENT.read_text(encoding="utf-8"))).lower()
     forbidden = ("token", "secret", "password", "oauth", "recipient", "email=", "model", "command=", "exec=", "codex")
     assert all(item not in material for item in forbidden)
-    assert ENVIRONMENT.read_text(encoding="utf-8").splitlines()[-2:] == ["PYTHONUNBUFFERED=1", "TZ=Asia/Singapore"]
+    assert ENVIRONMENT.read_text(encoding="utf-8").splitlines()[-2:] == ["PYTHONUNBUFFERED=1", "TZ=Asia/Hong_Kong"]
 
     runbook = RUNBOOK.read_text(encoding="utf-8")
     for required in ("唯一常驻", "SIGTERM", "WatchdogSec", "升级", "回滚", "不构成安装或生产切换授权"):

@@ -18,12 +18,12 @@ from trainlab.analysis.config import (
 def valid_payload() -> dict[str, object]:
     return {
         "analysis": {
-            "timezone": "Asia/Singapore",
+            "timezone": "Asia/Hong_Kong",
             "harness_root": "harness",
             "input_schema": "harness/schemas/analysis_input.schema.json",
             "output_schema": "harness/schemas/analysis_result.schema.json",
             "max_context_bytes": MAX_CONTEXT_BYTES,
-            "completed_window_days": 30,
+            "completed_window_days": 28,
             "max_recent_daily_artifacts": 7,
             "codex_timeout_seconds": MAX_CODEX_TIMEOUT_SECONDS,
             "delivery_timeout_seconds": MAX_DELIVERY_TIMEOUT_SECONDS,
@@ -44,13 +44,13 @@ def write_config(root: Path, payload: dict[str, object]) -> Path:
     return path
 
 
-def test_loads_static_singapore_config_under_project_root(tmp_path: Path) -> None:
+def test_loads_static_hong_kong_config_under_project_root(tmp_path: Path) -> None:
     config_path = write_config(tmp_path, valid_payload())
     before = sorted(path.relative_to(tmp_path).as_posix() for path in tmp_path.rglob("*"))
 
     config = load_analysis_config(tmp_path, config_path)
 
-    assert config.timezone == "Asia/Singapore"
+    assert config.timezone == "Asia/Hong_Kong"
     assert config.max_context_bytes == MAX_CONTEXT_BYTES
     assert config.codex_timeout_seconds == MAX_CODEX_TIMEOUT_SECONDS
     assert config.delivery_timeout_seconds == MAX_DELIVERY_TIMEOUT_SECONDS

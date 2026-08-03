@@ -80,7 +80,7 @@ def snapshot(
         plan_reasons=tuple(plan_reasons),
         audit=(),
         subject_context=StableSubjectContext(
-            subject_id, "Asia/Singapore", "garmin", "account", True
+            subject_id, "Asia/Hong_Kong", "garmin", "account", True
         ),
     )
 
@@ -208,13 +208,15 @@ def test_static_schema_and_context_policy_are_versioned_and_frozen():
     Draft202012Validator.check_schema(schema)
     assert schema["additionalProperties"] is False
     assert ANALYSIS_INPUT_SCHEMA_VERSION == "1"
-    assert ANALYSIS_INPUT_SCHEMA_SHA256 == "40c9ff7b1eddc3fe1d0ce88b4e9268f6719ee066406686c67245592d6f479e57"
+    assert ANALYSIS_INPUT_SCHEMA_SHA256 == "2e55ae4d25b87e2ef285678e280add38de4e3b458443c32c27676e839504d16d"
     assert ANALYSIS_INPUT_SCHEMA_SHA256 == sha256(schema_path.read_bytes()).hexdigest()
-    assert CONTEXT_POLICY_VERSION == "2.0.0-compact-30d"
-    assert CONTEXT_POLICY_SHA256 == "99296a1b67b6de08fad3071671f038e24d996adb5089d66619e32daa17f22fb2"
+    assert CONTEXT_POLICY_VERSION == "2.1.0-compact-7-28-90d"
+    assert CONTEXT_POLICY_SHA256 == "0480fd3077254de6932796143952d38b110592704c7e895b5dac622da3f78acb"
     assert CONTEXT_POLICY_SHA256 == sha256(policy_path.read_bytes()).hexdigest()
     assert policy["default_max_context_bytes"] == 1_100_000
-    assert policy["completed_window_days"] == 30
+    assert policy["completed_window_days"] == 28
+    assert policy["short_window_days"] == 7
+    assert policy["trend_window_days"] == 90
     assert policy["pruning_order"] == [
         "optional_activity_extras",
         "old_activity_details",
@@ -236,7 +238,7 @@ def test_fixed_route_windows_daily_weekly_revise_and_regenerate():
         "review": None,
         "plan": None,
         "baseline": {
-            "start_local_date": "2026-06-24",
+            "start_local_date": "2026-06-26",
             "end_local_date": "2026-07-23",
         },
         "effective_local_date": None,
@@ -251,7 +253,7 @@ def test_fixed_route_windows_daily_weekly_revise_and_regenerate():
         "end_local_date": "2026-07-27",
     }
     assert weekly_periods["baseline"] == {
-        "start_local_date": "2026-06-21",
+        "start_local_date": "2026-06-23",
         "end_local_date": "2026-07-20",
     }
     revise = ContextBuildRequest(
@@ -266,7 +268,7 @@ def test_fixed_route_windows_daily_weekly_revise_and_regenerate():
         reason_event_id=9,
     )
     assert revise.validated_periods()["baseline"] == {
-        "start_local_date": "2026-06-24",
+        "start_local_date": "2026-06-26",
         "end_local_date": "2026-07-23",
     }
     regenerated = replace(
@@ -294,7 +296,7 @@ def test_revision_context_selects_exact_plan_and_reason_ids() -> None:
         "id": 7, "subject_id": 1, "analysis_artifact_id": 70,
         "plan_start_local_date": "2026-07-21",
         "plan_end_local_date": "2026-07-27",
-        "timezone": "Asia/Singapore", "status": "active",
+        "timezone": "Asia/Hong_Kong", "status": "active",
         "objective_json": "{}", "constraints_json": "{}",
         "created_at_utc": "2026-07-20T00:00:00Z",
     }
@@ -409,7 +411,7 @@ def test_repository_seam_uses_only_bounded_snapshot_and_sample_summary():
     source = load_context_source(repository, daily(), (sample,))
     assert source.snapshot is value and len(source.technical_samples) == 1
     assert repository.calls == [
-        ("snapshot", 1, "2026-06-24", "2026-07-24"),
+            ("snapshot", 1, "2026-04-26", "2026-07-24"),
         (
             "samples",
             1,
@@ -731,7 +733,7 @@ def test_context_canonicalizes_valid_foundation_json_but_rejects_duplicate_keys(
     valid = snapshot(
         views={
             "v_current_daily_health": (
-                health(1, "2026-07-23", "health-1", values_json='{ "z": 2, "a": 1 }'),
+                health(1, "2026-07-23", "health-1", values_json='{ "heart_rate_z": 2, "heart_rate_a": 1 }'),
             )
         }
     )
@@ -740,8 +742,8 @@ def test_context_canonicalizes_valid_foundation_json_but_rejects_duplicate_keys(
         item["content"]["metric_key"]: item["content"]
         for item in result.context["health"]
     }
-    assert metrics["health.a"]["latest"]["value"] == 1
-    assert metrics["health.z"]["latest"]["value"] == 2
+    assert metrics["health.heart_rate_a"]["latest"]["value"] == 1
+    assert metrics["health.heart_rate_z"]["latest"]["value"] == 2
     assert all(item["value_kind"] == "numeric" for item in metrics.values())
 
     duplicate = snapshot(
@@ -755,8 +757,8 @@ def test_context_canonicalizes_valid_foundation_json_but_rejects_duplicate_keys(
         build(daily(), duplicate)
 
 
-def test_thirty_completed_days_are_aggregated_and_today_is_excluded() -> None:
-    first_day = date(2026, 6, 24)
+def test_twenty_eight_baseline_days_are_aggregated_and_today_is_excluded() -> None:
+    first_day = date(2026, 6, 26)
     rows = tuple(
         health(
             index + 1,
@@ -767,10 +769,10 @@ def test_thirty_completed_days_are_aggregated_and_today_is_excluded() -> None:
                 separators=(",", ":"),
             ),
         )
-        for index in range(30)
+        for index in range(28)
     ) + (
         health(
-            31,
+            29,
             "2026-07-24",
             "health-today",
             values_json='{"resting_heart_rate":99}',
@@ -787,11 +789,11 @@ def test_thirty_completed_days_are_aggregated_and_today_is_excluded() -> None:
     )
 
     assert result.context["target_periods"]["baseline"] == {
-        "start_local_date": "2026-06-24",
+        "start_local_date": "2026-06-26",
         "end_local_date": "2026-07-23",
     }
-    assert aggregate["coverage_days"] == 30
-    assert aggregate["observation_count"] == 30
+    assert aggregate["coverage_days"] == 28
+    assert aggregate["observation_count"] == 28
     assert aggregate["minimum"] == 50
     assert aggregate["maximum"] == 52
     assert aggregate["latest"]["local_date"] == "2026-07-23"
@@ -963,7 +965,7 @@ def test_utf8_limit_counts_multibyte_bytes_not_python_characters():
                     1,
                     "2026-07-23",
                     "r1",
-                    values_json='{"note":"攀岩恢复良好"}',
+                    values_json='{"heart_rate_note":"攀岩恢复良好"}',
                 ),
             )
         }
@@ -1023,7 +1025,7 @@ def pruning_snapshot():
         "analysis_artifact_id": 201,
         "plan_start_local_date": "2026-07-14",
         "plan_end_local_date": "2026-07-20",
-        "timezone": "Asia/Singapore",
+        "timezone": "Asia/Hong_Kong",
         "status": "active",
         "objective_json": "{}",
         "constraints_json": "{}",

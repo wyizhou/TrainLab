@@ -113,7 +113,7 @@ _UTC_PATTERN = re.compile(
 )
 _SAFE_ENTITY = re.compile(r"^[A-Za-z0-9_.:-]+$")
 _SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
-_SINGAPORE = ZoneInfo("Asia/Singapore")
+_HONG_KONG = ZoneInfo("Asia/Hong_Kong")
 _MALFORMED_HASH = sha256(b"trainlab:quality-gate:malformed-snapshot:v1").hexdigest()
 
 
@@ -183,7 +183,7 @@ class QualityGateRequest:
                 raise QualityGateError("analysis_quality_revision_request_invalid")
         if self.route != "revise_plan" and (self.plan_id is not None or self.reason_event_id is not None):
             raise QualityGateError("analysis_quality_request_invalid")
-        if self.route != "revise_plan" and end > as_of.astimezone(_SINGAPORE).date():
+        if self.route != "revise_plan" and end > as_of.astimezone(_HONG_KONG).date():
             raise QualityGateError("analysis_quality_window_after_as_of")
         return dates, as_of
 
@@ -282,7 +282,7 @@ def _timestamp(value: object) -> datetime:
 
 
 def _local_day(value: object) -> str:
-    return _timestamp(value).astimezone(_SINGAPORE).date().isoformat()
+    return _timestamp(value).astimezone(_HONG_KONG).date().isoformat()
 
 
 def _snapshot_payload(snapshot: StableSnapshot) -> tuple[str, str]:
@@ -448,7 +448,7 @@ class QualityGate:
         if (
             not isinstance(context, StableSubjectContext)
             or context.subject_id != request.subject_id
-            or context.timezone != "Asia/Singapore"
+            or context.timezone != "Asia/Hong_Kong"
             or context.provider != "garmin"
             or context.identity_kind != "account"
             or context.verified is not True
@@ -481,7 +481,7 @@ class QualityGate:
         grouped: dict[str, list[dict[str, Any]]] = {}
         environments: set[str] = set()
         through_date = date.fromisoformat(through)
-        as_of_date = as_of.astimezone(_SINGAPORE).date()
+        as_of_date = as_of.astimezone(_HONG_KONG).date()
         for row in snapshot.capabilities:
             kind = row.get("resource_kind")
             if kind not in _RESOURCES:
@@ -585,7 +585,7 @@ class QualityGate:
                         or (state == "fetched" and record_count == 0)
                         or (state in _OPTIONAL | {"empty"} and record_count != 0)
                         or _canonical_date(day) is None
-                        or observed.astimezone(_SINGAPORE).date()
+                        or observed.astimezone(_HONG_KONG).date()
                         < date.fromisoformat(day)
                     ):
                         blockers.append(_reason("coverage_state_unknown", entity))
@@ -672,11 +672,16 @@ class QualityGate:
             end = _timestamp(row.get("end_time_utc"))
             if end <= start:
                 raise _SnapshotMalformed("sleep_window")
-            main_sleep_dates.add(end.astimezone(_SINGAPORE).date().isoformat())
+            main_sleep_dates.add(end.astimezone(_HONG_KONG).date().isoformat())
         for day in dates:
             row = coverage.get(("sleep", day))
             if row is not None and row.get("availability_state") == "fetched":
-                if day not in main_sleep_dates:
+                # Garmin keys the fetched sleep resource by the evening's
+                # local date, while the main session can end the following
+                # morning.  Accept either boundary without accepting a sleep
+                # session from a later day.
+                next_day = (date.fromisoformat(day) + timedelta(days=1)).isoformat()
+                if day not in main_sleep_dates and next_day not in main_sleep_dates:
                     blockers.append(_reason("sleep_evidence_missing", day))
 
     @staticmethod
@@ -845,7 +850,7 @@ class QualityGate:
                 or start is None
                 or end is None
                 or (date.fromisoformat(end) - date.fromisoformat(start)).days != 6
-                or plan.get("timezone") != "Asia/Singapore"
+                or plan.get("timezone") != "Asia/Hong_Kong"
                 or plan.get("status") not in {"proposed", "active"}
                 or not isinstance(plan.get("objective_json"), str)
                 or not isinstance(plan.get("constraints_json"), str)

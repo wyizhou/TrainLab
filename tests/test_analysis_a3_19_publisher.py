@@ -27,7 +27,7 @@ def database() -> sqlite3.Connection:
     INSERT INTO analysis_runs(id,run_key,subject_id,analysis_kind,status) VALUES(1,'analysis:1:revise_plan:9:31:one',1,'plan_revision','started');
     INSERT INTO analysis_runs(id,run_key,subject_id,analysis_kind,status) VALUES(2,'old',1,'weekly','succeeded');
     INSERT INTO analysis_artifacts(id,subject_id,artifact_kind,period_start_local_date,period_end_local_date,revision_no,generated_by_run_id,schema_version,structured_content_json,user_visible_text,content_sha256,is_current,created_at_utc) VALUES(8,1,'weekly_training_plan','2026-07-20','2026-07-26',1,2,'1','{}','旧计划','a',1,'2026-07-20T00:00:00Z');
-    INSERT INTO training_plans(id,subject_id,analysis_artifact_id,plan_start_local_date,plan_end_local_date,timezone,status,objective_json,constraints_json,created_at_utc) VALUES(9,1,8,'2026-07-20','2026-07-26','Asia/Singapore','active','{}','{}','2026-07-20T00:00:00Z');
+    INSERT INTO training_plans(id,subject_id,analysis_artifact_id,plan_start_local_date,plan_end_local_date,timezone,status,objective_json,constraints_json,created_at_utc) VALUES(9,1,8,'2026-07-20','2026-07-26','Asia/Hong_Kong','active','{}','{}','2026-07-20T00:00:00Z');
     INSERT INTO conversation_events VALUES(31,1,'plan_revision_reason_recorded','trainlab','system_generated');
     """)
     for index in range(7):
@@ -57,7 +57,7 @@ def items() -> list[dict[str, object]]:
 def accepted() -> dict[str, object]:
     plan = {
         "period": {"start_local_date": "2026-07-20", "end_local_date": "2026-07-26"},
-        "timezone": "Asia/Singapore", "objective": {"focus": "adjust"}, "constraints": {},
+        "timezone": "Asia/Hong_Kong", "objective": {"focus": "adjust"}, "constraints": {},
         "original_plan_id": 9, "original_artifact_id": 8, "reason_event_id": 31,
         "effective_local_date": "2026-07-23",
         "items": items(),

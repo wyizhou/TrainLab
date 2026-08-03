@@ -14,7 +14,7 @@ from trainlab.foundation import (
     VIEWS,
 )
 
-from .foundation_v1_fixture import UTC, V1_SCHEMA_SUPPORT_SQL, config
+from .foundation_v1_fixture import LEGACY_TABLES, UTC, V1_SCHEMA_SUPPORT_SQL, config
 
 
 def create_published_v2_database(root: Path) -> FoundationTool:
@@ -40,7 +40,7 @@ def create_published_v2_database(root: Path) -> FoundationTool:
         conn.execute(
             "CREATE TABLE schema_migrations (version INTEGER PRIMARY KEY, description TEXT NOT NULL, applied_at_utc TEXT NOT NULL, code_revision TEXT NOT NULL DEFAULT 'foundation-v1', content_sha256 TEXT NOT NULL)"
         )
-        for name, definition in TABLES.items():
+        for name, definition in LEGACY_TABLES.items():
             if name == "foundation_state":
                 continue
             if name == "analysis_artifact_inputs":

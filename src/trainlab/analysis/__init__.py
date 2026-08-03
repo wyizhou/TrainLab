@@ -34,6 +34,19 @@ from .context import (
     validate_analysis_context,
 )
 from .runner import AnalysisCodexRunner, AnalysisRunnerError, AnalysisRunnerResult
+from .heart_rate_zones import (
+    MAX_HEART_RATE_WINDOW_DAYS,
+    RHR_WINDOW_DAYS,
+    THRESHOLD_WINDOW_DAYS,
+    build_zone_revision_candidate,
+    calculate_zone_candidates,
+    compute_heart_rate_zone_candidates,
+)
+from .fit_context import (
+    FIT_CONTEXT_MAX_BYTES,
+    ExplicitFitContextError,
+    build_explicit_fit_context,
+)
 
 __all__ = [
     "AnalysisBoundaryError",
@@ -68,4 +81,13 @@ __all__ = [
     "AnalysisCodexRunner",
     "AnalysisRunnerError",
     "AnalysisRunnerResult",
+    "RHR_WINDOW_DAYS",
+    "MAX_HEART_RATE_WINDOW_DAYS",
+    "THRESHOLD_WINDOW_DAYS",
+    "calculate_zone_candidates",
+    "compute_heart_rate_zone_candidates",
+    "build_zone_revision_candidate",
+    "FIT_CONTEXT_MAX_BYTES",
+    "ExplicitFitContextError",
+    "build_explicit_fit_context",
 ]

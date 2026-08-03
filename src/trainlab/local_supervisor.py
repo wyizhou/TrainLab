@@ -162,7 +162,7 @@ class LocalSupervisorLauncher:
             raise LocalSupervisorLauncherError("local_supervisor_executable_invalid")
         environment = os.environ.copy()
         environment["PYTHONUNBUFFERED"] = "1"
-        environment["TZ"] = "Asia/Singapore"
+        environment["TZ"] = "Asia/Hong_Kong"
         argv = (str(executable), "supervisor", "run")
 
         with _exclusive_launcher_lock(self._root):

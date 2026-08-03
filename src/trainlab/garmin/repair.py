@@ -467,7 +467,11 @@ class RepairAuditMixin:
                         (local_activity_id, revision),
                     )
                     day = str(validated["local_date"])
-                elif resource in HEALTH_RESOURCES:
+                # Repairs follow the active health whitelist as well as the
+                # normal collection planner.  Historical gaps for excluded
+                # endpoints remain auditable but cannot silently re-enable
+                # those provider calls.
+                elif resource in COLLECTED_HEALTH_RESOURCES:
                     payload, _canonical = parse_provider_json_bytes(raw)
                     spec = RESOURCE_CATALOG[resource]
                     if spec.scope == "range":
@@ -602,6 +606,9 @@ class RepairAuditMixin:
             raise ValueError("mode_has_incompatible_parameters")
         if any(resource not in REQUEST_RESOURCE_KINDS for resource in request.resource_kinds):
             raise ValueError("resource_kind_invalid")
+        excluded_health = set(HEALTH_RESOURCES) - set(COLLECTED_HEALTH_RESOURCES)
+        if any(resource in excluded_health for resource in request.resource_kinds):
+            raise ValueError("resource_kind_not_allowlisted")
         for value in (request.health_from_local_date, request.through_local_date, request.snapshot_local_date):
             if value: date.fromisoformat(value)
         if self.config.history_start_date:

@@ -107,7 +107,7 @@ workflow 中的 Codex、Garmin 或 Gmail 子进程不能进入 Supervisor 主进
 ## 4. 已冻结的核心决策
 
 1. 第五层是唯一常驻业务服务；第一层完成 init 后退出，第二至第四层均按次运行。
-2. 调度时区固定为 `Asia/Singapore`，数据库时间仍保存 UTC。
+2. 调度时区固定为 `Asia/Hong_Kong`，数据库时间仍保存 UTC。
 3. 每个 workflow、step 和下层 invocation 都有稳定幂等 ID；进程重启不能产生
    第二份日报、计划、回复或邮件。
 4. 第五层只根据结构化 request、receipt 和稳定状态视图工作，不解析 stdout 中的
@@ -146,7 +146,7 @@ Supervisor 获得 lease、加载调度任务前固定执行：
 
 ### 5.1 每日早晨 workflow
 
-新加坡时间每天 07:00 触发一次 `morning` workflow：
+香港时间每天 09:00 触发一次 `morning` workflow：
 
 1. 调用第二层 `sync incremental --through 昨天`。
 2. 检查逐资源 cursor、未解决 gap、实际日期范围和 receipt。
@@ -158,9 +158,9 @@ Supervisor 获得 lease、加载调度任务前固定执行：
 日报总结日期是昨天，训练建议日期是今天。日期由第五层显式传给第三层，不能依赖
 子进程所在机器的隐式本地日期。
 
-### 5.2 星期日 workflow
+### 5.2 星期一 workflow
 
-新加坡时间每个星期日 07:00 使用同一次早晨数据更新执行：
+香港时间每个星期一 09:00 使用同一次早晨数据更新执行：
 
 1. 只运行一次第二层 incremental，不为 daily 和 weekly 重复抓取。
 2. 在相同数据质量快照上先执行 daily，再执行 weekly。
@@ -550,9 +550,9 @@ receipt hash 和编排状态。
 
 ```yaml
 orchestrator:
-  timezone: Asia/Singapore
-  morning_time: "07:00"
-  weekly_day: sunday
+  timezone: Asia/Hong_Kong
+  morning_time: "09:00"
+  weekly_day: monday
   mail_poll_interval_seconds: 300
   health_check_interval_seconds: 60
   workflow_deadline_seconds: 3600
@@ -613,7 +613,7 @@ systemd timer 不直接调用第二至第四层，避免与 Supervisor 形成双
 - daily/weekly misfire。
 - mail poll 长时间未完成和 backlog 增长。
 - 运维邮件发送未知或 Gmail 自身不可用。
-- 系统时间跳变、时区配置错误和重复 07:00 触发。
+- 系统时间跳变、时区配置错误和重复 09:00 触发。
 
 恢复必须从持久化 workflow/step 和下层 run/delivery 证据开始，不能从“日志最后一行”
 猜测状态。
@@ -629,7 +629,7 @@ systemd timer 不直接调用第二至第四层，避免与 Supervisor 形成双
 5. 第五层先以 shadow 模式读取状态并生成 workflow 计划，不执行真实下层调用。
 6. 对照人工执行结果、逻辑日期、幂等 ID、邮件和 incident。
 7. 切换到第五层唯一调度，关闭旧调度入口。
-8. 验证 daily、Sunday weekly、mail、重启恢复和告警。
+8. 验证 daily、Monday weekly、mail、重启恢复和告警。
 9. 保留受控回滚路径；回滚时不能让新旧调度同时启用。
 
 切换必须同步更新项目根 `AGENTS.md`、生产 Harness、systemd 配置、运行手册和旧
@@ -639,9 +639,9 @@ watchdog。现有生产入口在切换完成前继续有效。
 
 ### 22.1 调度
 
-- 每日 07:00 只触发一个 morning workflow。
-- 星期日复用一次 collection，随后按顺序运行 daily 和 weekly。
-- DST 不影响新加坡时区；系统 UTC/本地时区不同仍得到正确逻辑日期。
+- 每日 09:00 只触发一个 morning workflow。
+- 星期一复用一次 collection，随后按顺序运行 daily 和 weekly。
+- 香港时区没有 DST；系统 UTC/本地时区不同仍得到正确逻辑日期。
 - 重启 misfire 补跑一次，不重复生成。
 - mail 间隔丢失后只运行一次 catch-up。
 
@@ -687,7 +687,7 @@ watchdog。现有生产入口在切换完成前继续有效。
 ### 22.7 受控端到端验收
 
 - 连续运行至少一个完整每日周期。
-- 覆盖一个星期日 daily + weekly 周期。
+- 覆盖一个星期一 daily + weekly 周期。
 - 发送一封 TrainLab 测试邮件并完成第四层回复。
 - 通过邮件触发一次受控 plan revision，确认第三层发新版计划、第四层只回原 thread。
 - 人工制造一次 collection deferred、一次 analysis delivery unknown 和一次 mail
@@ -699,7 +699,7 @@ watchdog。现有生产入口在切换完成前继续有效。
 第五层只有同时满足以下条件才从“已冻结”进入“已验证”：
 
 1. Supervisor 是唯一常驻业务进程，第二至第四层仍为一次性 tools。
-2. 每日 07:00 和星期日 workflow 的日期、顺序与幂等正确。
+2. 每日 09:00 和星期一 workflow 的日期、顺序与幂等正确。
 3. mail 按配置调用，停机恢复不逐次回放空轮询。
 4. 所有 workflow/step 状态持久化，重启可以恢复。
 5. 只根据结构化 receipt 和稳定视图决策。
@@ -714,7 +714,7 @@ watchdog。现有生产入口在切换完成前继续有效。
 14. 配置、日志、receipt 和告警不泄露敏感 payload 或凭据。
 15. systemd/watchdog、升级、停止和回滚流程完成验收。
 16. 新旧调度不会同时运行。
-17. 每日、星期日、邮件、计划修订、故障恢复和主机重启端到端验收通过。
+17. 每日、星期一、邮件、计划修订、故障恢复和主机重启端到端验收通过。
 
 ## 24. 对其他层的固定接口
 

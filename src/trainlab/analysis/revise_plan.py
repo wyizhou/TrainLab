@@ -41,7 +41,7 @@ from .stable_views import StableViewRepository
 from .training_difficulty import training_control_contracts
 
 
-_SG = ZoneInfo("Asia/Singapore")
+_SG = ZoneInfo("Asia/Hong_Kong")
 
 
 class PendingPlanRevisionDelivery(Protocol):
@@ -82,7 +82,7 @@ def plan_revision_contract(
         "scope": "effective_date_through_original_plan_end_only",
         "historical_prefix_policy": "host_copies_original_rows_byte_for_byte",
         "items_per_remaining_day": 1,
-        "timezone": "Asia/Singapore",
+        "timezone": "Asia/Hong_Kong",
         "clock_time_forbidden": True,
         "allowed_activity_kinds": list(daily["allowed_activity_kinds"]),
         "running_template": daily["running_template"],
@@ -226,7 +226,7 @@ class PlanRevisionRoute:
             or plan["status"] != "active"
             or plan["is_current"] != 1
             or plan["artifact_kind"] != "weekly_training_plan"
-            or plan["timezone"] != "Asia/Singapore"
+            or plan["timezone"] != "Asia/Hong_Kong"
         ):
             raise _PreflightError("analysis_plan_revision_source_unavailable")
         try:
@@ -401,6 +401,7 @@ class PlanRevisionRoute:
                 "reason_event_id": str(source["reason_event_id"]),
                 "effective_local_date": effective,
             },
+            available_training_weekdays=self.config.available_training_weekdays,
         )
         validator = self.validator
         if validator is None:

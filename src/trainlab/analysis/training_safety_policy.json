@@ -1,7 +1,7 @@
 {
   "schema_version": "1",
   "policy_version": "1.0.1-a3-09",
-  "timezone": "Asia/Singapore",
+  "timezone": "Asia/Hong_Kong",
   "zone_boundary_policy": "inclusive_contiguous_no_overlap",
   "zone_source_priority": [
     "garmin_sport_zones",

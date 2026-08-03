@@ -19,7 +19,7 @@ from .repository import OrchestrationRepository, OrchestrationRepositoryError, S
 from .scheduling_config import OrchestrationConfigSnapshot, UtcClock
 
 
-SINGAPORE = ZoneInfo("Asia/Singapore")
+HONG_KONG = ZoneInfo("Asia/Hong_Kong")
 _ID = re.compile(r"^[A-Za-z0-9_.:-]{1,128}$")
 _SCHEDULE_KEYS = frozenset({"schedule_kind", "interval_seconds", "depends_on_job_key", "collection_strategy"})
 _PRIORITY = {"recovery": 0, "morning": 1, "weekly": 2, "mail": 3, "health_check": 4}
@@ -107,17 +107,17 @@ def _text(value: datetime) -> str:
 
 
 def _local_date(value: datetime) -> str:
-    return _utc(value).astimezone(SINGAPORE).date().isoformat()
+    return _utc(value).astimezone(HONG_KONG).date().isoformat()
 
 
 def _morning_due(local_date: str) -> datetime:
     # date.fromisoformat would offer no useful extra flexibility here; the
-    # exact value comes from an already validated Asia/Singapore projection.
-    return datetime.fromisoformat(local_date + "T07:00:00+08:00").astimezone(UTC)
+    # exact value comes from an already validated Asia/Hong_Kong projection.
+    return datetime.fromisoformat(local_date + "T09:00:00+08:00").astimezone(UTC)
 
 
 def _next_calendar_due(kind: str, due: datetime) -> datetime:
-    local = _utc(due).astimezone(SINGAPORE)
+    local = _utc(due).astimezone(HONG_KONG)
     delta = 7 if kind == "weekly" else 1
     return (local + timedelta(days=delta)).astimezone(UTC)
 
@@ -145,7 +145,7 @@ def _workflow_key(kind: str, subject_id: int, host_id: str, due: datetime) -> st
 
 
 def _schedule(record: SchedulerJobRecord, snapshot: OrchestrationConfigSnapshot) -> dict[str, object]:
-    if (record.timezone != "Asia/Singapore" or record.job_key not in _JOB_KIND
+    if (record.timezone != "Asia/Hong_Kong" or record.job_key not in _JOB_KIND
             or record.workflow_kind != _JOB_KIND[record.job_key]):
         raise SchedulerError("scheduler_job_invalid")
     try:
@@ -169,8 +169,8 @@ def _schedule(record: SchedulerJobRecord, snapshot: OrchestrationConfigSnapshot)
 
 
 def _validate_snapshot(snapshot: OrchestrationConfigSnapshot) -> None:
-    if (type(snapshot) is not OrchestrationConfigSnapshot or snapshot.timezone != "Asia/Singapore"
-            or snapshot.morning_time != "07:00" or snapshot.weekly_day != "sunday"
+    if (type(snapshot) is not OrchestrationConfigSnapshot or snapshot.timezone != "Asia/Hong_Kong"
+            or snapshot.morning_time != "09:00" or snapshot.weekly_day != "monday"
             or type(snapshot.config_sha256) is not str or re.fullmatch(r"[0-9a-f]{64}", snapshot.config_sha256) is None):
         raise SchedulerError("scheduler_configuration_invalid")
     for value in (snapshot.mail_poll_interval_seconds, snapshot.health_check_interval_seconds,
@@ -224,12 +224,12 @@ class DueEvaluator:
                 continue
             kind = record.workflow_kind
             if kind in {"morning", "weekly"}:
-                # The persisted due must be the fixed SGT 07:00 projection. A
-                # weekly job can only be Sunday; this rejects accidental UTC or
+                # The persisted due must be the fixed Hong Kong 09:00 projection. A
+                # weekly job can only be Monday; this rejects accidental UTC or
                 # DST/cron-style semantics before any claim.
-                local = due.astimezone(SINGAPORE)
-                valid = local.hour == 7 and local.minute == 0 and local.second == 0
-                valid = valid and (kind != "weekly" or local.weekday() == 6)
+                local = due.astimezone(HONG_KONG)
+                valid = local.hour == 9 and local.minute == 0 and local.second == 0
+                valid = valid and (kind != "weekly" or local.weekday() == 0)
                 window = timedelta(hours=(snapshot.weekly_misfire_window_hours if kind == "weekly" else snapshot.daily_misfire_window_hours))
                 if not valid:
                     incidents.append(SchedulerIncident(f"scheduler:{record.job_key}:invalid", "scheduler", "error", "scheduler_calendar_due_invalid", "maintenance"))

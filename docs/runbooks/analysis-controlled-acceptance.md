@@ -21,8 +21,8 @@ The approved operator, not this document, must record the following results:
   delivery identifiers.
 - [ ] Repeating the same invocation returns unchanged without a duplicate
   delivery.
-- [ ] A Sunday-like weekly input verifies past review dates and future plan
-  dates.
+- [ ] A Monday weekly input verifies the preceding Monday–Sunday review
+  window and the current week's future plan dates.
 - [ ] A delivery retry proves already_sent when the exact existing delivery is
   found; uncertain delivery is reconciled before any retry.
 - [ ] A failed delivery preserves the accepted artifact and plan; no automatic

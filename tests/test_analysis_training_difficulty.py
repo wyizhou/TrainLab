@@ -25,7 +25,7 @@ def config(
     return AnalysisConfig(
         "1",
         tmp_path,
-        "Asia/Singapore",
+        "Asia/Hong_Kong",
         tmp_path,
         schema,
         schema,
@@ -92,8 +92,11 @@ def test_every_training_control_is_explicit_and_pace_anchored(
     assert difficulty["configured_level"] == 3
     assert goals == race_goal_contract(value)
     assert goals["configuration_keys"] == [
+        "project_global.active_race_goal",
         "project_global.marathon_target_finish_time",
+        "project_global.marathon_race_date",
         "project_global.half_marathon_target_finish_time",
+        "project_global.half_marathon_race_date",
     ]
     assert goals["marathon"]["configured_finish_time"] == "03:30"
     assert goals["marathon"]["goal_pace_seconds_per_km"] == 299

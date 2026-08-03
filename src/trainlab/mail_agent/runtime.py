@@ -35,7 +35,7 @@ from .stages import (
     ReconcileStage, StatusStage,
 )
 
-_LOCAL_TZ = ZoneInfo("Asia/Singapore")
+_LOCAL_TZ = ZoneInfo("Asia/Hong_Kong")
 _FOUNDATION_RETRY_DELAY = timedelta(minutes=5)
 
 

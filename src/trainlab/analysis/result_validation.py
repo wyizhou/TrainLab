@@ -88,7 +88,7 @@ class ResultValidationExpectation:
     # decides whether it is acceptable and how it is normalised.
     safety_request_base: Mapping[str, Any]
     # Weekly retains A3-09's one-primary-item contract by supplying one
-    # request base per planned Singapore local date.  Each base deliberately
+    # request base per planned Hong Kong local date.  Each base deliberately
     # omits ``primary_items``; the validator supplies the model candidate.
     weekly_safety_request_bases: Mapping[str, Mapping[str, Any]] | None = None
     # The context builder distinguishes an absent first weekly artifact from a
@@ -105,6 +105,7 @@ class ResultValidationExpectation:
     regeneration_source_shape: str | None = None
     regeneration_source_artifact_id: str | None = None
     training_difficulty_level: int = 2
+    available_training_weekdays: Sequence[int] | None = None
 
 
 @dataclass(frozen=True)
@@ -305,6 +306,11 @@ def _validate_daily_content(
             "analysis_result_daily_item_kind_invalid",
             "artifacts.daily_training_advice.structured_content.primary_item.activity_kind",
         )
+    available = expected.available_training_weekdays
+    if available is not None and primary.get("activity_kind") == "running":
+        advice_day = date.fromisoformat(str(advice_content.get("advice_local_date", expected.target_periods["advice"]["start_local_date"])))
+        if advice_day.isoweekday() not in available:
+            _reject("analysis_result_training_weekday_forbidden", "artifacts.daily_training_advice.structured_content.primary_item")
     if not body.startswith(prefix):
         _reject(
             "analysis_result_daily_primary_opening_invalid",
@@ -410,6 +416,9 @@ def _validate_weekly_shape(payload: Mapping[str, Any], expected: ResultValidatio
             _reject("analysis_result_weekly_item_sequence_invalid", f"training_plan.items.{index}")
         if item.get("activity_kind") not in {"running", "rest"}:
             _reject("analysis_result_weekly_item_kind_invalid", f"training_plan.items.{index}.activity_kind")
+        if expected.available_training_weekdays is not None and item.get("activity_kind") == "running":
+            if date.fromisoformat(str(item["local_date"])).isoweekday() not in expected.available_training_weekdays:
+                _reject("analysis_result_training_weekday_forbidden", f"training_plan.items.{index}.activity_kind")
         assert isinstance(item, dict)
         _canonicalize_plan_item_kind(
             item, path=f"training_plan.items.{index}.prescription"
@@ -441,6 +450,9 @@ def _validate_regenerated_plan_shape(payload: Mapping[str, Any], expected: Resul
             _reject("analysis_result_weekly_item_sequence_invalid", f"training_plan.items.{index}")
         if item.get("activity_kind") not in {"running", "rest"} or not isinstance(item.get("prescription"), dict):
             _reject("analysis_result_weekly_item_invalid", f"training_plan.items.{index}")
+        if expected.available_training_weekdays is not None and item.get("activity_kind") == "running":
+            if date.fromisoformat(str(item["local_date"])).isoweekday() not in expected.available_training_weekdays:
+                _reject("analysis_result_training_weekday_forbidden", f"training_plan.items.{index}.activity_kind")
         assert isinstance(item, dict)
         _canonicalize_plan_item_kind(
             item, path=f"training_plan.items.{index}.prescription"
@@ -756,6 +768,9 @@ def _validate_revision_shape(payload: Mapping[str, Any], expected: ResultValidat
             _reject("analysis_result_revision_item_sequence_invalid", f"training_plan.items.{index}")
         if item.get("activity_kind") not in {"running", "rest"} or not isinstance(item.get("prescription"), dict):
             _reject("analysis_result_revision_item_invalid", f"training_plan.items.{index}")
+        if expected.available_training_weekdays is not None and item.get("activity_kind") == "running":
+            if date.fromisoformat(str(item["local_date"])).isoweekday() not in expected.available_training_weekdays:
+                _reject("analysis_result_training_weekday_forbidden", f"training_plan.items.{index}.activity_kind")
         assert isinstance(item, dict)
         _canonicalize_plan_item_kind(
             item, path=f"training_plan.items.{index}.prescription"

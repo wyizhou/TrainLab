@@ -786,7 +786,7 @@ def _created_at_local(value: str) -> str:
         raise AnalysisDeliveryError("analysis_delivery_artifact_content_invalid") from None
     if parsed.tzinfo is None:
         raise AnalysisDeliveryError("analysis_delivery_artifact_content_invalid")
-    return parsed.astimezone(ZoneInfo("Asia/Singapore")).strftime("%Y-%m-%d %H:%M")
+    return parsed.astimezone(ZoneInfo("Asia/Hong_Kong")).strftime("%Y-%m-%d %H:%M")
 
 
 def _stop_text(value: object) -> str:
@@ -921,7 +921,7 @@ def _weekly_html(pending: PendingDelivery, *, revision: bool) -> str:
     period = content.get("period")
     if not isinstance(period, dict) or _local_date(period.get("start_local_date")) != plan.period_start_local_date or _local_date(period.get("end_local_date")) != plan.period_end_local_date:
         raise AnalysisDeliveryError("analysis_delivery_artifact_content_invalid")
-    if content.get("timezone") != "Asia/Singapore" or not isinstance(content.get("objective"), Mapping) or not isinstance(content.get("constraints"), Mapping):
+    if content.get("timezone") != "Asia/Hong_Kong" or not isinstance(content.get("objective"), Mapping) or not isinstance(content.get("constraints"), Mapping):
         raise AnalysisDeliveryError("analysis_delivery_artifact_content_invalid")
     start = date.fromisoformat(plan.period_start_local_date)
     end = date.fromisoformat(plan.period_end_local_date)

@@ -20,7 +20,7 @@ def digest(path: Path) -> str:
 
 def analysis_config(root: Path) -> AnalysisConfig:
     return AnalysisConfig(
-        schema_version="1", project_root=root, timezone="Asia/Singapore",
+        schema_version="1", project_root=root, timezone="Asia/Hong_Kong",
         harness_root=root / "harness", input_schema=root / "harness/schemas/analysis_input.schema.json",
         output_schema=root / "harness/schemas/analysis_result.schema.json", max_context_bytes=1_000_000,
         daily_baseline_days=14, weekly_baseline_days=28, max_recent_daily_artifacts=7,
@@ -68,7 +68,7 @@ def test_legacy_production_shared_then_runtime_retains_legacy_rules() -> None:
         "Send multipart plain text + inline-styled HTML",
         "X-TrainLab-Run-ID",
         "UTC",
-        "Asia/Singapore",
+        "Asia/Hong_Kong",
         "Never pin a model name",
     ):
         assert required in combined
@@ -89,7 +89,7 @@ def test_analysis_bundle_excludes_legacy_runtime_rules_and_keeps_shared_safety(t
     text = "\n".join((config.project_root / item.path_id).read_text(encoding="utf-8") for item in bundle.files)
     for required in (
         "UTC",
-        "Asia/Singapore",
+        "Asia/Hong_Kong",
         "untrusted",
         "Do not diagnose medical conditions",
         "Never pin a model name",

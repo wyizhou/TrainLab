@@ -30,7 +30,7 @@
         "run_id": {"type": "string", "minLength": 8},
         "slot": {"enum": ["morning", "evening"]},
         "as_of": {"type": "string", "format": "date-time"},
-        "timezone": {"const": "Asia/Singapore"},
+        "timezone": {"const": "Asia/Hong_Kong"},
         "window_start": {"type": "string", "format": "date-time"},
         "window_end": {"type": "string", "format": "date-time"},
         "plan_date": {"type": "string", "format": "date"}

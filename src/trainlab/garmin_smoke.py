@@ -138,7 +138,7 @@ def validate_smoke_evidence(evidence: Mapping[str, Any]) -> tuple[str, ...]:
     if not required_modes.issubset(set(modes)):
         errors.append("authorization_scope_incomplete")
     window = evidence.get("approved_window")
-    if not isinstance(window, Mapping) or window.get("timezone") != "Asia/Singapore" or not _is_date(window.get("from_local_date")) or not _is_date(window.get("through_local_date")):
+    if not isinstance(window, Mapping) or window.get("timezone") != "Asia/Hong_Kong" or not _is_date(window.get("from_local_date")) or not _is_date(window.get("through_local_date")):
         errors.append("approved_window_invalid")
     else:
         window_start = date.fromisoformat(str(window["from_local_date"]))

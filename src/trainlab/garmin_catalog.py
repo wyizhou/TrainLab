@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from typing import Literal
 
 
-CATALOG_VERSION = "garmin-v3"
+CATALOG_VERSION = "garmin-v4"
 ADAPTER_VERSION = "garminconnect-0.3.6"
 PARSER_VERSION = "fitdecode-0.11.0"
 
@@ -238,6 +238,24 @@ HEALTH_RESOURCES = tuple(
     spec.resource_kind for spec in _SPECS
     if spec.scope in {"daily", "range"} and spec.requestable
 )
+
+# Production collection is intentionally narrower than the compatibility
+# catalog above.  The catalog remains complete so old archives and explicit
+# repair requests can still be interpreted, but a normal run may fetch only
+# the reviewed health whitelist.  Activities are sourced from inventory +
+# ORIGINAL FIT; weather is the sole default activity enrichment.
+HEALTH_COLLECTION_ALLOWLIST = frozenset({
+    "sleep", "heart_rates", "rhr", "hrv", "spo2",
+    "max_metrics", "body_composition", "weigh_ins",
+})
+COLLECTED_HEALTH_RESOURCES = tuple(
+    resource for resource in HEALTH_RESOURCES
+    if resource in HEALTH_COLLECTION_ALLOWLIST
+)
+ACTIVITY_COLLECTION_ALLOWLIST = frozenset({
+    "activity_inventory", "activity_summary", "activity_fit", "activity_weather",
+})
+DEFAULT_ACTIVITY_ENRICHMENTS = (("activity_weather", "weather_json"),)
 _ROLE_TO_LEGACY_EXTRA = {
     "splits": "splits_json",
     "typed_splits": "typed_splits_json",

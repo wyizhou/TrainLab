@@ -63,17 +63,20 @@
 3. `python-garminconnect` 只负责认证和调用 Garmin Connect；同步状态、重试、
    幂等、补漏、解析和入库由本层负责。
 4. 本层禁用库的通用 API retry，使用自己的统一、可记录重试策略。
-5. “所有健康生理数据”按语义完整覆盖，不机械重复调用别名、组合包装和可本地
-   重算的重复汇总。
-6. “运动数据”指所有运动类型的已完成活动，以及活动 summary、FIT、splits、
-   sets、zones、weather、gear 和个人纪录；不含未来训练计划。
+5. 正常生产采集使用审查后的健康白名单：睡眠、全天/静息心率、HRV、脉搏血氧、
+   跑步 VO₂ Max 和体重；其余 catalog 资源只保留为显式 repair/兼容语义，不进入
+   默认工作计划。
+6. “运动数据”保留所有运动类型；活动原始主来源是增量同步得到的 ORIGINAL FIT，
+   每个活动默认只补一次天气，其他 splits、sets、zones、gear 和网页 chart 不在
+   默认路径中。
 7. 健康生理数据以 Connect JSON 为原始事实源。
-8. 活动采用 Connect JSON 与 FIT 双事实源；原始下载优先请求 `ORIGINAL`，
-   安全提取并保存有效 FIT，不长期保存 ZIP。
+8. 活动以 inventory/summary 建立身份，原始运动证据优先请求并永久保存
+   `ORIGINAL` FIT；安全提取并保存有效 FIT，不长期保存 ZIP。
 9. FIT 是 record、lap、split、set、workout step、开发者字段和传感器流的首选来源。
 10. Connect JSON 是 provider ID、名称、类型、用户修改、Garmin 后处理和
     Connect 专属附属数据的首选来源。
-11. `get_activity_details` 的 chart 只在无可用 FIT 时作为降级数据，不能覆盖 FIT。
+11. `get_activity_details` chart 不在默认生产路径；只有用户明确要求的诊断请求
+    才可显式调用，不能覆盖 FIT。
 12. full 和 incremental 默认只推进到昨天；今天由 snapshot 读取并标记 partial。
 13. incremental 固定重拉最近 14 个已结束日期，并限额处理历史失败和缺口。
 14. 长时间 429 不让工具无限阻塞；持久化 `next_retry_at_utc` 后返回 deferred。
@@ -102,7 +105,7 @@ trainlab garmin status
 规则：
 
 - 不提供 `--daemon`、`--schedule` 或任何轮询参数。
-- 日期参数是 `Asia/Singapore` 本地日期，格式严格为 `YYYY-MM-DD`。
+- 日期参数是 `Asia/Hong_Kong` 本地日期，格式严格为 `YYYY-MM-DD`。
 - `--through` 为包含式上界；full/incremental 不允许晚于昨天且默认昨天，
   repair/audit 不允许晚于今天。
 - snapshot 的 `--date` 默认今天；历史 snapshot 仍不推进 completed cursor。
@@ -241,7 +244,15 @@ garmin:
 
 ### 8.1 健康生理资源
 
-首版 required 或 conditional 资源：
+catalog 仍登记完整 Garmin 能力以支持历史 raw/revision 的解释，但默认生产工作计划
+只启用下列白名单：
+
+| 默认启用 | 资源 |
+|---|---|
+| 是 | `sleep`、`heart_rates`、`rhr`、`hrv`、`spo2`、`max_metrics`、`body_composition`、`weigh_ins` |
+| 否（仅显式 repair/兼容） | steps、楼层、补水、呼吸、压力、Body Battery、血压、营养、女性健康以及其他训练派生资源 |
+
+完整 catalog 资源表：
 
 | 数据族 | 采用的接口/数据 | 第一层落点 |
 |---|---|---|
@@ -338,7 +349,7 @@ garmin:inventory:activities:<run_id>:<page_no>
 4. 活动通过 count 与分页枚举整个账号历史，再过滤 through 之后的活动。
 5. 保存每个 inventory page，并按 provider activity ID 去重。
 6. 对每个活动先完成 summary + FIT 核心阶段。
-7. 再补齐适用的 splits、sets、zones、weather 和 gear enrichments。
+7. 对每个活动默认只调用一次天气；其他 enrichments 只有显式资源请求才补齐。
 8. 解析、投影、对账并更新 coverage。
 9. 对完整日期推进各资源游标。
 10. 生成 receipt；失败项保留为可恢复 gap。

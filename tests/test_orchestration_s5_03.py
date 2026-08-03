@@ -42,7 +42,7 @@ def test_schema_missing_or_drift_fails_closed_without_repairs(tmp_path: Path) ->
 
 def test_scheduler_job_projection_is_persisted_but_lease_is_read_only(tmp_path: Path) -> None:
     repo, _ = repository(tmp_path)
-    projection = SchedulerJobProjection("morning", "morning", "Asia/Singapore", "daily_at", NOW, "2026-07-23", None, None, "own_incremental", timedelta(hours=12), HASH)
+    projection = SchedulerJobProjection("morning", "morning", "Asia/Hong_Kong", "daily_at", NOW, "2026-07-23", None, None, "own_incremental", timedelta(hours=12), HASH)
     saved = repo.upsert_scheduler_job(projection, is_enabled=True, updated_at_utc=NOW)
     assert saved.job_key == "morning" and repo.get_scheduler_job("morning") == saved
     assert repo.get_scheduler_lease("supervisor") is None
@@ -126,8 +126,8 @@ def test_success_resolves_only_earlier_open_mail_failures_for_same_subject(
             "(subject_key,timezone,is_active,created_at_utc) "
             "VALUES(?,?,1,?)",
             (
-                ("subject-one", "Asia/Singapore", "2026-07-23T00:00:00Z"),
-                ("subject-two", "Asia/Singapore", "2026-07-23T00:00:00Z"),
+                ("subject-one", "Asia/Hong_Kong", "2026-07-23T00:00:00Z"),
+                ("subject-two", "Asia/Hong_Kong", "2026-07-23T00:00:00Z"),
             ),
         )
         connection.commit()
@@ -247,8 +247,8 @@ def test_analysis_success_recovery_is_scoped_to_subject_and_logical_date(
             "(subject_key,timezone,is_active,created_at_utc) "
             "VALUES(?,?,1,?)",
             (
-                ("subject-one", "Asia/Singapore", "2026-07-23T00:00:00Z"),
-                ("subject-two", "Asia/Singapore", "2026-07-23T00:00:00Z"),
+                ("subject-one", "Asia/Hong_Kong", "2026-07-23T00:00:00Z"),
+                ("subject-two", "Asia/Hong_Kong", "2026-07-23T00:00:00Z"),
             ),
         )
         connection.commit()
@@ -459,7 +459,7 @@ def test_read_only_recovery_queries_do_not_commit_writes(tmp_path: Path) -> None
 
 def test_recovery_dtos_expose_complete_audit_state_without_bare_sql(tmp_path: Path) -> None:
     repo, db_path = repository(tmp_path)
-    projection = SchedulerJobProjection("morning", "morning", "Asia/Singapore", "daily_at", NOW, "2026-07-23", None, None, "own_incremental", timedelta(hours=12), HASH)
+    projection = SchedulerJobProjection("morning", "morning", "Asia/Hong_Kong", "daily_at", NOW, "2026-07-23", None, None, "own_incremental", timedelta(hours=12), HASH)
     job = repo.upsert_scheduler_job(projection, is_enabled=True, updated_at_utc=NOW)
     run = workflow(repo); step = repo.create_step(workflow_key=run.workflow_key, step_key="collect", ordinal=0, layer_no=2, tool_mode="incremental", request_sha256=HASH, invocation_id="invoke_1", downstream_run_id="run_1")
     repo.transition_step(workflow_key=run.workflow_key, step_key=step.step_key, status="running", at_utc=NOW)
@@ -469,7 +469,7 @@ def test_recovery_dtos_expose_complete_audit_state_without_bare_sql(tmp_path: Pa
     with sqlite3.connect(db_path) as conn:
         conn.execute("INSERT INTO scheduler_leases (lease_key,owner_instance_id,owner_pid,acquired_at_utc,heartbeat_at_utc,expires_at_utc) VALUES (?,?,?,?,?,?)", ("supervisor", "instance_1", 123, "2026-07-23T00:00:00Z", "2026-07-23T00:00:01Z", "2026-07-23T00:01:00Z")); conn.commit()
     lease = repo.get_scheduler_lease("supervisor")
-    assert job.timezone == "Asia/Singapore" and job.schedule_spec_json and job.is_enabled and job.misfire_policy and job.updated_at_utc
+    assert job.timezone == "Asia/Hong_Kong" and job.schedule_spec_json and job.is_enabled and job.misfire_policy and job.updated_at_utc
     assert run.trigger_kind == "scheduled" and run.result_summary_json and step.layer_no == 2 and step.tool_mode == "incremental" and step.invocation_id == "invoke_1" and step.downstream_run_id == "run_1" and step.next_retry_at_utc is None
     assert incident.category == "database" and incident.related_step_id == step.id and incident.error_code == "busy" and alert.operational_incident_id == incident.id and alert.provider_message_id is None
     assert lease is not None and lease.owner_pid == 123 and lease.acquired_at_utc and lease.heartbeat_at_utc and lease.expires_at_utc
