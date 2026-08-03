@@ -297,6 +297,7 @@ def snapshot_plan_matches(snapshot:StableSnapshot,*,user_events:Iterable[Mapping
     if seconds<=0 or seconds!=minute_seconds:_fail("feature_prescription_duration_ambiguous")
    mapped["planned_duration_seconds"]=minute_seconds
   items.append({**item,**mapped,"source_revision_id":plan.get("analysis_artifact_id")})
+ plan_dates={_date(item.get("local_date")).isoformat() for item in items}
  activities=[]
  segments=_rows(snapshot.views.get("v_activity_segments",()));stages={str(x["id"]):x for x in _rows(snapshot.activity_stages)}
  for activity in _rows(snapshot.views.get("v_current_activities",())):
@@ -310,7 +311,7 @@ def snapshot_plan_matches(snapshot:StableSnapshot,*,user_events:Iterable[Mapping
   # proof of zero structure and must remain in lineage.
   structure_known=fit_revision is not None
   activities.append({**activity,"is_formal_training":formal,"has_intervals":any(s.get("segment_type")=="interval" for s in related) if structure_known else None,"lap_count":sum(s.get("segment_type")=="lap" for s in related) if structure_known else None,"route_count":sum(s.get("segment_type")=="climb_active" for s in related) if structure_known else None,"set_count":sum(s.get("segment_type")=="strength_active" for s in related) if structure_known else None,"structure_revision_ids":(fit_revision,) if structure_known else ()})
- activities=[a for a in activities if a["is_formal_training"]]
+ activities=[a for a in activities if a["is_formal_training"] and a.get("local_date") in plan_dates]
  return match_plan_items(items,activities,user_events=user_events)
 
 def adherence_statistics(matches:Iterable[Mapping[str,Any]],*,end_local_date:str,window_days:int,coverage_complete_dates:Iterable[Any],plan_applicability="plan_present",plan_revision_ids:Iterable[str|int]=())->tuple[DeterministicFeature,...]:

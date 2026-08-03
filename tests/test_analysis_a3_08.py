@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 import pytest
 
 import json
@@ -282,6 +284,50 @@ def test_real_snapshot_prescription_and_commute_do_not_claim_completion(tmp_path
     snapshot = repo.snapshot(1, "2026-07-22", "2026-07-22")
     result = snapshot_plan_matches(snapshot)
     assert result[0]["status"] == "unconfirmed" and result[0]["activity_id"] is None
+    conn.close()
+
+
+def test_snapshot_matching_ignores_unrelated_dates_before_candidate_bound(
+    tmp_path,
+):
+    conn, repo = repository(tmp_path)
+    snapshot = repo.snapshot(1, "2026-07-22", "2026-07-22")
+    unrelated = tuple(
+        {
+            "id": 100 + index,
+            "subject_id": 1,
+            "local_date": "2026-07-21",
+            "sport": "run",
+            "provider_state": "active",
+            "primary_revision_id": 100 + index,
+        }
+        for index in range(17)
+    )
+    stages = tuple(
+        {
+            "id": row["id"],
+            "summary_ready": 1,
+            "fit_core_ready": 1,
+            "fallback_ready": 0,
+            "active_fit_revision_id": None,
+        }
+        for row in unrelated
+    )
+    widened = replace(
+        snapshot,
+        views={
+            **snapshot.views,
+            "v_current_activities": (
+                *snapshot.views["v_current_activities"],
+                *unrelated,
+            ),
+        },
+        activity_stages=(*snapshot.activity_stages, *stages),
+    )
+
+    result = snapshot_plan_matches(widened)
+
+    assert len(result) == 1 and result[0]["plan_item_id"] == "1"
     conn.close()
 
 
