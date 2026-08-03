@@ -92,6 +92,38 @@ def test_snapshot_exposes_only_latest_coverage_observation_per_resource_day(
     assert rows[0]["observed_at_utc"] == "2026-07-23T00:00:00Z"
 
 
+def test_snapshot_excludes_items_from_superseded_overlapping_plan(
+    tmp_path: Path,
+) -> None:
+    conn, repo = repository(tmp_path)
+    conn.execute(
+        "INSERT INTO analysis_runs(id,run_key,subject_id,analysis_kind,status,started_at_utc) "
+        "VALUES(4,'weekly-run-old',1,'weekly','succeeded','2026-07-21T00:00:00Z')"
+    )
+    conn.execute(
+        "INSERT INTO analysis_artifacts(id,subject_id,artifact_kind,period_start_local_date,"
+        "period_end_local_date,revision_no,generated_by_run_id,schema_version,"
+        "structured_content_json,user_visible_text,content_sha256,is_current,created_at_utc) "
+        "VALUES(5,1,'weekly_training_plan','2026-07-22','2026-07-28',2,4,'1','{}',"
+        "'old',?,0,'2026-07-21T00:00:00Z')",
+        ("f" * 64,),
+    )
+    conn.execute(
+        "INSERT INTO training_plans(id,subject_id,analysis_artifact_id,plan_start_local_date,"
+        "plan_end_local_date,timezone,status,created_at_utc) "
+        "VALUES(2,1,5,'2026-07-22','2026-07-28','Asia/Singapore','superseded',"
+        "'2026-07-21T00:00:00Z')"
+    )
+    conn.execute(
+        "INSERT INTO training_plan_items(training_plan_id,item_index,local_date,activity_kind) "
+        "VALUES(2,0,'2026-07-22','running')"
+    )
+
+    snapshot = repo.snapshot(1, "2026-07-22", "2026-07-22")
+
+    assert [row["training_plan_id"] for row in snapshot.views["v_training_plan_items"]] == [1]
+
+
 def test_snapshot_excludes_coverage_linked_to_noncurrent_source_revision(
     tmp_path: Path,
 ) -> None:
