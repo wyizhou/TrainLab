@@ -27,6 +27,10 @@ past plan item complete only because its date passed; use deterministic
 matching or accepted user feedback. Every running item declares its controlled
 `hansons_session_role`; rest items do not.
 
+When expressing running pace, use Chinese duration wording such as
+`5分30秒/公里`; never use digit-colon-digit notation such as `5:30/km`, because
+all digit-colon-digit text is reserved for and rejected as a clock time.
+
 Explain recovery, distribution, adherence, risks, improvements and data limits.
 Keep high-intensity running structured, conservative and source-qualified.
 Hansons running-strength intervals remain running sessions; gym strength is
