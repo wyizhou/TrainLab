@@ -4,6 +4,9 @@
 以根目录 [README](../README.md) 和五层架构为准；不要把 legacy 文档当作新功能的
 配置或行为规范。
 
+第三层 Harness 已确认的 60 项决策、实施顺序和验收门见
+[60 项执行计划](60-item-execution-plan.md)。
+
 ## 当前运行手册
 
 - [数据基础层最终验收](runbooks/foundation-final-acceptance.md)
