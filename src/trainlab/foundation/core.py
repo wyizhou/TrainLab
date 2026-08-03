@@ -64,6 +64,12 @@ class _PinnedConnection(sqlite3.Connection):
                 # unlinked: it either remains at the canonical name or is
                 # restored from an untrusted claim and leaves a blocker.
                 for child, identity in expected.items():
+                    before = os.stat(child, dir_fd=snapshot_fd, follow_symlinks=False)
+                    if not (
+                        stat.S_ISREG(before.st_mode)
+                        and (before.st_dev, before.st_ino) == identity
+                    ):
+                        raise OSError("foundation_snapshot_unexpected_object")
                     claim=f".foundation-snapshot-cleanup-{secrets.token_hex(16)}"
                     os.rename(child, claim, src_dir_fd=snapshot_fd, dst_dir_fd=snapshot_fd)
                     claimed=os.stat(claim, dir_fd=snapshot_fd, follow_symlinks=False)

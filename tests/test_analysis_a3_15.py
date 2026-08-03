@@ -96,7 +96,7 @@ def test_verified_current_environment_binding_is_used_verbatim():
     assert calls == [
         (
             ("registered-npx", ["@artymclabin/gmail-mcp"]),
-            {"timeout": 60},
+            {"timeout": 60, "stdout_preamble_lines": ("OAuth keys found in current directory, copied to global config.",)},
         )
     ]
 

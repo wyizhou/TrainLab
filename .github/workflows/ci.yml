@@ -34,18 +34,21 @@ jobs:
       - name: Lint maintained modules
         run: |
           ruff check src/trainlab/foundation/readiness.py \
+            src/trainlab/local_supervisor.py \
             src/trainlab/orchestration/workflow_incidents.py \
             src/trainlab/process_liveness.py \
             scripts/verify_repository_quality.py \
-            tests/test_repository_quality.py
+            tests/test_local_supervisor.py tests/test_repository_quality.py
           ruff format --check src/trainlab/foundation/readiness.py \
+            src/trainlab/local_supervisor.py \
             src/trainlab/orchestration/workflow_incidents.py \
             src/trainlab/process_liveness.py \
             scripts/verify_repository_quality.py \
-            tests/test_repository_quality.py
+            tests/test_local_supervisor.py tests/test_repository_quality.py
       - name: Type-check maintained modules
         run: |
           mypy src/trainlab/foundation/readiness.py \
+            src/trainlab/local_supervisor.py \
             src/trainlab/orchestration/workflow_incidents.py \
             src/trainlab/process_liveness.py \
             scripts/verify_repository_quality.py

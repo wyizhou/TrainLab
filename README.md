@@ -55,14 +55,19 @@ python3 -m venv .venv
 ```sh
 .venv/bin/python scripts/verify_repository_quality.py all
 .venv/bin/ruff check src/trainlab/foundation/readiness.py \
+  src/trainlab/local_supervisor.py \
   src/trainlab/orchestration/workflow_incidents.py \
   src/trainlab/process_liveness.py \
-  scripts/verify_repository_quality.py tests/test_repository_quality.py
+  scripts/verify_repository_quality.py \
+  tests/test_local_supervisor.py tests/test_repository_quality.py
 .venv/bin/ruff format --check src/trainlab/foundation/readiness.py \
+  src/trainlab/local_supervisor.py \
   src/trainlab/orchestration/workflow_incidents.py \
   src/trainlab/process_liveness.py \
-  scripts/verify_repository_quality.py tests/test_repository_quality.py
+  scripts/verify_repository_quality.py \
+  tests/test_local_supervisor.py tests/test_repository_quality.py
 .venv/bin/mypy src/trainlab/foundation/readiness.py \
+  src/trainlab/local_supervisor.py \
   src/trainlab/orchestration/workflow_incidents.py \
   src/trainlab/process_liveness.py \
   scripts/verify_repository_quality.py
@@ -125,17 +130,23 @@ Gmail 必须使用当前 Codex 环境中名为 `gmail` 的 MCP 服务，支持�
 .venv/bin/trainlab supervisor run
 ```
 
-开发机或 SSH 容器中可用一个脱离终端的本地进程进行短期观察；这不是服务器服务管理器，
-不会自动重启：
+开发机或 SSH 容器中可用受控的本地 launcher 进行短期观察。它持有独立的 owner-only
+文件锁，每次只启动一个固定的 `trainlab supervisor run` 子进程；子进程异常退出时按
+15、30、60 秒最多重启三次，收到 `SIGTERM`/`SIGINT` 后停止且不再重启：
 
 ```sh
 install -d -m 700 logs
 install -m 600 /dev/null logs/supervisor.local.out.log
 install -m 600 /dev/null logs/supervisor.local.err.log
-nohup .venv/bin/trainlab supervisor run \
+nohup .venv/bin/python -m trainlab.local_supervisor \
   >>logs/supervisor.local.out.log \
   2>>logs/supervisor.local.err.log </dev/null &
 ```
+
+launcher 只负责当前容器内的短期测试，不能跨容器替换，也不替代宿主服务管理器。
+连续三次重启仍失败时会停止并留下 data-free 收据，必须人工调查。
+独立文件锁只串行化 launcher；数据库 lease 仍是唯一 active Supervisor 的权威边界，
+手工误启的第二个 Supervisor 最多进入 passive 后退出，不能获得调度权。
 
 启动前必须确认没有第二个 Supervisor；启动后只验证一次唯一进程、唯一 lease 和
 `orchestrate status`，不要并行启动旧 scheduler。长期 Linux 服务器部署使用

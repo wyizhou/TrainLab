@@ -342,6 +342,26 @@ def test_stdio_client_converts_jsonrpc_and_tool_iserror_without_provider_text(mo
     assert "private" not in str(tool_error.value).lower()
 
 
+def test_stdio_client_allows_each_explicit_preamble_line_once(monkeypatch: pytest.MonkeyPatch) -> None:
+    notice = "known startup notice"
+    class Pipe:
+        def __init__(self, lines: list[str]) -> None: self.lines = lines
+        def write(self, _value: str) -> None: pass
+        def flush(self) -> None: pass
+        def readline(self) -> str: return self.lines.pop(0)
+    class Process:
+        def __init__(self, lines: list[str]) -> None: self.stdin = Pipe([]); self.stdout = Pipe(lines)
+        def poll(self): return None
+    def client(lines: list[str]) -> StdioMCPClient:
+        value = object.__new__(StdioMCPClient); value.timeout = 1; value.process = Process(lines); value._next_id = 1; value._stdout_preamble_lines = {notice}; return value
+    monkeypatch.setattr("trainlab.mcp.select.select", lambda value, *_args: ([value[0]], [], []))
+    accepted = client([f"{notice}\n", '{"jsonrpc":"2.0","id":1,"result":{"ok":true}}\n'])
+    assert accepted._request("initialize", {}) == {"ok": True}
+    repeated = client([f"{notice}\n", f"{notice}\n", '{"jsonrpc":"2.0","id":1,"result":{"ok":true}}\n'])
+    with pytest.raises(MCPResponseError) as raised: repeated._request("initialize", {})
+    assert raised.value.kind == "protocol"
+
+
 def test_stdio_client_keeps_successful_legacy_tool_results_unchanged() -> None:
     client = object.__new__(StdioMCPClient)
     expected = {"structuredContent": {"email": "self@example.com"}}

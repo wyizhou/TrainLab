@@ -28,6 +28,7 @@ _REQUIRED_TOOLS = frozenset(
     {"search_emails", "send_email", "get_or_create_label", "modify_email"}
 )
 _LABEL_NAME = "TrainLab"
+_OAUTH_COPY_NOTICE = "OAuth keys found in current directory, copied to global config."
 _EMAIL = re.compile(r"[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+\Z")
 _IDENTIFIER = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,255}\Z")
 _PROVIDER_ID = re.compile(r"[A-Za-z0-9_-]{1,256}\Z")
@@ -316,6 +317,7 @@ class GmailDeliveryGateway:
                 status.command,
                 list(status.args),
                 timeout=self._timeout_seconds,
+                stdout_preamble_lines=(_OAUTH_COPY_NOTICE,),
             )
             available = self._available_tools(client)
             if not _REQUIRED_TOOLS.issubset(available):
@@ -389,6 +391,7 @@ class GmailDeliveryGateway:
                 status.command,
                 list(status.args),
                 timeout=self._timeout_seconds,
+                stdout_preamble_lines=(_OAUTH_COPY_NOTICE,),
             )
             if not _REQUIRED_TOOLS.issubset(self._available_tools(client)):
                 raise GmailDeliveryError("gmail_delivery_capability_mismatch")

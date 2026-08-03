@@ -62,11 +62,14 @@ def _bounded_protocol_integer(value: Any, minimum: int, maximum: int) -> int | N
 class StdioMCPClient:
     """Small deterministic MCP client used by watchdog and idempotency checks."""
 
-    def __init__(self, command: str, args: list[str], env: dict[str, str] | None = None, timeout: int = 30):
+    def __init__(self, command: str, args: list[str], env: dict[str, str] | None = None, timeout: int = 30, stdout_preamble_lines: tuple[str, ...] = ()):
         actual_env = os.environ.copy()
         actual_env.update(env or {})
         self.timeout = timeout
         self._closed = False
+        if any(not isinstance(line, str) or not line or "\n" in line or "\r" in line for line in stdout_preamble_lines):
+            raise ValueError("MCP stdout preamble is invalid")
+        self._stdout_preamble_lines = set(stdout_preamble_lines)
         self.process = subprocess.Popen(
             [command, *args],
             stdin=subprocess.PIPE,
@@ -115,6 +118,11 @@ class StdioMCPClient:
                 continue
             line = self.process.stdout.readline()
             if not line:
+                continue
+            preamble = line.removesuffix("\n")
+            allowed_preamble: set[str] = getattr(self, "_stdout_preamble_lines", set())
+            if preamble in allowed_preamble:
+                allowed_preamble.remove(preamble)
                 continue
             try:
                 message = json.loads(line)

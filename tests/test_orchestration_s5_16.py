@@ -4,7 +4,13 @@ import argparse
 import json
 import threading
 
-from trainlab.orchestration.cli import _supervisor_exit_code, add_root_subparsers, dispatch, execute
+from trainlab.orchestration.cli import (
+    _supervisor_exit_code,
+    add_root_subparsers,
+    dispatch,
+    execute,
+)
+from trainlab.orchestration.lease import LeaseError
 from trainlab.orchestration.operations import OperatorOperations, RedactingAuditLogger
 from trainlab.orchestration.supervisor import (
     BusinessIncidentEvents,
@@ -141,6 +147,65 @@ def test_supervisor_is_cooperative_and_has_no_hidden_background_loop() -> None:
     assert result.cycles == 2 and result.dispatched == 1 and calls == ["fixed-workflow"]
     assert incidents == ["scheduler:test"]
     assert watchdog.states and runtime.stop().status == "stopped" and lease.stopped and queue.stopped
+
+
+class FailingLease(Lease):
+    def __init__(self, phase: str, error: Exception):
+        super().__init__()
+        self.phase = phase
+        self.error = error
+
+    def start(self):
+        if self.phase == "lease_start":
+            raise self.error
+        return super().start()
+
+    def heartbeat(self):
+        if self.phase == "lease_heartbeat":
+            raise self.error
+        return super().heartbeat()
+
+
+def test_controlled_lease_clock_anomaly_preserves_failure_phase() -> None:
+    for phase in ("lease_start", "lease_heartbeat"):
+        queue, watchdog, dispatched = Queue(), Watchdog(), []
+        runtime = SupervisorRuntime(
+            FailingLease(phase, LeaseError("lease_clock_anomaly")),
+            queue,
+            RuntimeConfig(),
+            dispatch=dispatched.append,
+            watchdog=watchdog,
+        )
+
+        result = runtime.run(max_cycles=3, wait=lambda _: None)
+
+        assert result.status == "failed"
+        assert result.cycles == 1 and result.dispatched == 0
+        assert result.error_code == "lease_clock_anomaly"
+        assert result.failure_phase == phase
+        assert result.as_json_dict()["failure_phase"] == phase
+        assert watchdog.states == ["error"]
+        assert not queue.claimed and not dispatched
+
+
+def test_untrusted_lease_error_is_redacted_and_other_errors_stay_generic() -> None:
+    result = SupervisorRuntime(
+        FailingLease("lease_start", LeaseError("untrusted-detail")),
+        Queue(),
+        RuntimeConfig(),
+        dispatch=lambda _: None,
+    ).run_once()
+    assert result.error_code == "supervisor_lease_failed"
+    assert "untrusted-detail" not in json.dumps(result.as_json_dict())
+
+    generic = SupervisorRuntime(
+        FailingLease("lease_start", RuntimeError("private detail")),
+        Queue(),
+        RuntimeConfig(),
+        dispatch=lambda _: None,
+    ).run_once()
+    assert generic.error_code == "supervisor_cycle_failed"
+    assert generic.failure_phase is None
 
 
 class BlockingLease(Lease):

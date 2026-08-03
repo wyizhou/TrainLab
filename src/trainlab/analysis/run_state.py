@@ -619,7 +619,35 @@ class SubjectLockManager:
                 try:
                     _claim_private_lock_at(parent_fd, filename, created_info, payload, "failed-create", allow_incomplete_owned_record=True)
                 except AnalysisRunStateError:
-                    pass
+                    # A post-create replacement is not ours to delete. Retain
+                    # the exact entry as a private claim and expose the same
+                    # inode at the canonical name as a durable busy blocker.
+                    try:
+                        replacement_payload, replacement_info = (
+                            _read_private_lock_at(parent_fd, filename)
+                        )
+                        claim = _claim_private_lock_at(
+                            parent_fd,
+                            filename,
+                            replacement_info,
+                            replacement_payload,
+                            "failed-create",
+                            retain_claim=True,
+                        )
+                        assert claim is not None
+                        try:
+                            os.link(
+                                claim,
+                                filename,
+                                src_dir_fd=parent_fd,
+                                dst_dir_fd=parent_fd,
+                                follow_symlinks=False,
+                            )
+                            os.fsync(parent_fd)
+                        except FileExistsError:
+                            pass
+                    except (FileNotFoundError, OSError, AnalysisRunStateError):
+                        pass
             os.close(parent_fd)
             raise
 

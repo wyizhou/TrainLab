@@ -12,6 +12,11 @@ import socket
 import threading
 from typing import Callable, Protocol
 
+from .lease import LeaseError
+
+
+_EXPOSED_LEASE_ERROR_CODES = frozenset({"lease_clock_anomaly"})
+
 
 class Lease(Protocol):
     state: str
@@ -64,9 +69,13 @@ class SupervisorReceipt:
     cycles: int
     dispatched: int
     error_code: str | None = None
+    failure_phase: str | None = None
 
     def as_json_dict(self) -> dict[str, object]:
-        return {"schema_version": "1", "status": self.status, "cycles": self.cycles, "dispatched": self.dispatched, "error_code": self.error_code}
+        result: dict[str, object] = {"schema_version": "1", "status": self.status, "cycles": self.cycles, "dispatched": self.dispatched, "error_code": self.error_code}
+        if self.failure_phase is not None:
+            result["failure_phase"] = self.failure_phase
+        return result
 
 
 @dataclass(frozen=True, slots=True)
@@ -112,12 +121,18 @@ class SupervisorRuntime:
             return SupervisorReceipt("stopped", 0, 0)
         try:
             if not self._started:
-                lease = self._supervisor.start()
+                try:
+                    lease = self._supervisor.start()
+                except LeaseError as exc:
+                    return self._lease_failure(exc, "lease_start")
                 self._started = True
                 if getattr(lease, "state", None) != "active":
                     self._notify("passive")
                     return SupervisorReceipt("passive", 0, 0)
-            heartbeat = self._supervisor.heartbeat()
+            try:
+                heartbeat = self._supervisor.heartbeat()
+            except LeaseError as exc:
+                return self._lease_failure(exc, "lease_heartbeat")
             if getattr(heartbeat, "state", None) != "active":
                 self._notify("lease_lost")
                 return SupervisorReceipt("lease_lost", 1, 0)
@@ -144,6 +159,11 @@ class SupervisorRuntime:
         except Exception:
             self._notify("error")
             return SupervisorReceipt("failed", 1, 0, "supervisor_cycle_failed")
+
+    def _lease_failure(self, exc: LeaseError, phase: str) -> SupervisorReceipt:
+        self._notify("error")
+        error_code = exc.args[0] if len(exc.args) == 1 and exc.args[0] in _EXPOSED_LEASE_ERROR_CODES else "supervisor_lease_failed"
+        return SupervisorReceipt("failed", 1, 0, error_code, phase)
 
     def _dispatch_with_keepalive(self, claim: object) -> str:
         """Dispatch exactly one synchronous claim while renewing its lease.
@@ -227,7 +247,7 @@ class SupervisorRuntime:
                 break
             if wait is not None and not self._stopped and (max_cycles is None or cycles < max_cycles):
                 wait(float(wait_seconds))
-        return SupervisorReceipt(last.status, cycles, dispatched, last.error_code)
+        return SupervisorReceipt(last.status, cycles, dispatched, last.error_code, last.failure_phase)
 
     def stop(self) -> SupervisorReceipt:
         self.request_stop()
