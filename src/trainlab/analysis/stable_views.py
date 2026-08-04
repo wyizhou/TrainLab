@@ -7,7 +7,7 @@ import re
 import math
 import json
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 
@@ -35,8 +35,8 @@ _MAX_VIEW_ROWS = 2_000
 # detailed records for deterministic quality checks and future explicitly
 # requested drill-down, while the default context builder emits only aggregate
 # health/sleep/physiology and activity-level summaries.
-_MAX_AUX_ROWS = 2_000
-_MAX_READ_ROWS = 2_000
+_MAX_AUX_ROWS = 4_000
+_MAX_READ_ROWS = 4_000
 _MAX_SNAPSHOT_ROWS = 8_000
 _SPECS: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     ("v_current_daily_health", "SELECT id,subject_id,local_date,values_json,source_revision_id FROM v_current_daily_health WHERE subject_id=? AND local_date BETWEEN ? AND ? ORDER BY local_date,id", ("subject", "date", "date")),
@@ -53,6 +53,22 @@ _SPECS: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     ("v_training_plan_items", "SELECT i.id,p.subject_id,i.training_plan_id,i.item_index,i.local_date,i.activity_kind,i.prescription_json,i.rationale_text FROM v_training_plan_items i JOIN v_current_training_plans p ON p.id=i.training_plan_id WHERE p.subject_id=? AND i.local_date BETWEEN ? AND ? ORDER BY i.local_date,i.item_index,i.id", ("subject", "date", "date")),
     ("v_analysis_history_context", "SELECT id,subject_id,artifact_kind,period_start_local_date,period_end_local_date,revision_no,schema_version,content_sha256,is_current,created_at_utc,trust_class FROM v_analysis_history_context WHERE subject_id=? AND period_end_local_date>=? AND period_start_local_date<=? ORDER BY period_start_local_date,artifact_kind,revision_no,id", ("subject", "date", "date")),
 )
+
+_SNAPSHOT_ACTIVITY_SEGMENTS_SQL = """
+SELECT s.id,a.subject_id,s.activity_id,s.segment_type,s.segment_index,
+       s.start_time_utc,s.end_time_utc,s.duration_seconds,s.distance_m,
+       s.source_revision_id
+FROM v_activity_segments s
+JOIN activities a ON a.id=s.activity_id
+WHERE a.subject_id=? AND a.local_date BETWEEN ? AND ?
+  AND EXISTS (
+      SELECT 1
+      FROM v_training_plan_items i
+      JOIN v_current_training_plans p ON p.id=i.training_plan_id
+      WHERE p.subject_id=a.subject_id AND i.local_date=a.local_date
+  )
+ORDER BY a.local_date,s.activity_id,s.segment_index,s.id
+"""
 
 
 @dataclass(frozen=True)
@@ -348,19 +364,42 @@ class StableViewRepository:
         # These views are intentionally queried independently: a missing
         # projection is schema incompatibility, never silently interpreted as empty.
             for name, _, _ in _SPECS:
-                views[name] = self.view(
-                    name,
-                    subject_id,
-                    start_local_date,
-                    end_local_date,
-                    limit=_MAX_VIEW_ROWS,
-                )
+                if name == "v_activity_segments":
+                    views[name] = self._read(
+                        f"view:{name}",
+                        subject_id,
+                        _SNAPSHOT_ACTIVITY_SEGMENTS_SQL + " LIMIT ?",
+                        (
+                            subject_id,
+                            start_local_date,
+                            end_local_date,
+                            _MAX_VIEW_ROWS + 1,
+                        ),
+                        start_local_date,
+                        end_local_date,
+                        limit=_MAX_VIEW_ROWS,
+                    )
+                else:
+                    views[name] = self.view(
+                        name,
+                        subject_id,
+                        start_local_date,
+                        end_local_date,
+                        limit=_MAX_VIEW_ROWS,
+                    )
             def aux(op: str, sql: str, params: tuple[object, ...]) -> tuple[dict[str, Any], ...]: return self._read(op, subject_id, sql + " LIMIT ?", params + (_MAX_AUX_ROWS + 1,), start_local_date, end_local_date, limit=_MAX_AUX_ROWS)
             coverage = aux("coverage", "SELECT c.id,c.subject_id,c.provider,c.resource_kind,c.local_date,c.availability_state,c.record_count,c.source_revision_id,1 AS source_revision_current,c.observed_at_utc FROM resource_coverage c WHERE c.subject_id=? AND c.local_date>=? AND c.local_date<=? AND (c.source_revision_id IS NULL OR EXISTS(SELECT 1 FROM source_revisions current_source WHERE current_source.id=c.source_revision_id AND current_source.is_current=1)) AND NOT EXISTS(SELECT 1 FROM resource_coverage newer WHERE newer.subject_id=c.subject_id AND newer.provider=c.provider AND newer.resource_kind=c.resource_kind AND newer.local_date=c.local_date AND (newer.observed_at_utc>c.observed_at_utc OR (newer.observed_at_utc=c.observed_at_utc AND newer.id>c.id))) ORDER BY c.local_date,c.resource_kind,c.id", (subject_id, start_local_date, end_local_date))
             cursors = aux("cursors", "SELECT resource_kind,cursor_grain,complete_through_local_date,last_success_at_utc,catalog_version FROM garmin_sync_cursors WHERE subject_id=? ORDER BY resource_kind,cursor_grain", (subject_id,))
             gaps = aux("gaps", "SELECT resource_kind,logical_object_key,window_start_local_date,window_end_local_date,stage,reason_code,status,priority,next_retry_at_utc FROM garmin_sync_gaps WHERE subject_id=? AND status IN ('open','deferred') AND window_end_local_date>=? AND window_start_local_date<=? ORDER BY priority DESC,window_start_local_date,resource_kind,id", (subject_id, start_local_date, end_local_date))
             stages = aux("activity_stage", "SELECT a.id,a.provider_activity_id,a.sport,a.sub_sport,a.local_date,a.start_time_utc,a.end_time_utc,a.elapsed_seconds,a.timer_seconds,a.distance_m,a.provider_state,(SELECT c.availability_state FROM resource_coverage c WHERE c.subject_id=a.subject_id AND c.provider=a.provider AND c.resource_kind='activity_inventory' AND c.local_date=a.local_date ORDER BY c.observed_at_utc DESC,c.id DESC LIMIT 1) AS inventory_coverage_state,(SELECT c.observed_at_utc FROM resource_coverage c WHERE c.subject_id=a.subject_id AND c.provider=a.provider AND c.resource_kind='activity_inventory' AND c.local_date=a.local_date ORDER BY c.observed_at_utc DESC,c.id DESC LIMIT 1) AS inventory_coverage_observed_at_utc,SUM(CASE WHEN ar.source_role='summary_json' AND ar.is_active=1 THEN 1 ELSE 0 END) AS summary_relation_count,SUM(CASE WHEN ar.source_role='activity_fit' AND ar.is_active=1 THEN 1 ELSE 0 END) AS fit_relation_count,SUM(CASE WHEN ar.source_role='details_json_fallback' AND ar.is_active=1 THEN 1 ELSE 0 END) AS fallback_relation_count,CASE WHEN SUM(CASE WHEN ar.source_role='summary_json' AND ar.is_active=1 THEN 1 ELSE 0 END)=1 AND SUM(CASE WHEN ar.source_role='summary_json' AND ar.is_active=1 AND sr.is_current=1 AND sr.parsed_at_utc IS NOT NULL AND sr.provider=a.provider AND sr.resource_kind='activity_summary' AND sr.provider_object_id=a.provider_activity_id THEN 1 ELSE 0 END)=1 THEN 1 ELSE 0 END AS summary_ready,CASE WHEN SUM(CASE WHEN ar.source_role='activity_fit' AND ar.is_active=1 THEN 1 ELSE 0 END)=1 AND SUM(CASE WHEN ar.source_role='activity_fit' AND ar.is_active=1 AND sr.is_current=1 AND sr.parsed_at_utc IS NOT NULL AND sr.provider=a.provider AND sr.resource_kind='activity_fit' AND sr.provider_object_id=a.provider_activity_id THEN 1 ELSE 0 END)=1 THEN 1 ELSE 0 END AS fit_core_ready,CASE WHEN SUM(CASE WHEN ar.source_role='details_json_fallback' AND ar.is_active=1 THEN 1 ELSE 0 END)=1 AND SUM(CASE WHEN ar.source_role='details_json_fallback' AND ar.is_active=1 AND sr.is_current=1 AND sr.parsed_at_utc IS NOT NULL AND sr.provider=a.provider AND sr.resource_kind='activity_details_fallback' AND sr.provider_object_id=a.provider_activity_id THEN 1 ELSE 0 END)=1 THEN 1 ELSE 0 END AS fallback_ready,MAX(CASE WHEN ar.source_role='activity_fit' AND ar.is_active=1 AND sr.is_current=1 AND sr.parsed_at_utc IS NOT NULL THEN sr.id END) AS active_fit_revision_id FROM activities a LEFT JOIN activity_source_revisions ar ON ar.activity_id=a.id LEFT JOIN source_revisions sr ON sr.id=ar.source_revision_id WHERE a.subject_id=? AND a.local_date>=? AND a.local_date<=? AND a.provider_state IN ('active','suspected_missing') GROUP BY a.id ORDER BY a.local_date,a.start_time_utc,a.id", (subject_id, start_local_date, end_local_date))
-            quality = aux("quality", "SELECT q.entity_type,q.entity_id,q.issue_code,q.severity,q.status,q.first_seen_at_utc,q.last_seen_at_utc FROM v_open_data_quality_issues q WHERE (q.entity_type='activity' AND EXISTS(SELECT 1 FROM activities a WHERE a.id=q.entity_id AND a.subject_id=? AND a.local_date>=? AND a.local_date<=?)) OR (q.entity_type='daily_health' AND EXISTS(SELECT 1 FROM daily_health d WHERE d.id=q.entity_id AND d.subject_id=? AND d.local_date>=? AND d.local_date<=?)) OR (q.entity_type='sleep_session' AND EXISTS(SELECT 1 FROM sleep_sessions s WHERE s.id=q.entity_id AND s.subject_id=? AND substr(s.end_time_utc,1,10)>=? AND substr(s.end_time_utc,1,10)<=?)) OR (q.entity_type='physiology_record' AND EXISTS(SELECT 1 FROM physiology_records p WHERE p.id=q.entity_id AND p.subject_id=? AND p.local_date>=? AND p.local_date<=?)) OR (q.entity_type='coverage' AND EXISTS(SELECT 1 FROM resource_coverage c WHERE c.id=q.entity_id AND c.subject_id=? AND c.local_date>=? AND c.local_date<=?)) ORDER BY q.severity DESC,q.last_seen_at_utc,q.id", (subject_id,start_local_date,end_local_date,subject_id,start_local_date,end_local_date,subject_id,start_local_date,end_local_date,subject_id,start_local_date,end_local_date,subject_id,start_local_date,end_local_date))
+            quality_start_local_date = max(
+                start_local_date,
+                (
+                    datetime.strptime(end_local_date, "%Y-%m-%d").date()
+                    - timedelta(days=27)
+                ).isoformat(),
+            )
+            quality = aux("quality", "SELECT q.entity_type,q.entity_id,q.issue_code,q.severity,q.status,q.first_seen_at_utc,q.last_seen_at_utc FROM v_open_data_quality_issues q WHERE (q.entity_type='activity' AND EXISTS(SELECT 1 FROM activities a WHERE a.id=q.entity_id AND a.subject_id=? AND a.local_date>=? AND a.local_date<=?)) OR (q.entity_type='daily_health' AND EXISTS(SELECT 1 FROM daily_health d WHERE d.id=q.entity_id AND d.subject_id=? AND d.local_date>=? AND d.local_date<=?)) OR (q.entity_type='sleep_session' AND EXISTS(SELECT 1 FROM sleep_sessions s WHERE s.id=q.entity_id AND s.subject_id=? AND substr(s.end_time_utc,1,10)>=? AND substr(s.end_time_utc,1,10)<=?)) OR (q.entity_type='physiology_record' AND EXISTS(SELECT 1 FROM physiology_records p WHERE p.id=q.entity_id AND p.subject_id=? AND p.local_date>=? AND p.local_date<=?)) OR (q.entity_type='coverage' AND EXISTS(SELECT 1 FROM resource_coverage c WHERE c.id=q.entity_id AND c.subject_id=? AND c.local_date>=? AND c.local_date<=?)) ORDER BY q.severity DESC,q.last_seen_at_utc,q.id", (subject_id,quality_start_local_date,end_local_date,subject_id,quality_start_local_date,end_local_date,subject_id,quality_start_local_date,end_local_date,subject_id,quality_start_local_date,end_local_date,subject_id,quality_start_local_date,end_local_date))
             facts = aux("facts", "SELECT id,fact_key,scope,effective_from_utc,expires_at_utc,confidence FROM v_active_user_facts WHERE subject_id=? ORDER BY fact_key,id", (subject_id,))
             capabilities = aux("capabilities", "SELECT environment_key,resource_kind,capability_state,last_checked_at_utc,next_probe_at_utc FROM garmin_resource_capabilities WHERE subject_id=? ORDER BY environment_key,resource_kind,id", (subject_id,))
             raw_plan_reasons = aux("plan_reasons", "SELECT e.id,e.subject_id,e.event_type,e.actor_role,e.occurred_at_utc,e.trust_level,e.created_by,e.structured_payload_json AS reason_payload,m.id AS mail_message_id,m.mail_thread_id,m.actor_role AS mail_actor_role,m.direction,m.processing_state,m.source_revision_id,t.subject_id AS thread_subject_id,t.is_current AS thread_is_current,CASE WHEN sr.id IS NULL THEN 0 ELSE 1 END AS source_is_current FROM v_plan_revision_reason_events e JOIN mail_messages m ON m.id=e.mail_message_id JOIN mail_threads t ON t.id=m.mail_thread_id LEFT JOIN source_revisions sr ON sr.id=m.source_revision_id AND sr.is_current=1 AND sr.provider='gmail' AND sr.resource_kind='message_json' AND sr.provider_object_id=m.provider_message_id WHERE e.subject_id=? ORDER BY e.occurred_at_utc,e.id", (subject_id,))

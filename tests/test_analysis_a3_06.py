@@ -92,6 +92,45 @@ def test_snapshot_exposes_only_latest_coverage_observation_per_resource_day(
     assert rows[0]["observed_at_utc"] == "2026-07-23T00:00:00Z"
 
 
+def test_snapshot_limits_segments_to_current_plan_dates_without_narrowing_view(
+    tmp_path: Path,
+) -> None:
+    conn, repo = repository(tmp_path)
+    conn.execute(
+        "INSERT INTO activities(id,subject_id,provider,provider_activity_id,start_time_utc,local_date) "
+        "VALUES(4,1,'garmin','unplanned','2026-07-23T01:00:00Z','2026-07-23')"
+    )
+    conn.execute(
+        "INSERT INTO activity_segments(activity_id,segment_type,segment_index,source_revision_id) "
+        "VALUES(4,'lap',0,1)"
+    )
+
+    public_rows = repo.view(
+        "v_activity_segments", 1, "2026-07-22", "2026-07-23"
+    )
+    snapshot_rows = repo.snapshot(
+        1, "2026-07-22", "2026-07-23"
+    ).views["v_activity_segments"]
+
+    assert [row["activity_id"] for row in public_rows] == [1, 4]
+    assert [row["activity_id"] for row in snapshot_rows] == [1]
+
+
+def test_snapshot_quality_issues_use_bounded_baseline_window(tmp_path: Path) -> None:
+    conn, repo = repository(tmp_path)
+    conn.execute(
+        "INSERT INTO data_quality_issues(entity_type,entity_id,issue_code,severity,status,"
+        "first_seen_at_utc,last_seen_at_utc) "
+        "VALUES('activity',3,'old-warning','warning','open',"
+        "'2026-07-01T00:00:00Z','2026-07-01T00:00:00Z')"
+    )
+
+    rows = repo.snapshot(1, "2026-05-07", "2026-08-04").quality_issues
+
+    assert any(row["entity_id"] == 1 for row in rows)
+    assert not any(row["entity_id"] == 3 for row in rows)
+
+
 def test_snapshot_excludes_items_from_superseded_overlapping_plan(
     tmp_path: Path,
 ) -> None:

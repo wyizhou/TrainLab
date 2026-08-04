@@ -16,7 +16,11 @@ from trainlab.analysis.quality_gate import (
     QualityGateRequest,
 )
 from trainlab.analysis.stable_views import StableSnapshot, StableSubjectContext
-from trainlab.garmin_catalog import CATALOG_VERSION, RESOURCE_CATALOG
+from trainlab.garmin_catalog import (
+    CATALOG_VERSION,
+    HEALTH_COLLECTION_ALLOWLIST,
+    RESOURCE_CATALOG,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 POLICY = json.loads(
@@ -186,18 +190,20 @@ def coverage_row(
 
 
 def test_policy_and_result_schema_are_versioned_and_match_collection_catalog() -> None:
-    expected_conditionals = {
-        kind
-        for kind, spec in RESOURCE_CATALOG.items()
-        if spec.requestable and spec.scope in {"daily", "range"} and spec.conditional
-    }
+    expected_conditionals = set(HEALTH_COLLECTION_ALLOWLIST)
     assert CATALOG_VERSION == POLICY["catalog_version"] == "garmin-v4"
     assert set(CONDITIONAL) == expected_conditionals
+    assert all(
+        RESOURCE_CATALOG[kind].requestable
+        and RESOURCE_CATALOG[kind].scope in {"daily", "range"}
+        and RESOURCE_CATALOG[kind].conditional
+        for kind in CONDITIONAL
+    )
     assert {"activity_inventory"} == set(REQUIRED)
-    assert QUALITY_GATE_POLICY_VERSION == "4"
+    assert QUALITY_GATE_POLICY_VERSION == "5"
     assert (
         QUALITY_GATE_POLICY_SHA256
-        == "71627bcb1bc5d6e63c211c9af9274ed7ae4e00bd20c993f3005730097689810c"
+        == "9d0ba9a8774d2a3592d7f07c7794b7ea1be077185cf0eb23181d1ddf6d97b453"
     )
     result = QualityGate().evaluate(request(), snapshot())
     result.validate()
