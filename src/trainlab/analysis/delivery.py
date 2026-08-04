@@ -541,15 +541,15 @@ def _hrv_metric(
         if len(matches) == 1:
             return matches[0]
         if len(matches) > 1:
-            preferred = [
-                item for item in matches
-                if any(
-                    token in str(item.get("metric_key", "")).casefold()
-                    for token in ("last_night_average", "overnight_average", "weekly_average")
-                )
-            ]
-            if len(preferred) == 1:
-                return preferred[0]
+            for token in (
+                "last_night_average", "overnight_average", "weekly_average"
+            ):
+                preferred = [
+                    item for item in matches
+                    if token in str(item.get("metric_key", "")).casefold()
+                ]
+                if len(preferred) == 1:
+                    return preferred[0]
             return None
     return None
 
@@ -567,10 +567,15 @@ def _recovery_metrics(
     if hrv_current is None:
         hrv_current = _hrv_metric(snapshot, "health")
     hrv_key = str(hrv_current.get("metric_key")) if hrv_current else ""
+    hrv_baseline_key = (
+        "health." + hrv_key.removeprefix("morning_recovery.")
+        if hrv_key.startswith("morning_recovery.")
+        else hrv_key
+    )
     hrv_baseline = (
-        _context_metric(snapshot, section="health", family="health", metric_key=hrv_key)
-        or _context_metric(snapshot, section="sleep", family="sleep", metric_key=hrv_key)
-        if hrv_key else None
+        _context_metric(snapshot, section="health", family="health", metric_key=hrv_baseline_key)
+        or _context_metric(snapshot, section="sleep", family="sleep", metric_key=hrv_baseline_key)
+        if hrv_baseline_key else None
     )
     specs.append(("hrv", "HRV", hrv_current, hrv_baseline, " ms", 0))
     spo2_current = _context_metric(
@@ -1688,6 +1693,69 @@ def _stop_text(value: object) -> str:
     )
 
 
+def _daily_advice_paragraphs(value: str) -> tuple[str, ...]:
+    """Keep plan rationale readable without repeating host-owned sections.
+
+    Confidence, data limitations and stop conditions already have dedicated
+    email blocks.  The accepted artifact remains immutable; this function only
+    removes those duplicated sentences from the delivery presentation.
+    """
+    lines = [
+        line.strip()
+        for line in value.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+        if line.strip()
+        and not line.strip().startswith(("判断置信度：", "数据说明："))
+    ]
+    sentences = [
+        sentence.strip()
+        for line in lines
+        for sentence in re.findall(r"[^。！？]+[。！？]?", line)
+        if sentence.strip()
+    ]
+    paragraphs: list[str] = []
+    for sentence in sentences:
+        if sentence in {"今日跑步。", "今日休息。"}:
+            continue
+        if "停止" in sentence and any(
+            phrase in sentence
+            for phrase in ("急性疼痛", "胸痛", "晕厥", "头晕", "呼吸困难")
+        ):
+            continue
+        paragraphs.append(sentence)
+    return tuple(paragraphs)
+
+
+def _daily_advice_paragraph_nodes(paragraphs: Sequence[str]) -> tuple[Element, ...]:
+    return tuple(
+        element(
+            "div",
+            text(paragraph),
+            attributes={
+                "style": (
+                    "margin-top:10px;font-size:14px;line-height:1.75;"
+                    "color:#33445A;"
+                )
+            },
+        )
+        for paragraph in paragraphs
+    )
+
+
+def _stop_condition_nodes(value: object) -> tuple[Element, ...]:
+    return tuple(
+        element(
+            "div",
+            element(
+                "span", text("•"),
+                attributes={"style": "display:inline-block;width:16px;color:#A56D00;"},
+            ),
+            text(_STOP_CONDITIONS.get(item, "出现需要停止训练的情况")),
+            attributes={"style": "margin-top:4px;"},
+        )
+        for item in _list_text(value)
+    )
+
+
 def _strip_design_ids(root: Element) -> None:
     root.discard_attribute("data-od-id")
     for child in root.children:
@@ -1900,6 +1968,7 @@ def _daily_html(pending: PendingDelivery) -> str:
             factors.append(localized)
     heart_rate = _heart_rate(primary.get("target_bpm_range"))
     stop_conditions = _stop_text(primary.get("stop_conditions"))
+    advice_paragraphs = _daily_advice_paragraphs(advice.user_visible_text)
     is_rest = activity == "rest"
     sleep_chart = pending.sleep_chart
     sleep_completeness = (
@@ -1958,7 +2027,6 @@ def _daily_html(pending: PendingDelivery) -> str:
         "warmup": _localized(primary.get("warmup"), _PRESCRIPTION_TEXT, neutral="按身体状态逐步热身"),
         "main_work": _localized(primary.get("main_set"), _PRESCRIPTION_TEXT, neutral="按课程说明完成主训练"),
         "cooldown": _localized(primary.get("cooldown"), _PRESCRIPTION_TEXT, neutral="逐步降速完成冷身"),
-        "daily_advice_text": advice.user_visible_text,
         "stop_conditions": stop_conditions,
         "configured_difficulty_level": _number(advice.structured_content_json.get("configured_difficulty_level")),
         "selected_session_difficulty_level": _number(advice.structured_content_json.get("selected_session_difficulty_level")),
@@ -1979,6 +2047,7 @@ def _daily_html(pending: PendingDelivery) -> str:
         "recovery_metrics": recovery_metrics,
         "yesterday_activities": yesterday_activities,
         "training_load_chart": training_load,
+        "daily_advice_paragraphs": advice_paragraphs,
         "stop_conditions": fields["stop_conditions"],
         "difficulty_adjustment_reason": fields["difficulty_adjustment_reason"],
         "data_limitation": fields["data_limitation"],
@@ -1995,6 +2064,8 @@ def _daily_html(pending: PendingDelivery) -> str:
         "training_load_days": (
             _training_load_rows(training_load) if training_load is not None else ()
         ),
+        "daily_advice_paragraphs": _daily_advice_paragraph_nodes(advice_paragraphs),
+        "stop_conditions": _stop_condition_nodes(primary.get("stop_conditions")),
     }).set_fields(fields)
     return template.finalize()
 
@@ -2054,11 +2125,19 @@ def render_delivery(pending: PendingDelivery) -> RenderedDelivery:
                 "最近7日训练量："
                 + _training_load_plain(pending.training_load_chart)
             )
-        plain.extend((
-            "",
-            _TITLES[advice.content_role],
-            advice.user_visible_text.replace("\r\n", "\n").replace("\r", "\n"),
-        ))
+        advice_paragraphs = _daily_advice_paragraphs(advice.user_visible_text)
+        stop_conditions = _list_text(
+            advice.structured_content_json.get("primary_item", {}).get("stop_conditions")
+            if isinstance(advice.structured_content_json.get("primary_item"), Mapping)
+            else None
+        )
+        plain.extend(("", _TITLES[advice.content_role], *advice_paragraphs))
+        if stop_conditions:
+            plain.append("停止条件：")
+            plain.extend(
+                "- " + _STOP_CONDITIONS.get(item, "出现需要停止训练的情况")
+                for item in stop_conditions
+            )
     elif pending.delivery_kind == "weekly_report":
         summary = next((item for item in pending.artifacts if item.content_role == "weekly_summary"), None)
         subject = _safe_header(

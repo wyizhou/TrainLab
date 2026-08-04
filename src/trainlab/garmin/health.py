@@ -1352,22 +1352,30 @@ class HealthCollectionMixin:
         values = json.loads(prior["values_json"]) if prior else {}
         extras = json.loads(prior["extras_json"]) if prior else {}
         source_map = json.loads(prior["source_map_json"]) if prior else {}
+        scalar_payload = payload
+        nested_hrv_summary = False
+        if resource == "hrv" and isinstance(payload, dict) and isinstance(payload.get("hrvSummary"), dict):
+            scalar_payload = payload["hrvSummary"]
+            nested_hrv_summary = True
         for metric in DAILY_SCALAR_METRICS.get(resource, {}).values():
             values.pop(metric[0], None)
             source_map.pop(metric[0], None)
-        if isinstance(payload, dict):
+        if isinstance(scalar_payload, dict):
             for source, metric in DAILY_SCALAR_METRICS.get(resource, {}).items():
-                value = payload.get(source)
+                value = scalar_payload.get(source)
                 if isinstance(value, (int, float)) and not isinstance(value, bool):
+                    source_path = metric[4]
+                    if resource == "hrv" and not nested_hrv_summary and source_path.startswith("/hrvSummary/"):
+                        source_path = source_path.removeprefix("/hrvSummary")
                     values[metric[0]] = float(value)
                     source_map[metric[0]] = {
                         "source_revision_id": revision,
-                        "source_path": metric[4],
+                        "source_path": source_path,
                         "raw_unit": metric[1],
                         "canonical_unit": metric[2],
                         "value_origin": metric[3],
                     }
-                    self.repo.map_field(conn, resource, metric[4], metric[0])
+                    self.repo.map_field(conn, resource, source_path, metric[0])
         conn.execute("UPDATE daily_health SET is_current=0 WHERE subject_id=? AND local_date=? AND is_current=1", (subject, day))
         if values:
             conn.execute("INSERT INTO daily_health(subject_id,local_date,values_json,extras_json,source_map_json,source_revision_id,is_current) VALUES(?,?,?,?,?,?,1)", (subject, day, stable_json(values).decode("utf-8"), json.dumps(extras, sort_keys=True, allow_nan=False), json.dumps(source_map, sort_keys=True, allow_nan=False), revision))
@@ -1427,6 +1435,29 @@ class HealthCollectionMixin:
             if not isinstance(record, dict):
                 continue
             recognised: set[str] = set()
+            if resource == "hrv" and "hrvReadings" in record:
+                recognised.add("hrvReadings")
+                readings = record["hrvReadings"]
+                if not isinstance(readings, list):
+                    raise ValueError("invalid_hrv_readings_container")
+                requested = date.fromisoformat(day)
+                for point_index, point in enumerate(readings):
+                    if not isinstance(point, dict):
+                        raise ValueError("invalid_hrv_reading")
+                    timestamp = point.get("readingTimeGMT")
+                    value = point.get("hrvValue")
+                    if timestamp is None or not isinstance(value, (int, float)) or isinstance(value, bool):
+                        raise ValueError("invalid_hrv_reading")
+                    stamp = self._timestamp_utc(timestamp, day, assume_utc=True)
+                    observed_day = datetime.fromisoformat(stamp.replace("Z", "+00:00")).astimezone(TZ).date()
+                    if observed_day not in {requested - timedelta(days=1), requested}:
+                        raise ValueError("timestamp_outside_requested_day")
+                    conn.execute(
+                        "INSERT INTO health_samples(subject_id,observed_at_utc,local_date,metric_key,value_number,raw_value_json,raw_unit,canonical_unit,source_revision_id) VALUES(?,?,?,?,?,?,?,?,?)",
+                        (subject, stamp, observed_day.isoformat(), "garmin.hrv.reading_ms", float(value), json.dumps({"sample_index": index, "series_index": point_index}, sort_keys=True, allow_nan=False), "ms", "ms", revision),
+                    )
+                    self.repo.map_field(conn, resource, "/hrvReadings/*/hrvValue", "garmin.hrv.reading_ms")
+                    inserted += 1
             if series is not None:
                 field, canonical_key, raw_unit, origin, source_path = series
                 values = record.get(field)
@@ -1937,23 +1968,28 @@ class HealthCollectionMixin:
             return self._project_advanced(conn, subject, resource, day, payload, revision)
         daily_resources = {
             "user_summary", "steps", "floors", "heart_rates", "rhr", "hydration",
-            "respiration", "spo2", "intensity_minutes", "stress",
+            "respiration", "spo2", "intensity_minutes", "stress", "hrv",
         }
         sampled_resources = {
             "steps", "floors", "heart_rates", "rhr", "respiration", "spo2", "stress", "hrv", "body_battery",
         }
         physiology_resources = {
-            "intensity_minutes", "all_day_events", "lifestyle", "hrv", "body_battery",
+            "intensity_minutes", "all_day_events", "lifestyle", "body_battery",
             "body_battery_events", "blood_pressure",
         }
         body_resources = {"body_composition", "weigh_ins", "blood_pressure"}
         projected = 0
         if resource in daily_resources:
             self._upsert_daily_health(conn, subject, day, resource, payload, revision)
+            scalar_payload = (
+                payload.get("hrvSummary")
+                if resource == "hrv" and isinstance(payload, dict) and isinstance(payload.get("hrvSummary"), dict)
+                else payload
+            )
             if any(
-                isinstance(payload.get(source), (int, float)) and not isinstance(payload.get(source), bool)
+                isinstance(scalar_payload.get(source), (int, float)) and not isinstance(scalar_payload.get(source), bool)
                 for source in DAILY_SCALAR_METRICS.get(resource, {})
-            ) if isinstance(payload, dict) else False:
+            ) if isinstance(scalar_payload, dict) else False:
                 projected += 1
         if resource in sampled_resources:
             projected += self._project_samples(conn, subject, resource, day, payload, revision)

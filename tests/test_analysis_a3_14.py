@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from dataclasses import replace
 from hashlib import sha256
 
 import pytest
@@ -144,6 +145,43 @@ def test_daily_sleep_chart_accepts_only_lineage_bound_closed_final_session():
         "source_count": 28,
         "source_revision_count": 28,
         "source_revision_ids": ["88"],
+    }}, {"ordinal": 1, "content": {
+        "family": "morning_recovery",
+        "metric_key": "morning_recovery.garmin.hrv.last_night_average_ms",
+        "window": {
+            "start_local_date": "2026-07-24",
+            "end_local_date": "2026-07-24",
+        },
+        "latest": {"local_date": "2026-07-24", "value": 58.0},
+        "observation_count": 1,
+        "source_count": 1,
+        "source_revision_count": 1,
+        "source_revision_ids": ["89"],
+    }}, {"ordinal": 2, "content": {
+        "family": "health",
+        "metric_key": "health.garmin.hrv.last_night_average_ms",
+        "window": {
+            "start_local_date": "2026-06-26",
+            "end_local_date": "2026-07-23",
+        },
+        "latest": {"local_date": "2026-07-23", "value": 60.0},
+        "average": 60.0,
+        "observation_count": 28,
+        "source_count": 28,
+        "source_revision_count": 28,
+        "source_revision_ids": ["89"],
+    }}, {"ordinal": 3, "content": {
+        "family": "morning_recovery",
+        "metric_key": "morning_recovery.garmin.hrv.weekly_average_ms",
+        "window": {
+            "start_local_date": "2026-07-24",
+            "end_local_date": "2026-07-24",
+        },
+        "latest": {"local_date": "2026-07-24", "value": 61.0},
+        "observation_count": 1,
+        "source_count": 1,
+        "source_revision_count": 1,
+        "source_revision_ids": ["89"],
     }}]
     activities = [{"ordinal": 0, "content": {
         "aggregate_sha256": "d" * 64,
@@ -172,7 +210,7 @@ def test_daily_sleep_chart_accepts_only_lineage_bound_closed_final_session():
     assert pending.sleep_chart is not None
     assert pending.sleep_chart.completeness == "complete"
     assert [item.value_text for item in pending.recovery_metrics] == [
-        "52 次/分钟", "未收到", "95%",
+        "52 次/分钟", "58 ms", "95%",
     ]
     assert pending.training_load_chart is not None
     assert pending.training_load_chart.activity_count == 1
@@ -188,7 +226,7 @@ def test_daily_sleep_chart_accepts_only_lineage_bound_closed_final_session():
     assert "清醒 1小时" in rendered.html
     assert "恢复指标" in rendered.html
     assert "较28日基线 +2 次/分钟" in rendered.html
-    assert "本次分析没有可验证数值" in rendered.html
+    assert "较28日基线 -2 ms" in rendered.html
     assert "较28日基线 +1%" in rendered.html
     assert "昨日运动" in rendered.html and "距离 5 km" in rendered.html
     assert "最近7日训练量" in rendered.html and "1次活动" in rendered.html
@@ -201,6 +239,32 @@ def test_daily_sleep_chart_accepts_only_lineage_bound_closed_final_session():
         marker not in rendered.html
         for marker in ("data-field=", "data-repeat=", "data-optional=")
     )
+
+
+def test_daily_plan_uses_light_background_and_deduplicates_safety_copy() -> None:
+    connection = database()
+    receipt = published(connection)
+    pending = AnalysisDeliveryFactory(connection).create_pending(
+        publish_receipt=receipt, delivery_kind="daily_report"
+    )
+    advice = pending.artifacts[1]
+    advice = replace(
+        advice,
+        user_visible_text=(
+            "今日跑步。完成轻松主训练。"
+            "如有急性疼痛，请立即停止。\n"
+            "判断置信度：一般——数据有限"
+        ),
+    )
+    pending = replace(pending, artifacts=(pending.artifacts[0], advice))
+
+    rendered = render_delivery(pending)
+    assert "background:#13263D;border-radius:14px" not in rendered.html
+    assert "font-size:22px" in rendered.html
+    assert rendered.html.count("出现急性疼痛") == 1
+    assert "如有急性疼痛，请立即停止" not in rendered.html
+    assert rendered.plain_text.count("出现急性疼痛") == 1
+    assert "- 出现急性疼痛" in rendered.plain_text
 
 
 def test_same_exact_revision_is_idempotent_and_does_not_duplicate_pending_delivery():

@@ -229,6 +229,50 @@ def test_nested_connect_time_series_keep_each_sample_timestamp_and_local_day(tmp
         ).fetchone()[0] == 1
 
 
+def test_live_nested_hrv_summary_and_overnight_readings_are_canonical(tmp_path: Path) -> None:
+    config, tool, transport = _setup(tmp_path)
+    transport.payloads["hrv"] = {
+        "startTimestampGMT": "2026-04-14T15:00:00.0",
+        "sleepEndTimestampGMT": "2026-04-14T23:00:00.0",
+        "hrvReadings": [
+            {"readingTimeGMT": "2026-04-14T15:00:00.0", "hrvValue": 54},
+            {"readingTimeGMT": "2026-04-14T17:00:00.0", "hrvValue": 61},
+        ],
+        "hrvSummary": {
+            "calendarDate": "2026-04-15",
+            "lastNightAvg": 58,
+            "weeklyAvg": 60,
+            "lastNight5MinHigh": 79,
+            "status": "BALANCED",
+        },
+    }
+
+    assert _repair(tool, "hrv", "live-hrv-nested").status == "succeeded"
+    with sqlite3.connect(config.database_path) as conn:
+        values = json.loads(conn.execute(
+            "SELECT values_json FROM daily_health WHERE local_date='2026-04-15' AND is_current=1"
+        ).fetchone()[0])
+        assert values == {
+            "garmin.hrv.last_night_5_min_high_ms": 79.0,
+            "garmin.hrv.last_night_average_ms": 58.0,
+            "garmin.hrv.weekly_average_ms": 60.0,
+        }
+        source_map = json.loads(conn.execute(
+            "SELECT source_map_json FROM daily_health WHERE local_date='2026-04-15' AND is_current=1"
+        ).fetchone()[0])
+        assert source_map["garmin.hrv.last_night_average_ms"]["source_path"] == "/hrvSummary/lastNightAvg"
+        assert conn.execute(
+            "SELECT observed_at_utc,local_date,value_number FROM health_samples "
+            "WHERE metric_key='garmin.hrv.reading_ms' ORDER BY observed_at_utc"
+        ).fetchall() == [
+            ("2026-04-14T15:00:00Z", "2026-04-14", 54.0),
+            ("2026-04-14T17:00:00Z", "2026-04-15", 61.0),
+        ]
+        assert conn.execute(
+            "SELECT count(*) FROM physiology_records WHERE record_type='hrv'"
+        ).fetchone()[0] == 0
+
+
 def test_respiration_accepts_only_the_closed_interval_next_midnight_boundary(
     tmp_path: Path,
 ) -> None:

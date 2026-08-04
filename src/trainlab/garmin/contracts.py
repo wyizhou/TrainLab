@@ -92,6 +92,11 @@ DAILY_SCALAR_METRICS: dict[str, dict[str, tuple[str, str | None, str | None, str
     },
     "intensity_minutes": {"moderateIntensityMinutes": ("garmin.daily.moderate_intensity_minutes", "min", "min", "provider_derived", "/moderateIntensityMinutes")},
     "hydration": {"hydrationMl": ("garmin.daily.hydration_ml", "mL", "mL", "user_entered", "/hydrationMl")},
+    "hrv": {
+        "lastNightAvg": ("garmin.hrv.last_night_average_ms", "ms", "ms", "provider_derived", "/hrvSummary/lastNightAvg"),
+        "weeklyAvg": ("garmin.hrv.weekly_average_ms", "ms", "ms", "provider_derived", "/hrvSummary/weeklyAvg"),
+        "lastNight5MinHigh": ("garmin.hrv.last_night_5_min_high_ms", "ms", "ms", "provider_derived", "/hrvSummary/lastNight5MinHigh"),
+    },
 }
 PHYSIOLOGY_SCALAR_METRICS: dict[str, dict[str, tuple[str, str | None, str | None, str, str]]] = {
     "blood_pressure": {
