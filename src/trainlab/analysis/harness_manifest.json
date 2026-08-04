@@ -9,7 +9,7 @@
     "weekly": [
       {"path": "harness/shared/HARNESS.md", "sha256": "74dac26ce77b7c20842f3fa5ceecedba8730396612ecb4159ca58db06e6adea1"},
       {"path": "harness/analysis/HARNESS.md", "sha256": "38c7e00e57d6c51f1e45deeed4738e3187f72dc3a9792ad8d7a7dd65689bf38f"},
-      {"path": "harness/analysis/weekly.md", "sha256": "6cb2478e1d88318d2dd2c92b0e8ae26096a39db2add2f6d9d7f37c2a89159bed"}
+      {"path": "harness/analysis/weekly.md", "sha256": "ec2d909ea3048248aeb6c016b714031aa03c31ff21a816ca93d4cdb8b14c6a01"}
     ],
     "revise_plan": [
       {"path": "harness/shared/HARNESS.md", "sha256": "74dac26ce77b7c20842f3fa5ceecedba8730396612ecb4159ca58db06e6adea1"},

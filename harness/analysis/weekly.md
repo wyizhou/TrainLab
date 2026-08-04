@@ -6,6 +6,15 @@ previous accepted weekly summary and actual prior plan only as
 `prior_model_output`; distinguish first-run `no_prior_artifact` from missing
 data.
 
+When `weekly_plan_contract_v1.prior_artifact_state.summary` is `available`,
+include the single matching `artifact.prior_model_output` manifest row for the
+immediately preceding seven-day summary period in `source_usage`. When
+`weekly_plan_contract_v1.prior_artifact_state.plan` is `available`, include the
+single matching `plan.current_revision` manifest row overlapping the review
+period in `source_usage`. Copy each row's ordinal, role, entity ID and revision
+ID exactly. These references are required even when the new narrative only
+uses them to assess continuity or adherence.
+
 Use the supplied 30-completed-day aggregate as the only default baseline and
 activity-summary history. The seven review dates are a decision slice within
 that same window, not an additional detailed data window. Never ask for or
@@ -38,3 +47,8 @@ not part of the plan. Copy the configured target difficulty into
 `training_plan.constraints.training_difficulty_level`; individual days may
 vary, but the whole plan must remain consistent with that target after recovery
 and safety constraints. Output only the route schema JSON.
+
+Before returning JSON, verify that neither user-visible text field contains the
+literal terms `Body Battery`, `训练准备度`, `睡眠评分`, `睡眠秒数`, `POOR` or
+`BEHIND`, with or without a number. Express their meaning in plain recovery
+language instead of narrating raw device labels.

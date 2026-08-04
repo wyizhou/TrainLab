@@ -82,6 +82,23 @@ def test_active_shared_hash_is_fixed_by_analysis_harness_manifest() -> None:
         assert bundle[0] == {"path": "harness/shared/HARNESS.md", "sha256": expected}
 
 
+def test_weekly_harness_requires_available_prior_artifacts_in_source_usage() -> None:
+    text = (PROJECT_ROOT / "harness/analysis/weekly.md").read_text(encoding="utf-8")
+    assert "prior_artifact_state.summary` is `available`" in text
+    assert "artifact.prior_model_output" in text
+    assert "prior_artifact_state.plan` is `available`" in text
+    assert "plan.current_revision" in text
+    for forbidden_device_term in (
+        "Body Battery",
+        "训练准备度",
+        "睡眠评分",
+        "睡眠秒数",
+        "POOR",
+        "BEHIND",
+    ):
+        assert forbidden_device_term in text
+
+
 @pytest.mark.parametrize("route", ["daily", "weekly", "revise_plan", "delivery"])
 def test_analysis_bundle_excludes_legacy_runtime_rules_and_keeps_shared_safety(tmp_path: Path, route: str) -> None:
     config, evidence = fixture_root(tmp_path)
