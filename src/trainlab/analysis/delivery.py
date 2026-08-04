@@ -626,6 +626,11 @@ _STOP_CONDITIONS = {
 }
 _WEEKDAYS = ("星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日")
 _CONFIDENCE = frozenset({"较高", "一般", "较低"})
+_SLEEP_COMPLETENESS = {
+    "complete": "已收到（包含昨日日间、昨夜睡眠与今日早晨恢复）",
+    "partial": "部分收到；睡眠或早晨恢复可能仍在进行，结论按保守方式处理",
+    "limited": "未完整收到；缺失数据不会被当作正常，结论按最低置信度处理",
+}
 
 
 def _display_date(value: str) -> str:
@@ -639,6 +644,69 @@ def _text(value: object, *, neutral: str = "未提供") -> str:
 
 def _number(value: object, *, suffix: str = "") -> str:
     return f"{value}{suffix}" if isinstance(value, int) and not isinstance(value, bool) and value > 0 else "未提供"
+
+
+def _date_label(value: object, *, neutral: str = "未设置") -> str:
+    if not isinstance(value, str):
+        return neutral
+    try:
+        return _display_date(_local_date(value))
+    except AnalysisDeliveryError:
+        return neutral
+
+
+def _scalar(value: object) -> str:
+    if isinstance(value, bool):
+        return ""
+    if isinstance(value, (int, float)):
+        return str(value)
+    return value.strip() if isinstance(value, str) and value.strip() else ""
+
+
+def _activity_weather_summary(value: object) -> str:
+    """Render only bounded, human-readable activity/weather evidence.
+
+    Weekly artifacts may carry a structured ``actual_activities`` list.  The
+    renderer intentionally selects a small allow-list of fields instead of
+    exposing identifiers or serializing arbitrary JSON into the email.
+    """
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    if not isinstance(value, list):
+        return "本周实际活动与天气明细未随本次报告提供；请以数据说明和后续补录为准。"
+    lines: list[str] = []
+    for item in value[:14]:
+        if not isinstance(item, Mapping):
+            continue
+        day = _date_label(item.get("local_date"), neutral="日期未提供")
+        sport = _scalar(item.get("sport") or item.get("activity_kind") or item.get("activity_type")) or "活动"
+        details: list[str] = []
+        for key, label, suffix in (
+            ("duration_minutes", "时长", " 分钟"),
+            ("distance_km", "距离", " km"),
+            ("average_heart_rate_bpm", "平均心率", " 次/分钟"),
+        ):
+            scalar = _scalar(item.get(key))
+            if scalar:
+                details.append(f"{label}{scalar}{suffix}")
+        weather = item.get("weather") or item.get("weather_summary")
+        weather_text = _scalar(weather)
+        if not weather_text and isinstance(weather, Mapping):
+            weather_parts: list[str] = []
+            for key, label, suffix in (
+                ("temperature_c", "温度", "℃"),
+                ("humidity_percent", "湿度", "%"),
+                ("condition", "天气", ""),
+            ):
+                scalar = _scalar(weather.get(key))
+                if scalar:
+                    weather_parts.append(f"{label}{scalar}{suffix}")
+            weather_text = "，".join(weather_parts)
+        if weather_text:
+            details.append(f"天气：{weather_text}")
+        suffix = "；".join(details)
+        lines.append(f"{day} · {sport}" + (f" · {suffix}" if suffix else ""))
+    return "\n".join(lines) if lines else "本周实际活动与天气明细未随本次报告提供；请以数据说明和后续补录为准。"
 
 
 def _enum(value: object, choices: Mapping[str, str]) -> str:
@@ -968,6 +1036,14 @@ def _weekly_html(pending: PendingDelivery, *, revision: bool) -> str:
         "training_difficulty_level": _number(_find_control(content, ("training_difficulty_level", "configured_level")), suffix=" / 5"),
         "marathon_goal_time": _text(_find_control(content, ("marathon_target_finish_time",)), neutral="未设置"),
         "half_marathon_goal_time": _text(_find_control(content, ("half_marathon_target_finish_time",)), neutral="未设置"),
+        "marathon_race_date": "参赛：" + _date_label(_find_control(content, ("marathon_race_date",))),
+        "half_marathon_race_date": "参赛：" + _date_label(_find_control(content, ("half_marathon_race_date",))),
+        "actual_activity_weather": _activity_weather_summary(
+            _find_control(
+                summary.structured_content_json if summary else None,
+                ("actual_activities", "activity_weather_summary", "actual_activity_summary"),
+            )
+        ),
         "plan_objective": _mapping_text(content.get("objective"), "focus", "summary", "description", neutral="详见计划正文"),
         "plan_constraints": _mapping_text(content.get("constraints"), "summary", "description", neutral="详见计划正文"),
         "plan_note": "每次训练前根据体感与安全信号决定是否降级或停止。",
@@ -1001,10 +1077,19 @@ def _daily_html(pending: PendingDelivery) -> str:
     heart_rate = _heart_rate(primary.get("target_bpm_range"))
     stop_conditions = _stop_text(primary.get("stop_conditions"))
     is_rest = activity == "rest"
+    completeness = summary.structured_content_json.get("data_completeness")
     fields = {
         "brand_name": "TrainLab", "display_date": _display_date(advice.period_start_local_date), "title": "每日训练简报",
         "subtitle": "昨日状态与今日安排", "preheader": "昨日状态与今日安排", "overall_state": _text(summary.structured_content_json.get("overall_state")),
         "data_completeness": _enum(summary.structured_content_json.get("data_completeness"), _COMPLETENESS),
+        "data_window": (
+            f"{_display_date(summary.period_start_local_date)}白天活动与健康；"
+            f"{_display_date(summary.period_start_local_date)}晚至{_display_date(advice.period_start_local_date)}早睡眠；"
+            f"{_display_date(advice.period_start_local_date)}早晨恢复（Asia/Hong_Kong）"
+        ),
+        "sleep_recovery_status": _SLEEP_COMPLETENESS.get(
+            completeness, "未提供完整性状态；相关结论按保守方式处理"
+        ),
         "confidence": _text(advice.structured_content_json.get("confidence")), "summary_date": _display_date(summary.period_start_local_date),
         "daily_summary_text": summary.user_visible_text, "advice_date": _display_date(advice.period_start_local_date),
         "session_title": "跑步训练" if activity == "running" else "休息日", "activity_kind": _ACTIVITY[activity],
@@ -1043,8 +1128,53 @@ def render_delivery(pending: PendingDelivery) -> RenderedDelivery:
         html = _weekly_html(pending, revision=pending.delivery_kind == "plan_revision")
     period = pending.artifacts[-1]
     report_title = _DELIVERY_PRESENTATION[pending.delivery_kind][0]
-    subject = _safe_header(f"TrainLab｜{report_title}｜{_display_date(period.period_start_local_date)}")
-    plain = [report_title, f"日期：{_display_date(period.period_start_local_date)}"]
+    if pending.delivery_kind == "daily_report":
+        summary = next(item for item in pending.artifacts if item.content_role == "daily_summary")
+        advice = next(item for item in pending.artifacts if item.content_role == "daily_advice")
+        subject = _safe_header(
+            f"TrainLab｜{report_title}｜回顾{_display_date(summary.period_start_local_date)}｜"
+            f"安排{_display_date(advice.period_start_local_date)}"
+        )
+        completeness = summary.structured_content_json.get("data_completeness")
+        plain = [
+            report_title,
+            f"回顾日期：{_display_date(summary.period_start_local_date)}",
+            f"安排日期：{_display_date(advice.period_start_local_date)}",
+            "数据窗口："
+            f"{_display_date(summary.period_start_local_date)}白天活动与健康；"
+            f"{_display_date(summary.period_start_local_date)}晚至{_display_date(advice.period_start_local_date)}早睡眠；"
+            f"{_display_date(advice.period_start_local_date)}早晨恢复（Asia/Hong_Kong）",
+            "睡眠与早晨恢复：" + _SLEEP_COMPLETENESS.get(
+                completeness, "未提供完整性状态；相关结论按保守方式处理"
+            ),
+        ]
+    elif pending.delivery_kind == "weekly_report":
+        summary = next((item for item in pending.artifacts if item.content_role == "weekly_summary"), None)
+        subject = _safe_header(
+            f"TrainLab｜{report_title}｜回顾"
+            f"{_display_date(summary.period_start_local_date) if summary else '未提供'}—"
+            f"{_display_date(summary.period_end_local_date) if summary else '未提供'}｜计划"
+            f"{_display_date(period.period_start_local_date)}—{_display_date(period.period_end_local_date)}"
+        )
+        plan_content = period.structured_content_json
+        plain = [
+            report_title,
+            f"回顾日期：{_display_date(summary.period_start_local_date) if summary else '未提供'}—{_display_date(summary.period_end_local_date) if summary else '未提供'}",
+            f"计划日期：{_display_date(period.period_start_local_date)}—{_display_date(period.period_end_local_date)}",
+            "实际活动与天气：" + _activity_weather_summary(
+                _find_control(
+                    summary.structured_content_json if summary else None,
+                    ("actual_activities", "activity_weather_summary", "actual_activity_summary"),
+                )
+            ),
+            "全马目标：" + _text(_find_control(plan_content, ("marathon_target_finish_time",)), neutral="未设置")
+            + "；" + "参赛：" + _date_label(_find_control(plan_content, ("marathon_race_date",))),
+            "半马目标：" + _text(_find_control(plan_content, ("half_marathon_target_finish_time",)), neutral="未设置")
+            + "；" + "参赛：" + _date_label(_find_control(plan_content, ("half_marathon_race_date",))),
+        ]
+    else:
+        subject = _safe_header(f"TrainLab｜{report_title}｜{_display_date(period.period_start_local_date)}")
+        plain = [report_title, f"日期：{_display_date(period.period_start_local_date)}"]
     for artifact in pending.artifacts:
         plain.extend(("", _TITLES[artifact.content_role], artifact.user_visible_text.replace("\r\n", "\n").replace("\r", "\n")))
     plain_text = "\n".join(plain)

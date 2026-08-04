@@ -64,8 +64,10 @@ def test_accepted_artifacts_commit_before_pending_delivery_and_render_is_ephemer
     assert connection.execute("SELECT status FROM analysis_deliveries").fetchone()[0] == "pending"
     assert connection.execute("SELECT count(*) FROM analysis_delivery_artifacts").fetchone()[0] == 2
     assert connection.execute("SELECT count(*) FROM analysis_artifacts").fetchone()[0] == 2
-    assert rendered.subject == "TrainLab｜每日训练简报｜2026年7月24日"
-    assert rendered.plain_text.startswith("每日训练简报\n日期：2026年7月24日\n\n昨日回顾\n")
+    assert rendered.subject == "TrainLab｜每日训练简报｜回顾2026年7月23日｜安排2026年7月24日"
+    assert rendered.plain_text.startswith(
+        "每日训练简报\n回顾日期：2026年7月23日\n安排日期：2026年7月24日\n"
+    )
     assert "\n今日安排\n" in rendered.plain_text
     assert "TrainLab 分析报告" not in rendered.plain_text
     assert "Run-ID:" not in rendered.plain_text
@@ -180,7 +182,10 @@ def test_weekly_report_binds_exact_summary_and_plan_revisions() -> None:
     rendered = render_delivery(pending)
     assert "每周总结" in rendered.plain_text
     assert "未来七天计划" in rendered.plain_text
-    assert rendered.plain_text.startswith("每周训练报告\n日期：2026年7月26日")
+    assert rendered.plain_text.startswith(
+        "每周训练报告\n回顾日期：2026年7月19日—2026年7月25日\n"
+        "计划日期：2026年7月26日—2026年8月1日"
+    )
     assert "每周训练报告" in rendered.html
     assert "先稳定恢复，再延续训练节奏" not in rendered.html
     assert "Run-ID:" not in rendered.plain_text

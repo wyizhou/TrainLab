@@ -39,6 +39,7 @@ _STRING_FIELDS = frozenset({
     "change_constraints", "next_steps", "warnings", "safety_note",
     "data_limitations", "footer_note",
 })
+_ZONE_STATUSES = frozenset({"available", "unavailable", "insufficient_evidence", "max_only"})
 
 
 class MailRenderError(ValueError):
@@ -123,6 +124,81 @@ def _paragraphs(value: str) -> list[str]:
     return [part.strip() for part in re.split(r"\n\s*\n", value) if part.strip()]
 
 
+def _zone_ranges(value: object) -> str:
+    if not isinstance(value, Sequence) or isinstance(value, (str, bytes)):
+        return ""
+    ranges: list[str] = []
+    for row in value[:5]:
+        if not isinstance(row, Mapping):
+            continue
+        zone = row.get("zone")
+        bpm = row.get("bpm")
+        if (
+            isinstance(zone, int) and not isinstance(zone, bool) and 1 <= zone <= 5
+            and isinstance(bpm, Sequence) and not isinstance(bpm, (str, bytes))
+            and len(bpm) == 2
+            and all(isinstance(item, int) and not isinstance(item, bool) and 30 <= item <= 240 for item in bpm)
+            and bpm[0] <= bpm[1]
+        ):
+            ranges.append(f"Z{zone} {bpm[0]}–{bpm[1]} 次/分钟")
+    return "；".join(ranges)
+
+
+def _zone_method(
+    value: object,
+    *,
+    label: str,
+    bpm_key: str,
+    bpm_label: str,
+    max_key: str | None = None,
+) -> str:
+    if not isinstance(value, Mapping):
+        raise MailRenderError("mail_response_structured_content_invalid")
+    status = value.get("status")
+    if status not in _ZONE_STATUSES:
+        raise MailRenderError("mail_response_structured_content_invalid")
+    details: list[str] = [f"{label}：{status}"]
+    bpm = value.get(bpm_key)
+    if isinstance(bpm, int) and not isinstance(bpm, bool) and 30 <= bpm <= 240:
+        details.append(f"{bpm_label}{bpm} 次/分钟")
+    elif bpm is not None:
+        raise MailRenderError("mail_response_structured_content_invalid")
+    if max_key is not None:
+        maximum = value.get(max_key)
+        if isinstance(maximum, int) and not isinstance(maximum, bool) and 30 <= maximum <= 240:
+            details.append(f"最大心率{maximum} 次/分钟")
+        elif maximum is not None:
+            raise MailRenderError("mail_response_structured_content_invalid")
+    ranges = _zone_ranges(value.get("zones"))
+    if value.get("zones") is not None and not ranges:
+        raise MailRenderError("mail_response_structured_content_invalid")
+    if ranges:
+        details.append(ranges)
+    return "；".join(details)
+
+
+def _heart_rate_zone_design(value: object) -> tuple[str, str, str, str] | None:
+    if value is None:
+        return None
+    if not isinstance(value, Mapping):
+        raise MailRenderError("mail_response_structured_content_invalid")
+    hrr = _zone_method(
+        value.get("hrr"), label="HRR（主方法）", bpm_key="resting_heart_rate_bpm", bpm_label="静息心率", max_key="max_heart_rate_bpm"
+    )
+    threshold = _zone_method(
+        value.get("historical_threshold_proxy"), label="历史阈值代理", bpm_key="heart_rate_bpm", bpm_label="候选阈值心率"
+    )
+    tanaka = _zone_method(
+        value.get("tanaka_low_confidence"), label="Tanaka（低置信度备用）", bpm_key="predicted_max_heart_rate_bpm", bpm_label="预测最大心率"
+    )
+    return (
+        "跑步心率区间候选（待确认）",
+        hrr,
+        f"{threshold}\n{tanaka}",
+        "请回复“确认 HRR”后才会追加生效；未确认前仅作对比，不影响训练分析。",
+    )
+
+
 def _design_values(
     structured_content: object,
     user_visible_text: str,
@@ -191,6 +267,26 @@ def _design_values(
         "safety_note": values["safety_note"],
         "data_limitations": values["data_limitations"],
     }
+    zone_design = _heart_rate_zone_design(structured.get("heart_rate_zone_comparison"))
+    if zone_design is not None:
+        values.update(
+            {
+                "heart_rate_zone_title": zone_design[0],
+                "heart_rate_zone_primary": zone_design[1],
+                "heart_rate_zone_comparison": zone_design[2],
+                "heart_rate_zone_confirmation": zone_design[3],
+            }
+        )
+    else:
+        values.update(
+            {
+                "heart_rate_zone_title": "",
+                "heart_rate_zone_primary": "",
+                "heart_rate_zone_comparison": "",
+                "heart_rate_zone_confirmation": "",
+            }
+        )
+    optional["heart_rate_zone_confirmation"] = zone_design is not None
     return values, optional, {"recommendations": recommendations}
 
 
@@ -253,6 +349,16 @@ def render_mail_response(
         )
         if fields[key]
     )
+    if optional["heart_rate_zone_confirmation"]:
+        plain_parts.extend(
+            fields[key]
+            for key in (
+                "heart_rate_zone_title",
+                "heart_rate_zone_primary",
+                "heart_rate_zone_comparison",
+                "heart_rate_zone_confirmation",
+            )
+        )
     plain_text = "\n\n".join(
         dict.fromkeys(part for part in plain_parts if part)
     )
