@@ -129,9 +129,10 @@ class AnalysisStatusQueryService:
     def _plan(self, subject_id: int) -> dict[str, Any] | None:
         rows = list(self._connection.execute(
             "SELECT id,plan_start_local_date,plan_end_local_date,status FROM v_current_training_plans "
-            "WHERE subject_id=? ORDER BY created_at_utc DESC,id DESC LIMIT 2", (subject_id,)
+            "WHERE subject_id=? ORDER BY plan_start_local_date DESC,created_at_utc DESC,id DESC LIMIT 2",
+            (subject_id,),
         ))
-        if len(rows) > 1:
+        if len(rows) > 1 and rows[1]["plan_end_local_date"] >= rows[0]["plan_start_local_date"]:
             raise AnalysisStatusError("analysis_status_current_plan_ambiguous")
         if not rows:
             return None

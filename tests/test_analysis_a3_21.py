@@ -101,6 +101,31 @@ def test_selected_absent_or_foreign_run_never_leaks_another_subject() -> None:
     assert foreign.delivery is not None and foreign.delivery.delivery_id == "502"
 
 
+def test_status_selects_latest_nonoverlapping_plan_and_rejects_overlap() -> None:
+    conn = database()
+    conn.execute(
+        "INSERT INTO training_plans VALUES(302,1,'2026-08-01','2026-08-07','active',"
+        "'2026-08-01T00:02:00Z','{}','{}')"
+    )
+    receipt = AnalysisStatusQueryService(conn, clock=lambda: NOW).execute(request())
+    assert receipt.status == "succeeded"
+    assert receipt.status_snapshot is not None
+    assert receipt.status_snapshot["current_plan"] == {
+        "id": "302",
+        "start_local_date": "2026-08-01",
+        "end_local_date": "2026-08-07",
+        "status": "active",
+    }
+
+    conn.execute(
+        "INSERT INTO training_plans VALUES(303,1,'2026-08-05','2026-08-11','active',"
+        "'2026-08-05T00:02:00Z','{}','{}')"
+    )
+    failed = AnalysisStatusQueryService(conn, clock=lambda: NOW).execute(request())
+    assert failed.status == "failed"
+    assert failed.errors[0].code == "analysis_status_unavailable"
+
+
 def test_status_schema_requires_bounded_snapshot_and_failure_is_redacted() -> None:
     conn = database()
     receipt = AnalysisStatusQueryService(conn, clock=lambda: NOW).execute(request())
