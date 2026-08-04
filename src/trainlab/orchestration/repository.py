@@ -15,7 +15,7 @@ import re
 import sqlite3
 import stat
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Mapping
 
@@ -831,6 +831,81 @@ class OrchestrationRepository:
             handoff = _decode_handoff(run.result_summary_json)
             return None if handoff is None else _handoff_record(run, handoff)
         return self._readonly(query)
+
+    def reconcile_expired_scheduler_handoff(
+        self, workflow_key: str, *, at_utc: datetime
+    ) -> WorkflowRunRecord:
+        """Materialize a terminal, auditable state for an expired handoff.
+
+        A scheduler handoff has no workflow definition or steps yet.  Once its
+        deadline has passed it cannot safely be executed with the old request
+        identity, so reconciliation records a deterministic Layer-5 failure
+        instead of changing a lower-layer table or leaving the row forever in
+        ``started``.
+        """
+        _identifier(workflow_key)
+        now = _parse_utc(_utc_text(at_utc))
+        run = self.get_workflow(workflow_key)
+        handoff = self.get_scheduler_handoff(workflow_key)
+        if run is None or handoff is None or run.status != "started":
+            raise OrchestrationRepositoryError("scheduler_handoff_not_reconcilable")
+        if run.deadline_at_utc is None or _parse_utc(run.deadline_at_utc) >= now:
+            raise OrchestrationRepositoryError("scheduler_handoff_not_expired")
+        from .domain_state_machine import StepTransitionEvent, WorkflowTransitionEvent
+        from .state_projection import StepDefinition, WorkflowDefinition
+
+        started = _parse_utc(run.started_at_utc)
+        workflow = WorkflowDefinition(
+            run.workflow_key, run.workflow_kind, run.subject_id,
+            run.logical_local_date, run.trigger_kind,
+            _parse_utc(run.deadline_at_utc), run.parent_workflow_run_id,
+            started, handoff.materialization_command_sha256,
+            handoff.materialization_evidence_sha256, "queued",
+        )
+        request_hash = hashlib.sha256(
+            f"expired-scheduler-handoff-reconcile\0{run.workflow_key}".encode("utf-8")
+        ).hexdigest()
+        step = StepDefinition(
+            "reconcile", 0, 5, "reconcile", request_hash,
+            f"reconcile-expired-{run.id}", None, "pending",
+        )
+        self.create_workflow_definition(workflow, (step,))
+        cursor = max(now, started + timedelta(microseconds=1))
+        self.transition_workflow_domain(
+            run.workflow_key,
+            WorkflowTransitionEvent(
+                f"reconcile-expired-{run.id}:workflow:running", "running",
+                cursor, "deterministic_check",
+            ),
+        )
+        cursor += timedelta(microseconds=1)
+        self.transition_step_domain(
+            run.workflow_key,
+            StepTransitionEvent(
+                f"reconcile-expired-{run.id}:reconcile:running", "reconcile",
+                "running", cursor,
+            ),
+        )
+        cursor += timedelta(microseconds=1)
+        self.transition_step_domain(
+            run.workflow_key,
+            StepTransitionEvent(
+                f"reconcile-expired-{run.id}:reconcile:failed", "reconcile",
+                "failed", cursor, evidence_code="deterministic_check",
+            ),
+        )
+        cursor += timedelta(microseconds=1)
+        self.transition_workflow_domain(
+            run.workflow_key,
+            WorkflowTransitionEvent(
+                f"reconcile-expired-{run.id}:workflow:failed", "failed",
+                cursor, "deterministic_check",
+            ),
+        )
+        result = self.get_workflow(workflow_key)
+        if result is None:
+            raise OrchestrationRepositoryError("scheduler_handoff_reconcile_failed")
+        return result
 
     def get_step(self, workflow_key: str, step_key: str) -> WorkflowStepRecord | None:
         _identifier(workflow_key); _identifier(step_key)

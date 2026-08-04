@@ -435,13 +435,36 @@ class ProductionOrchestrationApplication:
     def reconcile(self, workflow_run_id: str | None) -> object:
         _foundation, _config, repository, _subjects = self._components()
         rows = repository.active_workflow_definitions(200, 0)
+        decisions: list[dict[str, str]] = []
         if workflow_run_id is not None:
+            target = workflow_run_id
+            try:
+                run = repository.get_workflow_by_id(int(target)) if target.isdecimal() else repository.get_workflow(target)
+            except (ValueError, TypeError):
+                run = None
+            if run is not None:
+                handoff = repository.get_scheduler_handoff(run.workflow_key)
+                now = datetime.now(UTC)
+                if (
+                    handoff is not None
+                    and run.status == "started"
+                    and run.deadline_at_utc is not None
+                    and datetime.fromisoformat(run.deadline_at_utc.replace("Z", "+00:00")) < now
+                ):
+                    reconciled = repository.reconcile_expired_scheduler_handoff(
+                        run.workflow_key, at_utc=now
+                    )
+                    decisions.append({
+                        "workflow_key": reconciled.workflow_key,
+                        "action": "expired_handoff_reconciled",
+                    })
+                    return {"schema_version": "1", "status": "checked", "decisions": decisions}
             rows = tuple(
                 row for row in rows
                 if str(row.run_record.id) == workflow_run_id
                 or row.run_record.workflow_key == workflow_run_id
             )
-        decisions = [
+        decisions.extend(
             {
                 "workflow_key": aggregate.workflow.workflow_key,
                 "action": plan_recovery(
@@ -449,7 +472,7 @@ class ProductionOrchestrationApplication:
                 ).action,
             }
             for aggregate in rows
-        ]
+        )
         return {"schema_version": "1", "status": "checked", "decisions": decisions}
 
     def retry(self, workflow_run_id: str) -> object:

@@ -154,6 +154,20 @@ def test_claim_survives_crash_and_new_lease_reclaims_same_handoff(tmp_path: Path
     assert recovered.claim.dispatch_reason == "handoff_recovery"
 
 
+def test_expired_scheduler_handoff_reconcile_materializes_terminal_state(tmp_path: Path) -> None:
+    now = datetime(2026, 7, 24, 1, 0, tzinfo=UTC)
+    result, lease = repo(tmp_path, now); config = snapshot(tmp_path)
+    jobs(result, config, now, morning=now)
+    claim = DueQueueService(result, lease, ControlledClock(now), subject_id=7, host_id="host").tick(config).claim
+    assert claim is not None
+    reconciled = result.reconcile_expired_scheduler_handoff(
+        claim.workflow_key, at_utc=now + timedelta(hours=2)
+    )
+    assert reconciled.status == "failed"
+    assert result.get_scheduler_handoff(claim.workflow_key) is None
+    assert result.get_workflow(claim.workflow_key).status == "failed"  # type: ignore[union-attr]
+
+
 def test_two_evaluators_same_lease_only_one_durable_handoff(tmp_path: Path) -> None:
     now = datetime(2026, 7, 24, 1, 0, tzinfo=UTC)
     result, lease = repo(tmp_path, now); config = snapshot(tmp_path)
