@@ -25,9 +25,9 @@
 Gmail 仅使用当前 Codex 执行环境已注册的 `gmail` MCP；没有该精确绑定时，保持未启用
 并按 incident/认证流程处理，不能安装、认证或替换 transport。
 
-默认 Foundation 布局将数据库放在 `state/foundation/data.db`。因此部署配置中的
+默认 Foundation 布局将数据库放在 `state/data.db`。因此部署配置中的
 `state_lock_path` 必须使用
-`state/foundation/state/locks/supervisor.lock`，使 Supervisor 的诊断锁位于数据库
+`state/runtime/locks/supervisor.lock`，使 Supervisor 的诊断锁位于数据库
 可信根内。不得通过放宽 LeaseManager 的路径校验来兼容旧的 `state/locks` 路径。
 
 ## 模板与最小权限

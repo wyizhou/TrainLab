@@ -48,7 +48,7 @@ class FakeFactory:
 def _root(tmp_path: Path) -> Path:
     (tmp_path / "harness").mkdir()
     (tmp_path / "pyproject.toml").write_text("[project]\n", encoding="utf-8")
-    lock_parent = tmp_path / "state/foundation/state/locks"
+    lock_parent = tmp_path / "state/runtime/locks"
     lock_parent.mkdir(parents=True)
     lock_parent.chmod(0o700)
     executable = tmp_path / ".venv/bin/trainlab"
@@ -82,7 +82,7 @@ def test_launcher_restarts_serially_with_bounded_backoff(tmp_path: Path) -> None
         assert cwd == root
         assert environment["TZ"] == "Asia/Hong_Kong"
         assert environment["PYTHONUNBUFFERED"] == "1"
-    lock = root / "state/foundation/state/locks/local-supervisor.lock"
+    lock = root / "state/runtime/locks/local-supervisor.lock"
     assert lock.read_text(encoding="ascii").strip() == str(os.getpid())
     assert stat.S_IMODE(lock.stat().st_mode) == 0o600
 
@@ -116,7 +116,7 @@ def test_launcher_rejects_group_or_world_writable_lock_parent(
     tmp_path: Path, mode: int
 ) -> None:
     root = _root(tmp_path)
-    (root / "state/foundation/state/locks").chmod(mode)
+    (root / "state/runtime/locks").chmod(mode)
     factory = FakeFactory([0])
 
     with pytest.raises(

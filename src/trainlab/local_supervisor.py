@@ -23,7 +23,7 @@ from typing import Protocol
 from trainlab.util import project_root
 
 _RESTART_DELAYS_SECONDS = (15.0, 30.0, 60.0)
-_LOCK_RELATIVE_PATH = Path("state/foundation/state/locks/local-supervisor.lock")
+_LOCK_RELATIVE_PATH = Path("state/runtime/locks/local-supervisor.lock")
 
 
 class LocalSupervisorLauncherError(RuntimeError):

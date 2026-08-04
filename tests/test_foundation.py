@@ -191,7 +191,7 @@ def test_cli_has_only_fixed_foundation_shape() -> None:
 def test_versioned_owner_config_loads() -> None:
     root = Path(__file__).resolve().parents[1]
     config = FoundationConfig.load(root)
-    assert config.data_root == (root / "state/foundation").resolve()
+    assert config.data_root == (root / "state").resolve()
 
 
 def test_manual_section_715_manifest_matches_sqlite(tmp_path: Path) -> None:

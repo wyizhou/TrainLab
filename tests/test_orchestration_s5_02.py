@@ -16,7 +16,7 @@ def payload(**overrides: object) -> dict:
         "workflow_deadline_seconds": 3600, "max_parallel_read_checks": 4,
         "lease_ttl_seconds": 90, "heartbeat_interval_seconds": 30,
         "daily_misfire_window_hours": 12, "weekly_misfire_window_hours": 24,
-        "state_lock_path": "state/foundation/state/locks/supervisor.lock", "temp_root": "state/tmp/orchestrator",
+        "state_lock_path": "state/runtime/locks/supervisor.lock", "temp_root": "state/tmp/orchestrator",
         "log_root": "logs", "operational_alerts_enabled": True,
     }
     values.update(overrides)

@@ -60,19 +60,18 @@ HRR 公式：
 
 ## 本地数据与存储位置
 
-新五层架构的唯一权威存储根目录是 `state/foundation/`：
+新五层架构的唯一权威存储根目录是 `state/`：
 
 | 路径 | 用途 | 清理规则 |
 |---|---|---|
-| `state/foundation/data.db` | 当前 SQLite 结构化数据 | 不提交、不手动删除 |
-| `state/foundation/raw/` | Garmin 原始 JSON 与 FIT | 不提交、不可变、不手动删除 |
-| `state/foundation/state/` | 同步游标、锁、运行记录和认证状态 | 不提交、不手动删除 |
-| `state/foundation/backups/` | 具名备份及其校验信息 | 不自动合并或删除 |
+| `state/data.db` | 当前 SQLite 结构化数据 | 不提交；服务运行时不得手动删除 |
+| `state/raw/` | Garmin 原始 JSON 与 FIT | 不提交、不可变 |
+| `state/runtime/` | 同步游标、锁、运行记录和认证状态 | 不提交；只由受控运行流程写入 |
+| `state/backups/` | 具名备份及其校验信息 | 按回滚窗口和授权清理 |
 
-旧根目录数据库、`source/` 输入和退役的私有配置已原样收纳到本机
-`state/legacy/root-runtime-2026-07-28/`，并附带 SHA-256 搬迁清单。它们不是当前
-架构的 canonical 数据源，只供历史排查或单独授权的回滚；不得覆盖
-`state/foundation/`。
+旧根目录数据库、旧 `state/foundation/` 布局、`source/` 输入和退役的私有配置在迁移
+验收结束前保留于本机回滚目录，并附带 SHA-256 搬迁清单。它们不是当前架构的
+canonical 数据源，只供历史排查或单独授权的回滚；不得覆盖 `state/` 当前数据。
 
 `test_data/` 是本地私有测试样本。`config/trainlab.json`、
 `config/foundation.yaml` 和 `config/garmin.yaml` 是本地用户配置。这些路径都已
