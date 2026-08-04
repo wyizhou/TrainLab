@@ -48,6 +48,22 @@ def test_scheduler_job_projection_is_persisted_but_lease_is_read_only(tmp_path: 
     assert repo.get_scheduler_lease("supervisor") is None
 
 
+def test_calendar_projection_preserves_bounded_restart_misfire(tmp_path: Path) -> None:
+    repo, _ = repository(tmp_path)
+    due = NOW - timedelta(hours=2)
+    first = SchedulerJobProjection(
+        "morning", "morning", "Asia/Hong_Kong", "daily_at", due,
+        "2026-07-22", None, None, "own_incremental", timedelta(hours=12), HASH,
+    )
+    repo.upsert_scheduler_job(first, is_enabled=True, updated_at_utc=due)
+    projected = SchedulerJobProjection(
+        "morning", "morning", "Asia/Hong_Kong", "daily_at", NOW + timedelta(days=1),
+        "2026-07-24", None, None, "own_incremental", timedelta(hours=12), HASH,
+    )
+    saved = repo.upsert_scheduler_job(projected, is_enabled=True, updated_at_utc=NOW)
+    assert saved.next_due_at_utc == due.isoformat().replace("+00:00", "Z")
+
+
 def test_workflow_step_uniqueness_recovery_and_status_guards(tmp_path: Path) -> None:
     repo, _ = repository(tmp_path)
     first = workflow(repo)

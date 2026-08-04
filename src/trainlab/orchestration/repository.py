@@ -308,10 +308,29 @@ class OrchestrationRepository:
             "collection_strategy": projection.collection_strategy,
         }, sort_keys=True, separators=(",", ":"))
         misfire = "bounded" if projection.misfire_window is not None else "not_applicable"
+        projected_due = _utc_text(projection.next_due_at_utc)
+        updated = _utc_text(updated_at_utc)
         with self._transaction() as conn:
+            # Calendar jobs keep an already-persisted due marker across a
+            # Supervisor restart.  Otherwise projecting "the next" 09:00 at
+            # startup would erase a still-valid bounded misfire before the due
+            # queue can claim it.  Interval jobs intentionally collapse missed
+            # ticks and therefore always use the fresh projection.
+            existing = self._job_by_key(conn, projection.job_key, missing_none=True)
+            if (
+                existing is not None
+                and projection.schedule_kind in {"daily_at", "weekly_at"}
+                and existing.next_due_at_utc is not None
+                and existing.config_sha256 == projection.config_sha256
+                and existing.timezone == projection.timezone
+                and existing.workflow_kind == projection.workflow_kind
+                and existing.is_enabled == bool(is_enabled)
+                and _parse_utc(existing.next_due_at_utc) <= _parse_utc(updated)
+            ):
+                projected_due = existing.next_due_at_utc
             conn.execute(
                 "INSERT INTO scheduler_jobs (job_key,workflow_kind,timezone,schedule_spec_json,is_enabled,misfire_policy,next_due_at_utc,config_sha256,updated_at_utc) VALUES (?,?,?,?,?,?,?,?,?) ON CONFLICT(job_key) DO UPDATE SET workflow_kind=excluded.workflow_kind,timezone=excluded.timezone,schedule_spec_json=excluded.schedule_spec_json,is_enabled=excluded.is_enabled,misfire_policy=excluded.misfire_policy,next_due_at_utc=excluded.next_due_at_utc,config_sha256=excluded.config_sha256,updated_at_utc=excluded.updated_at_utc",
-                (projection.job_key, projection.workflow_kind, projection.timezone, schedule, int(is_enabled), misfire, _utc_text(projection.next_due_at_utc), projection.config_sha256, _utc_text(updated_at_utc)),
+                (projection.job_key, projection.workflow_kind, projection.timezone, schedule, int(is_enabled), misfire, projected_due, projection.config_sha256, updated),
             )
             return self._job_by_key(conn, projection.job_key)
 
