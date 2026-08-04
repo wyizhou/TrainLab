@@ -295,6 +295,19 @@ class DueQueueService:
             return SchedulerTick("invalid", None, (*evaluation.incidents, incident))
         if any(incident.severity == "error" for incident in evaluation.incidents):
             return SchedulerTick("invalid", None, evaluation.incidents)
+        # A successful lease heartbeat plus a valid scheduler evaluation is
+        # positive evidence that a prior global clock/state anomaly has
+        # recovered.  Close only that exact scheduler incident; misfires and
+        # workflow/provider incidents retain their own evidence lifecycle.
+        try:
+            prior = self._repository.get_incident("scheduler:global:invalid")
+            if prior is not None and prior.state in {"open", "acknowledged"}:
+                self._repository.transition_incident(
+                    "scheduler:global:invalid", "resolved", at_utc=now
+                )
+        except Exception:
+            incident = SchedulerIncident("scheduler:incident_recovery_unavailable", "scheduler", "error", "scheduler_incident_recovery_failed", "maintenance")
+            return SchedulerTick("invalid", None, (*evaluation.incidents, incident))
         for skipped in evaluation.skipped:
             # Consuming an expired calendar marker records that it was observed
             # and prevents a restart from generating the same incident forever.

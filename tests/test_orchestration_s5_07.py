@@ -168,6 +168,21 @@ def test_expired_scheduler_handoff_reconcile_materializes_terminal_state(tmp_pat
     assert result.get_workflow(claim.workflow_key).status == "failed"  # type: ignore[union-attr]
 
 
+def test_valid_scheduler_tick_resolves_prior_global_clock_incident(tmp_path: Path) -> None:
+    now = datetime(2026, 7, 24, 1, 0, tzinfo=UTC)
+    result, lease = repo(tmp_path, now); config = snapshot(tmp_path)
+    jobs(result, config, now, mail=now + timedelta(minutes=5), health=now + timedelta(minutes=5))
+    result.record_incident(
+        incident_key="scheduler:global:invalid", category="scheduler",
+        severity="error", seen_at_utc=now - timedelta(minutes=1),
+        error_code="lease_clock_anomaly", error_summary="lease_clock_anomaly",
+        next_action="maintenance",
+    )
+    tick = DueQueueService(result, lease, ControlledClock(now), subject_id=7, host_id="host").tick(config)
+    assert tick.status == "idle"
+    assert result.get_incident("scheduler:global:invalid").state == "resolved"  # type: ignore[union-attr]
+
+
 def test_two_evaluators_same_lease_only_one_durable_handoff(tmp_path: Path) -> None:
     now = datetime(2026, 7, 24, 1, 0, tzinfo=UTC)
     result, lease = repo(tmp_path, now); config = snapshot(tmp_path)
