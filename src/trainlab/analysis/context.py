@@ -916,6 +916,7 @@ def _revision_universe(snapshot: StableSnapshot) -> frozenset[str]:
             "source_revision_id",
             "primary_revision_id",
             "active_fit_revision_id",
+            "active_weather_revision_id",
         ):
             if row.get(key) is not None:
                 revisions.add(_identifier(row[key], "analysis_context_revision_invalid"))
@@ -1269,7 +1270,8 @@ def _morning_recovery_observations(
 
 
 def _sleep_observations(
-    rows: Sequence[Mapping[str, Any]], window: tuple[str, str]
+    rows: Sequence[Mapping[str, Any]], window: tuple[str, str], *,
+    include_session_timestamps: bool = False,
 ) -> list[dict[str, Any]]:
     output: list[dict[str, Any]] = []
     for row in rows:
@@ -1279,7 +1281,10 @@ def _sleep_observations(
         values = sanitized.get("values")
         if isinstance(values, Mapping):
             for metric_key, value in _flatten_compact_values(values):
-                if value is None:
+                if value is None or not _sleep_metric_allowed(
+                    metric_key,
+                    include_session_timestamps=include_session_timestamps,
+                ):
                     continue
                 output.append({
                     "metric_key": f"sleep.{metric_key}",
@@ -1312,6 +1317,38 @@ def _sleep_observations(
                     "source_revision_id": revision,
                 })
     return output
+
+
+_SLEEP_METRIC_NAMES = frozenset({
+    "calendardate",
+    "sleeptimeseconds", "deepsleepseconds", "lightsleepseconds",
+    "remsleepseconds", "awakesleepseconds", "unmeasurablesleepseconds",
+    "averagespo2value", "lowestspo2value", "averageheartrate",
+    "restingheartrate", "averagerespirationvalue", "lowestrespirationvalue",
+    "highestrespirationvalue", "avgsleepstress", "awakecount",
+    "sleepwindowconfirmed", "sleepwindowconfirmationtype",
+})
+_SLEEP_METRIC_PATHS = frozenset({
+    "sleepscores.overall.value", "sleepscores.overall.qualifier",
+})
+_SLEEP_SESSION_TIMESTAMP_NAMES = frozenset({
+    "sleepstarttimestampgmt", "sleependtimestampgmt",
+})
+
+
+def _sleep_metric_allowed(
+    metric_key: str, *, include_session_timestamps: bool = False,
+) -> bool:
+    """Expose only compact recovery facts, never provider/account metadata."""
+    normalized = metric_key.casefold().replace("_", "")
+    return (
+        normalized in _SLEEP_METRIC_NAMES
+        or normalized in _SLEEP_METRIC_PATHS
+        or (
+            include_session_timestamps
+            and normalized in _SLEEP_SESSION_TIMESTAMP_NAMES
+        )
+    )
 
 
 def _physiology_observations(
@@ -1614,7 +1651,10 @@ def _base_candidates(
             role="sleep.morning_recovery",
             entity_type="morning_sleep_aggregate",
             family="morning_sleep",
-            observations=_sleep_observations(morning_sleep_rows, morning_window),
+            observations=_sleep_observations(
+                morning_sleep_rows, morning_window,
+                include_session_timestamps=True,
+            ),
             window=morning_window,
         )
     _add_compact_observations(
@@ -1660,11 +1700,15 @@ def _base_candidates(
         identity = _identifier(row.get("id"))
         revision = _row_revision(row, "activity", identity)
         activities[identity] = row
-        summary = _sanitize_row(row)
+        summary = {
+            key: value for key, value in _sanitize_row(row).items()
+            if not key.startswith(("fit_", "weather_"))
+            and key not in {"active_fit_revision_id", "active_weather_revision_id"}
+        }
         summary.update({
             "source_count": 1,
             "source_revision_count": 1,
-            "aggregate_sha256": _sha(_sanitize_row(row)),
+            "aggregate_sha256": _sha(summary),
         })
         _add_row(
             candidates,
@@ -1678,6 +1722,49 @@ def _base_candidates(
             revision_id=revision,
             display_fields=_DISPLAY_FIELDS,
         )
+        fit_values = {
+            key.removeprefix("fit_"): row.get(key)
+            for key in (
+                "fit_avg_heart_rate_bpm", "fit_max_heart_rate_bpm",
+                "fit_avg_speed_mps", "fit_avg_power_w",
+                "fit_avg_temperature_c", "fit_total_ascent_m",
+            )
+            if row.get(key) is not None
+        }
+        if fit_values and row.get("active_fit_revision_id") is not None:
+            _add_row(
+                candidates,
+                section="activities",
+                role="activity.fit_summary",
+                entity_type="activity_fit_summary",
+                row={"activity_id": identity, "local_date": row.get("local_date"), **fit_values},
+                fallback_window=activity_window,
+                trust="provider_fact",
+                entity_id=f"{identity}:fit",
+                revision_id=_identifier(row["active_fit_revision_id"]),
+            )
+        weather_values = {
+            key.removeprefix("weather_"): row.get(key)
+            for key in (
+                "weather_temperature_provider_value",
+                "weather_relative_humidity_percent", "weather_condition",
+                "weather_wind_speed_provider_value", "weather_observed_at",
+            )
+            if row.get(key) is not None
+        }
+        if weather_values and row.get("active_weather_revision_id") is not None:
+            weather_values["provider_numeric_units"] = "unspecified"
+            _add_row(
+                candidates,
+                section="activities",
+                role="activity.weather_summary",
+                entity_type="activity_weather_summary",
+                row={"activity_id": identity, "local_date": row.get("local_date"), **weather_values},
+                fallback_window=activity_window,
+                trust="provider_fact",
+                entity_id=f"{identity}:weather",
+                revision_id=_identifier(row["active_weather_revision_id"]),
+            )
 
     # A raw FIT payload can enter the model context only when the host binds
     # exact activity IDs on this request.  Normal routes leave both values

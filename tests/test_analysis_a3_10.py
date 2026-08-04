@@ -1130,6 +1130,68 @@ def test_compact_context_is_deterministic_and_excludes_activity_details():
     assert result.canonical_json == reversed_result.canonical_json
 
 
+def test_default_context_includes_bounded_fit_and_weather_activity_summaries():
+    row = activity(
+        1, "2026-07-23", "summary-1",
+        active_fit_revision_id="fit-1",
+        active_weather_revision_id="weather-1",
+        fit_avg_heart_rate_bpm=149,
+        fit_max_heart_rate_bpm=164,
+        fit_avg_speed_mps=2.728,
+        fit_avg_power_w=269,
+        fit_avg_temperature_c=29,
+        fit_total_ascent_m=None,
+        weather_temperature_provider_value=72,
+        weather_relative_humidity_percent=100,
+        weather_condition="Cloudy",
+        weather_wind_speed_provider_value=3,
+        weather_observed_at=None,
+    )
+    result = build(daily(), snapshot(views={"v_current_activities": (row,)}))
+    roles = {
+        item["ordinal"]: item["input_role"]
+        for item in result.context["input_manifest"]
+    }
+    entries = {
+        roles[item["ordinal"]]: item["content"]
+        for item in result.context["activities"]
+    }
+    assert entries["activity.fit_summary"]["avg_heart_rate_bpm"] == 149
+    assert entries["activity.fit_summary"]["avg_temperature_c"] == 29
+    assert entries["activity.weather_summary"]["relative_humidity_percent"] == 100
+    assert entries["activity.weather_summary"]["provider_numeric_units"] == "unspecified"
+    assert "fit_avg_heart_rate_bpm" not in entries["activity.summary"]
+    assert "weather_condition" not in entries["activity.summary"]
+
+
+def test_sleep_context_whitelist_excludes_provider_metadata():
+    values = {
+        "calendarDate": "2026-07-23",
+        "sleepTimeSeconds": 25200,
+        "deepSleepSeconds": 3600,
+        "averageSpO2Value": 95,
+        "sleepScores": {"overall": {"value": 81, "qualifier": "GOOD"}},
+        "sleepNeed": {"calendarDate": "2026-07-23", "value": 500},
+        "userProfilePK": 123456,
+        "deviceId": "private-device",
+        "providerFeedback": "not-for-analysis",
+    }
+    row = {
+        "id": 1, "subject_id": 1, "session_type": "main_sleep",
+        "start_time_utc": "2026-07-22T16:00:00Z",
+        "end_time_utc": "2026-07-23T00:00:00Z",
+        "values_json": json.dumps(values), "source_revision_id": "sleep-1",
+    }
+    result = build(daily(), snapshot(views={"v_current_sleep_sessions": (row,)}))
+    encoded = json.dumps(result.context["sleep"], ensure_ascii=False)
+    assert "sleep.sleepTimeSeconds" in encoded
+    assert "sleep.sleepScores.overall.value" in encoded
+    assert "userProfilePK" not in encoded
+    assert "private-device" not in encoded
+    assert "providerFeedback" not in encoded
+    assert "sleepNeed" not in encoded
+
+
 def test_compaction_keeps_quality_gaps_current_plan_prior_week_and_policies():
     value = pruning_snapshot()
     features = pruning_features()

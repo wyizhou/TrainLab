@@ -1234,8 +1234,7 @@ class HealthCollectionMixin:
                 return nested
         return records
 
-    @staticmethod
-    def _supersede_range_projection(conn: sqlite3.Connection, subject: int, resource: str, day: str) -> None:
+    def _supersede_range_projection(self, conn: sqlite3.Connection, subject: int, resource: str, day: str) -> None:
         conn.execute(
             """DELETE FROM body_measurements
                  WHERE subject_id=? AND local_date=?
@@ -1250,6 +1249,8 @@ class HealthCollectionMixin:
             ids = tuple(row[0] for row in records)
             conn.execute("DELETE FROM physiology_metrics WHERE physiology_record_id IN (%s)" % ",".join("?" for _ in ids), ids)
             conn.execute("DELETE FROM physiology_records WHERE id IN (%s)" % ",".join("?" for _ in ids), ids)
+        if resource == "weigh_ins":
+            self._clear_daily_health_resource(conn, subject, day, resource)
 
     @staticmethod
     def _consolidate_advanced_coverage(conn: sqlite3.Connection, subject: int, resource: str, day: str) -> None:
@@ -1353,10 +1354,47 @@ class HealthCollectionMixin:
         extras = json.loads(prior["extras_json"]) if prior else {}
         source_map = json.loads(prior["source_map_json"]) if prior else {}
         scalar_payload = payload
+        source_paths: dict[str, str] = {}
+        raw_units: dict[str, str | None] = {}
         nested_hrv_summary = False
         if resource == "hrv" and isinstance(payload, dict) and isinstance(payload.get("hrvSummary"), dict):
             scalar_payload = payload["hrvSummary"]
             nested_hrv_summary = True
+        elif resource == "rhr" and isinstance(payload, dict):
+            metrics = payload.get("allMetrics")
+            metric_map = metrics.get("metricsMap") if isinstance(metrics, dict) else None
+            candidates = metric_map.get("WELLNESS_RESTING_HEART_RATE") if isinstance(metric_map, dict) else None
+            matches = [
+                item for item in candidates or []
+                if isinstance(item, dict)
+                and item.get("calendarDate", day) == day
+                and isinstance(item.get("value"), (int, float))
+                and not isinstance(item.get("value"), bool)
+            ] if isinstance(candidates, list) else []
+            if matches:
+                scalar_payload = {"restingHeartRate": matches[-1]["value"]}
+            source_paths["restingHeartRate"] = "/allMetrics/metricsMap/WELLNESS_RESTING_HEART_RATE/*/value"
+        elif resource == "heart_rates" and isinstance(payload, dict):
+            scalar_payload = dict(payload)
+            readings = [
+                item[1] for item in payload.get("heartRateValues", [])
+                if isinstance(item, list) and len(item) >= 2
+                and isinstance(item[1], (int, float)) and not isinstance(item[1], bool)
+            ] if isinstance(payload.get("heartRateValues"), list) else []
+            if readings:
+                scalar_payload["dailyAverageHeartRate"] = sum(float(value) for value in readings) / len(readings)
+        elif resource == "weigh_ins":
+            records = [item for item in payload if isinstance(item, dict)] if isinstance(payload, list) else []
+            scalar_payload = records[-1] if records else {}
+            if isinstance(scalar_payload, dict) and isinstance(scalar_payload.get("weight"), (int, float)):
+                raw_weight = float(scalar_payload["weight"])
+                # Connect's live endpoint reports grams, while older adapters
+                # and fixtures can already provide kilograms.
+                if raw_weight > 500:
+                    scalar_payload = {**scalar_payload, "weight": raw_weight / 1000.0}
+                    raw_units["weight"] = "g"
+                else:
+                    raw_units["weight"] = "kg"
         for metric in DAILY_SCALAR_METRICS.get(resource, {}).values():
             values.pop(metric[0], None)
             source_map.pop(metric[0], None)
@@ -1364,14 +1402,14 @@ class HealthCollectionMixin:
             for source, metric in DAILY_SCALAR_METRICS.get(resource, {}).items():
                 value = scalar_payload.get(source)
                 if isinstance(value, (int, float)) and not isinstance(value, bool):
-                    source_path = metric[4]
+                    source_path = source_paths.get(source, metric[4])
                     if resource == "hrv" and not nested_hrv_summary and source_path.startswith("/hrvSummary/"):
                         source_path = source_path.removeprefix("/hrvSummary")
                     values[metric[0]] = float(value)
                     source_map[metric[0]] = {
                         "source_revision_id": revision,
                         "source_path": source_path,
-                        "raw_unit": metric[1],
+                        "raw_unit": raw_units.get(source, metric[1]),
                         "canonical_unit": metric[2],
                         "value_origin": metric[3],
                     }
@@ -1680,13 +1718,14 @@ class HealthCollectionMixin:
                 )
                 self.repo.map_field(conn, resource, spec[4], spec[0])
 
-    def _project_body_measurements(self, conn: sqlite3.Connection, subject: int, resource: str, day: str, payload: Any, revision: int) -> None:
+    def _project_body_measurements(self, conn: sqlite3.Connection, subject: int, resource: str, day: str, payload: Any, revision: int) -> int:
         records = payload if isinstance(payload, list) else [payload]
         if isinstance(payload, dict):
             for key in ("dateWeightList", "dailyWeightSummaries", "bloodPressureSummaries", "bloodPressureList", "bodyCompositionSummaries", "measurements"):
                 if isinstance(payload.get(key), list):
                     records = payload[key]
                     break
+        inserted = 0
         for item in records:
             if not isinstance(item, dict):
                 continue
@@ -1720,6 +1759,8 @@ class HealthCollectionMixin:
             )
             self._assert_sample_day(stamp, day)
             conn.execute("INSERT INTO body_measurements(subject_id,observed_at_utc,local_date,values_json,extras_json,source_revision_id) VALUES(?,?,?,?,?,?)", (subject, stamp, self._local_day(stamp), stable_json(item).decode("utf-8"), "{}", revision))
+            inserted += 1
+        return inserted
 
     def _project_sleep(self, conn: sqlite3.Connection, subject: int, day: str, payload: Any, revision: int) -> int:
         if not isinstance(payload, dict):
@@ -1794,31 +1835,43 @@ class HealthCollectionMixin:
         ]
         if revisions:
             placeholders = ",".join("?" for _ in revisions)
-            conn.execute(
-                f"DELETE FROM health_samples WHERE subject_id=? AND source_revision_id IN ({placeholders})",
-                (subject, *revisions),
-            )
-            conn.execute(
-                f"DELETE FROM sleep_stages WHERE sleep_session_id IN (SELECT id FROM sleep_sessions WHERE subject_id=? AND source_revision_id IN ({placeholders}))",
-                (subject, *revisions),
-            )
-            conn.execute(
-                f"DELETE FROM sleep_sessions WHERE subject_id=? AND source_revision_id IN ({placeholders})",
-                (subject, *revisions),
-            )
-            conn.execute(
-                f"DELETE FROM body_measurements WHERE subject_id=? AND source_revision_id IN ({placeholders})",
-                (subject, *revisions),
-            )
-            conn.execute(
-                f"""DELETE FROM physiology_metrics WHERE physiology_record_id IN
-                    (SELECT id FROM physiology_records WHERE subject_id=? AND source_revision_id IN ({placeholders}))""",
-                (subject, *revisions),
-            )
-            conn.execute(
-                f"DELETE FROM physiology_records WHERE subject_id=? AND source_revision_id IN ({placeholders})",
-                (subject, *revisions),
-            )
+            sampled_resources = {
+                "steps", "floors", "heart_rates", "rhr", "respiration",
+                "spo2", "stress", "hrv", "body_battery",
+            }
+            if resource in sampled_resources:
+                conn.execute(
+                    f"DELETE FROM health_samples WHERE subject_id=? AND source_revision_id IN ({placeholders})",
+                    (subject, *revisions),
+                )
+            if resource == "sleep":
+                conn.execute(
+                    f"DELETE FROM sleep_stages WHERE sleep_session_id IN (SELECT id FROM sleep_sessions WHERE subject_id=? AND source_revision_id IN ({placeholders}))",
+                    (subject, *revisions),
+                )
+                conn.execute(
+                    f"DELETE FROM sleep_sessions WHERE subject_id=? AND source_revision_id IN ({placeholders})",
+                    (subject, *revisions),
+                )
+            if resource in {"body_composition", "weigh_ins", "blood_pressure"}:
+                conn.execute(
+                    f"DELETE FROM body_measurements WHERE subject_id=? AND source_revision_id IN ({placeholders})",
+                    (subject, *revisions),
+                )
+            physiology_resources = ADVANCED_RESOURCES | {
+                "intensity_minutes", "all_day_events", "lifestyle",
+                "body_battery", "body_battery_events", "blood_pressure",
+            }
+            if resource in physiology_resources:
+                conn.execute(
+                    f"""DELETE FROM physiology_metrics WHERE physiology_record_id IN
+                        (SELECT id FROM physiology_records WHERE subject_id=? AND source_revision_id IN ({placeholders}))""",
+                    (subject, *revisions),
+                )
+                conn.execute(
+                    f"DELETE FROM physiology_records WHERE subject_id=? AND source_revision_id IN ({placeholders})",
+                    (subject, *revisions),
+                )
         self._clear_daily_health_resource(conn, subject, day, resource)
 
     @staticmethod
@@ -1848,6 +1901,38 @@ class HealthCollectionMixin:
 
     def _project_advanced(self, conn: sqlite3.Connection, subject: int, resource: str, day: str, payload: Any, revision: int) -> int:
         specs = ADVANCED_PHYSIOLOGY_METRICS[resource]
+        if resource == "max_metrics":
+            records = self._advanced_records(payload)
+            inserted = 0
+            for index, outer in enumerate(records):
+                generic = outer.get("generic") if isinstance(outer.get("generic"), dict) else outer
+                chosen = next(
+                    (
+                        field for field in ("vo2MaxPreciseValue", "vo2MaxValue", "vo2Max")
+                        if isinstance(generic.get(field), (int, float))
+                        and not isinstance(generic.get(field), bool)
+                    ),
+                    None,
+                )
+                if chosen is None:
+                    continue
+                spec = specs[chosen]
+                stamp = self._timestamp_utc(generic.get("calendarDate") or outer.get("calendarDate"), day, allow_day_boundary=True)
+                self._assert_sample_day(stamp, day)
+                cursor = conn.execute(
+                    """INSERT INTO physiology_records(subject_id,domain,record_type,provider_record_id,effective_at_utc,local_date,value_origin,extras_json,source_revision_id)
+                       VALUES(?,?,?,?,?,?,?,?,?)""",
+                    (subject, "garmin", resource, str(index), stamp, self._local_day(stamp), "provider_derived", "{}", revision),
+                )
+                source_path = f"/*/generic/{chosen}" if generic is not outer else f"/{chosen}"
+                conn.execute(
+                    """INSERT INTO physiology_metrics(physiology_record_id,metric_key,value_number,raw_unit,canonical_unit,value_origin,source_path)
+                       VALUES(?,?,?,?,?,?,?)""",
+                    (int(cursor.lastrowid), spec[0], float(generic[chosen]), spec[1], spec[2], spec[3], source_path),
+                )
+                self.repo.map_field(conn, resource, source_path, spec[0])
+                inserted += 1
+            return inserted
         if (
             resource == "lactate_threshold"
             and isinstance(payload, list)
@@ -1979,26 +2064,91 @@ class HealthCollectionMixin:
         }
         body_resources = {"body_composition", "weigh_ins", "blood_pressure"}
         projected = 0
-        if resource in daily_resources:
+        if resource in daily_resources or resource == "weigh_ins":
             self._upsert_daily_health(conn, subject, day, resource, payload, revision)
             scalar_payload = (
                 payload.get("hrvSummary")
                 if resource == "hrv" and isinstance(payload, dict) and isinstance(payload.get("hrvSummary"), dict)
                 else payload
             )
+            current = conn.execute(
+                "SELECT source_map_json FROM daily_health WHERE subject_id=? AND local_date=? AND is_current=1",
+                (subject, day),
+            ).fetchone()
+            current_sources = json.loads(current["source_map_json"]) if current else {}
             if any(
-                isinstance(scalar_payload.get(source), (int, float)) and not isinstance(scalar_payload.get(source), bool)
-                for source in DAILY_SCALAR_METRICS.get(resource, {})
-            ) if isinstance(scalar_payload, dict) else False:
+                isinstance(current_sources.get(spec[0]), dict)
+                and current_sources[spec[0]].get("source_revision_id") == revision
+                for spec in DAILY_SCALAR_METRICS.get(resource, {}).values()
+            ):
                 projected += 1
         if resource in sampled_resources:
             projected += self._project_samples(conn, subject, resource, day, payload, revision)
         if resource == "sleep":
             projected += self._project_sleep(conn, subject, day, payload, revision)
         if resource in body_resources:
-            self._project_body_measurements(conn, subject, resource, day, payload, revision)
-            projected += 1
+            projected += self._project_body_measurements(conn, subject, resource, day, payload, revision)
         if resource in physiology_resources or resource not in daily_resources | sampled_resources | body_resources | {"sleep"}:
             self._project_physiology(conn, subject, resource, day, payload, revision)
             projected += 1
+        if self._has_reviewed_projection_signal(resource, payload) and projected == 0:
+            # A known, non-empty provider fact must never be relabelled as an
+            # empty day.  Raising keeps the raw revision reparable and opens
+            # the normal parse/project gap instead of silently starving AI.
+            raise ValueError(f"reviewed_projection_empty:{resource}")
         return projected
+
+    @staticmethod
+    def _has_reviewed_projection_signal(resource: str, payload: Any) -> bool:
+        """Detect reviewed source facts that are required to project."""
+        def numeric(value: Any) -> bool:
+            return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+        if resource == "rhr" and isinstance(payload, dict):
+            if numeric(payload.get("restingHeartRate")):
+                return True
+            outer = payload.get("allMetrics")
+            metric_map = outer.get("metricsMap") if isinstance(outer, dict) else None
+            values = metric_map.get("WELLNESS_RESTING_HEART_RATE") if isinstance(metric_map, dict) else None
+            return isinstance(values, list) and any(
+                isinstance(item, dict) and numeric(item.get("value")) for item in values
+            )
+        if resource == "hrv" and isinstance(payload, dict):
+            summary = payload.get("hrvSummary")
+            readings = payload.get("hrvReadings")
+            return (
+                isinstance(summary, dict)
+                and any(numeric(summary.get(key)) for key in ("lastNightAvg", "weeklyAvg", "lastNight5MinHigh"))
+            ) or (
+                isinstance(readings, list)
+                and any(isinstance(item, dict) and numeric(item.get("hrvValue")) for item in readings)
+            )
+        if resource == "heart_rates" and isinstance(payload, dict):
+            return any(numeric(payload.get(key)) for key in DAILY_SCALAR_METRICS[resource] if key != "dailyAverageHeartRate") or (
+                isinstance(payload.get("heartRateValues"), list)
+                and any(isinstance(item, list) and len(item) >= 2 and numeric(item[1]) for item in payload["heartRateValues"])
+            )
+        if resource == "spo2" and isinstance(payload, dict):
+            return any(numeric(payload.get(key)) for key in DAILY_SCALAR_METRICS[resource]) or (
+                isinstance(payload.get("spO2HourlyAverages"), list)
+                and any(isinstance(item, list) and len(item) >= 2 and numeric(item[1]) for item in payload["spO2HourlyAverages"])
+            )
+        if resource == "max_metrics":
+            records = payload if isinstance(payload, list) else [payload]
+            return any(
+                isinstance(record, dict)
+                and isinstance(record.get("generic") if isinstance(record.get("generic"), dict) else record, dict)
+                and any(
+                    numeric((record.get("generic") if isinstance(record.get("generic"), dict) else record).get(key))
+                    for key in ("vo2MaxPreciseValue", "vo2MaxValue", "vo2Max")
+                )
+                for record in records
+            )
+        if resource in {"weigh_ins", "body_composition"}:
+            records = payload if isinstance(payload, list) else [payload]
+            return any(
+                isinstance(item, dict)
+                and any(numeric(item.get(key)) for key in ("weight", "weightKg"))
+                for item in records
+            )
+        return False

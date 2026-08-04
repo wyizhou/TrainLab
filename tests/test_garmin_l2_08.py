@@ -273,6 +273,50 @@ def test_live_nested_hrv_summary_and_overnight_readings_are_canonical(tmp_path: 
         ).fetchone()[0] == 0
 
 
+def test_selected_health_summaries_project_from_live_connect_shapes(tmp_path: Path) -> None:
+    config, tool, transport = _setup(tmp_path)
+    transport.payloads["rhr"] = {
+        "allMetrics": {"metricsMap": {"WELLNESS_RESTING_HEART_RATE": [
+            {"calendarDate": "2026-04-15", "value": 48.0},
+        ]}},
+    }
+    transport.payloads["heart_rates"] = {
+        "calendarDate": "2026-04-15", "minHeartRate": 44,
+        "maxHeartRate": 171, "restingHeartRate": 49,
+        "lastSevenDaysAvgRestingHeartRate": 50,
+        "heartRateValues": [[1776211200000, 60], [1776211260000, 80]],
+    }
+    transport.payloads["spo2"] = {
+        "calendarDate": "2026-04-15", "averageSpO2": 96,
+        "avgSleepSpO2": 95, "latestSpO2": 97, "lowestSpO2": 91,
+        "lastSevenDaysAvgSpO2": 96,
+        "spO2HourlyAverages": [[1776211200000, 96]],
+    }
+    for resource in ("heart_rates", "rhr", "spo2"):
+        assert _repair(tool, resource, f"selected-{resource}").status == "succeeded"
+    with sqlite3.connect(config.database_path) as conn:
+        values = json.loads(conn.execute(
+            "SELECT values_json FROM daily_health WHERE local_date='2026-04-15' AND is_current=1"
+        ).fetchone()[0])
+        assert values["garmin.daily.resting_heart_rate_bpm"] == 48.0
+        assert values["garmin.heart_rate.daily_average_bpm"] == 70.0
+        assert values["garmin.heart_rate.daily_max_bpm"] == 171.0
+        assert values["garmin.spo2.sleep_average_percent"] == 95.0
+        assert values["garmin.spo2.daily_lowest_percent"] == 91.0
+
+
+def test_known_health_signal_cannot_silently_become_zero_projection(tmp_path: Path, monkeypatch) -> None:
+    _config, tool, _transport = _setup(tmp_path)
+    monkeypatch.setattr(tool, "_project_samples", lambda *_args, **_kwargs: 0)
+    monkeypatch.setattr(tool, "_upsert_daily_health", lambda *_args, **_kwargs: None)
+    with sqlite3.connect(tool.config.database_path) as conn:
+        with pytest.raises(ValueError, match="reviewed_projection_empty:heart_rates"):
+            tool._project_health(
+                conn, 1, "heart_rates", "2026-04-15",
+                {"heartRateValues": [[1776211200000, 70]]}, 1,
+            )
+
+
 def test_respiration_accepts_only_the_closed_interval_next_midnight_boundary(
     tmp_path: Path,
 ) -> None:

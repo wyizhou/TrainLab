@@ -97,6 +97,27 @@ DAILY_SCALAR_METRICS: dict[str, dict[str, tuple[str, str | None, str | None, str
         "weeklyAvg": ("garmin.hrv.weekly_average_ms", "ms", "ms", "provider_derived", "/hrvSummary/weeklyAvg"),
         "lastNight5MinHigh": ("garmin.hrv.last_night_5_min_high_ms", "ms", "ms", "provider_derived", "/hrvSummary/lastNight5MinHigh"),
     },
+    "rhr": {
+        "restingHeartRate": ("garmin.daily.resting_heart_rate_bpm", "bpm", "bpm", "provider_derived", "/allMetrics/metricsMap/WELLNESS_RESTING_HEART_RATE/*/value"),
+    },
+    "heart_rates": {
+        "minHeartRate": ("garmin.heart_rate.daily_min_bpm", "bpm", "bpm", "provider_derived", "/minHeartRate"),
+        "maxHeartRate": ("garmin.heart_rate.daily_max_bpm", "bpm", "bpm", "provider_derived", "/maxHeartRate"),
+        "restingHeartRate": ("garmin.daily.resting_heart_rate_bpm", "bpm", "bpm", "provider_derived", "/restingHeartRate"),
+        "lastSevenDaysAvgRestingHeartRate": ("garmin.heart_rate.resting_7d_average_bpm", "bpm", "bpm", "provider_derived", "/lastSevenDaysAvgRestingHeartRate"),
+        "dailyAverageHeartRate": ("garmin.heart_rate.daily_average_bpm", "bpm", "bpm", "derived_statistic", "/heartRateValues/*/1"),
+    },
+    "spo2": {
+        "averageSpO2": ("garmin.spo2.daily_average_percent", "%", "%", "provider_derived", "/averageSpO2"),
+        "avgSleepSpO2": ("garmin.spo2.sleep_average_percent", "%", "%", "provider_derived", "/avgSleepSpO2"),
+        "latestSpO2": ("garmin.spo2.latest_percent", "%", "%", "provider_derived", "/latestSpO2"),
+        "lowestSpO2": ("garmin.spo2.daily_lowest_percent", "%", "%", "provider_derived", "/lowestSpO2"),
+        "lastSevenDaysAvgSpO2": ("garmin.spo2.seven_day_average_percent", "%", "%", "provider_derived", "/lastSevenDaysAvgSpO2"),
+    },
+    "weigh_ins": {
+        "weight": ("garmin.body.weight_kg", "g", "kg", "sensor_observed", "/*/weight"),
+        "weightKg": ("garmin.body.weight_kg", "kg", "kg", "sensor_observed", "/*/weightKg"),
+    },
 }
 PHYSIOLOGY_SCALAR_METRICS: dict[str, dict[str, tuple[str, str | None, str | None, str, str]]] = {
     "blood_pressure": {
@@ -114,7 +135,11 @@ PHYSIOLOGY_SCALAR_METRICS: dict[str, dict[str, tuple[str, str | None, str | None
 # field catalog, but never acquire an invented canonical key.
 ADVANCED_PHYSIOLOGY_METRICS: dict[str, dict[str, tuple[str, str | None, str | None, str, str]]] = {
     "training_readiness": {"score": ("garmin.training_readiness.score", "score", "score", "provider_derived", "/score"), "trainingReadinessScore": ("garmin.training_readiness.score", "score", "score", "provider_derived", "/trainingReadinessScore")},
-    "max_metrics": {"vo2Max": ("garmin.vo2_max.ml_per_kg_min", "ml/kg/min", "ml/kg/min", "provider_derived", "/vo2Max")},
+    "max_metrics": {
+        "vo2MaxPreciseValue": ("garmin.vo2_max.ml_per_kg_min", "ml/kg/min", "ml/kg/min", "provider_derived", "/*/generic/vo2MaxPreciseValue"),
+        "vo2MaxValue": ("garmin.vo2_max.ml_per_kg_min", "ml/kg/min", "ml/kg/min", "provider_derived", "/*/generic/vo2MaxValue"),
+        "vo2Max": ("garmin.vo2_max.ml_per_kg_min", "ml/kg/min", "ml/kg/min", "provider_derived", "/vo2Max"),
+    },
     "lactate_threshold": {"lactateThresholdHeartRate": ("garmin.lactate_threshold.heart_rate_bpm", "bpm", "bpm", "provider_derived", "/lactateThresholdHeartRate"), "lactateThresholdPower": ("garmin.lactate_threshold.power_w", "W", "W", "provider_derived", "/lactateThresholdPower"), "lactateThresholdSpeed": ("garmin.lactate_threshold.speed_mps", "m/s", "m/s", "provider_derived", "/lactateThresholdSpeed")},
     "training_status": {"trainingStatusScore": ("garmin.training_status.score", "score", "score", "provider_derived", "/trainingStatusScore"), "acuteTrainingLoad": ("garmin.training_status.acute_load", "load", "load", "provider_derived", "/acuteTrainingLoad")},
     "running_tolerance": {"runningTolerance": ("garmin.running_tolerance.score", "score", "score", "provider_derived", "/runningTolerance"), "weeklyMileage": ("garmin.running_tolerance.weekly_distance_m", "m", "m", "provider_derived", "/weeklyMileage")},

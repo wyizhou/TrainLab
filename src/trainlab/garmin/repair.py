@@ -507,7 +507,7 @@ class RepairAuditMixin:
                             )
                             self.repo.coverage(
                                 conn, subject, resource, current_day_text,
-                                "fetched" if day_payload else "empty", revision, count,
+                                "fetched" if count > 0 else "empty", revision, count,
                             )
                             resolved_range_days.append(current_day_text)
                     else:
@@ -516,7 +516,10 @@ class RepairAuditMixin:
                         self.repo.fields(conn, resource, payload)
                         self._supersede_health_projection(conn, subject, resource, key, day)
                         count = self._project_health(conn, subject, resource, day, payload, revision)
-                        self.repo.coverage(conn, subject, resource, day, "fetched", revision, count)
+                        self.repo.coverage(
+                            conn, subject, resource, day,
+                            "fetched" if count > 0 else "empty", revision, count,
+                        )
                 else:
                     # Archive-only resources still get their raw syntax and
                     # field signature verified; their existing projection is

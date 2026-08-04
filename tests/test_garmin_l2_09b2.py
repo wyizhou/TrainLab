@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+import json
 import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -80,6 +81,33 @@ def _setup(tmp_path: Path):
 
 def _repair(tool, resource: str, invocation: str):
     return tool.execute(SyncRequest("repair", health_from_local_date="2026-04-15", through_local_date="2026-04-15", resource_kinds=(resource,), repair_strategy="refetch", invocation_id=invocation))
+
+
+def test_live_nested_vo2_and_weight_are_available_to_daily_analysis(tmp_path: Path) -> None:
+    config, tool, transport = _setup(tmp_path)
+    transport.payloads["max_metrics"] = [{
+        "generic": {
+            "calendarDate": "2026-04-15",
+            "vo2MaxPreciseValue": 51.1,
+            "vo2MaxValue": 51.0,
+        },
+    }]
+    transport.payloads["weigh_ins"] = {
+        "dailyWeightSummaries": [{
+            "summaryDate": "2026-04-15",
+            "allWeightMetrics": [{"calendarDate": "2026-04-15", "weight": 70699.0}],
+        }],
+    }
+    assert _repair(tool, "max_metrics", "nested-max").status == "succeeded"
+    assert _repair(tool, "weigh_ins", "nested-weight").status == "succeeded"
+    with sqlite3.connect(config.database_path) as conn:
+        assert conn.execute(
+            "SELECT value_number,source_path FROM physiology_metrics WHERE metric_key='garmin.vo2_max.ml_per_kg_min'"
+        ).fetchone() == (51.1, "/*/generic/vo2MaxPreciseValue")
+        values = json.loads(conn.execute(
+            "SELECT values_json FROM daily_health WHERE local_date='2026-04-15' AND is_current=1"
+        ).fetchone()[0])
+        assert values["garmin.body.weight_kg"] == pytest.approx(70.699)
 
 
 @pytest.mark.parametrize(

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sqlite3
 from pathlib import Path
+import json
 
 import pytest
 
@@ -69,6 +70,36 @@ def test_real_foundation_allowlist_subject_isolation_and_stable_snapshot(tmp_pat
     assert all("sql" not in item.__dict__ and "payload" not in item.__dict__ for item in first.audit)
     assert all(row.get("subject_id", 1) == 1 for row in [*first.coverage, *first.cursors, *first.gaps, *first.activity_stages, *first.quality_issues, *first.facts])
     with pytest.raises(StableViewError): repo.view("activities", 1, "2026-07-22", "2026-07-22")
+
+
+def test_activity_stable_view_exposes_only_bounded_fit_and_weather_summaries(tmp_path: Path) -> None:
+    conn, repo = repository(tmp_path)
+    extras = {
+        "fit_session": {"fields": {
+            "avg_heart_rate": {"value": 149},
+            "max_heart_rate": {"value": 164},
+            "enhanced_avg_speed": {"value": 2.728},
+            "avg_temperature": {"value": 29},
+        }},
+        "connect_enrichments": {"weather_json": {"reviewed": {
+            "temp": 72, "relativeHumidity": 100, "windSpeed": 3,
+            "weatherTypeDTO": {"desc": "Cloudy"},
+        }}},
+        "private_provider_field": "must-not-escape",
+    }
+    conn.execute("UPDATE activities SET extras_json=? WHERE id=1", (json.dumps(extras),))
+    conn.execute(
+        "INSERT INTO source_revisions(id,provider,resource_kind,provider_object_id,revision_no,payload_hash,is_current,parsed_at_utc) VALUES(4,'garmin','activity_weather','one',1,?,1,'2026-07-22T02:00:00Z')",
+        ("4" * 64,),
+    )
+    conn.execute("INSERT INTO activity_source_revisions(activity_id,source_revision_id,source_role,is_active) VALUES(1,4,'weather_json',1)")
+    row = repo.snapshot(1, "2026-07-22", "2026-07-22").views["v_current_activities"][0]
+    assert row["fit_avg_heart_rate_bpm"] == 149
+    assert row["fit_avg_temperature_c"] == 29
+    assert row["weather_relative_humidity_percent"] == 100
+    assert row["active_fit_revision_id"] == 1
+    assert row["active_weather_revision_id"] == 4
+    assert "private_provider_field" not in row
 
 
 def test_snapshot_exposes_only_latest_coverage_observation_per_resource_day(
