@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import json
 import sqlite3
 from hashlib import sha256
-import json
 
 import pytest
 
@@ -100,6 +100,7 @@ def test_daily_sleep_chart_accepts_only_lineage_bound_closed_final_session():
         "sleep.unmeasurableSleepSeconds": 0,
         "sleep.sleepWindowConfirmed": True,
         "sleep.sleepWindowConfirmationType": "enhanced_confirmed_final",
+        "sleep.averageSpO2Value": 95.0,
     }
     sleep = []
     for ordinal, (metric, value) in enumerate(values.items()):
@@ -116,8 +117,46 @@ def test_daily_sleep_chart_accepts_only_lineage_bound_closed_final_session():
             "source_revision_count": 1,
             "source_revision_ids": ["77"],
         }})
+    sleep.append({"ordinal": len(sleep), "content": {
+        "family": "sleep",
+        "metric_key": "sleep.averageSpO2Value",
+        "window": {
+            "start_local_date": "2026-06-26",
+            "end_local_date": "2026-07-23",
+        },
+        "latest": {"local_date": "2026-07-23", "value": 94.0},
+        "average": 94.0,
+        "observation_count": 28,
+        "source_count": 28,
+        "source_revision_count": 28,
+        "source_revision_ids": ["77"],
+    }})
+    health = [{"ordinal": 0, "content": {
+        "family": "health",
+        "metric_key": "health.garmin.daily.resting_heart_rate_bpm",
+        "window": {
+            "start_local_date": "2026-06-26",
+            "end_local_date": "2026-07-23",
+        },
+        "latest": {"local_date": "2026-07-23", "value": 52.0},
+        "average": 50.0,
+        "observation_count": 28,
+        "source_count": 28,
+        "source_revision_count": 28,
+        "source_revision_ids": ["88"],
+    }}]
+    activities = [{"ordinal": 0, "content": {
+        "aggregate_sha256": "d" * 64,
+        "source_count": 1,
+        "source_revision_count": 1,
+        "local_date": "2026-07-23",
+        "sport": "running",
+        "elapsed_seconds": 1800.0,
+        "distance_m": 5000.0,
+    }}]
     snapshot = json.dumps(
-        {"sleep": sleep}, ensure_ascii=False, sort_keys=True,
+        {"sleep": sleep, "health": health, "activities": activities},
+        ensure_ascii=False, sort_keys=True,
         separators=(",", ":"),
     )
     connection.execute(
@@ -132,6 +171,12 @@ def test_daily_sleep_chart_accepts_only_lineage_bound_closed_final_session():
     )
     assert pending.sleep_chart is not None
     assert pending.sleep_chart.completeness == "complete"
+    assert [item.value_text for item in pending.recovery_metrics] == [
+        "52 次/分钟", "未收到", "95%",
+    ]
+    assert pending.training_load_chart is not None
+    assert pending.training_load_chart.activity_count == 1
+    assert len(pending.yesterday_activities) == 1
     rendered = render_delivery(pending)
     assert "睡眠数据：已收到一条时间与阶段均闭合" in rendered.plain_text
     assert "睡眠图表：00:00–07:00；实际睡眠6小时" in rendered.plain_text
@@ -141,6 +186,16 @@ def test_daily_sleep_chart_accepts_only_lineage_bound_closed_final_session():
     assert "浅睡 4小时" in rendered.html
     assert "REM 1小时" in rendered.html
     assert "清醒 1小时" in rendered.html
+    assert "恢复指标" in rendered.html
+    assert "较28日基线 +2 次/分钟" in rendered.html
+    assert "本次分析没有可验证数值" in rendered.html
+    assert "较28日基线 +1%" in rendered.html
+    assert "昨日运动" in rendered.html and "距离 5 km" in rendered.html
+    assert "最近7日训练量" in rendered.html and "1次活动" in rendered.html
+    assert rendered.html.index("昨日恢复稳定。") < rendered.html.index("昨夜睡眠")
+    assert rendered.html.index("昨夜睡眠") < rendered.html.index("恢复指标")
+    assert rendered.plain_text.index("昨日回顾") < rendered.plain_text.index("睡眠图表")
+    assert rendered.plain_text.index("睡眠图表") < rendered.plain_text.index("恢复指标")
     assert "睡眠或早晨恢复可能仍在进行" not in rendered.html
     assert all(
         marker not in rendered.html

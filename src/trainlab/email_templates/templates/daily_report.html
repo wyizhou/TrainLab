@@ -97,6 +97,18 @@
                 </tr>
               </table>
 
+              <table data-od-id="daily-review" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin-top:28px;">
+                <tr>
+                  <td>
+                    <div style="font-size:12px;line-height:1.3;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#0B7F78;">昨日回顾 · <span data-field="summary_date">7月27日</span></div>
+                    <h2 style="margin:8px 0 10px;font-family:'Aptos Display','SF Pro Display','Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;font-size:22px;line-height:1.3;font-weight:600;letter-spacing:-.01em;color:#142337;">恢复信号改善，但暂不增加强度</h2>
+                    <div data-field="daily_summary_text" style="font-size:15px;line-height:1.75;color:#33445A;">
+                      昨日总体恢复尚可，睡眠表现较近期个人基线改善，静息心率也接近个人常态。恢复信号虽高于近期平均，但整体趋势仍偏弱，因此不宜贸然增加训练强度。昨日没有确认到活动记录，正式休息安排是否落实无法判断。
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
               <table data-optional="sleep_chart" data-od-id="daily-sleep-chart" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin-top:20px;background:#FFFFFF;border:1px solid #D8E2E5;border-radius:12px;">
                 <tr>
                   <td style="padding:18px 18px 16px;">
@@ -126,14 +138,53 @@
                 </tr>
               </table>
 
-              <table data-od-id="daily-review" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin-top:28px;">
+              <table data-optional="recovery_metrics" data-od-id="daily-recovery-metrics" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin-top:18px;background:#FFFFFF;border:1px solid #D8E2E5;border-radius:12px;">
                 <tr>
-                  <td>
-                    <div style="font-size:12px;line-height:1.3;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#0B7F78;">昨日回顾 · <span data-field="summary_date">7月27日</span></div>
-                    <h2 style="margin:8px 0 10px;font-family:'Aptos Display','SF Pro Display','Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;font-size:22px;line-height:1.3;font-weight:600;letter-spacing:-.01em;color:#142337;">恢复信号改善，但暂不增加强度</h2>
-                    <div data-field="daily_summary_text" style="font-size:15px;line-height:1.75;color:#33445A;">
-                      昨日总体恢复尚可，睡眠表现较近期个人基线改善，静息心率也接近个人常态。恢复信号虽高于近期平均，但整体趋势仍偏弱，因此不宜贸然增加训练强度。昨日没有确认到活动记录，正式休息安排是否落实无法判断。
-                    </div>
+                  <td style="padding:16px 18px 14px;">
+                    <div style="font-size:12px;line-height:1.3;font-weight:600;letter-spacing:.04em;color:#0B7F78;">恢复指标</div>
+                    <div style="margin-top:3px;font-size:11px;line-height:1.55;color:#627184;">最新可验证值与最近28个有效日的个人基线；缺失值不会按正常处理</div>
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin-top:14px;">
+                      <tr class="stack" data-repeat="recovery_metrics">
+                        <td width="33.33%" style="font-size:12px;color:#33445A;">静息心率</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <table data-optional="yesterday_activities" data-od-id="daily-yesterday-activities" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin-top:18px;background:#FFFFFF;border:1px solid #D8E2E5;border-radius:12px;">
+                <tr>
+                  <td style="padding:16px 18px;">
+                    <div style="font-size:12px;line-height:1.3;font-weight:600;letter-spacing:.04em;color:#0B7F78;">昨日运动</div>
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin-top:8px;">
+                      <tbody data-repeat="yesterday_activities">
+                        <tr><td style="font-size:12px;color:#33445A;">跑步 · 30分钟</td></tr>
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <table data-optional="training_load_chart" data-od-id="daily-training-load" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin-top:18px;background:#FFFFFF;border:1px solid #D8E2E5;border-radius:12px;">
+                <tr>
+                  <td style="padding:16px 18px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td>
+                          <div style="font-size:12px;line-height:1.3;font-weight:600;letter-spacing:.04em;color:#0B7F78;">最近7日训练量</div>
+                          <div style="margin-top:3px;font-size:11px;line-height:1.55;color:#627184;"><span data-field="training_load_window">7月28日—8月3日</span> · 各日活动经过时长，从零开始比较</div>
+                        </td>
+                        <td align="right" valign="top" style="font-size:11px;line-height:1.55;color:#627184;">
+                          <strong data-field="training_load_total" style="font-size:15px;color:#142337;">4小时</strong><br>
+                          <span data-field="training_load_count">3次活动</span>
+                        </td>
+                      </tr>
+                    </table>
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin-top:10px;">
+                      <tbody data-repeat="training_load_days">
+                        <tr><td style="font-size:11px;color:#627184;">周一 7/28</td></tr>
+                      </tbody>
+                    </table>
                   </td>
                 </tr>
               </table>

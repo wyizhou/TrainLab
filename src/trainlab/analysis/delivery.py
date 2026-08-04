@@ -7,17 +7,25 @@ runner.  It never stores a rendered body or changes artifact/current/run state.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
-from datetime import date, datetime, timezone
-from hashlib import sha256
 import json
+import math
 import re
 import sqlite3
+from dataclasses import dataclass
+from datetime import date, datetime, timedelta, timezone
+from hashlib import sha256
 from typing import Any, Callable, Literal, Mapping, Protocol, Sequence
 from zoneinfo import ZoneInfo
 
-from trainlab.email_templates import Element, Template, Text, assert_no_bindings, element, load_template, text
-
+from trainlab.email_templates import (
+    Element,
+    Template,
+    Text,
+    assert_no_bindings,
+    element,
+    load_template,
+    text,
+)
 
 DeliveryKind = Literal["daily_report", "weekly_report", "plan_revision"]
 
@@ -93,6 +101,43 @@ class SleepChart:
 
 
 @dataclass(frozen=True)
+class RecoveryMetric:
+    """One exact recovery value with a neutral personal-baseline comparison."""
+
+    key: Literal["resting_heart_rate", "hrv", "spo2"]
+    label: str
+    value_text: str
+    comparison_text: str
+    observation_text: str
+    available: bool
+
+
+@dataclass(frozen=True)
+class TrainingLoadDay:
+    local_date: str
+    duration_seconds: int
+    activity_count: int
+
+
+@dataclass(frozen=True)
+class TrainingLoadChart:
+    start_local_date: str
+    end_local_date: str
+    total_seconds: int
+    activity_count: int
+    days: tuple[TrainingLoadDay, ...]
+
+
+@dataclass(frozen=True)
+class ActivityOverview:
+    sport_label: str
+    duration_seconds: int
+    distance_m: float | None
+    average_heart_rate_bpm: float | None
+    weather_text: str | None
+
+
+@dataclass(frozen=True)
 class PendingDelivery:
     delivery_id: int
     subject_id: int
@@ -102,6 +147,9 @@ class PendingDelivery:
     idempotency_key: str
     artifacts: tuple[DeliveryArtifact, ...]
     sleep_chart: SleepChart | None = None
+    recovery_metrics: tuple[RecoveryMetric, ...] = ()
+    training_load_chart: TrainingLoadChart | None = None
+    yesterday_activities: tuple[ActivityOverview, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -200,14 +248,13 @@ def _idempotency_key(run_key: str, delivery_kind: str, artifacts: Sequence[Deliv
     return "analysis-delivery:v1:" + sha256(_canonical(material).encode("utf-8")).hexdigest()
 
 
-def _sleep_chart(
+def _verified_context_snapshot(
     connection: sqlite3.Connection,
     *,
     analysis_run_id: int,
     subject_id: int,
-    advice_local_date: str,
-) -> SleepChart | None:
-    """Read the exact morning-sleep aggregates frozen into this analysis run."""
+) -> Mapping[str, object] | None:
+    """Load only a hash-verified immutable context owned by the analysis run."""
 
     run_columns = {
         str(column[1])
@@ -232,7 +279,24 @@ def _sleep_chart(
         snapshot = json.loads(snapshot_json)
     except (TypeError, json.JSONDecodeError):
         return None
-    if not isinstance(snapshot, dict) or not isinstance(snapshot.get("sleep"), list):
+    return snapshot if isinstance(snapshot, dict) else None
+
+
+def _sleep_chart(
+    connection: sqlite3.Connection,
+    *,
+    analysis_run_id: int,
+    subject_id: int,
+    advice_local_date: str,
+) -> SleepChart | None:
+    """Read the exact morning-sleep aggregates frozen into this analysis run."""
+
+    snapshot = _verified_context_snapshot(
+        connection,
+        analysis_run_id=analysis_run_id,
+        subject_id=subject_id,
+    )
+    if snapshot is None or not isinstance(snapshot.get("sleep"), list):
         return None
 
     values: dict[str, object] = {}
@@ -365,6 +429,329 @@ def _delivery_sleep_chart(
     )
 
 
+def _context_metric(
+    snapshot: Mapping[str, object],
+    *,
+    section: str,
+    family: str,
+    metric_key: str,
+) -> Mapping[str, object] | None:
+    entries = snapshot.get(section)
+    if not isinstance(entries, list):
+        return None
+    matches: list[Mapping[str, object]] = []
+    for entry in entries:
+        if not isinstance(entry, Mapping):
+            continue
+        content = entry.get("content")
+        if (
+            isinstance(content, Mapping)
+            and content.get("family") == family
+            and content.get("metric_key") == metric_key
+        ):
+            matches.append(content)
+    return matches[0] if len(matches) == 1 else None
+
+
+def _numeric_latest(content: Mapping[str, object] | None) -> tuple[float, str] | None:
+    if content is None or not isinstance(content.get("latest"), Mapping):
+        return None
+    latest = content["latest"]
+    value, local_date = latest.get("value"), latest.get("local_date")
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, (int, float))
+        or not math.isfinite(float(value))
+        or not isinstance(local_date, str)
+    ):
+        return None
+    try:
+        if date.fromisoformat(local_date).isoformat() != local_date:
+            return None
+    except ValueError:
+        return None
+    return float(value), local_date
+
+
+def _numeric_average(content: Mapping[str, object] | None) -> float | None:
+    if content is None:
+        return None
+    value = content.get("average")
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, (int, float))
+        or not math.isfinite(float(value))
+    ):
+        return None
+    return float(value)
+
+
+def _metric_value(value: float, *, digits: int = 0) -> str:
+    rounded = round(value, digits)
+    if digits == 0:
+        return str(int(rounded))
+    return f"{rounded:.{digits}f}".rstrip("0").rstrip(".")
+
+
+def _baseline_comparison(
+    value: float,
+    baseline: float | None,
+    *,
+    unit: str,
+    digits: int,
+) -> str:
+    if baseline is None:
+        return "28日个人基线不可用"
+    delta = value - baseline
+    sign = "+" if delta > 0 else ""
+    return (
+        f"较28日基线 {sign}{_metric_value(delta, digits=digits)}{unit}"
+        f"（基线 {_metric_value(baseline, digits=digits)}{unit}）"
+    )
+
+
+def _observation_label(local_date: str, advice_local_date: str) -> str:
+    if local_date == advice_local_date:
+        return "今晨记录"
+    parsed = date.fromisoformat(local_date)
+    return f"最近记录：{parsed.month}月{parsed.day}日"
+
+
+def _hrv_metric(
+    snapshot: Mapping[str, object], family: str
+) -> Mapping[str, object] | None:
+    for section in ("health", "sleep"):
+        entries = snapshot.get(section)
+        if not isinstance(entries, list):
+            continue
+        matches: list[Mapping[str, object]] = []
+        for entry in entries:
+            if not isinstance(entry, Mapping) or not isinstance(entry.get("content"), Mapping):
+                continue
+            content = entry["content"]
+            key = content.get("metric_key")
+            if (
+                content.get("family") == family
+                and isinstance(key, str)
+                and "hrv" in key.casefold()
+                and "adjustment" not in key.casefold()
+                and _numeric_latest(content) is not None
+            ):
+                matches.append(content)
+        if len(matches) == 1:
+            return matches[0]
+        if len(matches) > 1:
+            preferred = [
+                item for item in matches
+                if any(
+                    token in str(item.get("metric_key", "")).casefold()
+                    for token in ("last_night_average", "overnight_average", "weekly_average")
+                )
+            ]
+            if len(preferred) == 1:
+                return preferred[0]
+            return None
+    return None
+
+
+def _recovery_metrics(
+    snapshot: Mapping[str, object], *, advice_local_date: str
+) -> tuple[RecoveryMetric, ...]:
+    specs: list[tuple[str, str, Mapping[str, object] | None, Mapping[str, object] | None, str, int]] = []
+    resting = _context_metric(
+        snapshot, section="health", family="health",
+        metric_key="health.garmin.daily.resting_heart_rate_bpm",
+    )
+    specs.append(("resting_heart_rate", "静息心率", resting, resting, " 次/分钟", 0))
+    hrv_current = _hrv_metric(snapshot, "morning_recovery")
+    if hrv_current is None:
+        hrv_current = _hrv_metric(snapshot, "health")
+    hrv_key = str(hrv_current.get("metric_key")) if hrv_current else ""
+    hrv_baseline = (
+        _context_metric(snapshot, section="health", family="health", metric_key=hrv_key)
+        or _context_metric(snapshot, section="sleep", family="sleep", metric_key=hrv_key)
+        if hrv_key else None
+    )
+    specs.append(("hrv", "HRV", hrv_current, hrv_baseline, " ms", 0))
+    spo2_current = _context_metric(
+        snapshot, section="sleep", family="morning_sleep",
+        metric_key="sleep.averageSpO2Value",
+    )
+    spo2_baseline = _context_metric(
+        snapshot, section="sleep", family="sleep",
+        metric_key="sleep.averageSpO2Value",
+    )
+    specs.append(("spo2", "平均血氧", spo2_current, spo2_baseline, "%", 1))
+
+    result: list[RecoveryMetric] = []
+    for key, label, current, baseline_content, unit, digits in specs:
+        latest = _numeric_latest(current)
+        if latest is None:
+            result.append(RecoveryMetric(
+                key=key,  # type: ignore[arg-type]
+                label=label,
+                value_text="未收到",
+                comparison_text="本次分析没有可验证数值",
+                observation_text="不会按正常值处理",
+                available=False,
+            ))
+            continue
+        value, observed = latest
+        result.append(RecoveryMetric(
+            key=key,  # type: ignore[arg-type]
+            label=label,
+            value_text=_metric_value(value, digits=digits) + unit,
+            comparison_text=_baseline_comparison(
+                value, _numeric_average(baseline_content), unit=unit, digits=digits,
+            ),
+            observation_text=_observation_label(observed, advice_local_date),
+            available=True,
+        ))
+    return tuple(result)
+
+
+_SPORT_LABELS = {
+    "running": "跑步",
+    "cycling": "骑行",
+    "bouldering": "抱石",
+    "indoor_climbing": "室内攀岩",
+    "climbing": "攀岩",
+    "strength": "力量训练",
+}
+
+
+def _activity_rows(snapshot: Mapping[str, object]) -> tuple[Mapping[str, object], ...]:
+    entries = snapshot.get("activities")
+    if not isinstance(entries, list):
+        return ()
+    rows: list[Mapping[str, object]] = []
+    for entry in entries:
+        if not isinstance(entry, Mapping) or not isinstance(entry.get("content"), Mapping):
+            continue
+        content = entry["content"]
+        digest = content.get("aggregate_sha256")
+        if (
+            content.get("source_count") != 1
+            or content.get("source_revision_count") != 1
+            or not isinstance(digest, str)
+            or len(digest) != 64
+        ):
+            continue
+        rows.append(content)
+    return tuple(rows)
+
+
+def _activity_seconds(row: Mapping[str, object]) -> int | None:
+    value = row.get("elapsed_seconds")
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, (int, float))
+        or not math.isfinite(float(value))
+        or not 0 <= float(value) <= 24 * 60 * 60
+    ):
+        return None
+    return int(round(float(value)))
+
+
+def _training_load_chart(
+    snapshot: Mapping[str, object], *, summary_local_date: str
+) -> TrainingLoadChart | None:
+    end = date.fromisoformat(summary_local_date)
+    start = end - timedelta(days=6)
+    totals = {date.fromordinal(start.toordinal() + offset).isoformat(): [0, 0] for offset in range(7)}
+    for row in _activity_rows(snapshot):
+        local_date = row.get("local_date")
+        seconds = _activity_seconds(row)
+        if not isinstance(local_date, str) or local_date not in totals or seconds is None:
+            continue
+        totals[local_date][0] += seconds
+        totals[local_date][1] += 1
+    days = tuple(
+        TrainingLoadDay(day, values[0], values[1])
+        for day, values in totals.items()
+    )
+    activity_count = sum(item.activity_count for item in days)
+    if activity_count == 0:
+        return None
+    return TrainingLoadChart(
+        start.isoformat(), end.isoformat(),
+        sum(item.duration_seconds for item in days), activity_count, days,
+    )
+
+
+def _weather_text(row: Mapping[str, object]) -> str | None:
+    weather = row.get("weather") or row.get("weather_summary")
+    if isinstance(weather, str) and weather.strip():
+        return weather.strip()
+    if not isinstance(weather, Mapping):
+        return None
+    parts: list[str] = []
+    for key, suffix in (("temperature_c", "℃"), ("humidity_percent", "%")):
+        value = weather.get(key)
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            parts.append(_metric_value(float(value), digits=1) + suffix)
+    condition = weather.get("condition")
+    if isinstance(condition, str) and condition.strip():
+        parts.append(condition.strip())
+    return " · ".join(parts) or None
+
+
+def _yesterday_activities(
+    snapshot: Mapping[str, object], *, summary_local_date: str
+) -> tuple[ActivityOverview, ...]:
+    result: list[ActivityOverview] = []
+    for row in _activity_rows(snapshot):
+        if row.get("local_date") != summary_local_date:
+            continue
+        seconds = _activity_seconds(row)
+        sport = row.get("sport")
+        if seconds is None or not isinstance(sport, str):
+            continue
+        distance = row.get("distance_m")
+        distance_value = (
+            float(distance)
+            if isinstance(distance, (int, float)) and not isinstance(distance, bool)
+            and math.isfinite(float(distance)) and float(distance) >= 0
+            else None
+        )
+        heart_rate = row.get("average_heart_rate_bpm")
+        heart_rate_value = (
+            float(heart_rate)
+            if isinstance(heart_rate, (int, float)) and not isinstance(heart_rate, bool)
+            and math.isfinite(float(heart_rate)) and 0 < float(heart_rate) < 260
+            else None
+        )
+        result.append(ActivityOverview(
+            _SPORT_LABELS.get(sport, sport), seconds, distance_value,
+            heart_rate_value, _weather_text(row),
+        ))
+    return tuple(result[:8])
+
+
+def _delivery_daily_visuals(
+    connection: sqlite3.Connection,
+    *,
+    delivery_kind: str,
+    analysis_run_id: int,
+    subject_id: int,
+    artifacts: Sequence[DeliveryArtifact],
+) -> tuple[tuple[RecoveryMetric, ...], TrainingLoadChart | None, tuple[ActivityOverview, ...]]:
+    if delivery_kind != "daily_report":
+        return (), None, ()
+    summary = next((item for item in artifacts if item.content_role == "daily_summary"), None)
+    advice = next((item for item in artifacts if item.content_role == "daily_advice"), None)
+    snapshot = _verified_context_snapshot(
+        connection, analysis_run_id=analysis_run_id, subject_id=subject_id,
+    )
+    if summary is None or advice is None or snapshot is None:
+        return (), None, ()
+    return (
+        _recovery_metrics(snapshot, advice_local_date=advice.period_start_local_date),
+        _training_load_chart(snapshot, summary_local_date=summary.period_start_local_date),
+        _yesterday_activities(snapshot, summary_local_date=summary.period_start_local_date),
+    )
+
+
 class AnalysisDeliveryFactory:
     """Seed one pending delivery in a short transaction, with no send capability."""
 
@@ -477,6 +864,15 @@ class AnalysisDeliveryFactory:
             subject_id=int(run["subject_id"]),
             artifacts=artifacts,
         )
+        recovery_metrics, training_load_chart, yesterday_activities = (
+            _delivery_daily_visuals(
+                self._connection,
+                delivery_kind=delivery_kind,
+                analysis_run_id=run_id,
+                subject_id=int(run["subject_id"]),
+                artifacts=artifacts,
+            )
+        )
         return PendingDelivery(
             delivery_id,
             int(run["subject_id"]),
@@ -486,6 +882,9 @@ class AnalysisDeliveryFactory:
             key,
             tuple(artifacts),
             sleep_chart,
+            recovery_metrics,
+            training_load_chart,
+            yesterday_activities,
         )
 
     def _verify_existing_relations(self, delivery_id: int, expected: Sequence[DeliveryArtifact]) -> None:
@@ -529,11 +928,23 @@ class AnalysisDeliveryRepository:
             subject_id=int(row["subject_id"]),
             artifacts=artifacts,
         )
+        recovery_metrics, training_load_chart, yesterday_activities = (
+            _delivery_daily_visuals(
+                self._connection,
+                delivery_kind=str(row["delivery_kind"]),
+                analysis_run_id=int(row["analysis_run_id"]),
+                subject_id=int(row["subject_id"]),
+                artifacts=artifacts,
+            )
+        )
         return PendingDelivery(
             delivery_id=int(row["id"]), subject_id=int(row["subject_id"]), analysis_run_id=int(row["analysis_run_id"]),
             run_key=str(row["run_key"]), delivery_kind=str(row["delivery_kind"]),
             idempotency_key=str(row["idempotency_key"]), artifacts=tuple(artifacts),
             sleep_chart=sleep_chart,
+            recovery_metrics=recovery_metrics,
+            training_load_chart=training_load_chart,
+            yesterday_activities=yesterday_activities,
         )
 
     def load_rendered(self, delivery_id: int, *, subject_id: int | None = None) -> RenderedDelivery:
@@ -910,6 +1321,145 @@ def _sleep_chart_legend(chart: SleepChart) -> tuple[Element, ...]:
         for label, seconds, color in stages
         if seconds > 0
     )
+
+
+def _recovery_metric_cells(metrics: Sequence[RecoveryMetric]) -> tuple[Element, ...]:
+    cells: list[Element] = []
+    for index, metric in enumerate(metrics):
+        border = "border-right:1px solid #D8E2E5;" if index < len(metrics) - 1 else ""
+        cells.append(element(
+            "td",
+            element(
+                "div", text(metric.label),
+                attributes={"style": "font-size:11px;line-height:1.3;font-weight:600;letter-spacing:.04em;color:#627184;"},
+            ),
+            element(
+                "div", text(metric.value_text),
+                attributes={"style": "margin-top:6px;font-size:20px;line-height:1.3;font-weight:600;color:#142337;"},
+            ),
+            element(
+                "div", text(metric.comparison_text),
+                attributes={"style": "margin-top:5px;font-size:11px;line-height:1.55;color:#33445A;"},
+            ),
+            element(
+                "div", text(metric.observation_text),
+                attributes={"style": "margin-top:3px;font-size:10px;line-height:1.5;color:#8290A0;"},
+            ),
+            attributes={
+                "class": "stat-cell",
+                "width": f"{100 / max(len(metrics), 1):.2f}%",
+                "valign": "top",
+                "style": f"padding:0 14px 2px;{border}",
+            },
+        ))
+    return tuple(cells)
+
+
+def _load_day_label(local_date: str) -> str:
+    parsed = date.fromisoformat(local_date)
+    weekdays = ("一", "二", "三", "四", "五", "六", "日")
+    return f"周{weekdays[parsed.weekday()]} {parsed.month}/{parsed.day}"
+
+
+def _training_load_rows(chart: TrainingLoadChart) -> tuple[Element, ...]:
+    maximum = max((item.duration_seconds for item in chart.days), default=0)
+    rows: list[Element] = []
+    for day in chart.days:
+        width = 0 if maximum <= 0 else day.duration_seconds * 100 / maximum
+        bar = element(
+            "table",
+            element(
+                "tr",
+                element(
+                    "td", text(" "),
+                    attributes={
+                        "width": f"{width:.2f}%",
+                        "bgcolor": "#237F8E",
+                        "style": f"width:{width:.2f}%;height:9px;background:#237F8E;font-size:1px;line-height:9px;",
+                    },
+                ) if width > 0 else element(
+                    "td", text(" "),
+                    attributes={"style": "height:9px;font-size:1px;line-height:9px;"},
+                ),
+            ),
+            attributes={
+                "role": "presentation", "width": "100%", "cellpadding": "0",
+                "cellspacing": "0", "border": "0",
+                "style": "width:100%;background:#EAF0F2;border-radius:5px;overflow:hidden;",
+            },
+        )
+        rows.append(element(
+            "tr",
+            element(
+                "td", text(_load_day_label(day.local_date)),
+                attributes={"width": "76", "style": "padding:5px 10px 5px 0;font-size:11px;line-height:1.4;color:#627184;white-space:nowrap;"},
+            ),
+            element(
+                "td", bar,
+                attributes={"style": "padding:5px 12px 5px 0;"},
+            ),
+            element(
+                "td", text(_duration_label(day.duration_seconds)),
+                attributes={"width": "72", "align": "right", "style": "padding:5px 0;font-size:11px;line-height:1.4;color:#33445A;white-space:nowrap;"},
+            ),
+        ))
+    return tuple(rows)
+
+
+def _activity_overview_rows(activities: Sequence[ActivityOverview]) -> tuple[Element, ...]:
+    rows: list[Element] = []
+    for activity in activities:
+        details = [f"时长 {_duration_label(activity.duration_seconds)}"]
+        if activity.distance_m is not None:
+            details.append(f"距离 {_metric_value(activity.distance_m / 1000, digits=2)} km")
+        if activity.average_heart_rate_bpm is not None:
+            details.append(f"平均心率 {_metric_value(activity.average_heart_rate_bpm)} 次/分钟")
+        if activity.weather_text:
+            details.append(f"天气 {activity.weather_text}")
+        rows.append(element(
+            "tr",
+            element(
+                "td", text(activity.sport_label),
+                attributes={"width": "86", "valign": "top", "style": "padding:7px 12px 7px 0;font-size:12px;line-height:1.5;font-weight:600;color:#142337;"},
+            ),
+            element(
+                "td", text(" · ".join(details)),
+                attributes={"style": "padding:7px 0;font-size:12px;line-height:1.6;color:#33445A;"},
+            ),
+        ))
+    return tuple(rows)
+
+
+def _recovery_plain(metrics: Sequence[RecoveryMetric]) -> str:
+    return "；".join(
+        f"{item.label}{item.value_text}，{item.comparison_text}，{item.observation_text}"
+        for item in metrics
+    )
+
+
+def _training_load_plain(chart: TrainingLoadChart) -> str:
+    days = "、".join(
+        f"{_load_day_label(item.local_date)} {_duration_label(item.duration_seconds)}"
+        for item in chart.days
+    )
+    return (
+        f"最近7日共{chart.activity_count}次活动、{_duration_label(chart.total_seconds)}；"
+        + days
+    )
+
+
+def _activities_plain(activities: Sequence[ActivityOverview]) -> str:
+    values: list[str] = []
+    for activity in activities:
+        details = [activity.sport_label, _duration_label(activity.duration_seconds)]
+        if activity.distance_m is not None:
+            details.append(_metric_value(activity.distance_m / 1000, digits=2) + " km")
+        if activity.average_heart_rate_bpm is not None:
+            details.append(_metric_value(activity.average_heart_rate_bpm) + " 次/分钟")
+        if activity.weather_text:
+            details.append(activity.weather_text)
+        values.append(" · ".join(details))
+    return "；".join(values)
 
 
 def _text(value: object, *, neutral: str = "未提供") -> str:
@@ -1355,6 +1905,9 @@ def _daily_html(pending: PendingDelivery) -> str:
     sleep_completeness = (
         sleep_chart.completeness if sleep_chart is not None else "unavailable"
     )
+    recovery_metrics = pending.recovery_metrics
+    training_load = pending.training_load_chart
+    yesterday_activities = pending.yesterday_activities
     fields = {
         "brand_name": "TrainLab", "display_date": _display_date(advice.period_start_local_date), "title": "每日训练简报",
         "subtitle": "昨日状态与今日安排", "preheader": "昨日状态与今日安排", "overall_state": _text(summary.structured_content_json.get("overall_state")),
@@ -1383,6 +1936,19 @@ def _daily_html(pending: PendingDelivery) -> str:
             _duration_label(sleep_chart.awake_seconds)
             if sleep_chart is not None else ""
         ),
+        "training_load_window": (
+            f"{_display_date(training_load.start_local_date)}—"
+            f"{_display_date(training_load.end_local_date)}"
+            if training_load is not None else ""
+        ),
+        "training_load_total": (
+            _duration_label(training_load.total_seconds)
+            if training_load is not None else ""
+        ),
+        "training_load_count": (
+            f"{training_load.activity_count}次活动"
+            if training_load is not None else ""
+        ),
         "confidence": _text(advice.structured_content_json.get("confidence")), "summary_date": _display_date(summary.period_start_local_date),
         "daily_summary_text": summary.user_visible_text, "advice_date": _display_date(advice.period_start_local_date),
         "session_title": "跑步训练" if activity == "running" else "休息日", "activity_kind": _ACTIVITY[activity],
@@ -1410,6 +1976,9 @@ def _daily_html(pending: PendingDelivery) -> str:
     template.remove_empty_optional({
         "decision_factors": factors,
         "sleep_chart": sleep_chart,
+        "recovery_metrics": recovery_metrics,
+        "yesterday_activities": yesterday_activities,
+        "training_load_chart": training_load,
         "stop_conditions": fields["stop_conditions"],
         "difficulty_adjustment_reason": fields["difficulty_adjustment_reason"],
         "data_limitation": fields["data_limitation"],
@@ -1420,6 +1989,11 @@ def _daily_html(pending: PendingDelivery) -> str:
         ),
         "sleep_stage_legend": (
             _sleep_chart_legend(sleep_chart) if sleep_chart is not None else ()
+        ),
+        "recovery_metrics": _recovery_metric_cells(recovery_metrics),
+        "yesterday_activities": _activity_overview_rows(yesterday_activities),
+        "training_load_days": (
+            _training_load_rows(training_load) if training_load is not None else ()
         ),
     }).set_fields(fields)
     return template.finalize()
@@ -1457,6 +2031,9 @@ def render_delivery(pending: PendingDelivery) -> RenderedDelivery:
             "睡眠数据：" + _SLEEP_COMPLETENESS.get(
                 sleep_completeness, _SLEEP_COMPLETENESS["unavailable"]
             ),
+            "",
+            _TITLES[summary.content_role],
+            summary.user_visible_text.replace("\r\n", "\n").replace("\r", "\n"),
         ]
         if sleep_chart is not None:
             plain.append(
@@ -1468,6 +2045,20 @@ def render_delivery(pending: PendingDelivery) -> RenderedDelivery:
                 f"REM {_duration_label(sleep_chart.rem_seconds)}、"
                 f"清醒{_duration_label(sleep_chart.awake_seconds)}"
             )
+        if pending.recovery_metrics:
+            plain.append("恢复指标：" + _recovery_plain(pending.recovery_metrics))
+        if pending.yesterday_activities:
+            plain.append("昨日运动：" + _activities_plain(pending.yesterday_activities))
+        if pending.training_load_chart is not None:
+            plain.append(
+                "最近7日训练量："
+                + _training_load_plain(pending.training_load_chart)
+            )
+        plain.extend((
+            "",
+            _TITLES[advice.content_role],
+            advice.user_visible_text.replace("\r\n", "\n").replace("\r", "\n"),
+        ))
     elif pending.delivery_kind == "weekly_report":
         summary = next((item for item in pending.artifacts if item.content_role == "weekly_summary"), None)
         subject = _safe_header(
@@ -1495,8 +2086,9 @@ def render_delivery(pending: PendingDelivery) -> RenderedDelivery:
     else:
         subject = _safe_header(f"TrainLab｜{report_title}｜{_display_date(period.period_start_local_date)}")
         plain = [report_title, f"日期：{_display_date(period.period_start_local_date)}"]
-    for artifact in pending.artifacts:
-        plain.extend(("", _TITLES[artifact.content_role], artifact.user_visible_text.replace("\r\n", "\n").replace("\r", "\n")))
+    if pending.delivery_kind != "daily_report":
+        for artifact in pending.artifacts:
+            plain.extend(("", _TITLES[artifact.content_role], artifact.user_visible_text.replace("\r\n", "\n").replace("\r", "\n")))
     plain_text = "\n".join(plain)
     if (
         pending.run_key in subject
