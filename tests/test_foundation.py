@@ -59,6 +59,109 @@ def test_explicit_migrate_and_incompatible_roots(tmp_path: Path) -> None:
     assert foundation_tool(bad).execute(request("init", bad)).status == "incompatible"
 
 
+def test_explicit_migrate_repairs_exact_legacy_v3_timezone_contract(tmp_path: Path) -> None:
+    root = tmp_path / "foundation"
+    tool = foundation_tool(root)
+    assert tool.execute(request("init", root)).status == "initialized"
+    db = sqlite3.connect(root / "data.db")
+    try:
+        db.execute("PRAGMA foreign_keys=ON")
+        db.execute(
+            "INSERT INTO data_subjects(subject_key,timezone,created_at_utc) "
+            "VALUES('timezone-subject','Asia/Hong_Kong','2026-01-01T00:00:00Z')"
+        )
+        subject = db.execute("SELECT id FROM data_subjects").fetchone()[0]
+        db.execute(
+            "INSERT INTO analysis_runs(run_key,subject_id,analysis_kind,status,started_at_utc) "
+            "VALUES('timezone-run',?,'weekly','succeeded','2026-01-01T00:00:00Z')",
+            (subject,),
+        )
+        run = db.execute("SELECT id FROM analysis_runs").fetchone()[0]
+        db.execute(
+            "INSERT INTO analysis_artifacts(subject_id,artifact_kind,period_start_local_date,"
+            "period_end_local_date,revision_no,generated_by_run_id,schema_version,"
+            "structured_content_json,user_visible_text,content_sha256,is_current,created_at_utc) "
+            "VALUES(?,'weekly_training_plan','2026-01-05','2026-01-11',1,?,'1','{}','plan',?,1,"
+            "'2026-01-01T00:00:00Z')",
+            (subject, run, "a" * 64),
+        )
+        artifact = db.execute("SELECT id FROM analysis_artifacts").fetchone()[0]
+        db.execute(
+            "INSERT INTO training_plans(subject_id,analysis_artifact_id,plan_start_local_date,"
+            "plan_end_local_date,timezone,status,created_at_utc) "
+            "VALUES(?,?,'2026-01-05','2026-01-11','Asia/Hong_Kong','active',"
+            "'2026-01-01T00:00:00Z')",
+            (subject, artifact),
+        )
+        db.commit()
+
+        saved = tuple(
+            row[0] for row in db.execute(
+                "SELECT sql FROM sqlite_master WHERE type IN ('view','trigger') "
+                "AND sql IS NOT NULL AND (type='view' OR name IN ("
+                "'trg_training_plan_item_window','trg_training_plan_artifact_insert',"
+                "'trg_training_plan_artifact_update')) ORDER BY type,name"
+            )
+        )
+        legacy_subjects = TABLES["data_subjects"].replace(
+            "DEFAULT 'Asia/Hong_Kong'", "DEFAULT 'Asia/Singapore'"
+        )
+        legacy_plans = TABLES["training_plans"].replace(
+            "CHECK(timezone='Asia/Hong_Kong')", "CHECK(timezone='Asia/Singapore')"
+        )
+        db.execute("PRAGMA foreign_keys=OFF")
+        db.execute("BEGIN IMMEDIATE")
+        for name in VIEWS:
+            db.execute(f"DROP VIEW {name}")
+        for name in (
+            "trg_training_plan_item_window",
+            "trg_training_plan_artifact_insert",
+            "trg_training_plan_artifact_update",
+        ):
+            db.execute(f"DROP TRIGGER {name}")
+        db.execute(f"CREATE TABLE data_subjects__legacy ({legacy_subjects})")
+        db.execute(
+            "INSERT INTO data_subjects__legacy SELECT id,subject_key,'Asia/Singapore',"
+            "is_active,created_at_utc FROM data_subjects"
+        )
+        db.execute(f"CREATE TABLE training_plans__legacy ({legacy_plans})")
+        db.execute(
+            "INSERT INTO training_plans__legacy SELECT id,subject_id,analysis_artifact_id,"
+            "plan_start_local_date,plan_end_local_date,'Asia/Singapore',status,objective_json,"
+            "constraints_json,created_at_utc FROM training_plans"
+        )
+        db.execute("DROP TABLE training_plans")
+        db.execute("DROP TABLE data_subjects")
+        db.execute("ALTER TABLE data_subjects__legacy RENAME TO data_subjects")
+        db.execute("ALTER TABLE training_plans__legacy RENAME TO training_plans")
+        for statement in saved:
+            db.execute(statement)
+        db.execute("COMMIT")
+        db.execute("PRAGMA foreign_keys=ON")
+    finally:
+        db.close()
+
+    receipt = tool.execute(request("migrate", root, FOUNDATION_SCHEMA_VERSION))
+    assert receipt.status == "already_initialized"
+    assert [item["code"] for item in receipt.warnings] == [
+        "legacy_timezone_contract_repaired"
+    ]
+    db = sqlite3.connect(root / "data.db")
+    try:
+        assert db.execute("SELECT DISTINCT timezone FROM data_subjects").fetchall() == [
+            ("Asia/Hong_Kong",)
+        ]
+        assert db.execute("SELECT DISTINCT timezone FROM training_plans").fetchall() == [
+            ("Asia/Hong_Kong",)
+        ]
+        assert db.execute("PRAGMA foreign_key_check").fetchone() is None
+        assert "Asia/Hong_Kong" in db.execute(
+            "SELECT sql FROM sqlite_master WHERE name='training_plans'"
+        ).fetchone()[0]
+    finally:
+        db.close()
+
+
 def test_key_constraints_and_delivery_ownership_tables(tmp_path: Path) -> None:
     root = tmp_path / "foundation"
     tool = foundation_tool(root)

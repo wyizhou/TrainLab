@@ -228,10 +228,19 @@ def test_verified_registry_binding_is_used_to_start_the_client():
     status = GmailEnvironmentStatus(True, None, "gmail_mcp_available", "safe", "/opt/runtime/npx", ("@artymclabin/gmail-mcp",))
     value = GmailEnvironmentRecipientAdapter(
         SELF, inspector=lambda: status,
-        client_factory=lambda command, args, **_kwargs: (started.append((command, args)) or client),
+        client_factory=lambda command, args, **kwargs: (started.append((command, args, kwargs)) or client),
     )
     send(value)
-    assert started == [("/opt/runtime/npx", ["@artymclabin/gmail-mcp"])]
+    assert started == [(
+        "/opt/runtime/npx",
+        ["@artymclabin/gmail-mcp"],
+        {
+            "timeout": 60,
+            "stdout_preamble_lines": (
+                "OAuth keys found in current directory, copied to global config.",
+            ),
+        },
+    )]
 
 
 def test_read_only_short_rate_limit_is_retried_but_send_is_not():

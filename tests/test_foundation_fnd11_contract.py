@@ -317,7 +317,10 @@ def test_fnd11_postcommit_premarker_failure_requires_explicit_republication(tmp_
     assert FoundationTool(base.config).execute(request("init")).status == "incompatible"
     repaired=FoundationTool(base.config).execute(request("migrate", target=FOUNDATION_SCHEMA_VERSION))
     assert repaired.status == "initialized" and repaired.ready
-    assert repaired.warnings == [{"code":"migration_marker_republished","summary":"completed explicit migration publication"}]
+    assert [item["code"] for item in repaired.warnings] == [
+        "legacy_timezone_contract_repaired",
+        "migration_marker_republished",
+    ]
 
 
 def test_fnd11_postmarker_failure_leaves_verified_last_known_good(tmp_path: Path) -> None:

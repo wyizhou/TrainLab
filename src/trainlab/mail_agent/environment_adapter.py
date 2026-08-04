@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Any, Callable, Protocol
 
 from ..integrations.gmail_environment import (
+    GMAIL_MCP_OAUTH_COPY_NOTICE,
     GMAIL_MCP_PACKAGE,
     GmailEnvironmentStatus,
     inspect_gmail_environment,
@@ -572,7 +573,12 @@ class GmailEnvironmentRecipientAdapter:
             # The validator has already established that this is the enabled,
             # package-exact current `gmail` binding.  Never replace it with a
             # host-specific or hard-coded executable.
-            client = self._client_factory(status.command, list(status.args), timeout=self._timeout_seconds)
+            client = self._client_factory(
+                status.command,
+                list(status.args),
+                timeout=self._timeout_seconds,
+                stdout_preamble_lines=(GMAIL_MCP_OAUTH_COPY_NOTICE,),
+            )
             if not _REQUIRED_TOOLS.issubset(self._available_tools(client)):
                 self._close(client)
                 raise GmailEnvironmentAdapterError("gmail_reply_capability_mismatch")

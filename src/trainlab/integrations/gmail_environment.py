@@ -8,6 +8,7 @@ name and package validation rules.
 from ..gmail_environment import (
     GMAIL_MCP_AUTH_COMMAND,
     GMAIL_MCP_PACKAGE,
+    GMAIL_MCP_OAUTH_COPY_NOTICE,
     GMAIL_MCP_REGISTER_COMMAND,
     GMAIL_MCP_SERVER_NAME,
     GMAIL_MCP_SETUP_HINT,
@@ -20,6 +21,7 @@ from ..gmail_environment import (
 __all__ = [
     "GMAIL_MCP_AUTH_COMMAND",
     "GMAIL_MCP_PACKAGE",
+    "GMAIL_MCP_OAUTH_COPY_NOTICE",
     "GMAIL_MCP_REGISTER_COMMAND",
     "GMAIL_MCP_SERVER_NAME",
     "GMAIL_MCP_SETUP_HINT",

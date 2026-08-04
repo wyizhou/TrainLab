@@ -78,7 +78,15 @@ def test_explicit_v2_to_v3_rebuilds_only_analysis_inputs_and_preserves_every_old
             conn.execute("INSERT INTO analysis_artifact_inputs(analysis_run_id,input_role,source_entity_type,input_sha256,trust_class,ordinal) VALUES(?,?,?,?,?,?)", (run, "bad", "fixture", "0" * 64, "not_a_trust_class", 99))
     finally:
         conn.close()
-    assert _schema_rows(root) == other_schema_before
+    changed_timezone_tables = {"data_subjects", "training_plans"}
+    assert tuple(
+        row for row in _schema_rows(root) if row[1] not in changed_timezone_tables
+    ) == tuple(
+        row for row in other_schema_before if row[1] not in changed_timezone_tables
+    )
+    current_schema = {row[1]: row[2] for row in _schema_rows(root)}
+    assert "Asia/Hong_Kong" in current_schema["data_subjects"]
+    assert "Asia/Hong_Kong" in current_schema["training_plans"]
     assert tuple((str(path.relative_to(root / "raw")), path.read_bytes() if path.is_file() else None) for path in [root / "raw", *(root / "raw").rglob("*")]) == raw_before
     assert tool.execute(request("verify", "v3-verify")).status == "ready"
     assert tool.execute(request("migrate", "v3-repeat", FOUNDATION_SCHEMA_VERSION)).status == "already_initialized"

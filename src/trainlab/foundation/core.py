@@ -1501,6 +1501,12 @@ class FoundationTool:
                 state = self._read_foundation_state(conn)
                 current = int(state["schema_version"])
                 if current == FOUNDATION_SCHEMA_VERSION:
+                    if self._v3_timezone_contract_needs_repair(conn):
+                        self._repair_v3_timezone_contract(conn)
+                        receipt.warnings.append({
+                            "code": "legacy_timezone_contract_repaired",
+                            "summary": "normalized the published v3 timezone contract",
+                        })
                     errors = validate_schema_manifest(conn, self._manifest())
                     if state["state"] != "ready":
                         errors.append("database_not_ready")
@@ -1557,6 +1563,150 @@ class FoundationTool:
             finally:
                 if conn is not None:
                     conn.close()
+
+    @staticmethod
+    def _normalized_ddl(value: object) -> str:
+        if not isinstance(value, str):
+            return ""
+        return re.sub(r"\s+", "", value).replace('"', "").lower()
+
+    def _v3_timezone_contract_needs_repair(self, conn: sqlite3.Connection) -> bool:
+        """Admit only the exact Singapore-era DDL accidentally published as v3."""
+
+        legacy = {
+            "data_subjects": TABLES["data_subjects"].replace(
+                "DEFAULT 'Asia/Hong_Kong'", "DEFAULT 'Asia/Singapore'"
+            ),
+            "training_plans": TABLES["training_plans"].replace(
+                "CHECK(timezone='Asia/Hong_Kong')",
+                "CHECK(timezone='Asia/Singapore')",
+            ),
+        }
+        observed: dict[str, str] = {}
+        for name in legacy:
+            row = conn.execute(
+                "SELECT sql FROM sqlite_master WHERE type='table' AND name=?",
+                (name,),
+            ).fetchone()
+            if row is None:
+                return False
+            observed[name] = self._normalized_ddl(row[0])
+        current = {
+            name: self._normalized_ddl(f"CREATE TABLE {name} ({TABLES[name]})")
+            for name in legacy
+        }
+        if observed == current:
+            return False
+        expected_legacy = {
+            name: self._normalized_ddl(f"CREATE TABLE {name} ({definition})")
+            for name, definition in legacy.items()
+        }
+        if observed != expected_legacy:
+            return False
+        return (
+            conn.execute(
+                "SELECT 1 FROM data_subjects WHERE timezone NOT IN "
+                "('Asia/Singapore','Asia/Hong_Kong') LIMIT 1"
+            ).fetchone()
+            is None
+            and conn.execute(
+                "SELECT 1 FROM training_plans WHERE timezone NOT IN "
+                "('Asia/Singapore','Asia/Hong_Kong') LIMIT 1"
+            ).fetchone()
+            is None
+        )
+
+    def _repair_v3_timezone_contract(self, conn: sqlite3.Connection) -> None:
+        """Transactionally rebuild the two legacy timezone-constrained tables."""
+
+        subject_columns = tuple(
+            row[1] for row in conn.execute("PRAGMA table_info(data_subjects)")
+        )
+        plan_columns = tuple(
+            row[1] for row in conn.execute("PRAGMA table_info(training_plans)")
+        )
+        if subject_columns != (
+            "id", "subject_key", "timezone", "is_active", "created_at_utc"
+        ) or plan_columns != (
+            "id", "subject_id", "analysis_artifact_id", "plan_start_local_date",
+            "plan_end_local_date", "timezone", "status", "objective_json",
+            "constraints_json", "created_at_utc",
+        ):
+            raise IncompatibleError("migration_v3_timezone_columns_unrecognized")
+
+        related_triggers = (
+            "CREATE TRIGGER trg_training_plan_item_window BEFORE INSERT ON training_plan_items FOR EACH ROW WHEN NEW.local_date < (SELECT plan_start_local_date FROM training_plans WHERE id=NEW.training_plan_id) OR NEW.local_date > (SELECT plan_end_local_date FROM training_plans WHERE id=NEW.training_plan_id) BEGIN SELECT RAISE(ABORT,'training_plan_item_outside_plan_window'); END",
+            "CREATE TRIGGER trg_training_plan_artifact_insert BEFORE INSERT ON training_plans FOR EACH ROW WHEN (SELECT artifact_kind FROM analysis_artifacts WHERE id=NEW.analysis_artifact_id) != 'weekly_training_plan' BEGIN SELECT RAISE(ABORT,'training_plan_requires_weekly_training_plan'); END",
+            "CREATE TRIGGER trg_training_plan_artifact_update BEFORE UPDATE OF analysis_artifact_id ON training_plans FOR EACH ROW WHEN (SELECT artifact_kind FROM analysis_artifacts WHERE id=NEW.analysis_artifact_id) != 'weekly_training_plan' BEGIN SELECT RAISE(ABORT,'training_plan_requires_weekly_training_plan'); END",
+        )
+        subject_count = int(conn.execute("SELECT COUNT(*) FROM data_subjects").fetchone()[0])
+        plan_count = int(conn.execute("SELECT COUNT(*) FROM training_plans").fetchone()[0])
+        conn.execute("PRAGMA foreign_keys=OFF")
+        transaction_open = False
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            transaction_open = True
+            for name in VIEWS:
+                conn.execute(f"DROP VIEW {name}")
+            for name in (
+                "trg_training_plan_item_window",
+                "trg_training_plan_artifact_insert",
+                "trg_training_plan_artifact_update",
+            ):
+                conn.execute(f"DROP TRIGGER {name}")
+            conn.execute(
+                f"CREATE TABLE data_subjects__timezone_v3 ({TABLES['data_subjects']})"
+            )
+            conn.execute(
+                "INSERT INTO data_subjects__timezone_v3 "
+                "(id,subject_key,timezone,is_active,created_at_utc) "
+                "SELECT id,subject_key,'Asia/Hong_Kong',is_active,created_at_utc "
+                "FROM data_subjects"
+            )
+            conn.execute(
+                f"CREATE TABLE training_plans__timezone_v3 ({TABLES['training_plans']})"
+            )
+            conn.execute(
+                "INSERT INTO training_plans__timezone_v3 "
+                "(id,subject_id,analysis_artifact_id,plan_start_local_date,"
+                "plan_end_local_date,timezone,status,objective_json,"
+                "constraints_json,created_at_utc) "
+                "SELECT id,subject_id,analysis_artifact_id,plan_start_local_date,"
+                "plan_end_local_date,'Asia/Hong_Kong',status,objective_json,"
+                "constraints_json,created_at_utc FROM training_plans"
+            )
+            if (
+                conn.execute("SELECT COUNT(*) FROM data_subjects__timezone_v3").fetchone()[0]
+                != subject_count
+                or conn.execute("SELECT COUNT(*) FROM training_plans__timezone_v3").fetchone()[0]
+                != plan_count
+            ):
+                raise RuntimeError("migration_v3_timezone_row_count_mismatch")
+            conn.execute("DROP TABLE training_plans")
+            conn.execute("DROP TABLE data_subjects")
+            conn.execute(
+                "ALTER TABLE data_subjects__timezone_v3 RENAME TO data_subjects"
+            )
+            conn.execute(
+                "ALTER TABLE training_plans__timezone_v3 RENAME TO training_plans"
+            )
+            for name, query in VIEWS.items():
+                conn.execute(f"CREATE VIEW {name} AS {query}")
+            for statement in related_triggers:
+                conn.execute(statement)
+            if (
+                conn.execute("PRAGMA foreign_key_check").fetchone() is not None
+                or [row[0] for row in conn.execute("PRAGMA integrity_check")] != ["ok"]
+            ):
+                raise RuntimeError("migration_v3_timezone_integrity_failed")
+            conn.execute("COMMIT")
+            transaction_open = False
+        except Exception:
+            if transaction_open:
+                conn.execute("ROLLBACK")
+            raise
+        finally:
+            conn.execute("PRAGMA foreign_keys=ON")
 
     @staticmethod
     def _mail_message_columns() -> tuple[str, ...]:
@@ -1869,6 +2019,16 @@ class FoundationTool:
         finally:
             conn.execute("PRAGMA foreign_keys=ON")
             conn.close()
+        repair = self._connect(paths["db"])
+        try:
+            if self._v3_timezone_contract_needs_repair(repair):
+                self._repair_v3_timezone_contract(repair)
+                receipt.warnings.append({
+                    "code": "legacy_timezone_contract_repaired",
+                    "summary": "normalized the published v3 timezone contract",
+                })
+        finally:
+            repair.close()
         self._fire_failpoint("after_v3_migration_transaction")
         self._atomic_json(
             paths["ready"],
