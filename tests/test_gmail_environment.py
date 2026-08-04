@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 from trainlab.gmail_environment import (
     GMAIL_MCP_PACKAGE,
+    GMAIL_MCP_OAUTH_COPY_NOTICE,
     GMAIL_MCP_SETUP_HINT,
     inspect_gmail_environment,
     probe_gmail_environment,
@@ -128,6 +129,21 @@ def test_read_only_probe_discards_mailbox_payload_and_closes_client():
     assert clients[0].calls == [("list_email_labels", {})]
     assert clients[0].closed is True
     assert "must not be returned" not in status.detail
+
+
+def test_read_only_probe_allows_known_oauth_copy_notice():
+    calls = []
+
+    def factory(*args, **kwargs):
+        calls.append((args, kwargs))
+        return Client()
+
+    status = probe_gmail_environment(
+        runner=runner(binding()),
+        client_factory=factory,
+    )
+    assert status.code == "gmail_mcp_authenticated"
+    assert calls[0][1]["stdout_preamble_lines"] == (GMAIL_MCP_OAUTH_COPY_NOTICE,)
 
 
 def test_probe_never_starts_provider_when_registration_is_missing():

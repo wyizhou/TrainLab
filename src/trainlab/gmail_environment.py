@@ -25,6 +25,10 @@ GMAIL_MCP_SETUP_HINT = (
     "Run `npx @artymclabin/gmail-mcp auth`, then register the current Codex "
     "environment with `codex mcp add gmail -- npx @artymclabin/gmail-mcp`."
 )
+# The installed provider emits this informational line on stdout when it finds
+# a project-local OAuth key file.  It is not an MCP message, but is a known,
+# bounded preamble that the stdio client may safely discard.
+GMAIL_MCP_OAUTH_COPY_NOTICE = "OAuth keys found in current directory, copied to global config."
 
 
 class GmailEnvironmentError(RuntimeError):
@@ -137,7 +141,12 @@ def probe_gmail_environment(
         return status
     client = None
     try:
-        client = client_factory(status.command, list(status.args), timeout=timeout)
+        client = client_factory(
+            status.command,
+            list(status.args),
+            timeout=timeout,
+            stdout_preamble_lines=(GMAIL_MCP_OAUTH_COPY_NOTICE,),
+        )
         tools = {
             str(item.get("name"))
             for item in client.list_tools()
