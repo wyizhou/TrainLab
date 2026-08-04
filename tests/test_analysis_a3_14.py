@@ -75,8 +75,77 @@ def test_accepted_artifacts_commit_before_pending_delivery_and_render_is_ephemer
     assert "每日训练简报" in rendered.html
     assert "昨日状态与今日安排" in rendered.html
     assert "analysis:1:daily" not in rendered.html
+    assert "睡眠数据：未获得与本日报输入绑定的可验证睡眠记录" in rendered.plain_text
+    assert "睡眠或早晨恢复可能仍在进行" not in rendered.html
+    assert "昨夜睡眠" not in rendered.html
     assert all(marker not in rendered.html for marker in ("data-field=", "data-repeat=", "data-optional=", "data-variant=", "data-od-id="))
     assert "body" not in {row[1] for row in connection.execute("PRAGMA table_info(analysis_deliveries)")}
+
+
+def test_daily_sleep_chart_accepts_only_lineage_bound_closed_final_session():
+    connection = database()
+    receipt = published(connection)
+    values = {
+        "sleep.calendarDate": "2026-07-24",
+        "sleep.session_type": "main_sleep",
+        "sleep.sleepStartTimestampGMT": 1784822400000,
+        "sleep.sleepEndTimestampGMT": 1784847600000,
+        # Garmin may round independently reported totals and stages by a few
+        # seconds; this nine-second delta mirrors a real provider record.
+        "sleep.sleepTimeSeconds": 21591,
+        "sleep.deepSleepSeconds": 3600,
+        "sleep.lightSleepSeconds": 14400,
+        "sleep.remSleepSeconds": 3600,
+        "sleep.awakeSleepSeconds": 3600,
+        "sleep.unmeasurableSleepSeconds": 0,
+        "sleep.sleepWindowConfirmed": True,
+        "sleep.sleepWindowConfirmationType": "enhanced_confirmed_final",
+    }
+    sleep = []
+    for ordinal, (metric, value) in enumerate(values.items()):
+        sleep.append({"ordinal": ordinal, "content": {
+            "family": "morning_sleep",
+            "metric_key": metric,
+            "window": {
+                "start_local_date": "2026-07-24",
+                "end_local_date": "2026-07-24",
+            },
+            "latest": {"local_date": "2026-07-24", "value": value},
+            "observation_count": 1,
+            "source_count": 1,
+            "source_revision_count": 1,
+            "source_revision_ids": ["77"],
+        }})
+    snapshot = json.dumps(
+        {"sleep": sleep}, ensure_ascii=False, sort_keys=True,
+        separators=(",", ":"),
+    )
+    connection.execute(
+        "UPDATE analysis_runs SET context_snapshot_json=?,"
+        "context_snapshot_sha256=? WHERE id=1",
+        (snapshot, sha256(snapshot.encode()).hexdigest()),
+    )
+    connection.commit()
+
+    pending = AnalysisDeliveryFactory(connection).create_pending(
+        publish_receipt=receipt, delivery_kind="daily_report"
+    )
+    assert pending.sleep_chart is not None
+    assert pending.sleep_chart.completeness == "complete"
+    rendered = render_delivery(pending)
+    assert "睡眠数据：已收到一条时间与阶段均闭合" in rendered.plain_text
+    assert "睡眠图表：00:00–07:00；实际睡眠6小时" in rendered.plain_text
+    assert "昨夜睡眠" in rendered.html
+    assert "00:00–07:00" in rendered.html
+    assert "深睡 1小时" in rendered.html
+    assert "浅睡 4小时" in rendered.html
+    assert "REM 1小时" in rendered.html
+    assert "清醒 1小时" in rendered.html
+    assert "睡眠或早晨恢复可能仍在进行" not in rendered.html
+    assert all(
+        marker not in rendered.html
+        for marker in ("data-field=", "data-repeat=", "data-optional=")
+    )
 
 
 def test_same_exact_revision_is_idempotent_and_does_not_duplicate_pending_delivery():

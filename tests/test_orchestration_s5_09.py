@@ -24,25 +24,27 @@ def request():
 
 
 def test_sunday_collects_once_then_daily_and_weekly_share_snapshot() -> None:
-    queue = Queue([g("incremental"), g("audit"), a("daily"), a("weekly")])
+    current = g("snapshot"); current["coverage_state"] = "partial"
+    queue = Queue([g("incremental"), current, g("audit"), a("daily"), a("weekly")])
     result = SundayWorkflowService(queue).execute(request())
     assert result.status == "succeeded" and result.collection_snapshot_id == "single-snapshot"
-    assert [(item.layer, item.mode) for item in queue.calls] == [("garmin", "incremental"), ("garmin", "audit"), ("analysis", "daily"), ("analysis", "weekly")]
+    assert [(item.layer, item.mode) for item in queue.calls] == [("garmin", "incremental"), ("garmin", "snapshot"), ("garmin", "audit"), ("analysis", "daily"), ("analysis", "weekly")]
+    assert queue.calls[1].snapshot_local_date == "2026-07-26"
     assert queue.calls[-1].as_of_local_date == "2026-07-26"
 
 
 def test_daily_failure_does_not_prevent_weekly_and_reentry_does_not_repeat_collection() -> None:
-    queue = Queue([g("incremental"), g("audit"), a("daily", "partial"), a("weekly")])
+    queue = Queue([g("incremental"), g("snapshot"), g("audit"), a("daily", "partial"), a("weekly")])
     service = SundayWorkflowService(queue)
     result = service.execute(request())
-    assert result.status == "deferred" and [item.mode for item in queue.calls] == ["incremental", "audit", "daily", "weekly"]
+    assert result.status == "deferred" and [item.mode for item in queue.calls] == ["incremental", "snapshot", "audit", "daily", "weekly"]
     # A terminal partial is intentionally not cached: durable S5-05 recovery,
     # rather than a new workflow, owns the exact downstream retry.
     assert len(service._completed) == 0
 
 
 def test_collection_blocked_skips_both_analyses() -> None:
-    queue = Queue([g("incremental"), g("audit", "deferred")])
+    queue = Queue([g("incremental"), g("snapshot"), g("audit", "deferred")])
     result = SundayWorkflowService(queue).execute(request())
     assert result.status == "deferred"
-    assert [item.layer for item in queue.calls] == ["garmin", "garmin"]
+    assert [item.layer for item in queue.calls] == ["garmin", "garmin", "garmin"]

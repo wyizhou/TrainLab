@@ -16,7 +16,7 @@ import sqlite3
 from typing import Any, Callable, Literal, Mapping, Protocol, Sequence
 from zoneinfo import ZoneInfo
 
-from trainlab.email_templates import Element, Template, Text, assert_no_bindings, load_template
+from trainlab.email_templates import Element, Template, Text, assert_no_bindings, element, load_template, text
 
 
 DeliveryKind = Literal["daily_report", "weekly_report", "plan_revision"]
@@ -77,6 +77,22 @@ class DeliveryArtifact:
 
 
 @dataclass(frozen=True)
+class SleepChart:
+    """Lineage-bound sleep values safe for deterministic email rendering."""
+
+    completeness: Literal["complete", "partial"]
+    start_local_time: str
+    end_local_time: str
+    window_seconds: int
+    asleep_seconds: int
+    deep_seconds: int
+    light_seconds: int
+    rem_seconds: int
+    awake_seconds: int
+    unmeasurable_seconds: int
+
+
+@dataclass(frozen=True)
 class PendingDelivery:
     delivery_id: int
     subject_id: int
@@ -85,6 +101,7 @@ class PendingDelivery:
     delivery_kind: DeliveryKind
     idempotency_key: str
     artifacts: tuple[DeliveryArtifact, ...]
+    sleep_chart: SleepChart | None = None
 
 
 @dataclass(frozen=True)
@@ -181,6 +198,171 @@ def _idempotency_key(run_key: str, delivery_kind: str, artifacts: Sequence[Deliv
         ],
     }
     return "analysis-delivery:v1:" + sha256(_canonical(material).encode("utf-8")).hexdigest()
+
+
+def _sleep_chart(
+    connection: sqlite3.Connection,
+    *,
+    analysis_run_id: int,
+    subject_id: int,
+    advice_local_date: str,
+) -> SleepChart | None:
+    """Read the exact morning-sleep aggregates frozen into this analysis run."""
+
+    run_columns = {
+        str(column[1])
+        for column in connection.execute("PRAGMA table_info(analysis_runs)")
+    }
+    if not {"context_snapshot_json", "context_snapshot_sha256"}.issubset(
+        run_columns
+    ):
+        return None
+    row = connection.execute(
+        "SELECT context_snapshot_json,context_snapshot_sha256 "
+        "FROM analysis_runs WHERE id=? AND subject_id=?",
+        (analysis_run_id, subject_id),
+    ).fetchone()
+    if row is None:
+        return None
+    try:
+        snapshot_json = str(row["context_snapshot_json"])
+        expected_hash = str(row["context_snapshot_sha256"])
+        if sha256(snapshot_json.encode("utf-8")).hexdigest() != expected_hash:
+            return None
+        snapshot = json.loads(snapshot_json)
+    except (TypeError, json.JSONDecodeError):
+        return None
+    if not isinstance(snapshot, dict) or not isinstance(snapshot.get("sleep"), list):
+        return None
+
+    values: dict[str, object] = {}
+    source_revision: str | None = None
+    for entry in snapshot["sleep"]:
+        if not isinstance(entry, dict) or not isinstance(entry.get("content"), dict):
+            continue
+        content = entry["content"]
+        window = content.get("window")
+        latest = content.get("latest")
+        if (
+            content.get("family") != "morning_sleep"
+            or window != {
+                "start_local_date": advice_local_date,
+                "end_local_date": advice_local_date,
+            }
+            or not isinstance(latest, dict)
+            or latest.get("local_date") != advice_local_date
+            or content.get("observation_count") != 1
+            or content.get("source_count") != 1
+            or content.get("source_revision_count") != 1
+        ):
+            continue
+        revisions = content.get("source_revision_ids")
+        metric = content.get("metric_key")
+        if (
+            not isinstance(revisions, list)
+            or len(revisions) != 1
+            or not isinstance(revisions[0], str)
+            or not isinstance(metric, str)
+            or metric in values
+        ):
+            return None
+        if source_revision is None:
+            source_revision = revisions[0]
+        elif source_revision != revisions[0]:
+            return None
+        values[metric] = latest.get("value")
+    names = {
+        "sleepTimeSeconds",
+        "deepSleepSeconds",
+        "lightSleepSeconds",
+        "remSleepSeconds",
+        "awakeSleepSeconds",
+        "unmeasurableSleepSeconds",
+    }
+    durations: dict[str, int] = {}
+    for name in names:
+        value = values.get(f"sleep.{name}")
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            return None
+        durations[name] = value
+    start_ms = values.get("sleep.sleepStartTimestampGMT")
+    end_ms = values.get("sleep.sleepEndTimestampGMT")
+    if (
+        isinstance(start_ms, bool)
+        or not isinstance(start_ms, (int, float))
+        or isinstance(end_ms, bool)
+        or not isinstance(end_ms, (int, float))
+    ):
+        return None
+    try:
+        start = datetime.fromtimestamp(float(start_ms) / 1000, tz=timezone.utc)
+        end = datetime.fromtimestamp(float(end_ms) / 1000, tz=timezone.utc)
+    except (OverflowError, OSError, ValueError):
+        return None
+    window_seconds = int((end - start).total_seconds())
+    asleep = durations["sleepTimeSeconds"]
+    awake = durations["awakeSleepSeconds"]
+    stage_total = (
+        durations["deepSleepSeconds"]
+        + durations["lightSleepSeconds"]
+        + durations["remSleepSeconds"]
+    )
+    accounted_window = (
+        asleep + awake + durations["unmeasurableSleepSeconds"]
+    )
+    # Garmin may round independently reported stage totals by a few seconds.
+    # Accept only a tightly bounded discrepancy; material inconsistencies stay
+    # fail-closed and are not rendered.
+    if (
+        not 0 < window_seconds <= 24 * 60 * 60
+        or asleep <= 0
+        or abs(stage_total - asleep) > 60
+        or abs(accounted_window - window_seconds) > 60
+    ):
+        return None
+    final = (
+        values.get("sleep.sleepWindowConfirmed") is True
+        and values.get("sleep.sleepWindowConfirmationType")
+        == "enhanced_confirmed_final"
+        and values.get("sleep.calendarDate") == advice_local_date
+        and values.get("sleep.session_type") == "main_sleep"
+    )
+    local = ZoneInfo("Asia/Hong_Kong")
+    return SleepChart(
+        completeness="complete" if final else "partial",
+        start_local_time=start.astimezone(local).strftime("%H:%M"),
+        end_local_time=end.astimezone(local).strftime("%H:%M"),
+        window_seconds=window_seconds,
+        asleep_seconds=asleep,
+        deep_seconds=durations["deepSleepSeconds"],
+        light_seconds=durations["lightSleepSeconds"],
+        rem_seconds=durations["remSleepSeconds"],
+        awake_seconds=awake,
+        unmeasurable_seconds=durations["unmeasurableSleepSeconds"],
+    )
+
+
+def _delivery_sleep_chart(
+    connection: sqlite3.Connection,
+    *,
+    delivery_kind: str,
+    analysis_run_id: int,
+    subject_id: int,
+    artifacts: Sequence[DeliveryArtifact],
+) -> SleepChart | None:
+    if delivery_kind != "daily_report":
+        return None
+    advice = next(
+        (item for item in artifacts if item.content_role == "daily_advice"), None
+    )
+    if advice is None:
+        return None
+    return _sleep_chart(
+        connection,
+        analysis_run_id=analysis_run_id,
+        subject_id=subject_id,
+        advice_local_date=advice.period_start_local_date,
+    )
 
 
 class AnalysisDeliveryFactory:
@@ -288,7 +470,23 @@ class AnalysisDeliveryFactory:
                     "INSERT INTO analysis_delivery_artifacts(analysis_delivery_id,analysis_artifact_id,content_role,ordinal) VALUES(?,?,?,?)",
                     (delivery_id, artifact.artifact_id, artifact.content_role, ordinal),
                 )
-        return PendingDelivery(delivery_id, int(run["subject_id"]), run_id, run_key, delivery_kind, key, tuple(artifacts))
+        sleep_chart = _delivery_sleep_chart(
+            self._connection,
+            delivery_kind=delivery_kind,
+            analysis_run_id=run_id,
+            subject_id=int(run["subject_id"]),
+            artifacts=artifacts,
+        )
+        return PendingDelivery(
+            delivery_id,
+            int(run["subject_id"]),
+            run_id,
+            run_key,
+            delivery_kind,
+            key,
+            tuple(artifacts),
+            sleep_chart,
+        )
 
     def _verify_existing_relations(self, delivery_id: int, expected: Sequence[DeliveryArtifact]) -> None:
         actual = self._connection.execute(
@@ -324,10 +522,18 @@ class AnalysisDeliveryRepository:
         row, artifacts = self._load_verified(delivery_id)
         if subject_id is not None and int(row["subject_id"]) != subject_id:
             raise AnalysisDeliveryError("analysis_delivery_ownership_invalid")
+        sleep_chart = _delivery_sleep_chart(
+            self._connection,
+            delivery_kind=str(row["delivery_kind"]),
+            analysis_run_id=int(row["analysis_run_id"]),
+            subject_id=int(row["subject_id"]),
+            artifacts=artifacts,
+        )
         return PendingDelivery(
             delivery_id=int(row["id"]), subject_id=int(row["subject_id"]), analysis_run_id=int(row["analysis_run_id"]),
             run_key=str(row["run_key"]), delivery_kind=str(row["delivery_kind"]),
             idempotency_key=str(row["idempotency_key"]), artifacts=tuple(artifacts),
+            sleep_chart=sleep_chart,
         )
 
     def load_rendered(self, delivery_id: int, *, subject_id: int | None = None) -> RenderedDelivery:
@@ -627,15 +833,83 @@ _STOP_CONDITIONS = {
 _WEEKDAYS = ("星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日")
 _CONFIDENCE = frozenset({"较高", "一般", "较低"})
 _SLEEP_COMPLETENESS = {
-    "complete": "已收到（包含昨日日间、昨夜睡眠与今日早晨恢复）",
-    "partial": "部分收到；睡眠或早晨恢复可能仍在进行，结论按保守方式处理",
-    "limited": "未完整收到；缺失数据不会被当作正常，结论按最低置信度处理",
+    "complete": "已收到一条时间与阶段均闭合、且由设备最终确认的主睡眠记录",
+    "partial": "已收到睡眠记录，但尚未满足最终确认或完整闭合条件",
+    "unavailable": "未获得与本日报输入绑定的可验证睡眠记录；相关结论按保守方式处理",
 }
 
 
 def _display_date(value: str) -> str:
     parsed = date.fromisoformat(value)
     return f"{parsed.year}年{parsed.month}月{parsed.day}日"
+
+
+def _duration_label(seconds: int) -> str:
+    minutes = int(round(seconds / 60))
+    hours, remainder = divmod(minutes, 60)
+    if hours and remainder:
+        return f"{hours}小时{remainder}分钟"
+    if hours:
+        return f"{hours}小时"
+    return f"{remainder}分钟"
+
+
+def _sleep_chart_segments(chart: SleepChart) -> tuple[Element, ...]:
+    stages = (
+        ("深睡", chart.deep_seconds, "#315C8C"),
+        ("浅睡", chart.light_seconds, "#76A7D8"),
+        ("REM", chart.rem_seconds, "#8B78C6"),
+        ("清醒", chart.awake_seconds, "#D3B66F"),
+        ("未测", chart.unmeasurable_seconds, "#B8C1CC"),
+    )
+    chart_total = sum(seconds for _, seconds, _ in stages)
+    if chart_total <= 0:
+        return ()
+    segments: list[Element] = []
+    for label, seconds, color in stages:
+        if seconds <= 0:
+            continue
+        width = f"{seconds * 100 / chart_total:.2f}%"
+        segments.append(element(
+            "td",
+            text(" "),
+            attributes={
+                "width": width,
+                "bgcolor": color,
+                "aria-label": f"{label} {_duration_label(seconds)}",
+                "style": f"width:{width};height:18px;background:{color};font-size:1px;line-height:18px;",
+            },
+        ))
+    return tuple(segments)
+
+
+def _sleep_chart_legend(chart: SleepChart) -> tuple[Element, ...]:
+    stages = (
+        ("深睡", chart.deep_seconds, "#315C8C"),
+        ("浅睡", chart.light_seconds, "#76A7D8"),
+        ("REM", chart.rem_seconds, "#8B78C6"),
+        ("清醒", chart.awake_seconds, "#D3B66F"),
+        ("未测", chart.unmeasurable_seconds, "#B8C1CC"),
+    )
+    return tuple(
+        element(
+            "td",
+            element(
+                "span",
+                text(" "),
+                attributes={
+                    "style": f"display:inline-block;width:9px;height:9px;margin-right:5px;background:{color};border-radius:2px;"
+                },
+            ),
+            text(f"{label} {_duration_label(seconds)}"),
+            attributes={
+                "valign": "top",
+                "style": "padding:7px 12px 0 0;font-size:11px;line-height:1.5;color:#627184;white-space:nowrap;",
+            },
+        )
+        for label, seconds, color in stages
+        if seconds > 0
+    )
 
 
 def _text(value: object, *, neutral: str = "未提供") -> str:
@@ -1077,7 +1351,10 @@ def _daily_html(pending: PendingDelivery) -> str:
     heart_rate = _heart_rate(primary.get("target_bpm_range"))
     stop_conditions = _stop_text(primary.get("stop_conditions"))
     is_rest = activity == "rest"
-    completeness = summary.structured_content_json.get("data_completeness")
+    sleep_chart = pending.sleep_chart
+    sleep_completeness = (
+        sleep_chart.completeness if sleep_chart is not None else "unavailable"
+    )
     fields = {
         "brand_name": "TrainLab", "display_date": _display_date(advice.period_start_local_date), "title": "每日训练简报",
         "subtitle": "昨日状态与今日安排", "preheader": "昨日状态与今日安排", "overall_state": _text(summary.structured_content_json.get("overall_state")),
@@ -1088,7 +1365,23 @@ def _daily_html(pending: PendingDelivery) -> str:
             f"{_display_date(advice.period_start_local_date)}早晨恢复（Asia/Hong_Kong）"
         ),
         "sleep_recovery_status": _SLEEP_COMPLETENESS.get(
-            completeness, "未提供完整性状态；相关结论按保守方式处理"
+            sleep_completeness, _SLEEP_COMPLETENESS["unavailable"]
+        ),
+        "sleep_window": (
+            f"{sleep_chart.start_local_time}–{sleep_chart.end_local_time}"
+            if sleep_chart is not None else ""
+        ),
+        "sleep_window_duration": (
+            _duration_label(sleep_chart.window_seconds)
+            if sleep_chart is not None else ""
+        ),
+        "sleep_asleep_duration": (
+            _duration_label(sleep_chart.asleep_seconds)
+            if sleep_chart is not None else ""
+        ),
+        "sleep_awake_duration": (
+            _duration_label(sleep_chart.awake_seconds)
+            if sleep_chart is not None else ""
         ),
         "confidence": _text(advice.structured_content_json.get("confidence")), "summary_date": _display_date(summary.period_start_local_date),
         "daily_summary_text": summary.user_visible_text, "advice_date": _display_date(advice.period_start_local_date),
@@ -1114,7 +1407,21 @@ def _daily_html(pending: PendingDelivery) -> str:
     if activity == "rest":
         for field in ("warmup", "main_work", "cooldown"):
             _remove_table_with_field(template.root, field)
-    template.remove_empty_optional({"decision_factors": factors, "stop_conditions": fields["stop_conditions"], "difficulty_adjustment_reason": fields["difficulty_adjustment_reason"], "data_limitation": fields["data_limitation"]}).replace_repeats({"decision_factors": factors}).set_fields(fields)
+    template.remove_empty_optional({
+        "decision_factors": factors,
+        "sleep_chart": sleep_chart,
+        "stop_conditions": fields["stop_conditions"],
+        "difficulty_adjustment_reason": fields["difficulty_adjustment_reason"],
+        "data_limitation": fields["data_limitation"],
+    }).replace_repeats({
+        "decision_factors": factors,
+        "sleep_stage_segments": (
+            _sleep_chart_segments(sleep_chart) if sleep_chart is not None else ()
+        ),
+        "sleep_stage_legend": (
+            _sleep_chart_legend(sleep_chart) if sleep_chart is not None else ()
+        ),
+    }).set_fields(fields)
     return template.finalize()
 
 
@@ -1135,7 +1442,10 @@ def render_delivery(pending: PendingDelivery) -> RenderedDelivery:
             f"TrainLab｜{report_title}｜回顾{_display_date(summary.period_start_local_date)}｜"
             f"安排{_display_date(advice.period_start_local_date)}"
         )
-        completeness = summary.structured_content_json.get("data_completeness")
+        sleep_chart = pending.sleep_chart
+        sleep_completeness = (
+            sleep_chart.completeness if sleep_chart is not None else "unavailable"
+        )
         plain = [
             report_title,
             f"回顾日期：{_display_date(summary.period_start_local_date)}",
@@ -1144,10 +1454,20 @@ def render_delivery(pending: PendingDelivery) -> RenderedDelivery:
             f"{_display_date(summary.period_start_local_date)}白天活动与健康；"
             f"{_display_date(summary.period_start_local_date)}晚至{_display_date(advice.period_start_local_date)}早睡眠；"
             f"{_display_date(advice.period_start_local_date)}早晨恢复（Asia/Hong_Kong）",
-            "睡眠与早晨恢复：" + _SLEEP_COMPLETENESS.get(
-                completeness, "未提供完整性状态；相关结论按保守方式处理"
+            "睡眠数据：" + _SLEEP_COMPLETENESS.get(
+                sleep_completeness, _SLEEP_COMPLETENESS["unavailable"]
             ),
         ]
+        if sleep_chart is not None:
+            plain.append(
+                "睡眠图表："
+                f"{sleep_chart.start_local_time}–{sleep_chart.end_local_time}；"
+                f"实际睡眠{_duration_label(sleep_chart.asleep_seconds)}；"
+                f"深睡{_duration_label(sleep_chart.deep_seconds)}、"
+                f"浅睡{_duration_label(sleep_chart.light_seconds)}、"
+                f"REM {_duration_label(sleep_chart.rem_seconds)}、"
+                f"清醒{_duration_label(sleep_chart.awake_seconds)}"
+            )
     elif pending.delivery_kind == "weekly_report":
         summary = next((item for item in pending.artifacts if item.content_role == "weekly_summary"), None)
         subject = _safe_header(

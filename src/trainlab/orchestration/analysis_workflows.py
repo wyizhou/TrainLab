@@ -192,6 +192,23 @@ class MorningWorkflowService:
         collection = _receipt(collected)
         if collect_step.status not in _TERMINAL_GOOD:
             return _stop(request, steps, "blocked", collect_step.status)
+        # A completed-day incremental run deliberately stops at yesterday.
+        # Fetch today's live snapshot separately so the analysis can see a
+        # sleep session that ended this morning without pretending that the
+        # still-open current day is complete or advancing completed-day
+        # cursors.  Snapshot coverage is therefore not part of `_quality`;
+        # only its execution status is required here.
+        _current, current_step = _run(
+            self._executor,
+            request.workflow_key,
+            "current_snapshot",
+            layer="garmin",
+            mode="snapshot",
+            snapshot_local_date=today,
+        )
+        steps.append(current_step)
+        if current_step.status not in _TERMINAL_GOOD:
+            return _stop(request, steps, "blocked", current_step.status)
         audited, audit_step = _run(self._executor, request.workflow_key, "quality", layer="garmin", mode="audit", health_from_local_date=yesterday, through_local_date=yesterday)
         steps.append(audit_step)
         quality_receipt = _receipt(audited)
@@ -232,6 +249,8 @@ class MondayWorkflowService(MorningWorkflowService):
         steps: list[AnalysisWorkflowStep] = []
         collected, item = _run(self._executor, request.workflow_key, "collect", layer="garmin", mode="incremental", through_local_date=yesterday); steps.append(item)
         collection = _receipt(collected)
+        if item.status not in _TERMINAL_GOOD: return _stop(request, steps, "blocked", item.status)
+        _current, item = _run(self._executor, request.workflow_key, "current_snapshot", layer="garmin", mode="snapshot", snapshot_local_date=today); steps.append(item)
         if item.status not in _TERMINAL_GOOD: return _stop(request, steps, "blocked", item.status)
         audited, item = _run(self._executor, request.workflow_key, "quality", layer="garmin", mode="audit", health_from_local_date=yesterday, through_local_date=yesterday); steps.append(item)
         quality = _quality(collection, _receipt(audited))
