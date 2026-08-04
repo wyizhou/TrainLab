@@ -67,6 +67,23 @@ def _new_run(
     )
 
 
+def test_subject_normalizes_known_legacy_timezone(tmp_path: Path) -> None:
+    config, _ = _setup(tmp_path)
+    repository = GarminRepository(config)
+    connection = repository.connect()
+    connection.execute(
+        "UPDATE data_subjects SET timezone='Asia/Singapore' WHERE subject_key=?",
+        (config.subject_key,),
+    )
+
+    subject = repository.subject(connection)
+
+    assert connection.execute(
+        "SELECT timezone FROM data_subjects WHERE id=?", (subject,)
+    ).fetchone()[0] == "Asia/Hong_Kong"
+    connection.close()
+
+
 def test_interrupted_item_recovers_without_duplicate_run(tmp_path: Path) -> None:
     config, _ = _setup(tmp_path)
     repository = GarminRepository(config)

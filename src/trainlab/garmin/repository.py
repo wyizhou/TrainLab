@@ -15,10 +15,26 @@ class GarminRepository:
         return conn
 
     def subject(self, conn: sqlite3.Connection) -> int:
-        row = conn.execute("SELECT id FROM data_subjects WHERE subject_key=?", (self.config.subject_key,)).fetchone()
+        row = conn.execute(
+            "SELECT id,timezone FROM data_subjects WHERE subject_key=?",
+            (self.config.subject_key,),
+        ).fetchone()
         if row:
-            return int(row[0])
-        conn.execute("INSERT INTO data_subjects(subject_key,timezone,created_at_utc) VALUES(?,?,?)", (self.config.subject_key, "Asia/Hong_Kong", utc_now()))
+            subject_id = int(row[0])
+            # The published schema used Asia/Singapore before the production
+            # contract was fixed to Hong Kong business time. Normalize only
+            # that known legacy alias during a normal Garmin write path; an
+            # unknown timezone remains untouched so analysis still fails closed.
+            if row[1] == "Asia/Singapore":
+                conn.execute(
+                    "UPDATE data_subjects SET timezone=? WHERE id=? AND timezone=?",
+                    (TZ.key, subject_id, "Asia/Singapore"),
+                )
+            return subject_id
+        conn.execute(
+            "INSERT INTO data_subjects(subject_key,timezone,created_at_utc) VALUES(?,?,?)",
+            (self.config.subject_key, TZ.key, utc_now()),
+        )
         return int(conn.execute("SELECT last_insert_rowid()").fetchone()[0])
 
     def start_run(self, conn: sqlite3.Connection, request: SyncRequest, subject_id: int, receipt: SyncReceipt) -> int:
