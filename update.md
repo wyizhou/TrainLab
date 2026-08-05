@@ -77,3 +77,10 @@
 - Supervisor 启动后，原失败命令在并发运行状态下返回 `succeeded`、`next_action=none`，可操作的 pending/failed/delivery_unknown 均为 0，最新 delivery 28 为 `sent`。
 - 基线健康检查 workflow 2295 为 `succeeded`，0 warning、0 error、0 incident；open incident 为 0，部署后没有非成功 workflow，launcher 和 worker 各 1，PID 使用量 68/512，无新增 PID 上限命中。
 - 新稳定起点：`2026-08-05T06:42:44Z`（香港时间 `2026-08-05 14:42:44`）；连续 14 天目标时间：`2026-08-19T06:42:44Z`。下一次 30 分钟检查时间为 `2026-08-05T07:12:44Z`。
+
+## 2026-08-05：14 天测试因执行环境暂停再次重置
+
+- 08:42:44Z 周期检查发现 Supervisor worker 从 8328 变为 12923，launcher 缓冲收据为 `lease_lost`；08:16:57Z 至 08:44:33Z 间没有调度任务，健康任务最大间隔约 27 分 36 秒。
+- 同一窗口内，监控会话的 600 秒等待跨越了约 30 分钟系统时间；旧 worker 恢复后发现 90 秒 lease 已过期并安全退出，launcher 按 15 秒退避启动新 worker。业务 workflow、健康结果和分析投递均没有失败，但连续运行要求已被破坏。
+- 这次不修改 lease 的 fail-closed 语义：进程经历长时间暂停后不得续接已过期所有权。运维修复是取消超过 55 秒的监控等待，避免执行环境被长时间阻塞/挂起；每轮检查新增对 worker PID 集合和健康 workflow 最大间隔的连续性验证。
+- 服务已立即停止，原稳定计时作废。完成文档提交、doctor、重启和新基线前不重新计时。
