@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+import ctypes
 import json
 import os
 import re
 import select
+import signal
 import subprocess
+import sys
 import time
-from pathlib import Path
 from typing import Any
 
 
@@ -59,6 +61,60 @@ def _bounded_protocol_integer(value: Any, minimum: int, maximum: int) -> int | N
     return None
 
 
+def _enable_child_subreaper() -> bool:
+    """Adopt MCP grandchildren so short-lived ``npx`` trees can be reaped."""
+
+    if not sys.platform.startswith("linux"):
+        return False
+    try:
+        libc = ctypes.CDLL(None, use_errno=True)
+        prctl = libc.prctl
+        prctl.argtypes = [
+            ctypes.c_int,
+            ctypes.c_ulong,
+            ctypes.c_ulong,
+            ctypes.c_ulong,
+            ctypes.c_ulong,
+        ]
+        prctl.restype = ctypes.c_int
+        return prctl(36, 1, 0, 0, 0) == 0  # PR_SET_CHILD_SUBREAPER
+    except (AttributeError, OSError):
+        return False
+
+
+def _signal_process_group(
+    process: object, process_group_id: object, requested_signal: int
+) -> None:
+    if isinstance(process_group_id, int) and process_group_id > 0:
+        try:
+            os.killpg(process_group_id, requested_signal)
+            return
+        except ProcessLookupError:
+            return
+        except OSError:
+            pass
+    action = "terminate" if requested_signal == signal.SIGTERM else "kill"
+    getattr(process, action)()
+
+
+def _reap_process_group(process_group_id: object) -> None:
+    if not isinstance(process_group_id, int) or process_group_id <= 0:
+        return
+    deadline = time.monotonic() + 3
+    while time.monotonic() < deadline:
+        reaped = False
+        while True:
+            try:
+                pid, _status = os.waitpid(-process_group_id, os.WNOHANG)
+            except (ChildProcessError, OSError):
+                return
+            if pid == 0:
+                break
+            reaped = True
+        if not reaped:
+            time.sleep(0.05)
+
+
 class StdioMCPClient:
     """Small deterministic MCP client used by watchdog and idempotency checks."""
 
@@ -70,6 +126,7 @@ class StdioMCPClient:
         if any(not isinstance(line, str) or not line or "\n" in line or "\r" in line for line in stdout_preamble_lines):
             raise ValueError("MCP stdout preamble is invalid")
         self._stdout_preamble_lines = set(stdout_preamble_lines)
+        self._subreaper_enabled = _enable_child_subreaper()
         self.process = subprocess.Popen(
             [command, *args],
             stdin=subprocess.PIPE,
@@ -81,7 +138,9 @@ class StdioMCPClient:
             text=True,
             bufsize=1,
             env=actual_env,
+            start_new_session=True,
         )
+        self._process_group_id = getattr(self.process, "pid", None)
         self._next_id = 1
         try:
             self._request(
@@ -159,18 +218,21 @@ class StdioMCPClient:
         process = getattr(self, "process", None)
         if process is None:
             return
+        process_group_id = getattr(self, "_process_group_id", None)
         try:
             if process.poll() is None:
-                process.terminate()
+                _signal_process_group(process, process_group_id, signal.SIGTERM)
                 try:
                     process.wait(timeout=3)
                 except subprocess.TimeoutExpired:
-                    process.kill()
+                    _signal_process_group(process, process_group_id, signal.SIGKILL)
                     try:
                         # Reap after kill as well: kill alone can leave a zombie.
                         process.wait(timeout=3)
                     except subprocess.TimeoutExpired:
                         pass
+            if getattr(self, "_subreaper_enabled", False):
+                _reap_process_group(process_group_id)
         except Exception:
             # Closing is best-effort and idempotent; it must not disclose or mask
             # a prior protocol failure.

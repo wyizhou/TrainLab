@@ -27,6 +27,8 @@ logs/*
 !logs/.gitkeep
 *.lock
 !requirements.lock
+core
+core.*
 
 # Garmin Full archives are permanent local evidence, never Git content.
 # Raw provider JSON and extracted FIT files stay on disk indefinitely; the

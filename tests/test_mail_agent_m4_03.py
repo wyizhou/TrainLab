@@ -440,6 +440,28 @@ def test_stdio_client_uses_devnull_for_provider_stderr(monkeypatch: pytest.Monke
     monkeypatch.setattr(StdioMCPClient, "_notify", lambda *_args: None)
     StdioMCPClient("fake", [])
     assert popen_calls[0]["stderr"] == __import__("subprocess").DEVNULL
+    assert popen_calls[0]["start_new_session"] is True
+
+
+def test_stdio_client_close_terminates_and_reaps_its_linux_process_group(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    process = _ProcessDouble(exited=False)
+    signals: list[tuple[int, int]] = []
+    reaped: list[int] = []
+    client = object.__new__(StdioMCPClient)
+    client.process = process
+    client._process_group_id = 4321
+    client._subreaper_enabled = True
+    monkeypatch.setattr("trainlab.mcp.os.killpg", lambda group, sig: signals.append((group, sig)))
+    monkeypatch.setattr("trainlab.mcp._reap_process_group", lambda group: reaped.append(group))
+
+    client.close()
+
+    assert signals == [(4321, __import__("signal").SIGTERM)]
+    assert process.terminate_calls == 0
+    assert process.wait_calls == [3]
+    assert reaped == [4321]
 
 
 @pytest.mark.parametrize(
