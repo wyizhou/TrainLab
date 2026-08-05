@@ -53,3 +53,12 @@
 - Supervisor 重新启动后完成约 9.8GB 的启动读取校验并建立 active lease；受控健康检查 workflow 2217 为 `succeeded`，0 warning、0 error、0 incident，系统 open incident 数为 0。
 - 新稳定起点：`2026-08-05T05:11:23Z`（香港时间 `2026-08-05 13:11:23`）；连续 14 天目标时间：`2026-08-19T05:11:23Z`。
 - 计时状态和每次检查收据分别保存在本机忽略目录中的 `state/runtime/stability-monitor.json` 与 `state/runtime/stability-checks.jsonl`，不进入 Git，也不包含健康数据或凭据。
+
+## 2026-08-05：修复 Supervisor 心跳绕过 SQLite 忙重试
+
+- 14 天稳定性测试在第三次检查时发现，本地 Supervisor worker 曾以 `supervisor_lease_failed`、`lease_heartbeat` 退出，local launcher 随后自动拉起新 worker；服务已按测试规则停止，原稳定计时作废。
+- 数据库审计显示旧 worker 最后一次健康任务成功、新 worker 接管后任务也继续成功，期间没有业务 workflow 失败。旧版本将具体租约错误统一脱敏，无法从历史输出反推出唯一底层异常。
+- 代码核查发现一个与现象一致的确定缺陷：心跳只重试直接抛出的 SQLite `busy/locked`；连接层若将同一底层异常包装成 schema 读取异常，心跳会绕过既有重试预算并立即退出。
+- 修复后，心跳会沿受控异常因果链识别真正的 SQLite `OperationalError` busy/locked，并继续使用原有的最长 10 秒、低于 90 秒租约 TTL 的有界退避；非 busy 数据库错误仍立即失败关闭。
+- Supervisor 输出现在可区分固定且不含敏感信息的 `lease_database_unavailable`、`lease_ownership_lost` 和 `lease_clock_anomaly`，未知异常仍统一为 `supervisor_lease_failed`。
+- 防回归测试覆盖包装后的临时锁重试、超出预算失败、非 busy 不重试、安全错误码保留和未知错误脱敏；租约与 Supervisor 针对性测试 49 项通过。

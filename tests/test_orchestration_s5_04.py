@@ -142,6 +142,41 @@ def test_s5_04_heartbeat_retries_only_transient_sqlite_contention(tmp_path: Path
         blocker.close()
 
 
+def test_s5_04_heartbeat_retries_wrapped_sqlite_contention(tmp_path: Path) -> None:
+    root = foundation_root(tmp_path)
+    clock = FakeClock(datetime(2026, 7, 24, tzinfo=UTC))
+    lease = manager(root, clock, "one", 1, heartbeat_retry_seconds=0.1)
+    assert lease.acquire().state == "active"
+    actual_transaction = lease._tx
+    attempts = [0]
+
+    class WrappedBusyTransaction:
+        def __enter__(self):
+            try:
+                raise sqlite3.OperationalError("database is locked")
+            except sqlite3.OperationalError as exc:
+                raise repository_module.OrchestrationSchemaIncompatible(
+                    "orchestrator_schema_unreadable"
+                ) from exc
+
+        def __exit__(self, typ, value, traceback):
+            return False
+
+    def wrapped_transaction():
+        attempts[0] += 1
+        if attempts[0] == 1:
+            return WrappedBusyTransaction()
+        return actual_transaction()
+
+    elapsed = [0.0]
+    lease._tx = wrapped_transaction
+    lease._monotonic = lambda: elapsed[0]
+    lease._sleep = lambda delay: elapsed.__setitem__(0, elapsed[0] + delay)
+
+    assert lease.heartbeat().state == "active"
+    assert attempts[0] == 2
+
+
 def test_s5_04_heartbeat_busy_beyond_budget_still_fails_closed(tmp_path: Path) -> None:
     root = foundation_root(tmp_path)
     clock = FakeClock(datetime(2026, 7, 24, tzinfo=UTC))

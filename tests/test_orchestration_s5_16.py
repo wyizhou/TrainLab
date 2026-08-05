@@ -188,6 +188,20 @@ def test_controlled_lease_clock_anomaly_preserves_failure_phase() -> None:
         assert not queue.claimed and not dispatched
 
 
+def test_safe_operational_lease_errors_preserve_failure_phase() -> None:
+    for error_code in ("lease_database_unavailable", "lease_ownership_lost"):
+        result = SupervisorRuntime(
+            FailingLease("lease_heartbeat", LeaseError(error_code)),
+            Queue(),
+            RuntimeConfig(),
+            dispatch=lambda _: None,
+        ).run_once()
+
+        assert result.status == "failed"
+        assert result.error_code == error_code
+        assert result.failure_phase == "lease_heartbeat"
+
+
 def test_untrusted_lease_error_is_redacted_and_other_errors_stay_generic() -> None:
     result = SupervisorRuntime(
         FailingLease("lease_start", LeaseError("untrusted-detail")),

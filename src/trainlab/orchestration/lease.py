@@ -229,8 +229,11 @@ class LeaseManager:
                     return self._heartbeat_in_transaction(conn, now, expiry)
             except LeaseError:
                 raise
-            except sqlite3.OperationalError as exc:
-                if not _sqlite_busy(exc) or self._monotonic() >= deadline:
+            except Exception as exc:
+                # Repository connection setup deliberately wraps schema-read
+                # failures.  Preserve the heartbeat retry contract when the
+                # wrapped root cause is only transient SQLite contention.
+                if not _sqlite_busy_in_chain(exc) or self._monotonic() >= deadline:
                     raise LeaseError("lease_database_unavailable") from exc
                 remaining = deadline - self._monotonic()
                 delay = min(0.05 * (2 ** min(attempt, 4)), remaining)
@@ -238,8 +241,6 @@ class LeaseManager:
                     raise LeaseError("lease_database_unavailable") from exc
                 self._sleep(delay)
                 attempt += 1
-            except Exception as exc:
-                raise LeaseError("lease_database_unavailable") from exc
 
     def release(self) -> LeaseResult:
         error: Exception | None = None
@@ -506,6 +507,18 @@ def _sqlite_busy(error: sqlite3.OperationalError) -> bool:
         "database table is locked",
         "database schema is locked",
     }
+
+
+def _sqlite_busy_in_chain(error: BaseException) -> bool:
+    """Recognize wrapped SQLite contention without trusting arbitrary text."""
+    seen: set[int] = set()
+    current: BaseException | None = error
+    while current is not None and id(current) not in seen:
+        seen.add(id(current))
+        if isinstance(current, sqlite3.OperationalError) and _sqlite_busy(current):
+            return True
+        current = current.__cause__ or current.__context__
+    return False
 
 
 def _parse(value: object) -> datetime:

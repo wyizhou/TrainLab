@@ -15,7 +15,11 @@ from typing import Callable, Protocol
 from .lease import LeaseError
 
 
-_EXPOSED_LEASE_ERROR_CODES = frozenset({"lease_clock_anomaly"})
+_EXPOSED_LEASE_ERROR_CODES = frozenset({
+    "lease_clock_anomaly",
+    "lease_database_unavailable",
+    "lease_ownership_lost",
+})
 
 
 class Lease(Protocol):
