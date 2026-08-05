@@ -540,3 +540,20 @@ def test_c2_snapshot_malformed_wal_fails_without_snapshot_residue(tmp_path:Path)
   with pytest.raises(IncompatibleError,match='sqlite_wal_state_unsafe'): tool._connect(db,readonly=True)
   assert not list(root.glob('.foundation-readonly-*'))
  finally: writer.close()
+
+
+def test_c2_wal_disappearing_before_snapshot_is_controlled(tmp_path:Path,monkeypatch:pytest.MonkeyPatch)->None:
+ root=tmp_path/'f'; tool=_tool(root); assert tool.execute(FoundationRequest('init','c2-wal-disappears',UTC)).status=='initialized'; db=root/'data.db'
+ writer=tool._connect(db); writer.execute('PRAGMA wal_autocheckpoint=0'); writer.execute('CREATE TABLE disappearing_wal(v)'); writer.execute('INSERT INTO disappearing_wal VALUES(1)')
+ original_stat=os.stat; wal_checks=0; wal=root/'data.db-wal'
+ def checked(name,*args,**kwargs):
+  nonlocal wal_checks
+  if name==db.name+'-wal' and kwargs.get('dir_fd') is not None:
+   wal_checks+=1
+   if wal_checks==2: wal.unlink()
+  return original_stat(name,*args,**kwargs)
+ monkeypatch.setattr(os,'stat',checked)
+ try:
+  with pytest.raises(IncompatibleError,match='sqlite_wal_state_unsafe'): tool._connect(db,readonly=True)
+  assert wal_checks==2 and not list(root.glob('.foundation-readonly-*'))
+ finally: writer.close()

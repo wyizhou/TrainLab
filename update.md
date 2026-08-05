@@ -62,3 +62,11 @@
 - 修复后，心跳会沿受控异常因果链识别真正的 SQLite `OperationalError` busy/locked，并继续使用原有的最长 10 秒、低于 90 秒租约 TTL 的有界退避；非 busy 数据库错误仍立即失败关闭。
 - Supervisor 输出现在可区分固定且不含敏感信息的 `lease_database_unavailable`、`lease_ownership_lost` 和 `lease_clock_anomaly`，未知异常仍统一为 `supervisor_lease_failed`。
 - 防回归测试覆盖包装后的临时锁重试、超出预算失败、非 busy 不重试、安全错误码保留和未知错误脱敏；租约与 Supervisor 针对性测试 49 项通过。
+
+## 2026-08-05：修复分析状态读取与 WAL checkpoint 竞态
+
+- 租约修复部署后的基线复核中，`trainlab run --slot morning --analysis-only --status` 在创建只读一致性快照时遇到 `data.db-wal` 于检查后、打开前被 checkpoint 删除，原实现泄漏了未受控的 `FileNotFoundError`。
+- 按稳定性测试规则，发现后立即停止 Supervisor；该次候选基线不计入 14 天稳定时间。
+- Foundation 现在把 WAL/SHM 快照成员在绑定窗口内消失统一转换为固定的 `sqlite_wal_state_unsafe`，继续保持 fail-closed，不接受混合时点快照。
+- 只有只读分析状态入口会对这个精确错误最多重新打开 3 次；路径替换、权限异常、内容变化和其他 Foundation 错误不会重试。
+- 新增测试覆盖 WAL 在初检后消失、精确瞬时错误重试以及其他安全错误不重试。完整相关套件中 478 项通过；另 2 项旧 SHM mtime 断言在未修复提交 `7331def` 的隔离副本中也同样失败，确认不是本次变更引入，且 inode、权限、大小和内容哈希均未改变。

@@ -12,7 +12,7 @@ from pathlib import Path
 import re
 from zoneinfo import ZoneInfo
 
-from ..foundation import FoundationConfig, FoundationTool
+from ..foundation import FoundationConfig, FoundationTool, IncompatibleError
 from ..util import project_root
 from .config import load_analysis_config
 from .contracts import AnalysisDelivery, AnalysisError, AnalysisRequest, AnalysisReceipt, build_run_key
@@ -458,9 +458,17 @@ def run_analysis_status(
     """Read A3-21 status using only the Foundation database connection."""
     root = (root or project_root()).resolve()
     foundation = FoundationConfig.load(root)
-    connection = FoundationTool(foundation)._connect(
-        foundation.database_path, readonly=True
-    )
+    tool = FoundationTool(foundation)
+    connection = None
+    for attempt in range(3):
+        try:
+            connection = tool._connect(foundation.database_path, readonly=True)
+            break
+        except IncompatibleError as exc:
+            transient_wal_change = exc.args == ("sqlite_wal_state_unsafe",)
+            if not transient_wal_change or attempt == 2:
+                raise
+    assert connection is not None
     try:
         from .status import AnalysisStatusQueryService
 

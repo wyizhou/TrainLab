@@ -817,11 +817,23 @@ class FoundationTool:
                 digest.update(block); total += len(block)
         def _strict_source(source_name: str, source_fd: int | None = None) -> tuple[int, tuple[int,int,int,int,int,bytes]]:
             """Bind an opened source fd to a stable name and full evidence."""
-            pre=checked_stat(source_name)
+            try:
+                pre=checked_stat(source_name)
+            except FileNotFoundError as exc:
+                raise IncompatibleError("sqlite_wal_state_unsafe") from exc
             owned=False
             if source_fd is None:
-                source_fd=os.open(source_name,os.O_RDONLY|getattr(os,"O_NOFOLLOW",0),dir_fd=parent_fd); owned=True
-            opened=os.fstat(source_fd); post=checked_stat(source_name)
+                try:
+                    source_fd=os.open(source_name,os.O_RDONLY|getattr(os,"O_NOFOLLOW",0),dir_fd=parent_fd)
+                except FileNotFoundError as exc:
+                    raise IncompatibleError("sqlite_wal_state_unsafe") from exc
+                owned=True
+            opened=os.fstat(source_fd)
+            try:
+                post=checked_stat(source_name)
+            except FileNotFoundError as exc:
+                if owned: os.close(source_fd)
+                raise IncompatibleError("sqlite_wal_state_unsafe") from exc
             if not (stat.S_ISREG(opened.st_mode) and opened.st_uid==os.getuid() and stat.S_IMODE(opened.st_mode)==0o600):
                 if owned: os.close(source_fd)
                 raise IncompatibleError("sqlite_wal_state_unsafe")

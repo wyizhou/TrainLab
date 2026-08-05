@@ -485,6 +485,59 @@ def test_unchanged_daily_receipt_recovers_persisted_delivery_artifact_ids():
     assert merged.artifact_ids == ("11", "12")
 
 
+def test_status_retries_only_controlled_transient_wal_change(monkeypatch):
+    class Connection:
+        def execute(self, sql, *_args):
+            assert "data_subjects" in sql
+            return [("default",)]
+
+        def close(self):
+            pass
+
+    connection = Connection()
+    attempts = []
+
+    class Tool:
+        def _connect(self, _path, *, readonly=False):
+            assert readonly
+            attempts.append(readonly)
+            if len(attempts) < 3:
+                raise runtime.IncompatibleError("sqlite_wal_state_unsafe")
+            return connection
+
+    foundation = SimpleNamespace(database_path=Path("/project/state/data.db"))
+    monkeypatch.setattr(runtime, "FoundationConfig", SimpleNamespace(load=lambda _root: foundation))
+    monkeypatch.setattr(runtime, "FoundationTool", lambda _foundation: Tool())
+
+    from trainlab.analysis import status
+
+    monkeypatch.setattr(
+        status,
+        "AnalysisStatusQueryService",
+        lambda _connection: SimpleNamespace(execute=lambda _request: _receipt("succeeded")),
+    )
+
+    assert runtime.run_analysis_status(root=Path("/project")).status == "succeeded"
+    assert attempts == [True, True, True]
+
+
+def test_status_does_not_retry_other_foundation_error(monkeypatch):
+    attempts = []
+
+    class Tool:
+        def _connect(self, _path, *, readonly=False):
+            attempts.append(readonly)
+            raise runtime.IncompatibleError("sqlite_path_unsafe")
+
+    foundation = SimpleNamespace(database_path=Path("/project/state/data.db"))
+    monkeypatch.setattr(runtime, "FoundationConfig", SimpleNamespace(load=lambda _root: foundation))
+    monkeypatch.setattr(runtime, "FoundationTool", lambda _foundation: Tool())
+
+    with pytest.raises(runtime.IncompatibleError, match="sqlite_path_unsafe"):
+        runtime.run_analysis_status(root=Path("/project"))
+    assert attempts == [True]
+
+
 def test_unchanged_daily_receipt_restores_stored_run_evidence_without_generation():
     class Connection:
         def execute(self, sql, values):
