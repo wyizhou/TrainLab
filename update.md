@@ -70,3 +70,10 @@
 - Foundation 现在把 WAL/SHM 快照成员在绑定窗口内消失统一转换为固定的 `sqlite_wal_state_unsafe`，继续保持 fail-closed，不接受混合时点快照。
 - 只有只读分析状态入口会对这个精确错误最多重新打开 3 次；路径替换、权限异常、内容变化和其他 Foundation 错误不会重试。
 - 新增测试覆盖 WAL 在初检后消失、精确瞬时错误重试以及其他安全错误不重试。完整相关套件中 478 项通过；另 2 项旧 SHM mtime 断言在未修复提交 `7331def` 的隔离副本中也同样失败，确认不是本次变更引入，且 inode、权限、大小和内容哈希均未改变。
+
+### 14 天稳定性计时再次重置
+
+- 修复提交 `8c0f821` 已推送到远程 `main`；部署前 doctor 的 configuration、contracts、foundation、Gmail 和 subject 全部 ready，Gmail 为当前环境注册的 `gmail_mcp_available`。
+- Supervisor 启动后，原失败命令在并发运行状态下返回 `succeeded`、`next_action=none`，可操作的 pending/failed/delivery_unknown 均为 0，最新 delivery 28 为 `sent`。
+- 基线健康检查 workflow 2295 为 `succeeded`，0 warning、0 error、0 incident；open incident 为 0，部署后没有非成功 workflow，launcher 和 worker 各 1，PID 使用量 68/512，无新增 PID 上限命中。
+- 新稳定起点：`2026-08-05T06:42:44Z`（香港时间 `2026-08-05 14:42:44`）；连续 14 天目标时间：`2026-08-19T06:42:44Z`。下一次 30 分钟检查时间为 `2026-08-05T07:12:44Z`。
