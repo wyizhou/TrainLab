@@ -147,6 +147,46 @@ def test_health_workflow_reports_counts_and_times_but_not_lower_layer_content(tm
     assert all("content" not in str(value).lower() and "email" not in str(value).lower() for value in values.values())
 
 
+def test_health_ignores_retryable_delivery_superseded_by_later_sent_report(
+    tmp_path: Path,
+) -> None:
+    database = foundation_database(tmp_path)
+    conn = sqlite3.connect(database)
+    try:
+        conn.execute("DROP TABLE analysis_deliveries")
+        conn.execute(
+            "CREATE TABLE analysis_deliveries("
+            "id INTEGER PRIMARY KEY,subject_id INTEGER,delivery_kind TEXT,status TEXT,"
+            "created_at_utc TEXT)"
+        )
+        conn.executemany(
+            "INSERT INTO analysis_deliveries VALUES(?,?,?,?,?)",
+            (
+                (1, 1, "daily_report", "pending", "2026-07-26T00:00:00Z"),
+                (2, 1, "daily_report", "failed", "2026-07-26T00:01:00Z"),
+                (3, 1, "daily_report", "sent", "2026-07-26T00:02:00Z"),
+            ),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    repository = Repository()
+    outcome = HealthWorkflow(
+        database_path=database,
+        state_directory=tmp_path / "state",
+        log_directory=tmp_path / "logs",
+        storage_directory=tmp_path,
+        repository=repository,
+        clock=lambda: NOW,
+    ).execute(request())
+    analysis = next(
+        item for item in repository.checks if item["check_kind"] == "analysis"
+    )
+    assert analysis["status"] == "ready"
+    assert analysis["metrics"] == {"attention_count": 0}
+    assert outcome.status == "succeeded"
+
+
 def test_health_workflow_marks_missing_database_attention_without_attempting_repair(tmp_path: Path) -> None:
     repository = Repository()
     workflow = HealthWorkflow(

@@ -266,7 +266,30 @@ class HealthWorkflow:
         return HealthObservation("garmin", "cursor", state, {"cursor_count": int(cursor_count), "open_gaps": gaps, "lag_days": lag})
 
     def _analysis(self, conn: sqlite3.Connection) -> HealthObservation:
-        total = int(conn.execute("SELECT COUNT(*) FROM analysis_deliveries WHERE status IN ('pending','sending','delivery_unknown','failed')").fetchone()[0])
+        columns = {
+            str(row[1]) for row in conn.execute("PRAGMA table_info(analysis_deliveries)")
+        }
+        if {
+            "id", "subject_id", "delivery_kind", "status", "created_at_utc",
+        }.issubset(columns):
+            total = int(conn.execute(
+                "SELECT COUNT(*) FROM analysis_deliveries d "
+                "WHERE d.status IN ('pending','sending','delivery_unknown','failed') "
+                "AND NOT (d.status IN ('pending','failed') AND EXISTS ("
+                "SELECT 1 FROM analysis_deliveries newer "
+                "WHERE newer.subject_id=d.subject_id "
+                "AND newer.delivery_kind=d.delivery_kind "
+                "AND newer.status IN ('sent','already_sent') "
+                "AND (newer.created_at_utc>d.created_at_utc OR "
+                "(newer.created_at_utc=d.created_at_utc AND newer.id>d.id))))"
+            ).fetchone()[0])
+        else:
+            # Synthetic/legacy-compatible schemas cannot prove supersession,
+            # so retain the conservative count instead of ignoring anything.
+            total = int(conn.execute(
+                "SELECT COUNT(*) FROM analysis_deliveries "
+                "WHERE status IN ('pending','sending','delivery_unknown','failed')"
+            ).fetchone()[0])
         state = "warning" if total > self._thresholds.maximum_delivery_attention else "ready"
         return HealthObservation("analysis", "delivery", state, {"attention_count": total})
 

@@ -18,6 +18,22 @@ _ARTIFACT_KINDS = (
 _DELIVERY_COUNTS = ("pending", "delivery_unknown", "failed")
 _RETRY_STATUSES = ("pending", "failed")
 _RECONCILE_STATUSES = ("sending", "delivery_unknown")
+_ACTIONABLE_DELIVERY = """
+    d.status IN ('pending','failed','sending','delivery_unknown')
+    AND NOT (
+        d.status IN ('pending','failed')
+        AND EXISTS (
+            SELECT 1 FROM analysis_deliveries newer
+            WHERE newer.subject_id=d.subject_id
+              AND newer.delivery_kind=d.delivery_kind
+              AND newer.status IN ('sent','already_sent')
+              AND (
+                  newer.created_at_utc>d.created_at_utc
+                  OR (newer.created_at_utc=d.created_at_utc AND newer.id>d.id)
+              )
+        )
+    )
+"""
 
 
 def _utc_now() -> str:
@@ -160,8 +176,10 @@ class AnalysisStatusQueryService:
     def _delivery_counts(self, subject_id: int) -> dict[str, int]:
         counts = {name: 0 for name in _DELIVERY_COUNTS}
         rows = self._connection.execute(
-            "SELECT status,COUNT(*) AS count FROM analysis_deliveries WHERE subject_id=? "
-            "AND status IN ('pending','delivery_unknown','failed') GROUP BY status", (subject_id,)
+            "SELECT d.status,COUNT(*) AS count FROM analysis_deliveries d WHERE d.subject_id=? "
+            f"AND {_ACTIONABLE_DELIVERY} "
+            "AND d.status IN ('pending','delivery_unknown','failed') GROUP BY d.status",
+            (subject_id,),
         )
         for row in rows:
             counts[row["status"]] = int(row["count"])
@@ -169,9 +187,9 @@ class AnalysisStatusQueryService:
 
     def _actionable_delivery_ids(self, subject_id: int) -> dict[str, list[str]]:
         rows = self._connection.execute(
-            "SELECT id,status FROM analysis_deliveries WHERE subject_id=? "
-            "AND status IN ('pending','failed','sending','delivery_unknown') "
-            "ORDER BY updated_at_utc DESC,id DESC LIMIT 64", (subject_id,)
+            "SELECT d.id,d.status FROM analysis_deliveries d WHERE d.subject_id=? "
+            f"AND {_ACTIONABLE_DELIVERY} "
+            "ORDER BY d.updated_at_utc DESC,d.id DESC LIMIT 64", (subject_id,)
         )
         result = {"retry_delivery": [], "reconcile_delivery": []}
         for row in rows:

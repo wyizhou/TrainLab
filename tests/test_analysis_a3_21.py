@@ -29,7 +29,7 @@ def database() -> sqlite3.Connection:
     CREATE TABLE analysis_runs(id INTEGER PRIMARY KEY, run_key TEXT, subject_id INTEGER, status TEXT, started_at_utc TEXT, completed_at_utc TEXT);
     CREATE TABLE analysis_artifacts(id INTEGER PRIMARY KEY, subject_id INTEGER, artifact_kind TEXT, period_start_local_date TEXT, period_end_local_date TEXT, revision_no INTEGER, is_current INTEGER, user_visible_text TEXT, structured_content_json TEXT);
     CREATE TABLE training_plans(id INTEGER PRIMARY KEY, subject_id INTEGER, plan_start_local_date TEXT, plan_end_local_date TEXT, status TEXT, created_at_utc TEXT, objective_json TEXT, constraints_json TEXT);
-    CREATE TABLE analysis_deliveries(id INTEGER PRIMARY KEY, subject_id INTEGER, status TEXT, updated_at_utc TEXT, provider_message_id TEXT, provider_thread_id TEXT, error_summary TEXT);
+    CREATE TABLE analysis_deliveries(id INTEGER PRIMARY KEY, subject_id INTEGER, status TEXT, updated_at_utc TEXT, provider_message_id TEXT, provider_thread_id TEXT, error_summary TEXT, delivery_kind TEXT, created_at_utc TEXT);
     CREATE TABLE analysis_delivery_artifacts(analysis_delivery_id INTEGER, analysis_artifact_id INTEGER, ordinal INTEGER);
     CREATE TABLE data_quality_issues(id INTEGER PRIMARY KEY, entity_type TEXT, entity_id INTEGER, issue_code TEXT, severity TEXT, status TEXT, details_json TEXT);
     CREATE VIEW v_current_analysis_artifacts AS SELECT * FROM analysis_artifacts WHERE is_current=1;
@@ -48,9 +48,9 @@ def database() -> sqlite3.Connection:
       (301,1,'2026-07-25','2026-07-31','active','2026-07-25T00:02:00Z','{"objective":"private"}','{"constraint":"private"}'),
       (401,2,'2026-07-25','2026-07-31','active','2026-07-25T00:02:00Z','{"objective":"other"}','{}');
     INSERT INTO analysis_deliveries VALUES
-      (501,1,'failed','2026-07-26T00:02:00Z','provider-a','thread-a','SECRET DELIVERY ERROR'),
-      (502,1,'delivery_unknown','2026-07-26T00:03:00Z','provider-new','thread-new','SECRET UNKNOWN ERROR'),
-      (601,2,'pending','2026-07-26T00:04:00Z','provider-b','thread-b','OTHER DELIVERY ERROR');
+      (501,1,'failed','2026-07-26T00:02:00Z','provider-a','thread-a','SECRET DELIVERY ERROR','daily_report','2026-07-26T00:02:00Z'),
+      (502,1,'delivery_unknown','2026-07-26T00:03:00Z','provider-new','thread-new','SECRET UNKNOWN ERROR','weekly_report','2026-07-26T00:03:00Z'),
+      (601,2,'pending','2026-07-26T00:04:00Z','provider-b','thread-b','OTHER DELIVERY ERROR','daily_report','2026-07-26T00:04:00Z');
     INSERT INTO analysis_delivery_artifacts VALUES(501,101,0),(502,102,0),(601,201,0);
     INSERT INTO data_quality_issues VALUES
       (1,'analysis_run',12,'analysis_input_blocked','error','open','{"secret":"no"}'),
@@ -99,6 +99,26 @@ def test_selected_absent_or_foreign_run_never_leaks_another_subject() -> None:
     assert foreign.status_snapshot is not None and foreign.status_snapshot["selected_run"] is None
     assert foreign.artifact_ids == ("101", "102")
     assert foreign.delivery is not None and foreign.delivery.delivery_id == "502"
+
+
+def test_later_terminal_delivery_supersedes_only_retryable_older_delivery() -> None:
+    conn = database()
+    conn.execute(
+        "INSERT INTO analysis_deliveries VALUES"
+        "(503,1,'pending','2026-07-26T00:04:00Z',NULL,NULL,NULL,'plan_revision','2026-07-26T00:04:00Z'),"
+        "(504,1,'sent','2026-07-26T00:05:00Z','provider-sent','thread-sent',NULL,'plan_revision','2026-07-26T00:05:00Z'),"
+        "(505,1,'delivery_unknown','2026-07-26T00:01:00Z',NULL,NULL,'SECRET UNKNOWN','plan_revision','2026-07-26T00:01:00Z')"
+    )
+    receipt = AnalysisStatusQueryService(conn, clock=lambda: NOW).execute(request())
+    snapshot = receipt.status_snapshot
+    assert snapshot is not None
+    assert snapshot["delivery_counts"] == {
+        "pending": 0, "delivery_unknown": 2, "failed": 1,
+    }
+    assert snapshot["actionable_delivery_ids"] == {
+        "retry_delivery": ["501"],
+        "reconcile_delivery": ["502", "505"],
+    }
 
 
 def test_status_selects_latest_nonoverlapping_plan_and_rejects_overlap() -> None:

@@ -38,3 +38,11 @@
 - `trainlab supervisor doctor` 的 configuration、contracts、foundation、Gmail 和 subject 五项检查均为 ready。
 - 本机 Supervisor 已重新启动；即时检查确认仅有 1 个精确匹配的 `trainlab.local_supervisor` 进程，`local-supervisor.lock` 已在启动时刷新，容器 PID 使用量为 69/512。
 - 按本机测试约定，仅完成启动与一次健康核验，不进行持续监控。
+
+## 2026-08-05：修复历史分析投递持续触发健康告警
+
+- 14 天稳定性测试的首轮基线检查发现，7 条历史日报回算产生的 `pending` delivery 使 `health:analysis:delivery` 持续告警，健康检查因此一直为 `partial`。
+- 这些 delivery 对应 2026-07-28 至 2026-08-03 的历史回算，以及一次 HRV 上下文验证；用户要求发送的是最新周报和当日日报，直接重试这些旧 delivery 会错误补发历史邮件。
+- 修复后，只有在同一用户、同一报告类型存在创建时间更晚且状态为 `sent` 或 `already_sent` 的投递证据时，旧 `pending`/`failed` 才从运维待办中退役；`sending` 和 `delivery_unknown` 始终保留为必须核对的状态。
+- 分析状态与健康检查采用同一判定语义，不删除历史 delivery 和分析产物，也不伪造发送证据。生产只读状态验证已从 7 个可重试投递变为 0，`next_action` 变为 `none`。
+- 按稳定性测试规则，发现问题后已停止 Supervisor；修复、测试、提交和重新部署完成前不开始累计 14 天稳定时间。
