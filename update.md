@@ -84,3 +84,9 @@
 - 同一窗口内，监控会话的 600 秒等待跨越了约 30 分钟系统时间；旧 worker 恢复后发现 90 秒 lease 已过期并安全退出，launcher 按 15 秒退避启动新 worker。业务 workflow、健康结果和分析投递均没有失败，但连续运行要求已被破坏。
 - 这次不修改 lease 的 fail-closed 语义：进程经历长时间暂停后不得续接已过期所有权。运维修复是取消超过 55 秒的监控等待，避免执行环境被长时间阻塞/挂起；每轮检查新增对 worker PID 集合和健康 workflow 最大间隔的连续性验证。
 - 服务已立即停止，原稳定计时作废。完成文档提交、doctor、重启和新基线前不重新计时。
+
+### 环境暂停后的新基线
+
+- 运维记录提交 `3dba5ab` 已推送；doctor 五项全部 ready，Gmail 为 `gmail_mcp_available`。
+- 新 worker 13640 完成约 5.4GB 启动读取后建立 active lease；基线 health workflow 2416 succeeded，分析状态为 ready/none，且无失败 workflow 或 open incident。
+- 新稳定起点：`2026-08-05T09:07:39Z`（香港时间 `2026-08-05 17:07:39`）；连续 14 天目标时间：`2026-08-19T09:07:39Z`。后续监控等待严格限制为每段不超过 55 秒。
