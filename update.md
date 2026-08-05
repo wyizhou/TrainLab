@@ -46,3 +46,10 @@
 - 修复后，只有在同一用户、同一报告类型存在创建时间更晚且状态为 `sent` 或 `already_sent` 的投递证据时，旧 `pending`/`failed` 才从运维待办中退役；`sending` 和 `delivery_unknown` 始终保留为必须核对的状态。
 - 分析状态与健康检查采用同一判定语义，不删除历史 delivery 和分析产物，也不伪造发送证据。生产只读状态验证已从 7 个可重试投递变为 0，`next_action` 变为 `none`。
 - 按稳定性测试规则，发现问题后已停止 Supervisor；修复、测试、提交和重新部署完成前不开始累计 14 天稳定时间。
+
+### 14 天稳定性计时重置
+
+- 修复提交 `8865a0c` 已推送到远程 `main`，相关测试 20 项、Ruff 致命错误检查、Python 编译检查和仓库质量门均通过。
+- Supervisor 重新启动后完成约 9.8GB 的启动读取校验并建立 active lease；受控健康检查 workflow 2217 为 `succeeded`，0 warning、0 error、0 incident，系统 open incident 数为 0。
+- 新稳定起点：`2026-08-05T05:11:23Z`（香港时间 `2026-08-05 13:11:23`）；连续 14 天目标时间：`2026-08-19T05:11:23Z`。
+- 计时状态和每次检查收据分别保存在本机忽略目录中的 `state/runtime/stability-monitor.json` 与 `state/runtime/stability-checks.jsonl`，不进入 Git，也不包含健康数据或凭据。
