@@ -369,12 +369,22 @@ def test_analysis_target_period_mutations_fail_closed() -> None:
     assert runner_module._validate_receipt(request, value, 0)[1] == "receipt_target_mismatch"
 
 
-def test_snapshot_none_range_mutations_fail_closed() -> None:
+def test_snapshot_receipt_uses_canonical_requested_and_effective_ranges() -> None:
     value = _layer_fixture("garmin", "incremental")
     request = DownstreamCall("garmin", "snapshot", "invoke-1", None, snapshot_local_date="2026-07-24")
-    value.update(mode="snapshot", requested_range={"from":None,"through":"2026-07-24"})
+    value.update(
+        mode="snapshot",
+        requested_range={"from": None, "through": "2026-07-24"},
+        effective_range={"from": "2026-07-24", "through": "2026-07-24"},
+    )
+    assert runner_module._validate_receipt(request, value, 0)[0] is not None
+
+    value["requested_range"] = {"from": "2026-07-24", "through": "2026-07-24"}
     assert runner_module._validate_receipt(request, value, 0)[1] == "receipt_target_mismatch"
-    value["requested_range"] = {"from":"2026-07-24","through":None}
+    value["requested_range"] = {"from": None, "through": None}
+    assert runner_module._validate_receipt(request, value, 0)[1] == "receipt_target_mismatch"
+    value["requested_range"] = {"from": None, "through": "2026-07-24"}
+    value["effective_range"] = {"from": "2026-07-23", "through": "2026-07-24"}
     assert runner_module._validate_receipt(request, value, 0)[1] == "receipt_target_mismatch"
 
 
@@ -860,8 +870,11 @@ def _offline_receipt_for(call: DownstreamCall, status: str) -> dict[str, object]
     if call.layer == "garmin":
         requested = {"from": call.health_from_local_date, "through": call.through_local_date}
         if call.snapshot_local_date is not None:
-            requested = {"from": call.snapshot_local_date, "through": call.snapshot_local_date}
-        value.update(requested_range=requested, effective_range=requested)
+            requested = {"from": None, "through": call.snapshot_local_date}
+            effective = {"from": call.snapshot_local_date, "through": call.snapshot_local_date}
+        else:
+            effective = requested
+        value.update(requested_range=requested, effective_range=effective)
         return value
     if call.layer == "analysis":
         from trainlab.analysis.contracts import AnalysisRequest, build_run_key

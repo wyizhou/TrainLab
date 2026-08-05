@@ -17,3 +17,11 @@
 - Ruff 致命错误检查、Python 编译检查、仓库质量门和 Git diff 检查通过。
 - 当前 Linux 环境已确认支持并成功启用 child subreaper。
 - Supervisor 已停止，避免容器重启前继续消耗剩余 PID 配额。
+
+## 2026-08-05：修复 morning workflow 对 Garmin 快照回执的误判
+
+- 现象：容器重启后，受控重试中的 Garmin 增量采集和当天快照都实际成功，但编排器仍将 `current_snapshot` 标记为失败；边界诊断返回 `receipt_target_mismatch`。
+- 根因：Garmin 快照的正式回执使用 `requested_range.from=null`、`requested_range.through=快照日期`，编排器却错误要求请求范围的起止日期都等于快照日期。
+- 代码修复：编排器现在按正式快照回执契约验证请求目标；对于 `succeeded` 或 `partial` 回执，仍严格要求 `effective_range` 的起止日期都精确等于请求的快照日期，避免接受越界回执。
+- 防回归：新增合法快照回执、非空请求起点、缺失终点和实际范围越界测试，并同步修正全部生产模式的离线边界夹具。
+- 验证：编排边界测试 199 项全部通过；Garmin 快照及回执相关针对性测试 8 项全部通过。容器 `/tmp` 为 `noexec`，涉及临时可执行文件的测试改用已忽略的 `state/test-tmp` 临时目录运行。

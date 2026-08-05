@@ -474,8 +474,18 @@ def _validate_receipt(call: DownstreamCall, value: object, exit_code: int) -> tu
             return None, "receipt_target_mismatch"
         if call.health_from_local_date is not None and requested.get("from") != call.health_from_local_date:
             return None, "receipt_target_mismatch"
-        if call.snapshot_local_date is not None and (requested.get("from") != call.snapshot_local_date or requested.get("through") != call.snapshot_local_date):
-            return None, "receipt_target_mismatch"
+        if call.snapshot_local_date is not None:
+            # Garmin records the user-requested snapshot date in ``through``;
+            # ``from`` remains null because snapshot has no range-style CLI
+            # argument.  The effective range, once work made progress, must
+            # still prove that exactly the requested local date was handled.
+            if requested.get("from") is not None or requested.get("through") != call.snapshot_local_date:
+                return None, "receipt_target_mismatch"
+            if value.get("status") in _PROGRESS_STATUSES and (
+                effective.get("from") != call.snapshot_local_date
+                or effective.get("through") != call.snapshot_local_date
+            ):
+                return None, "receipt_target_mismatch"
         for bounds in (requested, effective):
             left, right = bounds.get("from"), bounds.get("through")
             if left is not None and right is not None and (type(left) is not str or type(right) is not str or left > right):
