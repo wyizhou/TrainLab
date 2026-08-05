@@ -32,3 +32,9 @@
 - 对原失败 workflow 2035 执行受控重试后，新 workflow 2202 完整成功：Garmin 增量采集、2026-08-05 当天快照、2026-08-04 数据质量审计、每日分析均为 `succeeded`，且未创建新 incident。
 - 今日分析 run 102 成功，最新 analysis delivery 28 状态为 `sent`，无 `delivery_unknown` 或 `failed`。
 - 通过当前 Codex 环境中已注册并授权的精确 `gmail` MCP 核实，“已发送”中存在主题为“TrainLab｜每日训练简报｜回顾2026年8月4日｜安排2026年8月5日”的邮件。
+
+### 本机服务恢复
+
+- `trainlab supervisor doctor` 的 configuration、contracts、foundation、Gmail 和 subject 五项检查均为 ready。
+- 本机 Supervisor 已重新启动；即时检查确认仅有 1 个精确匹配的 `trainlab.local_supervisor` 进程，`local-supervisor.lock` 已在启动时刷新，容器 PID 使用量为 69/512。
+- 按本机测试约定，仅完成启动与一次健康核验，不进行持续监控。
