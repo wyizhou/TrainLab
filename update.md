@@ -90,3 +90,12 @@
 - 运维记录提交 `3dba5ab` 已推送；doctor 五项全部 ready，Gmail 为 `gmail_mcp_available`。
 - 新 worker 13640 完成约 5.4GB 启动读取后建立 active lease；基线 health workflow 2416 succeeded，分析状态为 ready/none，且无失败 workflow 或 open incident。
 - 新稳定起点：`2026-08-05T09:07:39Z`（香港时间 `2026-08-05 17:07:39`）；连续 14 天目标时间：`2026-08-19T09:07:39Z`。后续监控等待严格限制为每段不超过 55 秒。
+
+## 2026-08-06：执行环境故障后的恢复与当日日报补录
+
+- 2026-08-05 09:13Z 后，Supervisor worker 13640 在 lease heartbeat 阶段以固定错误 `lease_database_unavailable` 安全退出；本地 launcher 首次观察到子进程退出码 `-7`（SIGBUS），其后三次重启均因执行入口不可用返回 127 并停止重试。
+- 同一时刻，项目外的基础命令与文件补丁操作也统一返回 `Bad file descriptor`。故障同时影响 shell、launcher 和文件访问，且数据库中的最后 6 个业务 workflow 均已成功、open incident 为 0；现有证据更符合容器/virtiofs 执行环境故障，而不是 TrainLab 业务逻辑失败。服务保持停止，原 14 天稳定计时作废。
+- 环境重启后，`trainlab supervisor doctor` 的 configuration、contracts、foundation、Gmail 和 subject 全部 ready；Gmail 为当前 Codex 环境注册的 `gmail_mcp_available`。SQLite 只读状态、WAL journal mode 和业务查询恢复正常；重启前遗留 lease 已过期，未手工篡改数据库状态。
+- 由于 2026-08-06 09:00（香港时间）的定时任务在服务停止期间错过，使用唯一受控入口补跑 `morning`。Garmin 增量采集补齐至 2026-08-05，当天快照至 2026-08-06，2026-08-05 audit 成功，三步均为 0 失败。
+- 日报 analysis run 103 成功生成“2026-08-05 总结”和“2026-08-06 建议”；delivery 29 状态为 `sent`。通过当前 `gmail` MCP 在“已发送”中精确检索，主题“TrainLab｜每日训练简报｜回顾2026年8月5日｜安排2026年8月6日”仅有 1 封。
+- 本次环境恢复后必须重新部署 Supervisor、完成健康基线并重新开始连续 14 天稳定性计时；不得沿用 2026-08-05 的旧起点。
