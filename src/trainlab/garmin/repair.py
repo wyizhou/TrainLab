@@ -146,28 +146,30 @@ class RepairAuditMixin:
         global_resources = tuple(sorted({*ACCOUNT_RESOURCE_KINDS, "activity_inventory"}))
         placeholders = ",".join("?" for _ in global_resources)
         raw_rows = conn.execute(
-            f"""SELECT DISTINCT r.id,r.resource_kind,r.provider_object_id,r.payload_hash,
+            f"""WITH candidate_revisions(id) AS (
+                       SELECT id FROM source_revisions
+                        WHERE provider='garmin' AND is_current=1
+                          AND resource_kind IN ({placeholders})
+                       UNION
+                       SELECT coverage.source_revision_id
+                         FROM resource_coverage coverage
+                        WHERE coverage.subject_id=?
+                          AND coverage.source_revision_id IS NOT NULL
+                          AND coverage.local_date BETWEEN ? AND ?
+                       UNION
+                       SELECT relation.source_revision_id
+                         FROM activity_source_revisions relation
+                         JOIN activities activity ON activity.id=relation.activity_id
+                        WHERE activity.subject_id=?
+                          AND activity.local_date BETWEEN ? AND ?
+                   )
+                   SELECT r.id,r.resource_kind,r.provider_object_id,r.payload_hash,
                        r.profile_version,
                        o.relative_path,o.sha256,o.size_bytes,o.media_type
-                  FROM source_revisions r
+                  FROM candidate_revisions candidate
+                  JOIN source_revisions r ON r.id=candidate.id
                   JOIN raw_objects o ON o.id=r.raw_object_id
-                 WHERE r.provider='garmin' AND r.is_current=1
-                   AND (
-                       r.resource_kind IN ({placeholders})
-                       OR EXISTS (
-                           SELECT 1 FROM resource_coverage coverage
-                            WHERE coverage.subject_id=?
-                              AND coverage.source_revision_id=r.id
-                              AND coverage.local_date BETWEEN ? AND ?
-                       )
-                       OR EXISTS (
-                           SELECT 1 FROM activity_source_revisions relation
-                           JOIN activities activity ON activity.id=relation.activity_id
-                            WHERE relation.source_revision_id=r.id
-                              AND activity.subject_id=?
-                              AND activity.local_date BETWEEN ? AND ?
-                       )
-                   )""",
+                 WHERE r.provider='garmin' AND r.is_current=1""",
             (
                 *global_resources,
                 subject, start.isoformat(), through.isoformat(),
