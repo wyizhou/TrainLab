@@ -306,7 +306,11 @@ def validate(
     )
     _positive_optional_integer(workflow.parent_workflow_run_id)
     started = _parse_canonical_utc(_canonical_utc(workflow.started_at_utc))
-    if deadline is not None and deadline < started:
+    if (
+        deadline is not None
+        and deadline < started
+        and workflow.trigger_kind not in {"recovery", "reconcile"}
+    ):
         _invalid()
     _sha256(workflow.create_command_sha256)
     _sha256(workflow.create_evidence_sha256)

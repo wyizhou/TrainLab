@@ -168,6 +168,31 @@ def test_expired_scheduler_handoff_reconcile_materializes_terminal_state(tmp_pat
     assert result.get_workflow(claim.workflow_key).status == "failed"  # type: ignore[union-attr]
 
 
+def test_late_recovery_handoff_reconcile_preserves_expired_deadline(tmp_path: Path) -> None:
+    now = datetime(2026, 7, 24, 1, 0, tzinfo=UTC)
+    result, lease = repo(tmp_path, now); config = snapshot(tmp_path)
+    jobs(result, config, now, morning=now)
+    workflow_key = "morning:7:2026-07-24"
+    assert result.claim_scheduler_due(
+        job_key="morning",
+        due_at_utc=now,
+        next_due_at_utc=now + timedelta(days=1),
+        now_utc=now + timedelta(minutes=90),
+        owner_instance_id=lease.instance,
+        owner_pid=lease.pid,
+        workflow_key=workflow_key,
+        workflow_kind="morning",
+        trigger_kind="recovery",
+        subject_id=7,
+        logical_local_date="2026-07-24",
+        deadline_at_utc=now + timedelta(hours=1),
+    )
+    reconciled = result.reconcile_expired_scheduler_handoff(
+        workflow_key, at_utc=now + timedelta(hours=3)
+    )
+    assert reconciled.status == "failed"
+
+
 def test_valid_scheduler_tick_resolves_prior_global_clock_incident(tmp_path: Path) -> None:
     now = datetime(2026, 7, 24, 1, 0, tzinfo=UTC)
     result, lease = repo(tmp_path, now); config = snapshot(tmp_path)

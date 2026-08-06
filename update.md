@@ -115,3 +115,4 @@
 - 周报新增 HRR、历史阈值代理和 Tanaka 三方法对比卡；未确认候选明确标注为不参与训练处方。
 - 历史活动修复时发现 nested `summaryDTO` 离线重放曾使用未归一化外层对象；现已修正为归一化摘要，并让带日期的 activity repair 只处理日期范围内 revision。受影响的 505 条本地活动已从保留的 raw/FIT 恢复，未删除任何同步数据。
 - 两日 Garmin audit 的 revision 选择由相关 `OR EXISTS` 全表重复扫描改为集合化 CTE；修复前读取量超过 170GB 且未完成，修复后同一审计约 45 秒成功结束。
+- 修复逾期 scheduler handoff 在原 deadline 之后才被恢复时无法 reconcile 的边界：恢复/对账 definition 保留原始 deadline，并允许它早于延迟恢复的 started_at，仍按过期证据确定性终止原 run，随后才允许创建保留父引用的 retry run。

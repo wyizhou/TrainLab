@@ -1047,7 +1047,11 @@ class OrchestrationRepository:
         if run.status not in {"started", "succeeded", "partial", "failed", "deferred", "cancelled"}:
             raise OrchestrationRepositoryError("orchestrator_run_summary_row_mismatch")
         started = _parse_utc(run.started_at_utc)
-        if run.deadline_at_utc is not None and _parse_utc(run.deadline_at_utc) < started:
+        if (
+            run.deadline_at_utc is not None
+            and _parse_utc(run.deadline_at_utc) < started
+            and run.trigger_kind not in {"recovery", "reconcile"}
+        ):
             raise OrchestrationRepositoryError("orchestrator_run_summary_row_mismatch")
         terminal = {"succeeded", "partial", "failed", "deferred", "cancelled"}
         if (run.status == "started" and run.completed_at_utc is not None) or (run.status in terminal and run.completed_at_utc is None):
