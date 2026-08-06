@@ -191,8 +191,12 @@ ACTIVITY_CHART_MAX_POLYLINE_POINTS = 4_000
 # Relative differences are still persisted as evidence.
 ACTIVITY_RECONCILIATION_FIELDS: dict[str, tuple[str, str, float]] = {
     "distance_m": ("distance", "total_distance", 15.0),
-    "elapsed_seconds": ("duration", "total_elapsed_time", 5.0),
-    "timer_seconds": ("movingDuration", "total_timer_time", 5.0),
+    # Connect distinguishes wall-clock elapsed time (including pauses) from
+    # timer/active time.  Garmin's ``duration`` corresponds to FIT
+    # ``total_timer_time``; ``movingDuration`` is a third, stricter metric and
+    # must not be compared with the FIT timer field.
+    "elapsed_seconds": ("elapsedDuration", "total_elapsed_time", 5.0),
+    "timer_seconds": ("duration", "total_timer_time", 5.0),
     "calories_kcal": ("calories", "total_calories", 1.0),
     "aerobic_training_effect": ("aerobicTrainingEffect", "total_training_effect", 0.1),
     "anaerobic_training_effect": ("anaerobicTrainingEffect", "total_anaerobic_training_effect", 0.1),

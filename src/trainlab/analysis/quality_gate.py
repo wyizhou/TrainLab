@@ -392,7 +392,7 @@ class QualityGate:
             self._sleep(snapshot, dates, coverage, blockers)
             self._gaps(snapshot, dates, blockers)
             self._activities(snapshot, dates, coverage, capabilities, blockers, warnings)
-            self._quality(snapshot, blockers, warnings)
+            self._quality(snapshot, dates, blockers, warnings)
             self._facts(snapshot, blockers)
             self._plans(request, snapshot, dates, as_of, blockers)
         except (AttributeError, KeyError, TypeError, ValueError, QualityGateError, _SnapshotMalformed):
@@ -766,10 +766,18 @@ class QualityGate:
     @staticmethod
     def _quality(
         snapshot: StableSnapshot,
+        dates: tuple[str, ...],
         blockers: list[QualityGateReason],
         warnings: list[QualityGateReason],
     ) -> None:
         for row in snapshot.quality_issues:
+            # Stable snapshots intentionally carry a wider history for trend
+            # analysis.  A route must only be warned/blocked by an issue that
+            # affects its requested review dates, not by an unrelated older
+            # activity retained in that history window.
+            local_date = row.get("local_date")
+            if local_date is not None and local_date not in dates:
+                continue
             entity_type = row.get("entity_type")
             entity_id = row.get("entity_id")
             severity = row.get("severity")

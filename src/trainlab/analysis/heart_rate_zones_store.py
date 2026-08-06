@@ -9,12 +9,13 @@ needed.
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from hashlib import sha256
 from typing import Any, Mapping
 
 
 _RECORD_TYPE = "running_heart_rate_zone_revision"
+_CANDIDATE_RECORD_TYPE = "running_heart_rate_zone_candidate"
 _METHODS = (
     ("hrr", "hrr"),
     ("historical_threshold_proxy", "historical_threshold_proxy"),
@@ -117,6 +118,125 @@ def latest_confirmed_zone_revision(connection: Any, subject_id: int) -> dict[str
     return None
 
 
+def latest_zone_candidate(connection: Any, subject_id: int) -> dict[str, Any] | None:
+    row = connection.execute(
+        "SELECT id,local_date,effective_at_utc,extras_json FROM physiology_records "
+        "WHERE subject_id=? AND domain='trainlab' AND record_type=? "
+        "ORDER BY local_date DESC,id DESC LIMIT 1",
+        (subject_id, _CANDIDATE_RECORD_TYPE),
+    ).fetchone()
+    if row is None:
+        return None
+    record_id = int(row["id"] if isinstance(row, Mapping) else row[0])
+    metrics = connection.execute(
+        "SELECT metric_key,value_json FROM physiology_metrics WHERE physiology_record_id=?",
+        (record_id,),
+    ).fetchall()
+    values: dict[str, Any] = {}
+    for metric in metrics:
+        try:
+            values[str(metric["metric_key"])] = json.loads(metric["value_json"])
+        except (TypeError, ValueError, json.JSONDecodeError):
+            return None
+    if not all(key in values for key, _metric in _METHODS):
+        return None
+    return {
+        "id": record_id,
+        "local_date": row["local_date"],
+        "effective_at_utc": row["effective_at_utc"],
+        "methods": values,
+    }
+
+
+def ensure_zone_candidate(
+    connection: Any,
+    subject_id: int,
+    *,
+    as_of_local_date: str,
+    effective_at_utc: str,
+    weekly_refresh: bool,
+    age_years: int | None = None,
+) -> dict[str, Any]:
+    """Calculate and append a bounded candidate when due.
+
+    Daily execution only bootstraps a missing candidate. Weekly execution
+    appends at most one candidate for that completed review date. Candidates
+    never become prescription evidence until a separate user confirmation
+    appends a confirmed revision.
+    """
+    as_of = date.fromisoformat(as_of_local_date)
+    previous = latest_zone_candidate(connection, subject_id)
+    if previous is not None and (
+        not weekly_refresh or previous.get("local_date") == as_of.isoformat()
+    ):
+        return {"status": "unchanged", "record_id": previous["id"], **previous}
+
+    resting: list[dict[str, Any]] = []
+    for row in connection.execute(
+        "SELECT local_date,values_json FROM daily_health WHERE subject_id=? AND is_current=1 "
+        "AND local_date BETWEEN date(?,'-27 days') AND ? ORDER BY local_date,id",
+        (subject_id, as_of.isoformat(), as_of.isoformat()),
+    ):
+        try:
+            values = json.loads(row["values_json"] or "{}")
+        except (TypeError, ValueError, json.JSONDecodeError):
+            continue
+        bpm = values.get("garmin.daily.resting_heart_rate_bpm", values.get("resting_heart_rate"))
+        resting.append({"local_date": row["local_date"], "bpm": bpm, "valid": True})
+
+    running: list[dict[str, Any]] = []
+    sample_rows = connection.execute(
+        "SELECT a.id,a.local_date,a.timer_seconds,a.name,a.sub_sport,s.heart_rate_bpm "
+        "FROM activities a JOIN activity_source_revisions ar ON ar.activity_id=a.id "
+        "AND ar.source_role='activity_fit' AND ar.is_active=1 "
+        "JOIN source_revisions sr ON sr.id=ar.source_revision_id AND sr.is_current=1 "
+        "JOIN activity_samples s ON s.activity_id=a.id AND s.source_revision_id=ar.source_revision_id "
+        "WHERE a.subject_id=? AND lower(a.sport) IN ('running','run','trail_running','treadmill_running') "
+        "AND a.local_date BETWEEN date(?,'-179 days') AND ? AND s.heart_rate_bpm IS NOT NULL "
+        "ORDER BY a.id,s.sample_index",
+        (subject_id, as_of.isoformat(), as_of.isoformat()),
+    )
+    active_id: int | None = None
+    active: dict[str, Any] | None = None
+    for row in sample_rows:
+        row_id = int(row["id"])
+        if row_id != active_id:
+            if active is not None:
+                running.append(active)
+            active_id = row_id
+            active = {
+                "activity_id": str(row_id), "local_date": row["local_date"],
+                "duration_seconds": row["timer_seconds"], "sample_interval_seconds": 1.0,
+                "source_quality": "fit_verified",
+                "session_type": " ".join(str(value or "") for value in (row["name"], row["sub_sport"])),
+                "heart_rate_bpm": [],
+            }
+        active["heart_rate_bpm"].append(row["heart_rate_bpm"])
+    if active is not None:
+        running.append(active)
+
+    from .heart_rate_zones import calculate_zone_candidates
+    candidate = calculate_zone_candidates(resting, running, as_of=as_of, age_years=age_years)
+    values = {key: candidate[key] for key, _metric in _METHODS}
+    digest = sha256(_json(values).encode("utf-8")).hexdigest()
+    timestamp = _canonical_utc(effective_at_utc)
+    cursor = connection.execute(
+        "INSERT INTO physiology_records(subject_id,domain,record_type,provider_record_id,effective_at_utc,local_date,value_origin,extras_json,source_revision_id) VALUES(?,?,?,?,?,?,?, ?,NULL)",
+        (subject_id, "trainlab", _CANDIDATE_RECORD_TYPE, f"trainlab-hrr-candidate:{as_of.isoformat()}:{digest}", timestamp, as_of.isoformat(), "unknown", _json({
+            "algorithm_version": candidate["algorithm_version"],
+            "accepted": False, "requires_user_confirmation": True,
+            "primary_method": "hrr", "candidate_sha256": digest,
+        })),
+    )
+    record_id = int(cursor.lastrowid)
+    for key, metric in _METHODS:
+        connection.execute(
+            "INSERT INTO physiology_metrics(physiology_record_id,metric_key,value_json,value_origin,source_path) VALUES(?,?,?,?,?)",
+            (record_id, metric, _json(values[key]), "unknown", f"/candidate/{key}"),
+        )
+    return {"status": "created", "record_id": record_id, "candidate": candidate}
+
+
 def zone_evidence_from_snapshot(snapshot: Any) -> list[dict[str, Any]]:
     """Convert the latest confirmed HRR row in a stable snapshot to safety input."""
     views = getattr(snapshot, "views", {})
@@ -180,4 +300,4 @@ def zone_evidence_from_snapshot(snapshot: Any) -> list[dict[str, Any]]:
     }]
 
 
-__all__ = ["append_confirmed_zone_revision", "latest_confirmed_zone_revision", "zone_evidence_from_snapshot"]
+__all__ = ["append_confirmed_zone_revision", "latest_confirmed_zone_revision", "latest_zone_candidate", "ensure_zone_candidate", "zone_evidence_from_snapshot"]

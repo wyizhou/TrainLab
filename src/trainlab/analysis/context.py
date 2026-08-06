@@ -1535,6 +1535,12 @@ def _base_candidates(
         ("coverage.quality_issue", "data_quality_issue", snapshot.quality_issues),
     ):
         for row in rows:
+            if (
+                role == "coverage.quality_issue"
+                and row.get("local_date") is not None
+                and not _within(row, complete_start, complete_end)
+            ):
+                continue
             _add_row(
                 candidates,
                 section="coverage",
@@ -1726,6 +1732,7 @@ def _base_candidates(
             key.removeprefix("fit_"): row.get(key)
             for key in (
                 "fit_avg_heart_rate_bpm", "fit_max_heart_rate_bpm",
+                "fit_avg_running_cadence_spm",
                 "fit_avg_speed_mps", "fit_avg_power_w",
                 "fit_avg_temperature_c", "fit_total_ascent_m",
             )

@@ -9,7 +9,11 @@ when those sources are insufficient.
 
 The summary structured content must state the overall condition, one to three
 decision-relevant factors, activity evidence state, plan evidence state and
-data completeness. Its visible text is two to four natural Simplified-Chinese
+data completeness. When a recorded activity exists, `activity_highlights` may
+select at most two verified FIT metrics (`cadence`, `power`, or `ascent`) only
+when they materially support the review. Select metric keys only; the host
+binds verified numeric values. Omit it when no extra metric is useful. Its
+visible text is two to four natural Simplified-Chinese
 sentences. Do not include a title: the host renders `昨日回顾`. Do not show sleep
 seconds, sleep score, Training Readiness score, Body Battery points, Garmin
 English status codes, repeated intraday values or a minor change that did not
@@ -70,3 +74,8 @@ exist, describe the evidence limits. Explicit chest pain, fainting, unusual
 breathing difficulty or acute pain suspends exercise advice and recommends
 timely professional care. Keep summary and advice non-repetitive and readable
 within seconds.
+
+Never write the generic phrase `活动记录存在质量警告`. If a target-day quality
+issue materially affects the conclusion, name the affected field or evidence
+type and state the practical limitation. Omit historical or decision-irrelevant
+warnings from visible prose.

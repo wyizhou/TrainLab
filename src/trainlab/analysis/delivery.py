@@ -135,6 +135,9 @@ class ActivityOverview:
     distance_m: float | None
     average_heart_rate_bpm: float | None
     weather_text: str | None
+    average_pace_seconds_per_km: float | None = None
+    maximum_heart_rate_bpm: float | None = None
+    highlight_metrics: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -150,6 +153,48 @@ class PendingDelivery:
     recovery_metrics: tuple[RecoveryMetric, ...] = ()
     training_load_chart: TrainingLoadChart | None = None
     yesterday_activities: tuple[ActivityOverview, ...] = ()
+    heart_rate_zone_comparison: tuple[str, ...] = ()
+
+
+def _zone_comparison_lines(
+    connection: sqlite3.Connection, *, delivery_kind: str, subject_id: int
+) -> tuple[str, ...]:
+    if delivery_kind != "weekly_report":
+        return ()
+    from .heart_rate_zones_store import latest_zone_candidate
+    try:
+        stored = latest_zone_candidate(connection, subject_id)
+    except sqlite3.OperationalError:
+        # Compatibility for narrow renderer fixtures and historical read-only
+        # databases that predate the physiology projection.
+        return ()
+    if stored is None:
+        return ()
+    methods = stored["methods"]
+
+    def zones_text(value: object) -> str:
+        if not isinstance(value, Mapping) or not isinstance(value.get("zones"), list):
+            return "证据不足，暂不生成区间"
+        parts = []
+        for zone in value["zones"]:
+            bpm = zone.get("bpm") if isinstance(zone, Mapping) else None
+            if isinstance(bpm, list) and len(bpm) == 2:
+                parts.append(f"Z{zone.get('zone')} {bpm[0]}–{bpm[1]}")
+        return "；".join(parts) or "证据不足，暂不生成区间"
+
+    hrr = methods.get("hrr", {})
+    threshold = methods.get("historical_threshold_proxy", {})
+    tanaka = methods.get("tanaka_low_confidence", {})
+    threshold_bpm = threshold.get("heart_rate_bpm") if isinstance(threshold, Mapping) else None
+    threshold_text = (
+        f"候选阈值 {threshold_bpm} 次/分钟（仅一致性校验）"
+        if isinstance(threshold_bpm, (int, float)) else "证据不足（仅一致性校验）"
+    )
+    return (
+        "HRR（主方法，待确认）：" + zones_text(hrr),
+        "历史阈值代理：" + threshold_text,
+        "Tanaka（低置信度备用）：" + zones_text(tanaka),
+    )
 
 
 @dataclass(frozen=True)
@@ -647,7 +692,7 @@ def _activity_rows(snapshot: Mapping[str, object]) -> tuple[Mapping[str, object]
 
 
 def _activity_seconds(row: Mapping[str, object]) -> int | None:
-    value = row.get("elapsed_seconds")
+    value = row.get("timer_seconds", row.get("elapsed_seconds"))
     if (
         isinstance(value, bool)
         or not isinstance(value, (int, float))
@@ -702,8 +747,24 @@ def _weather_text(row: Mapping[str, object]) -> str | None:
 
 
 def _yesterday_activities(
-    snapshot: Mapping[str, object], *, summary_local_date: str
+    snapshot: Mapping[str, object], *, summary_local_date: str,
+    requested_highlights: Sequence[str] = (),
 ) -> tuple[ActivityOverview, ...]:
+    entries = snapshot.get("activities")
+    fit_by_activity: dict[str, Mapping[str, object]] = {}
+    weather_by_activity: dict[str, Mapping[str, object]] = {}
+    if isinstance(entries, list):
+        for entry in entries:
+            if not isinstance(entry, Mapping) or not isinstance(entry.get("content"), Mapping):
+                continue
+            content = entry["content"]
+            identity = content.get("activity_id")
+            if identity is None:
+                continue
+            if entry.get("role") == "activity.fit_summary":
+                fit_by_activity[str(identity)] = content
+            elif entry.get("role") == "activity.weather_summary":
+                weather_by_activity[str(identity)] = content
     result: list[ActivityOverview] = []
     for row in _activity_rows(snapshot):
         if row.get("local_date") != summary_local_date:
@@ -719,16 +780,46 @@ def _yesterday_activities(
             and math.isfinite(float(distance)) and float(distance) >= 0
             else None
         )
-        heart_rate = row.get("average_heart_rate_bpm")
+        identity = str(row.get("id"))
+        fit = fit_by_activity.get(identity, {})
+        weather = weather_by_activity.get(identity, {})
+        heart_rate = fit.get("avg_heart_rate_bpm")
         heart_rate_value = (
             float(heart_rate)
             if isinstance(heart_rate, (int, float)) and not isinstance(heart_rate, bool)
             and math.isfinite(float(heart_rate)) and 0 < float(heart_rate) < 260
             else None
         )
+        max_heart_rate = fit.get("max_heart_rate_bpm")
+        max_heart_rate_value = (
+            float(max_heart_rate)
+            if isinstance(max_heart_rate, (int, float)) and not isinstance(max_heart_rate, bool)
+            and math.isfinite(float(max_heart_rate)) and 0 < float(max_heart_rate) < 260
+            else None
+        )
+        speed = fit.get("avg_speed_mps")
+        pace = (
+            1000.0 / float(speed)
+            if isinstance(speed, (int, float)) and not isinstance(speed, bool)
+            and math.isfinite(float(speed)) and float(speed) > 0
+            else None
+        )
+        dynamic: list[str] = []
+        highlight_values = {
+            "cadence": (fit.get("avg_running_cadence_spm"), "平均步频", " 步/分钟"),
+            "power": (fit.get("avg_power_w"), "平均功率", " W"),
+            "ascent": (fit.get("total_ascent_m"), "累计爬升", " m"),
+        }
+        for key in requested_highlights:
+            value, label, suffix = highlight_values.get(key, (None, "", ""))
+            if isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(float(value)):
+                dynamic.append(f"{label} {_metric_value(float(value), digits=1)}{suffix}")
+            if len(dynamic) == 2:
+                break
         result.append(ActivityOverview(
             _SPORT_LABELS.get(sport, sport), seconds, distance_value,
-            heart_rate_value, _weather_text(row),
+            heart_rate_value, _weather_text(weather) or _weather_text(row), pace,
+            max_heart_rate_value, tuple(dynamic),
         ))
     return tuple(result[:8])
 
@@ -753,7 +844,14 @@ def _delivery_daily_visuals(
     return (
         _recovery_metrics(snapshot, advice_local_date=advice.period_start_local_date),
         _training_load_chart(snapshot, summary_local_date=summary.period_start_local_date),
-        _yesterday_activities(snapshot, summary_local_date=summary.period_start_local_date),
+        _yesterday_activities(
+            snapshot,
+            summary_local_date=summary.period_start_local_date,
+            requested_highlights=tuple(
+                value for value in summary.structured_content_json.get("activity_highlights", [])
+                if isinstance(value, str)
+            ),
+        ),
     )
 
 
@@ -890,6 +988,10 @@ class AnalysisDeliveryFactory:
             recovery_metrics,
             training_load_chart,
             yesterday_activities,
+            _zone_comparison_lines(
+                self._connection, delivery_kind=delivery_kind,
+                subject_id=int(run["subject_id"]),
+            ),
         )
 
     def _verify_existing_relations(self, delivery_id: int, expected: Sequence[DeliveryArtifact]) -> None:
@@ -950,6 +1052,10 @@ class AnalysisDeliveryRepository:
             recovery_metrics=recovery_metrics,
             training_load_chart=training_load_chart,
             yesterday_activities=yesterday_activities,
+            heart_rate_zone_comparison=_zone_comparison_lines(
+                self._connection, delivery_kind=str(row["delivery_kind"]),
+                subject_id=int(row["subject_id"]),
+            ),
         )
 
     def load_rendered(self, delivery_id: int, *, subject_id: int | None = None) -> RenderedDelivery:
@@ -1417,8 +1523,14 @@ def _activity_overview_rows(activities: Sequence[ActivityOverview]) -> tuple[Ele
         details = [f"时长 {_duration_label(activity.duration_seconds)}"]
         if activity.distance_m is not None:
             details.append(f"距离 {_metric_value(activity.distance_m / 1000, digits=2)} km")
+        if activity.average_pace_seconds_per_km is not None:
+            minutes, seconds = divmod(int(round(activity.average_pace_seconds_per_km)), 60)
+            details.append(f"平均配速 {minutes}:{seconds:02d}/km")
         if activity.average_heart_rate_bpm is not None:
             details.append(f"平均心率 {_metric_value(activity.average_heart_rate_bpm)} 次/分钟")
+        if activity.maximum_heart_rate_bpm is not None:
+            details.append(f"最高心率 {_metric_value(activity.maximum_heart_rate_bpm)} 次/分钟")
+        details.extend(activity.highlight_metrics)
         if activity.weather_text:
             details.append(f"天气 {activity.weather_text}")
         rows.append(element(
@@ -1459,8 +1571,14 @@ def _activities_plain(activities: Sequence[ActivityOverview]) -> str:
         details = [activity.sport_label, _duration_label(activity.duration_seconds)]
         if activity.distance_m is not None:
             details.append(_metric_value(activity.distance_m / 1000, digits=2) + " km")
+        if activity.average_pace_seconds_per_km is not None:
+            minutes, seconds = divmod(int(round(activity.average_pace_seconds_per_km)), 60)
+            details.append(f"{minutes}:{seconds:02d}/km")
         if activity.average_heart_rate_bpm is not None:
             details.append(_metric_value(activity.average_heart_rate_bpm) + " 次/分钟")
+        if activity.maximum_heart_rate_bpm is not None:
+            details.append("最高 " + _metric_value(activity.maximum_heart_rate_bpm) + " 次/分钟")
+        details.extend(activity.highlight_metrics)
         if activity.weather_text:
             details.append(activity.weather_text)
         values.append(" · ".join(details))
@@ -1947,7 +2065,7 @@ def _weekly_html(pending: PendingDelivery, *, revision: bool) -> str:
     repeat_template = repeat.clone()
     daily_plans = [_weekly_item(repeat_template, item, index) for index, item in enumerate(items)]
     _replace_design_example(template.root, "先稳定恢复，再延续训练节奏", "本周回顾")
-    template.remove_empty_optional({"key_findings": [], "attention_items": "", "data_limitation": ""}).replace_repeats({"daily_plans": daily_plans, "key_findings": []}).set_fields(fields)
+    template.remove_empty_optional({"key_findings": [], "heart_rate_zone_comparison": pending.heart_rate_zone_comparison, "attention_items": "", "data_limitation": ""}).replace_repeats({"daily_plans": daily_plans, "key_findings": [], "heart_rate_zone_comparison": tuple(element("div", text(line), attributes={"style": "margin-top:7px;font-size:13px;line-height:1.7;color:#33445A;"}) for line in pending.heart_rate_zone_comparison)}).set_fields(fields)
     return template.finalize()
 
 
@@ -2162,6 +2280,8 @@ def render_delivery(pending: PendingDelivery) -> RenderedDelivery:
             "半马目标：" + _text(_find_control(plan_content, ("half_marathon_target_finish_time",)), neutral="未设置")
             + "；" + "参赛：" + _date_label(_find_control(plan_content, ("half_marathon_race_date",))),
         ]
+        if pending.heart_rate_zone_comparison:
+            plain.extend(("", "跑步心率区间三方法对比", *pending.heart_rate_zone_comparison))
     else:
         subject = _safe_header(f"TrainLab｜{report_title}｜{_display_date(period.period_start_local_date)}")
         plain = [report_title, f"日期：{_display_date(period.period_start_local_date)}"]

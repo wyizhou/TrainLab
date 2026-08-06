@@ -370,8 +370,9 @@ def test_reconciliation_tolerance_tri_state_end_inference_and_replay(
 ) -> None:
     transport = L212Transport(fit=FIT_PATH.read_bytes())
     transport.summary.update({
-        "duration": 7893.188,
-        "movingDuration": 7750.209,
+        "elapsedDuration": 7893.188,
+        "duration": 7750.209,
+        "movingDuration": 7700.0,
         "distance": 20140.0,
         "calories": 0,
         "anaerobicTrainingEffect": None,
@@ -394,11 +395,15 @@ def test_reconciliation_tolerance_tri_state_end_inference_and_replay(
         }
         assert json.loads(rows["aerobic_training_effect"][1]) == {"state": "missing"}
         activity = conn.execute(
-            "SELECT end_time_utc,extras_json,source_map_json FROM activities"
+            "SELECT end_time_utc,extras_json,source_map_json,elapsed_seconds,timer_seconds FROM activities"
         ).fetchone()
         assert activity[0] is not None
         assert json.loads(activity[1])["end_time_inference"]["confidence"] >= 0.7
         assert json.loads(activity[2])["end_time_utc"]["evidence_revision_ids"]
+        assert activity[3] == pytest.approx(7893.188)
+        assert activity[4] == pytest.approx(7750.209)
+        assert rows["elapsed_seconds"][0] in {"match", "within_tolerance"}
+        assert rows["timer_seconds"][0] in {"match", "within_tolerance"}
         postprocessed = json.loads(activity[1])["postprocessed_metrics"]
         assert postprocessed["connect"]["values"]["calories_kcal"]["value"] == 0
         assert postprocessed["fit"]["values"]["calories_kcal"]["value"] == 1400
@@ -412,6 +417,7 @@ def test_conflicting_end_evidence_fails_closed_and_records_quality(
     tmp_path: Path,
 ) -> None:
     transport = L212Transport(fit=FIT_PATH.read_bytes())
+    transport.summary["elapsedDuration"] = 100
     transport.summary["duration"] = 100
     tool, foundation = _setup(tmp_path, transport)
     assert _sync(tool, "end-conflict", ("activity_fit",)).status == "succeeded"

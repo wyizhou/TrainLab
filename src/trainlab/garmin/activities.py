@@ -571,8 +571,9 @@ class ActivityCollectionMixin:
             (
                 subject, "garmin", provider_id, summary.get("activityName"),
                 validated["sport"], validated["sub_sport"], validated["start_time_utc"],
-                validated["end_time_utc"], validated["local_date"], summary.get("duration"),
-                summary.get("movingDuration"), summary.get("distance"),
+                validated["end_time_utc"], validated["local_date"],
+                summary.get("elapsedDuration", summary.get("duration")),
+                summary.get("timerTime", summary.get("duration")), summary.get("distance"),
                 json.dumps(extras, sort_keys=True, allow_nan=False),
                 json.dumps(source_map, sort_keys=True, allow_nan=False), revision,
             ),
@@ -1984,11 +1985,13 @@ class ActivityCollectionMixin:
             })
 
         duration_candidate(
-            "summary_elapsed", summary.get("duration"), summary_revision,
+            "summary_elapsed",
+            summary.get("elapsedDuration", summary.get("duration")),
+            summary_revision,
         )
         duration_candidate(
             "summary_timer",
-            summary.get("timerTime") if "timerTime" in summary else summary.get("movingDuration"),
+            summary.get("timerTime", summary.get("duration")),
             summary_revision, lower_bound=True,
         )
         duration_candidate(

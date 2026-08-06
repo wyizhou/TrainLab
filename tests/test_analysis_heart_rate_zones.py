@@ -3,7 +3,9 @@ from datetime import date, timedelta
 from trainlab.analysis.heart_rate_zones import calculate_zone_candidates
 from trainlab.analysis.heart_rate_zones_store import (
     append_confirmed_zone_revision,
+    ensure_zone_candidate,
     latest_confirmed_zone_revision,
+    latest_zone_candidate,
     zone_evidence_from_snapshot,
 )
 from trainlab.foundation import FoundationConfig, FoundationRequest, FoundationTool
@@ -111,4 +113,30 @@ def test_confirmed_revision_is_append_only_and_exposes_safety_evidence(tmp_path)
     assert len(evidence) == 1 and evidence[0]["source_kind"] == "user_zones"
     assert evidence[0]["measurement_method"] == "user_verified"
     assert len(evidence[0]["zones"]) == 5
+    connection.close()
+
+
+def test_candidate_bootstrap_is_idempotent_and_remains_unconfirmed(tmp_path):
+    root = tmp_path / "foundation"
+    tool = FoundationTool(FoundationConfig(
+        root, root / "data.db", root / "raw", root / "state",
+        root / "state/foundation-ready.json", root / "state/locks/foundation.lock",
+    ))
+    assert tool.execute(FoundationRequest("init", "hrr-candidate", "2026-08-03T00:00:00Z")).status == "initialized"
+    import sqlite3
+    connection = sqlite3.connect(root / "data.db")
+    connection.row_factory = sqlite3.Row
+    first = ensure_zone_candidate(
+        connection, 1, as_of_local_date="2026-08-03",
+        effective_at_utc="2026-08-04T01:00:00Z", weekly_refresh=False,
+    )
+    second = ensure_zone_candidate(
+        connection, 1, as_of_local_date="2026-08-03",
+        effective_at_utc="2026-08-04T01:00:01Z", weekly_refresh=False,
+    )
+    connection.commit()
+    assert first["status"] == "created"
+    assert second["status"] == "unchanged"
+    assert latest_zone_candidate(connection, 1)["id"] == first["record_id"]
+    assert latest_confirmed_zone_revision(connection, 1) is None
     connection.close()

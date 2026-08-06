@@ -10,6 +10,7 @@ from dataclasses import replace
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 import re
+import sqlite3
 from zoneinfo import ZoneInfo
 
 from ..foundation import FoundationConfig, FoundationTool, IncompatibleError
@@ -227,6 +228,15 @@ def _active_subject_key(connection: object) -> str:
     return subject_key
 
 
+def _active_subject_id(connection: object) -> int:
+    rows = list(connection.execute(
+        "SELECT id FROM data_subjects WHERE is_active=1 ORDER BY id"
+    ))  # type: ignore[union-attr]
+    if len(rows) != 1:
+        raise ValueError("analysis_active_subject_not_unique")
+    return int(rows[0][0])
+
+
 def run_analysis_only(
     *, invocation_id: str, summary_date: str | None = None, deliver: bool = False,
     root: Path | None = None
@@ -242,6 +252,15 @@ def run_analysis_only(
             invocation_id=invocation_id,
             summary_date=summary_date,
         )
+        if isinstance(connection, sqlite3.Connection):
+            from .heart_rate_zones_store import ensure_zone_candidate
+            ensure_zone_candidate(
+                connection, _active_subject_id(connection),
+                as_of_local_date=request.summary_local_date,
+                effective_at_utc=request.requested_at_utc,
+                weekly_refresh=False,
+            )
+            connection.commit()
         repository = AnalysisRunRepository(connection)
         coordinator = AnalysisRunCoordinator(
             repository,
@@ -296,6 +315,15 @@ def run_weekly_analysis(
             invocation_id=invocation_id,
             as_of_date=as_of_date,
         )
+        if isinstance(connection, sqlite3.Connection):
+            from .heart_rate_zones_store import ensure_zone_candidate
+            ensure_zone_candidate(
+                connection, _active_subject_id(connection),
+                as_of_local_date=(date.fromisoformat(str(request.as_of_local_date)) - timedelta(days=1)).isoformat(),
+                effective_at_utc=request.requested_at_utc,
+                weekly_refresh=True,
+            )
+            connection.commit()
         repository = AnalysisRunRepository(connection)
         coordinator = AnalysisRunCoordinator(
             repository,

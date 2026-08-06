@@ -47,6 +47,7 @@
       "properties": {
         "overall_state": {"type": "string", "minLength": 1, "maxLength": 500},
         "decision_factors": {"type": "array", "minItems": 1, "maxItems": 3, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 300}},
+        "activity_highlights": {"type": "array", "maxItems": 2, "uniqueItems": true, "items": {"enum": ["cadence", "power", "ascent"]}},
         "activity_evidence": {"enum": ["confirmed_recorded", "confirmed_no_recorded_activity", "partial", "unconfirmed"]},
         "plan_evidence": {"enum": ["available", "partial", "unavailable"]},
         "data_completeness": {"enum": ["complete", "partial", "limited"]}

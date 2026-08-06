@@ -190,6 +190,24 @@ def snapshot_metric_statistics(snapshot:StableSnapshot,*,metric:str,unit:str,end
  relevant=[c for c in coverage if c.get("subject_id")==sid and c.get("provider")=="garmin" and c.get("resource_kind")==resource and start<=_date(c.get("local_date"))<=_date(end_local_date)]
  return window_statistics(extracted,metric=metric,unit=unit,end_local_date=end_local_date,window_days=window_days,evidence_verified=True,coverage_rows=relevant)
 
+def training_history_features(snapshot:StableSnapshot,*,end_local_date:str)->tuple[dict[str,Any],...]:
+ """Compact 28/90-day activity history for weekly plan continuity."""
+ if not isinstance(snapshot,StableSnapshot) or not snapshot.subject_context:_fail("feature_snapshot_invalid")
+ end=_date(end_local_date); rows=_rows(snapshot.views.get("v_current_activities",())); result=[]
+ for days in (28,90):
+  start=end-timedelta(days=days-1)
+  selected=[r for r in rows if start<=_date(r.get("local_date"))<=end and r.get("provider_state")=="active"]
+  runs=[r for r in selected if _kind(r.get("sport"))=="running"]
+  revisions=tuple(sorted({_rev(r) for r in selected}))
+  durations=[_num(r.get("timer_seconds",r.get("elapsed_seconds"))) for r in selected if r.get("timer_seconds",r.get("elapsed_seconds")) is not None]
+  run_durations=[_num(r.get("timer_seconds",r.get("elapsed_seconds"))) for r in runs if r.get("timer_seconds",r.get("elapsed_seconds")) is not None]
+  run_distances=[_num(r["distance_m"]) for r in runs if r.get("distance_m") is not None]
+  active_weeks=len({(_date(r["local_date"])-start).days//7 for r in runs})
+  values=(("running_sessions",len(runs),"count",len(runs)),("running_distance",sum(run_distances) if run_distances else 0.0,"m",len(run_distances)),("running_duration",sum(run_durations) if run_durations else 0.0,"s",len(run_durations)),("longest_run_distance",max(run_distances) if run_distances else None,"m",len(run_distances)),("longest_run_duration",max(run_durations) if run_durations else None,"s",len(run_durations)),("all_activity_duration",sum(durations) if durations else 0.0,"s",len(durations)),("active_run_weeks",active_weeks,"count",len(runs)))
+  for name,value,unit,samples in values:
+   result.append(DeterministicFeature(f"training_history.{name}.{days}d",value,f"training_history.{name}",unit,start.isoformat(),end.isoformat(),samples,len(selected),max(0,len(selected)-samples),revisions).as_dict())
+ return tuple(result)
+
 def _score(p:Mapping[str,Any],a:Mapping[str,Any])->tuple[int,tuple[dict[str,Any],...]]:
  _id(p);_id(a); pd=_date(p.get("local_date"));ad=_date(a.get("local_date")); pk,ak=_kind(p.get("activity_kind")),_kind(a.get("sport")); evidence=[];score=0;possible=0
  def add(name,match,weight,**more):
@@ -455,4 +473,4 @@ def resolve_conflict(records:Iterable[Mapping[str,Any]])->dict[str,Any]:
  user=tuple(x for x in selected if x["value_origin"]=="user_asserted")
  return {"status":"resolved" if selected else "warning","warning":None if selected else "conflict_unresolved","selected":dict(selected[0]) if len(selected)==1 else None,"device_fact":dict(device) if device else None,"provider_conclusions":tuple(dict(x) for x in selected if x["value_origin"] in {"provider_derived","provider_predicted"}),"user_assertions":tuple(dict(x) for x in user),"resolutions":tuple(resolutions),"records":tuple(rows),"policy_version":CONFLICT_POLICY_VERSION,"value_origin":selected[0]["value_origin"] if len(selected)==1 else "unknown"}
 class FeatureLibrary:
- version=FEATURE_LIBRARY_VERSION;stable_hash=staticmethod(stable_hash);window_statistics=staticmethod(window_statistics);activity_distribution=staticmethod(activity_distribution);snapshot_metric_statistics=staticmethod(snapshot_metric_statistics);match_plan_items=staticmethod(match_plan_items);snapshot_plan_matches=staticmethod(snapshot_plan_matches);adherence_statistics=staticmethod(adherence_statistics);quality_session_intervals=staticmethod(quality_session_intervals);revision_impact=staticmethod(revision_impact);resolve_conflict=staticmethod(resolve_conflict)
+ version=FEATURE_LIBRARY_VERSION;stable_hash=staticmethod(stable_hash);window_statistics=staticmethod(window_statistics);activity_distribution=staticmethod(activity_distribution);snapshot_metric_statistics=staticmethod(snapshot_metric_statistics);training_history_features=staticmethod(training_history_features);match_plan_items=staticmethod(match_plan_items);snapshot_plan_matches=staticmethod(snapshot_plan_matches);adherence_statistics=staticmethod(adherence_statistics);quality_session_intervals=staticmethod(quality_session_intervals);revision_impact=staticmethod(revision_impact);resolve_conflict=staticmethod(resolve_conflict)

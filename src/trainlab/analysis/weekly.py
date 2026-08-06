@@ -30,13 +30,13 @@ from .daily import (
     _validate_with_bounded_corrections,
     daily_primary_item_contract,
 )
-from .features import adherence_statistics, snapshot_plan_matches
+from .features import adherence_statistics, snapshot_plan_matches, training_history_features
 from .harness import SchemaEvidence, resolve_harness_bundle
 from .publisher import AnalysisPublisher, RunEvidence
 from .quality_gate import QualityGate, QualityGateRequest
 from .result_validation import AnalysisResultValidationError, ResultValidationExpectation
 from .run_state import AnalysisRunCoordinator, AnalysisRunStateError
-from .stable_views import StableViewRepository
+from .stable_views import StableSnapshot, StableViewRepository
 from .training_difficulty import training_control_contracts
 
 
@@ -344,6 +344,10 @@ class WeeklyRoute:
             deterministic_features=(
                 weekly_plan_contract(prior_state),
                 *training_control_contracts(self.config),
+                *(
+                    training_history_features(snapshot, end_local_date=review["end_local_date"])
+                    if isinstance(snapshot, StableSnapshot) else ()
+                ),
             ),
             plan_adherence=adherence,
         )

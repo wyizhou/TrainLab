@@ -907,6 +907,21 @@ def test_resolved_quality_issues_do_not_block_and_acknowledged_warning_warns() -
     assert "quality_warning" in warning_codes(gate.evaluate(request(), acknowledged))
 
 
+def test_quality_issue_outside_requested_day_does_not_warn() -> None:
+    source = snapshot(
+        quality=(
+            {
+                "entity_type": "activity",
+                "entity_id": 1,
+                "local_date": "2026-07-15",
+                "severity": "warning",
+                "status": "open",
+            },
+        )
+    )
+    assert "quality_warning" not in warning_codes(QualityGate().evaluate(request(), source))
+
+
 def test_gap_and_next_action_mapping_are_deterministic() -> None:
     gate = QualityGate()
     collection = replace(
