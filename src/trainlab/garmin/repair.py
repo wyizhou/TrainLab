@@ -316,9 +316,27 @@ class RepairAuditMixin:
                 gap_parameters,
             )
         }
+        scoped_activity_revision_ids: set[int] | None = None
+        if request.health_from_local_date or request.through_local_date:
+            lower = request.health_from_local_date or "0001-01-01"
+            upper = request.through_local_date or "9999-12-31"
+            scoped_activity_revision_ids = {
+                int(row[0])
+                for row in conn.execute(
+                    "SELECT ar.source_revision_id FROM activity_source_revisions ar "
+                    "JOIN activities a ON a.id=ar.activity_id "
+                    "WHERE a.subject_id=? AND a.local_date BETWEEN ? AND ?",
+                    (subject, lower, upper),
+                )
+            }
         eligible_rows = [
             row for row in rows
             if (not resources or str(row["resource_kind"]) in resources)
+            and (
+                scoped_activity_revision_ids is None
+                or str(row["resource_kind"]) not in ACTIVITY_RESOURCE_KINDS
+                or int(row["id"]) in scoped_activity_revision_ids
+            )
             and (
                 not activity_ids
                 or any(
@@ -458,7 +476,7 @@ class RepairAuditMixin:
                     payload, _canonical = parse_provider_json_bytes(raw)
                     validated = self._validate_activity_summary(payload, key)
                     local_activity_id = self._project_activity(
-                        conn, subject, key, payload, validated, revision
+                        conn, subject, key, validated["normalized_summary"], validated, revision
                     )
                     conn.execute(
                         """UPDATE activity_source_revisions SET is_active=1

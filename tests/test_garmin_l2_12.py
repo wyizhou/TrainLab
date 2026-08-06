@@ -413,6 +413,39 @@ def test_reconciliation_tolerance_tri_state_end_inference_and_replay(
         assert conn.execute("SELECT count(*) FROM reconciliation_results").fetchone()[0] == count
 
 
+def test_nested_summary_offline_reparse_uses_normalized_payload(tmp_path: Path) -> None:
+    transport = L212Transport()
+    original = dict(transport.summary)
+    transport.summary = {
+        "activityId": 1,
+        "activityName": "nested summary",
+        "activityTypeDTO": original["activityType"],
+        "summaryDTO": {
+            "activityId": 1,
+            "startTimeGMT": original["startTimeGMT"],
+            "elapsedDuration": 620,
+            "duration": 600,
+            "movingDuration": 590,
+            "distance": 2_000,
+        },
+    }
+    tool, foundation = _setup(tmp_path, transport)
+    assert _sync(tool, "nested-source", ("activity_summary",)).status == "succeeded"
+    with sqlite3.connect(foundation.database_path) as conn:
+        conn.execute("UPDATE activities SET elapsed_seconds=NULL,timer_seconds=NULL")
+        conn.commit()
+    repaired = tool.execute(SyncRequest(
+        "repair", through_local_date="2026-07-19", activity_ids=("1",),
+        resource_kinds=("activity_summary",), repair_strategy="reparse",
+        invocation_id="nested-reparse",
+    ))
+    assert repaired.status == "succeeded"
+    with sqlite3.connect(foundation.database_path) as conn:
+        assert conn.execute(
+            "SELECT elapsed_seconds,timer_seconds FROM activities"
+        ).fetchone() == pytest.approx((620, 600))
+
+
 def test_conflicting_end_evidence_fails_closed_and_records_quality(
     tmp_path: Path,
 ) -> None:
