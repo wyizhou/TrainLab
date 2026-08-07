@@ -509,21 +509,28 @@ class GarminCollectionBase:
         refreshed = False
         for attempt in range(self.config.max_attempts):
             try:
-                now = self.monotonic()
-                interval = 0.0
+                if conn is not None and run is not None and resource and key:
+                    self.repo.item(conn, run, resource, key, stage, "running")
                 if self._last_request is not None:
                     target_interval = (
                         self.config.request_min_interval_ms
                         + self.config.request_interval_jitter_ms * self.rng()
                     ) / 1000
-                    interval = target_interval - (now - self._last_request)
-                    if interval > 0:
-                        self.sleep(interval)
-                # Record the time before invoking so failed requests also
-                # participate in the global pseudo-random interval.
-                self._last_request = now + max(0.0, interval)
-                if conn is not None and run is not None and resource and key:
-                    self.repo.item(conn, run, resource, key, stage, "running")
+                    # A sleep implementation may return early.  Recheck the
+                    # monotonic clock until the actual transport-entry lower
+                    # bound is reached, rather than trusting the requested
+                    # sleep duration.
+                    while True:
+                        remaining = target_interval - (
+                            self.monotonic() - self._last_request
+                        )
+                        if remaining <= 0:
+                            break
+                        self.sleep(remaining)
+                # Item persistence can take material time.  Record immediately
+                # before transport entry so both successful and failed calls
+                # pace from the real provider-call boundary.
+                self._last_request = self.monotonic()
                 return fn()
             except GarminError as exc:
                 last = exc

@@ -70,22 +70,145 @@ def _resource_request(resources: tuple[str, ...], invocation: str) -> SyncReques
     return SyncRequest("repair", through_local_date="2026-04-15", resource_kinds=resources, repair_strategy="refetch", invocation_id=invocation)
 
 
-def test_normal_calls_use_bounded_pseudorandom_intervals(tmp_path: Path) -> None:
-    _, tool, _, sleeps = _tool(
-        tmp_path,
-        resource_interval=1_000,
-        resource_interval_jitter=2_000,
+class _PacingClock:
+    def __init__(self, now: float = 100.0, *, early_sleep: bool = False) -> None:
+        self.now = now
+        self.early_sleep = early_sleep
+        self.sleeps: list[float] = []
+
+    def monotonic(self) -> float:
+        return self.now
+
+    def sleep(self, seconds: float) -> None:
+        self.sleeps.append(seconds)
+        self.now += seconds / 2 if self.early_sleep and len(self.sleeps) == 1 else seconds
+
+    def advance(self, seconds: float) -> None:
+        self.now += seconds
+
+
+def _pacing_tool(tmp_path: Path, clock: _PacingClock):
+    config = GarminConfig(
+        tmp_path / "data.db",
+        tmp_path / "raw",
+        tmp_path / "state",
+        "2026-04-15",
+        request_min_interval_ms=1_500,
     )
-    ticks = iter((100.0, 100.0, 101.5))
+    tool = GarminCollectionTool(config)
+    tool.monotonic = clock.monotonic
+    tool.sleep = clock.sleep
+    tool.rng = lambda: 0.0
+    return tool
+
+
+def test_normal_calls_use_bounded_pseudorandom_intervals(tmp_path: Path) -> None:
+    clock = _PacingClock()
+    config = GarminConfig(
+        tmp_path / "data.db",
+        tmp_path / "raw",
+        tmp_path / "state",
+        "2026-04-15",
+        request_min_interval_ms=1_000,
+        request_interval_jitter_ms=2_000,
+    )
+    tool = GarminCollectionTool(config, sleep=clock.sleep, monotonic=clock.monotonic)
     random_values = iter((0.25, 0.75))
-    tool.monotonic = lambda: next(ticks)
     tool.rng = lambda: next(random_values)
 
     assert tool._call(lambda: "first") == "first"
     assert tool._call(lambda: "second") == "second"
     assert tool._call(lambda: "third") == "third"
 
-    assert sleeps == [1.5, 2.5]
+    assert clock.sleeps == [pytest.approx(1.5), pytest.approx(2.5)]
+
+
+def test_provider_entry_pacing_first_call_and_exact_minimum(tmp_path: Path) -> None:
+    clock = _PacingClock()
+    tool = _pacing_tool(tmp_path, clock)
+    entries: list[float] = []
+    provider = lambda: entries.append(clock.monotonic())
+
+    tool._call(provider)
+    clock.advance(1.5)
+    tool._call(provider)
+
+    assert entries == [100.0, 101.5]
+    assert clock.sleeps == []
+
+
+def test_provider_entry_pacing_just_below_minimum(tmp_path: Path) -> None:
+    clock = _PacingClock()
+    tool = _pacing_tool(tmp_path, clock)
+    entries: list[float] = []
+    provider = lambda: entries.append(clock.monotonic())
+
+    tool._call(provider)
+    clock.advance(1.499)
+    tool._call(provider)
+
+    assert entries[1] - entries[0] == pytest.approx(1.5)
+    assert clock.sleeps == [pytest.approx(0.001)]
+
+
+def test_provider_entry_pacing_counts_pre_call_persistence(tmp_path: Path) -> None:
+    clock = _PacingClock()
+    tool = _pacing_tool(tmp_path, clock)
+    entries: list[float] = []
+    tool.repo.item = lambda *args: clock.advance(0.75)
+    provider = lambda: entries.append(clock.monotonic())
+
+    tool._call(provider, conn=object(), run=1, resource="steps", key="day")
+    clock.advance(0.75)
+    tool._call(provider, conn=object(), run=1, resource="steps", key="day")
+
+    assert entries[1] - entries[0] == pytest.approx(1.5)
+    assert clock.sleeps == []
+
+
+def test_provider_entry_pacing_rechecks_early_sleep_return(tmp_path: Path) -> None:
+    clock = _PacingClock(early_sleep=True)
+    tool = _pacing_tool(tmp_path, clock)
+    entries: list[float] = []
+    provider = lambda: entries.append(clock.monotonic())
+
+    tool._call(provider)
+    tool._call(provider)
+
+    assert entries[1] - entries[0] == pytest.approx(1.5)
+    assert clock.sleeps == [pytest.approx(1.5), pytest.approx(0.75)]
+
+
+def test_provider_entry_pacing_includes_retry_calls(tmp_path: Path) -> None:
+    clock = _PacingClock()
+    tool = _pacing_tool(tmp_path, clock)
+    entries: list[float] = []
+
+    def provider() -> str:
+        entries.append(clock.monotonic())
+        if len(entries) == 1:
+            raise GarminError("timeout")
+        return "ok"
+
+    assert tool._call(provider) == "ok"
+    assert entries[1] - entries[0] >= 1.5
+    assert clock.sleeps == [pytest.approx(2.0)]
+
+
+def test_provider_entry_pacing_allows_long_provider_calls(tmp_path: Path) -> None:
+    clock = _PacingClock()
+    tool = _pacing_tool(tmp_path, clock)
+    entries: list[float] = []
+
+    def provider() -> None:
+        entries.append(clock.monotonic())
+        clock.advance(2.0)
+
+    tool._call(provider)
+    tool._call(provider)
+
+    assert entries[1] - entries[0] == pytest.approx(2.0)
+    assert clock.sleeps == []
 
 
 def test_network_408_and_temporary_5xx_retry_with_jitter_and_durable_attempts(tmp_path: Path) -> None:
