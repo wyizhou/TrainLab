@@ -274,6 +274,43 @@ def test_schema_and_semantic_validator_reject_non_receipt_range_shapes(
         tool._validate_live_acceptance_document(checkpoint)
 
 
+@pytest.mark.parametrize("effective_from", ("2026-08-06", "2026-07-01"))
+def test_incremental_accepts_real_dynamic_effective_start_dates(
+    tmp_path: Path, effective_from: str
+) -> None:
+    tool = _tool(tmp_path)
+    checkpoint = _checkpoint(tool, 2, "incremental")
+    checkpoint["operation"]["effective_local_dates"]["from"] = effective_from
+    _reseal_checkpoint(tool, checkpoint)
+    assert _schema_errors(checkpoint) == []
+    tool._validate_live_acceptance_document(checkpoint)
+
+
+def test_incremental_requested_from_must_be_null_even_after_resealing(
+    tmp_path: Path,
+) -> None:
+    tool = _tool(tmp_path)
+    checkpoint = _checkpoint(tool, 2, "incremental")
+    checkpoint["operation"]["requested_local_dates"]["from"] = "2026-08-01"
+    _reseal_checkpoint(tool, checkpoint)
+    assert _schema_errors(checkpoint)
+    with pytest.raises(ValueError, match="schema"):
+        tool._validate_live_acceptance_document(checkpoint)
+
+
+def test_semantic_validator_rejects_resealed_reversed_real_date_ranges(
+    tmp_path: Path,
+) -> None:
+    tool = _tool(tmp_path)
+    checkpoint = _checkpoint(tool, 2, "incremental")
+    checkpoint["operation"]["effective_local_dates"]["from"] = "2026-08-07"
+    checkpoint["operation"]["effective_local_dates"]["through"] = "2026-08-06"
+    _reseal_checkpoint(tool, checkpoint)
+    assert _schema_errors(checkpoint) == []
+    with pytest.raises(ValueError, match="date_range_reversed"):
+        tool._validate_live_acceptance_document(checkpoint)
+
+
 @pytest.mark.parametrize("group", ("idempotence", "pacing", "durability"))
 def test_required_8_7_4_partition_coverage_cannot_be_weakened(
     tmp_path: Path, group: str

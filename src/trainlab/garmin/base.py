@@ -620,6 +620,15 @@ class GarminCollectionBase:
     @staticmethod
     def _validate_live_acceptance_checkpoint(document: Mapping[str, Any]) -> None:
         operation = document["operation"]
+        for range_name in ("requested_local_dates", "effective_local_dates"):
+            local_range = operation[range_name]
+            start, through = local_range["from"], local_range["through"]
+            # FormatChecker has already established the non-null values as
+            # ISO calendar dates, whose fixed-width lexical order is calendar
+            # order. Keeping this comparison string-based avoids reparsing a
+            # separate date representation after schema validation.
+            if start is not None and through is not None and start > through:
+                raise ValueError("live_acceptance_date_range_reversed")
         ordinal = operation["ordinal"]
         previous_digest = document["previous_checkpoint_sha256"]
         if (ordinal == 1) != (previous_digest == "0" * 64):

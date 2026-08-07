@@ -40,7 +40,7 @@
       },
       "allOf": [
         {"if": {"properties": {"mode": {"const": "auth"}}}, "then": {"properties": {"ordinal": {"const": 1}, "requested_local_dates": {"properties": {"from": {"const": null}, "through": {"const": null}}}, "effective_local_dates": {"properties": {"from": {"const": null}, "through": {"const": null}}}}}},
-        {"if": {"properties": {"mode": {"const": "incremental"}}}, "then": {"properties": {"requested_local_dates": {"properties": {"through": {"const": "2026-08-06"}}}, "effective_local_dates": {"properties": {"from": {"type": "string", "format": "date"}, "through": {"const": "2026-08-06"}}}}}},
+        {"if": {"properties": {"mode": {"const": "incremental"}}}, "then": {"properties": {"requested_local_dates": {"properties": {"from": {"const": null}, "through": {"const": "2026-08-06"}}}, "effective_local_dates": {"properties": {"from": {"type": "string", "format": "date"}, "through": {"const": "2026-08-06"}}}}}},
         {"if": {"properties": {"mode": {"const": "snapshot"}}}, "then": {"properties": {"requested_local_dates": {"properties": {"from": {"const": null}, "through": {"const": "2026-08-07"}}}, "effective_local_dates": {"properties": {"from": {"const": "2026-08-07"}, "through": {"const": "2026-08-07"}}}}}},
         {"if": {"properties": {"mode": {"const": "audit"}}}, "then": {"properties": {"requested_local_dates": {"properties": {"from": {"const": "2026-08-06"}, "through": {"const": "2026-08-06"}}}, "effective_local_dates": {"properties": {"from": {"const": "2026-08-06"}, "through": {"const": "2026-08-06"}}}}}}
       ]
