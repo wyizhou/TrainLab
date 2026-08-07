@@ -325,17 +325,18 @@ class ProductionOrchestrationApplication:
     ) -> None:
         if alerts is None or events is None:
             return
-        for keys, event in (
-            (events.opened, "open"),
-            (events.recovered, "recovery"),
-        ):
-            for incident_key in keys:
-                try:
-                    alerts.deliver(incident_key, event=event)
-                except Exception:
-                    # The incident transition is already durable. Alert
-                    # reconciliation must not invalidate the workflow result.
-                    continue
+        for incident_key in events.opened:
+            try:
+                alerts.deliver(incident_key, event="open")
+            except Exception:
+                # The incident transition is already durable. Alert
+                # reconciliation must not invalidate the workflow result.
+                continue
+        for incident_key in events.recovered:
+            try:
+                alerts.deliver(incident_key, event="recovery")
+            except Exception:
+                continue
 
     def supervisor_run(self) -> object:
         # Idempotent bootstrap is the only normal first-layer mutation.
@@ -366,27 +367,32 @@ class ProductionOrchestrationApplication:
             repository, lease, _Clock(), subject_id=numeric, host_id=instance
         )
         alerts = self._alert_service(config, repository)
+        alerts_ready_for_new_sends = True
         if alerts is not None:
             try:
-                alerts.reconcile_outstanding()
+                reconciled = alerts.reconcile_outstanding()
+                alerts_ready_for_new_sends = all(
+                    result.alert_status not in {"sending", "delivery_unknown"}
+                    for result in reconciled
+                )
             except Exception:
-                # A prior ambiguous alert remains durable and retryable. Gmail
-                # reconciliation must not prevent the scheduler from starting.
-                pass
+                # Do not erase the durable ambiguity and, critically, do not
+                # attach fresh-send callbacks after reconciliation failed.
+                alerts_ready_for_new_sends = False
         incidents = WorkflowIncidentCoordinator(repository)
         runtime = SupervisorRuntime(
             supervisor, queue, config, dispatch=self._execute_due,
             watchdog=SystemdNotifier(),
             incident_notifier=(
                 None
-                if alerts is None
+                if alerts is None or not alerts_ready_for_new_sends
                 else lambda incident_key: alerts.deliver(
                     incident_key, event="open"
                 )
             ),
             incident_recovery_notifier=(
                 None
-                if alerts is None
+                if alerts is None or not alerts_ready_for_new_sends
                 else lambda incident_key: alerts.deliver(
                     incident_key, event="recovery"
                 )
@@ -400,7 +406,7 @@ class ProductionOrchestrationApplication:
                 )
             ),
         )
-        previous: dict[int, Any] = {}
+        previous: dict[signal.Signals, Any] = {}
         for signum in (signal.SIGTERM, signal.SIGINT):
             previous[signum] = signal.signal(
                 signum, lambda number, _frame: runtime.request_stop(number)

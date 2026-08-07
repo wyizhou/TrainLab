@@ -7,8 +7,8 @@ provider behavior.  Every operation opens a short SQLite transaction.
 
 from __future__ import annotations
 
-import json
 import hashlib
+import json
 import math
 import os
 import re
@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Mapping
 
 from trainlab.foundation import validate_schema_manifest
+
 from .evidence_codes import DOWNSTREAM_FAILURE_EVIDENCE_CODES
 from .scheduling_config import SchedulerJobProjection
 
@@ -531,6 +532,7 @@ class OrchestrationRepository:
             clauses = [
                 "i.category='workflow'",
                 "i.state='open'",
+                "i.error_code='workflow_execution_failed'",
                 "i.related_workflow_run_id IS NOT NULL",
                 "r.id<?",
             ]
@@ -634,6 +636,17 @@ class OrchestrationRepository:
         timestamp = _optional_utc(at_utc)
         with self._transaction() as conn:
             current = self._alert_by_key(conn, idempotency_key)
+            if status in {"sent", "already_sent"}:
+                if provider_message_id is None and current.provider_message_id is None:
+                    raise OrchestrationRepositoryError("operational_alert_receipt_required")
+                if timestamp is None and current.last_verified_at_utc is None:
+                    raise OrchestrationRepositoryError("operational_alert_verification_required")
+            for supplied, saved in (
+                (provider_message_id, current.provider_message_id),
+                (provider_thread_id, current.provider_thread_id),
+            ):
+                if supplied is not None and saved is not None and supplied != saved:
+                    raise OrchestrationRepositoryError("operational_alert_receipt_conflict")
             if (
                 current.status == status
                 and provider_message_id is None
@@ -1009,7 +1022,7 @@ class OrchestrationRepository:
             )
             if any(value is None for value in values):
                 raise OrchestrationRepositoryError("workflow_definition_persistence_unavailable")
-            return values  # type: ignore[return-value]
+            return values
         finally:
             self._close_connected(connection)
 
