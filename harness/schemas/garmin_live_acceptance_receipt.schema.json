@@ -1,0 +1,202 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trainlab.local/schemas/garmin_live_acceptance_receipt.schema.json",
+  "title": "TrainLab redacted Garmin live acceptance receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "receipt_kind",
+    "timezone",
+    "operations",
+    "checkpoints",
+    "provider_entry_count",
+    "configured_minimum_interval_ns",
+    "adjacent_controlled_provider_intervals_ns",
+    "authority_unchanged",
+    "token_dump_attempt_count",
+    "drift_evidence",
+    "failure_evidence",
+    "final_checkpoint_sha256",
+    "result_sha256",
+    "partition_coverage"
+  ],
+  "properties": {
+    "schema_version": {"const": "1"},
+    "receipt_kind": {"const": "garmin_live_acceptance"},
+    "timezone": {"const": "Asia/Hong_Kong"},
+    "operations": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "prefixItems": [
+        {"allOf": [{"$ref": "#/$defs/operation"}, {"properties": {"ordinal": {"const": 1}, "mode": {"const": "auth"}}}]},
+        {"allOf": [{"$ref": "#/$defs/operation"}, {"properties": {"ordinal": {"const": 2}, "mode": {"const": "incremental"}, "requested_local_dates": {"$ref": "#/$defs/incremental_dates"}, "effective_local_dates": {"$ref": "#/$defs/incremental_dates"}}}]},
+        {"allOf": [{"$ref": "#/$defs/operation"}, {"properties": {"ordinal": {"const": 3}, "mode": {"const": "incremental"}, "requested_local_dates": {"$ref": "#/$defs/incremental_dates"}, "effective_local_dates": {"$ref": "#/$defs/incremental_dates"}}}]},
+        {"allOf": [{"$ref": "#/$defs/operation"}, {"properties": {"ordinal": {"const": 4}, "mode": {"const": "snapshot"}, "requested_local_dates": {"$ref": "#/$defs/snapshot_dates"}, "effective_local_dates": {"$ref": "#/$defs/snapshot_dates"}}}]},
+        {"allOf": [{"$ref": "#/$defs/operation"}, {"properties": {"ordinal": {"const": 5}, "mode": {"const": "audit"}, "requested_local_dates": {"$ref": "#/$defs/audit_dates"}, "effective_local_dates": {"$ref": "#/$defs/audit_dates"}}}]}
+      ],
+      "items": false
+    },
+    "checkpoints": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {"$ref": "#/$defs/checkpoint"}
+    },
+    "provider_entry_count": {"type": "integer", "minimum": 0},
+    "configured_minimum_interval_ns": {"type": "integer", "minimum": 0},
+    "adjacent_controlled_provider_intervals_ns": {
+      "type": "array",
+      "items": {"type": "integer", "minimum": 0}
+    },
+    "authority_unchanged": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["production_database", "production_raw_root", "credential_permissions"],
+      "properties": {
+        "production_database": {"const": true},
+        "production_raw_root": {"const": true},
+        "credential_permissions": {"const": true}
+      }
+    },
+    "token_dump_attempt_count": {"type": "integer", "const": 0},
+    "drift_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stable_repeat", "changed_payload"],
+      "properties": {
+        "stable_repeat": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["same_payload_hash", "raw_object_delta", "source_revision_delta"],
+          "properties": {
+            "same_payload_hash": {"const": true},
+            "raw_object_delta": {"const": 0},
+            "source_revision_delta": {"const": 0}
+          }
+        },
+        "changed_payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["payload_hash_changed", "raw_object_delta", "source_revision_delta", "current_version_provenance"],
+          "properties": {
+            "payload_hash_changed": {"const": true},
+            "raw_object_delta": {"const": 1},
+            "source_revision_delta": {"const": 1},
+            "current_version_provenance": {"const": true}
+          }
+        }
+      }
+    },
+    "failure_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pre_provider_failure", "post_provider_local_gate_failure_preserves_checkpoint", "ambiguous_in_flight_provider_preserves_last_checkpoint"],
+      "properties": {
+        "pre_provider_failure": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["provider_entry_count", "receipt_schema_valid"],
+          "properties": {
+            "provider_entry_count": {"const": 0},
+            "receipt_schema_valid": {"const": true}
+          }
+        },
+        "post_provider_local_gate_failure_preserves_checkpoint": {"const": true},
+        "ambiguous_in_flight_provider_preserves_last_checkpoint": {"const": true}
+      }
+    },
+    "final_checkpoint_sha256": {"$ref": "#/$defs/hash"},
+    "result_sha256": {"$ref": "#/$defs/hash"},
+    "partition_coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["idempotence", "pacing", "durability"],
+      "properties": {
+        "idempotence": {"$ref": "#/$defs/idempotence_partitions"},
+        "pacing": {"$ref": "#/$defs/pacing_partitions"},
+        "durability": {"$ref": "#/$defs/durability_partitions"}
+      }
+    }
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "date_or_null": {"type": ["string", "null"], "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+    "date_range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from", "through", "snapshot"],
+      "properties": {
+        "from": {"$ref": "#/$defs/date_or_null"},
+        "through": {"$ref": "#/$defs/date_or_null"},
+        "snapshot": {"$ref": "#/$defs/date_or_null"}
+      }
+    },
+    "incremental_dates": {
+      "allOf": [
+        {"$ref": "#/$defs/date_range"},
+        {"properties": {"from": {"const": null}, "through": {"const": "2026-08-06"}, "snapshot": {"const": null}}}
+      ]
+    },
+    "snapshot_dates": {
+      "allOf": [
+        {"$ref": "#/$defs/date_range"},
+        {"properties": {"from": {"const": null}, "through": {"const": null}, "snapshot": {"const": "2026-08-07"}}}
+      ]
+    },
+    "audit_dates": {
+      "allOf": [
+        {"$ref": "#/$defs/date_range"},
+        {"properties": {"from": {"const": "2026-08-06"}, "through": {"const": "2026-08-06"}, "snapshot": {"const": null}}}
+      ]
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fetched", "empty", "unchanged", "revised", "failed", "deferred", "not_available", "not_enabled"],
+      "properties": {
+        "fetched": {"type": "integer", "minimum": 0}, "empty": {"type": "integer", "minimum": 0}, "unchanged": {"type": "integer", "minimum": 0}, "revised": {"type": "integer", "minimum": 0}, "failed": {"type": "integer", "minimum": 0}, "deferred": {"type": "integer", "minimum": 0}, "not_available": {"type": "integer", "minimum": 0}, "not_enabled": {"type": "integer", "minimum": 0}
+      }
+    },
+    "ordinal_bounds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["first", "last"],
+      "properties": {"first": {"type": "integer", "minimum": 0}, "last": {"type": "integer", "minimum": 0}}
+    },
+    "operation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ordinal", "mode", "status", "request_semantic_sha256", "requested_local_dates", "effective_local_dates", "receipt_schema_valid", "receipt_counts", "provider_entry_ordinals", "checkpoint_sha256"],
+      "properties": {
+        "ordinal": {"type": "integer", "minimum": 1},
+        "mode": {"enum": ["auth", "incremental", "snapshot", "audit"]},
+        "status": {"enum": ["succeeded", "partial", "deferred", "failed", "auth_required", "lock_busy"]},
+        "request_semantic_sha256": {"$ref": "#/$defs/hash"},
+        "requested_local_dates": {"$ref": "#/$defs/date_range"},
+        "effective_local_dates": {"$ref": "#/$defs/date_range"},
+        "receipt_schema_valid": {"type": "boolean"},
+        "receipt_counts": {"$ref": "#/$defs/counts"},
+        "provider_entry_ordinals": {"$ref": "#/$defs/ordinal_bounds"},
+        "checkpoint_sha256": {"$ref": "#/$defs/hash"}
+      }
+    },
+    "checkpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operation_ordinal", "previous_checkpoint_sha256", "checkpoint_sha256", "schema_valid", "provider_entry_count", "adjacent_controlled_provider_intervals_ns"],
+      "properties": {
+        "operation_ordinal": {"type": "integer", "minimum": 1},
+        "previous_checkpoint_sha256": {"$ref": "#/$defs/hash"},
+        "checkpoint_sha256": {"$ref": "#/$defs/hash"},
+        "schema_valid": {"const": true},
+        "provider_entry_count": {"type": "integer", "minimum": 0},
+        "adjacent_controlled_provider_intervals_ns": {"type": "array", "items": {"type": "integer", "minimum": 0}}
+      }
+    },
+    "idempotence_partitions": {"type": "array", "minItems": 8, "maxItems": 8, "uniqueItems": true, "items": {"enum": ["incremental-through-2026-08-06", "stable-repeat-no-new-object", "provider-drift-one-distinct-revision", "snapshot-2026-08-07", "audit-only-2026-08-06", "empty-delta", "provider-deferred", "rate-limit-boundary"]}},
+    "pacing_partitions": {"type": "array", "minItems": 7, "maxItems": 7, "uniqueItems": true, "items": {"enum": ["first-call", "exact-minimum", "just-below-minimum", "pre-call-persistence-delay", "early-sleep-return", "retry-call", "long-provider-call"]}},
+    "durability_partitions": {"type": "array", "minItems": 4, "maxItems": 4, "uniqueItems": true, "items": {"enum": ["pre-provider-failure-zero-entry-receipt", "completed-operation-integer-nanosecond-intervals", "post-provider-local-gate-failure-preserves-checkpoint", "ambiguous-in-flight-provider-preserves-last-checkpoint"]}}
+  }
+}
