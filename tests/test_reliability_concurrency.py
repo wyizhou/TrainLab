@@ -52,7 +52,7 @@ def test_competing_writers_have_exactly_one_workflow_owner(tmp_path: Path) -> No
                 trigger_kind="scheduled",
                 started_at_utc=NOW,
             )
-        except (OrchestrationRepositoryError, sqlite3.OperationalError) as exc:
+        except OrchestrationRepositoryError as exc:
             return str(exc)
         return owner
 
@@ -62,6 +62,14 @@ def test_competing_writers_have_exactly_one_workflow_owner(tmp_path: Path) -> No
     owners = [result for result in results if result in {"owner-a", "owner-b"}]
     assert len(owners) == 1
     assert len(set(results)) == 2
+    assert any(
+        result
+        in {
+            "orchestrator_database_busy",
+            "orchestrator_workflow_key_conflict",
+        }
+        for result in results
+    )
     with sqlite3.connect(database) as connection:
         rows = connection.execute(
             "SELECT workflow_key,status FROM orchestrator_runs "
@@ -70,24 +78,45 @@ def test_competing_writers_have_exactly_one_workflow_owner(tmp_path: Path) -> No
     assert rows == [("morning:competing-owner", "started")]
 
 
-def test_resource_busy_leaves_no_partial_effect_and_exposes_current_defect(
+def test_resource_busy_is_controlled_closes_resources_and_recovers_cleanly(
     tmp_path: Path,
 ) -> None:
     database = _database(tmp_path)
+    repository = OrchestrationRepository(database)
     blocker = sqlite3.connect(database, timeout=0)
     blocker.execute("BEGIN EXCLUSIVE")
     try:
-        with pytest.raises(sqlite3.OperationalError, match="database is locked"):
-            OrchestrationRepository(database).create_workflow(
+        before = blocker.execute(
+            "SELECT count(*) FROM orchestrator_runs "
+            "WHERE workflow_key='morning:resource-busy'"
+        ).fetchone()
+        with pytest.raises(OrchestrationRepositoryError) as raised:
+            repository.create_workflow(
                 workflow_key="morning:resource-busy",
                 workflow_kind="morning",
                 trigger_kind="scheduled",
                 started_at_utc=NOW,
             )
+        assert str(raised.value) == "orchestrator_database_busy"
+        assert (
+            blocker.execute(
+                "SELECT count(*) FROM orchestrator_runs "
+                "WHERE workflow_key='morning:resource-busy'"
+            ).fetchone()
+            == before
+            == (0,)
+        )
+        assert repository._identity_fds == {}
     finally:
         blocker.rollback()
         blocker.close()
 
-    assert (
-        OrchestrationRepository(database).get_workflow("morning:resource-busy") is None
+    recovered = repository.create_workflow(
+        workflow_key="morning:resource-busy",
+        workflow_kind="morning",
+        trigger_kind="scheduled",
+        started_at_utc=NOW,
     )
+    assert recovered.workflow_key == "morning:resource-busy"
+    assert repository.get_workflow("morning:resource-busy") == recovered
+    assert repository._identity_fds == {}
