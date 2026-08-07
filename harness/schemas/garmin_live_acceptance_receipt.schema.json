@@ -34,7 +34,7 @@
         "request_semantic_sha256": {"$ref": "#/$defs/hash"},
         "requested_local_dates": {"$ref": "#/$defs/date_range"},
         "effective_local_dates": {"$ref": "#/$defs/date_range"},
-        "receipt_schema_valid": {"type": "boolean"},
+        "receipt_schema_valid": {"const": true},
         "receipt_counts": {"$ref": "#/$defs/counts"},
         "provider_entry_ordinals": {"$ref": "#/$defs/entry_bounds"}
       },
@@ -74,7 +74,7 @@
         "checkpoints": {"type": "array", "minItems": 5, "maxItems": 5, "items": {"$ref": "#/$defs/checkpoint_document"}},
         "provider_entry_count": {"type": "integer", "minimum": 0}, "configured_minimum_interval_ns": {"type": "integer", "minimum": 0}, "adjacent_controlled_provider_intervals_ns": {"type": "array", "items": {"type": "integer", "minimum": 0}},
         "authority_unchanged": {"$ref": "#/$defs/authority"}, "token_dump_attempt_count": {"const": 0},
-        "drift_evidence": {"type": "object", "additionalProperties": false, "required": ["stable_repeat_count", "changed_payload_count", "stable_repeat_violation_count", "changed_revision_violation_count"], "properties": {"stable_repeat_count": {"type": "integer", "minimum": 0}, "changed_payload_count": {"type": "integer", "minimum": 0}, "stable_repeat_violation_count": {"type": "integer", "minimum": 0}, "changed_revision_violation_count": {"type": "integer", "minimum": 0}}},
+        "drift_evidence": {"type": "object", "additionalProperties": false, "required": ["stable_repeat_count", "changed_payload_count", "stable_repeat_violation_count", "changed_revision_violation_count", "changed_current_provenance_violation_count"], "properties": {"stable_repeat_count": {"type": "integer", "minimum": 0}, "changed_payload_count": {"type": "integer", "minimum": 0}, "stable_repeat_violation_count": {"type": "integer", "minimum": 0}, "changed_revision_violation_count": {"type": "integer", "minimum": 0}, "changed_current_provenance_violation_count": {"type": "integer", "minimum": 0}}},
         "failure_evidence": {"type": "object", "additionalProperties": false, "required": ["outcome", "last_checkpoint_preserved"], "properties": {"outcome": {"enum": ["none", "pre-provider", "post-provider-local", "ambiguous"]}, "last_checkpoint_preserved": {"type": ["boolean", "null"]}}, "allOf": [{"if": {"properties": {"outcome": {"const": "none"}}}, "then": {"properties": {"last_checkpoint_preserved": {"const": null}}}}, {"if": {"properties": {"outcome": {"enum": ["pre-provider", "post-provider-local", "ambiguous"]}}}, "then": {"properties": {"last_checkpoint_preserved": {"const": true}}}}]},
         "final_checkpoint_sha256": {"$ref": "#/$defs/hash"}, "result_sha256": {"$ref": "#/$defs/hash"}, "partition_coverage": {"$ref": "#/$defs/partitions"}
       }

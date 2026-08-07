@@ -645,18 +645,33 @@ class GarminCollectionBase:
 
     def _validate_live_acceptance_result(self, document: Mapping[str, Any]) -> None:
         checkpoints = document["checkpoints"]
+        expected_modes = ("auth", "incremental", "incremental", "snapshot", "audit")
         previous_digest = "0" * 64
         previous_count = 0
-        for expected_ordinal, checkpoint in enumerate(checkpoints, start=1):
+        previous_intervals: list[int] = []
+        for expected_ordinal, (expected_mode, checkpoint) in enumerate(
+            zip(expected_modes, checkpoints, strict=True), start=1
+        ):
             self._validate_live_acceptance_document(checkpoint)
             if checkpoint["operation"]["ordinal"] != expected_ordinal:
                 raise ValueError("live_acceptance_checkpoint_ordinal")
+            if checkpoint["operation"]["mode"] != expected_mode:
+                raise ValueError("live_acceptance_checkpoint_mode")
             if checkpoint["previous_checkpoint_sha256"] != previous_digest:
                 raise ValueError("live_acceptance_checkpoint_chain")
             if checkpoint["prior_provider_entry_count"] != previous_count:
                 raise ValueError("live_acceptance_checkpoint_prefix")
+            if (
+                checkpoint["configured_minimum_interval_ns"]
+                != document["configured_minimum_interval_ns"]
+            ):
+                raise ValueError("live_acceptance_checkpoint_minimum")
+            intervals = checkpoint["adjacent_controlled_provider_intervals_ns"]
+            if intervals[: len(previous_intervals)] != previous_intervals:
+                raise ValueError("live_acceptance_interval_history")
             previous_digest = checkpoint["checkpoint_sha256"]
             previous_count = checkpoint["provider_entry_count"]
+            previous_intervals = intervals
         if document["final_checkpoint_sha256"] != previous_digest:
             raise ValueError("live_acceptance_final_checkpoint")
         if document["provider_entry_count"] != previous_count:
@@ -667,6 +682,16 @@ class GarminCollectionBase:
         failure = document["failure_evidence"]
         if failure["outcome"] == "pre-provider" and document["provider_entry_count"] != 0:
             raise ValueError("live_acceptance_preprovider_entry")
+        drift = document["drift_evidence"]
+        if any(
+            drift[name] != 0
+            for name in (
+                "stable_repeat_violation_count",
+                "changed_revision_violation_count",
+                "changed_current_provenance_violation_count",
+            )
+        ):
+            raise ValueError("live_acceptance_drift_violation")
 
     def _persist_live_acceptance_document(self, destination: Path, document: Mapping[str, Any]) -> None:
         """Atomically persist a previously validated redacted receipt document."""
@@ -675,13 +700,25 @@ class GarminCollectionBase:
         parent = destination.parent
         if destination.is_symlink():
             raise ValueError("live_acceptance_destination_symlink")
+        ancestor = parent
+        while True:
+            if ancestor.is_symlink():
+                raise ValueError("live_acceptance_ancestor_symlink")
+            if ancestor == ancestor.parent:
+                break
+            ancestor = ancestor.parent
         directory_flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
         directory_fd = os.open(parent, directory_flags)
         temporary_name = f".{destination.name}.{uuid.uuid4().hex}.tmp"
         temporary_fd: int | None = None
         try:
             temporary_fd = os.open(temporary_name, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0), 0o600, dir_fd=directory_fd)
-            os.write(temporary_fd, payload)
+            written = 0
+            while written < len(payload):
+                count = os.write(temporary_fd, payload[written:])
+                if count <= 0:
+                    raise OSError("live_acceptance_short_write")
+                written += count
             os.fsync(temporary_fd)
             os.close(temporary_fd)
             temporary_fd = None

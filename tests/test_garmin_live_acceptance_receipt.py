@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -146,6 +147,7 @@ def _result(tool: GarminCollectionTool) -> dict[str, object]:
             "changed_payload_count": 0,
             "stable_repeat_violation_count": 0,
             "changed_revision_violation_count": 0,
+            "changed_current_provenance_violation_count": 0,
         },
         "failure_evidence": {"outcome": "none", "last_checkpoint_preserved": None},
         "final_checkpoint_sha256": previous,
@@ -262,6 +264,88 @@ def test_formal_validator_rejects_chain_and_final_reference_breaks(
         tool._validate_live_acceptance_document(result)
 
 
+def test_formal_validator_rejects_resealed_wrong_mode_order(tmp_path: Path) -> None:
+    tool = _tool(tmp_path)
+    result = _result(tool)
+    result["checkpoints"][1]["operation"]["mode"] = "snapshot"
+    result["checkpoints"][1]["operation"]["requested_local_dates"] = _dates("snapshot")
+    result["checkpoints"][1]["operation"]["effective_local_dates"] = _dates("snapshot")
+    _reseal_checkpoint(tool, result["checkpoints"][1])
+    _reseal_result(tool, result)
+    assert _schema_errors(result) == []
+    with pytest.raises(ValueError, match="mode"):
+        tool._validate_live_acceptance_document(result)
+
+
+def test_schema_rejects_false_receipt_schema_status(tmp_path: Path) -> None:
+    checkpoint = _checkpoint(_tool(tmp_path), 1, "auth")
+    checkpoint["operation"]["receipt_schema_valid"] = False
+    assert _schema_errors(checkpoint)
+
+
+@pytest.mark.parametrize("mutation", ("minimum", "history"))
+def test_formal_validator_rejects_checkpoint_minimum_and_history_changes(
+    tmp_path: Path, mutation: str
+) -> None:
+    tool = _tool(tmp_path)
+    result = _result(tool)
+    first = result["checkpoints"][0]
+    second = result["checkpoints"][1]
+    first["provider_entry_count"] = 2
+    first["adjacent_controlled_provider_intervals_ns"] = [1_500_000_000]
+    first["operation"]["provider_entry_ordinals"] = {"first": 1, "last": 2}
+    _reseal_checkpoint(tool, first)
+    second["previous_checkpoint_sha256"] = first["checkpoint_sha256"]
+    second["prior_provider_entry_count"] = 2
+    second["provider_entry_count"] = 2
+    second["adjacent_controlled_provider_intervals_ns"] = [1_500_000_000]
+    _reseal_checkpoint(tool, second)
+    for checkpoint in result["checkpoints"][2:]:
+        checkpoint["previous_checkpoint_sha256"] = second["checkpoint_sha256"]
+        checkpoint["prior_provider_entry_count"] = 2
+        checkpoint["provider_entry_count"] = 2
+        checkpoint["adjacent_controlled_provider_intervals_ns"] = [1_500_000_000]
+        _reseal_checkpoint(tool, checkpoint)
+        second = checkpoint
+    result["final_checkpoint_sha256"] = second["checkpoint_sha256"]
+    result["provider_entry_count"] = 2
+    result["adjacent_controlled_provider_intervals_ns"] = [1_500_000_000]
+    if mutation == "minimum":
+        result["checkpoints"][3]["configured_minimum_interval_ns"] = 1
+    else:
+        result["checkpoints"][3]["adjacent_controlled_provider_intervals_ns"] = [
+            1_500_000_001
+        ]
+    previous = ZERO_HASH
+    for checkpoint in result["checkpoints"]:
+        checkpoint["previous_checkpoint_sha256"] = previous
+        _reseal_checkpoint(tool, checkpoint)
+        previous = checkpoint["checkpoint_sha256"]
+    result["final_checkpoint_sha256"] = previous
+    _reseal_result(tool, result)
+    assert _schema_errors(result) == []
+    with pytest.raises(ValueError):
+        tool._validate_live_acceptance_document(result)
+
+
+@pytest.mark.parametrize(
+    "field",
+    (
+        "stable_repeat_violation_count",
+        "changed_revision_violation_count",
+        "changed_current_provenance_violation_count",
+    ),
+)
+def test_formal_validator_rejects_drift_violations(tmp_path: Path, field: str) -> None:
+    tool = _tool(tmp_path)
+    result = _result(tool)
+    result["drift_evidence"][field] = 1
+    _reseal_result(tool, result)
+    assert _schema_errors(result) == []
+    with pytest.raises(ValueError, match="drift"):
+        tool._validate_live_acceptance_document(result)
+
+
 @pytest.mark.parametrize("outcome", ("post-provider-local", "ambiguous"))
 def test_atomic_checkpoint_write_survives_local_or_ambiguous_failure(
     tmp_path: Path, outcome: str
@@ -276,3 +360,40 @@ def test_atomic_checkpoint_write_survives_local_or_ambiguous_failure(
     assert persisted == checkpoint
     assert destination.stat().st_mode & 0o777 == 0o600
     tool._validate_live_acceptance_document(persisted)
+
+
+def test_atomic_writer_retries_short_writes_and_rejects_zero_write(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    tool = _tool(tmp_path)
+    checkpoint = _checkpoint(tool, 1, "auth")
+    destination = tmp_path / "short-write.json"
+    original_write = os.write
+    calls = 0
+
+    def short_write(fd: int, payload: bytes) -> int:
+        nonlocal calls
+        calls += 1
+        return original_write(fd, payload[: max(1, len(payload) // 2)])
+
+    monkeypatch.setattr("trainlab.garmin.base.os.write", short_write)
+    tool._persist_live_acceptance_document(destination, checkpoint)
+    assert calls > 1
+    assert json.loads(destination.read_text(encoding="utf-8")) == checkpoint
+
+    monkeypatch.setattr("trainlab.garmin.base.os.write", lambda _fd, _payload: 0)
+    with pytest.raises(OSError, match="short_write"):
+        tool._persist_live_acceptance_document(destination, checkpoint)
+    assert json.loads(destination.read_text(encoding="utf-8")) == checkpoint
+
+
+def test_atomic_writer_rejects_ancestor_symlink(tmp_path: Path) -> None:
+    tool = _tool(tmp_path)
+    actual = tmp_path / "actual"
+    actual.mkdir()
+    linked = tmp_path / "linked"
+    linked.symlink_to(actual, target_is_directory=True)
+    with pytest.raises(ValueError, match="ancestor_symlink"):
+        tool._persist_live_acceptance_document(
+            linked / "checkpoint.json", _checkpoint(tool, 1, "auth")
+        )
