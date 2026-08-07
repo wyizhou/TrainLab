@@ -9,11 +9,10 @@ restricted ``GmailMCPAdapter`` and a repository implementation.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Literal, Mapping, Protocol
+from typing import Any, Literal, Protocol
 
 from .gmail_adapter import GmailAdapterError, SendReceipt
 from .renderer import MailRenderError, RenderedMail, render_mail_response
-
 
 DeliveryStatus = Literal[
     "sent", "already_sent", "label_pending", "delivery_unknown", "rejected"
@@ -62,7 +61,9 @@ class MailDeliveryResult:
 class RestrictedMailDeliveryAdapter(Protocol):
     """The only provider capabilities the delivery service can invoke."""
 
-    def search_run_id(self, *, run_id: str, max_results: int = 10) -> tuple[dict[str, Any], ...]: ...
+    def search_run_id(
+        self, *, run_id: str, max_results: int = 10
+    ) -> tuple[dict[str, Any], ...]: ...
 
     def send_html_recipient(
         self,
@@ -158,11 +159,15 @@ class MailResponseDeliveryService:
     after any send-side exception.
     """
 
-    def __init__(self, store: MailDeliveryStore, adapter: RestrictedMailDeliveryAdapter) -> None:
+    def __init__(
+        self, store: MailDeliveryStore, adapter: RestrictedMailDeliveryAdapter
+    ) -> None:
         self._store = store
         self._adapter = adapter
 
-    def deliver(self, *, subject_id: int, response_artifact_id: int) -> MailDeliveryResult:
+    def deliver(
+        self, *, subject_id: int, response_artifact_id: int
+    ) -> MailDeliveryResult:
         target = self._store.load_accepted_delivery_target(
             subject_id=subject_id, response_artifact_id=response_artifact_id
         )
@@ -284,7 +289,9 @@ class MailResponseDeliveryService:
         self, target: AcceptedDeliveryTarget, message_id: str, thread_id: str
     ) -> MailDeliveryResult:
         try:
-            self._adapter.apply_trainlab_label(message_id=message_id, thread_id=thread_id)
+            self._adapter.apply_trainlab_label(
+                message_id=message_id, thread_id=thread_id
+            )
         except Exception:
             self._store.mark_label_pending(
                 target,
@@ -316,7 +323,8 @@ class MailResponseDeliveryService:
         )
 
     def _send_once(
-        self, target: AcceptedDeliveryTarget, rendered: RenderedMail) -> MailDeliveryResult:
+        self, target: AcceptedDeliveryTarget, rendered: RenderedMail
+    ) -> MailDeliveryResult:
         self._store.mark_delivery_sending(target)
         try:
             receipt = self._adapter.send_html_recipient(
