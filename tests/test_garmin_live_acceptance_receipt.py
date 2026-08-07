@@ -1,4 +1,4 @@
-"""Offline validation for the redacted Garmin live-acceptance receipt contract."""
+"""Offline checks for redacted Garmin live-acceptance documents."""
 
 from __future__ import annotations
 
@@ -7,10 +7,21 @@ import json
 from pathlib import Path
 
 import pytest
-from jsonschema import Draft202012Validator
+from jsonschema import Draft202012Validator, FormatChecker
+
+from trainlab.garmin import GarminCollectionTool, GarminConfig
 
 SCHEMA_PATH = Path("harness/schemas/garmin_live_acceptance_receipt.schema.json")
 ZERO_HASH = "0" * 64
+MODES = ("auth", "incremental", "incremental", "snapshot", "audit")
+
+
+def _tool(tmp_path: Path) -> GarminCollectionTool:
+    return GarminCollectionTool(
+        GarminConfig(
+            tmp_path / "data.db", tmp_path / "raw", tmp_path / "state", "2026-08-06"
+        )
+    )
 
 
 def _hash(index: int) -> str:
@@ -18,16 +29,19 @@ def _hash(index: int) -> str:
 
 
 def _counts() -> dict[str, int]:
-    return {
-        "fetched": 0,
-        "empty": 0,
-        "unchanged": 0,
-        "revised": 0,
-        "failed": 0,
-        "deferred": 0,
-        "not_available": 0,
-        "not_enabled": 0,
-    }
+    return dict.fromkeys(
+        (
+            "fetched",
+            "empty",
+            "unchanged",
+            "revised",
+            "failed",
+            "deferred",
+            "not_available",
+            "not_enabled",
+        ),
+        0,
+    )
 
 
 def _dates(mode: str) -> dict[str, str | None]:
@@ -40,44 +54,83 @@ def _dates(mode: str) -> dict[str, str | None]:
     return {"from": None, "through": None, "snapshot": None}
 
 
-def _receipt() -> dict[str, object]:
-    modes = ("auth", "incremental", "incremental", "snapshot", "audit")
-    checkpoints = []
-    operations = []
-    previous = ZERO_HASH
-    for ordinal, mode in enumerate(modes, start=1):
-        checkpoint_hash = _hash(ordinal)
-        dates = _dates(mode)
-        operations.append(
-            {
-                "ordinal": ordinal,
-                "mode": mode,
-                "status": "succeeded",
-                "request_semantic_sha256": _hash(10 + ordinal),
-                "requested_local_dates": dates,
-                "effective_local_dates": dates.copy(),
-                "receipt_schema_valid": True,
-                "receipt_counts": _counts(),
-                "provider_entry_ordinals": {"first": 0, "last": 0},
-                "checkpoint_sha256": checkpoint_hash,
-            }
-        )
-        checkpoints.append(
-            {
-                "operation_ordinal": ordinal,
-                "previous_checkpoint_sha256": previous,
-                "checkpoint_sha256": checkpoint_hash,
-                "schema_valid": True,
-                "provider_entry_count": 0,
-                "adjacent_controlled_provider_intervals_ns": [],
-            }
-        )
-        previous = checkpoint_hash
-    return {
+def _checkpoint(
+    tool: GarminCollectionTool, ordinal: int, mode: str
+) -> dict[str, object]:
+    dates = _dates(mode)
+    document: dict[str, object] = {
         "schema_version": "1",
-        "receipt_kind": "garmin_live_acceptance",
+        "document_kind": "garmin_live_acceptance_checkpoint",
         "timezone": "Asia/Hong_Kong",
-        "operations": operations,
+        "operation": {
+            "ordinal": ordinal,
+            "mode": mode,
+            "status": "succeeded",
+            "request_semantic_sha256": _hash(10 + ordinal),
+            "requested_local_dates": dates,
+            "effective_local_dates": dates.copy(),
+            "receipt_schema_valid": True,
+            "receipt_counts": _counts(),
+            "provider_entry_ordinals": {"first": None, "last": None},
+        },
+        "prior_provider_entry_count": 0,
+        "provider_entry_count": 0,
+        "configured_minimum_interval_ns": 1_500_000_000,
+        "adjacent_controlled_provider_intervals_ns": [],
+        "previous_checkpoint_sha256": ZERO_HASH
+        if ordinal == 1
+        else _hash(70 + ordinal),
+        "checkpoint_sha256": ZERO_HASH,
+    }
+    document["checkpoint_sha256"] = tool._canonical_live_acceptance_sha256(document)
+    return document
+
+
+def _partitions() -> dict[str, list[str]]:
+    return {
+        "idempotence": [
+            "incremental-through-2026-08-06",
+            "stable-repeat-no-new-object",
+            "provider-drift-one-distinct-revision",
+            "snapshot-2026-08-07",
+            "audit-only-2026-08-06",
+            "empty-delta",
+            "provider-deferred",
+            "rate-limit-boundary",
+        ],
+        "pacing": [
+            "first-call",
+            "exact-minimum",
+            "just-below-minimum",
+            "pre-call-persistence-delay",
+            "early-sleep-return",
+            "retry-call",
+            "long-provider-call",
+        ],
+        "durability": [
+            "pre-provider-failure-zero-entry-receipt",
+            "completed-operation-integer-nanosecond-intervals",
+            "post-provider-local-gate-failure-preserves-checkpoint",
+            "ambiguous-in-flight-provider-preserves-last-checkpoint",
+        ],
+    }
+
+
+def _result(tool: GarminCollectionTool) -> dict[str, object]:
+    checkpoints = [
+        _checkpoint(tool, ordinal, mode) for ordinal, mode in enumerate(MODES, 1)
+    ]
+    previous = ZERO_HASH
+    for checkpoint in checkpoints:
+        checkpoint["previous_checkpoint_sha256"] = previous
+        checkpoint["checkpoint_sha256"] = tool._canonical_live_acceptance_sha256(
+            checkpoint
+        )
+        previous = checkpoint["checkpoint_sha256"]
+    document: dict[str, object] = {
+        "schema_version": "1",
+        "document_kind": "garmin_live_acceptance_result",
+        "timezone": "Asia/Hong_Kong",
         "checkpoints": checkpoints,
         "provider_entry_count": 0,
         "configured_minimum_interval_ns": 1_500_000_000,
@@ -89,181 +142,137 @@ def _receipt() -> dict[str, object]:
         },
         "token_dump_attempt_count": 0,
         "drift_evidence": {
-            "stable_repeat": {
-                "same_payload_hash": True,
-                "raw_object_delta": 0,
-                "source_revision_delta": 0,
-            },
-            "changed_payload": {
-                "payload_hash_changed": True,
-                "raw_object_delta": 1,
-                "source_revision_delta": 1,
-                "current_version_provenance": True,
-            },
+            "stable_repeat_count": 0,
+            "changed_payload_count": 0,
+            "stable_repeat_violation_count": 0,
+            "changed_revision_violation_count": 0,
         },
-        "failure_evidence": {
-            "pre_provider_failure": {
-                "provider_entry_count": 0,
-                "receipt_schema_valid": True,
-            },
-            "post_provider_local_gate_failure_preserves_checkpoint": True,
-            "ambiguous_in_flight_provider_preserves_last_checkpoint": True,
-        },
+        "failure_evidence": {"outcome": "none", "last_checkpoint_preserved": None},
         "final_checkpoint_sha256": previous,
-        "result_sha256": _hash(99),
-        "partition_coverage": {
-            "idempotence": [
-                "incremental-through-2026-08-06",
-                "stable-repeat-no-new-object",
-                "provider-drift-one-distinct-revision",
-                "snapshot-2026-08-07",
-                "audit-only-2026-08-06",
-                "empty-delta",
-                "provider-deferred",
-                "rate-limit-boundary",
-            ],
-            "pacing": [
-                "first-call",
-                "exact-minimum",
-                "just-below-minimum",
-                "pre-call-persistence-delay",
-                "early-sleep-return",
-                "retry-call",
-                "long-provider-call",
-            ],
-            "durability": [
-                "pre-provider-failure-zero-entry-receipt",
-                "completed-operation-integer-nanosecond-intervals",
-                "post-provider-local-gate-failure-preserves-checkpoint",
-                "ambiguous-in-flight-provider-preserves-last-checkpoint",
-            ],
-        },
+        "result_sha256": ZERO_HASH,
+        "partition_coverage": _partitions(),
     }
+    document["result_sha256"] = tool._canonical_live_acceptance_sha256(document)
+    return document
 
 
-def _validator() -> Draft202012Validator:
-    return Draft202012Validator(json.loads(SCHEMA_PATH.read_text()))
-
-
-def _errors(receipt: dict[str, object]) -> list[object]:
-    return list(_validator().iter_errors(receipt))
-
-
-def _assert_chain_continuity(receipt: dict[str, object]) -> None:
-    operations = receipt["operations"]
-    checkpoints = receipt["checkpoints"]
-    assert isinstance(operations, list)
-    assert isinstance(checkpoints, list)
-    assert [operation["ordinal"] for operation in operations] == list(
-        range(1, len(operations) + 1)
+def _schema_errors(document: dict[str, object]) -> list[object]:
+    schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+    return list(
+        Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(
+            document
+        )
     )
-    assert [checkpoint["operation_ordinal"] for checkpoint in checkpoints] == [
-        operation["ordinal"] for operation in operations
-    ]
-    previous = ZERO_HASH
-    for operation, checkpoint in zip(operations, checkpoints, strict=True):
-        assert checkpoint["previous_checkpoint_sha256"] == previous
-        assert operation["checkpoint_sha256"] == checkpoint["checkpoint_sha256"]
-        previous = checkpoint["checkpoint_sha256"]
-    assert receipt["final_checkpoint_sha256"] == previous
 
 
-def test_offline_redacted_receipt_is_schema_valid_and_has_continuous_digest_chain() -> (
-    None
-):
-    receipt = _receipt()
-    assert _errors(receipt) == []
-    _assert_chain_continuity(receipt)
-    assert receipt["provider_entry_count"] == 0
+def _reseal_checkpoint(
+    tool: GarminCollectionTool, checkpoint: dict[str, object]
+) -> None:
+    checkpoint["checkpoint_sha256"] = tool._canonical_live_acceptance_sha256(checkpoint)
 
 
-@pytest.mark.parametrize("partition_group", ("idempotence", "pacing", "durability"))
-def test_partition_coverage_rejects_missing_partition(partition_group: str) -> None:
-    receipt = _receipt()
-    coverage = receipt["partition_coverage"]
-    assert isinstance(coverage, dict)
-    entries = coverage[partition_group]
-    assert isinstance(entries, list)
-    entries.pop()
-    assert _errors(receipt)
+def _reseal_result(tool: GarminCollectionTool, document: dict[str, object]) -> None:
+    document["result_sha256"] = tool._canonical_live_acceptance_sha256(document)
 
 
-@pytest.mark.parametrize(
-    "mutation",
-    (
-        "extra-top-level",
-        "extra-operation-field",
-        "wrong-frozen-date",
-        "non-integer-interval",
-        "token-dump-attempt",
-        "authority-changed",
-        "stable-repeat-revision",
-        "changed-payload-not-revised",
-        "pre-provider-nonzero-entry",
-        "bad-checkpoint-hash",
-    ),
-)
-def test_invalid_or_extra_receipt_fields_fail_schema_validation(mutation: str) -> None:
-    receipt = _receipt()
-    if mutation == "extra-top-level":
-        receipt["raw_provider_payload"] = "forbidden"
-    elif mutation == "extra-operation-field":
-        receipt["operations"][0]["raw_token"] = "forbidden"
-    elif mutation == "wrong-frozen-date":
-        receipt["operations"][1]["effective_local_dates"]["through"] = "2026-08-05"
-    elif mutation == "non-integer-interval":
-        receipt["adjacent_controlled_provider_intervals_ns"] = [1.5]
-    elif mutation == "token-dump-attempt":
-        receipt["token_dump_attempt_count"] = 1
-    elif mutation == "authority-changed":
-        receipt["authority_unchanged"]["production_raw_root"] = False
-    elif mutation == "stable-repeat-revision":
-        receipt["drift_evidence"]["stable_repeat"]["source_revision_delta"] = 1
-    elif mutation == "changed-payload-not-revised":
-        receipt["drift_evidence"]["changed_payload"]["raw_object_delta"] = 0
-    elif mutation == "pre-provider-nonzero-entry":
-        receipt["failure_evidence"]["pre_provider_failure"]["provider_entry_count"] = 1
+@pytest.mark.parametrize("ordinal,mode", tuple(enumerate(MODES, 1)))
+def test_each_partial_checkpoint_is_independently_schema_and_semantically_valid(
+    tmp_path: Path, ordinal: int, mode: str
+) -> None:
+    tool = _tool(tmp_path)
+    checkpoint = _checkpoint(tool, ordinal, mode)
+    assert _schema_errors(checkpoint) == []
+    tool._validate_live_acceptance_document(checkpoint)
+
+
+def test_final_result_is_valid_with_real_dates_and_zero_provider_entries(
+    tmp_path: Path,
+) -> None:
+    tool = _tool(tmp_path)
+    result = _result(tool)
+    assert _schema_errors(result) == []
+    tool._validate_live_acceptance_document(result)
+    assert result["provider_entry_count"] == 0
+
+
+@pytest.mark.parametrize("group", ("idempotence", "pacing", "durability"))
+def test_required_8_7_4_partition_coverage_cannot_be_weakened(
+    tmp_path: Path, group: str
+) -> None:
+    result = _result(_tool(tmp_path))
+    result["partition_coverage"][group].pop()
+    assert _schema_errors(result)
+
+
+@pytest.mark.parametrize("mutation", ("calendar", "extra", "auth-date"))
+def test_format_checked_schema_rejects_bad_or_extra_checkpoint_fields(
+    tmp_path: Path, mutation: str
+) -> None:
+    tool = _tool(tmp_path)
+    checkpoint = _checkpoint(tool, 1, "auth")
+    if mutation == "calendar":
+        checkpoint["operation"]["requested_local_dates"]["from"] = "2026-02-30"
+    elif mutation == "auth-date":
+        checkpoint["operation"]["effective_local_dates"]["through"] = "2026-08-06"
     else:
-        receipt["checkpoints"][0]["checkpoint_sha256"] = "not-a-digest"
-    assert _errors(receipt)
+        checkpoint["operation"]["raw_provider_payload"] = "forbidden"
+    assert _schema_errors(checkpoint)
+    with pytest.raises(ValueError, match="schema"):
+        tool._validate_live_acceptance_document(checkpoint)
 
 
-@pytest.mark.parametrize(
-    "mutation", ("ordinal-gap", "digest-break", "final-digest-break")
-)
-def test_ordinal_and_digest_continuity_are_checked_offline(mutation: str) -> None:
-    receipt = copy.deepcopy(_receipt())
-    if mutation == "ordinal-gap":
-        receipt["checkpoints"][2]["operation_ordinal"] = 4
-    elif mutation == "digest-break":
-        receipt["checkpoints"][2]["previous_checkpoint_sha256"] = _hash(81)
+@pytest.mark.parametrize("mutation", ("subminimum", "reversed", "unbound"))
+def test_formal_validator_rejects_invalid_interval_and_entry_bounds(
+    tmp_path: Path, mutation: str
+) -> None:
+    tool = _tool(tmp_path)
+    checkpoint = _checkpoint(tool, 2, "incremental")
+    checkpoint["prior_provider_entry_count"] = 1
+    checkpoint["provider_entry_count"] = 2
+    checkpoint["adjacent_controlled_provider_intervals_ns"] = [1_500_000_000]
+    checkpoint["operation"]["provider_entry_ordinals"] = {"first": 2, "last": 2}
+    if mutation == "subminimum":
+        checkpoint["adjacent_controlled_provider_intervals_ns"] = [1_499_999_999]
+    elif mutation == "reversed":
+        checkpoint["operation"]["provider_entry_ordinals"] = {"first": 3, "last": 2}
     else:
-        receipt["final_checkpoint_sha256"] = _hash(82)
-    assert _errors(receipt) == []
-    with pytest.raises(AssertionError):
-        _assert_chain_continuity(receipt)
+        checkpoint["operation"]["provider_entry_ordinals"] = {"first": 1, "last": 1}
+    _reseal_checkpoint(tool, checkpoint)
+    assert _schema_errors(checkpoint) == []
+    with pytest.raises(ValueError):
+        tool._validate_live_acceptance_document(checkpoint)
 
 
-def test_integer_nanosecond_pacing_is_recomputable_without_provider_access() -> None:
-    receipt = _receipt()
-    receipt["provider_entry_count"] = 3
-    receipt["adjacent_controlled_provider_intervals_ns"] = [
-        1_500_000_000,
-        1_500_000_001,
-    ]
-    receipt["operations"][1]["provider_entry_ordinals"] = {"first": 1, "last": 2}
-    receipt["operations"][2]["provider_entry_ordinals"] = {"first": 3, "last": 3}
-    receipt["checkpoints"][1]["provider_entry_count"] = 2
-    receipt["checkpoints"][1]["adjacent_controlled_provider_intervals_ns"] = [
-        1_500_000_000
-    ]
-    receipt["checkpoints"][2]["provider_entry_count"] = 3
-    receipt["checkpoints"][2]["adjacent_controlled_provider_intervals_ns"] = [
-        1_500_000_000,
-        1_500_000_001,
-    ]
-    assert _errors(receipt) == []
-    assert all(
-        interval >= receipt["configured_minimum_interval_ns"]
-        for interval in receipt["adjacent_controlled_provider_intervals_ns"]
-    )
+@pytest.mark.parametrize("mutation", ("broken", "duplicate", "final-reference"))
+def test_formal_validator_rejects_chain_and_final_reference_breaks(
+    tmp_path: Path, mutation: str
+) -> None:
+    tool = _tool(tmp_path)
+    result = _result(tool)
+    if mutation == "broken":
+        result["checkpoints"][2]["previous_checkpoint_sha256"] = _hash(90)
+        _reseal_checkpoint(tool, result["checkpoints"][2])
+    elif mutation == "duplicate":
+        result["checkpoints"][2] = copy.deepcopy(result["checkpoints"][1])
+    else:
+        result["final_checkpoint_sha256"] = _hash(91)
+    _reseal_result(tool, result)
+    assert _schema_errors(result) == []
+    with pytest.raises(ValueError):
+        tool._validate_live_acceptance_document(result)
+
+
+@pytest.mark.parametrize("outcome", ("post-provider-local", "ambiguous"))
+def test_atomic_checkpoint_write_survives_local_or_ambiguous_failure(
+    tmp_path: Path, outcome: str
+) -> None:
+    tool = _tool(tmp_path)
+    checkpoint = _checkpoint(tool, 1, "auth")
+    destination = tmp_path / f"{outcome}.json"
+    tool._persist_live_acceptance_document(destination, checkpoint)
+    with pytest.raises(RuntimeError, match=outcome):
+        raise RuntimeError(outcome)
+    persisted = json.loads(destination.read_text(encoding="utf-8"))
+    assert persisted == checkpoint
+    assert destination.stat().st_mode & 0o777 == 0o600
+    tool._validate_live_acceptance_document(persisted)

@@ -1,6 +1,10 @@
 """Collection lifecycle, locking, retries and provider-call control."""
 from __future__ import annotations
 
+import hashlib
+
+from jsonschema import Draft202012Validator, FormatChecker
+
 from .contracts import *  # noqa: F403
 from .repository import GarminRepository
 
@@ -564,6 +568,129 @@ class GarminCollectionBase:
                     delay = min(self.config.retry_max_seconds, self.config.retry_base_seconds * (2 ** attempt) + self.rng())
                     self.sleep(delay)
         raise last or GarminError("unknown")
+
+    @staticmethod
+    def _canonical_live_acceptance_sha256(document: Mapping[str, Any]) -> str:
+        """Hash redacted acceptance JSON excluding its own digest field.
+
+        The canonical payload is UTF-8 JSON with lexicographically sorted keys,
+        compact separators, no ASCII escaping, and no non-finite numbers. A
+        checkpoint excludes only ``checkpoint_sha256`` and a final result
+        excludes only ``result_sha256``; referenced checkpoint digests remain
+        part of the final-result payload.
+        """
+        try:
+            payload = json.loads(json.dumps(document, allow_nan=False, ensure_ascii=False))
+        except (TypeError, ValueError) as exc:
+            raise ValueError("live_acceptance_not_json") from exc
+        kind = payload.get("document_kind")
+        if kind == "garmin_live_acceptance_checkpoint":
+            payload.pop("checkpoint_sha256", None)
+        elif kind == "garmin_live_acceptance_result":
+            payload.pop("result_sha256", None)
+        else:
+            raise ValueError("live_acceptance_document_kind")
+        canonical = json.dumps(payload, allow_nan=False, ensure_ascii=False, separators=(",", ":"), sort_keys=True).encode("utf-8")
+        return hashlib.sha256(canonical).hexdigest()
+
+    @staticmethod
+    def _live_acceptance_schema() -> dict[str, Any]:
+        schema_path = Path(__file__).resolve().parents[3] / "harness" / "schemas" / "garmin_live_acceptance_receipt.schema.json"
+        return json.loads(schema_path.read_text(encoding="utf-8"))
+
+    def _validate_live_acceptance_document(self, document: Mapping[str, Any]) -> None:
+        """Fail closed unless a redacted checkpoint/result is semantically sound."""
+        errors = sorted(Draft202012Validator(self._live_acceptance_schema(), format_checker=FormatChecker()).iter_errors(document), key=lambda error: list(error.absolute_path))
+        if errors:
+            raise ValueError("live_acceptance_schema_invalid")
+        kind = document["document_kind"]
+        digest_key = "checkpoint_sha256" if kind == "garmin_live_acceptance_checkpoint" else "result_sha256"
+        if document[digest_key] != self._canonical_live_acceptance_sha256(document):
+            raise ValueError("live_acceptance_digest_invalid")
+        if kind == "garmin_live_acceptance_checkpoint":
+            self._validate_live_acceptance_checkpoint(document)
+            return
+        self._validate_live_acceptance_result(document)
+
+    @staticmethod
+    def _validate_live_acceptance_checkpoint(document: Mapping[str, Any]) -> None:
+        operation = document["operation"]
+        ordinal = operation["ordinal"]
+        previous_digest = document["previous_checkpoint_sha256"]
+        if (ordinal == 1) != (previous_digest == "0" * 64):
+            raise ValueError("live_acceptance_checkpoint_sequence")
+        prior_count = document["prior_provider_entry_count"]
+        total_count = document["provider_entry_count"]
+        if total_count < prior_count:
+            raise ValueError("live_acceptance_provider_count_regressed")
+        intervals = document["adjacent_controlled_provider_intervals_ns"]
+        if len(intervals) != max(total_count - 1, 0):
+            raise ValueError("live_acceptance_interval_count")
+        minimum = document["configured_minimum_interval_ns"]
+        if any(interval < minimum for interval in intervals):
+            raise ValueError("live_acceptance_interval_subminimum")
+        bounds = operation["provider_entry_ordinals"]
+        first, last = bounds["first"], bounds["last"]
+        if total_count == prior_count:
+            if first is not None or last is not None:
+                raise ValueError("live_acceptance_empty_entry_bounds")
+            return
+        if first != prior_count + 1 or last != total_count or first > last:
+            raise ValueError("live_acceptance_entry_bounds")
+
+    def _validate_live_acceptance_result(self, document: Mapping[str, Any]) -> None:
+        checkpoints = document["checkpoints"]
+        previous_digest = "0" * 64
+        previous_count = 0
+        for expected_ordinal, checkpoint in enumerate(checkpoints, start=1):
+            self._validate_live_acceptance_document(checkpoint)
+            if checkpoint["operation"]["ordinal"] != expected_ordinal:
+                raise ValueError("live_acceptance_checkpoint_ordinal")
+            if checkpoint["previous_checkpoint_sha256"] != previous_digest:
+                raise ValueError("live_acceptance_checkpoint_chain")
+            if checkpoint["prior_provider_entry_count"] != previous_count:
+                raise ValueError("live_acceptance_checkpoint_prefix")
+            previous_digest = checkpoint["checkpoint_sha256"]
+            previous_count = checkpoint["provider_entry_count"]
+        if document["final_checkpoint_sha256"] != previous_digest:
+            raise ValueError("live_acceptance_final_checkpoint")
+        if document["provider_entry_count"] != previous_count:
+            raise ValueError("live_acceptance_final_provider_count")
+        intervals = document["adjacent_controlled_provider_intervals_ns"]
+        if intervals != checkpoints[-1]["adjacent_controlled_provider_intervals_ns"]:
+            raise ValueError("live_acceptance_final_interval_prefix")
+        failure = document["failure_evidence"]
+        if failure["outcome"] == "pre-provider" and document["provider_entry_count"] != 0:
+            raise ValueError("live_acceptance_preprovider_entry")
+
+    def _persist_live_acceptance_document(self, destination: Path, document: Mapping[str, Any]) -> None:
+        """Atomically persist a previously validated redacted receipt document."""
+        self._validate_live_acceptance_document(document)
+        payload = json.dumps(document, allow_nan=False, ensure_ascii=False, separators=(",", ":"), sort_keys=True).encode("utf-8") + b"\n"
+        parent = destination.parent
+        if destination.is_symlink():
+            raise ValueError("live_acceptance_destination_symlink")
+        directory_flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
+        directory_fd = os.open(parent, directory_flags)
+        temporary_name = f".{destination.name}.{uuid.uuid4().hex}.tmp"
+        temporary_fd: int | None = None
+        try:
+            temporary_fd = os.open(temporary_name, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0), 0o600, dir_fd=directory_fd)
+            os.write(temporary_fd, payload)
+            os.fsync(temporary_fd)
+            os.close(temporary_fd)
+            temporary_fd = None
+            os.replace(temporary_name, destination.name, src_dir_fd=directory_fd, dst_dir_fd=directory_fd)
+            os.fsync(directory_fd)
+        finally:
+            if temporary_fd is not None:
+                os.close(temporary_fd)
+            try:
+                os.unlink(temporary_name, dir_fd=directory_fd)
+            except FileNotFoundError:
+                pass
+            finally:
+                os.close(directory_fd)
 
     _ACCOUNT_BASIC_RESOURCES = ("user_profile", "user_profile_settings", "devices")
     _ACCOUNT_B1_RESOURCES = ("primary_device", "device_settings", "device_last_used", "personal_records", "cycling_ftp", "pregnancy")
