@@ -1576,8 +1576,12 @@ class OrchestrationRepository:
                 try:
                     inner.conn.execute("BEGIN IMMEDIATE")
                     self._verify_connected_identity(inner.conn)
-                except Exception:
+                except BaseException as exc:
                     self._close_connected(inner.conn)
+                    if _is_sqlite_busy_or_locked(exc):
+                        raise OrchestrationRepositoryError(
+                            "orchestrator_database_busy"
+                        ) from None
                     raise
                 return inner.conn
 
@@ -1835,6 +1839,15 @@ def _utc_text(value: datetime) -> str:
     ):
         raise OrchestrationRepositoryError("orchestrator_timestamp_not_utc")
     return value.astimezone(UTC).isoformat().replace("+00:00", "Z")
+
+
+def _is_sqlite_busy_or_locked(error: BaseException) -> bool:
+    """Classify SQLite contention without inspecting provider error text."""
+
+    error_code = getattr(error, "sqlite_errorcode", None)
+    if not isinstance(error_code, int) or isinstance(error_code, bool):
+        return False
+    return error_code & 0xFF in {sqlite3.SQLITE_BUSY, sqlite3.SQLITE_LOCKED}
 
 
 def _parse_utc(value: str) -> datetime:

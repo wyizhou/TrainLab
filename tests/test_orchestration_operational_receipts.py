@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -180,3 +181,64 @@ def test_failed_partition_is_not_a_silent_resend_after_ambiguity(
     repository.transition_alert_delivery(key, "delivery_unknown")
     repository.transition_alert_delivery(key, "failed", error_code="gmail_not_found")
     assert service.deliver(incident.incident_key).action == "unavailable"
+
+
+def test_transaction_busy_is_fixed_code_resource_closed_and_zero_write(
+    tmp_path: Path,
+) -> None:
+    repository, incident, _service = make_service(tmp_path)
+    key = alert_idempotency_key(incident.incident_key, "open")
+    blocker = sqlite3.connect(repository._database_path, timeout=0)
+    try:
+        blocker.execute("BEGIN IMMEDIATE")
+        before = blocker.execute(
+            "SELECT COUNT(*) FROM operational_alert_deliveries"
+        ).fetchone()[0]
+
+        with pytest.raises(OrchestrationRepositoryError) as raised:
+            repository.create_alert_delivery(
+                incident_key=incident.incident_key,
+                idempotency_key=key,
+            )
+
+        assert str(raised.value) == "orchestrator_database_busy"
+        assert (
+            blocker.execute(
+                "SELECT COUNT(*) FROM operational_alert_deliveries"
+            ).fetchone()[0]
+            == before
+        )
+        assert repository._identity_fds == {}
+    finally:
+        blocker.rollback()
+        blocker.close()
+
+    assert repository.get_alert_delivery(key) is None
+
+
+@pytest.mark.parametrize("error_code", (sqlite3.SQLITE_BUSY, sqlite3.SQLITE_LOCKED))
+def test_transaction_maps_busy_and_locked_codes_without_provider_text(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    error_code: int,
+) -> None:
+    repository, _incident, _service = make_service(tmp_path)
+    provider_error = sqlite3.OperationalError("private provider lock detail")
+    provider_error.sqlite_errorcode = error_code
+
+    class FailingConnection:
+        def execute(self, statement: str) -> None:
+            assert statement == "BEGIN IMMEDIATE"
+            raise provider_error
+
+    connection = FailingConnection()
+    closed: list[object] = []
+    monkeypatch.setattr(repository, "_connect", lambda: connection)
+    monkeypatch.setattr(repository, "_close_connected", closed.append)
+
+    with pytest.raises(OrchestrationRepositoryError) as raised:
+        with repository._transaction():
+            pytest.fail("busy transaction body must not run")
+
+    assert str(raised.value) == "orchestrator_database_busy"
+    assert closed == [connection]
