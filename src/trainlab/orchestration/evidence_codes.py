@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-
 DOWNSTREAM_FAILURE_EVIDENCE_CODES = frozenset(
     {
         "downstream_execution_failed",

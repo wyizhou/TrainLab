@@ -5,6 +5,7 @@ only builds fixed :class:`DownstreamCall` values and turns data-free receipt
 metadata into one conservative workflow result.  A caller that needs durable
 crash recovery must persist the returned step identities through S5-05.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -16,7 +17,6 @@ from zoneinfo import ZoneInfo
 
 from .evidence_codes import downstream_failure_evidence
 from .subprocess_runner import DownstreamCall, DownstreamResult
-
 
 HONG_KONG = ZoneInfo("Asia/Hong_Kong")
 _TERMINAL_GOOD = frozenset({"succeeded", "unchanged"})
@@ -34,6 +34,7 @@ class DownstreamExecutor(Protocol):
 @dataclass(frozen=True, slots=True)
 class AnalysisWorkflowRequest:
     """The fixed identity of a morning or Monday analysis workflow."""
+
     workflow_key: str
     subject_id: str
     logical_local_date: str
@@ -69,7 +70,11 @@ class AnalysisWorkflowResult:
 
 
 def _utc(value: datetime) -> datetime:
-    if type(value) is not datetime or value.tzinfo is None or value.utcoffset() != UTC.utcoffset(None):
+    if (
+        type(value) is not datetime
+        or value.tzinfo is None
+        or value.utcoffset() != UTC.utcoffset(None)
+    ):
         raise AnalysisWorkflowError("analysis_workflow_time_invalid")
     return value.astimezone(UTC)
 
@@ -89,8 +94,11 @@ def _date(value: str) -> date:
 def _validate(request: AnalysisWorkflowRequest) -> tuple[date, datetime]:
     if type(request) is not AnalysisWorkflowRequest:
         raise AnalysisWorkflowError("analysis_workflow_request_invalid")
-    if (not request.workflow_key or not request.subject_id
-            or request.workflow_kind not in {"morning", "monday", "sunday"}):
+    if (
+        not request.workflow_key
+        or not request.subject_id
+        or request.workflow_kind not in {"morning", "monday", "sunday"}
+    ):
         raise AnalysisWorkflowError("analysis_workflow_request_invalid")
     logical = _date(request.logical_local_date)
     now = _utc(request.requested_at_utc)
@@ -114,38 +122,78 @@ def _hash(receipt: Mapping[str, Any] | None, fallback: str | None) -> str | None
         return fallback
     if receipt is None:
         return None
-    return hashlib.sha256(json.dumps(dict(receipt), sort_keys=True, separators=(",", ":"), allow_nan=False).encode()).hexdigest()
+    return hashlib.sha256(
+        json.dumps(
+            dict(receipt), sort_keys=True, separators=(",", ":"), allow_nan=False
+        ).encode()
+    ).hexdigest()
 
 
-def _step(key: str, layer: Literal["garmin", "analysis"], mode: str, result: DownstreamResult) -> AnalysisWorkflowStep:
+def _step(
+    key: str, layer: Literal["garmin", "analysis"], mode: str, result: DownstreamResult
+) -> AnalysisWorkflowStep:
     receipt = result.receipt
-    status = "failed" if result.kind != "accepted" or receipt is None else str(receipt.get("status", "failed"))
+    status = (
+        "failed"
+        if result.kind != "accepted" or receipt is None
+        else str(receipt.get("status", "failed"))
+    )
     retry = receipt.get("next_retry_at_utc") if receipt is not None else None
     return AnalysisWorkflowStep(
-        key, layer, mode,
+        key,
+        layer,
+        mode,
         _invocation(key.split("/", 1)[0], key.split("/", 1)[1]),
-        status, _hash(receipt, result.receipt_sha256),
+        status,
+        _hash(receipt, result.receipt_sha256),
         retry if type(retry) is str else None,
-        None if result.kind == "accepted" else downstream_failure_evidence(result.error_code),
+        (
+            None
+            if result.kind == "accepted" and receipt is not None
+            else downstream_failure_evidence(result.error_code)
+        ),
     )
 
 
-def _run(executor: DownstreamExecutor, workflow_key: str, step_key: str, **kwargs: Any) -> tuple[DownstreamResult, AnalysisWorkflowStep]:
-    call = DownstreamCall(invocation_id=_invocation(workflow_key, step_key), request_sha256=None, **kwargs)
+def _run(
+    executor: DownstreamExecutor, workflow_key: str, step_key: str, **kwargs: Any
+) -> tuple[DownstreamResult, AnalysisWorkflowStep]:
+    call = DownstreamCall(
+        invocation_id=_invocation(workflow_key, step_key), request_sha256=None, **kwargs
+    )
     result = executor.run(call)
     receipt = result.receipt
-    status = "failed" if result.kind != "accepted" or receipt is None else str(receipt.get("status", "failed"))
+    status = (
+        "failed"
+        if result.kind != "accepted" or receipt is None
+        else str(receipt.get("status", "failed"))
+    )
     retry = receipt.get("next_retry_at_utc") if receipt else None
     return result, AnalysisWorkflowStep(
-        step_key, kwargs["layer"], kwargs["mode"], call.invocation_id or "",
-        status, _hash(receipt, result.receipt_sha256),
+        step_key,
+        kwargs["layer"],
+        kwargs["mode"],
+        call.invocation_id or "",
+        status,
+        _hash(receipt, result.receipt_sha256),
         retry if type(retry) is str else None,
-        None if result.kind == "accepted" else downstream_failure_evidence(result.error_code),
+        # An ``accepted`` result is only accepted when it includes its receipt.
+        # A broken adapter must not turn an absent receipt into either a silent
+        # failure or a made-up process-start failure.
+        (
+            None
+            if result.kind == "accepted" and receipt is not None
+            else downstream_failure_evidence(result.error_code)
+        ),
     )
 
 
 def _receipt(result: DownstreamResult) -> Mapping[str, Any] | None:
-    return result.receipt if result.kind == "accepted" and result.receipt is not None else None
+    return (
+        result.receipt
+        if result.kind == "accepted" and result.receipt is not None
+        else None
+    )
 
 
 def _quality(
@@ -174,21 +222,61 @@ def _quality(
     return "ready_with_warnings" if warning_count else "ready"
 
 
-def _stop(request: AnalysisWorkflowRequest, steps: list[AnalysisWorkflowStep], quality: Literal["ready", "ready_with_warnings", "blocked"], status: str) -> AnalysisWorkflowResult:
+def _stop(
+    request: AnalysisWorkflowRequest,
+    steps: list[AnalysisWorkflowStep],
+    quality: Literal["ready", "ready_with_warnings", "blocked"],
+    status: str,
+) -> AnalysisWorkflowResult:
     # Sunday may complete weekly after a daily failure.  The retry identity is
     # therefore the failed step, not simply the last step in execution order.
-    last = next((item for item in reversed(steps) if item.status == status), steps[-1] if steps else None)
+    last = next(
+        (item for item in reversed(steps) if item.status == status),
+        steps[-1] if steps else None,
+    )
     if status in _RETRYABLE:
-        return AnalysisWorkflowResult(request.workflow_key, "deferred", request.logical_local_date, None, quality, tuple(steps), "retry_step", last.next_retry_at_utc if last else None, last.error_code if last else None)
+        return AnalysisWorkflowResult(
+            request.workflow_key,
+            "deferred",
+            request.logical_local_date,
+            None,
+            quality,
+            tuple(steps),
+            "retry_step",
+            last.next_retry_at_utc if last else None,
+            last.error_code if last else None,
+        )
     if status == "auth_required":
-        return AnalysisWorkflowResult(request.workflow_key, "attention_required", request.logical_local_date, None, quality, tuple(steps), "authenticate_garmin", None, last.error_code if last else None)
-    return AnalysisWorkflowResult(request.workflow_key, "failed", request.logical_local_date, None, quality, tuple(steps), "operator_review", None, last.error_code if last else None)
+        return AnalysisWorkflowResult(
+            request.workflow_key,
+            "attention_required",
+            request.logical_local_date,
+            None,
+            quality,
+            tuple(steps),
+            "authenticate_garmin",
+            None,
+            last.error_code if last else None,
+        )
+    return AnalysisWorkflowResult(
+        request.workflow_key,
+        "failed",
+        request.logical_local_date,
+        None,
+        quality,
+        tuple(steps),
+        "operator_review",
+        None,
+        last.error_code if last else None,
+    )
 
 
 class MorningWorkflowService:
     """Run at most one bounded collection/repair/daily chain for one date."""
 
-    def __init__(self, executor: DownstreamExecutor, *, max_repair_attempts: int = 1) -> None:
+    def __init__(
+        self, executor: DownstreamExecutor, *, max_repair_attempts: int = 1
+    ) -> None:
         if type(max_repair_attempts) is not int or not 0 <= max_repair_attempts <= 1:
             raise AnalysisWorkflowError("analysis_workflow_repair_budget_invalid")
         self._executor, self._max_repair_attempts = executor, max_repair_attempts
@@ -201,7 +289,14 @@ class MorningWorkflowService:
         yesterday = (logical - timedelta(days=1)).isoformat()
         today = logical.isoformat()
         steps: list[AnalysisWorkflowStep] = []
-        collected, collect_step = _run(self._executor, request.workflow_key, "collect", layer="garmin", mode="incremental", through_local_date=yesterday)
+        collected, collect_step = _run(
+            self._executor,
+            request.workflow_key,
+            "collect",
+            layer="garmin",
+            mode="incremental",
+            through_local_date=yesterday,
+        )
         steps.append(collect_step)
         collection = _receipt(collected)
         if collect_step.status not in _TERMINAL_GOOD:
@@ -223,28 +318,92 @@ class MorningWorkflowService:
         steps.append(current_step)
         if current_step.status not in _TERMINAL_GOOD:
             return _stop(request, steps, "blocked", current_step.status)
-        audited, audit_step = _run(self._executor, request.workflow_key, "quality", layer="garmin", mode="audit", health_from_local_date=yesterday, through_local_date=yesterday)
+        audited, audit_step = _run(
+            self._executor,
+            request.workflow_key,
+            "quality",
+            layer="garmin",
+            mode="audit",
+            health_from_local_date=yesterday,
+            through_local_date=yesterday,
+        )
         steps.append(audit_step)
         quality_receipt = _receipt(audited)
         if audit_step.status not in _TERMINAL_GOOD:
             return _stop(request, steps, "blocked", audit_step.status)
         quality = _quality(collection, quality_receipt)
         if quality == "blocked" and self._max_repair_attempts:
-            repaired, repair_step = _run(self._executor, request.workflow_key, "repair", layer="garmin", mode="repair", health_from_local_date=yesterday, through_local_date=yesterday, repair_strategy="auto")
+            repaired, repair_step = _run(
+                self._executor,
+                request.workflow_key,
+                "repair",
+                layer="garmin",
+                mode="repair",
+                health_from_local_date=yesterday,
+                through_local_date=yesterday,
+                repair_strategy="auto",
+            )
             steps.append(repair_step)
             if repair_step.status not in _TERMINAL_GOOD:
                 return _stop(request, steps, "blocked", repair_step.status)
-            audited, audit_step = _run(self._executor, request.workflow_key, "quality_after_repair", layer="garmin", mode="audit", health_from_local_date=yesterday, through_local_date=yesterday)
-            steps.append(audit_step); quality_receipt = _receipt(audited); quality = _quality(collection, quality_receipt)
+            audited, audit_step = _run(
+                self._executor,
+                request.workflow_key,
+                "quality_after_repair",
+                layer="garmin",
+                mode="audit",
+                health_from_local_date=yesterday,
+                through_local_date=yesterday,
+            )
+            steps.append(audit_step)
+            quality_receipt = _receipt(audited)
+            quality = _quality(collection, quality_receipt)
         if quality == "blocked":
-            return AnalysisWorkflowResult(request.workflow_key, "deferred", today, None, quality, tuple(steps), "repair_data", None)
+            return AnalysisWorkflowResult(
+                request.workflow_key,
+                "deferred",
+                today,
+                None,
+                quality,
+                tuple(steps),
+                "repair_data",
+                None,
+            )
         return self._analyse(request, steps, quality, collection, yesterday, today)
 
-    def _analyse(self, request: AnalysisWorkflowRequest, steps: list[AnalysisWorkflowStep], quality: Literal["ready", "ready_with_warnings"], collection: Mapping[str, Any] | None, yesterday: str, today: str) -> AnalysisWorkflowResult:
-        daily, daily_step = _run(self._executor, request.workflow_key, "daily", layer="analysis", mode="daily", subject_id=request.subject_id, summary_local_date=yesterday, advice_local_date=today)
+    def _analyse(
+        self,
+        request: AnalysisWorkflowRequest,
+        steps: list[AnalysisWorkflowStep],
+        quality: Literal["ready", "ready_with_warnings"],
+        collection: Mapping[str, Any] | None,
+        yesterday: str,
+        today: str,
+    ) -> AnalysisWorkflowResult:
+        daily, daily_step = _run(
+            self._executor,
+            request.workflow_key,
+            "daily",
+            layer="analysis",
+            mode="daily",
+            subject_id=request.subject_id,
+            summary_local_date=yesterday,
+            advice_local_date=today,
+        )
         steps.append(daily_step)
         if daily_step.status in _TERMINAL_GOOD:
-            result = AnalysisWorkflowResult(request.workflow_key, "succeeded", today, str(collection.get("run_id")) if collection and collection.get("run_id") else None, quality, tuple(steps), "none", None)
+            result = AnalysisWorkflowResult(
+                request.workflow_key,
+                "succeeded",
+                today,
+                str(collection.get("run_id"))
+                if collection and collection.get("run_id")
+                else None,
+                quality,
+                tuple(steps),
+                "none",
+                None,
+            )
             self._completed[request.workflow_key] = result
             return result
         return _stop(request, steps, quality, daily_step.status)
@@ -259,28 +418,124 @@ class MondayWorkflowService(MorningWorkflowService):
         logical, _ = _validate(request)
         if request.workflow_key in self._completed:
             return self._completed[request.workflow_key]
-        yesterday, today = (logical - timedelta(days=1)).isoformat(), logical.isoformat()
+        yesterday, today = (
+            (logical - timedelta(days=1)).isoformat(),
+            logical.isoformat(),
+        )
         steps: list[AnalysisWorkflowStep] = []
-        collected, item = _run(self._executor, request.workflow_key, "collect", layer="garmin", mode="incremental", through_local_date=yesterday); steps.append(item)
+        collected, item = _run(
+            self._executor,
+            request.workflow_key,
+            "collect",
+            layer="garmin",
+            mode="incremental",
+            through_local_date=yesterday,
+        )
+        steps.append(item)
         collection = _receipt(collected)
-        if item.status not in _TERMINAL_GOOD: return _stop(request, steps, "blocked", item.status)
-        _current, item = _run(self._executor, request.workflow_key, "current_snapshot", layer="garmin", mode="snapshot", snapshot_local_date=today); steps.append(item)
-        if item.status not in _TERMINAL_GOOD: return _stop(request, steps, "blocked", item.status)
-        audited, item = _run(self._executor, request.workflow_key, "quality", layer="garmin", mode="audit", health_from_local_date=yesterday, through_local_date=yesterday); steps.append(item)
+        if item.status not in _TERMINAL_GOOD:
+            return _stop(request, steps, "blocked", item.status)
+        _current, item = _run(
+            self._executor,
+            request.workflow_key,
+            "current_snapshot",
+            layer="garmin",
+            mode="snapshot",
+            snapshot_local_date=today,
+        )
+        steps.append(item)
+        if item.status not in _TERMINAL_GOOD:
+            return _stop(request, steps, "blocked", item.status)
+        audited, item = _run(
+            self._executor,
+            request.workflow_key,
+            "quality",
+            layer="garmin",
+            mode="audit",
+            health_from_local_date=yesterday,
+            through_local_date=yesterday,
+        )
+        steps.append(item)
         quality = _quality(collection, _receipt(audited))
-        if item.status not in _TERMINAL_GOOD: return _stop(request, steps, "blocked", item.status)
+        if item.status not in _TERMINAL_GOOD:
+            return _stop(request, steps, "blocked", item.status)
         if quality == "blocked" and self._max_repair_attempts:
-            repaired, item = _run(self._executor, request.workflow_key, "repair", layer="garmin", mode="repair", health_from_local_date=yesterday, through_local_date=yesterday, repair_strategy="auto"); steps.append(item)
-            if item.status not in _TERMINAL_GOOD: return _stop(request, steps, "blocked", item.status)
-            audited, item = _run(self._executor, request.workflow_key, "quality_after_repair", layer="garmin", mode="audit", health_from_local_date=yesterday, through_local_date=yesterday); steps.append(item)
+            repaired, item = _run(
+                self._executor,
+                request.workflow_key,
+                "repair",
+                layer="garmin",
+                mode="repair",
+                health_from_local_date=yesterday,
+                through_local_date=yesterday,
+                repair_strategy="auto",
+            )
+            steps.append(item)
+            if item.status not in _TERMINAL_GOOD:
+                return _stop(request, steps, "blocked", item.status)
+            audited, item = _run(
+                self._executor,
+                request.workflow_key,
+                "quality_after_repair",
+                layer="garmin",
+                mode="audit",
+                health_from_local_date=yesterday,
+                through_local_date=yesterday,
+            )
+            steps.append(item)
             quality = _quality(collection, _receipt(audited))
-            if item.status not in _TERMINAL_GOOD: return _stop(request, steps, "blocked", item.status)
-        if quality == "blocked": return AnalysisWorkflowResult(request.workflow_key, "deferred", today, None, quality, tuple(steps), "repair_data", None)
-        _daily, item = _run(self._executor, request.workflow_key, "daily", layer="analysis", mode="daily", subject_id=request.subject_id, summary_local_date=yesterday, advice_local_date=today); steps.append(item)
-        _weekly, weekly = _run(self._executor, request.workflow_key, "weekly", layer="analysis", mode="weekly", subject_id=request.subject_id, as_of_local_date=today); steps.append(weekly)
-        snapshot = str(collection.get("run_id")) if collection and collection.get("run_id") else None
+            if item.status not in _TERMINAL_GOOD:
+                return _stop(request, steps, "blocked", item.status)
+        if quality == "blocked":
+            return AnalysisWorkflowResult(
+                request.workflow_key,
+                "deferred",
+                today,
+                None,
+                quality,
+                tuple(steps),
+                "repair_data",
+                None,
+            )
+        _daily, item = _run(
+            self._executor,
+            request.workflow_key,
+            "daily",
+            layer="analysis",
+            mode="daily",
+            subject_id=request.subject_id,
+            summary_local_date=yesterday,
+            advice_local_date=today,
+        )
+        steps.append(item)
+        _weekly, weekly = _run(
+            self._executor,
+            request.workflow_key,
+            "weekly",
+            layer="analysis",
+            mode="weekly",
+            subject_id=request.subject_id,
+            as_of_local_date=today,
+        )
+        steps.append(weekly)
+        snapshot = (
+            str(collection.get("run_id"))
+            if collection and collection.get("run_id")
+            else None
+        )
         if weekly.status in _TERMINAL_GOOD and item.status in _TERMINAL_GOOD:
-            result = AnalysisWorkflowResult(request.workflow_key, "succeeded", today, snapshot, quality, tuple(steps), "none", None); self._completed[request.workflow_key] = result; return result
+            result = AnalysisWorkflowResult(
+                request.workflow_key,
+                "succeeded",
+                today,
+                snapshot,
+                quality,
+                tuple(steps),
+                "none",
+                None,
+            )
+            self._completed[request.workflow_key] = result
+            return result
         # Daily and weekly are independent: a partial one preserves the other
         # accepted artifact and recovery targets only the unfinished step.
         bad = weekly if weekly.status not in _TERMINAL_GOOD else item

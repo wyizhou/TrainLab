@@ -9,11 +9,11 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from .contracts import WorkflowReceipt, WorkflowRequest, WorkflowStepReceipt
+from .domain_state_machine import StepTransitionEvent, WorkflowTransitionEvent
 from .evidence_codes import (
     DOWNSTREAM_FAILURE_EVIDENCE_CODES,
     downstream_failure_evidence,
 )
-from .domain_state_machine import StepTransitionEvent, WorkflowTransitionEvent
 from .repository import OrchestrationRepository
 from .state_projection import StepDefinition, WorkflowDefinition
 
@@ -28,7 +28,9 @@ def _parse_utc(value: str | None) -> datetime:
     try:
         parsed = datetime.fromisoformat(value[:-1] + "+00:00")
     except ValueError as exc:
-        raise OrchestrationPersistenceError("orchestration_persistence_time_invalid") from exc
+        raise OrchestrationPersistenceError(
+            "orchestration_persistence_time_invalid"
+        ) from exc
     if parsed.utcoffset() != UTC.utcoffset(None):
         raise OrchestrationPersistenceError("orchestration_persistence_time_invalid")
     return parsed.astimezone(UTC)
@@ -123,7 +125,9 @@ class RepositoryReceiptStore:
         self, request: WorkflowRequest, receipt: WorkflowReceipt
     ) -> None:
         if receipt.workflow_key != receipt.workflow_run_id.removeprefix("run:"):
-            raise OrchestrationPersistenceError("orchestration_persistence_identity_invalid")
+            raise OrchestrationPersistenceError(
+                "orchestration_persistence_identity_invalid"
+            )
         handoff = self._repository.get_scheduler_handoff(receipt.workflow_key)
         # A scheduler claim first creates a handoff-only run row.  It is not a
         # malformed workflow definition; the exact receipt below materializes
@@ -140,45 +144,73 @@ class RepositoryReceiptStore:
         )
         subject = self._subjects.resolve(request.subject_id)
         if request.subject_id is not None and subject is None:
-            raise OrchestrationPersistenceError("orchestration_persistence_subject_invalid")
+            raise OrchestrationPersistenceError(
+                "orchestration_persistence_subject_invalid"
+            )
         parent = None
         if request.parent_workflow_run_id is not None:
-            if not request.parent_workflow_run_id.isdecimal() or int(request.parent_workflow_run_id) <= 0:
-                raise OrchestrationPersistenceError("orchestration_persistence_parent_invalid")
             if (
-                request.trigger_kind == "manual"
-                and not self.permits_operator_retry(request)
+                not request.parent_workflow_run_id.isdecimal()
+                or int(request.parent_workflow_run_id) <= 0
+            ):
+                raise OrchestrationPersistenceError(
+                    "orchestration_persistence_parent_invalid"
+                )
+            if request.trigger_kind == "manual" and not self.permits_operator_retry(
+                request
             ):
                 raise OrchestrationPersistenceError(
                     "orchestration_persistence_parent_invalid"
                 )
             parent = int(request.parent_workflow_run_id)
-        command_hash = handoff.materialization_command_sha256 if handoff else _digest(request.as_json_dict())
-        evidence_hash = handoff.materialization_evidence_sha256 if handoff else _digest({
-            "workflow_key": receipt.workflow_key,
-            "invocation_id": request.invocation_id,
-        })
-        workflow = WorkflowDefinition(
-            receipt.workflow_key, receipt.workflow_kind, subject,
-            receipt.logical_local_date, request.trigger_kind,
-            _parse_utc(request.deadline_at_utc), parent, started,
-            command_hash, evidence_hash, "queued",
+        command_hash = (
+            handoff.materialization_command_sha256
+            if handoff
+            else _digest(request.as_json_dict())
         )
-        steps = tuple(self._definition(item, index) for index, item in enumerate(receipt.steps))
+        evidence_hash = (
+            handoff.materialization_evidence_sha256
+            if handoff
+            else _digest(
+                {
+                    "workflow_key": receipt.workflow_key,
+                    "invocation_id": request.invocation_id,
+                }
+            )
+        )
+        workflow = WorkflowDefinition(
+            receipt.workflow_key,
+            receipt.workflow_kind,
+            subject,
+            receipt.logical_local_date,
+            request.trigger_kind,
+            _parse_utc(request.deadline_at_utc),
+            parent,
+            started,
+            command_hash,
+            evidence_hash,
+            "queued",
+        )
+        steps = tuple(
+            self._definition(item, index) for index, item in enumerate(receipt.steps)
+        )
         if existing is None:
             aggregate = self._repository.create_workflow_definition(workflow, steps)
         else:
             self._validate_replay_identity(existing, workflow, steps)
             aggregate = existing
             if aggregate.workflow.domain_state in {
-                "succeeded", "partial", "attention_required", "failed", "cancelled"
+                "succeeded",
+                "partial",
+                "attention_required",
+                "failed",
+                "cancelled",
             }:
                 return
             if self._matches_receipt(aggregate, receipt):
                 return
         completed_attempts = sum(
-            event.to_state == "running"
-            for event in aggregate.workflow_events
+            event.to_state == "running" for event in aggregate.workflow_events
         )
         attempt = (
             max(1, completed_attempts)
@@ -198,15 +230,24 @@ class RepositoryReceiptStore:
             aggregate = self._repository.transition_workflow_domain(
                 receipt.workflow_key,
                 WorkflowTransitionEvent(
-                    f"{event_prefix}:workflow:running", "running",
-                    cursor, "executor_started",
+                    f"{event_prefix}:workflow:running",
+                    "running",
+                    cursor,
+                    "executor_started",
                 ),
             )
         for item in receipt.steps:
-            current = next(step for step in aggregate.steps if step.step_key == item.step_id)
+            current = next(
+                step for step in aggregate.steps if step.step_key == item.step_id
+            )
             if current.domain_state in {
-                "succeeded", "unchanged", "partial", "auth_required",
-                "rejected", "failed", "skipped",
+                "succeeded",
+                "unchanged",
+                "partial",
+                "auth_required",
+                "rejected",
+                "failed",
+                "skipped",
             }:
                 continue
             if item.status == "pending":
@@ -217,7 +258,9 @@ class RepositoryReceiptStore:
                     receipt.workflow_key,
                     StepTransitionEvent(
                         f"{event_prefix}:{item.step_id}:skipped",
-                        item.step_id, "skipped", cursor,
+                        item.step_id,
+                        "skipped",
+                        cursor,
                         evidence_code="deterministic_check",
                     ),
                 )
@@ -227,31 +270,28 @@ class RepositoryReceiptStore:
                     receipt.workflow_key,
                     StepTransitionEvent(
                         f"{event_prefix}:{item.step_id}:running",
-                        item.step_id, "running", cursor,
+                        item.step_id,
+                        "running",
+                        cursor,
                     ),
                 )
                 cursor += timedelta(microseconds=1)
-            receipt_error_codes = tuple(
-                error.get("code")
-                for error in receipt.errors
-                if isinstance(error, dict)
-                and error.get("code") in DOWNSTREAM_FAILURE_EVIDENCE_CODES
-            )
-            evidence = (
-                None
-                if item.receipt_sha256
-                else downstream_failure_evidence(
-                    receipt_error_codes[0] if receipt_error_codes else None
+            evidence = None if item.receipt_sha256 else self._failure_evidence(receipt)
+            retry = (
+                _parse_utc(receipt.next_retry_at_utc)
+                if (
+                    item.status in {"deferred", "lock_busy"}
+                    and receipt.next_retry_at_utc
                 )
+                else None
             )
-            retry = _parse_utc(receipt.next_retry_at_utc) if (
-                item.status in {"deferred", "lock_busy"} and receipt.next_retry_at_utc
-            ) else None
             aggregate = self._repository.transition_step_domain(
                 receipt.workflow_key,
                 StepTransitionEvent(
                     f"{event_prefix}:{item.step_id}:{item.status}",
-                    item.step_id, item.status, cursor,
+                    item.step_id,
+                    item.status,
+                    cursor,
                     receipt_sha256=item.receipt_sha256,
                     evidence_code=evidence,
                     next_retry_at_utc=retry,
@@ -264,12 +304,25 @@ class RepositoryReceiptStore:
                 receipt.workflow_key,
                 WorkflowTransitionEvent(
                     f"{event_prefix}:workflow:{receipt.status}",
-                    receipt.status, cursor, "workflow_receipt",
+                    receipt.status,
+                    cursor,
+                    "workflow_receipt",
                 ),
             )
 
     @staticmethod
-    def _matches_receipt(existing, receipt: WorkflowReceipt) -> bool:
+    def _failure_evidence(receipt: WorkflowReceipt) -> str:
+        """Select the receipt's fixed safe code for a no-receipt transition."""
+        for error in receipt.errors:
+            if (
+                isinstance(error, dict)
+                and error.get("code") in DOWNSTREAM_FAILURE_EVIDENCE_CODES
+            ):
+                return str(error["code"])
+        return downstream_failure_evidence(None)
+
+    @classmethod
+    def _matches_receipt(cls, existing, receipt: WorkflowReceipt) -> bool:
         if (
             existing.workflow.domain_state != receipt.status
             or not receipt.steps
@@ -284,10 +337,11 @@ class RepositoryReceiptStore:
             )
             for step in existing.steps
         }
-        for current, requested in zip(
-            existing.steps, receipt.steps, strict=True
-        ):
-            if current.step_key != requested.step_id or current.domain_state != requested.status:
+        for current, requested in zip(existing.steps, receipt.steps, strict=True):
+            if (
+                current.step_key != requested.step_id
+                or current.domain_state != requested.status
+            ):
                 return False
             history = histories[current.step_key]
             last = history[-1] if history else None
@@ -304,9 +358,14 @@ class RepositoryReceiptStore:
             )
             if (
                 last.receipt_sha256 != requested.receipt_sha256
+                or last.evidence_code
+                != (
+                    "receipt_received"
+                    if requested.receipt_sha256 is not None
+                    else cls._failure_evidence(receipt)
+                )
                 or last.next_retry_at_utc != expected_retry
-                or last.controlled_counts
-                != tuple(sorted(requested.counts.items()))
+                or last.controlled_counts != tuple(sorted(requested.counts.items()))
             ):
                 return False
         return True
@@ -326,15 +385,25 @@ class RepositoryReceiptStore:
             )
         actual_steps = tuple(
             (
-                item.step_key, item.ordinal, item.layer_no, item.tool_mode,
-                item.request_sha256, item.invocation_id, item.downstream_run_id,
+                item.step_key,
+                item.ordinal,
+                item.layer_no,
+                item.tool_mode,
+                item.request_sha256,
+                item.invocation_id,
+                item.downstream_run_id,
             )
             for item in existing.steps
         )
         requested_steps = tuple(
             (
-                item.step_key, item.ordinal, item.layer_no, item.tool_mode,
-                item.request_sha256, item.invocation_id, item.downstream_run_id,
+                item.step_key,
+                item.ordinal,
+                item.layer_no,
+                item.tool_mode,
+                item.request_sha256,
+                item.invocation_id,
+                item.downstream_run_id,
             )
             for item in steps
         )
@@ -353,13 +422,20 @@ class RepositoryReceiptStore:
             "orchestration": 5,
         }[item.layer]
         return StepDefinition(
-            item.step_id, ordinal, layer_no, item.mode,
-            _digest({
-                "step_id": item.step_id,
-                "layer": item.layer,
-                "mode": item.mode,
-                "downstream_invocation_id": item.downstream_invocation_id,
-                "downstream_run_id": item.downstream_run_id,
-            }), item.downstream_invocation_id,
-            item.downstream_run_id, "pending",
+            item.step_id,
+            ordinal,
+            layer_no,
+            item.mode,
+            _digest(
+                {
+                    "step_id": item.step_id,
+                    "layer": item.layer,
+                    "mode": item.mode,
+                    "downstream_invocation_id": item.downstream_invocation_id,
+                    "downstream_run_id": item.downstream_run_id,
+                }
+            ),
+            item.downstream_invocation_id,
+            item.downstream_run_id,
+            "pending",
         )

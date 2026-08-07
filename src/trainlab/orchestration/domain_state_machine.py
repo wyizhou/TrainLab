@@ -8,6 +8,7 @@ from datetime import datetime
 from types import MappingProxyType
 from typing import Final, Mapping, cast
 
+from .evidence_codes import DOWNSTREAM_FAILURE_EVIDENCE_CODES
 from .state_projection import (
     StateProjectionError,
     StepDomainState,
@@ -21,33 +22,29 @@ from .state_projection import (
     step_storage_state,
     workflow_storage_state,
 )
-from .evidence_codes import DOWNSTREAM_FAILURE_EVIDENCE_CODES
 
-
-WORKFLOW_TRANSITIONS: Final[Mapping[WorkflowDomainState, frozenset[WorkflowDomainState]]] = (
-    MappingProxyType(
-        {
-            "queued": frozenset({"running", "cancelled"}),
-            "running": frozenset(
-                {
-                    "succeeded",
-                    "partial",
-                    "deferred",
-                    "attention_required",
-                    "failed",
-                    "cancelled",
-                }
-            ),
-            "deferred": frozenset(
-                {"running", "attention_required", "failed", "cancelled"}
-            ),
-            "succeeded": frozenset(),
-            "partial": frozenset(),
-            "attention_required": frozenset(),
-            "failed": frozenset(),
-            "cancelled": frozenset(),
-        }
-    )
+WORKFLOW_TRANSITIONS: Final[
+    Mapping[WorkflowDomainState, frozenset[WorkflowDomainState]]
+] = MappingProxyType(
+    {
+        "queued": frozenset({"running", "cancelled"}),
+        "running": frozenset(
+            {
+                "succeeded",
+                "partial",
+                "deferred",
+                "attention_required",
+                "failed",
+                "cancelled",
+            }
+        ),
+        "deferred": frozenset({"running", "attention_required", "failed", "cancelled"}),
+        "succeeded": frozenset(),
+        "partial": frozenset(),
+        "attention_required": frozenset(),
+        "failed": frozenset(),
+        "cancelled": frozenset(),
+    }
 )
 
 STEP_TRANSITIONS: Final[Mapping[StepDomainState, frozenset[StepDomainState]]] = (
@@ -92,14 +89,17 @@ MAX_ATTEMPTS: Final = 16
 MAX_CONTROLLED_COUNTS: Final = 64
 
 _CODE = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
-_NO_RECEIPT_EVIDENCE = frozenset(
-    {
-        "deterministic_check",
-        "process_start_failed",
-        "process_timeout",
-        "provider_unavailable",
-    }
-) | DOWNSTREAM_FAILURE_EVIDENCE_CODES
+_NO_RECEIPT_EVIDENCE = (
+    frozenset(
+        {
+            "deterministic_check",
+            "process_start_failed",
+            "process_timeout",
+            "provider_unavailable",
+        }
+    )
+    | DOWNSTREAM_FAILURE_EVIDENCE_CODES
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -148,7 +148,7 @@ class StepEventRecord:
 def _code(value: object) -> str:
     if type(value) is not str or _CODE.fullmatch(value) is None:
         _invalid()
-    return value
+    return cast(str, value)
 
 
 def _workflow_state(value: object) -> WorkflowDomainState:
@@ -163,31 +163,28 @@ def _step_state(value: object) -> StepDomainState:
 
 def _counts(value: object) -> tuple[tuple[str, int], ...]:
     if type(value) is dict:
-        value = tuple(value.items())
+        value = tuple(cast(dict[object, object], value).items())
     if type(value) is not tuple or len(value) > MAX_CONTROLLED_COUNTS:
         _invalid()
+    items = cast(tuple[tuple[object, object], ...], value)
     result: list[tuple[str, int]] = []
     seen: set[str] = set()
-    for item in value:
+    for item in items:
         if type(item) is not tuple or len(item) != 2:
             _invalid()
         key, count = item
         key = _code(key)
-        if (
-            key in seen
-            or type(count) is not int
-            or not 0 <= count <= 1_000_000_000
-        ):
+        if key in seen or type(count) is not int or not 0 <= count <= 1_000_000_000:
             _invalid()
         seen.add(key)
-        result.append((key, count))
+        result.append((key, cast(int, count)))
     return tuple(sorted(result))
 
 
 def _counts_from_json(value: object) -> tuple[tuple[str, int], ...]:
     if type(value) is not dict:
         _invalid()
-    return _counts(tuple(value.items()))
+    return _counts(tuple(cast(dict[object, object], value).items()))
 
 
 def _optional_receipt(value: object) -> str | None:
@@ -274,18 +271,10 @@ def normalize_step_event(
         if receipt is None or evidence != "receipt_received" or retry is not None:
             raise StateProjectionError("step_domain_event_payload_invalid")
     elif to_state == "partial":
-        if (
-            receipt is None
-            or evidence != "receipt_received"
-            or retry is not None
-        ):
+        if receipt is None or evidence != "receipt_received" or retry is not None:
             raise StateProjectionError("step_domain_event_payload_invalid")
     elif to_state == "lock_busy":
-        if (
-            receipt is None
-            or evidence != "receipt_received"
-            or retry is None
-        ):
+        if receipt is None or evidence != "receipt_received" or retry is None:
             raise StateProjectionError("step_domain_event_payload_invalid")
     elif to_state == "deferred":
         if receipt is not None:
@@ -370,10 +359,11 @@ def parse_workflow_history(
 ) -> tuple[tuple[WorkflowEventRecord, ...], WorkflowDomainState]:
     if type(value) is not list or len(value) > MAX_WORKFLOW_EVENTS:
         _invalid()
+    events = cast(list[object], value)
     current: WorkflowDomainState = "queued"
     previous_time = _parse_canonical_utc(started_at_utc)
     records: list[WorkflowEventRecord] = []
-    for index, item in enumerate(value):
+    for index, item in enumerate(events):
         document = _expect_keys(
             item,
             frozenset(
@@ -396,9 +386,7 @@ def parse_workflow_history(
         )
         record = normalize_workflow_event(request, from_state=current)
         at = _parse_canonical_utc(record.at_utc)
-        if (index == 0 and at < previous_time) or (
-            index > 0 and at <= previous_time
-        ):
+        if (index == 0 and at < previous_time) or (index > 0 and at <= previous_time):
             raise StateProjectionError("workflow_domain_event_time_invalid")
         if workflow_record_document(record) != document:
             _invalid()
@@ -416,11 +404,12 @@ def parse_step_history(
 ) -> tuple[tuple[StepEventRecord, ...], StepDomainState, int]:
     if type(value) is not list or len(value) > MAX_STEP_EVENTS:
         _invalid()
+    events = cast(list[object], value)
     current: StepDomainState = "pending"
     attempt = 0
     previous_time = _parse_canonical_utc(workflow_started_at_utc)
     records: list[StepEventRecord] = []
-    for index, item in enumerate(value):
+    for index, item in enumerate(events):
         document = _expect_keys(
             item,
             frozenset(
@@ -463,11 +452,12 @@ def parse_step_history(
             prior_attempt=attempt,
         )
         at = _parse_canonical_utc(record.at_utc)
-        if (index == 0 and at < previous_time) or (
-            index > 0 and at <= previous_time
-        ):
+        if (index == 0 and at < previous_time) or (index > 0 and at <= previous_time):
             raise StateProjectionError("step_domain_event_time_invalid")
-        if type(document["attempt"]) is not int or document["attempt"] != record.attempt:
+        if (
+            type(document["attempt"]) is not int
+            or document["attempt"] != record.attempt
+        ):
             _invalid()
         if step_record_document(record) != document:
             _invalid()
