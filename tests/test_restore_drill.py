@@ -31,9 +31,10 @@ def test_declared_restore_partition_is_exhaustively_accounted_for(
     assert partition in drill.PARTITIONS
 
 
-def test_restore_drill_rejects_any_non_disposable_output_root(tmp_path: Path) -> None:
+def test_restore_drill_rejects_any_non_disposable_output_root() -> None:
+    outside_disposable_root = drill.PROJECT_ROOT.parent / "restore-drill-not-disposable"
     with pytest.raises(drill.RestoreDrillError, match="state_test_tmp"):
-        drill.run_drill(tmp_path / "not-disposable")
+        drill.run_drill(outside_disposable_root)
 
 
 @pytest.mark.parametrize(
