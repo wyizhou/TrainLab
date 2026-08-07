@@ -39,7 +39,10 @@ def test_incident_deduplicates_lifecycle_and_alert_open_is_idempotent(tmp_path: 
     first = alerts.deliver(incident.incident_key)
     second = alerts.deliver(incident.incident_key)
     assert (first.action, second.action) == ("sent", "already_sent")
-    assert repo.get_alert_delivery(first.idempotency_key).status == "sent"
+    saved = repo.get_alert_delivery(first.idempotency_key)
+    assert saved.status == "sent"
+    assert saved.provider_message_id == "synthetic-alert-message"
+    assert saved.sent_at_utc is not None and saved.last_verified_at_utc is not None
     sends = [x for x in alerts._transport.operations if x["operation"] == "send_html"]
     assert len(sends) == 1 and sends[0]["recipient"] == "owner@example.invalid"
     assert manager.acknowledge(incident.incident_key, at_utc=NOW + timedelta(minutes=2)).state == "acknowledged"
@@ -73,6 +76,28 @@ def test_send_unknown_reconciles_without_duplicate_send(tmp_path: Path) -> None:
     resolved = alerts.reconcile(incident.incident_key)
     assert resolved.action == "already_sent" and repo.get_alert_delivery(unknown.idempotency_key).status == "already_sent"
     assert len([x for x in alerts._transport.operations if x["operation"] == "send_html"]) == 1
+
+
+def test_startup_reconciles_stale_sending_without_duplicate_send(tmp_path: Path) -> None:
+    transport = FakeGmailTransport()
+    repo, _, incident, alerts = service(tmp_path, transport)
+    key = alert_idempotency_key(incident.incident_key, "open")
+    repo.create_alert_delivery(
+        incident_key=incident.incident_key, idempotency_key=key
+    )
+    repo.transition_alert_delivery(key, "sending")
+    transport.known_idempotency_keys.add(key)
+
+    results = alerts.reconcile_outstanding()
+
+    assert len(results) == 1 and results[0].action == "already_sent"
+    saved = repo.get_alert_delivery(key)
+    assert saved.status == "already_sent"
+    assert saved.provider_message_id == "synthetic-alert-message"
+    assert saved.last_verified_at_utc is not None
+    assert not [
+        item for item in transport.operations if item["operation"] == "send_html"
+    ]
 
 
 def test_fixed_gmail_boundary_and_payload_free_template(tmp_path: Path) -> None:

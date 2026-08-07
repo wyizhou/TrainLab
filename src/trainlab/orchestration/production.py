@@ -366,6 +366,13 @@ class ProductionOrchestrationApplication:
             repository, lease, _Clock(), subject_id=numeric, host_id=instance
         )
         alerts = self._alert_service(config, repository)
+        if alerts is not None:
+            try:
+                alerts.reconcile_outstanding()
+            except Exception:
+                # A prior ambiguous alert remains durable and retryable. Gmail
+                # reconciliation must not prevent the scheduler from starting.
+                pass
         incidents = WorkflowIncidentCoordinator(repository)
         runtime = SupervisorRuntime(
             supervisor, queue, config, dispatch=self._execute_due,

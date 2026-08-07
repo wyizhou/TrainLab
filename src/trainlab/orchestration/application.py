@@ -18,6 +18,7 @@ from zoneinfo import ZoneInfo
 
 from .analysis_workflows import AnalysisWorkflowRequest, AnalysisWorkflowResult
 from .contracts import WorkflowReceipt, WorkflowRequest, WorkflowStepReceipt
+from .evidence_codes import DOWNSTREAM_FAILURE_EVIDENCE_CODES
 from .mail_workflow import MailWorkflowOutcome
 
 
@@ -89,7 +90,7 @@ _SAFE_CODES = frozenset({
     "orchestration_dependency_missing", "orchestration_subject_inactive",
     "orchestration_request_invalid", "orchestration_execution_failed",
     "orchestration_receipt_persistence_failed", "orchestration_outcome_invalid",
-})
+}) | DOWNSTREAM_FAILURE_EVIDENCE_CODES
 
 
 def _parse_utc(value: object, code: str) -> datetime:
@@ -311,7 +312,12 @@ class OrchestrationTool:
         )
         if any(item.status == "failed" and source.status not in _STEP_STATUSES for item, source in zip(steps, outcome.steps)):
             raise OrchestrationApplicationError("orchestration_outcome_invalid")
-        return self._base(request, now, status=outcome.status, steps=steps, next_action=outcome.next_action, next_retry=outcome.next_retry_at_utc)
+        return self._base(
+            request, now, status=outcome.status, steps=steps,
+            next_action=outcome.next_action,
+            next_retry=outcome.next_retry_at_utc,
+            errors=_safe_error(outcome.error_code) if outcome.error_code else (),
+        )
 
     def _mail_receipt(self, request: WorkflowRequest, now: datetime, outcome: MailWorkflowOutcome) -> WorkflowReceipt:
         if outcome.status not in _WORKFLOW_STATUSES:

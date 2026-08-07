@@ -9,6 +9,8 @@ class Queue:
     def run(self, call):
         self.calls.append(call)
         receipt = self.receipts.pop(0)
+        if isinstance(receipt, DownstreamResult):
+            return receipt
         return DownstreamResult("accepted", None, receipt, "a" * 64, "b" * 64, 0)
 
 
@@ -74,6 +76,18 @@ def test_failed_current_snapshot_stops_before_quality_and_daily() -> None:
     result = MorningWorkflowService(queue).execute(request())
     assert result.status == "attention_required"
     assert [item.mode for item in queue.calls] == ["incremental", "snapshot"]
+
+
+def test_untrusted_boundary_failure_keeps_exact_safe_error_code() -> None:
+    queue = Queue([
+        DownstreamResult(
+            "untrusted", "receipt_schema_invalid", None, None, "b" * 64, 20
+        )
+    ])
+    result = MorningWorkflowService(queue).execute(request())
+    assert result.status == "failed"
+    assert result.error_code == "receipt_schema_invalid"
+    assert result.steps[0].error_code == "receipt_schema_invalid"
 
 
 def test_completed_reentry_returns_same_result_without_second_artifact() -> None:

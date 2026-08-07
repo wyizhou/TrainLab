@@ -21,6 +21,7 @@ from .state_projection import (
     step_storage_state,
     workflow_storage_state,
 )
+from .evidence_codes import DOWNSTREAM_FAILURE_EVIDENCE_CODES
 
 
 WORKFLOW_TRANSITIONS: Final[Mapping[WorkflowDomainState, frozenset[WorkflowDomainState]]] = (
@@ -98,7 +99,7 @@ _NO_RECEIPT_EVIDENCE = frozenset(
         "process_timeout",
         "provider_unavailable",
     }
-)
+) | DOWNSTREAM_FAILURE_EVIDENCE_CODES
 
 
 @dataclass(frozen=True, slots=True)

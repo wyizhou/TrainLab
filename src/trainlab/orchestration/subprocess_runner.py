@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import errno
 import hashlib
 import json
 import os
@@ -29,6 +30,10 @@ _EXECUTABLE = _ROOT / ".venv/bin/trainlab"
 _PYTHON = _ROOT / ".venv/bin/python"
 _MAX_OUTPUT = 1_048_576
 _GRACE_SECONDS = 2
+_PROCESS_START_RETRY_DELAYS_SECONDS = (0.05, 0.2)
+_PERMANENT_PROCESS_START_ERRNOS = frozenset(
+    {errno.EACCES, errno.ENOENT, errno.ENOEXEC, errno.ENOTDIR}
+)
 _ENV = {"LANG": "C.UTF-8", "LC_ALL": "C.UTF-8", "TZ": "Asia/Hong_Kong"}
 _SCHEMAS = {
     "foundation": _ROOT / "harness/schemas/foundation_receipt.schema.json",
@@ -595,11 +600,21 @@ class SubprocessRunner:
     def run(self, call: DownstreamCall) -> DownstreamResult:
         argv = _argv(call)
         request_hash = canonical_request_sha256(call)
-        try:
-            process = subprocess.Popen(argv, cwd=self._root, env=self._environment(), stdin=subprocess.DEVNULL,
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False, close_fds=True,
-                start_new_session=True, text=False)
-        except OSError:
+        process: subprocess.Popen[bytes] | None = None
+        for attempt in range(len(_PROCESS_START_RETRY_DELAYS_SECONDS) + 1):
+            try:
+                process = subprocess.Popen(argv, cwd=self._root, env=self._environment(), stdin=subprocess.DEVNULL,
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False, close_fds=True,
+                    start_new_session=True, text=False)
+                break
+            except OSError as exc:
+                if (
+                    exc.errno in _PERMANENT_PROCESS_START_ERRNOS
+                    or attempt == len(_PROCESS_START_RETRY_DELAYS_SECONDS)
+                ):
+                    break
+                time.sleep(_PROCESS_START_RETRY_DELAYS_SECONDS[attempt])
+        if process is None:
             return DownstreamResult("untrusted", "process_start_failed", None, None, request_hash, None)
         try:
             stdout, stderr = self._communicate_bounded(process, _TIMEOUTS[call.layer][call.mode])

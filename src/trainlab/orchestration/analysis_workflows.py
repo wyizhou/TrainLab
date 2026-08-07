@@ -14,6 +14,7 @@ from datetime import UTC, date, datetime, timedelta
 from typing import Any, Literal, Mapping, Protocol
 from zoneinfo import ZoneInfo
 
+from .evidence_codes import downstream_failure_evidence
 from .subprocess_runner import DownstreamCall, DownstreamResult
 
 
@@ -51,6 +52,7 @@ class AnalysisWorkflowStep:
     status: str
     receipt_sha256: str | None
     next_retry_at_utc: str | None = None
+    error_code: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,6 +65,7 @@ class AnalysisWorkflowResult:
     steps: tuple[AnalysisWorkflowStep, ...]
     next_action: str
     next_retry_at_utc: str | None
+    error_code: str | None = None
 
 
 def _utc(value: datetime) -> datetime:
@@ -118,7 +121,13 @@ def _step(key: str, layer: Literal["garmin", "analysis"], mode: str, result: Dow
     receipt = result.receipt
     status = "failed" if result.kind != "accepted" or receipt is None else str(receipt.get("status", "failed"))
     retry = receipt.get("next_retry_at_utc") if receipt is not None else None
-    return AnalysisWorkflowStep(key, layer, mode, _invocation(key.split("/", 1)[0], key.split("/", 1)[1]), status, _hash(receipt, result.receipt_sha256), retry if type(retry) is str else None)
+    return AnalysisWorkflowStep(
+        key, layer, mode,
+        _invocation(key.split("/", 1)[0], key.split("/", 1)[1]),
+        status, _hash(receipt, result.receipt_sha256),
+        retry if type(retry) is str else None,
+        None if result.kind == "accepted" else downstream_failure_evidence(result.error_code),
+    )
 
 
 def _run(executor: DownstreamExecutor, workflow_key: str, step_key: str, **kwargs: Any) -> tuple[DownstreamResult, AnalysisWorkflowStep]:
@@ -127,7 +136,12 @@ def _run(executor: DownstreamExecutor, workflow_key: str, step_key: str, **kwarg
     receipt = result.receipt
     status = "failed" if result.kind != "accepted" or receipt is None else str(receipt.get("status", "failed"))
     retry = receipt.get("next_retry_at_utc") if receipt else None
-    return result, AnalysisWorkflowStep(step_key, kwargs["layer"], kwargs["mode"], call.invocation_id or "", status, _hash(receipt, result.receipt_sha256), retry if type(retry) is str else None)
+    return result, AnalysisWorkflowStep(
+        step_key, kwargs["layer"], kwargs["mode"], call.invocation_id or "",
+        status, _hash(receipt, result.receipt_sha256),
+        retry if type(retry) is str else None,
+        None if result.kind == "accepted" else downstream_failure_evidence(result.error_code),
+    )
 
 
 def _receipt(result: DownstreamResult) -> Mapping[str, Any] | None:
@@ -165,10 +179,10 @@ def _stop(request: AnalysisWorkflowRequest, steps: list[AnalysisWorkflowStep], q
     # therefore the failed step, not simply the last step in execution order.
     last = next((item for item in reversed(steps) if item.status == status), steps[-1] if steps else None)
     if status in _RETRYABLE:
-        return AnalysisWorkflowResult(request.workflow_key, "deferred", request.logical_local_date, None, quality, tuple(steps), "retry_step", last.next_retry_at_utc if last else None)
+        return AnalysisWorkflowResult(request.workflow_key, "deferred", request.logical_local_date, None, quality, tuple(steps), "retry_step", last.next_retry_at_utc if last else None, last.error_code if last else None)
     if status == "auth_required":
-        return AnalysisWorkflowResult(request.workflow_key, "attention_required", request.logical_local_date, None, quality, tuple(steps), "authenticate_garmin", None)
-    return AnalysisWorkflowResult(request.workflow_key, "failed", request.logical_local_date, None, quality, tuple(steps), "operator_review", None)
+        return AnalysisWorkflowResult(request.workflow_key, "attention_required", request.logical_local_date, None, quality, tuple(steps), "authenticate_garmin", None, last.error_code if last else None)
+    return AnalysisWorkflowResult(request.workflow_key, "failed", request.logical_local_date, None, quality, tuple(steps), "operator_review", None, last.error_code if last else None)
 
 
 class MorningWorkflowService:

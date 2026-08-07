@@ -6,6 +6,7 @@ import hashlib
 from datetime import datetime
 from typing import Protocol
 
+from .evidence_codes import DOWNSTREAM_FAILURE_EVIDENCE_CODES
 from .repository import IncidentRecord, WorkflowRunRecord
 from .supervisor import BusinessIncidentEvents
 
@@ -22,6 +23,18 @@ class WorkflowIncidentRepository(Protocol):
 
 _WORKFLOW_KINDS = frozenset({"morning", "weekly", "mail", "health_check"})
 _AUTOMATIC_RETRY_KINDS = frozenset({"mail", "health_check"})
+
+
+def _failure_code(outcome: dict[str, object]) -> str:
+    errors = outcome.get("errors")
+    if isinstance(errors, list):
+        for error in errors:
+            if (
+                isinstance(error, dict)
+                and error.get("code") in DOWNSTREAM_FAILURE_EVIDENCE_CODES
+            ):
+                return str(error["code"])
+    return "workflow_execution_failed"
 
 
 class WorkflowIncidentCoordinator:
@@ -56,13 +69,14 @@ class WorkflowIncidentCoordinator:
 
         digest = hashlib.sha256(workflow_key.encode("utf-8")).hexdigest()[:32]
         incident_key = f"workflow:failed:{workflow_kind}:{digest}"
+        failure_code = _failure_code(outcome)
         self._repository.record_incident(
             incident_key=incident_key,
             category="workflow",
             severity="error",
             seen_at_utc=seen_at_utc,
-            error_code="workflow_execution_failed",
-            error_summary="workflow_execution_failed",
+            error_code=failure_code,
+            error_summary=failure_code,
             next_action=(
                 "retry"
                 if workflow_kind in _AUTOMATIC_RETRY_KINDS
