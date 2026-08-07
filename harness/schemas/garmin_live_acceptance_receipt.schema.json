@@ -11,8 +11,8 @@
     "date_or_null": {"type": ["string", "null"], "format": "date"},
     "date_range": {
       "type": "object", "additionalProperties": false,
-      "required": ["from", "through", "snapshot"],
-      "properties": {"from": {"$ref": "#/$defs/date_or_null"}, "through": {"$ref": "#/$defs/date_or_null"}, "snapshot": {"$ref": "#/$defs/date_or_null"}}
+      "required": ["from", "through"],
+      "properties": {"from": {"$ref": "#/$defs/date_or_null"}, "through": {"$ref": "#/$defs/date_or_null"}}
     },
     "counts": {
       "type": "object", "additionalProperties": false,
@@ -39,10 +39,10 @@
         "provider_entry_ordinals": {"$ref": "#/$defs/entry_bounds"}
       },
       "allOf": [
-        {"if": {"properties": {"mode": {"const": "auth"}}}, "then": {"properties": {"ordinal": {"const": 1}, "requested_local_dates": {"properties": {"from": {"const": null}, "through": {"const": null}, "snapshot": {"const": null}}}, "effective_local_dates": {"properties": {"from": {"const": null}, "through": {"const": null}, "snapshot": {"const": null}}}}}},
-        {"if": {"properties": {"mode": {"const": "incremental"}}}, "then": {"properties": {"requested_local_dates": {"properties": {"from": {"const": null}, "through": {"const": "2026-08-06"}, "snapshot": {"const": null}}}, "effective_local_dates": {"properties": {"from": {"const": null}, "through": {"const": "2026-08-06"}, "snapshot": {"const": null}}}}}},
-        {"if": {"properties": {"mode": {"const": "snapshot"}}}, "then": {"properties": {"requested_local_dates": {"properties": {"from": {"const": null}, "through": {"const": null}, "snapshot": {"const": "2026-08-07"}}}, "effective_local_dates": {"properties": {"from": {"const": null}, "through": {"const": null}, "snapshot": {"const": "2026-08-07"}}}}}},
-        {"if": {"properties": {"mode": {"const": "audit"}}}, "then": {"properties": {"requested_local_dates": {"properties": {"from": {"const": "2026-08-06"}, "through": {"const": "2026-08-06"}, "snapshot": {"const": null}}}, "effective_local_dates": {"properties": {"from": {"const": "2026-08-06"}, "through": {"const": "2026-08-06"}, "snapshot": {"const": null}}}}}}
+        {"if": {"properties": {"mode": {"const": "auth"}}}, "then": {"properties": {"ordinal": {"const": 1}, "requested_local_dates": {"properties": {"from": {"const": null}, "through": {"const": null}}}, "effective_local_dates": {"properties": {"from": {"const": null}, "through": {"const": null}}}}}},
+        {"if": {"properties": {"mode": {"const": "incremental"}}}, "then": {"properties": {"requested_local_dates": {"properties": {"through": {"const": "2026-08-06"}}}, "effective_local_dates": {"properties": {"from": {"type": "string", "format": "date"}, "through": {"const": "2026-08-06"}}}}}},
+        {"if": {"properties": {"mode": {"const": "snapshot"}}}, "then": {"properties": {"requested_local_dates": {"properties": {"from": {"const": null}, "through": {"const": "2026-08-07"}}}, "effective_local_dates": {"properties": {"from": {"const": "2026-08-07"}, "through": {"const": "2026-08-07"}}}}}},
+        {"if": {"properties": {"mode": {"const": "audit"}}}, "then": {"properties": {"requested_local_dates": {"properties": {"from": {"const": "2026-08-06"}, "through": {"const": "2026-08-06"}}}, "effective_local_dates": {"properties": {"from": {"const": "2026-08-06"}, "through": {"const": "2026-08-06"}}}}}}
       ]
     },
     "checkpoint_document": {

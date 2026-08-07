@@ -45,20 +45,28 @@ def _counts() -> dict[str, int]:
     )
 
 
-def _dates(mode: str) -> dict[str, str | None]:
+def _requested_dates(mode: str) -> dict[str, str | None]:
     if mode == "incremental":
-        return {"from": None, "through": "2026-08-06", "snapshot": None}
+        return {"from": None, "through": "2026-08-06"}
     if mode == "snapshot":
-        return {"from": None, "through": None, "snapshot": "2026-08-07"}
+        return {"from": None, "through": "2026-08-07"}
     if mode == "audit":
-        return {"from": "2026-08-06", "through": "2026-08-06", "snapshot": None}
-    return {"from": None, "through": None, "snapshot": None}
+        return {"from": "2026-08-06", "through": "2026-08-06"}
+    return {"from": None, "through": None}
+
+
+def _effective_dates(mode: str) -> dict[str, str | None]:
+    if mode == "incremental":
+        return {"from": "2026-07-24", "through": "2026-08-06"}
+    if mode == "snapshot":
+        return {"from": "2026-08-07", "through": "2026-08-07"}
+    return _requested_dates(mode)
 
 
 def _checkpoint(
     tool: GarminCollectionTool, ordinal: int, mode: str
 ) -> dict[str, object]:
-    dates = _dates(mode)
+    requested_dates = _requested_dates(mode)
     document: dict[str, object] = {
         "schema_version": "1",
         "document_kind": "garmin_live_acceptance_checkpoint",
@@ -68,8 +76,8 @@ def _checkpoint(
             "mode": mode,
             "status": "succeeded",
             "request_semantic_sha256": _hash(10 + ordinal),
-            "requested_local_dates": dates,
-            "effective_local_dates": dates.copy(),
+            "requested_local_dates": requested_dates,
+            "effective_local_dates": _effective_dates(mode),
             "receipt_schema_valid": True,
             "receipt_counts": _counts(),
             "provider_entry_ordinals": {"first": None, "last": None},
@@ -197,6 +205,75 @@ def test_final_result_is_valid_with_real_dates_and_zero_provider_entries(
     assert result["provider_entry_count"] == 0
 
 
+@pytest.mark.parametrize(
+    ("ordinal", "mode", "requested", "effective"),
+    (
+        (1, "auth", {"from": None, "through": None}, {"from": None, "through": None}),
+        (
+            2,
+            "incremental",
+            {"from": None, "through": "2026-08-06"},
+            {"from": "2026-07-24", "through": "2026-08-06"},
+        ),
+        (
+            3,
+            "incremental",
+            {"from": None, "through": "2026-08-06"},
+            {"from": "2026-07-24", "through": "2026-08-06"},
+        ),
+        (
+            4,
+            "snapshot",
+            {"from": None, "through": "2026-08-07"},
+            {"from": "2026-08-07", "through": "2026-08-07"},
+        ),
+        (
+            5,
+            "audit",
+            {"from": "2026-08-06", "through": "2026-08-06"},
+            {"from": "2026-08-06", "through": "2026-08-06"},
+        ),
+    ),
+)
+def test_operation_dates_match_real_garmin_receipt_range_shape(
+    tmp_path: Path,
+    ordinal: int,
+    mode: str,
+    requested: dict[str, str | None],
+    effective: dict[str, str | None],
+) -> None:
+    checkpoint = _checkpoint(_tool(tmp_path), ordinal, mode)
+    operation = checkpoint["operation"]
+    assert operation["requested_local_dates"] == requested
+    assert operation["effective_local_dates"] == effective
+
+
+@pytest.mark.parametrize(
+    ("ordinal", "mode", "range_name", "field", "value"),
+    (
+        (2, "incremental", "effective_local_dates", "from", None),
+        (4, "snapshot", "requested_local_dates", "through", "2026-08-06"),
+        (4, "snapshot", "effective_local_dates", "from", None),
+        (5, "audit", "requested_local_dates", "from", None),
+        (1, "auth", "requested_local_dates", "through", "2026-08-06"),
+    ),
+)
+def test_schema_and_semantic_validator_reject_non_receipt_range_shapes(
+    tmp_path: Path,
+    ordinal: int,
+    mode: str,
+    range_name: str,
+    field: str,
+    value: str | None,
+) -> None:
+    tool = _tool(tmp_path)
+    checkpoint = _checkpoint(tool, ordinal, mode)
+    checkpoint["operation"][range_name][field] = value
+    assert _schema_errors(checkpoint)
+    with pytest.raises(ValueError, match="schema"):
+        tool._validate_live_acceptance_document(checkpoint)
+
+
 @pytest.mark.parametrize("group", ("idempotence", "pacing", "durability"))
 def test_required_8_7_4_partition_coverage_cannot_be_weakened(
     tmp_path: Path, group: str
@@ -268,8 +345,12 @@ def test_formal_validator_rejects_resealed_wrong_mode_order(tmp_path: Path) -> N
     tool = _tool(tmp_path)
     result = _result(tool)
     result["checkpoints"][1]["operation"]["mode"] = "snapshot"
-    result["checkpoints"][1]["operation"]["requested_local_dates"] = _dates("snapshot")
-    result["checkpoints"][1]["operation"]["effective_local_dates"] = _dates("snapshot")
+    result["checkpoints"][1]["operation"]["requested_local_dates"] = _requested_dates(
+        "snapshot"
+    )
+    result["checkpoints"][1]["operation"]["effective_local_dates"] = _effective_dates(
+        "snapshot"
+    )
     _reseal_checkpoint(tool, result["checkpoints"][1])
     _reseal_result(tool, result)
     assert _schema_errors(result) == []
