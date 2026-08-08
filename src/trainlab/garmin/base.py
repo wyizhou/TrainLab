@@ -593,6 +593,8 @@ class GarminCollectionBase:
             payload.pop("checkpoint_sha256", None)
         elif kind == "garmin_live_acceptance_result":
             payload.pop("result_sha256", None)
+        elif kind == "garmin_live_auth_refresh_receipt":
+            payload.pop("auth_refresh_receipt_sha256", None)
         else:
             raise ValueError("live_acceptance_document_kind")
         canonical = json.dumps(payload, allow_nan=False, ensure_ascii=False, separators=(",", ":"), sort_keys=True).encode("utf-8")
@@ -609,13 +611,18 @@ class GarminCollectionBase:
         if errors:
             raise ValueError("live_acceptance_schema_invalid")
         kind = document["document_kind"]
-        digest_key = "checkpoint_sha256" if kind == "garmin_live_acceptance_checkpoint" else "result_sha256"
+        digest_key = {
+            "garmin_live_acceptance_checkpoint": "checkpoint_sha256",
+            "garmin_live_acceptance_result": "result_sha256",
+            "garmin_live_auth_refresh_receipt": "auth_refresh_receipt_sha256",
+        }[kind]
         if document[digest_key] != self._canonical_live_acceptance_sha256(document):
             raise ValueError("live_acceptance_digest_invalid")
         if kind == "garmin_live_acceptance_checkpoint":
             self._validate_live_acceptance_checkpoint(document)
             return
-        self._validate_live_acceptance_result(document)
+        if kind == "garmin_live_acceptance_result":
+            self._validate_live_acceptance_result(document)
 
     @staticmethod
     def _validate_live_acceptance_checkpoint(document: Mapping[str, Any]) -> None:
@@ -742,6 +749,106 @@ class GarminCollectionBase:
                 pass
             finally:
                 os.close(directory_fd)
+
+    @staticmethod
+    def _atomic_replace_existing_token(destination: Path, serialized: bytes) -> str:
+        """Durably replace one existing owner-only token without following links.
+
+        This deliberately accepts already-serialized bytes rather than a token
+        object.  It keeps the credential boundary small: callers can record the
+        returned digest, but neither this helper nor its errors expose token
+        material, a credential filename, or a provider response.
+        """
+        if not isinstance(serialized, bytes) or not serialized:
+            raise ValueError("live_auth_invalid_serialization")
+        if destination.is_symlink() or not destination.exists() or not destination.is_file():
+            raise ValueError("live_auth_token_target_invalid")
+        parent = destination.parent
+        if parent.is_symlink() or parent.stat().st_mode & 0o777 != 0o700:
+            raise ValueError("live_auth_token_parent_invalid")
+        before = os.stat(destination, follow_symlinks=False)
+        if before.st_mode & 0o777 != 0o600:
+            raise ValueError("live_auth_token_permissions_invalid")
+        directory_fd = os.open(
+            parent,
+            os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0),
+        )
+        temporary_name = f".{destination.name}.{uuid.uuid4().hex}.tmp"
+        temporary_fd: int | None = None
+        try:
+            temporary_fd = os.open(
+                temporary_name,
+                os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0),
+                0o600,
+                dir_fd=directory_fd,
+            )
+            written = 0
+            while written < len(serialized):
+                count = os.write(temporary_fd, serialized[written:])
+                if count <= 0:
+                    raise OSError("live_auth_token_short_write")
+                written += count
+            os.fsync(temporary_fd)
+            os.close(temporary_fd)
+            temporary_fd = None
+            os.replace(temporary_name, destination.name, src_dir_fd=directory_fd, dst_dir_fd=directory_fd)
+            os.fsync(directory_fd)
+        finally:
+            if temporary_fd is not None:
+                os.close(temporary_fd)
+            try:
+                os.unlink(temporary_name, dir_fd=directory_fd)
+            except FileNotFoundError:
+                pass
+            finally:
+                os.close(directory_fd)
+        after = os.stat(destination, follow_symlinks=False)
+        if after.st_mode & 0o777 != 0o600 or after.st_uid != before.st_uid:
+            raise ValueError("live_auth_token_postcondition_invalid")
+        return hashlib.sha256(serialized).hexdigest()
+
+    def _persist_live_auth_refresh_receipt(
+        self, destination: Path, document: Mapping[str, Any]
+    ) -> None:
+        """Validate and atomically persist the redacted auth boundary receipt."""
+        self._persist_live_acceptance_document(destination, document)
+
+    def _run_single_live_auth_refresh(
+        self,
+        *,
+        token_path: Path,
+        token_is_expiring: bool,
+        has_refresh_credential: bool,
+        has_client_identity: bool,
+        refresh: Any,
+        receipt_destination: Path,
+        receipt: Mapping[str, Any],
+        social_profile: Any,
+        user_settings: Any,
+        cached_identity: Any,
+    ) -> dict[str, Any]:
+        """Run the closed refresh/profile boundary used by the live driver.
+
+        It is intentionally dependency-injected and has no fallback path.  A
+        callback is invoked at most once, refresh persistence precedes all
+        profile callbacks, and a later profile failure never restores the old
+        credential.  ``cached_identity`` is returned without issuing HTTP.
+        """
+        if not (token_is_expiring and has_refresh_credential and has_client_identity):
+            raise ValueError("live_auth_refresh_precondition_failed")
+        serialized = refresh()  # the sole permitted DI/provider refresh entry
+        digest = self._atomic_replace_existing_token(token_path, serialized)
+        persisted_receipt = dict(receipt)
+        if persisted_receipt.get("document_kind") != "garmin_live_auth_refresh_receipt":
+            raise ValueError("live_auth_receipt_kind_invalid")
+        if persisted_receipt.get("credential_serialization_sha256") != digest:
+            raise ValueError("live_auth_receipt_digest_invalid")
+        self._persist_live_auth_refresh_receipt(receipt_destination, persisted_receipt)
+        # Do not wrap these calls in _call: its facade retry/401 refresh path is
+        # intentionally unavailable at this tightly bounded authentication edge.
+        social_profile()
+        user_settings()
+        return {"cached_identity": cached_identity, "credential_serialization_sha256": digest}
 
     _ACCOUNT_BASIC_RESOURCES = ("user_profile", "user_profile_settings", "devices")
     _ACCOUNT_B1_RESOURCES = ("primary_device", "device_settings", "device_last_used", "personal_records", "cycling_ftp", "pregnancy")

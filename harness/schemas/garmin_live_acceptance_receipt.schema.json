@@ -4,7 +4,8 @@
   "title": "TrainLab redacted Garmin live acceptance documents",
   "oneOf": [
     {"$ref": "#/$defs/checkpoint_document"},
-    {"$ref": "#/$defs/result_document"}
+    {"$ref": "#/$defs/result_document"},
+    {"$ref": "#/$defs/auth_refresh_receipt_document"}
   ],
   "$defs": {
     "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
@@ -57,6 +58,23 @@
     "authority": {
       "type": "object", "additionalProperties": false, "required": ["production_database", "production_raw_root", "credential_permissions"],
       "properties": {"production_database": {"const": true}, "production_raw_root": {"const": true}, "credential_permissions": {"const": true}}
+    },
+    "auth_refresh_counts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["refresh_provider_entry_count", "credential_replace_count", "social_profile_http_count", "user_settings_http_count", "cached_identity_http_count", "password_login_attempt_count", "mfa_attempt_count", "credential_fallback_attempt_count", "library_token_dump_attempt_count", "legacy_refresh_attempt_count", "implicit_401_refresh_attempt_count", "second_refresh_attempt_count", "auth_profile_retry_attempt_count", "unreviewed_profile_attempt_count"],
+      "properties": {
+        "refresh_provider_entry_count": {"const": 1}, "credential_replace_count": {"const": 1}, "social_profile_http_count": {"const": 1}, "user_settings_http_count": {"const": 1}, "cached_identity_http_count": {"const": 0},
+        "password_login_attempt_count": {"const": 0}, "mfa_attempt_count": {"const": 0}, "credential_fallback_attempt_count": {"const": 0}, "library_token_dump_attempt_count": {"const": 0}, "legacy_refresh_attempt_count": {"const": 0}, "implicit_401_refresh_attempt_count": {"const": 0}, "second_refresh_attempt_count": {"const": 0}, "auth_profile_retry_attempt_count": {"const": 0}, "unreviewed_profile_attempt_count": {"const": 0}
+      }
+    },
+    "auth_refresh_receipt_document": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema_version", "document_kind", "refresh_client_distribution", "credential_serialization_sha256", "counts", "credential_replaced_before_profile", "receipt_persisted_before_profile", "auth_refresh_receipt_sha256"],
+      "properties": {
+        "schema_version": {"const": "1"}, "document_kind": {"const": "garmin_live_auth_refresh_receipt"}, "refresh_client_distribution": {"const": "python-garminconnect-0.3.6"},
+        "credential_serialization_sha256": {"$ref": "#/$defs/hash"}, "counts": {"$ref": "#/$defs/auth_refresh_counts"},
+        "credential_replaced_before_profile": {"const": true}, "receipt_persisted_before_profile": {"const": true}, "auth_refresh_receipt_sha256": {"$ref": "#/$defs/hash"}
+      }
     },
     "partitions": {
       "type": "object", "additionalProperties": false, "required": ["idempotence", "pacing", "durability"],

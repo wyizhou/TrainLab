@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -183,6 +184,40 @@ def _reseal_checkpoint(
 
 def _reseal_result(tool: GarminCollectionTool, document: dict[str, object]) -> None:
     document["result_sha256"] = tool._canonical_live_acceptance_sha256(document)
+
+
+def _auth_refresh_receipt(
+    tool: GarminCollectionTool, token_digest: str
+) -> dict[str, object]:
+    document: dict[str, object] = {
+        "schema_version": "1",
+        "document_kind": "garmin_live_auth_refresh_receipt",
+        "refresh_client_distribution": "python-garminconnect-0.3.6",
+        "credential_serialization_sha256": token_digest,
+        "counts": {
+            "refresh_provider_entry_count": 1,
+            "credential_replace_count": 1,
+            "social_profile_http_count": 1,
+            "user_settings_http_count": 1,
+            "cached_identity_http_count": 0,
+            "password_login_attempt_count": 0,
+            "mfa_attempt_count": 0,
+            "credential_fallback_attempt_count": 0,
+            "library_token_dump_attempt_count": 0,
+            "legacy_refresh_attempt_count": 0,
+            "implicit_401_refresh_attempt_count": 0,
+            "second_refresh_attempt_count": 0,
+            "auth_profile_retry_attempt_count": 0,
+            "unreviewed_profile_attempt_count": 0,
+        },
+        "credential_replaced_before_profile": True,
+        "receipt_persisted_before_profile": True,
+        "auth_refresh_receipt_sha256": ZERO_HASH,
+    }
+    document["auth_refresh_receipt_sha256"] = tool._canonical_live_acceptance_sha256(
+        document
+    )
+    return document
 
 
 @pytest.mark.parametrize("ordinal,mode", tuple(enumerate(MODES, 1)))
@@ -515,3 +550,122 @@ def test_atomic_writer_rejects_ancestor_symlink(tmp_path: Path) -> None:
         tool._persist_live_acceptance_document(
             linked / "checkpoint.json", _checkpoint(tool, 1, "auth")
         )
+
+
+def test_auth_refresh_receipt_is_redacted_and_schema_valid(tmp_path: Path) -> None:
+    tool = _tool(tmp_path)
+    receipt = _auth_refresh_receipt(tool, _hash(123))
+    assert _schema_errors(receipt) == []
+    tool._validate_live_acceptance_document(receipt)
+    receipt["token"] = "forbidden"
+    assert _schema_errors(receipt)
+
+
+def test_single_refresh_replaces_existing_token_before_profiles(tmp_path: Path) -> None:
+    tool = _tool(tmp_path)
+    credential_dir = tmp_path / "credentials"
+    credential_dir.mkdir(mode=0o700)
+    token = credential_dir / "token"
+    token.write_bytes(b"old")
+    token.chmod(0o600)
+    profile_calls: list[str] = []
+    fresh = b"refreshed-token-bytes"
+    receipt = _auth_refresh_receipt(tool, hashlib.sha256(fresh).hexdigest())
+    result = tool._run_single_live_auth_refresh(
+        token_path=token,
+        token_is_expiring=True,
+        has_refresh_credential=True,
+        has_client_identity=True,
+        refresh=lambda: profile_calls.append("refresh") or fresh,
+        receipt_destination=tmp_path / "auth-refresh.json",
+        receipt=receipt,
+        social_profile=lambda: profile_calls.append("social"),
+        user_settings=lambda: profile_calls.append("settings"),
+        cached_identity="cached",
+    )
+    assert token.read_bytes() == fresh
+    assert token.stat().st_mode & 0o777 == 0o600
+    assert profile_calls == ["refresh", "social", "settings"]
+    assert result["cached_identity"] == "cached"
+    assert json.loads((tmp_path / "auth-refresh.json").read_text()) == receipt
+
+
+@pytest.mark.parametrize("precondition", ("expired", "refresh", "client"))
+def test_auth_refresh_preconditions_fail_before_provider_or_write(
+    tmp_path: Path, precondition: str
+) -> None:
+    tool = _tool(tmp_path)
+    credential_dir = tmp_path / "credentials"
+    credential_dir.mkdir(mode=0o700)
+    token = credential_dir / "token"
+    token.write_bytes(b"old")
+    token.chmod(0o600)
+    calls: list[str] = []
+    with pytest.raises(ValueError, match="precondition"):
+        tool._run_single_live_auth_refresh(
+            token_path=token,
+            token_is_expiring=precondition != "expired",
+            has_refresh_credential=precondition != "refresh",
+            has_client_identity=precondition != "client",
+            refresh=lambda: calls.append("refresh") or b"new",
+            receipt_destination=tmp_path / "receipt.json",
+            receipt=_auth_refresh_receipt(tool, _hash(1)),
+            social_profile=lambda: calls.append("social"),
+            user_settings=lambda: calls.append("settings"),
+            cached_identity="cached",
+        )
+    assert calls == [] and token.read_bytes() == b"old"
+
+
+def test_profile_failure_keeps_refreshed_token_and_stops_before_second_profile(
+    tmp_path: Path,
+) -> None:
+    tool = _tool(tmp_path)
+    credential_dir = tmp_path / "credentials"
+    credential_dir.mkdir(mode=0o700)
+    token = credential_dir / "token"
+    token.write_bytes(b"old")
+    token.chmod(0o600)
+    fresh = b"new"
+    calls: list[str] = []
+    with pytest.raises(RuntimeError, match="profile"):
+        tool._run_single_live_auth_refresh(
+            token_path=token,
+            token_is_expiring=True,
+            has_refresh_credential=True,
+            has_client_identity=True,
+            refresh=lambda: fresh,
+            receipt_destination=tmp_path / "receipt.json",
+            receipt=_auth_refresh_receipt(tool, hashlib.sha256(fresh).hexdigest()),
+            social_profile=lambda: (_ for _ in ()).throw(RuntimeError("profile")),
+            user_settings=lambda: calls.append("settings"),
+            cached_identity="cached",
+        )
+    assert token.read_bytes() == fresh and calls == []
+
+
+def test_atomic_token_writer_completes_partial_writes_or_keeps_old_token(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    tool = _tool(tmp_path)
+    credential_dir = tmp_path / "credentials"
+    credential_dir.mkdir(mode=0o700)
+    token = credential_dir / "token"
+    token.write_bytes(b"old")
+    token.chmod(0o600)
+    original_write = os.write
+
+    def partial_write(fd: int, payload: bytes) -> int:
+        return original_write(fd, payload[:1])
+
+    monkeypatch.setattr("trainlab.garmin.base.os.write", partial_write)
+    assert (
+        tool._atomic_replace_existing_token(token, b"fresh")
+        == hashlib.sha256(b"fresh").hexdigest()
+    )
+    assert token.read_bytes() == b"fresh"
+
+    monkeypatch.setattr("trainlab.garmin.base.os.write", lambda _fd, _payload: 0)
+    with pytest.raises(OSError, match="short_write"):
+        tool._atomic_replace_existing_token(token, b"newer")
+    assert token.read_bytes() == b"fresh"
