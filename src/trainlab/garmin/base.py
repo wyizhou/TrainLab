@@ -945,6 +945,9 @@ class GarminCollectionBase:
             "token_uid": token_stat.st_uid,
             "token_gid": token_stat.st_gid,
             "token_mode": token_stat.st_mode & 0o777,
+            "token_device": token_stat.st_dev,
+            "token_inode": token_stat.st_ino,
+            "token_size": token_stat.st_size,
             "structure_sha256": hashlib.sha256(
                 json.dumps(
                     structure,
@@ -1019,7 +1022,11 @@ class GarminCollectionBase:
 
     @staticmethod
     def _atomic_replace_existing_token(
-        destination: Path, serialized: bytes, *, stage_callback: Any = None
+        destination: Path,
+        serialized: bytes,
+        *,
+        expected_token_identity: tuple[int, int, int, int, int, int] | None = None,
+        stage_callback: Any = None,
     ) -> None:
         """Replace the one existing token with no-follow, fsync and rename.
 
@@ -1030,6 +1037,19 @@ class GarminCollectionBase:
         if not isinstance(serialized, bytes) or not serialized:
             raise ValueError("live_auth_invalid_serialization")
         before = GarminCollectionBase._token_authority_snapshot(destination)
+        observed_identity = (
+            before["token_device"],
+            before["token_inode"],
+            before["token_size"],
+            before["token_mode"],
+            before["token_uid"],
+            before["token_gid"],
+        )
+        if (
+            expected_token_identity is not None
+            and observed_identity != expected_token_identity
+        ):
+            raise _LiveAuthAtomicReplaceError("token_revalidated", replaced=False)
         parent = destination.parent
         directory_fd = os.open(
             parent,
@@ -1437,7 +1457,17 @@ class GarminCollectionBase:
                 raise ValueError("live_auth_atomic_stage")
             try:
                 self._atomic_replace_existing_token(
-                    token_path, serialized, stage_callback=token_stage
+                    token_path,
+                    serialized,
+                    expected_token_identity=(
+                        before["token_device"],
+                        before["token_inode"],
+                        before["token_size"],
+                        before["token_mode"],
+                        before["token_uid"],
+                        before["token_gid"],
+                    ),
+                    stage_callback=token_stage,
                 )
             except _LiveAuthAtomicReplaceError as exc:
                 if exc.replaced:

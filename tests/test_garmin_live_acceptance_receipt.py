@@ -949,8 +949,13 @@ def test_rotation_failure_before_directory_fsync_never_enters_parent_phase(
     calls: list[str] = []
 
     def fail_before_parent_fsync(
-        _destination: Path, _serialized: bytes, *, stage_callback: object = None
+        _destination: Path,
+        _serialized: bytes,
+        *,
+        expected_token_identity: object = None,
+        stage_callback: object = None,
     ) -> None:
+        assert expected_token_identity is not None
         assert stage_callback is not None
         raise OSError("write fixture")
 
@@ -978,6 +983,54 @@ def test_rotation_failure_before_directory_fsync_never_enters_parent_phase(
         )
     stopped = json.loads((tmp_path / "stop.json").read_text())
     assert token.read_bytes() == b"old" and calls == ["refresh"]
+    assert stopped["progress"]["parent_fsync"] == {
+        "attempted": False,
+        "entered": False,
+        "completed": False,
+    }
+
+
+def test_rotation_rejects_token_replacement_after_precondition_before_rename(
+    tmp_path: Path,
+) -> None:
+    tool = _tool(tmp_path)
+    credential_dir = tmp_path / "credentials"
+    credential_dir.mkdir(mode=0o700)
+    token = credential_dir / "token"
+    token.write_bytes(b"old")
+    token.chmod(0o600)
+    calls: list[str] = []
+
+    def replace_after_precondition() -> bytes:
+        replacement = credential_dir / "replacement"
+        replacement.write_bytes(b"raced")
+        replacement.chmod(0o600)
+        replacement.replace(token)
+        return b"new"
+
+    with pytest.raises(RuntimeError, match="rotation"):
+        tool._run_verified_live_auth_refresh(
+            token_path=token,
+            load_token_state=lambda: {
+                "proactive_expiring": True,
+                "has_di_refresh_credential": True,
+                "has_di_client_identity": True,
+            },
+            refresh_di_token=lambda: calls.append("refresh"),
+            serialize_refreshed=replace_after_precondition,
+            prepared_destination=tmp_path / "prepared.json",
+            checkpoint_destination=tmp_path / "checkpoint.json",
+            final_destination=tmp_path / "final.json",
+            stop_destination=tmp_path / "stop.json",
+            observed_counts=lambda: _observed_counts(calls),
+            social_profile=lambda: calls.append("social"),
+            cache_identity=lambda _profile: None,
+            user_settings=lambda: calls.append("settings"),
+        )
+    stopped = json.loads((tmp_path / "stop.json").read_text())
+    assert token.read_bytes() == b"raced" and calls == ["refresh"]
+    assert stopped["failure_stage"] == "token_revalidated"
+    assert stopped["counts"]["credential_replace_count"] == 0
     assert stopped["progress"]["parent_fsync"] == {
         "attempted": False,
         "entered": False,

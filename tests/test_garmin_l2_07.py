@@ -286,6 +286,7 @@ def test_v4_driver_import_and_noarg_are_inert_with_exact_manual_gate() -> None:
     assert namespace["main"]([]) == 0
     assert namespace["main"](["--wrong"]) == 2
     namespace["_verify_control_plane"]()
+    namespace["_verify_t12_edge_input"]()
 
 
 def test_v4_driver_low_level_allowlist_counts_only_reviewed_entries() -> None:
@@ -408,6 +409,24 @@ def test_v4_driver_fake_end_to_end_foundation_and_drift_plumbing(
         namespace["_require_foundation_ready"](
             SimpleNamespace(status="failed", ready=False), ("ready",)
         )
+
+    production_db = tmp_path / "production.db"
+    with sqlite3.connect(production_db) as connection:
+        connection.execute("CREATE TABLE fixture (id INTEGER PRIMARY KEY)")
+    production_raw = tmp_path / "production-raw"
+    production_raw.mkdir()
+    production = SimpleNamespace(
+        database_path=production_db,
+        raw_root=production_raw,
+        state_root=tmp_path / "production-state",
+    )
+    assert namespace["_production_quiescence_snapshot"](
+        production, foundation_tool
+    ) == namespace["_production_quiescence_snapshot"](production, foundation_tool)
+    (production.state_root / "locks").mkdir(parents=True)
+    (production.state_root / "locks" / "garmin.lock").write_text("fixture")
+    with pytest.raises(namespace["LiveGateError"], match="production_not_quiescent"):
+        namespace["_production_quiescence_snapshot"](production, foundation_tool)
 
     _config, sync_tool, _transport, _sleeps = _tool(tmp_path / "sync-receipt")
     sync_receipt = sync_tool.execute(SyncRequest("auth", invocation_id="driver-dry"))
