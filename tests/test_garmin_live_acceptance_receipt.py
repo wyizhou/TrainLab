@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import copy
-import hashlib
 import json
 import os
 from pathlib import Path
@@ -87,6 +86,7 @@ def _checkpoint(
         "provider_entry_count": 0,
         "configured_minimum_interval_ns": 1_500_000_000,
         "adjacent_controlled_provider_intervals_ns": [],
+        "controlled_provider_entry_ledger": [],
         "previous_checkpoint_sha256": ZERO_HASH
         if ordinal == 1
         else _hash(70 + ordinal),
@@ -137,6 +137,14 @@ def _result(tool: GarminCollectionTool) -> dict[str, object]:
             checkpoint
         )
         previous = checkpoint["checkpoint_sha256"]
+    auth_checkpoint = _auth_refresh_receipt(tool, status="rotation_checkpoint")
+    auth_final = _auth_refresh_receipt(
+        tool,
+        status="succeeded",
+        previous=auth_checkpoint["auth_refresh_receipt_sha256"],
+    )
+    auth_progress = copy.deepcopy(auth_final["progress"])
+    auth_progress["final_receipt"]["completed"] = True
     document: dict[str, object] = {
         "schema_version": "1",
         "document_kind": "garmin_live_acceptance_result",
@@ -145,6 +153,17 @@ def _result(tool: GarminCollectionTool) -> dict[str, object]:
         "provider_entry_count": 0,
         "configured_minimum_interval_ns": 1_500_000_000,
         "adjacent_controlled_provider_intervals_ns": [],
+        "controlled_provider_entry_ledger": [],
+        "auth_refresh": {
+            "auth_rotation_checkpoint_sha256": auth_checkpoint[
+                "auth_refresh_receipt_sha256"
+            ],
+            "auth_refresh_receipt_sha256": auth_final["auth_refresh_receipt_sha256"],
+            "counts": auth_final["counts"],
+            "ordering": auth_final["ordering"],
+            "credential_authority": auth_final["credential_authority"],
+            "progress": auth_progress,
+        },
         "authority_unchanged": {
             "production_database": True,
             "production_raw_root": True,
@@ -187,31 +206,97 @@ def _reseal_result(tool: GarminCollectionTool, document: dict[str, object]) -> N
 
 
 def _auth_refresh_receipt(
-    tool: GarminCollectionTool, token_digest: str
+    tool: GarminCollectionTool,
+    *,
+    status: str = "succeeded",
+    previous: str = ZERO_HASH,
 ) -> dict[str, object]:
+    counts = {
+        "refresh_provider_entry_count": 1,
+        "credential_replace_count": 1,
+        "social_profile_http_count": 1 if status == "succeeded" else 0,
+        "user_settings_http_count": 1 if status == "succeeded" else 0,
+        "cached_identity_http_count": 0,
+        "password_login_attempt_count": 0,
+        "mfa_attempt_count": 0,
+        "credential_fallback_attempt_count": 0,
+        "library_token_dump_attempt_count": 0,
+        "legacy_refresh_attempt_count": 0,
+        "implicit_401_refresh_attempt_count": 0,
+        "second_refresh_attempt_count": 0,
+        "auth_profile_retry_attempt_count": 0,
+        "unreviewed_profile_attempt_count": 0,
+    }
+    completed = {
+        "precondition",
+        "prepared_receipt",
+        "refresh",
+        "credential_replace",
+        "parent_fsync",
+        "reload",
+        "authority_recheck",
+    }
+    entered = set(completed)
+    if status == "rotation_checkpoint":
+        entered.add("rotation_checkpoint_receipt")
+    elif status == "succeeded":
+        completed.update(
+            {
+                "rotation_checkpoint_receipt",
+                "social_profile",
+                "cached_identity",
+                "user_settings",
+            }
+        )
+        entered.update(completed)
+        entered.add("final_receipt")
     document: dict[str, object] = {
         "schema_version": "1",
         "document_kind": "garmin_live_auth_refresh_receipt",
+        "status": status,
+        "failure_stage": "none",
         "refresh_client_distribution": "python-garminconnect-0.3.6",
-        "credential_serialization_sha256": token_digest,
-        "counts": {
-            "refresh_provider_entry_count": 1,
-            "credential_replace_count": 1,
-            "social_profile_http_count": 1,
-            "user_settings_http_count": 1,
-            "cached_identity_http_count": 0,
-            "password_login_attempt_count": 0,
-            "mfa_attempt_count": 0,
-            "credential_fallback_attempt_count": 0,
-            "library_token_dump_attempt_count": 0,
-            "legacy_refresh_attempt_count": 0,
-            "implicit_401_refresh_attempt_count": 0,
-            "second_refresh_attempt_count": 0,
-            "auth_profile_retry_attempt_count": 0,
-            "unreviewed_profile_attempt_count": 0,
+        "counts": counts,
+        "ordering": {
+            "refresh_before_credential_replace": True,
+            "credential_replaced_before_profile": True,
+            "checkpoint_persisted_before_profile": True,
+            "first_profile_stops_second_on_error": True,
+            "cached_identity_zero_http": True,
         },
-        "credential_replaced_before_profile": True,
-        "receipt_persisted_before_profile": True,
+        "credential_authority": {
+            "token_path_unchanged": True,
+            "token_directory_unchanged": True,
+            "owner_unchanged": True,
+            "group_unchanged": True,
+            "directory_mode_0700": True,
+            "file_mode_0600": True,
+            "structure_unchanged": True,
+            "content_changed_exactly_once": True,
+            "reloaded_nonexpiring": True,
+        },
+        "progress": {
+            name: {
+                "attempted": name in entered,
+                "entered": name in entered,
+                "completed": name in completed,
+            }
+            for name in (
+                "precondition",
+                "prepared_receipt",
+                "refresh",
+                "credential_replace",
+                "parent_fsync",
+                "reload",
+                "authority_recheck",
+                "rotation_checkpoint_receipt",
+                "social_profile",
+                "cached_identity",
+                "user_settings",
+                "final_receipt",
+            )
+        },
+        "previous_auth_receipt_sha256": previous,
         "auth_refresh_receipt_sha256": ZERO_HASH,
     }
     document["auth_refresh_receipt_sha256"] = tool._canonical_live_acceptance_sha256(
@@ -346,12 +431,18 @@ def test_semantic_validator_rejects_resealed_reversed_real_date_ranges(
         tool._validate_live_acceptance_document(checkpoint)
 
 
-@pytest.mark.parametrize("group", ("idempotence", "pacing", "durability"))
-def test_required_8_7_4_partition_coverage_cannot_be_weakened(
-    tmp_path: Path, group: str
-) -> None:
-    result = _result(_tool(tmp_path))
-    result["partition_coverage"][group].pop()
+def test_partition_coverage_records_only_observed_membership(tmp_path: Path) -> None:
+    tool = _tool(tmp_path)
+    result = _result(tool)
+    result["partition_coverage"] = {
+        "idempotence": ["incremental-through-2026-08-06"],
+        "pacing": ["first-call"],
+        "durability": ["completed-operation-integer-nanosecond-intervals"],
+    }
+    _reseal_result(tool, result)
+    assert _schema_errors(result) == []
+    tool._validate_live_acceptance_document(result)
+    result["partition_coverage"]["pacing"].append("first-call")
     assert _schema_errors(result)
 
 
@@ -499,6 +590,19 @@ def test_formal_validator_rejects_drift_violations(tmp_path: Path, field: str) -
         tool._validate_live_acceptance_document(result)
 
 
+def test_final_result_cannot_claim_a_failure_outcome(tmp_path: Path) -> None:
+    tool = _tool(tmp_path)
+    result = _result(tool)
+    result["failure_evidence"] = {
+        "outcome": "post-provider-local",
+        "last_checkpoint_preserved": True,
+    }
+    _reseal_result(tool, result)
+    assert _schema_errors(result) == []
+    with pytest.raises(ValueError, match="result_failure_evidence"):
+        tool._validate_live_acceptance_document(result)
+
+
 @pytest.mark.parametrize("outcome", ("post-provider-local", "ambiguous"))
 def test_atomic_checkpoint_write_survives_local_or_ambiguous_failure(
     tmp_path: Path, outcome: str
@@ -554,14 +658,24 @@ def test_atomic_writer_rejects_ancestor_symlink(tmp_path: Path) -> None:
 
 def test_auth_refresh_receipt_is_redacted_and_schema_valid(tmp_path: Path) -> None:
     tool = _tool(tmp_path)
-    receipt = _auth_refresh_receipt(tool, _hash(123))
+    receipt = _auth_refresh_receipt(tool)
     assert _schema_errors(receipt) == []
     tool._validate_live_acceptance_document(receipt)
     receipt["token"] = "forbidden"
     assert _schema_errors(receipt)
 
 
-def test_single_refresh_replaces_existing_token_before_profiles(tmp_path: Path) -> None:
+def _observed_counts(calls: list[str]) -> dict[str, int]:
+    counts = GarminCollectionTool._empty_auth_refresh_counts()
+    counts["refresh_provider_entry_count"] = calls.count("refresh")
+    counts["social_profile_http_count"] = calls.count("social")
+    counts["user_settings_http_count"] = calls.count("settings")
+    return counts
+
+
+def test_verified_refresh_replaces_existing_token_before_profiles(
+    tmp_path: Path,
+) -> None:
     tool = _tool(tmp_path)
     credential_dir = tmp_path / "credentials"
     credential_dir.mkdir(mode=0o700)
@@ -570,28 +684,61 @@ def test_single_refresh_replaces_existing_token_before_profiles(tmp_path: Path) 
     token.chmod(0o600)
     profile_calls: list[str] = []
     fresh = b"refreshed-token-bytes"
-    receipt = _auth_refresh_receipt(tool, hashlib.sha256(fresh).hexdigest())
-    result = tool._run_single_live_auth_refresh(
+    result = tool._run_verified_live_auth_refresh(
         token_path=token,
-        token_is_expiring=True,
-        has_refresh_credential=True,
-        has_client_identity=True,
-        refresh=lambda: profile_calls.append("refresh") or fresh,
-        receipt_destination=tmp_path / "auth-refresh.json",
-        receipt=receipt,
+        load_token_state=lambda: {
+            "proactive_expiring": token.read_bytes() == b"old",
+            "has_di_refresh_credential": True,
+            "has_di_client_identity": True,
+        },
+        refresh_di_token=lambda: profile_calls.append("refresh"),
+        serialize_refreshed=lambda: fresh,
+        prepared_destination=tmp_path / "auth-prepared.json",
+        checkpoint_destination=tmp_path / "rotation-checkpoint.json",
+        final_destination=tmp_path / "auth-final.json",
+        stop_destination=tmp_path / "auth-stop.json",
+        observed_counts=lambda: _observed_counts(profile_calls),
         social_profile=lambda: profile_calls.append("social"),
+        cache_identity=lambda _profile: None,
         user_settings=lambda: profile_calls.append("settings"),
-        cached_identity="cached",
     )
     assert token.read_bytes() == fresh
     assert token.stat().st_mode & 0o777 == 0o600
+    assert token.stat().st_uid == credential_dir.stat().st_uid
+    assert token.stat().st_gid == credential_dir.stat().st_gid
     assert profile_calls == ["refresh", "social", "settings"]
-    assert result["cached_identity"] == "cached"
-    assert json.loads((tmp_path / "auth-refresh.json").read_text()) == receipt
+    checkpoint = json.loads((tmp_path / "rotation-checkpoint.json").read_text())
+    final = json.loads((tmp_path / "auth-final.json").read_text())
+    prepared = json.loads((tmp_path / "auth-prepared.json").read_text())
+    assert prepared["status"] == "prepared"
+    assert prepared["progress"]["prepared_receipt"] == {
+        "attempted": True,
+        "entered": True,
+        "completed": False,
+    }
+    assert checkpoint["progress"]["prepared_receipt"]["completed"] is True
+    assert checkpoint["progress"]["rotation_checkpoint_receipt"]["completed"] is False
+    assert checkpoint["counts"]["social_profile_http_count"] == 0
+    assert checkpoint["counts"]["user_settings_http_count"] == 0
+    assert final["counts"]["social_profile_http_count"] == 1
+    assert final["counts"]["user_settings_http_count"] == 1
+    assert final["progress"]["rotation_checkpoint_receipt"]["completed"] is True
+    assert final["progress"]["final_receipt"] == {
+        "attempted": True,
+        "entered": True,
+        "completed": False,
+    }
+    assert result["progress"]["parent_fsync"] == {
+        "attempted": True,
+        "entered": True,
+        "completed": True,
+    }
+    assert result["progress"]["final_receipt"]["completed"] is True
+    assert result["final_receipt"] == final
 
 
 @pytest.mark.parametrize("precondition", ("expired", "refresh", "client"))
-def test_auth_refresh_preconditions_fail_before_provider_or_write(
+def test_verified_auth_preconditions_fail_before_provider_or_write(
     tmp_path: Path, precondition: str
 ) -> None:
     tool = _tool(tmp_path)
@@ -601,20 +748,28 @@ def test_auth_refresh_preconditions_fail_before_provider_or_write(
     token.write_bytes(b"old")
     token.chmod(0o600)
     calls: list[str] = []
-    with pytest.raises(ValueError, match="precondition"):
-        tool._run_single_live_auth_refresh(
+    with pytest.raises(RuntimeError, match="precondition"):
+        tool._run_verified_live_auth_refresh(
             token_path=token,
-            token_is_expiring=precondition != "expired",
-            has_refresh_credential=precondition != "refresh",
-            has_client_identity=precondition != "client",
-            refresh=lambda: calls.append("refresh") or b"new",
-            receipt_destination=tmp_path / "receipt.json",
-            receipt=_auth_refresh_receipt(tool, _hash(1)),
+            load_token_state=lambda: {
+                "proactive_expiring": precondition != "expired",
+                "has_di_refresh_credential": precondition != "refresh",
+                "has_di_client_identity": precondition != "client",
+            },
+            refresh_di_token=lambda: calls.append("refresh"),
+            serialize_refreshed=lambda: b"new",
+            prepared_destination=tmp_path / "prepared.json",
+            checkpoint_destination=tmp_path / "checkpoint.json",
+            final_destination=tmp_path / "final.json",
+            stop_destination=tmp_path / "stop.json",
+            observed_counts=lambda: _observed_counts(calls),
             social_profile=lambda: calls.append("social"),
+            cache_identity=lambda _profile: None,
             user_settings=lambda: calls.append("settings"),
-            cached_identity="cached",
         )
     assert calls == [] and token.read_bytes() == b"old"
+    stopped = json.loads((tmp_path / "stop.json").read_text())
+    assert stopped["failure_stage"] == "preflight"
 
 
 def test_profile_failure_keeps_refreshed_token_and_stops_before_second_profile(
@@ -628,20 +783,308 @@ def test_profile_failure_keeps_refreshed_token_and_stops_before_second_profile(
     token.chmod(0o600)
     fresh = b"new"
     calls: list[str] = []
-    with pytest.raises(RuntimeError, match="profile"):
-        tool._run_single_live_auth_refresh(
+    with pytest.raises(RuntimeError, match="social_profile"):
+        tool._run_verified_live_auth_refresh(
             token_path=token,
-            token_is_expiring=True,
-            has_refresh_credential=True,
-            has_client_identity=True,
-            refresh=lambda: fresh,
-            receipt_destination=tmp_path / "receipt.json",
-            receipt=_auth_refresh_receipt(tool, hashlib.sha256(fresh).hexdigest()),
-            social_profile=lambda: (_ for _ in ()).throw(RuntimeError("profile")),
+            load_token_state=lambda: {
+                "proactive_expiring": token.read_bytes() == b"old",
+                "has_di_refresh_credential": True,
+                "has_di_client_identity": True,
+            },
+            refresh_di_token=lambda: calls.append("refresh"),
+            serialize_refreshed=lambda: fresh,
+            prepared_destination=tmp_path / "prepared.json",
+            checkpoint_destination=tmp_path / "checkpoint.json",
+            final_destination=tmp_path / "final.json",
+            stop_destination=tmp_path / "stop.json",
+            observed_counts=lambda: _observed_counts(calls),
+            social_profile=lambda: (
+                calls.append("social") or (_ for _ in ()).throw(RuntimeError("profile"))
+            ),
+            cache_identity=lambda _profile: None,
             user_settings=lambda: calls.append("settings"),
-            cached_identity="cached",
         )
-    assert token.read_bytes() == fresh and calls == []
+    stop = json.loads((tmp_path / "stop.json").read_text())
+    assert token.read_bytes() == fresh and calls == ["refresh", "social"]
+    assert stop["status"] == "stopped"
+    assert stop["counts"]["social_profile_http_count"] == 1
+
+
+def test_refresh_failure_writes_no_token_and_persists_true_prefix_stop(
+    tmp_path: Path,
+) -> None:
+    tool = _tool(tmp_path)
+    credential_dir = tmp_path / "credentials"
+    credential_dir.mkdir(mode=0o700)
+    token = credential_dir / "token"
+    token.write_bytes(b"old")
+    token.chmod(0o600)
+    calls: list[str] = []
+    with pytest.raises(RuntimeError, match="rotation"):
+        tool._run_verified_live_auth_refresh(
+            token_path=token,
+            load_token_state=lambda: {
+                "proactive_expiring": True,
+                "has_di_refresh_credential": True,
+                "has_di_client_identity": True,
+            },
+            refresh_di_token=lambda: (
+                calls.append("refresh")
+                or (_ for _ in ()).throw(RuntimeError("provider"))
+            ),
+            serialize_refreshed=lambda: b"new",
+            prepared_destination=tmp_path / "prepared.json",
+            checkpoint_destination=tmp_path / "checkpoint.json",
+            final_destination=tmp_path / "final.json",
+            stop_destination=tmp_path / "stop.json",
+            observed_counts=lambda: _observed_counts(calls),
+            social_profile=lambda: calls.append("social"),
+            cache_identity=lambda _profile: None,
+            user_settings=lambda: calls.append("settings"),
+        )
+    stopped = json.loads((tmp_path / "stop.json").read_text())
+    assert token.read_bytes() == b"old"
+    assert calls == ["refresh"]
+    assert stopped["counts"]["refresh_provider_entry_count"] == 1
+    assert stopped["counts"]["credential_replace_count"] == 0
+
+
+def test_reload_expiry_failure_preserves_rotated_credential_in_stop(
+    tmp_path: Path,
+) -> None:
+    tool = _tool(tmp_path)
+    credential_dir = tmp_path / "credentials"
+    credential_dir.mkdir(mode=0o700)
+    token = credential_dir / "token"
+    token.write_bytes(b"old")
+    token.chmod(0o600)
+    calls: list[str] = []
+    with pytest.raises(RuntimeError, match="rotation"):
+        tool._run_verified_live_auth_refresh(
+            token_path=token,
+            load_token_state=lambda: {
+                "proactive_expiring": True,
+                "has_di_refresh_credential": True,
+                "has_di_client_identity": True,
+            },
+            refresh_di_token=lambda: calls.append("refresh"),
+            serialize_refreshed=lambda: b"new",
+            prepared_destination=tmp_path / "prepared.json",
+            checkpoint_destination=tmp_path / "checkpoint.json",
+            final_destination=tmp_path / "final.json",
+            stop_destination=tmp_path / "stop.json",
+            observed_counts=lambda: _observed_counts(calls),
+            social_profile=lambda: calls.append("social"),
+            cache_identity=lambda _profile: None,
+            user_settings=lambda: calls.append("settings"),
+        )
+    stopped = json.loads((tmp_path / "stop.json").read_text())
+    assert token.read_bytes() == b"new"
+    assert stopped["credential_authority"]["content_changed_exactly_once"] is True
+    assert stopped["credential_authority"]["reloaded_nonexpiring"] is False
+
+
+def test_parent_fsync_stop_preserves_actual_replacement_prefix(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    tool = _tool(tmp_path)
+    credential_dir = tmp_path / "credentials"
+    credential_dir.mkdir(mode=0o700)
+    token = credential_dir / "token"
+    token.write_bytes(b"old")
+    token.chmod(0o600)
+    calls: list[str] = []
+    original_fsync = os.fsync
+    fsync_calls = 0
+    credential_inode = credential_dir.stat().st_ino
+
+    def fail_only_parent_fsync(descriptor: int) -> None:
+        nonlocal fsync_calls
+        if os.fstat(descriptor).st_ino == credential_inode:
+            fsync_calls += 1
+            raise OSError("parent fsync fixture")
+        original_fsync(descriptor)
+
+    monkeypatch.setattr("trainlab.garmin.base.os.fsync", fail_only_parent_fsync)
+    with pytest.raises(RuntimeError, match="rotation"):
+        tool._run_verified_live_auth_refresh(
+            token_path=token,
+            load_token_state=lambda: {
+                "proactive_expiring": token.read_bytes() == b"old",
+                "has_di_refresh_credential": True,
+                "has_di_client_identity": True,
+            },
+            refresh_di_token=lambda: calls.append("refresh"),
+            serialize_refreshed=lambda: b"new",
+            prepared_destination=tmp_path / "prepared.json",
+            checkpoint_destination=tmp_path / "checkpoint.json",
+            final_destination=tmp_path / "final.json",
+            stop_destination=tmp_path / "stop.json",
+            observed_counts=lambda: _observed_counts(calls),
+            social_profile=lambda: calls.append("social"),
+            cache_identity=lambda _profile: None,
+            user_settings=lambda: calls.append("settings"),
+        )
+    stopped = json.loads((tmp_path / "stop.json").read_text())
+    assert token.read_bytes() == b"new" and calls == ["refresh"] and fsync_calls == 1
+    assert stopped["failure_stage"] == "parent_fsync"
+    assert stopped["counts"]["credential_replace_count"] == 1
+    assert stopped["progress"]["credential_replace"]["completed"] is True
+    assert stopped["progress"]["parent_fsync"] == {
+        "attempted": True,
+        "entered": True,
+        "completed": False,
+    }
+
+
+def test_rotation_failure_before_directory_fsync_never_enters_parent_phase(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    tool = _tool(tmp_path)
+    credential_dir = tmp_path / "credentials"
+    credential_dir.mkdir(mode=0o700)
+    token = credential_dir / "token"
+    token.write_bytes(b"old")
+    token.chmod(0o600)
+    calls: list[str] = []
+
+    def fail_before_parent_fsync(
+        _destination: Path, _serialized: bytes, *, stage_callback: object = None
+    ) -> None:
+        assert stage_callback is not None
+        raise OSError("write fixture")
+
+    monkeypatch.setattr(
+        tool, "_atomic_replace_existing_token", fail_before_parent_fsync
+    )
+    with pytest.raises(RuntimeError, match="rotation"):
+        tool._run_verified_live_auth_refresh(
+            token_path=token,
+            load_token_state=lambda: {
+                "proactive_expiring": True,
+                "has_di_refresh_credential": True,
+                "has_di_client_identity": True,
+            },
+            refresh_di_token=lambda: calls.append("refresh"),
+            serialize_refreshed=lambda: b"new",
+            prepared_destination=tmp_path / "prepared.json",
+            checkpoint_destination=tmp_path / "checkpoint.json",
+            final_destination=tmp_path / "final.json",
+            stop_destination=tmp_path / "stop.json",
+            observed_counts=lambda: _observed_counts(calls),
+            social_profile=lambda: calls.append("social"),
+            cache_identity=lambda _profile: None,
+            user_settings=lambda: calls.append("settings"),
+        )
+    stopped = json.loads((tmp_path / "stop.json").read_text())
+    assert token.read_bytes() == b"old" and calls == ["refresh"]
+    assert stopped["progress"]["parent_fsync"] == {
+        "attempted": False,
+        "entered": False,
+        "completed": False,
+    }
+
+
+def test_prepared_receipt_failure_stops_before_refresh_or_token_write(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    tool = _tool(tmp_path)
+    credential_dir = tmp_path / "credentials"
+    credential_dir.mkdir(mode=0o700)
+    token = credential_dir / "token"
+    token.write_bytes(b"old")
+    token.chmod(0o600)
+    original_persist = tool._persist_live_auth_refresh_receipt
+    calls: list[str] = []
+
+    def fail_prepared(destination: Path, document: dict[str, object]) -> None:
+        if destination.name == "prepared.json":
+            raise OSError("fixture")
+        original_persist(destination, document)
+
+    monkeypatch.setattr(tool, "_persist_live_auth_refresh_receipt", fail_prepared)
+    with pytest.raises(RuntimeError, match="prepared_receipt"):
+        tool._run_verified_live_auth_refresh(
+            token_path=token,
+            load_token_state=lambda: {
+                "proactive_expiring": True,
+                "has_di_refresh_credential": True,
+                "has_di_client_identity": True,
+            },
+            refresh_di_token=lambda: calls.append("refresh"),
+            serialize_refreshed=lambda: b"new",
+            prepared_destination=tmp_path / "prepared.json",
+            checkpoint_destination=tmp_path / "checkpoint.json",
+            final_destination=tmp_path / "final.json",
+            stop_destination=tmp_path / "stop.json",
+            observed_counts=lambda: _observed_counts(calls),
+            social_profile=lambda: calls.append("social"),
+            cache_identity=lambda _profile: None,
+            user_settings=lambda: calls.append("settings"),
+        )
+    stopped = json.loads((tmp_path / "stop.json").read_text())
+    assert calls == [] and token.read_bytes() == b"old"
+    assert stopped["failure_stage"] == "prepared_receipt_persist"
+
+
+@pytest.mark.parametrize(
+    ("failed_name", "stage", "expected_calls"),
+    (
+        ("checkpoint.json", "checkpoint_persist", ["refresh"]),
+        ("final.json", "final_receipt_persist", ["refresh", "social", "settings"]),
+    ),
+)
+def test_later_auth_receipt_persist_failures_preserve_true_prefix(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    failed_name: str,
+    stage: str,
+    expected_calls: list[str],
+) -> None:
+    tool = _tool(tmp_path)
+    credential_dir = tmp_path / "credentials"
+    credential_dir.mkdir(mode=0o700)
+    token = credential_dir / "token"
+    token.write_bytes(b"old")
+    token.chmod(0o600)
+    original_persist = tool._persist_live_auth_refresh_receipt
+    calls: list[str] = []
+
+    def fail_selected(destination: Path, document: dict[str, object]) -> None:
+        if destination.name == failed_name:
+            raise OSError("fixture")
+        original_persist(destination, document)
+
+    monkeypatch.setattr(tool, "_persist_live_auth_refresh_receipt", fail_selected)
+    with pytest.raises(RuntimeError):
+        tool._run_verified_live_auth_refresh(
+            token_path=token,
+            load_token_state=lambda: {
+                "proactive_expiring": token.read_bytes() == b"old",
+                "has_di_refresh_credential": True,
+                "has_di_client_identity": True,
+            },
+            refresh_di_token=lambda: calls.append("refresh"),
+            serialize_refreshed=lambda: b"new",
+            prepared_destination=tmp_path / "prepared.json",
+            checkpoint_destination=tmp_path / "checkpoint.json",
+            final_destination=tmp_path / "final.json",
+            stop_destination=tmp_path / "stop.json",
+            observed_counts=lambda: _observed_counts(calls),
+            social_profile=lambda: calls.append("social"),
+            cache_identity=lambda _profile: None,
+            user_settings=lambda: calls.append("settings"),
+        )
+    stopped = json.loads((tmp_path / "stop.json").read_text())
+    assert token.read_bytes() == b"new" and calls == expected_calls
+    assert stopped["failure_stage"] == stage
+    assert stopped["progress"]["prepared_receipt"]["completed"] is True
+    assert stopped["progress"]["rotation_checkpoint_receipt"]["completed"] is (
+        failed_name == "final.json"
+    )
+    assert stopped["progress"]["final_receipt"]["entered"] is (
+        failed_name == "final.json"
+    )
 
 
 def test_atomic_token_writer_completes_partial_writes_or_keeps_old_token(
@@ -659,13 +1102,10 @@ def test_atomic_token_writer_completes_partial_writes_or_keeps_old_token(
         return original_write(fd, payload[:1])
 
     monkeypatch.setattr("trainlab.garmin.base.os.write", partial_write)
-    assert (
-        tool._atomic_replace_existing_token(token, b"fresh")
-        == hashlib.sha256(b"fresh").hexdigest()
-    )
+    tool._atomic_replace_existing_token(token, b"fresh")
     assert token.read_bytes() == b"fresh"
 
     monkeypatch.setattr("trainlab.garmin.base.os.write", lambda _fd, _payload: 0)
-    with pytest.raises(OSError, match="short_write"):
+    with pytest.raises(OSError):
         tool._atomic_replace_existing_token(token, b"newer")
     assert token.read_bytes() == b"fresh"

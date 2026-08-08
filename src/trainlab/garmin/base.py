@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import stat
 import uuid
 from pathlib import Path
 from typing import Any, Mapping
@@ -12,6 +13,16 @@ from jsonschema import Draft202012Validator, FormatChecker
 
 from .contracts import *  # noqa: F403
 from .repository import GarminRepository
+
+
+class _LiveAuthAtomicReplaceError(OSError):
+    """Redacted outcome of the one allowed credential replacement."""
+
+    def __init__(self, stage: str, *, replaced: bool) -> None:
+        super().__init__(stage)
+        self.stage = stage
+        self.replaced = replaced
+
 
 class GarminCollectionBase:
     def __init__(self, config: GarminConfig, transport: GarminTransport | None = None, *, sleep: Callable[[float], None] = time.sleep, clock: Callable[[], datetime] = lambda: datetime.now(TZ), monotonic: Callable[[], float] = time.monotonic, rng: Callable[[], float] | None = None) -> None:
@@ -543,6 +554,16 @@ class GarminCollectionBase:
                 return fn()
             except GarminError as exc:
                 last = exc
+                # The one-shot live acceptance driver has already completed
+                # its only approved refresh.  Its closed adapter sets this
+                # flag so no generic retry, implicit 401 login, or fallback
+                # can re-enter authentication after data collection begins.
+                if getattr(self, "_live_acceptance_no_retry", False):
+                    if exc.http_status == 401:
+                        raise exc.__class__(
+                            "live_acceptance_401_blocked", http_status=401
+                        )
+                    raise exc
                 # A persisted long-rate-limit cooldown is never converted
                 # into an inline wait just because less than 120 seconds now
                 # remain; the provider call must not be made before its due
@@ -595,6 +616,8 @@ class GarminCollectionBase:
             payload.pop("result_sha256", None)
         elif kind == "garmin_live_auth_refresh_receipt":
             payload.pop("auth_refresh_receipt_sha256", None)
+        elif kind == "garmin_live_acceptance_stop":
+            payload.pop("stop_sha256", None)
         else:
             raise ValueError("live_acceptance_document_kind")
         canonical = json.dumps(payload, allow_nan=False, ensure_ascii=False, separators=(",", ":"), sort_keys=True).encode("utf-8")
@@ -615,6 +638,7 @@ class GarminCollectionBase:
             "garmin_live_acceptance_checkpoint": "checkpoint_sha256",
             "garmin_live_acceptance_result": "result_sha256",
             "garmin_live_auth_refresh_receipt": "auth_refresh_receipt_sha256",
+            "garmin_live_acceptance_stop": "stop_sha256",
         }[kind]
         if document[digest_key] != self._canonical_live_acceptance_sha256(document):
             raise ValueError("live_acceptance_digest_invalid")
@@ -623,6 +647,11 @@ class GarminCollectionBase:
             return
         if kind == "garmin_live_acceptance_result":
             self._validate_live_acceptance_result(document)
+            return
+        if kind == "garmin_live_acceptance_stop":
+            self._validate_live_acceptance_stop(document)
+            return
+        self._validate_live_auth_refresh_document(document)
 
     @staticmethod
     def _validate_live_acceptance_checkpoint(document: Mapping[str, Any]) -> None:
@@ -650,6 +679,16 @@ class GarminCollectionBase:
         minimum = document["configured_minimum_interval_ns"]
         if any(interval < minimum for interval in intervals):
             raise ValueError("live_acceptance_interval_subminimum")
+        ledger = document["controlled_provider_entry_ledger"]
+        if len(ledger) != total_count:
+            raise ValueError("live_acceptance_ledger_count")
+        if [entry["ordinal"] for entry in ledger] != list(range(1, total_count + 1)):
+            raise ValueError("live_acceptance_ledger_ordinal")
+        if [
+            ledger[index]["monotonic_ns"] - ledger[index - 1]["monotonic_ns"]
+            for index in range(1, len(ledger))
+        ] != intervals:
+            raise ValueError("live_acceptance_ledger_intervals")
         bounds = operation["provider_entry_ordinals"]
         first, last = bounds["first"], bounds["last"]
         if total_count == prior_count:
@@ -685,6 +724,12 @@ class GarminCollectionBase:
             intervals = checkpoint["adjacent_controlled_provider_intervals_ns"]
             if intervals[: len(previous_intervals)] != previous_intervals:
                 raise ValueError("live_acceptance_interval_history")
+            if checkpoint["controlled_provider_entry_ledger"][:previous_count] != (
+                checkpoints[expected_ordinal - 2]["controlled_provider_entry_ledger"]
+                if expected_ordinal > 1
+                else []
+            ):
+                raise ValueError("live_acceptance_ledger_history")
             previous_digest = checkpoint["checkpoint_sha256"]
             previous_count = checkpoint["provider_entry_count"]
             previous_intervals = intervals
@@ -695,9 +740,40 @@ class GarminCollectionBase:
         intervals = document["adjacent_controlled_provider_intervals_ns"]
         if intervals != checkpoints[-1]["adjacent_controlled_provider_intervals_ns"]:
             raise ValueError("live_acceptance_final_interval_prefix")
+        if document["controlled_provider_entry_ledger"] != checkpoints[-1]["controlled_provider_entry_ledger"]:
+            raise ValueError("live_acceptance_final_ledger_prefix")
         failure = document["failure_evidence"]
-        if failure["outcome"] == "pre-provider" and document["provider_entry_count"] != 0:
-            raise ValueError("live_acceptance_preprovider_entry")
+        if failure["outcome"] != "none" or failure["last_checkpoint_preserved"] is not None:
+            raise ValueError("live_acceptance_result_failure_evidence")
+        auth = document["auth_refresh"]
+        counts = auth["counts"]
+        if (
+            counts["refresh_provider_entry_count"] != 1
+            or counts["credential_replace_count"] != 1
+            or counts["social_profile_http_count"] != 1
+            or counts["user_settings_http_count"] != 1
+        ):
+            raise ValueError("live_acceptance_auth_count")
+        if not all(auth["credential_authority"].values()):
+            raise ValueError("live_acceptance_auth_authority")
+        self._validate_auth_progress(auth["progress"])
+        if not all(progress["completed"] for progress in auth["progress"].values()):
+            raise ValueError("live_acceptance_auth_progress")
+        if any(
+            counts[name] != 0
+            for name in (
+                "password_login_attempt_count",
+                "mfa_attempt_count",
+                "credential_fallback_attempt_count",
+                "library_token_dump_attempt_count",
+                "legacy_refresh_attempt_count",
+                "implicit_401_refresh_attempt_count",
+                "second_refresh_attempt_count",
+                "auth_profile_retry_attempt_count",
+                "unreviewed_profile_attempt_count",
+            )
+        ):
+            raise ValueError("live_acceptance_auth_blocked_path")
         drift = document["drift_evidence"]
         if any(
             drift[name] != 0
@@ -708,6 +784,64 @@ class GarminCollectionBase:
             )
         ):
             raise ValueError("live_acceptance_drift_violation")
+
+    def _validate_live_acceptance_stop(self, document: Mapping[str, Any]) -> None:
+        ledger = document["controlled_provider_entry_ledger"]
+        count = document["provider_entry_count"]
+        if len(ledger) != count:
+            raise ValueError("live_acceptance_stop_ledger_count")
+        intervals = document["adjacent_controlled_provider_intervals_ns"]
+        if len(intervals) != max(count - 1, 0):
+            raise ValueError("live_acceptance_stop_interval_count")
+        if any(interval < document["configured_minimum_interval_ns"] for interval in intervals):
+            raise ValueError("live_acceptance_stop_interval_subminimum")
+        if [entry["ordinal"] for entry in ledger] != list(range(1, count + 1)):
+            raise ValueError("live_acceptance_stop_ledger_ordinal")
+        if [
+            ledger[index]["monotonic_ns"] - ledger[index - 1]["monotonic_ns"]
+            for index in range(1, len(ledger))
+        ] != intervals:
+            raise ValueError("live_acceptance_stop_ledger_intervals")
+        checkpoints = document["checkpoints"]
+        previous_digest = "0" * 64
+        previous_count = 0
+        for checkpoint in checkpoints:
+            self._validate_live_acceptance_checkpoint(checkpoint)
+            if checkpoint["previous_checkpoint_sha256"] != previous_digest:
+                raise ValueError("live_acceptance_stop_checkpoint_chain")
+            if checkpoint["prior_provider_entry_count"] != previous_count:
+                raise ValueError("live_acceptance_stop_checkpoint_prefix")
+            previous_digest = checkpoint["checkpoint_sha256"]
+            previous_count = checkpoint["provider_entry_count"]
+        if ledger[:previous_count] != (
+            checkpoints[-1]["controlled_provider_entry_ledger"] if checkpoints else []
+        ):
+            raise ValueError("live_acceptance_stop_checkpoint_ledger")
+        auth = document["auth_refresh"]
+        if not all(auth["credential_authority"].values()) or not all(
+            progress["completed"] for progress in auth["progress"].values()
+        ):
+            raise ValueError("live_acceptance_stop_auth_authority")
+        if any(
+            auth["counts"][name] != expected
+            for name, expected in (
+                ("refresh_provider_entry_count", 1),
+                ("credential_replace_count", 1),
+                ("social_profile_http_count", 1),
+                ("user_settings_http_count", 1),
+                ("cached_identity_http_count", 0),
+                ("password_login_attempt_count", 0),
+                ("mfa_attempt_count", 0),
+                ("credential_fallback_attempt_count", 0),
+                ("library_token_dump_attempt_count", 0),
+                ("legacy_refresh_attempt_count", 0),
+                ("implicit_401_refresh_attempt_count", 0),
+                ("second_refresh_attempt_count", 0),
+                ("auth_profile_retry_attempt_count", 0),
+                ("unreviewed_profile_attempt_count", 0),
+            )
+        ):
+            raise ValueError("live_acceptance_stop_auth_counts")
 
     def _persist_live_acceptance_document(self, destination: Path, document: Mapping[str, Any]) -> None:
         """Atomically persist a previously validated redacted receipt document."""
@@ -729,6 +863,7 @@ class GarminCollectionBase:
         temporary_fd: int | None = None
         try:
             temporary_fd = os.open(temporary_name, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0), 0o600, dir_fd=directory_fd)
+            os.fchmod(temporary_fd, 0o600)
             written = 0
             while written < len(payload):
                 count = os.write(temporary_fd, payload[written:])
@@ -751,30 +886,158 @@ class GarminCollectionBase:
                 os.close(directory_fd)
 
     @staticmethod
-    def _atomic_replace_existing_token(destination: Path, serialized: bytes) -> str:
-        """Durably replace one existing owner-only token without following links.
+    def _token_authority_snapshot(destination: Path) -> dict[str, Any]:
+        """Return private comparison facts for an existing, owner-only token.
 
-        This deliberately accepts already-serialized bytes rather than a token
-        object.  It keeps the credential boundary small: callers can record the
-        returned digest, but neither this helper nor its errors expose token
-        material, a credential filename, or a provider response.
+        The values are intentionally only for local comparison.  Callers must
+        convert them to booleans before a receipt is persisted: token hashes,
+        paths, names, ownership ids and credential bytes are never evidence.
+        """
+        parent = destination.parent
+        ancestor = parent
+        while True:
+            if os.path.islink(ancestor):
+                raise ValueError("live_auth_token_ancestor_symlink")
+            if ancestor == ancestor.parent:
+                break
+            ancestor = ancestor.parent
+        parent_stat = os.stat(parent, follow_symlinks=False)
+        if not stat.S_ISDIR(parent_stat.st_mode) or parent_stat.st_mode & 0o777 != 0o700:
+            raise ValueError("live_auth_token_parent_invalid")
+        flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+        token_fd = os.open(destination, flags)
+        try:
+            token_stat = os.fstat(token_fd)
+            if not stat.S_ISREG(token_stat.st_mode) or token_stat.st_mode & 0o777 != 0o600:
+                raise ValueError("live_auth_token_permissions_invalid")
+            content = bytearray()
+            while True:
+                block = os.read(token_fd, 65_536)
+                if not block:
+                    break
+                content.extend(block)
+                if len(content) > 1_048_576:
+                    raise ValueError("live_auth_token_too_large")
+        finally:
+            os.close(token_fd)
+        structure: list[tuple[str, int, int, int]] = []
+        for root, directories, files in os.walk(parent, followlinks=False):
+            entries = sorted((*directories, *files))
+            for name in entries:
+                candidate = Path(root) / name
+                entry = os.lstat(candidate)
+                if os.path.islink(candidate):
+                    raise ValueError("live_auth_token_structure_symlink")
+                structure.append(
+                    (
+                        str(candidate.relative_to(parent)),
+                        entry.st_mode,
+                        entry.st_uid,
+                        entry.st_gid,
+                    )
+                )
+        return {
+            "parent_device": parent_stat.st_dev,
+            "parent_inode": parent_stat.st_ino,
+            "parent_uid": parent_stat.st_uid,
+            "parent_gid": parent_stat.st_gid,
+            "parent_mode": parent_stat.st_mode & 0o777,
+            "token_uid": token_stat.st_uid,
+            "token_gid": token_stat.st_gid,
+            "token_mode": token_stat.st_mode & 0o777,
+            "structure_sha256": hashlib.sha256(
+                json.dumps(
+                    structure,
+                    allow_nan=False,
+                    ensure_ascii=False,
+                    separators=(",", ":"),
+                    sort_keys=True,
+                ).encode("utf-8")
+            ).hexdigest(),
+            "content_sha256": hashlib.sha256(content).hexdigest(),
+        }
+
+    @staticmethod
+    def _credential_authority_facts(
+        before: Mapping[str, Any], after: Mapping[str, Any], *, reloaded_nonexpiring: bool
+    ) -> dict[str, bool]:
+        """Reduce secret-bearing authority snapshots to redacted booleans."""
+        return {
+            "token_path_unchanged": True,
+            "token_directory_unchanged": (
+                before["parent_device"] == after["parent_device"]
+                and before["parent_inode"] == after["parent_inode"]
+            ),
+            "owner_unchanged": (
+                before["parent_uid"] == after["parent_uid"]
+                and before["token_uid"] == after["token_uid"]
+            ),
+            "group_unchanged": (
+                before["parent_gid"] == after["parent_gid"]
+                and before["token_gid"] == after["token_gid"]
+            ),
+            "directory_mode_0700": (
+                before["parent_mode"] == after["parent_mode"] == 0o700
+            ),
+            "file_mode_0600": before["token_mode"] == after["token_mode"] == 0o600,
+            "structure_unchanged": before["structure_sha256"] == after["structure_sha256"],
+            "content_changed_exactly_once": (
+                before["content_sha256"] != after["content_sha256"]
+            ),
+            "reloaded_nonexpiring": reloaded_nonexpiring,
+        }
+
+    @staticmethod
+    def _preflight_live_acceptance_destination(destination: Path) -> None:
+        """Check a fresh receipt target without creating or following links.
+
+        The subsequent prepared receipt is the durability probe before the
+        sole provider entry; this preflight deliberately does not create a
+        disposable file that could obscure the actual evidence sequence.
+        """
+        if destination.is_symlink() or destination.exists():
+            raise ValueError("live_auth_receipt_destination_symlink")
+        ancestor = destination.parent
+        while True:
+            if ancestor.is_symlink():
+                raise ValueError("live_auth_receipt_ancestor_symlink")
+            if ancestor == ancestor.parent:
+                break
+            ancestor = ancestor.parent
+        directory_fd = os.open(
+            destination.parent,
+            os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0),
+        )
+        try:
+            directory_stat = os.fstat(directory_fd)
+            if not stat.S_ISDIR(directory_stat.st_mode):
+                raise ValueError("live_auth_receipt_parent_invalid")
+            if not os.access(destination.parent, os.W_OK):
+                raise ValueError("live_auth_receipt_destination_unwritable")
+        finally:
+            os.close(directory_fd)
+
+    @staticmethod
+    def _atomic_replace_existing_token(
+        destination: Path, serialized: bytes, *, stage_callback: Any = None
+    ) -> None:
+        """Replace the one existing token with no-follow, fsync and rename.
+
+        The refreshed serialization never escapes this method.  It is not
+        returned or logged, preventing an otherwise useful digest from turning
+        into a durable token correlator.
         """
         if not isinstance(serialized, bytes) or not serialized:
             raise ValueError("live_auth_invalid_serialization")
-        if destination.is_symlink() or not destination.exists() or not destination.is_file():
-            raise ValueError("live_auth_token_target_invalid")
+        before = GarminCollectionBase._token_authority_snapshot(destination)
         parent = destination.parent
-        if parent.is_symlink() or parent.stat().st_mode & 0o777 != 0o700:
-            raise ValueError("live_auth_token_parent_invalid")
-        before = os.stat(destination, follow_symlinks=False)
-        if before.st_mode & 0o777 != 0o600:
-            raise ValueError("live_auth_token_permissions_invalid")
         directory_fd = os.open(
             parent,
             os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0),
         )
         temporary_name = f".{destination.name}.{uuid.uuid4().hex}.tmp"
         temporary_fd: int | None = None
+        renamed = False
         try:
             temporary_fd = os.open(
                 temporary_name,
@@ -782,6 +1045,8 @@ class GarminCollectionBase:
                 0o600,
                 dir_fd=directory_fd,
             )
+            os.fchmod(temporary_fd, 0o600)
+            os.fchown(temporary_fd, before["token_uid"], before["token_gid"])
             written = 0
             while written < len(serialized):
                 count = os.write(temporary_fd, serialized[written:])
@@ -791,8 +1056,27 @@ class GarminCollectionBase:
             os.fsync(temporary_fd)
             os.close(temporary_fd)
             temporary_fd = None
-            os.replace(temporary_name, destination.name, src_dir_fd=directory_fd, dst_dir_fd=directory_fd)
-            os.fsync(directory_fd)
+            os.replace(
+                temporary_name,
+                destination.name,
+                src_dir_fd=directory_fd,
+                dst_dir_fd=directory_fd,
+            )
+            renamed = True
+            try:
+                if stage_callback is not None:
+                    stage_callback("parent_fsync_entered")
+                os.fsync(directory_fd)
+                if stage_callback is not None:
+                    stage_callback("parent_fsync_completed")
+            except Exception as exc:
+                raise _LiveAuthAtomicReplaceError(
+                    "parent_fsync", replaced=True
+                ) from exc
+        except _LiveAuthAtomicReplaceError:
+            raise
+        except Exception as exc:
+            raise _LiveAuthAtomicReplaceError("rotation", replaced=renamed) from exc
         finally:
             if temporary_fd is not None:
                 os.close(temporary_fd)
@@ -802,53 +1086,495 @@ class GarminCollectionBase:
                 pass
             finally:
                 os.close(directory_fd)
-        after = os.stat(destination, follow_symlinks=False)
-        if after.st_mode & 0o777 != 0o600 or after.st_uid != before.st_uid:
-            raise ValueError("live_auth_token_postcondition_invalid")
-        return hashlib.sha256(serialized).hexdigest()
+
+    @staticmethod
+    def _empty_auth_refresh_counts() -> dict[str, int]:
+        return {
+            "refresh_provider_entry_count": 0,
+            "credential_replace_count": 0,
+            "social_profile_http_count": 0,
+            "user_settings_http_count": 0,
+            "cached_identity_http_count": 0,
+            "password_login_attempt_count": 0,
+            "mfa_attempt_count": 0,
+            "credential_fallback_attempt_count": 0,
+            "library_token_dump_attempt_count": 0,
+            "legacy_refresh_attempt_count": 0,
+            "implicit_401_refresh_attempt_count": 0,
+            "second_refresh_attempt_count": 0,
+            "auth_profile_retry_attempt_count": 0,
+            "unreviewed_profile_attempt_count": 0,
+        }
+
+    @staticmethod
+    def _empty_auth_refresh_progress() -> dict[str, dict[str, bool]]:
+        """Return only redacted, monotonic auth boundary state."""
+        return {
+            name: {"attempted": False, "entered": False, "completed": False}
+            for name in (
+                "precondition",
+                "prepared_receipt",
+                "refresh",
+                "credential_replace",
+                "parent_fsync",
+                "reload",
+                "authority_recheck",
+                "rotation_checkpoint_receipt",
+                "social_profile",
+                "cached_identity",
+                "user_settings",
+                "final_receipt",
+            )
+        }
+
+    @staticmethod
+    def _auth_phase_entered(
+        progress: dict[str, dict[str, bool]], name: str
+    ) -> None:
+        progress[name]["attempted"] = True
+        progress[name]["entered"] = True
+
+    @staticmethod
+    def _auth_phase_completed(
+        progress: dict[str, dict[str, bool]], name: str
+    ) -> None:
+        GarminCollectionBase._auth_phase_entered(progress, name)
+        progress[name]["completed"] = True
+
+    @staticmethod
+    def _validate_auth_progress(progress: Mapping[str, Any]) -> None:
+        for phase in progress.values():
+            if phase["completed"] and not phase["entered"]:
+                raise ValueError("live_auth_progress_completed_without_entry")
+            if phase["entered"] and not phase["attempted"]:
+                raise ValueError("live_auth_progress_entry_without_attempt")
+
+    def _make_live_auth_refresh_document(
+        self,
+        *,
+        status: str,
+        failure_stage: str,
+        counts: Mapping[str, int],
+        authority: Mapping[str, bool],
+        progress: Mapping[str, Mapping[str, bool]],
+        previous_digest: str,
+    ) -> dict[str, Any]:
+        document: dict[str, Any] = {
+            "schema_version": "1",
+            "document_kind": "garmin_live_auth_refresh_receipt",
+            "status": status,
+            "failure_stage": failure_stage,
+            "refresh_client_distribution": "python-garminconnect-0.3.6",
+            "counts": dict(counts),
+            "ordering": {
+                "refresh_before_credential_replace": True,
+                "credential_replaced_before_profile": True,
+                "checkpoint_persisted_before_profile": True,
+                "first_profile_stops_second_on_error": True,
+                "cached_identity_zero_http": True,
+            },
+            "credential_authority": dict(authority),
+            "progress": {name: dict(state) for name, state in progress.items()},
+            "previous_auth_receipt_sha256": previous_digest,
+            "auth_refresh_receipt_sha256": "0" * 64,
+        }
+        document["auth_refresh_receipt_sha256"] = (
+            self._canonical_live_acceptance_sha256(document)
+        )
+        return document
+
+    @staticmethod
+    def _validate_live_auth_refresh_document(document: Mapping[str, Any]) -> None:
+        counts = document["counts"]
+        progress = document["progress"]
+        GarminCollectionBase._validate_auth_progress(progress)
+        for count_name, phase_name in (
+            ("refresh_provider_entry_count", "refresh"),
+            ("social_profile_http_count", "social_profile"),
+            ("user_settings_http_count", "user_settings"),
+        ):
+            if bool(counts[count_name]) != bool(progress[phase_name]["entered"]):
+                raise ValueError("live_auth_count_progress_mismatch")
+        if counts["credential_replace_count"] and not progress[
+            "credential_replace"
+        ]["completed"]:
+            raise ValueError("live_auth_rotation_progress_mismatch")
+        if document["status"] == "prepared":
+            if any(value != 0 for value in counts.values()):
+                raise ValueError("live_auth_prepared_counts")
+            if not progress["precondition"]["completed"]:
+                raise ValueError("live_auth_prepared_precondition")
+            if not (
+                progress["prepared_receipt"]["entered"]
+                and not progress["prepared_receipt"]["completed"]
+            ):
+                raise ValueError("live_auth_prepared_receipt_progress")
+            return
+        if document["status"] == "stopped":
+            if (
+                counts["social_profile_http_count"]
+                or counts["user_settings_http_count"]
+            ) and counts["credential_replace_count"] != 1:
+                raise ValueError("live_auth_stop_profile_before_rotation")
+            if counts["user_settings_http_count"] > counts["social_profile_http_count"]:
+                raise ValueError("live_auth_profile_order")
+            return
+        if counts["refresh_provider_entry_count"] != 1:
+            raise ValueError("live_auth_refresh_count")
+        if counts["credential_replace_count"] != 1:
+            raise ValueError("live_auth_rotation_count")
+        if document["status"] == "rotation_checkpoint":
+            if counts["social_profile_http_count"] or counts["user_settings_http_count"]:
+                raise ValueError("live_auth_checkpoint_future_profile_count")
+            if not all(
+                progress[name]["completed"]
+                for name in (
+                    "precondition",
+                    "prepared_receipt",
+                    "refresh",
+                    "credential_replace",
+                    "parent_fsync",
+                    "reload",
+                    "authority_recheck",
+                )
+            ):
+                raise ValueError("live_auth_checkpoint_progress")
+            if not (
+                progress["rotation_checkpoint_receipt"]["entered"]
+                and not progress["rotation_checkpoint_receipt"]["completed"]
+            ):
+                raise ValueError("live_auth_checkpoint_receipt_progress")
+            return
+        if document["status"] == "succeeded" and (
+            counts["social_profile_http_count"] != 1
+            or counts["user_settings_http_count"] != 1
+        ):
+            raise ValueError("live_auth_final_profile_count")
+        if document["status"] == "succeeded" and not all(
+            document["credential_authority"].values()
+        ):
+            raise ValueError("live_auth_final_authority")
+        if document["status"] == "succeeded" and not all(
+            progress[name]["completed"]
+            for name in (
+                "precondition",
+                "prepared_receipt",
+                "refresh",
+                "credential_replace",
+                "parent_fsync",
+                "reload",
+                "authority_recheck",
+                "rotation_checkpoint_receipt",
+                "social_profile",
+                "cached_identity",
+                "user_settings",
+            )
+        ):
+            raise ValueError("live_auth_final_progress")
+        if document["status"] == "succeeded" and not (
+            progress["final_receipt"]["entered"]
+            and not progress["final_receipt"]["completed"]
+        ):
+            raise ValueError("live_auth_final_receipt_progress")
+        if (
+            counts["user_settings_http_count"]
+            > counts["social_profile_http_count"]
+        ):
+            raise ValueError("live_auth_profile_order")
 
     def _persist_live_auth_refresh_receipt(
         self, destination: Path, document: Mapping[str, Any]
     ) -> None:
-        """Validate and atomically persist the redacted auth boundary receipt."""
+        """Validate and atomically persist redacted, observed auth evidence."""
         self._persist_live_acceptance_document(destination, document)
 
-    def _run_single_live_auth_refresh(
+    def _run_verified_live_auth_refresh(
         self,
         *,
         token_path: Path,
-        token_is_expiring: bool,
-        has_refresh_credential: bool,
-        has_client_identity: bool,
-        refresh: Any,
-        receipt_destination: Path,
-        receipt: Mapping[str, Any],
+        load_token_state: Any,
+        refresh_di_token: Any,
+        serialize_refreshed: Any,
+        prepared_destination: Path,
+        checkpoint_destination: Path,
+        final_destination: Path,
+        stop_destination: Path,
+        observed_counts: Any,
         social_profile: Any,
+        cache_identity: Any,
         user_settings: Any,
-        cached_identity: Any,
     ) -> dict[str, Any]:
-        """Run the closed refresh/profile boundary used by the live driver.
+        """Execute the non-retrying refresh/profile boundary from observed state.
 
-        It is intentionally dependency-injected and has no fallback path.  A
-        callback is invoked at most once, refresh persistence precedes all
-        profile callbacks, and a later profile failure never restores the old
-        credential.  ``cached_identity`` is returned without issuing HTTP.
+        ``load_token_state`` is called before and after replacement by the
+        driver that owns the pinned client.  It must derive the three local
+        preconditions from a no-follow token load; the public API deliberately
+        contains no caller-supplied auth booleans.
         """
-        if not (token_is_expiring and has_refresh_credential and has_client_identity):
-            raise ValueError("live_auth_refresh_precondition_failed")
-        serialized = refresh()  # the sole permitted DI/provider refresh entry
-        digest = self._atomic_replace_existing_token(token_path, serialized)
-        persisted_receipt = dict(receipt)
-        if persisted_receipt.get("document_kind") != "garmin_live_auth_refresh_receipt":
-            raise ValueError("live_auth_receipt_kind_invalid")
-        if persisted_receipt.get("credential_serialization_sha256") != digest:
-            raise ValueError("live_auth_receipt_digest_invalid")
-        self._persist_live_auth_refresh_receipt(receipt_destination, persisted_receipt)
-        # Do not wrap these calls in _call: its facade retry/401 refresh path is
-        # intentionally unavailable at this tightly bounded authentication edge.
-        social_profile()
-        user_settings()
-        return {"cached_identity": cached_identity, "credential_serialization_sha256": digest}
+        empty_counts = self._empty_auth_refresh_counts()
+        no_authority = {
+            "token_path_unchanged": False,
+            "token_directory_unchanged": False,
+            "owner_unchanged": False,
+            "group_unchanged": False,
+            "directory_mode_0700": False,
+            "file_mode_0600": False,
+            "structure_unchanged": False,
+            "content_changed_exactly_once": False,
+            "reloaded_nonexpiring": False,
+        }
+        progress = self._empty_auth_refresh_progress()
+        destinations = (
+            prepared_destination,
+            checkpoint_destination,
+            final_destination,
+            stop_destination,
+        )
+        if len({str(destination.absolute()) for destination in destinations}) != len(
+            destinations
+        ):
+            raise ValueError("live_auth_receipt_destinations_not_distinct")
+        for destination in destinations:
+            self._preflight_live_acceptance_destination(destination)
+
+        def persist_stopped(
+            stage: str,
+            *,
+            counts: Mapping[str, int],
+            authority: Mapping[str, bool],
+            previous_digest: str,
+        ) -> None:
+            stopped = self._make_live_auth_refresh_document(
+                status="stopped",
+                failure_stage=stage,
+                counts=counts,
+                authority=authority,
+                progress=progress,
+                previous_digest=previous_digest,
+            )
+            try:
+                self._persist_live_auth_refresh_receipt(stop_destination, stopped)
+            except Exception:
+                raise RuntimeError("live_auth_stop_persist_failed") from None
+
+        required = (
+            "proactive_expiring",
+            "has_di_refresh_credential",
+            "has_di_client_identity",
+        )
+        before: Mapping[str, Any] | None = None
+        authority: Mapping[str, bool] = no_authority
+        self._auth_phase_entered(progress, "precondition")
+        try:
+            before = self._token_authority_snapshot(token_path)
+            initial = load_token_state()
+            if not isinstance(initial, Mapping) or any(
+                initial.get(name) is not True for name in required
+            ):
+                raise ValueError("live_auth_refresh_precondition_failed")
+            authority = {
+                "token_path_unchanged": True,
+                "token_directory_unchanged": True,
+                "owner_unchanged": True,
+                "group_unchanged": True,
+                "directory_mode_0700": True,
+                "file_mode_0600": True,
+                "structure_unchanged": True,
+                "content_changed_exactly_once": False,
+                "reloaded_nonexpiring": False,
+            }
+            self._auth_phase_completed(progress, "precondition")
+        except Exception:
+            persist_stopped(
+                "preflight",
+                counts=empty_counts,
+                authority=authority,
+                previous_digest="0" * 64,
+            )
+            raise RuntimeError("live_auth_refresh_precondition_failed") from None
+
+        self._auth_phase_entered(progress, "prepared_receipt")
+        prepared = self._make_live_auth_refresh_document(
+            status="prepared",
+            failure_stage="none",
+            counts=empty_counts,
+            authority=authority,
+            progress=progress,
+            previous_digest="0" * 64,
+        )
+        try:
+            self._persist_live_auth_refresh_receipt(prepared_destination, prepared)
+            self._auth_phase_completed(progress, "prepared_receipt")
+        except Exception:
+            persist_stopped(
+                "prepared_receipt_persist",
+                counts=empty_counts,
+                authority=authority,
+                previous_digest="0" * 64,
+            )
+            raise RuntimeError("live_auth_prepared_receipt_failed") from None
+
+        checkpoint: Mapping[str, Any] | None = None
+        rotation_complete = False
+        checkpoint_persisted = False
+        rotation_stage = "refresh"
+        try:
+            self._auth_phase_entered(progress, "refresh")
+            refresh_di_token()
+            self._auth_phase_completed(progress, "refresh")
+            if dict(observed_counts())["refresh_provider_entry_count"] != 1:
+                raise ValueError("live_auth_refresh_entry_unobserved")
+            rotation_stage = "rotation"
+            serialized = serialize_refreshed()
+            self._auth_phase_entered(progress, "credential_replace")
+            def token_stage(event: str) -> None:
+                if event == "parent_fsync_entered":
+                    self._auth_phase_entered(progress, "parent_fsync")
+                    return
+                if event == "parent_fsync_completed":
+                    self._auth_phase_completed(progress, "parent_fsync")
+                    return
+                raise ValueError("live_auth_atomic_stage")
+            try:
+                self._atomic_replace_existing_token(
+                    token_path, serialized, stage_callback=token_stage
+                )
+            except _LiveAuthAtomicReplaceError as exc:
+                if exc.replaced:
+                    rotation_complete = True
+                    self._auth_phase_completed(progress, "credential_replace")
+                    rotation_stage = exc.stage
+                    after = self._token_authority_snapshot(token_path)
+                    authority = self._credential_authority_facts(
+                        before, after, reloaded_nonexpiring=False
+                    )
+                else:
+                    rotation_stage = exc.stage
+                raise
+            rotation_complete = True
+            self._auth_phase_completed(progress, "credential_replace")
+            rotation_stage = "reload"
+            self._auth_phase_entered(progress, "reload")
+            after = self._token_authority_snapshot(token_path)
+            authority = self._credential_authority_facts(
+                before, after, reloaded_nonexpiring=False
+            )
+            reloaded = load_token_state()
+            if not isinstance(reloaded, Mapping) or (
+                reloaded.get("proactive_expiring") is not False
+                or reloaded.get("has_di_refresh_credential") is not True
+                or reloaded.get("has_di_client_identity") is not True
+            ):
+                raise ValueError("live_auth_reload_expiry_failed")
+            self._auth_phase_completed(progress, "reload")
+            rotation_stage = "authority_recheck"
+            self._auth_phase_entered(progress, "authority_recheck")
+            authority = self._credential_authority_facts(
+                before, after, reloaded_nonexpiring=True
+            )
+            if not all(authority.values()):
+                raise ValueError("live_auth_authority_recheck_failed")
+            self._auth_phase_completed(progress, "authority_recheck")
+            rotation_stage = "checkpoint_persist"
+            counts = dict(observed_counts())
+            counts["credential_replace_count"] = 1
+            self._auth_phase_entered(progress, "rotation_checkpoint_receipt")
+            checkpoint = self._make_live_auth_refresh_document(
+                status="rotation_checkpoint",
+                failure_stage="none",
+                counts=counts,
+                authority=authority,
+                progress=progress,
+                previous_digest=prepared["auth_refresh_receipt_sha256"],
+            )
+            self._persist_live_auth_refresh_receipt(checkpoint_destination, checkpoint)
+            checkpoint_persisted = True
+            self._auth_phase_completed(progress, "rotation_checkpoint_receipt")
+        except Exception:
+            stopped_counts = dict(observed_counts())
+            if rotation_complete:
+                stopped_counts["credential_replace_count"] = 1
+            persist_stopped(
+                rotation_stage,
+                counts=stopped_counts,
+                authority=authority,
+                previous_digest=(
+                    checkpoint["auth_refresh_receipt_sha256"]
+                    if checkpoint_persisted and checkpoint is not None
+                    else prepared["auth_refresh_receipt_sha256"]
+                ),
+            )
+            raise RuntimeError("live_auth_rotation_failed") from None
+        try:
+            self._auth_phase_entered(progress, "social_profile")
+            social_payload = social_profile()
+            self._auth_phase_completed(progress, "social_profile")
+            counts = dict(observed_counts())
+            counts["credential_replace_count"] = 1
+        except Exception:
+            persist_stopped(
+                "social_profile",
+                counts={**dict(observed_counts()), "credential_replace_count": 1},
+                authority=authority,
+                previous_digest=checkpoint["auth_refresh_receipt_sha256"],
+            )
+            raise RuntimeError("live_auth_social_profile_failed") from None
+        try:
+            self._auth_phase_entered(progress, "cached_identity")
+            cache_identity(social_payload)
+            if dict(observed_counts())["cached_identity_http_count"] != 0:
+                raise ValueError("live_auth_cached_identity_http")
+            self._auth_phase_completed(progress, "cached_identity")
+        except Exception:
+            persist_stopped(
+                "cached_identity",
+                counts={**dict(observed_counts()), "credential_replace_count": 1},
+                authority=authority,
+                previous_digest=checkpoint["auth_refresh_receipt_sha256"],
+            )
+            raise RuntimeError("live_auth_cached_identity_failed") from None
+        try:
+            self._auth_phase_entered(progress, "user_settings")
+            user_settings()
+            self._auth_phase_completed(progress, "user_settings")
+            counts = dict(observed_counts())
+            counts["credential_replace_count"] = 1
+        except Exception:
+            persist_stopped(
+                "user_settings",
+                counts={**dict(observed_counts()), "credential_replace_count": 1},
+                authority=authority,
+                previous_digest=checkpoint["auth_refresh_receipt_sha256"],
+            )
+            raise RuntimeError("live_auth_user_settings_failed") from None
+        self._auth_phase_entered(progress, "final_receipt")
+        final = self._make_live_auth_refresh_document(
+            status="succeeded",
+            failure_stage="none",
+            counts=counts,
+            authority=authority,
+            progress=progress,
+            previous_digest=checkpoint["auth_refresh_receipt_sha256"],
+        )
+        try:
+            self._persist_live_auth_refresh_receipt(final_destination, final)
+            self._auth_phase_completed(progress, "final_receipt")
+        except Exception:
+            persist_stopped(
+                "final_receipt_persist",
+                counts=counts,
+                authority=authority,
+                previous_digest=checkpoint["auth_refresh_receipt_sha256"],
+            )
+            raise RuntimeError("live_auth_final_receipt_failed") from None
+        return {
+            "prepared_receipt": prepared,
+            "rotation_checkpoint": checkpoint,
+            "final_receipt": final,
+            "counts": counts,
+            "authority": authority,
+            "progress": progress,
+        }
 
     _ACCOUNT_BASIC_RESOURCES = ("user_profile", "user_profile_settings", "devices")
     _ACCOUNT_B1_RESOURCES = ("primary_device", "device_settings", "device_last_used", "personal_records", "cycling_ftp", "pregnancy")

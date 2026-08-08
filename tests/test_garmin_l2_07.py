@@ -5,6 +5,7 @@ from __future__ import annotations
 import sqlite3
 from datetime import datetime
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from garminconnect import Garmin
@@ -250,6 +251,255 @@ def test_provider_entry_pacing_allows_long_provider_calls(tmp_path: Path) -> Non
 
     assert entries[1] - entries[0] == pytest.approx(2.0)
     assert clock.sleeps == []
+
+
+def test_live_acceptance_hard_stops_401_without_login_or_retry(tmp_path: Path) -> None:
+    tool = _pacing_tool(tmp_path, _PacingClock())
+    tool._live_acceptance_no_retry = True
+    calls: list[str] = []
+    tool._transport = lambda: type(
+        "ForbiddenRefresh", (), {"login": lambda _self: calls.append("login")}
+    )()
+
+    def provider() -> None:
+        calls.append("provider")
+        raise GarminError("expired", http_status=401)
+
+    with pytest.raises(GarminError, match="401_blocked"):
+        tool._call(provider)
+    assert calls == ["provider"]
+
+
+def test_v4_driver_import_and_noarg_are_inert_with_exact_manual_gate() -> None:
+    driver = (
+        Path("/home/dev/Project/state/test-tmp/garmin-live-acceptance")
+        / "v4-a1-20260808-n14"
+        / "driver.py"
+    )
+    source = driver.read_text(encoding="utf-8")
+    assert 'arguments != ["--execute-once"]' in source
+    assert "subprocess" not in source.split("\n\n", 1)[1]
+    assert "threading" not in source
+    assert "multiprocessing" not in source
+    namespace = {"__name__": "v4_driver_test", "__file__": str(driver)}
+    exec(compile(source, str(driver), "exec"), namespace)
+    assert namespace["main"]([]) == 0
+    assert namespace["main"](["--wrong"]) == 2
+    namespace["_verify_control_plane"]()
+
+
+def test_v4_driver_low_level_allowlist_counts_only_reviewed_entries() -> None:
+    driver = (
+        Path("/home/dev/Project/state/test-tmp/garmin-live-acceptance")
+        / "v4-a1-20260808-n14"
+        / "driver.py"
+    )
+    namespace = {"__name__": "v4_driver_gate_test", "__file__": str(driver)}
+    exec(compile(driver.read_text(encoding="utf-8"), str(driver), "exec"), namespace)
+
+    class Response:
+        status_code = 200
+
+    class Session:
+        def request(self, *_args, **_kwargs):
+            return Response()
+
+        def get(self, *_args, **_kwargs):
+            return Response()
+
+        def post(self, *_args, **_kwargs):
+            return Response()
+
+    class Client:
+        _di_token_url = "https://di.invalid/token"
+        _connectapi = "https://api.invalid"
+
+        def __init__(self) -> None:
+            self._api_session = Session()
+            self.cs = Session()
+
+        def _http_post(self, *_args, **_kwargs):
+            return Response()
+
+        def _run_request(self, method, path, **_kwargs):
+            return self._api_session.request(
+                method, f"{self._connectapi}/{path.lstrip('/')}"
+            )
+
+        def _refresh_di_token(self):
+            return self._http_post(self._di_token_url)
+
+        def dump(self, *_args, **_kwargs):
+            raise AssertionError("must be replaced")
+
+        def _refresh_session(self):
+            raise AssertionError("must be replaced")
+
+    client = Client()
+    facade = type("Facade", (), {})()
+    gate = namespace["_ProviderGate"](client, 0)
+    gate.install(facade)
+    gate.phase = "refresh"
+    assert client._refresh_di_token().status_code == 200
+    with pytest.raises(namespace["LiveGateError"]):
+        client._http_post("https://di.invalid/token")
+    gate.phase = "profiles"
+    assert (
+        client._run_request("GET", "/userprofile-service/socialProfile").status_code
+        == 200
+    )
+    assert (
+        client._run_request(
+            "GET", "/userprofile-service/userprofile/user-settings"
+        ).status_code
+        == 200
+    )
+    with pytest.raises(namespace["LiveGateError"], match="profile_retry_blocked"):
+        client._run_request("GET", "/userprofile-service/socialProfile")
+    with pytest.raises(namespace["LiveGateError"], match="run_request_blocked"):
+        client._run_request("GET", "/unreviewed")
+    with pytest.raises(namespace["LiveGateError"]):
+        client.cs.get("https://sso.invalid")
+    with pytest.raises(namespace["LiveGateError"]):
+        client.dump("forbidden")
+    assert gate.counts["refresh_provider_entry_count"] == 1
+    assert gate.counts["social_profile_http_count"] == 1
+    assert gate.counts["user_settings_http_count"] == 1
+    assert gate.counts["cached_identity_http_count"] == 0
+    assert gate.counts["auth_profile_retry_attempt_count"] == 1
+    assert gate.counts["unreviewed_profile_attempt_count"] == 1
+    assert gate.counts["credential_fallback_attempt_count"] == 1
+    assert gate.counts["library_token_dump_attempt_count"] == 1
+
+
+def test_v4_driver_fake_end_to_end_foundation_and_drift_plumbing(
+    tmp_path: Path,
+) -> None:
+    """Exercise driver-owned gates with fixtures only; no execute-once path."""
+    driver = (
+        Path("/home/dev/Project/state/test-tmp/garmin-live-acceptance")
+        / "v4-a1-20260808-n14"
+        / "driver.py"
+    )
+    namespace = {"__name__": "v4_driver_dry_test", "__file__": str(driver)}
+    exec(compile(driver.read_text(encoding="utf-8"), str(driver), "exec"), namespace)
+
+    root = tmp_path / "isolated"
+    root.mkdir(mode=0o700)
+    foundation = FoundationConfig(
+        root,
+        root / "data.db",
+        root / "raw",
+        root / "state",
+        root / "state" / "ready.json",
+        root / "state" / "locks" / "foundation.lock",
+        tmp_path,
+    )
+    foundation_tool = FoundationTool(foundation)
+    init = foundation_tool.execute(
+        FoundationRequest("init", "driver-dry-init", "2026-08-08T00:00:00Z")
+    )
+    status = foundation_tool.execute(
+        FoundationRequest("status", "driver-dry-status", "2026-08-08T00:00:00Z")
+    )
+    namespace["_require_foundation_ready"](init, ("initialized", "already_initialized"))
+    namespace["_require_foundation_ready"](status, ("ready",))
+    with pytest.raises(namespace["LiveGateError"]):
+        namespace["_require_foundation_ready"](
+            SimpleNamespace(status="failed", ready=False), ("ready",)
+        )
+
+    _config, sync_tool, _transport, _sleeps = _tool(tmp_path / "sync-receipt")
+    sync_receipt = sync_tool.execute(SyncRequest("auth", invocation_id="driver-dry"))
+    assert namespace["_require_sync_receipt"](sync_tool, sync_receipt) is sync_receipt
+    with pytest.raises(namespace["LiveGateError"], match="sync_receipt_invalid"):
+        namespace["_require_sync_receipt"](sync_tool, object())
+
+    def blocked_by_gate() -> None:
+        raise namespace["LiveGateError"]("blocked")
+
+    with pytest.raises(namespace["LiveGateError"], match="blocked"):
+        namespace["_closed_adapter_invoke"](
+            lambda _error: AssertionError("must not translate gate failures"),
+            blocked_by_gate,
+        )
+
+    key = ("garmin", "personal_records", "record")
+    first = {
+        "raw_ids": {1},
+        "history": {key: [(1, 1, "a" * 64, 1, 1)]},
+        "current": {key: [(1, 1, "a" * 64, 1, 1)]},
+        "raw_tree_digest": "b" * 64,
+    }
+    second = {
+        "raw_ids": {1},
+        "history": {key: [(1, 1, "a" * 64, 1, 1)]},
+        "current": {key: [(1, 1, "a" * 64, 1, 1)]},
+        "raw_tree_digest": "b" * 64,
+    }
+    drift = namespace["_drift_evidence"](first, second)
+    assert drift == {
+        "stable_repeat_count": 1,
+        "changed_payload_count": 0,
+        "stable_repeat_violation_count": 0,
+        "changed_revision_violation_count": 0,
+        "changed_current_provenance_violation_count": 0,
+    }
+    partitions = namespace["_observed_partitions"]([], [], 1_500_000_000, drift)
+    assert partitions["idempotence"] == [
+        "incremental-through-2026-08-06",
+        "snapshot-2026-08-07",
+        "audit-only-2026-08-06",
+        "stable-repeat-no-new-object",
+    ]
+
+
+def test_v4_driver_drift_accepts_only_real_demote_promote_transition() -> None:
+    driver = (
+        Path("/home/dev/Project/state/test-tmp/garmin-live-acceptance")
+        / "v4-a1-20260808-n14"
+        / "driver.py"
+    )
+    namespace = {"__name__": "v4_driver_drift_test", "__file__": str(driver)}
+    exec(compile(driver.read_text(encoding="utf-8"), str(driver), "exec"), namespace)
+    key = ("garmin", "personal_records", "record")
+    old = (1, 1, "a" * 64, 10, 1)
+    demoted = (1, 1, "a" * 64, 10, 0)
+    promoted = (2, 2, "b" * 64, 11, 1)
+
+    def snapshot(
+        history: list[tuple[int, int, str, int, int]], raw_ids: set[int], tree: str
+    ) -> dict[str, object]:
+        return {
+            "raw_ids": raw_ids,
+            "history": {key: history},
+            "current": {key: [entry for entry in history if entry[4] == 1]},
+            "raw_tree_digest": tree,
+        }
+
+    first = snapshot([old], {10}, "c" * 64)
+    second = snapshot([demoted, promoted], {10, 11}, "d" * 64)
+    assert namespace["_drift_evidence"](first, second) == {
+        "stable_repeat_count": 0,
+        "changed_payload_count": 1,
+        "stable_repeat_violation_count": 0,
+        "changed_revision_violation_count": 0,
+        "changed_current_provenance_violation_count": 0,
+    }
+
+    invalid_transitions = (
+        snapshot([demoted, (2, 3, "b" * 64, 11, 1)], {10, 11}, "d" * 64),
+        snapshot([old, promoted], {10, 11}, "d" * 64),
+        snapshot([demoted, (2, 2, "b" * 64, 10, 1)], {10}, "d" * 64),
+        snapshot([demoted, promoted], {10, 11}, "c" * 64),
+    )
+    for invalid in invalid_transitions:
+        evidence = namespace["_drift_evidence"](first, invalid)
+        assert (
+            evidence["changed_revision_violation_count"]
+            + evidence["changed_current_provenance_violation_count"]
+            > 0
+        )
 
 
 def test_network_408_and_temporary_5xx_retry_with_jitter_and_durable_attempts(
