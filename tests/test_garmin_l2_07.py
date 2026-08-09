@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import sqlite3
+import json
+import os
 from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
@@ -308,6 +310,43 @@ def test_v5_driver_has_a_frozen_double_gate_without_entering_live_path() -> None
     assert namespace["main"](["--wrong"]) == 2
     namespace["_verify_marker"]()
     namespace["_verify_static_gate"]()
+
+
+@pytest.mark.parametrize("stage", ("static", "t12", "source", "package", "quiescence"))
+def test_v5_driver_pre_auth_failures_write_independent_zero_stop(
+    tmp_path: Path, stage: str
+) -> None:
+    """Fault only the offline driver seam; never invoke its CLI execute gate."""
+    driver = Path("/home/dev/Project/state/test-tmp/garmin-live-acceptance/trainlab-reliability-21-v5-n14-garmin-live-a1/driver.py")
+    namespace = {"__name__": "v5_driver_preflight_test", "__file__": str(driver)}
+    exec(compile(driver.read_text(encoding="utf-8"), str(driver), "exec"), namespace)
+    marker = tmp_path / "marker"; marker.mkdir(mode=0o700)
+    namespace["MARKER_ROOT"] = marker
+    namespace["_verify_marker"] = lambda **_kwargs: None
+    namespace["_acquire_once_lock"] = lambda: os.open(marker / "execution.lock", os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    namespace["_verify_static_gate"] = lambda: (_ for _ in ()).throw(namespace["LiveGateError"](stage))
+    with pytest.raises(namespace["LiveGateError"]):
+        namespace["_execute_once"]()
+    stop = json.loads((marker / "preflight-stop.json").read_text(encoding="utf-8"))
+    assert stop["failure_code"] == "preflight_static_gate"
+    assert all(stop[name] == 0 for name in ("provider_entry_count", "credential_content_read_count", "credential_write_count", "production_authority_write_count"))
+    assert (marker / "preflight-stop.json").stat().st_mode & 0o777 == 0o600
+    assert not (marker / "auth-prepared.json").exists()
+
+
+def test_v5_driver_preflight_stop_persist_failure_never_reaches_import(tmp_path: Path) -> None:
+    driver = Path("/home/dev/Project/state/test-tmp/garmin-live-acceptance/trainlab-reliability-21-v5-n14-garmin-live-a1/driver.py")
+    namespace = {"__name__": "v5_driver_stop_failure_test", "__file__": str(driver)}
+    exec(compile(driver.read_text(encoding="utf-8"), str(driver), "exec"), namespace)
+    marker = tmp_path / "marker"; marker.mkdir(mode=0o700)
+    namespace["MARKER_ROOT"] = marker
+    namespace["_verify_marker"] = lambda **_kwargs: None
+    namespace["_acquire_once_lock"] = lambda: os.open(marker / "execution.lock", os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    namespace["_verify_static_gate"] = lambda: (_ for _ in ()).throw(namespace["LiveGateError"]("fixture"))
+    namespace["_persist_preflight_stop"] = lambda _code: (_ for _ in ()).throw(OSError("fixture"))
+    with pytest.raises(namespace["LiveGateError"]):
+        namespace["_execute_once"]()
+    assert not (marker / "preflight-stop.json").exists()
 
 
 def test_v4_driver_low_level_allowlist_counts_only_reviewed_entries() -> None:

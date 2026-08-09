@@ -160,7 +160,7 @@
         "document_kind": {"const": "garmin_live_acceptance_preflight_stop"},
         "timezone": {"const": "Asia/Hong_Kong"},
         "failure_stage": {"const": "preflight"},
-        "failure_code": {"enum": ["stable_file_missing", "stable_file_symlink", "stable_file_open_failed", "stable_file_not_regular", "stable_file_replaced", "stable_file_short_read", "stable_file_growth", "stable_file_metadata_drift", "stable_file_read_failed", "stable_file_unknown"]},
+        "failure_code": {"enum": ["stable_file_missing", "stable_file_symlink", "stable_file_open_failed", "stable_file_not_regular", "stable_file_replaced", "stable_file_short_read", "stable_file_growth", "stable_file_metadata_drift", "stable_file_read_failed", "stable_file_unknown", "preflight_static_gate", "preflight_import", "preflight_quiescence", "preflight_authority"]},
         "plan_id": {"const": "trainlab-reliability-21"},
         "plan_version": {"const": 5},
         "plan_hash": {"const": "94562869382e87b00a6417225cba607750914e01b22fd86c78f94ef85f8ecac9"},
