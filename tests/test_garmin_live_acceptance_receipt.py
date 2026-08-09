@@ -205,6 +205,127 @@ def _reseal_result(tool: GarminCollectionTool, document: dict[str, object]) -> N
     document["result_sha256"] = tool._canonical_live_acceptance_sha256(document)
 
 
+def _v5_preflight(
+    tool: GarminCollectionTool, authority: dict[str, Path], stop: Path
+) -> dict[str, object]:
+    return tool._run_live_acceptance_preflight(
+        authority_paths=authority,
+        stop_destination=stop,
+        plan_id="trainlab-reliability-21",
+        plan_version=5,
+        plan_hash="94562869382e87b00a6417225cba607750914e01b22fd86c78f94ef85f8ecac9",
+        attempt_id="trainlab-reliability-21-v5-n14-garmin-live-a1",
+    )
+
+
+def test_stable_authority_streams_database_larger_than_32mib(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    tool = _tool(tmp_path)
+    database = tmp_path / "large.db"
+    with database.open("wb") as handle:
+        handle.truncate(33 * 1024 * 1024 + 1)
+    observed_reads: list[int] = []
+    original_read = os.read
+
+    def bounded_read(descriptor: int, size: int) -> bytes:
+        observed_reads.append(size)
+        return original_read(descriptor, size)
+
+    monkeypatch.setattr("trainlab.garmin.base.os.read", bounded_read)
+    result = _v5_preflight(tool, {"database": database}, tmp_path / "stop.json")
+    assert result["authority_file_count"] == 1
+    assert result["authority_byte_count"] == database.stat().st_size
+    assert max(observed_reads) <= 65_536
+
+
+@pytest.mark.parametrize("kind", ("symlink", "nonregular"))
+def test_preflight_failure_is_redacted_and_blocks_pre_auth_boundary(
+    tmp_path: Path, kind: str
+) -> None:
+    tool = _tool(tmp_path)
+    authority = tmp_path / "authority"
+    if kind == "symlink":
+        target = tmp_path / "target"
+        target.write_bytes(b"fixture")
+        authority.symlink_to(target)
+    else:
+        os.mkfifo(authority)
+    stop = tmp_path / "preflight-stop.json"
+    with pytest.raises(RuntimeError, match="preflight_failed"):
+        _v5_preflight(tool, {"database": authority}, stop)
+    document = json.loads(stop.read_text(encoding="utf-8"))
+    assert _schema_errors(document) == []
+    tool._validate_live_acceptance_document(document)
+    assert document["failure_code"] in {
+        "stable_file_symlink",
+        "stable_file_not_regular",
+    }
+    assert {
+        key: document[key]
+        for key in (
+            "provider_entry_count",
+            "credential_content_read_count",
+            "credential_write_count",
+            "production_authority_write_count",
+        )
+    } == dict.fromkeys(
+        (
+            "provider_entry_count",
+            "credential_content_read_count",
+            "credential_write_count",
+            "production_authority_write_count",
+        ),
+        0,
+    )
+    assert "auth_refresh" not in document and str(authority) not in stop.read_text(
+        encoding="utf-8"
+    )
+
+
+def test_preflight_rejects_replaced_authority_after_open(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    tool = _tool(tmp_path)
+    authority = tmp_path / "authority"
+    authority.write_bytes(b"a" * 70_000)
+    original_read = os.read
+    replaced = False
+
+    def replace_during_read(descriptor: int, size: int) -> bytes:
+        nonlocal replaced
+        block = original_read(descriptor, size)
+        if not replaced:
+            replacement = tmp_path / "replacement"
+            replacement.write_bytes(b"replacement")
+            replacement.replace(authority)
+            replaced = True
+        return block
+
+    monkeypatch.setattr("trainlab.garmin.base.os.read", replace_during_read)
+    with pytest.raises(RuntimeError, match="preflight_failed"):
+        _v5_preflight(tool, {"database": authority}, tmp_path / "stop.json")
+    document = json.loads((tmp_path / "stop.json").read_text(encoding="utf-8"))
+    assert document["failure_code"] in {
+        "stable_file_replaced",
+        "stable_file_metadata_drift",
+    }
+
+
+def test_preflight_stop_persistence_failure_cannot_continue(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    tool = _tool(tmp_path)
+    missing = tmp_path / "missing"
+    monkeypatch.setattr(
+        tool,
+        "_persist_live_acceptance_document",
+        lambda *_args: (_ for _ in ()).throw(OSError("fixture")),
+    )
+    with pytest.raises(RuntimeError, match="preflight_stop_persist_failed"):
+        _v5_preflight(tool, {"database": missing}, tmp_path / "stop.json")
+
+
 def _auth_refresh_receipt(
     tool: GarminCollectionTool,
     *,

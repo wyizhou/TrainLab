@@ -6,7 +6,8 @@
     {"$ref": "#/$defs/checkpoint_document"},
     {"$ref": "#/$defs/result_document"},
     {"$ref": "#/$defs/auth_refresh_receipt_document"},
-    {"$ref": "#/$defs/stop_document"}
+    {"$ref": "#/$defs/stop_document"},
+    {"$ref": "#/$defs/preflight_stop_document"}
   ],
   "$defs": {
     "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
@@ -149,6 +150,29 @@
       "required": ["schema_version", "document_kind", "timezone", "failure_stage", "failure_evidence", "auth_refresh", "checkpoints", "provider_entry_count", "configured_minimum_interval_ns", "adjacent_controlled_provider_intervals_ns", "controlled_provider_entry_ledger", "stop_sha256"],
       "properties": {
         "schema_version": {"const": "1"}, "document_kind": {"const": "garmin_live_acceptance_stop"}, "timezone": {"const": "Asia/Hong_Kong"}, "failure_stage": {"enum": ["preflight", "refresh", "rotation", "parent_fsync", "reload", "checkpoint_persist", "social_profile", "user_settings", "authority_recheck", "foundation", "data"]}, "failure_evidence": {"type": "object", "additionalProperties": false, "required": ["outcome", "last_checkpoint_preserved"], "properties": {"outcome": {"enum": ["pre-provider", "post-provider-local", "ambiguous"]}, "last_checkpoint_preserved": {"const": true}}}, "auth_refresh": {"$ref": "#/$defs/auth_refresh_evidence"}, "checkpoints": {"type": "array", "maxItems": 5, "items": {"$ref": "#/$defs/checkpoint_document"}}, "provider_entry_count": {"type": "integer", "minimum": 0}, "configured_minimum_interval_ns": {"type": "integer", "minimum": 0}, "adjacent_controlled_provider_intervals_ns": {"type": "array", "items": {"type": "integer", "minimum": 0}}, "controlled_provider_entry_ledger": {"type": "array", "items": {"$ref": "#/$defs/provider_entry"}}, "stop_sha256": {"$ref": "#/$defs/hash"}
+      }
+    },
+    "preflight_stop_document": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema_version", "document_kind", "timezone", "failure_stage", "failure_code", "plan_id", "plan_version", "plan_hash", "attempt_id", "authority_file_count", "authority_byte_count", "authority_aggregate_sha256", "provider_entry_count", "credential_content_read_count", "credential_write_count", "production_authority_write_count", "stop_sha256"],
+      "properties": {
+        "schema_version": {"const": "1"},
+        "document_kind": {"const": "garmin_live_acceptance_preflight_stop"},
+        "timezone": {"const": "Asia/Hong_Kong"},
+        "failure_stage": {"const": "preflight"},
+        "failure_code": {"enum": ["stable_file_missing", "stable_file_symlink", "stable_file_open_failed", "stable_file_not_regular", "stable_file_replaced", "stable_file_short_read", "stable_file_growth", "stable_file_metadata_drift", "stable_file_read_failed", "stable_file_unknown"]},
+        "plan_id": {"const": "trainlab-reliability-21"},
+        "plan_version": {"const": 5},
+        "plan_hash": {"const": "94562869382e87b00a6417225cba607750914e01b22fd86c78f94ef85f8ecac9"},
+        "attempt_id": {"type": "string", "pattern": "^trainlab-reliability-21-v5-n14-garmin-live-a1$"},
+        "authority_file_count": {"type": "integer", "minimum": 0},
+        "authority_byte_count": {"type": "integer", "minimum": 0},
+        "authority_aggregate_sha256": {"$ref": "#/$defs/hash"},
+        "provider_entry_count": {"const": 0},
+        "credential_content_read_count": {"const": 0},
+        "credential_write_count": {"const": 0},
+        "production_authority_write_count": {"const": 0},
+        "stop_sha256": {"$ref": "#/$defs/hash"}
       }
     }
   }

@@ -289,6 +289,24 @@ def test_v4_driver_import_and_noarg_are_inert_with_exact_manual_gate() -> None:
     namespace["_verify_t12_edge_input"]()
 
 
+def test_v5_driver_is_a_new_inert_double_gate_with_frozen_bindings() -> None:
+    driver = (
+        Path("/home/dev/Project/state/test-tmp/garmin-live-acceptance")
+        / "trainlab-reliability-21-v5-n14-garmin-live-a1"
+        / "driver.py"
+    )
+    source = driver.read_text(encoding="utf-8")
+    assert "94562869382e87b00a6417225cba607750914e01b22fd86c78f94ef85f8ecac9" in source
+    assert "cdc50b0265c639f2e32dabca34c18c73c8bcdaf8577870017bc9851c66297767" in source
+    assert "v4-a1-20260808-n14" not in source
+    assert "subprocess" not in source and "requests" not in source
+    namespace = {"__name__": "v5_driver_test", "__file__": str(driver)}
+    exec(compile(source, str(driver), "exec"), namespace)
+    assert namespace["main"]([]) == 0
+    assert namespace["main"](["--execute-once"]) == 2
+    namespace["_verify_static_bindings"]()
+
+
 def test_v4_driver_low_level_allowlist_counts_only_reviewed_entries() -> None:
     driver = (
         Path("/home/dev/Project/state/test-tmp/garmin-live-acceptance")
