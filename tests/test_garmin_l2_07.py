@@ -329,6 +329,7 @@ def test_v5_driver_pre_auth_failures_write_independent_zero_stop(
     with pytest.raises(namespace["LiveGateError"]):
         namespace["_execute_once"]()
     stop = json.loads((marker / "preflight-stop.json").read_text(encoding="utf-8"))
+    _tool(tmp_path / "validator")[1]._validate_live_acceptance_document(stop)
     assert stop["failure_code"] == "preflight_static_gate"
     assert all(stop[name] == 0 for name in ("provider_entry_count", "credential_content_read_count", "credential_write_count", "production_authority_write_count"))
     assert (marker / "preflight-stop.json").stat().st_mode & 0o777 == 0o600
