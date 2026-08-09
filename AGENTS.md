@@ -1,6 +1,6 @@
 # TrainLab production agent entry
 
-Always load `harness/shared/HARNESS.md`. For analysis work, also load
+Always load `harness/shared/HARNESS.md` and `AGREEMENTS.md`. For analysis work, also load
 `harness/analysis/HARNESS.md`; for mail work, also load
 `harness/mail/HARNESS.md`. `harness/runtime/HARNESS.md` is historical
 compatibility evidence, not a default production Harness.
@@ -31,3 +31,7 @@ Run production analysis only through `trainlab run`.
    exact enabled binding, stop before any mailbox action and tell the user to
    authenticate and register it; never install, authenticate, or fall back to
    another Gmail transport silently.
+6. `AGREEMENTS.md` contains durable user-agent operating agreements and known
+   failure-prevention rules. Treat every active entry as mandatory. Add a new
+   entry only after the user and agent explicitly agree on it; never silently
+   weaken, delete, or reinterpret an existing entry.
