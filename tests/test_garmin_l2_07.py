@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import sqlite3
 import json
 import os
+import sqlite3
 from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
@@ -320,7 +320,8 @@ def test_v5_driver_pre_auth_failures_write_independent_zero_stop(
     driver = Path("/home/dev/Project/state/test-tmp/garmin-live-acceptance/trainlab-reliability-21-v5-n14-garmin-live-a1/driver.py")
     namespace = {"__name__": "v5_driver_preflight_test", "__file__": str(driver)}
     exec(compile(driver.read_text(encoding="utf-8"), str(driver), "exec"), namespace)
-    marker = tmp_path / "marker"; marker.mkdir(mode=0o700)
+    marker = tmp_path / "marker"
+    marker.mkdir(mode=0o700)
     namespace["MARKER_ROOT"] = marker
     namespace["_verify_marker"] = lambda **_kwargs: None
     namespace["_acquire_once_lock"] = lambda: os.open(marker / "execution.lock", os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
@@ -338,7 +339,8 @@ def test_v5_driver_preflight_stop_persist_failure_never_reaches_import(tmp_path:
     driver = Path("/home/dev/Project/state/test-tmp/garmin-live-acceptance/trainlab-reliability-21-v5-n14-garmin-live-a1/driver.py")
     namespace = {"__name__": "v5_driver_stop_failure_test", "__file__": str(driver)}
     exec(compile(driver.read_text(encoding="utf-8"), str(driver), "exec"), namespace)
-    marker = tmp_path / "marker"; marker.mkdir(mode=0o700)
+    marker = tmp_path / "marker"
+    marker.mkdir(mode=0o700)
     namespace["MARKER_ROOT"] = marker
     namespace["_verify_marker"] = lambda **_kwargs: None
     namespace["_acquire_once_lock"] = lambda: os.open(marker / "execution.lock", os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
