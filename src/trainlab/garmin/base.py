@@ -1,5 +1,4 @@
 """Collection lifecycle, locking, retries and provider-call control."""
-
 from __future__ import annotations
 
 import hashlib
@@ -26,82 +25,36 @@ class _LiveAuthAtomicReplaceError(OSError):
 
 
 class _LiveAcceptancePreflightError(OSError):
-    """A redacted stable-authority preflight failure.
-
-    The message is deliberately a fixed code rather than an operating-system
-    error.  Preflight evidence is permitted to say *what class* of guard
-    failed, but must never turn a production path or file metadata into a
-    durable receipt.
-    """
-
+    """Redacted stable-authority preflight failure."""
     def __init__(self, code: str) -> None:
-        super().__init__(code)
-        self.code = code
+        super().__init__(code); self.code = code
 
 
 class GarminCollectionBase:
-    def __init__(
-        self,
-        config: GarminConfig,
-        transport: GarminTransport | None = None,
-        *,
-        sleep: Callable[[float], None] = time.sleep,
-        clock: Callable[[], datetime] = lambda: datetime.now(TZ),
-        monotonic: Callable[[], float] = time.monotonic,
-        rng: Callable[[], float] | None = None,
-    ) -> None:
-        (
-            self.config,
-            self.transport,
-            self.repo,
-            self.sleep,
-            self.clock,
-            self.monotonic,
-        ) = config, transport, GarminRepository(config), sleep, clock, monotonic
+    def __init__(self, config: GarminConfig, transport: GarminTransport | None = None, *, sleep: Callable[[float], None] = time.sleep, clock: Callable[[], datetime] = lambda: datetime.now(TZ), monotonic: Callable[[], float] = time.monotonic, rng: Callable[[], float] | None = None) -> None:
+        self.config, self.transport, self.repo, self.sleep, self.clock, self.monotonic = config, transport, GarminRepository(config), sleep, clock, monotonic
         self.rng = rng or random.Random().random
         self._last_request: float | None = None
 
     def execute(self, request: SyncRequest) -> SyncReceipt:
-        if request.invocation_id is None:
-            request = replace(request, invocation_id=f"garmin-{uuid.uuid4()}")
-        receipt = SyncReceipt(
-            mode=request.mode,
-            requested_range={
-                "from": request.health_from_local_date,
-                "through": request.through_local_date or request.snapshot_local_date,
-            },
-            effective_range={"from": None, "through": None},
-        )
+        if request.invocation_id is None: request=replace(request,invocation_id=f"garmin-{uuid.uuid4()}")
+        receipt = SyncReceipt(mode=request.mode, requested_range={"from": request.health_from_local_date, "through": request.through_local_date or request.snapshot_local_date}, effective_range={"from": None, "through": None})
         self._validate(request)
-        if request.mode == "status":
-            return self._validated_receipt(self._status(receipt))
-        if request.mode == "auth":
-            return self._validated_receipt(self._auth(receipt))
-        lock = self.config.state_root / "locks" / "garmin.lock"
-        lock.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        if request.mode == "status": return self._validated_receipt(self._status(receipt))
+        if request.mode == "auth": return self._validated_receipt(self._auth(receipt))
+        lock = self.config.state_root / "locks" / "garmin.lock"; lock.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         try:
             fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
         except FileExistsError:
             if not self._recover_stale_lock(lock, request.invocation_id):
-                receipt.status, receipt.completed_at_utc = "lock_busy", utc_now()
-                return self._validated_receipt(receipt)
+                receipt.status, receipt.completed_at_utc = "lock_busy", utc_now(); return self._validated_receipt(receipt)
             fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
         try:
-            os.write(
-                fd,
-                stable_json(
-                    {
-                        "pid": os.getpid(),
-                        "invocation_id": request.invocation_id,
-                        "started_at_utc": receipt.started_at_utc,
-                    }
-                ),
-            )
+            os.write(fd, stable_json({"pid": os.getpid(), "invocation_id": request.invocation_id, "started_at_utc": receipt.started_at_utc}))
             os.fsync(fd)
             return self._validated_receipt(self._execute_locked(request, receipt))
         finally:
-            os.close(fd)
-            lock.unlink(missing_ok=True)
+            os.close(fd); lock.unlink(missing_ok=True)
 
     def _recover_stale_lock(
         self,
@@ -116,35 +69,21 @@ class GarminCollectionBase:
         cannot strand or overlap the interrupted run.
         """
         try:
-            payload = json.loads(lock.read_text())
-            pid = int(payload["pid"])
-            invocation_id = payload.get("invocation_id")
-            os.kill(pid, 0)
-            return False
+            payload=json.loads(lock.read_text()); pid=int(payload["pid"]); invocation_id=payload.get("invocation_id")
+            os.kill(pid, 0); return False
         except ProcessLookupError:
             pass
         except (OSError, ValueError, KeyError, json.JSONDecodeError):
             return False
-        conn = self.repo.connect()
+        conn=self.repo.connect()
         try:
-            active = (
-                conn.execute(
-                    "SELECT 1 FROM garmin_sync_runs WHERE invocation_id=? AND status='started'",
-                    (invocation_id,),
-                ).fetchone()
-                if invocation_id
-                else None
-            )
+            active=conn.execute("SELECT 1 FROM garmin_sync_runs WHERE invocation_id=? AND status='started'",(invocation_id,)).fetchone() if invocation_id else None
             if active and requested_invocation_id != invocation_id:
                 return False
-        finally:
-            conn.close()
-        lock.unlink(missing_ok=True)
-        return True
+        finally: conn.close()
+        lock.unlink(missing_ok=True); return True
 
-    def _execute_locked(
-        self, request: SyncRequest, receipt: SyncReceipt
-    ) -> SyncReceipt:
+    def _execute_locked(self, request: SyncRequest, receipt: SyncReceipt) -> SyncReceipt:
         conn = self.repo.connect()
         run = 0
         actual_start: date | None = None
@@ -155,301 +94,146 @@ class GarminCollectionBase:
             # collection/audit entry.  It is local, idempotent and performs no
             # provider call, so a small repair can heal an existing database.
             self.repo.reconcile_legacy_capability_environment(
-                conn,
-                subject,
-                self.config.region,
+                conn, subject, self.config.region,
             )
             run = self.repo.start_run(conn, request, subject, receipt)
-            if receipt.status != "started":
-                return receipt
+            if receipt.status != "started": return receipt
             # Reparse and reconcile are deliberately offline operations.  In
             # particular they must remain usable while a token is expired or
             # Garmin is unavailable; the immutable raw object is the input.
             repair_strategy = self._repair_strategy(conn, subject, request, receipt)
-            offline_repair = request.mode == "repair" and repair_strategy in {
-                "reparse",
-                "reconcile",
-            }
+            offline_repair = request.mode == "repair" and repair_strategy in {"reparse", "reconcile"}
             if request.mode == "repair" and repair_strategy == "deferred":
                 receipt.status = "deferred"
                 self.repo.finish_run(conn, run, receipt, None, None)
                 return receipt
             if not offline_repair:
-                identity = conn.execute(
-                    "SELECT 1 FROM subject_identities WHERE subject_id=? AND provider='garmin' AND identity_kind='account' AND is_verified=1",
-                    (subject,),
-                ).fetchone()
+                identity = conn.execute("SELECT 1 FROM subject_identities WHERE subject_id=? AND provider='garmin' AND identity_kind='account' AND is_verified=1", (subject,)).fetchone()
                 if identity is None:
-                    receipt.status = "auth_required"
-                    receipt.errors.append(
-                        {
-                            "code": "verified_identity_required",
-                            "resource": "auth",
-                            "logical_object_key": "garmin:account:identity",
-                            "summary": "authenticate before sync",
-                        }
-                    )
-                    self.repo.finish_run(conn, run, receipt, None, None)
-                    return receipt
+                    receipt.status = "auth_required"; receipt.errors.append({"code":"verified_identity_required","resource":"auth","logical_object_key":"garmin:account:identity","summary":"authenticate before sync"}); self.repo.finish_run(conn, run, receipt, None, None); return receipt
                 try:
                     self._transport().login()
                     actual = self._identity_hmac(self._transport().identity())
-                    verified = conn.execute(
-                        "SELECT 1 FROM subject_identities WHERE subject_id=? AND provider='garmin' AND identity_kind='account' AND identity_hmac=? AND is_verified=1",
-                        (subject, actual),
-                    ).fetchone()
+                    verified = conn.execute("SELECT 1 FROM subject_identities WHERE subject_id=? AND provider='garmin' AND identity_kind='account' AND identity_hmac=? AND is_verified=1", (subject, actual)).fetchone()
                     if verified is None:
-                        receipt.status = "failed"
-                        receipt.errors.append(
-                            {
-                                "code": "identity_mismatch",
-                                "resource": "auth",
-                                "logical_object_key": "garmin:account:identity",
-                                "summary": "identity mismatch",
-                            }
-                        )
-                        self.repo.finish_run(conn, run, receipt, None, None)
-                        return receipt
+                        receipt.status="failed"; receipt.errors.append({"code":"identity_mismatch","resource":"auth","logical_object_key":"garmin:account:identity","summary":"identity mismatch"}); self.repo.finish_run(conn,run,receipt,None,None); return receipt
                 except GarminError as exc:
-                    receipt.status = (
-                        "auth_required" if exc.http_status == 401 else "failed"
-                    )
-                    receipt.errors.append(
-                        {
-                            "code": exc.code,
-                            "resource": "auth",
-                            "logical_object_key": "garmin:account:identity",
-                            "summary": "provider authentication failed",
-                        }
-                    )
-                    self.repo.finish_run(conn, run, receipt, None, None)
-                    return receipt
+                    receipt.status="auth_required" if exc.http_status==401 else "failed"; receipt.errors.append({"code":exc.code,"resource":"auth","logical_object_key":"garmin:account:identity","summary":"provider authentication failed"}); self.repo.finish_run(conn,run,receipt,None,None); return receipt
             today = self._today_local()
             yesterday = today - timedelta(days=1)
             if request.mode == "repair" and offline_repair:
-                actual_through = (
-                    date.fromisoformat(request.through_local_date)
-                    if request.through_local_date
-                    else yesterday
-                )
+                actual_through = date.fromisoformat(request.through_local_date) if request.through_local_date else yesterday
                 actual_start = date.fromisoformat(
                     request.health_from_local_date
                     or self.config.history_start_date
                     or actual_through.isoformat()
                 )
-                receipt.effective_range = {
-                    "from": actual_start.isoformat(),
-                    "through": actual_through.isoformat(),
-                }
-                self._offline_repair(
-                    conn,
-                    run,
-                    subject,
-                    replace(request, repair_strategy=repair_strategy),
-                    receipt,
-                )
+                receipt.effective_range = {"from": actual_start.isoformat(), "through": actual_through.isoformat()}
+                self._offline_repair(conn, run, subject, replace(request, repair_strategy=repair_strategy), receipt)
                 self._advance_repair_health_cursors(
-                    conn,
-                    run,
-                    subject,
-                    request,
-                    actual_through,
+                    conn, run, subject, request, actual_through,
                 )
             elif request.mode in {"full", "incremental", "snapshot"}:
                 plan = self._build_mode_plan(conn, subject, request, today)
                 prior_gap_ceiling = (
-                    int(
-                        conn.execute(
-                            "SELECT coalesce(max(id),0) FROM garmin_sync_gaps"
-                        ).fetchone()[0]
-                    )
+                    int(conn.execute(
+                        "SELECT coalesce(max(id),0) FROM garmin_sync_gaps"
+                    ).fetchone()[0])
                     if request.mode == "incremental"
                     else 0
                 )
-                actual_start, actual_through = (
-                    plan.effective_start,
-                    plan.effective_through,
-                )
+                actual_start, actual_through = plan.effective_start, plan.effective_through
                 receipt.effective_range = {
                     "from": actual_start.isoformat(),
                     "through": actual_through.isoformat(),
                 }
                 if plan.snapshot:
                     receipt.coverage_state = "partial"
-                self._account_basics(
-                    conn, run, subject, plan.effective_through, request, receipt
-                )
-                self._account_b1(
-                    conn, run, subject, plan.effective_through, request, receipt
-                )
+                self._account_basics(conn, run, subject, plan.effective_through, request, receipt)
+                self._account_b1(conn, run, subject, plan.effective_through, request, receipt)
                 selected = set(request.resource_kinds)
                 for window in plan.health_windows:
                     scoped = replace(request, resource_kinds=(window.resource_kind,))
                     self._health(
-                        conn,
-                        run,
-                        subject,
-                        window.start,
-                        window.through,
-                        scoped,
-                        receipt,
+                        conn, run, subject, window.start, window.through,
+                        scoped, receipt,
                     )
                 # Explicit account-only repair is a closed provider scope: it
                 # must not enumerate activities merely because activities are
                 # normally part of a full collection invocation.
                 activity_scope = {
-                    "activity_inventory",
-                    "activity_summary",
-                    "activity_fit",
-                    "activity_details_fallback",
-                    "activities",
+                    "activity_inventory", "activity_summary", "activity_fit",
+                    "activity_details_fallback", "activities",
                     *ACTIVITY_ENRICHMENT_RESOURCES,
                 }
-                if (
-                    request.activity_ids
-                    or not selected
-                    or selected.intersection(activity_scope)
-                ):
+                if request.activity_ids or not selected or selected.intersection(activity_scope):
                     self._activities(
-                        conn,
-                        run,
-                        subject,
-                        plan.activity_start,
-                        plan.activity_through,
-                        request,
-                        receipt,
+                        conn, run, subject, plan.activity_start,
+                        plan.activity_through, request, receipt,
                         not selected or "activity_fit" in selected,
                     )
                 if request.mode == "incremental":
                     self._process_due_gaps(
-                        conn,
-                        run,
-                        subject,
-                        request,
-                        receipt,
-                        plan.activity_start,
-                        plan.activity_through,
+                        conn, run, subject, request, receipt,
+                        plan.activity_start, plan.activity_through,
                         prior_gap_ceiling,
                     )
                 if not plan.snapshot:
                     for window in plan.health_windows:
                         self.repo.advance_cursor(
-                            conn,
-                            subject,
-                            window.resource_kind,
-                            window.through.isoformat(),
-                            run,
+                            conn, subject, window.resource_kind,
+                            window.through.isoformat(), run,
                         )
                     if receipt.coverage_state != "partial":
                         receipt.coverage_state = (
                             "complete"
-                            if self._health_windows_complete(
-                                conn, subject, plan.health_windows
-                            )
+                            if self._health_windows_complete(conn, subject, plan.health_windows)
                             else "partial"
                         )
             elif request.mode == "audit":
-                actual_through = (
-                    date.fromisoformat(request.through_local_date)
-                    if request.through_local_date
-                    else today
-                )
+                actual_through = date.fromisoformat(request.through_local_date) if request.through_local_date else today
                 actual_start = date.fromisoformat(
                     request.health_from_local_date
                     or self.config.history_start_date
                     or actual_through.isoformat()
                 )
-                receipt.effective_range = {
-                    "from": actual_start.isoformat(),
-                    "through": actual_through.isoformat(),
-                }
+                receipt.effective_range = {"from": actual_start.isoformat(), "through": actual_through.isoformat()}
                 self._audit(conn, subject, receipt, actual_start, actual_through)
             elif request.mode == "repair":
-                actual_through = (
-                    date.fromisoformat(request.through_local_date)
-                    if request.through_local_date
-                    else yesterday
-                )
+                actual_through = date.fromisoformat(request.through_local_date) if request.through_local_date else yesterday
                 actual_start = date.fromisoformat(
                     request.health_from_local_date
                     or self.config.history_start_date
                     or actual_through.isoformat()
                 )
-                receipt.effective_range = {
-                    "from": actual_start.isoformat(),
-                    "through": actual_through.isoformat(),
-                }
-                self._account_basics(
-                    conn, run, subject, actual_through, request, receipt
-                )
+                receipt.effective_range = {"from": actual_start.isoformat(), "through": actual_through.isoformat()}
+                self._account_basics(conn, run, subject, actual_through, request, receipt)
                 self._account_b1(conn, run, subject, actual_through, request, receipt)
                 selected = set(request.resource_kinds)
                 if not selected or selected.intersection(COLLECTED_HEALTH_RESOURCES):
-                    self._health(
-                        conn,
-                        run,
-                        subject,
-                        actual_start,
-                        actual_through,
-                        request,
-                        receipt,
-                    )
+                    self._health(conn, run, subject, actual_start, actual_through, request, receipt)
                 activity_scope = {
-                    "activity_inventory",
-                    "activity_summary",
-                    "activity_fit",
-                    "activity_details_fallback",
-                    "activities",
+                    "activity_inventory", "activity_summary", "activity_fit",
+                    "activity_details_fallback", "activities",
                     *ACTIVITY_ENRICHMENT_RESOURCES,
                 }
-                if (
-                    request.activity_ids
-                    or not selected
-                    or selected.intersection(activity_scope)
-                ):
+                if request.activity_ids or not selected or selected.intersection(activity_scope):
                     self._activities(
-                        conn,
-                        run,
-                        subject,
-                        actual_start,
-                        actual_through,
-                        request,
-                        receipt,
-                        not selected or "activity_fit" in selected,
+                        conn, run, subject, actual_start, actual_through,
+                        request, receipt, not selected or "activity_fit" in selected,
                     )
                 self._advance_repair_health_cursors(
-                    conn,
-                    run,
-                    subject,
-                    request,
-                    actual_through,
+                    conn, run, subject, request, actual_through,
                 )
-            receipt.status = (
-                "deferred"
-                if receipt.counts["deferred"]
-                else (
-                    "partial"
-                    if receipt.counts["failed"]
-                    or (
-                        request.mode != "snapshot"
-                        and receipt.coverage_state == "partial"
-                    )
-                    else "succeeded"
+            receipt.status = "deferred" if receipt.counts["deferred"] else (
+                "partial"
+                if receipt.counts["failed"] or (
+                    request.mode != "snapshot" and receipt.coverage_state == "partial"
                 )
+                else "succeeded"
             )
-            receipt.open_gap_count = int(
-                conn.execute(
-                    "SELECT count(*) FROM garmin_sync_gaps WHERE subject_id=? AND status IN ('open','deferred')",
-                    (subject,),
-                ).fetchone()[0]
-            )
-            receipt.complete_through_by_resource = {
-                r["resource_kind"]: r["complete_through_local_date"]
-                for r in conn.execute(
-                    "SELECT resource_kind,complete_through_local_date FROM garmin_sync_cursors WHERE subject_id=?",
-                    (subject,),
-                )
-            }
+            receipt.open_gap_count = int(conn.execute("SELECT count(*) FROM garmin_sync_gaps WHERE subject_id=? AND status IN ('open','deferred')", (subject,)).fetchone()[0])
+            receipt.complete_through_by_resource = {r["resource_kind"]: r["complete_through_local_date"] for r in conn.execute("SELECT resource_kind,complete_through_local_date FROM garmin_sync_cursors WHERE subject_id=?", (subject,))}
             if receipt.next_retry_at_utc is None:
                 pending_retry = conn.execute(
                     """SELECT min(next_retry_at_utc) FROM garmin_sync_gaps
@@ -459,36 +243,17 @@ class GarminCollectionBase:
                 ).fetchone()[0]
                 receipt.next_retry_at_utc = pending_retry
             self.repo.finish_run(
-                conn,
-                run,
-                receipt,
+                conn, run, receipt,
                 actual_start.isoformat() if actual_start else None,
                 actual_through.isoformat() if actual_through else None,
             )
             return receipt
         except GarminError as exc:
-            receipt.status = "auth_required" if exc.http_status == 401 else "failed"
-            receipt.errors.append(
-                {
-                    "code": exc.code,
-                    "resource": "garmin",
-                    "logical_object_key": "garmin:run",
-                    "summary": exc.code,
-                }
-            )
-            try:
-                self.repo.finish_run(
-                    conn,
-                    run,
-                    receipt,
-                    actual_start.isoformat() if actual_start else None,
-                    actual_through.isoformat() if actual_through else None,
-                )
-            except Exception:
-                receipt.completed_at_utc = utc_now()
+            receipt.status = "auth_required" if exc.http_status == 401 else "failed"; receipt.errors.append({"code": exc.code, "resource": "garmin", "logical_object_key":"garmin:run","summary": exc.code})
+            try: self.repo.finish_run(conn, run, receipt, actual_start.isoformat() if actual_start else None, actual_through.isoformat() if actual_through else None)
+            except Exception: receipt.completed_at_utc = utc_now()
             return receipt
-        finally:
-            conn.close()
+        finally: conn.close()
 
     def _today_local(self) -> date:
         value = self.clock()
@@ -505,8 +270,7 @@ class GarminCollectionBase:
     ) -> CollectionModePlan:
         selected = set(request.resource_kinds)
         health_resources = tuple(
-            resource
-            for resource in COLLECTED_HEALTH_RESOURCES
+            resource for resource in COLLECTED_HEALTH_RESOURCES
             if not selected or resource in selected
         )
         cursors = {
@@ -545,8 +309,7 @@ class GarminCollectionBase:
         """
         selected = set(request.resource_kinds)
         return tuple(
-            resource
-            for resource in COLLECTED_HEALTH_RESOURCES
+            resource for resource in COLLECTED_HEALTH_RESOURCES
             if not selected or resource in selected
         )
 
@@ -568,11 +331,7 @@ class GarminCollectionBase:
         """
         for resource in self._repair_cursor_resources(request):
             self.repo.advance_cursor(
-                conn,
-                subject,
-                resource,
-                actual_through.isoformat(),
-                run,
+                conn, subject, resource, actual_through.isoformat(), run,
             )
 
     @staticmethod
@@ -582,11 +341,7 @@ class GarminCollectionBase:
         windows: Iterable[ResourceDateWindow],
     ) -> bool:
         closed_states = {
-            "fetched",
-            "empty",
-            "not_enabled",
-            "not_available",
-            "not_supported",
+            "fetched", "empty", "not_enabled", "not_available", "not_supported",
         }
         for window in windows:
             rows = conn.execute(
@@ -596,10 +351,8 @@ class GarminCollectionBase:
                      AND resource_kind=? AND local_date>=? AND local_date<=?
                    ORDER BY id""",
                 (
-                    subject,
-                    window.resource_kind,
-                    window.start.isoformat(),
-                    window.through.isoformat(),
+                    subject, window.resource_kind,
+                    window.start.isoformat(), window.through.isoformat(),
                 ),
             )
             latest = {row["local_date"]: row["availability_state"] for row in rows}
@@ -616,10 +369,8 @@ class GarminCollectionBase:
                      AND window_end_local_date>=?
                    LIMIT 1""",
                 (
-                    subject,
-                    window.resource_kind,
-                    window.through.isoformat(),
-                    window.start.isoformat(),
+                    subject, window.resource_kind,
+                    window.through.isoformat(), window.start.isoformat(),
                 ),
             ).fetchone()
             if blocking_gap is not None:
@@ -642,9 +393,8 @@ class GarminCollectionBase:
         if limit <= 0:
             return
         now = self._now_utc().isoformat().replace("+00:00", "Z")
-        gaps = list(
-            conn.execute(
-                """SELECT id,resource_kind,logical_object_key,
+        gaps = list(conn.execute(
+            """SELECT id,resource_kind,logical_object_key,
                       window_start_local_date,window_end_local_date,stage
                FROM garmin_sync_gaps
                WHERE id<=?
@@ -665,15 +415,11 @@ class GarminCollectionBase:
                         CASE WHEN next_retry_at_utc IS NULL THEN 0 ELSE 1 END,
                         next_retry_at_utc,id
                LIMIT ?""",
-                (prior_gap_ceiling, now, run, limit),
-            )
-        )
+            (prior_gap_ceiling, now, run, limit),
+        ))
         activity_resources = {
-            "activity_inventory",
-            "activity_summary",
-            "activity_fit",
-            "activity_details_fallback",
-            "activities",
+            "activity_inventory", "activity_summary", "activity_fit",
+            "activity_details_fallback", "activities",
             *ACTIVITY_ENRICHMENT_RESOURCES,
         }
         for gap in gaps:
@@ -705,13 +451,7 @@ class GarminCollectionBase:
                     activity_ids=(),
                 )
                 self._health(
-                    conn,
-                    run,
-                    subject,
-                    start,
-                    through,
-                    scoped,
-                    receipt,
+                    conn, run, subject, start, through, scoped, receipt,
                 )
                 continue
             if resource not in activity_resources:
@@ -727,13 +467,10 @@ class GarminCollectionBase:
                 activity_ids=(activity_id,) if activity_id else (),
             )
             self._activities(
-                conn,
-                run,
-                subject,
+                conn, run, subject,
                 start if activity_id else activity_start,
                 through if activity_id else activity_through,
-                scoped,
-                receipt,
+                scoped, receipt,
                 selected_resource == "activity_fit",
             )
 
@@ -742,7 +479,7 @@ class GarminCollectionBase:
         prefix = "garmin:activity:"
         if not logical_key.startswith(prefix):
             return None
-        value = logical_key[len(prefix) :].strip()
+        value = logical_key[len(prefix):].strip()
         return value if value and ":" not in value else None
 
     def _now_utc(self) -> datetime:
@@ -751,9 +488,7 @@ class GarminCollectionBase:
             value = value.replace(tzinfo=TZ)
         return value.astimezone(UTC)
 
-    def _classify(
-        self, error: GarminError, *, allows_404: bool = False
-    ) -> RetryClassification:
+    def _classify(self, error: GarminError, *, allows_404: bool = False) -> RetryClassification:
         return classify_garmin_error(
             error,
             allows_404=allows_404,
@@ -768,21 +503,11 @@ class GarminCollectionBase:
             # between separate attempts while retaining a bounded value.
             seconds = min(
                 86_400,
-                self.config.rate_limit_fallback_seconds * (2**attempt),
+                self.config.rate_limit_fallback_seconds * (2 ** attempt),
             )
-        return (
-            (self._now_utc() + timedelta(seconds=seconds))
-            .isoformat()
-            .replace("+00:00", "Z")
-        )
+        return (self._now_utc() + timedelta(seconds=seconds)).isoformat().replace("+00:00", "Z")
 
-    def _cooldown_error(
-        self,
-        conn: sqlite3.Connection | None,
-        subject: int | None,
-        resource: str | None,
-        key: str | None,
-    ) -> GarminError | None:
+    def _cooldown_error(self, conn: sqlite3.Connection | None, subject: int | None, resource: str | None, key: str | None) -> GarminError | None:
         if conn is None or subject is None or resource is None or key is None:
             return None
         row = conn.execute(
@@ -795,32 +520,13 @@ class GarminCollectionBase:
         if row is None:
             return None
         try:
-            due = datetime.fromisoformat(
-                row["next_retry_at_utc"].replace("Z", "+00:00")
-            )
+            due = datetime.fromisoformat(row["next_retry_at_utc"].replace("Z", "+00:00"))
         except (TypeError, ValueError):
             return GarminError("cooldown_corrupt")
         remaining = (due - self._now_utc()).total_seconds()
-        return (
-            GarminError(
-                "cooldown_active", http_status=429, retry_after=max(1, int(remaining))
-            )
-            if remaining > 0
-            else None
-        )
+        return GarminError("cooldown_active", http_status=429, retry_after=max(1, int(remaining))) if remaining > 0 else None
 
-    def _call(
-        self,
-        fn: Callable[[], Any],
-        *,
-        conn: sqlite3.Connection | None = None,
-        run: int | None = None,
-        subject: int | None = None,
-        resource: str | None = None,
-        key: str | None = None,
-        stage: str = "fetch",
-        allows_404: bool = False,
-    ) -> Any:
+    def _call(self, fn: Callable[[], Any], *, conn: sqlite3.Connection | None = None, run: int | None = None, subject: int | None = None, resource: str | None = None, key: str | None = None, stage: str = "fetch", allows_404: bool = False) -> Any:
         """Execute one provider call with controlled retry and durable attempts."""
         cooldown = self._cooldown_error(conn, subject, resource, key)
         if cooldown is not None:
@@ -878,10 +584,7 @@ class GarminCollectionBase:
                     except GarminError:
                         raise GarminError("auth_required", http_status=401) from None
                     continue
-                if (
-                    classification.status != "retry"
-                    or attempt + 1 == self.config.max_attempts
-                ):
+                if classification.status != "retry" or attempt + 1 == self.config.max_attempts:
                     raise exc
                 if exc.http_status == 429:
                     # Short Retry-After is honoured precisely; long cooldowns
@@ -894,10 +597,7 @@ class GarminCollectionBase:
                         )
                     )
                 else:
-                    delay = min(
-                        self.config.retry_max_seconds,
-                        self.config.retry_base_seconds * (2**attempt) + self.rng(),
-                    )
+                    delay = min(self.config.retry_max_seconds, self.config.retry_base_seconds * (2 ** attempt) + self.rng())
                     self.sleep(delay)
         raise last or GarminError("unknown")
 
@@ -912,9 +612,7 @@ class GarminCollectionBase:
         part of the final-result payload.
         """
         try:
-            payload = json.loads(
-                json.dumps(document, allow_nan=False, ensure_ascii=False)
-            )
+            payload = json.loads(json.dumps(document, allow_nan=False, ensure_ascii=False))
         except (TypeError, ValueError) as exc:
             raise ValueError("live_acceptance_not_json") from exc
         kind = payload.get("document_kind")
@@ -930,187 +628,69 @@ class GarminCollectionBase:
             payload.pop("stop_sha256", None)
         else:
             raise ValueError("live_acceptance_document_kind")
-        canonical = json.dumps(
-            payload,
-            allow_nan=False,
-            ensure_ascii=False,
-            separators=(",", ":"),
-            sort_keys=True,
-        ).encode("utf-8")
+        canonical = json.dumps(payload, allow_nan=False, ensure_ascii=False, separators=(",", ":"), sort_keys=True).encode("utf-8")
         return hashlib.sha256(canonical).hexdigest()
 
     @staticmethod
-    def _stable_regular_file_sha256(
-        path: Path, *, chunk_size: int = 65_536
-    ) -> dict[str, Any]:
-        """Hash one authority file through a no-follow, stable descriptor."""
-        if not isinstance(chunk_size, int) or chunk_size <= 0:
-            raise ValueError("live_acceptance_chunk_size_invalid")
-        fields = (
-            "st_dev",
-            "st_ino",
-            "st_size",
-            "st_mode",
-            "st_uid",
-            "st_gid",
-            "st_nlink",
-            "st_mtime_ns",
-            "st_ctime_ns",
-        )
-
-        def facts(value: os.stat_result) -> tuple[int, ...]:
-            return tuple(int(getattr(value, field)) for field in fields)
-
+    def _stable_regular_file_sha256(path: Path, *, chunk_size: int = 65_536) -> dict[str, Any]:
+        """Bounded no-follow hash with exact-byte and stable-metadata checks."""
+        if not isinstance(chunk_size, int) or chunk_size <= 0: raise ValueError("live_acceptance_chunk_size_invalid")
+        fields=("st_dev","st_ino","st_size","st_mode","st_uid","st_gid","st_nlink","st_mtime_ns","st_ctime_ns")
+        def facts(value: os.stat_result) -> tuple[int, ...]: return tuple(int(getattr(value, field)) for field in fields)
         try:
-            opened_entry = os.lstat(path)
-            if stat.S_ISLNK(opened_entry.st_mode):
-                raise _LiveAcceptancePreflightError("stable_file_symlink")
-            if not stat.S_ISREG(opened_entry.st_mode):
-                raise _LiveAcceptancePreflightError("stable_file_not_regular")
-            descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
-        except _LiveAcceptancePreflightError:
-            raise
-        except FileNotFoundError as exc:
-            raise _LiveAcceptancePreflightError("stable_file_missing") from exc
-        except OSError as exc:
-            raise _LiveAcceptancePreflightError("stable_file_open_failed") from exc
+            named_before=os.lstat(path)
+            if stat.S_ISLNK(named_before.st_mode): raise _LiveAcceptancePreflightError("stable_file_symlink")
+            if not stat.S_ISREG(named_before.st_mode): raise _LiveAcceptancePreflightError("stable_file_not_regular")
+            descriptor=os.open(path, os.O_RDONLY|getattr(os,"O_NOFOLLOW",0))
+        except _LiveAcceptancePreflightError: raise
+        except FileNotFoundError as exc: raise _LiveAcceptancePreflightError("stable_file_missing") from exc
+        except OSError as exc: raise _LiveAcceptancePreflightError("stable_file_open_failed") from exc
         try:
-            before = os.fstat(descriptor)
-            if not stat.S_ISREG(before.st_mode):
-                raise _LiveAcceptancePreflightError("stable_file_not_regular")
-            if facts(opened_entry) != facts(before):
-                raise _LiveAcceptancePreflightError("stable_file_replaced")
-            remaining = before.st_size
-            digest = hashlib.sha256()
+            before=os.fstat(descriptor)
+            if not stat.S_ISREG(before.st_mode): raise _LiveAcceptancePreflightError("stable_file_not_regular")
+            if facts(named_before)!=facts(before): raise _LiveAcceptancePreflightError("stable_file_replaced")
+            remaining=before.st_size; digest=hashlib.sha256()
             while remaining:
-                block = os.read(descriptor, min(chunk_size, remaining))
-                if not block:
-                    raise _LiveAcceptancePreflightError("stable_file_short_read")
-                digest.update(block)
-                remaining -= len(block)
-            if os.read(descriptor, 1):
-                raise _LiveAcceptancePreflightError("stable_file_growth")
-            after = os.fstat(descriptor)
-            final_entry = os.lstat(path)
-            if not stat.S_ISREG(after.st_mode) or stat.S_ISLNK(final_entry.st_mode):
-                raise _LiveAcceptancePreflightError("stable_file_not_regular")
-            if facts(before) != facts(after):
-                raise _LiveAcceptancePreflightError("stable_file_metadata_drift")
-            if facts(after) != facts(final_entry):
-                raise _LiveAcceptancePreflightError("stable_file_replaced")
-            return {"sha256": digest.hexdigest(), "byte_count": before.st_size}
-        except _LiveAcceptancePreflightError:
-            raise
-        except OSError as exc:
-            raise _LiveAcceptancePreflightError("stable_file_read_failed") from exc
-        finally:
-            os.close(descriptor)
+                block=os.read(descriptor,min(chunk_size,remaining))
+                if not block: raise _LiveAcceptancePreflightError("stable_file_short_read")
+                digest.update(block); remaining-=len(block)
+            if os.read(descriptor,1): raise _LiveAcceptancePreflightError("stable_file_growth")
+            after=os.fstat(descriptor); named_after=os.lstat(path)
+            if not stat.S_ISREG(after.st_mode) or stat.S_ISLNK(named_after.st_mode): raise _LiveAcceptancePreflightError("stable_file_not_regular")
+            if facts(before)!=facts(after): raise _LiveAcceptancePreflightError("stable_file_metadata_drift")
+            if facts(after)!=facts(named_after): raise _LiveAcceptancePreflightError("stable_file_replaced")
+            return {"sha256":digest.hexdigest(),"byte_count":before.st_size}
+        except _LiveAcceptancePreflightError: raise
+        except OSError as exc: raise _LiveAcceptancePreflightError("stable_file_read_failed") from exc
+        finally: os.close(descriptor)
 
-    def _make_live_acceptance_preflight_stop(
-        self,
-        *,
-        failure_code: str,
-        plan_id: str,
-        plan_version: int,
-        plan_hash: str,
-        attempt_id: str,
-        authority_file_count: int,
-        authority_byte_count: int,
-        authority_aggregate_sha256: str,
-    ) -> dict[str, Any]:
-        """Build minimal durable evidence available before any auth evidence."""
-        document: dict[str, Any] = {
-            "schema_version": "1",
-            "document_kind": "garmin_live_acceptance_preflight_stop",
-            "timezone": "Asia/Hong_Kong",
-            "failure_stage": "preflight",
-            "failure_code": failure_code,
-            "plan_id": plan_id,
-            "plan_version": plan_version,
-            "plan_hash": plan_hash,
-            "attempt_id": attempt_id,
-            "authority_file_count": authority_file_count,
-            "authority_byte_count": authority_byte_count,
-            "authority_aggregate_sha256": authority_aggregate_sha256,
-            "provider_entry_count": 0,
-            "credential_content_read_count": 0,
-            "credential_write_count": 0,
-            "production_authority_write_count": 0,
-            "stop_sha256": "0" * 64,
-        }
-        document["stop_sha256"] = self._canonical_live_acceptance_sha256(document)
-        return document
+    def _make_live_acceptance_preflight_stop(self, *, failure_code: str, plan_id: str, plan_version: int, plan_hash: str, attempt_id: str, authority_file_count: int, authority_byte_count: int, authority_aggregate_sha256: str) -> dict[str, Any]:
+        document: dict[str, Any]={"schema_version":"1","document_kind":"garmin_live_acceptance_preflight_stop","timezone":"Asia/Hong_Kong","failure_stage":"preflight","failure_code":failure_code,"plan_id":plan_id,"plan_version":plan_version,"plan_hash":plan_hash,"attempt_id":attempt_id,"authority_file_count":authority_file_count,"authority_byte_count":authority_byte_count,"authority_aggregate_sha256":authority_aggregate_sha256,"provider_entry_count":0,"credential_content_read_count":0,"credential_write_count":0,"production_authority_write_count":0,"stop_sha256":"0"*64}
+        document["stop_sha256"]=self._canonical_live_acceptance_sha256(document); return document
 
-    def _run_live_acceptance_preflight(
-        self,
-        *,
-        authority_paths: Mapping[str, Path],
-        stop_destination: Path,
-        plan_id: str,
-        plan_version: int,
-        plan_hash: str,
-        attempt_id: str,
-    ) -> dict[str, Any]:
-        """Prove authority files stable or atomically stop before auth access."""
-        aggregate, file_count, byte_count = hashlib.sha256(), 0, 0
-        failure_code: str | None = None
+    def _run_live_acceptance_preflight(self, *, authority_paths: Mapping[str, Path], stop_destination: Path, plan_id: str, plan_version: int, plan_hash: str, attempt_id: str) -> dict[str, Any]:
+        """Stop durably on any authority failure before caller may load auth."""
+        aggregate,file_count,byte_count=hashlib.sha256(),0,0; failure_code: str|None=None
         try:
             for authority_id in sorted(authority_paths):
-                result = self._stable_regular_file_sha256(authority_paths[authority_id])
-                aggregate.update(authority_id.encode("utf-8"))
-                aggregate.update(b"\0")
-                aggregate.update(result["sha256"].encode("ascii"))
-                aggregate.update(b"\0")
-                aggregate.update(str(result["byte_count"]).encode("ascii"))
-                aggregate.update(b"\n")
-                file_count += 1
-                byte_count += result["byte_count"]
-        except _LiveAcceptancePreflightError as exc:
-            failure_code = exc.code
-        except Exception:
-            failure_code = "stable_file_unknown"
+                result=self._stable_regular_file_sha256(authority_paths[authority_id]); aggregate.update(authority_id.encode("utf-8")); aggregate.update(b"\0"); aggregate.update(result["sha256"].encode("ascii")); aggregate.update(b"\0"); aggregate.update(str(result["byte_count"]).encode("ascii")); aggregate.update(b"\n"); file_count+=1; byte_count+=result["byte_count"]
+        except _LiveAcceptancePreflightError as exc: failure_code=exc.code
+        except Exception: failure_code="stable_file_unknown"
         if failure_code is not None:
-            stopped = self._make_live_acceptance_preflight_stop(
-                failure_code=failure_code,
-                plan_id=plan_id,
-                plan_version=plan_version,
-                plan_hash=plan_hash,
-                attempt_id=attempt_id,
-                authority_file_count=file_count,
-                authority_byte_count=byte_count,
-                authority_aggregate_sha256=aggregate.hexdigest(),
-            )
-            try:
-                self._persist_live_acceptance_document(stop_destination, stopped)
-            except Exception:
-                raise RuntimeError(
-                    "live_acceptance_preflight_stop_persist_failed"
-                ) from None
+            stopped=self._make_live_acceptance_preflight_stop(failure_code=failure_code,plan_id=plan_id,plan_version=plan_version,plan_hash=plan_hash,attempt_id=attempt_id,authority_file_count=file_count,authority_byte_count=byte_count,authority_aggregate_sha256=aggregate.hexdigest())
+            try: self._persist_live_acceptance_document(stop_destination,stopped)
+            except Exception: raise RuntimeError("live_acceptance_preflight_stop_persist_failed") from None
             raise RuntimeError("live_acceptance_preflight_failed") from None
-        return {
-            "authority_file_count": file_count,
-            "authority_byte_count": byte_count,
-            "authority_aggregate_sha256": aggregate.hexdigest(),
-        }
+        return {"authority_file_count":file_count,"authority_byte_count":byte_count,"authority_aggregate_sha256":aggregate.hexdigest()}
 
     @staticmethod
     def _live_acceptance_schema() -> dict[str, Any]:
-        schema_path = (
-            Path(__file__).resolve().parents[3]
-            / "harness"
-            / "schemas"
-            / "garmin_live_acceptance_receipt.schema.json"
-        )
+        schema_path = Path(__file__).resolve().parents[3] / "harness" / "schemas" / "garmin_live_acceptance_receipt.schema.json"
         return json.loads(schema_path.read_text(encoding="utf-8"))
 
     def _validate_live_acceptance_document(self, document: Mapping[str, Any]) -> None:
         """Fail closed unless a redacted checkpoint/result is semantically sound."""
-        errors = sorted(
-            Draft202012Validator(
-                self._live_acceptance_schema(), format_checker=FormatChecker()
-            ).iter_errors(document),
-            key=lambda error: list(error.absolute_path),
-        )
+        errors = sorted(Draft202012Validator(self._live_acceptance_schema(), format_checker=FormatChecker()).iter_errors(document), key=lambda error: list(error.absolute_path))
         if errors:
             raise ValueError("live_acceptance_schema_invalid")
         kind = document["document_kind"]
@@ -1224,16 +804,10 @@ class GarminCollectionBase:
         intervals = document["adjacent_controlled_provider_intervals_ns"]
         if intervals != checkpoints[-1]["adjacent_controlled_provider_intervals_ns"]:
             raise ValueError("live_acceptance_final_interval_prefix")
-        if (
-            document["controlled_provider_entry_ledger"]
-            != checkpoints[-1]["controlled_provider_entry_ledger"]
-        ):
+        if document["controlled_provider_entry_ledger"] != checkpoints[-1]["controlled_provider_entry_ledger"]:
             raise ValueError("live_acceptance_final_ledger_prefix")
         failure = document["failure_evidence"]
-        if (
-            failure["outcome"] != "none"
-            or failure["last_checkpoint_preserved"] is not None
-        ):
+        if failure["outcome"] != "none" or failure["last_checkpoint_preserved"] is not None:
             raise ValueError("live_acceptance_result_failure_evidence")
         auth = document["auth_refresh"]
         counts = auth["counts"]
@@ -1277,19 +851,8 @@ class GarminCollectionBase:
 
     @staticmethod
     def _validate_live_acceptance_preflight_stop(document: Mapping[str, Any]) -> None:
-        """Pre-auth stops must never claim auth or authority side effects."""
-        if document["failure_stage"] != "preflight":
-            raise ValueError("live_acceptance_preflight_stage")
-        if any(
-            document[name] != 0
-            for name in (
-                "provider_entry_count",
-                "credential_content_read_count",
-                "credential_write_count",
-                "production_authority_write_count",
-            )
-        ):
-            raise ValueError("live_acceptance_preflight_nonzero_boundary")
+        if document["failure_stage"] != "preflight" or any(document[name] != 0 for name in ("provider_entry_count","credential_content_read_count","credential_write_count","production_authority_write_count")):
+            raise ValueError("live_acceptance_preflight_boundary")
 
     def _validate_live_acceptance_stop(self, document: Mapping[str, Any]) -> None:
         ledger = document["controlled_provider_entry_ledger"]
@@ -1299,10 +862,7 @@ class GarminCollectionBase:
         intervals = document["adjacent_controlled_provider_intervals_ns"]
         if len(intervals) != max(count - 1, 0):
             raise ValueError("live_acceptance_stop_interval_count")
-        if any(
-            interval < document["configured_minimum_interval_ns"]
-            for interval in intervals
-        ):
+        if any(interval < document["configured_minimum_interval_ns"] for interval in intervals):
             raise ValueError("live_acceptance_stop_interval_subminimum")
         if [entry["ordinal"] for entry in ledger] != list(range(1, count + 1)):
             raise ValueError("live_acceptance_stop_ledger_ordinal")
@@ -1352,21 +912,10 @@ class GarminCollectionBase:
         ):
             raise ValueError("live_acceptance_stop_auth_counts")
 
-    def _persist_live_acceptance_document(
-        self, destination: Path, document: Mapping[str, Any]
-    ) -> None:
+    def _persist_live_acceptance_document(self, destination: Path, document: Mapping[str, Any]) -> None:
         """Atomically persist a previously validated redacted receipt document."""
         self._validate_live_acceptance_document(document)
-        payload = (
-            json.dumps(
-                document,
-                allow_nan=False,
-                ensure_ascii=False,
-                separators=(",", ":"),
-                sort_keys=True,
-            ).encode("utf-8")
-            + b"\n"
-        )
+        payload = json.dumps(document, allow_nan=False, ensure_ascii=False, separators=(",", ":"), sort_keys=True).encode("utf-8") + b"\n"
         parent = destination.parent
         if destination.is_symlink():
             raise ValueError("live_acceptance_destination_symlink")
@@ -1377,19 +926,12 @@ class GarminCollectionBase:
             if ancestor == ancestor.parent:
                 break
             ancestor = ancestor.parent
-        directory_flags = (
-            os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
-        )
+        directory_flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
         directory_fd = os.open(parent, directory_flags)
         temporary_name = f".{destination.name}.{uuid.uuid4().hex}.tmp"
         temporary_fd: int | None = None
         try:
-            temporary_fd = os.open(
-                temporary_name,
-                os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0),
-                0o600,
-                dir_fd=directory_fd,
-            )
+            temporary_fd = os.open(temporary_name, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0), 0o600, dir_fd=directory_fd)
             os.fchmod(temporary_fd, 0o600)
             written = 0
             while written < len(payload):
@@ -1400,12 +942,7 @@ class GarminCollectionBase:
             os.fsync(temporary_fd)
             os.close(temporary_fd)
             temporary_fd = None
-            os.replace(
-                temporary_name,
-                destination.name,
-                src_dir_fd=directory_fd,
-                dst_dir_fd=directory_fd,
-            )
+            os.replace(temporary_name, destination.name, src_dir_fd=directory_fd, dst_dir_fd=directory_fd)
             os.fsync(directory_fd)
         finally:
             if temporary_fd is not None:
@@ -1434,19 +971,13 @@ class GarminCollectionBase:
                 break
             ancestor = ancestor.parent
         parent_stat = os.stat(parent, follow_symlinks=False)
-        if (
-            not stat.S_ISDIR(parent_stat.st_mode)
-            or parent_stat.st_mode & 0o777 != 0o700
-        ):
+        if not stat.S_ISDIR(parent_stat.st_mode) or parent_stat.st_mode & 0o777 != 0o700:
             raise ValueError("live_auth_token_parent_invalid")
         flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
         token_fd = os.open(destination, flags)
         try:
             token_stat = os.fstat(token_fd)
-            if (
-                not stat.S_ISREG(token_stat.st_mode)
-                or token_stat.st_mode & 0o777 != 0o600
-            ):
+            if not stat.S_ISREG(token_stat.st_mode) or token_stat.st_mode & 0o777 != 0o600:
                 raise ValueError("live_auth_token_permissions_invalid")
             content = bytearray()
             while True:
@@ -1500,10 +1031,7 @@ class GarminCollectionBase:
 
     @staticmethod
     def _credential_authority_facts(
-        before: Mapping[str, Any],
-        after: Mapping[str, Any],
-        *,
-        reloaded_nonexpiring: bool,
+        before: Mapping[str, Any], after: Mapping[str, Any], *, reloaded_nonexpiring: bool
     ) -> dict[str, bool]:
         """Reduce secret-bearing authority snapshots to redacted booleans."""
         return {
@@ -1524,8 +1052,7 @@ class GarminCollectionBase:
                 before["parent_mode"] == after["parent_mode"] == 0o700
             ),
             "file_mode_0600": before["token_mode"] == after["token_mode"] == 0o600,
-            "structure_unchanged": before["structure_sha256"]
-            == after["structure_sha256"],
+            "structure_unchanged": before["structure_sha256"] == after["structure_sha256"],
             "content_changed_exactly_once": (
                 before["content_sha256"] != after["content_sha256"]
             ),
@@ -1690,12 +1217,16 @@ class GarminCollectionBase:
         }
 
     @staticmethod
-    def _auth_phase_entered(progress: dict[str, dict[str, bool]], name: str) -> None:
+    def _auth_phase_entered(
+        progress: dict[str, dict[str, bool]], name: str
+    ) -> None:
         progress[name]["attempted"] = True
         progress[name]["entered"] = True
 
     @staticmethod
-    def _auth_phase_completed(progress: dict[str, dict[str, bool]], name: str) -> None:
+    def _auth_phase_completed(
+        progress: dict[str, dict[str, bool]], name: str
+    ) -> None:
         GarminCollectionBase._auth_phase_entered(progress, name)
         progress[name]["completed"] = True
 
@@ -1753,10 +1284,9 @@ class GarminCollectionBase:
         ):
             if bool(counts[count_name]) != bool(progress[phase_name]["entered"]):
                 raise ValueError("live_auth_count_progress_mismatch")
-        if (
-            counts["credential_replace_count"]
-            and not progress["credential_replace"]["completed"]
-        ):
+        if counts["credential_replace_count"] and not progress[
+            "credential_replace"
+        ]["completed"]:
             raise ValueError("live_auth_rotation_progress_mismatch")
         if document["status"] == "prepared":
             if any(value != 0 for value in counts.values()):
@@ -1783,10 +1313,7 @@ class GarminCollectionBase:
         if counts["credential_replace_count"] != 1:
             raise ValueError("live_auth_rotation_count")
         if document["status"] == "rotation_checkpoint":
-            if (
-                counts["social_profile_http_count"]
-                or counts["user_settings_http_count"]
-            ):
+            if counts["social_profile_http_count"] or counts["user_settings_http_count"]:
                 raise ValueError("live_auth_checkpoint_future_profile_count")
             if not all(
                 progress[name]["completed"]
@@ -1838,7 +1365,10 @@ class GarminCollectionBase:
             and not progress["final_receipt"]["completed"]
         ):
             raise ValueError("live_auth_final_receipt_progress")
-        if counts["user_settings_http_count"] > counts["social_profile_http_count"]:
+        if (
+            counts["user_settings_http_count"]
+            > counts["social_profile_http_count"]
+        ):
             raise ValueError("live_auth_profile_order")
 
     def _persist_live_auth_refresh_receipt(
@@ -1986,7 +1516,6 @@ class GarminCollectionBase:
             rotation_stage = "rotation"
             serialized = serialize_refreshed()
             self._auth_phase_entered(progress, "credential_replace")
-
             def token_stage(event: str) -> None:
                 if event == "parent_fsync_entered":
                     self._auth_phase_entered(progress, "parent_fsync")
@@ -1995,7 +1524,6 @@ class GarminCollectionBase:
                     self._auth_phase_completed(progress, "parent_fsync")
                     return
                 raise ValueError("live_auth_atomic_stage")
-
             try:
                 self._atomic_replace_existing_token(
                     token_path,
@@ -2148,17 +1676,7 @@ class GarminCollectionBase:
         }
 
     _ACCOUNT_BASIC_RESOURCES = ("user_profile", "user_profile_settings", "devices")
-    _ACCOUNT_B1_RESOURCES = (
-        "primary_device",
-        "device_settings",
-        "device_last_used",
-        "personal_records",
-        "cycling_ftp",
-        "pregnancy",
-    )
+    _ACCOUNT_B1_RESOURCES = ("primary_device", "device_settings", "device_last_used", "personal_records", "cycling_ftp", "pregnancy")
     _PROFILE_SETTING_FIELDS = {
-        "measurementSystem",
-        "timeFormat",
-        "weekStartDay",
-        "heartRateMethod",
+        "measurementSystem", "timeFormat", "weekStartDay", "heartRateMethod",
     }
