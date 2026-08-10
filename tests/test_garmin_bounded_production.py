@@ -228,6 +228,28 @@ def test_cached_only_login_blocks_refresh_and_token_writes(tmp_path):
     assert guard.provider_entries == 1
 
 
+def test_bounded_transport_constructor_never_prepares_token_store(
+    tmp_path, monkeypatch
+):
+    store = TokenStore(tmp_path / "tokens")
+    store.prepare()
+    token = store.directory / "garmin_tokens.json"
+    token.write_text("synthetic-token")
+    token.chmod(0o600)
+    monkeypatch.setattr(
+        store,
+        "prepare",
+        lambda: (_ for _ in ()).throw(AssertionError("prepare mutates metadata")),
+    )
+    GarminConnectTransport(
+        None,
+        None,
+        store,
+        client=_Facade(_Inner()),
+        budget_guard=ProductionBudgetGuard(_spec()),
+    )
+
+
 def test_cached_only_login_rejects_expiring_token_before_provider(tmp_path):
     transport, _facade, _inner, guard, _token = _transport(tmp_path, expiring=True)
     with pytest.raises(GarminError, match="cached_token_refresh_forbidden"):

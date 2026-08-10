@@ -77,7 +77,11 @@ class GarminConnectTransport:
         self._mfa_callback = mfa
         self._auth_flow_error: GarminError | None = None
         self.budget_guard = budget_guard
-        token_store.prepare(); self.token_store = token_store
+        if budget_guard is not None and budget_guard.spec.cached_tokens_only:
+            token_store.verify()
+        else:
+            token_store.prepare()
+        self.token_store = token_store
         if client is not None: self.client = client
         elif Garmin is None: raise GarminError("garminconnect_not_installed")
         else:
