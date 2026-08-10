@@ -381,6 +381,8 @@ class FitCollectionMixin:
                 original_format, day, receipt,
             )
         try:
+            if self.budget_guard is not None:
+                self.budget_guard.before_fit_download()
             blob = self._call(lambda: self._transport().activity_original(provider_id), conn=conn, run=run, subject=subject, resource="activity_fit", key=key, allows_404=True)
             self.repo.item(
                 conn, run, "activity_fit", key, "fetch", "fetched",

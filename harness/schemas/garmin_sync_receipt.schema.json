@@ -1,1 +1,32 @@
-{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","additionalProperties":false,"required":["schema_version","run_id","mode","status","requested_range","effective_range","coverage_state","counts","complete_through_by_resource","open_gap_count","next_retry_at_utc","errors","started_at_utc","completed_at_utc"],"properties":{"schema_version":{"const":"1"},"run_id":{"type":["string","null"]},"mode":{"enum":["auth","full","incremental","snapshot","repair","audit","status"]},"status":{"enum":["succeeded","partial","deferred","failed","auth_required","lock_busy"]},"requested_range":{"type":"object","additionalProperties":false,"required":["from","through"],"properties":{"from":{"type":["string","null"]},"through":{"type":["string","null"]}}},"effective_range":{"type":"object","additionalProperties":false,"required":["from","through"],"properties":{"from":{"type":["string","null"]},"through":{"type":["string","null"]}}},"coverage_state":{"enum":["complete","partial",null]},"counts":{"type":"object","additionalProperties":false,"required":["fetched","empty","unchanged","revised","failed","deferred","not_available","not_enabled"],"properties":{"fetched":{"type":"integer","minimum":0},"empty":{"type":"integer","minimum":0},"unchanged":{"type":"integer","minimum":0},"revised":{"type":"integer","minimum":0},"failed":{"type":"integer","minimum":0},"deferred":{"type":"integer","minimum":0},"not_available":{"type":"integer","minimum":0},"not_enabled":{"type":"integer","minimum":0}}},"complete_through_by_resource":{"type":"object","additionalProperties":{"type":["string","null"]}},"open_gap_count":{"type":"integer","minimum":0},"next_retry_at_utc":{"type":["string","null"]},"errors":{"type":"array","items":{"type":"object","additionalProperties":false,"required":["code","resource","logical_object_key","summary"],"properties":{"code":{"type":"string"},"resource":{"type":"string"},"logical_object_key":{"type":"string"},"summary":{"type":"string","maxLength":200}}}},"started_at_utc":{"type":"string"},"completed_at_utc":{"type":["string","null"]}}}
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run_id", "mode", "status", "requested_range", "effective_range", "coverage_state", "counts", "complete_through_by_resource", "open_gap_count", "next_retry_at_utc", "errors", "started_at_utc", "completed_at_utc"],
+  "properties": {
+    "schema_version": {"const": "1"},
+    "run_id": {"type": ["string", "null"]},
+    "mode": {"enum": ["auth", "full", "incremental", "snapshot", "repair", "audit", "status"]},
+    "status": {"enum": ["succeeded", "partial", "deferred", "failed", "auth_required", "lock_busy"]},
+    "requested_range": {"type": "object", "additionalProperties": false, "required": ["from", "through"], "properties": {"from": {"type": ["string", "null"]}, "through": {"type": ["string", "null"]}}},
+    "effective_range": {"type": "object", "additionalProperties": false, "required": ["from", "through"], "properties": {"from": {"type": ["string", "null"]}, "through": {"type": ["string", "null"]}}},
+    "coverage_state": {"enum": ["complete", "partial", null]},
+    "counts": {"type": "object", "additionalProperties": false, "required": ["fetched", "empty", "unchanged", "revised", "failed", "deferred", "not_available", "not_enabled"], "properties": {"fetched": {"type": "integer", "minimum": 0}, "empty": {"type": "integer", "minimum": 0}, "unchanged": {"type": "integer", "minimum": 0}, "revised": {"type": "integer", "minimum": 0}, "failed": {"type": "integer", "minimum": 0}, "deferred": {"type": "integer", "minimum": 0}, "not_available": {"type": "integer", "minimum": 0}, "not_enabled": {"type": "integer", "minimum": 0}}},
+    "complete_through_by_resource": {"type": "object", "additionalProperties": {"type": ["string", "null"]}},
+    "open_gap_count": {"type": "integer", "minimum": 0},
+    "next_retry_at_utc": {"type": ["string", "null"]},
+    "errors": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["code", "resource", "logical_object_key", "summary"], "properties": {"code": {"type": "string"}, "resource": {"type": "string"}, "logical_object_key": {"type": "string"}, "summary": {"type": "string", "maxLength": 200}}}},
+    "started_at_utc": {"type": "string"},
+    "completed_at_utc": {"type": ["string", "null"]},
+    "production_budget": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["limits", "counts", "elapsed_seconds"],
+      "properties": {
+        "limits": {"type": "object", "additionalProperties": false, "required": ["max_provider_entries", "max_wall_seconds", "max_activities", "max_fit_downloads", "max_new_raw_objects", "cached_tokens_only"], "properties": {"max_provider_entries": {"type": "integer", "minimum": 1}, "max_wall_seconds": {"type": "integer", "minimum": 1}, "max_activities": {"type": "integer", "minimum": 1}, "max_fit_downloads": {"type": "integer", "minimum": 1}, "max_new_raw_objects": {"type": "integer", "minimum": 1}, "cached_tokens_only": {"const": true}}},
+        "counts": {"type": "object", "additionalProperties": false, "required": ["provider_entries", "activities", "fit_downloads", "new_raw_objects"], "properties": {"provider_entries": {"type": "integer", "minimum": 0}, "activities": {"type": "integer", "minimum": 0}, "fit_downloads": {"type": "integer", "minimum": 0}, "new_raw_objects": {"type": "integer", "minimum": 0}}},
+        "elapsed_seconds": {"type": "number", "minimum": 0}
+      }
+    }
+  }
+}

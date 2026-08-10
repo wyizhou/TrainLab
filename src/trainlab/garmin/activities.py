@@ -46,6 +46,8 @@ class ActivityCollectionMixin:
             entry_day = self._activity_inventory_local_date(entry)
             if entry_day is not None and not self._activity_date_in_scope(entry_day, start, through, request.mode):
                 continue
+            if self.budget_guard is not None:
+                self.budget_guard.before_activity(activity_id)
             self._collect_activity_summary(
                 conn, run, subject, activity_id, start, through, request,
                 receipt, applicable_ids,
@@ -131,6 +133,7 @@ class ActivityCollectionMixin:
         try:
             has_paging = (
                 request.mode == "full"
+                and self.budget_guard is None
                 and callable(getattr(transport, "activity_count", None))
                 and callable(getattr(transport, "activity_page", None))
             )
@@ -185,7 +188,11 @@ class ActivityCollectionMixin:
             else:
                 page_key = f"{inventory_key}:page:000000"
                 current_key, current_stage = page_key, "fetch"
-                bounded_start = None if request.mode == "full" else start.isoformat()
+                bounded_start = (
+                    start.isoformat()
+                    if self.budget_guard is not None
+                    else (None if request.mode == "full" else start.isoformat())
+                )
                 payload = self._call(
                     lambda: list(transport.list_activities(bounded_start, through.isoformat())),
                     conn=conn, run=run, subject=subject, resource="activity_inventory",

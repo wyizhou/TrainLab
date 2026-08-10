@@ -5,12 +5,13 @@ exercise this adapter without contacting Garmin Connect.
 """
 from __future__ import annotations
 
+import hashlib
 import os
 import socket
 from pathlib import Path
 from typing import Any, Callable
 
-from .garmin import GarminError
+from .garmin import GarminError, ProductionBudgetGuard
 from .garmin_catalog import RESOURCE_CATALOG, health_call_arguments
 
 try:  # Imported lazily in practice; package installation is deployment-owned.
@@ -34,6 +35,21 @@ class TokenStore:
             if path.is_symlink(): raise ValueError("token_store_symlink_rejected")
             if path.is_dir() and path.stat().st_mode & 0o777 != 0o700: raise ValueError("unsafe_token_directory")
             if path.is_file() and path.stat().st_mode & 0o777 != 0o600: raise ValueError("unsafe_token_file")
+    def fingerprint(self) -> tuple[tuple[str, int, int, str], ...]:
+        self.verify()
+        rows = []
+        for path in sorted(self.directory.rglob("*")):
+            if path.is_file():
+                info = path.stat()
+                rows.append(
+                    (
+                        str(path.relative_to(self.directory)),
+                        info.st_mode & 0o777,
+                        info.st_size,
+                        hashlib.sha256(path.read_bytes()).hexdigest(),
+                    )
+                )
+        return tuple(rows)
 
 
 class GarminConnectTransport:
@@ -50,6 +66,7 @@ class GarminConnectTransport:
         mfa: Callable[[str], str] | None = None,
         client: Any = None,
         request_timeout_seconds: int = 30,
+        budget_guard: ProductionBudgetGuard | None = None,
     ) -> None:
         if request_timeout_seconds <= 0:
             raise ValueError("invalid_request_timeout")
@@ -59,6 +76,7 @@ class GarminConnectTransport:
         self.region = region
         self._mfa_callback = mfa
         self._auth_flow_error: GarminError | None = None
+        self.budget_guard = budget_guard
         token_store.prepare(); self.token_store = token_store
         if client is not None: self.client = client
         elif Garmin is None: raise GarminError("garminconnect_not_installed")
@@ -73,6 +91,7 @@ class GarminConnectTransport:
                 retry_attempts=0,
             )
         self._apply_request_timeout()
+        self._apply_provider_budget()
 
     def _abort_mfa(self, error: GarminError) -> None:
         """Preserve one safe error across the provider facade's exception wrapping."""
@@ -176,6 +195,21 @@ class GarminConnectTransport:
                 return __request(*args, **kwargs)
             setattr(bounded_request, "_trainlab_timeout_seconds", self.request_timeout_seconds)
             setattr(session, "request", bounded_request)
+    def _apply_provider_budget(self) -> None:
+        guard = self.budget_guard
+        if guard is None:
+            return
+        inner = getattr(self.client, "client", None)
+        request_owner = inner if inner is not None else self.client
+        for name in ("cs", "_api_session"):
+            session = getattr(request_owner, name, None)
+            request = getattr(session, "request", None)
+            if not callable(request):
+                raise GarminError("unsupported_garmin_client_structure")
+            def guarded_request(*args: Any, __request: Callable[..., Any] = request, **kwargs: Any) -> Any:
+                guard.before_provider_entry()
+                return __request(*args, **kwargs)
+            setattr(session, "request", guarded_request)
     def login(self) -> None:
         self._auth_flow_error = None
         try:
@@ -188,6 +222,39 @@ class GarminConnectTransport:
             if isinstance(exc, GarminError):
                 raise
             raise self._error(exc)
+    def login_cached_only(self) -> None:
+        """Load existing tokens while making every refresh/write path fail closed."""
+        if self.budget_guard is None or not self.budget_guard.spec.cached_tokens_only:
+            raise GarminError("cached_token_unusable")
+        before = self.token_store.fingerprint()
+        inner = getattr(self.client, "client", None)
+        if inner is None:
+            raise GarminError("unsupported_garmin_client_structure")
+        loader = getattr(inner, "load", None)
+        expires_soon = getattr(inner, "_token_expires_soon", None)
+        profile_loader = getattr(self.client, "_load_profile_and_settings", None)
+        if not callable(loader) or not callable(expires_soon) or not callable(profile_loader):
+            raise GarminError("unsupported_garmin_client_structure")
+        def refresh_forbidden(*_args: Any, **_kwargs: Any) -> None:
+            raise GarminError("cached_token_refresh_forbidden")
+        def token_write_forbidden(*_args: Any, **_kwargs: Any) -> None:
+            raise GarminError("token_store_mutation_forbidden")
+        try:
+            loader(str(self.token_store.directory))
+            inner._tokenstore_path = None
+            inner._refresh_session = refresh_forbidden
+            inner.dump = token_write_forbidden
+            if expires_soon():
+                raise GarminError("cached_token_refresh_forbidden")
+            profile_loader()
+            if self.token_store.fingerprint() != before:
+                raise GarminError("token_store_mutation_forbidden")
+        except GarminError:
+            raise
+        except Exception as exc:
+            if self.token_store.fingerprint() != before:
+                raise GarminError("token_store_mutation_forbidden") from None
+            raise GarminError("cached_token_unusable", http_status=getattr(exc, "status_code", None)) from None
     def identity(self) -> str:
         profile = self._invoke(getattr(self.client, "get_full_name"))
         return str(profile)

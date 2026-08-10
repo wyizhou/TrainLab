@@ -511,6 +511,10 @@ _DURABLE_PROVIDER_ERROR_CODES = frozenset({
     "raw_integrity", "coverage_error", "cursor_crosses_gap",
     "unmapped_field_signature", "activity_summary_missing",
     "offline_repair_failed", "capability_cooldown",
+    "provider_entry_budget_exhausted", "wall_clock_budget_exhausted",
+    "activity_budget_exhausted", "fit_download_budget_exhausted",
+    "raw_object_budget_exhausted", "cached_token_refresh_forbidden",
+    "cached_token_unusable", "token_store_mutation_forbidden",
 })
 
 
@@ -568,6 +572,7 @@ def classify_garmin_error(
 
 class GarminTransport(Protocol):
     def login(self) -> None: ...
+    def login_cached_only(self) -> None: ...
     def fetch_health(self, resource_kind: str, local_date: str) -> Any: ...
     def fetch_range(self, resource_kind: str, start_local_date: str, end_local_date: str) -> Any: ...
     def fetch_account(self, resource_kind: str, provider_device_id: str | None = None) -> Any: ...
@@ -613,6 +618,83 @@ class SyncRequest:
     activity_ids: tuple[str, ...] = ()
     repair_strategy: Literal["auto", "refetch", "reparse", "reconcile"] | None = None
     invocation_id: str | None = None
+    production_budget: ProductionBudgetSpec | None = None
+
+
+@dataclass(frozen=True)
+class ProductionBudgetSpec:
+    """Fail-closed ceilings required for an explicitly bounded live run."""
+
+    max_provider_entries: int
+    max_wall_seconds: int
+    max_activities: int
+    max_fit_downloads: int
+    max_new_raw_objects: int
+    cached_tokens_only: bool = True
+
+
+class ProductionBudgetGuard:
+    """Mutable counters shared by the provider, collector, and raw archive."""
+
+    def __init__(
+        self,
+        spec: ProductionBudgetSpec,
+        *,
+        monotonic: Callable[[], float] = time.monotonic,
+    ) -> None:
+        self.spec = spec
+        self._monotonic = monotonic
+        self._started = monotonic()
+        self.provider_entries = 0
+        self.activities = 0
+        self.fit_downloads = 0
+        self.new_raw_objects = 0
+        self._activity_ids: set[str] = set()
+
+    def _wall(self) -> float:
+        elapsed = self._monotonic() - self._started
+        if elapsed >= self.spec.max_wall_seconds:
+            raise GarminError("wall_clock_budget_exhausted")
+        return elapsed
+
+    def before_provider_entry(self) -> None:
+        self._wall()
+        if self.provider_entries >= self.spec.max_provider_entries:
+            raise GarminError("provider_entry_budget_exhausted")
+        self.provider_entries += 1
+
+    def before_activity(self, activity_id: str) -> None:
+        self._wall()
+        if activity_id in self._activity_ids:
+            return
+        if self.activities >= self.spec.max_activities:
+            raise GarminError("activity_budget_exhausted")
+        self._activity_ids.add(activity_id)
+        self.activities += 1
+
+    def before_fit_download(self) -> None:
+        self._wall()
+        if self.fit_downloads >= self.spec.max_fit_downloads:
+            raise GarminError("fit_download_budget_exhausted")
+        self.fit_downloads += 1
+
+    def before_new_raw_object(self) -> None:
+        self._wall()
+        if self.new_raw_objects >= self.spec.max_new_raw_objects:
+            raise GarminError("raw_object_budget_exhausted")
+        self.new_raw_objects += 1
+
+    def report(self) -> dict[str, Any]:
+        return {
+            "limits": asdict(self.spec),
+            "counts": {
+                "provider_entries": self.provider_entries,
+                "activities": self.activities,
+                "fit_downloads": self.fit_downloads,
+                "new_raw_objects": self.new_raw_objects,
+            },
+            "elapsed_seconds": max(0.0, self._monotonic() - self._started),
+        }
 
 
 @dataclass
@@ -631,6 +713,7 @@ class SyncReceipt:
     errors: list[dict[str, str]] = field(default_factory=list)
     started_at_utc: str = field(default_factory=utc_now)
     completed_at_utc: str | None = None
+    production_budget: dict[str, Any] | None = None
 
     def json(self) -> str:
         return json.dumps(asdict(self), ensure_ascii=False, sort_keys=True, allow_nan=False)

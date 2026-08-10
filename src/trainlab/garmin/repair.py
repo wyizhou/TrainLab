@@ -862,6 +862,27 @@ class RepairAuditMixin:
         return self.transport
 
     def _validate(self, request: SyncRequest) -> None:
+        budget = request.production_budget
+        if (budget is None) != (self.budget_guard is None):
+            raise ValueError("production_budget_guard_mismatch")
+        if budget is not None:
+            ceilings = (
+                budget.max_provider_entries,
+                budget.max_wall_seconds,
+                budget.max_activities,
+                budget.max_fit_downloads,
+                budget.max_new_raw_objects,
+            )
+            if (
+                request.mode != "full"
+                or request.health_from_local_date is None
+                or request.through_local_date is None
+                or not request.resource_kinds
+                or not budget.cached_tokens_only
+                or any(isinstance(value, bool) or value <= 0 for value in ceilings)
+                or self.budget_guard.spec != budget
+            ):
+                raise ValueError("invalid_production_budget")
         if not 1 <= self.config.max_attempts <= 5:
             raise ValueError("max_attempts_out_of_range")
         if (
@@ -911,6 +932,7 @@ class RepairAuditMixin:
                 request.resource_kinds,
                 request.activity_ids,
                 request.repair_strategy,
+                request.production_budget,
             )
         ):
             raise ValueError("mode_requires_empty_scope")
@@ -1004,8 +1026,9 @@ class RepairAuditMixin:
         ):
             raise ValueError("invalid_sync_request_schema")
 
-    @staticmethod
-    def _validated_receipt(receipt: SyncReceipt) -> SyncReceipt:
+    def _validated_receipt(self, receipt: SyncReceipt) -> SyncReceipt:
+        if self.budget_guard is not None:
+            receipt.production_budget = self.budget_guard.report()
         for error in receipt.errors:
             original = str(error.get("code") or "provider_error")
             safe = safe_provider_error_code(original)

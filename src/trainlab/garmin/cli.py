@@ -15,6 +15,8 @@ from ..util import project_root
 from . import (
     GarminCollectionTool,
     GarminError,
+    ProductionBudgetGuard,
+    ProductionBudgetSpec,
     REQUEST_RESOURCE_KINDS,
     SyncReceipt,
     SyncRequest,
@@ -56,6 +58,18 @@ def _validate_garmin_cli_args(args: Any, *, today: date | None = None) -> None:
     activities = tuple(getattr(args, "activity_id", ()) or ())
     strategy = getattr(args, "strategy", None)
     invocation_id = getattr(args, "invocation_id", None)
+    bounded = bool(getattr(args, "bounded_production", False))
+    budget_values = tuple(
+        getattr(args, name, None)
+        for name in (
+            "max_provider_entries",
+            "max_wall_seconds",
+            "max_activities",
+            "max_fit_downloads",
+            "max_new_raw_objects",
+        )
+    )
+    cached_tokens_only = bool(getattr(args, "cached_tokens_only", False))
     if invocation_id == "":
         raise ValueError("invalid_invocation_id")
     if len(resources) != len(set(resources)) or len(activities) != len(set(activities)) or any(not item for item in resources + activities):
@@ -64,6 +78,23 @@ def _validate_garmin_cli_args(args: Any, *, today: date | None = None) -> None:
         raise ValueError("invalid_resource_kind")
     if strategy not in {None, "auto", "refetch", "reparse", "reconcile"}:
         raise ValueError("invalid_repair_strategy")
+    if bounded:
+        if (
+            mode != "full"
+            or health_from is None
+            or through is None
+            or not resources
+            or not cached_tokens_only
+            or any(
+                isinstance(value, bool)
+                or not isinstance(value, int)
+                or value <= 0
+                for value in budget_values
+            )
+        ):
+            raise ValueError("invalid_production_budget")
+    elif any(value is not None for value in budget_values) or cached_tokens_only:
+        raise ValueError("production_budget_flag_requires_bounded_mode")
     if mode == "repair" and not (health_from or through or resources or activities):
         raise ValueError("repair_requires_scope")
     # The parser makes most incompatible combinations impossible.  Keep this
@@ -102,7 +133,20 @@ def garmin_cli_execute(args: Any, *, transport_factory=GarminConnectTransport, s
     try:
         foundation = FoundationConfig.load(project_root())
         config = load_garmin_config(project_root(), foundation)
-        request = SyncRequest(mode=mode, health_from_local_date=getattr(args, "health_from", None), through_local_date=getattr(args, "through", None), snapshot_local_date=getattr(args, "date", None), resource_kinds=tuple(getattr(args, "resource", [])), activity_ids=tuple(getattr(args, "activity_id", [])), repair_strategy=getattr(args, "strategy", None), invocation_id=args.invocation_id)
+        budget_spec = (
+            ProductionBudgetSpec(
+                max_provider_entries=args.max_provider_entries,
+                max_wall_seconds=args.max_wall_seconds,
+                max_activities=args.max_activities,
+                max_fit_downloads=args.max_fit_downloads,
+                max_new_raw_objects=args.max_new_raw_objects,
+                cached_tokens_only=True,
+            )
+            if getattr(args, "bounded_production", False)
+            else None
+        )
+        budget_guard = ProductionBudgetGuard(budget_spec) if budget_spec else None
+        request = SyncRequest(mode=mode, health_from_local_date=getattr(args, "health_from", None), through_local_date=getattr(args, "through", None), snapshot_local_date=getattr(args, "date", None), resource_kinds=tuple(getattr(args, "resource", [])), activity_ids=tuple(getattr(args, "activity_id", [])), repair_strategy=getattr(args, "strategy", None), invocation_id=args.invocation_id, production_budget=budget_spec)
         # status deliberately has no provider construction, token check, or login.
         if mode == "status": return GarminCollectionTool(config).execute(request)
         store = TokenStore(foundation.state_root / "secrets" / "garmin")
@@ -122,8 +166,13 @@ def garmin_cli_execute(args: Any, *, transport_factory=GarminConnectTransport, s
                 )
                 return getpass.getpass("", stream=stderr)
             transport=transport_factory(email,password,store,region=config.region,mfa=mfa)
-        else: transport=transport_factory(None,None,store,region=config.region)
-        return GarminCollectionTool(config, transport).execute(request)
+        else:
+            transport_kwargs = {"region": config.region}
+            if budget_guard is not None:
+                transport_kwargs["budget_guard"] = budget_guard
+            transport=transport_factory(None,None,store,**transport_kwargs)
+        tool_kwargs = {"budget_guard": budget_guard} if budget_guard is not None else {}
+        return GarminCollectionTool(config, transport, **tool_kwargs).execute(request)
     except GarminError as exc:
         allowed = {
             "mfa_code_delivery_failed",
@@ -152,6 +201,14 @@ def add_root_subparser(subparsers: argparse._SubParsersAction[Any]) -> None:
     full = sync_sub.add_parser("full")
     full.add_argument("--health-from")
     full.add_argument("--through")
+    full.add_argument("--resource", action="append", default=[])
+    full.add_argument("--bounded-production", action="store_true")
+    full.add_argument("--cached-tokens-only", action="store_true")
+    full.add_argument("--max-provider-entries", type=int)
+    full.add_argument("--max-wall-seconds", type=int)
+    full.add_argument("--max-activities", type=int)
+    full.add_argument("--max-fit-downloads", type=int)
+    full.add_argument("--max-new-raw-objects", type=int)
     incremental = sync_sub.add_parser("incremental")
     incremental.add_argument("--through")
     snapshot = sync_sub.add_parser("snapshot")

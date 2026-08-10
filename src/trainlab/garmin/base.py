@@ -40,6 +40,7 @@ class GarminCollectionBase:
         config: GarminConfig,
         transport: GarminTransport | None = None,
         *,
+        budget_guard: ProductionBudgetGuard | None = None,
         sleep: Callable[[float], None] = time.sleep,
         clock: Callable[[], datetime] = lambda: datetime.now(TZ),
         monotonic: Callable[[], float] = time.monotonic,
@@ -52,7 +53,20 @@ class GarminCollectionBase:
             self.sleep,
             self.clock,
             self.monotonic,
-        ) = config, transport, GarminRepository(config), sleep, clock, monotonic
+        ) = (
+            config,
+            transport,
+            GarminRepository(
+                config,
+                new_raw_object_guard=(
+                    budget_guard.before_new_raw_object if budget_guard else None
+                ),
+            ),
+            sleep,
+            clock,
+            monotonic,
+        )
+        self.budget_guard = budget_guard
         self.rng = rng or random.Random().random
         self._last_request: float | None = None
 
@@ -188,7 +202,10 @@ class GarminCollectionBase:
                     self.repo.finish_run(conn, run, receipt, None, None)
                     return receipt
                 try:
-                    self._transport().login()
+                    if request.production_budget is not None:
+                        self._transport().login_cached_only()
+                    else:
+                        self._transport().login()
                     actual = self._identity_hmac(self._transport().identity())
                     verified = conn.execute(
                         "SELECT 1 FROM subject_identities WHERE subject_id=? AND provider='garmin' AND identity_kind='account' AND identity_hmac=? AND is_verified=1",
@@ -917,6 +934,8 @@ class GarminCollectionBase:
                     raise exc
                 classification = self._classify(exc, allows_404=allows_404)
                 if exc.http_status == 401 and not refreshed:
+                    if self.budget_guard is not None:
+                        raise GarminError("cached_token_unusable", http_status=401)
                     refreshed = True
                     try:
                         self._transport().login()

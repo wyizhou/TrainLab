@@ -4,8 +4,14 @@ from __future__ import annotations
 from .contracts import *  # noqa: F403
 class GarminRepository:
     """All mutable Garmin state, with short transactions only."""
-    def __init__(self, config: GarminConfig) -> None:
+    def __init__(
+        self,
+        config: GarminConfig,
+        *,
+        new_raw_object_guard: Callable[[], None] | None = None,
+    ) -> None:
         self.config = config
+        self._new_raw_object_guard = new_raw_object_guard
 
     def connect(self, *, readonly: bool = False) -> sqlite3.Connection:
         conn = sqlite3.connect(f"file:{self.config.database_path}?mode=ro" if readonly else self.config.database_path, isolation_level=None, uri=readonly)
@@ -601,6 +607,9 @@ class GarminRepository:
             if existing["size_bytes"] != len(payload) or existing["media_type"] != media_type:
                 raise ValueError("raw_object_corrupt")
             return int(existing["id"]), sha
+
+        if self._new_raw_object_guard is not None:
+            self._new_raw_object_guard()
 
         date_path = datetime.now(UTC).strftime("%Y/%m")
         root_fd = self._open_raw_rootfd()
