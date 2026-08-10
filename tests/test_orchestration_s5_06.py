@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import errno
 import os
 import subprocess
 import sys
@@ -75,6 +76,44 @@ def test_schema_and_exit_mismatch_and_output_limit_are_untrusted(monkeypatch: py
     assert SubprocessRunner().run(call()).error_code == "receipt_exit_mismatch"
     install(monkeypatch, FakeProcess(b"x" * 2_000))
     assert SubprocessRunner(output_limit=1_024).run(call()).error_code == "process_output_limit"
+
+
+def test_transient_process_start_failure_is_retried_before_any_child_exists(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    process = FakeProcess(json.dumps(receipt()).encode())
+    attempts = 0
+    waits: list[float] = []
+
+    def popen(_argv, **_kwargs):
+        nonlocal attempts
+        attempts += 1
+        if attempts < 3:
+            raise OSError(errno.EAGAIN, "resource temporarily unavailable")
+        return process
+
+    monkeypatch.setattr(runner_module.subprocess, "Popen", popen)
+    monkeypatch.setattr(runner_module.time, "sleep", waits.append)
+    result = SubprocessRunner().run(call())
+    assert result.kind == "accepted"
+    assert attempts == 3
+    assert waits == [0.05, 0.2]
+
+
+def test_permanent_process_start_failure_is_not_retried(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    attempts = 0
+
+    def popen(_argv, **_kwargs):
+        nonlocal attempts
+        attempts += 1
+        raise OSError(errno.ENOENT, "missing executable")
+
+    monkeypatch.setattr(runner_module.subprocess, "Popen", popen)
+    result = SubprocessRunner().run(call())
+    assert result.error_code == "process_start_failed"
+    assert attempts == 1
 
 
 def test_timeout_is_unknown_and_terminates_the_whole_process_group(monkeypatch: pytest.MonkeyPatch) -> None:

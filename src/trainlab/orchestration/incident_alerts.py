@@ -10,11 +10,11 @@ never be supplied by a workflow or CLI request.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from hashlib import sha256
 from html import escape
 import re
-from typing import Literal, Protocol
+from typing import Callable, Literal, Protocol
 
 from .repository import AlertDeliveryRecord, IncidentRecord, OrchestrationRepository
 
@@ -34,7 +34,9 @@ _SEVERITY_LABELS = {
 class OperationalAlertTransport(Protocol):
     """The only Gmail operations allowed for fifth-layer operational alerts."""
 
-    def search_alert(self, *, idempotency_key: str, subject: str) -> bool: ...
+    def search_alert(
+        self, *, idempotency_key: str, subject: str
+    ) -> dict[str, str] | None: ...
 
     def send_html(
         self, *, recipient: str, idempotency_key: str, subject: str, html: str
@@ -145,11 +147,13 @@ class OperationalAlertService:
     def __init__(
         self, repository: OrchestrationRepository, transport: OperationalAlertTransport,
         *, configured_recipient: str, boundary: GmailMcpAlertBoundary | None = None,
+        clock: Callable[[], datetime] | None = None,
     ) -> None:
         self._repository = repository
         self._transport = transport
         self._configured_recipient = _validate_recipient(configured_recipient)
         self._boundary = boundary or GmailMcpAlertBoundary()
+        self._clock = clock or (lambda: datetime.now(UTC))
 
     def deliver(self, incident_key: str, *, event: Literal["open", "recovery"] = "open") -> OperationalAlertResult:
         incident = self._repository.get_incident(incident_key)
@@ -167,8 +171,13 @@ class OperationalAlertService:
             return self.reconcile(incident_key, event=event)
 
         try:
-            if self._transport.search_alert(idempotency_key=key, subject=subject):
-                alert = self._transition_if_needed(key, "already_sent")
+            found = self._transport.search_alert(
+                idempotency_key=key, subject=subject
+            )
+            if found is not None:
+                alert = self._transition_if_needed(
+                    key, "already_sent", response=found
+                )
                 return OperationalAlertResult(incident_key, event, alert.status, "already_sent", key)
         except Exception:
             self._mark_failed_or_unknown(alert, key, unknown=False)
@@ -189,7 +198,7 @@ class OperationalAlertService:
         except Exception:
             self._mark_failed_or_unknown(alert, key, unknown=True)
             return OperationalAlertResult(incident_key, event, self._repository.get_alert_delivery(key).status, "delivery_unknown", key, "gmail_send_unknown")
-        alert = self._transition_if_needed(key, "sent")
+        alert = self._transition_if_needed(key, "sent", response=response)
         return OperationalAlertResult(incident_key, event, alert.status, "sent", key)
 
     def reconcile(self, incident_key: str, *, event: Literal["open", "recovery"] = "open") -> OperationalAlertResult:
@@ -203,26 +212,72 @@ class OperationalAlertService:
             raise ValueError("operational_alert_not_found")
         if alert.status in {"sent", "already_sent"}:
             return OperationalAlertResult(incident_key, event, alert.status, "already_sent", key)
-        if alert.status != "delivery_unknown":
+        if alert.status not in {"sending", "delivery_unknown"}:
             return OperationalAlertResult(incident_key, event, alert.status, "unavailable", key, "reconcile_not_applicable")
         try:
             found = self._transport.search_alert(idempotency_key=key, subject=subject)
         except Exception:
             return OperationalAlertResult(incident_key, event, alert.status, "unavailable", key, "gmail_unavailable")
-        if found:
-            alert = self._transition_if_needed(key, "already_sent")
+        if found is not None:
+            alert = self._transition_if_needed(
+                key, "already_sent", response=found
+            )
             return OperationalAlertResult(incident_key, event, alert.status, "already_sent", key)
-        alert = self._transition_if_needed(key, "failed")
+        if alert.status == "sending":
+            alert = self._transition_if_needed(
+                key, "delivery_unknown", error_code="gmail_not_found"
+            )
+            return OperationalAlertResult(incident_key, event, alert.status, "delivery_unknown", key, "gmail_not_found")
+        alert = self._transition_if_needed(
+            key, "failed", error_code="gmail_not_found"
+        )
         return OperationalAlertResult(incident_key, event, alert.status, "delivery_unknown", key, "gmail_not_found")
+
+    def reconcile_outstanding(self) -> tuple[OperationalAlertResult, ...]:
+        """Reconcile ambiguous sends left by a prior process before new work."""
+
+        results: list[OperationalAlertResult] = []
+        for incident, alert in self._repository.reconcilable_alert_deliveries():
+            open_key = alert_idempotency_key(incident.incident_key, "open")
+            recovery_key = alert_idempotency_key(incident.incident_key, "recovery")
+            if alert.idempotency_key == open_key:
+                event: Literal["open", "recovery"] = "open"
+            elif alert.idempotency_key == recovery_key:
+                event = "recovery"
+            else:
+                continue
+            results.append(self.reconcile(incident.incident_key, event=event))
+        return tuple(results)
 
     def _mark_failed_or_unknown(self, alert: AlertDeliveryRecord, key: str, *, unknown: bool) -> None:
         if alert.status == "pending":
-            self._transition_if_needed(key, "delivery_unknown" if unknown else "failed")
+            self._transition_if_needed(
+                key, "delivery_unknown" if unknown else "failed",
+                error_code="gmail_send_unknown" if unknown else "gmail_unavailable",
+            )
         elif alert.status == "sending":
-            self._transition_if_needed(key, "delivery_unknown" if unknown else "failed")
+            self._transition_if_needed(
+                key, "delivery_unknown" if unknown else "failed",
+                error_code="gmail_send_unknown" if unknown else "gmail_unavailable",
+            )
 
-    def _transition_if_needed(self, key: str, status: Literal["sending", "sent", "already_sent", "failed", "delivery_unknown"]) -> AlertDeliveryRecord:
+    def _transition_if_needed(
+        self,
+        key: str,
+        status: Literal["sending", "sent", "already_sent", "failed", "delivery_unknown"],
+        *,
+        response: dict[str, str] | None = None,
+        error_code: str | None = None,
+    ) -> AlertDeliveryRecord:
         current = self._repository.get_alert_delivery(key)
         if current is None:
             raise ValueError("operational_alert_not_found")
-        return current if current.status == status else self._repository.transition_alert_delivery(key, status)
+        return self._repository.transition_alert_delivery(
+            key,
+            status,
+            at_utc=self._clock() if status in {"sent", "already_sent"} else None,
+            provider_message_id=(response or {}).get("provider_message_id"),
+            provider_thread_id=(response or {}).get("provider_thread_id"),
+            error_code=error_code,
+            error_summary=error_code,
+        )

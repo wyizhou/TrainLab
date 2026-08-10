@@ -15,12 +15,19 @@ class CurrentEnvironmentOperationalGmail:
         self._gateway = GmailDeliveryGateway(configured_recipient)
         self._last_delivery_message_id: str | None = None
 
-    def search_alert(self, *, idempotency_key: str, subject: str) -> bool:
+    def search_alert(
+        self, *, idempotency_key: str, subject: str
+    ) -> dict[str, str] | None:
         receipt = self._gateway.reconcile(
             subject=subject, idempotency_key=idempotency_key
         )
         self._last_delivery_message_id = receipt.provider_message_id
-        return receipt.status == "already_sent"
+        if receipt.status != "already_sent" or receipt.provider_message_id is None:
+            return None
+        result = {"provider_message_id": receipt.provider_message_id}
+        if receipt.provider_thread_id is not None:
+            result["provider_thread_id"] = receipt.provider_thread_id
+        return result
 
     def send_html(
         self,
@@ -44,7 +51,10 @@ class CurrentEnvironmentOperationalGmail:
                 may_have_sent=receipt.status in {"sent", "already_sent"},
             )
         self._last_delivery_message_id = receipt.provider_message_id
-        return {"provider_message_id": receipt.provider_message_id}
+        result = {"provider_message_id": receipt.provider_message_id}
+        if receipt.provider_thread_id is not None:
+            result["provider_thread_id"] = receipt.provider_thread_id
+        return result
 
     def apply_trainlab_label(self, provider_message_id: str) -> None:
         # The reused restricted gateway applies TrainLab before returning.

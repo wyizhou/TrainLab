@@ -258,6 +258,31 @@ def test_exception_and_store_failure_are_sanitized() -> None:
     assert receipt.errors[0]["code"] == "orchestration_receipt_persistence_failed"
 
 
+def test_safe_downstream_failure_code_reaches_workflow_receipt() -> None:
+    class FailedAnalysis:
+        def execute(self, request):
+            return AnalysisWorkflowResult(
+                request.workflow_key,
+                "failed",
+                request.logical_local_date,
+                None,
+                "blocked",
+                (
+                    AnalysisWorkflowStep(
+                        "quality", "garmin", "audit", "inv-audit", "failed",
+                        None, error_code="receipt_schema_invalid",
+                    ),
+                ),
+                "operator_review",
+                None,
+                "receipt_schema_invalid",
+            )
+
+    receipt = tool(morning=FailedAnalysis()).execute(request())
+    assert receipt.status == "failed"
+    assert receipt.errors[0]["code"] == "receipt_schema_invalid"
+
+
 def test_non_contract_request_type_raises_before_any_side_effect() -> None:
     with pytest.raises(OrchestrationApplicationError):
         tool(morning=Analysis()).execute(object())  # type: ignore[arg-type]

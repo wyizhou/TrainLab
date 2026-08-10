@@ -6,6 +6,7 @@ __pycache__/
 *.egg-info/
 build/
 dist/
+.orchestration/
 
 # Personal health data and runtime-only files are excluded from normal commits.
 # A deliberately sanitized snapshot can still be added explicitly with git -f.

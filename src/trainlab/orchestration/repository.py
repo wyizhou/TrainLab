@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Mapping
 
 from trainlab.foundation import validate_schema_manifest
+from .evidence_codes import DOWNSTREAM_FAILURE_EVIDENCE_CODES
 from .scheduling_config import SchedulerJobProjection
 
 if TYPE_CHECKING:
@@ -51,7 +52,7 @@ _HASH = re.compile(r"^[0-9a-f]{64}$")
 _IDENTIFIER = re.compile(r"^[A-Za-z0-9_.:-]{1,128}$")
 _CODE = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
 _UTC_TEXT = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z$")
-_NO_RECEIPT_EVIDENCE = frozenset({"deterministic_check", "process_start_failed", "process_timeout", "provider_unavailable"})
+_NO_RECEIPT_EVIDENCE = frozenset({"deterministic_check", "process_start_failed", "process_timeout", "provider_unavailable"}) | DOWNSTREAM_FAILURE_EVIDENCE_CODES
 _ALLOWED_TABLES = frozenset({
     "scheduler_jobs", "scheduler_leases", "orchestrator_runs", "orchestrator_steps",
     "service_health_checks", "operational_incidents", "operational_alert_deliveries",
@@ -530,7 +531,6 @@ class OrchestrationRepository:
             clauses = [
                 "i.category='workflow'",
                 "i.state='open'",
-                "i.error_code='workflow_execution_failed'",
                 "i.related_workflow_run_id IS NOT NULL",
                 "r.id<?",
             ]
@@ -615,15 +615,83 @@ class OrchestrationRepository:
                 raise OrchestrationRepositoryError("operational_alert_reference_invalid") from exc
             return self._alert_by_id(conn, cursor.lastrowid)
 
-    def transition_alert_delivery(self, idempotency_key: str, status: AlertStatus) -> AlertDeliveryRecord:
+    def transition_alert_delivery(
+        self,
+        idempotency_key: str,
+        status: AlertStatus,
+        *,
+        at_utc: datetime | None = None,
+        provider_message_id: str | None = None,
+        provider_thread_id: str | None = None,
+        error_code: str | None = None,
+        error_summary: str | None = None,
+    ) -> AlertDeliveryRecord:
         _identifier(idempotency_key)
+        for provider_id in (provider_message_id, provider_thread_id):
+            if provider_id is not None:
+                _identifier(provider_id)
+        _safe_text(error_code); _safe_text(error_summary)
+        timestamp = _optional_utc(at_utc)
         with self._transaction() as conn:
             current = self._alert_by_key(conn, idempotency_key)
-            if current.status == status:
+            if (
+                current.status == status
+                and provider_message_id is None
+                and provider_thread_id is None
+                and timestamp is None
+                and error_code is None
+                and error_summary is None
+            ):
                 return current
-            _transition(_ALERT_TRANSITIONS, current.status, status, "operational_alert")
-            conn.execute("UPDATE operational_alert_deliveries SET status=? WHERE id=?", (status, current.id))
+            if current.status != status:
+                _transition(_ALERT_TRANSITIONS, current.status, status, "operational_alert")
+            success = status in {"sent", "already_sent"}
+            conn.execute(
+                "UPDATE operational_alert_deliveries SET status=?,"
+                "provider_message_id=COALESCE(?,provider_message_id),"
+                "provider_thread_id=COALESCE(?,provider_thread_id),"
+                "sent_at_utc=CASE WHEN ?='sent' THEN COALESCE(sent_at_utc,?) ELSE sent_at_utc END,"
+                "last_verified_at_utc=CASE WHEN ? IN ('sent','already_sent') THEN COALESCE(?,last_verified_at_utc) ELSE last_verified_at_utc END,"
+                "error_code=?,error_summary=? WHERE id=?",
+                (
+                    status, provider_message_id, provider_thread_id, status,
+                    timestamp, status, timestamp,
+                    None if success else error_code,
+                    None if success else error_summary,
+                    current.id,
+                ),
+            )
             return self._alert_by_id(conn, current.id)
+
+    def reconcilable_alert_deliveries(
+        self, limit: int = 100
+    ) -> tuple[tuple[IncidentRecord, AlertDeliveryRecord], ...]:
+        """Return bounded ambiguous alert sends for startup reconciliation."""
+
+        if type(limit) is not int or isinstance(limit, bool) or not 1 <= limit <= 100:
+            raise OrchestrationRepositoryError("operational_alert_query_limit_invalid")
+
+        def query(conn):
+            rows = conn.execute(
+                "SELECT i.id,i.incident_key,i.category,i.severity,i.state,"
+                "i.related_workflow_run_id,i.related_step_id,i.first_seen_at_utc,"
+                "i.last_seen_at_utc,i.occurrence_count,i.resolved_at_utc,"
+                "i.error_code,i.error_summary,i.next_action,"
+                "d.id,d.operational_incident_id,d.idempotency_key,d.status,"
+                "d.provider_message_id,d.provider_thread_id,d.sent_at_utc,"
+                "d.last_verified_at_utc,d.error_code,d.error_summary "
+                "FROM operational_alert_deliveries AS d "
+                "JOIN operational_incidents AS i ON i.id=d.operational_incident_id "
+                "WHERE d.status IN ('sending','delivery_unknown') "
+                "ORDER BY d.id ASC LIMIT ?",
+                (limit,),
+            ).fetchall()
+            return tuple(
+                (self._incident_from_row(row[:14]), self._alert_from_row(row[14:]))
+                for row in rows
+            )
+
+        return self._readonly(query)
 
     def get_workflow(self, workflow_key: str) -> WorkflowRunRecord | None:
         _identifier(workflow_key)

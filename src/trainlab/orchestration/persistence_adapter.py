@@ -9,6 +9,10 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from .contracts import WorkflowReceipt, WorkflowRequest, WorkflowStepReceipt
+from .evidence_codes import (
+    DOWNSTREAM_FAILURE_EVIDENCE_CODES,
+    downstream_failure_evidence,
+)
 from .domain_state_machine import StepTransitionEvent, WorkflowTransitionEvent
 from .repository import OrchestrationRepository
 from .state_projection import StepDefinition, WorkflowDefinition
@@ -227,7 +231,19 @@ class RepositoryReceiptStore:
                     ),
                 )
                 cursor += timedelta(microseconds=1)
-            evidence = None if item.receipt_sha256 else "process_start_failed"
+            receipt_error_codes = tuple(
+                error.get("code")
+                for error in receipt.errors
+                if isinstance(error, dict)
+                and error.get("code") in DOWNSTREAM_FAILURE_EVIDENCE_CODES
+            )
+            evidence = (
+                None
+                if item.receipt_sha256
+                else downstream_failure_evidence(
+                    receipt_error_codes[0] if receipt_error_codes else None
+                )
+            )
             retry = _parse_utc(receipt.next_retry_at_utc) if (
                 item.status in {"deferred", "lock_busy"} and receipt.next_retry_at_utc
             ) else None
