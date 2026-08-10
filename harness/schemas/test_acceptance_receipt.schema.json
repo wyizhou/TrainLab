@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trainlab.local/schemas/test_acceptance_receipt.schema.json",
+  "title": "TrainLab isolated test acceptance receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "receipt_kind",
+    "run_id",
+    "subject_id",
+    "test_root",
+    "database_path",
+    "raw_root",
+    "state_root",
+    "self_recipient",
+    "mail_marker",
+    "partitions",
+    "external_effects"
+  ],
+  "properties": {
+    "schema_version": {"const": "1"},
+    "receipt_kind": {"const": "test_acceptance"},
+    "run_id": {"type": "string", "pattern": "^test-[a-z0-9]+-[0-9a-f]{32}$"},
+    "subject_id": {"type": "string", "pattern": "^test-[a-z0-9]+-[0-9a-f]{32}$"},
+    "test_root": {"type": "string", "minLength": 1},
+    "database_path": {"type": "string", "minLength": 1},
+    "raw_root": {"type": "string", "minLength": 1},
+    "state_root": {"type": "string", "minLength": 1},
+    "self_recipient": {"type": "string", "pattern": "^[a-z0-9-]+@example\\.invalid$"},
+    "mail_marker": {"type": "string", "pattern": "^TrainLab-Test:[0-9a-f]{32}$"},
+    "partitions": {
+      "type": "array",
+      "minItems": 6,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "synthetic-fixture",
+          "production-db-path",
+          "private-raw-path",
+          "credential-path",
+          "marked-test-mail",
+          "unmarked-mail"
+        ]
+      }
+    },
+    "external_effects": {"const": false}
+  }
+}

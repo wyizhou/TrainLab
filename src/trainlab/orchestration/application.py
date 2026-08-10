@@ -13,7 +13,7 @@ import json
 import re
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
-from typing import Protocol
+from typing import Callable, Protocol
 from zoneinfo import ZoneInfo
 
 from .analysis_workflows import AnalysisWorkflowRequest, AnalysisWorkflowResult
@@ -53,7 +53,11 @@ class AnalysisWorkflowExecutor(Protocol):
 
 class MailWorkflowExecutor(Protocol):
     def execute(
-        self, *, subject_id: int, invocation_id: str, max_items: int,
+        self,
+        *,
+        subject_id: int,
+        invocation_id: str,
+        max_items: int,
         deadline_seconds: int,
     ) -> MailWorkflowOutcome: ...
 
@@ -79,18 +83,43 @@ _SUBJECT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$")
 _MAIL_SUBJECT = re.compile(r"^[1-9][0-9]{0,18}$")
 _UTC = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z$")
 _HONG_KONG = ZoneInfo("Asia/Hong_Kong")
-_WORKFLOW_STATUSES = frozenset({
-    "succeeded", "partial", "deferred", "attention_required", "failed",
-})
-_STEP_STATUSES = frozenset({
-    "pending", "running", "succeeded", "unchanged", "partial", "deferred",
-    "lock_busy", "auth_required", "rejected", "failed", "skipped",
-})
-_SAFE_CODES = frozenset({
-    "orchestration_dependency_missing", "orchestration_subject_inactive",
-    "orchestration_request_invalid", "orchestration_execution_failed",
-    "orchestration_receipt_persistence_failed", "orchestration_outcome_invalid",
-}) | DOWNSTREAM_FAILURE_EVIDENCE_CODES
+_WORKFLOW_STATUSES = frozenset(
+    {
+        "succeeded",
+        "partial",
+        "deferred",
+        "attention_required",
+        "failed",
+    }
+)
+_STEP_STATUSES = frozenset(
+    {
+        "pending",
+        "running",
+        "succeeded",
+        "unchanged",
+        "partial",
+        "deferred",
+        "lock_busy",
+        "auth_required",
+        "rejected",
+        "failed",
+        "skipped",
+    }
+)
+_SAFE_CODES = (
+    frozenset(
+        {
+            "orchestration_dependency_missing",
+            "orchestration_subject_inactive",
+            "orchestration_request_invalid",
+            "orchestration_execution_failed",
+            "orchestration_receipt_persistence_failed",
+            "orchestration_outcome_invalid",
+        }
+    )
+    | DOWNSTREAM_FAILURE_EVIDENCE_CODES
+)
 
 
 def _parse_utc(value: object, code: str) -> datetime:
@@ -122,7 +151,12 @@ def _utc_text(value: datetime) -> str:
 
 
 def _safe_error(code: str) -> tuple[dict[str, str], ...]:
-    return ({"code": code if code in _SAFE_CODES else "orchestration_execution_failed", "summary": "workflow could not be completed safely"},)
+    return (
+        {
+            "code": code if code in _SAFE_CODES else "orchestration_execution_failed",
+            "summary": "workflow could not be completed safely",
+        },
+    )
 
 
 class OrchestrationTool:
@@ -136,7 +170,7 @@ class OrchestrationTool:
     def __init__(
         self,
         *,
-        clock: callable,
+        clock: Callable[[], datetime],
         subject_authorizer: SubjectAuthorizer | None,
         receipt_store: ReceiptStore | None,
         operator_retry_authorizer: OperatorRetryAuthorizer | None = None,
@@ -147,9 +181,17 @@ class OrchestrationTool:
         mail_max_items: int = 100,
         mail_deadline_seconds: int = 120,
     ) -> None:
-        if not isinstance(mail_max_items, int) or isinstance(mail_max_items, bool) or not 1 <= mail_max_items <= 10_000:
+        if (
+            not isinstance(mail_max_items, int)
+            or isinstance(mail_max_items, bool)
+            or not 1 <= mail_max_items <= 10_000
+        ):
             raise OrchestrationApplicationError("orchestration_request_invalid")
-        if not isinstance(mail_deadline_seconds, int) or isinstance(mail_deadline_seconds, bool) or not 1 <= mail_deadline_seconds <= 10_000:
+        if (
+            not isinstance(mail_deadline_seconds, int)
+            or isinstance(mail_deadline_seconds, bool)
+            or not 1 <= mail_deadline_seconds <= 10_000
+        ):
             raise OrchestrationApplicationError("orchestration_request_invalid")
         self._clock = clock
         self._subjects = subject_authorizer
@@ -157,7 +199,10 @@ class OrchestrationTool:
         self._retry_authorizer = operator_retry_authorizer
         self._morning, self._weekly = morning, weekly
         self._mail, self._health = mail, health_check
-        self._mail_max_items, self._mail_deadline_seconds = mail_max_items, mail_deadline_seconds
+        self._mail_max_items, self._mail_deadline_seconds = (
+            mail_max_items,
+            mail_deadline_seconds,
+        )
 
     def execute(self, request: WorkflowRequest) -> WorkflowReceipt:
         """Execute exactly one known workflow without accepting arbitrary inputs."""
@@ -178,31 +223,55 @@ class OrchestrationTool:
                 raise OrchestrationApplicationError("orchestration_dependency_missing")
             self._store.record_orchestration_receipt(request, receipt)
         except Exception:
-            receipt = self._failure(request, now, "orchestration_receipt_persistence_failed")
+            receipt = self._failure(
+                request, now, "orchestration_receipt_persistence_failed"
+            )
         return receipt
 
     def _now(self) -> datetime:
         value = self._clock()
-        if not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() != UTC.utcoffset(None):
+        if (
+            not isinstance(value, datetime)
+            or value.tzinfo is None
+            or value.utcoffset() != UTC.utcoffset(None)
+        ):
             raise OrchestrationApplicationError("orchestration_request_invalid")
         return value.astimezone(UTC)
 
     def _validate(self, request: WorkflowRequest, now: datetime) -> None:
         if request.workflow_kind not in {"morning", "weekly", "mail", "health_check"}:
             raise OrchestrationApplicationError("orchestration_request_invalid")
-        if request.trigger_kind not in {"scheduled", "recovery", "manual", "dependency"}:
+        if request.trigger_kind not in {
+            "scheduled",
+            "recovery",
+            "manual",
+            "dependency",
+        }:
             raise OrchestrationApplicationError("orchestration_request_invalid")
-        if not isinstance(request.invocation_id, str) or _ID.fullmatch(request.invocation_id) is None:
-            raise OrchestrationApplicationError("orchestration_request_invalid")
-        if request.parent_workflow_run_id is not None and (
-            not isinstance(request.parent_workflow_run_id, str) or _ID.fullmatch(request.parent_workflow_run_id) is None
+        if (
+            not isinstance(request.invocation_id, str)
+            or _ID.fullmatch(request.invocation_id) is None
         ):
             raise OrchestrationApplicationError("orchestration_request_invalid")
-        if type(request.dependency_ids) is not tuple or len(request.dependency_ids) > 64 or len(set(request.dependency_ids)) != len(request.dependency_ids):
+        if request.parent_workflow_run_id is not None and (
+            not isinstance(request.parent_workflow_run_id, str)
+            or _ID.fullmatch(request.parent_workflow_run_id) is None
+        ):
             raise OrchestrationApplicationError("orchestration_request_invalid")
-        if any(not isinstance(item, str) or _ID.fullmatch(item) is None for item in request.dependency_ids):
+        if (
+            type(request.dependency_ids) is not tuple
+            or len(request.dependency_ids) > 64
+            or len(set(request.dependency_ids)) != len(request.dependency_ids)
+        ):
             raise OrchestrationApplicationError("orchestration_request_invalid")
-        requested = _parse_utc(request.requested_at_utc, "orchestration_request_invalid")
+        if any(
+            not isinstance(item, str) or _ID.fullmatch(item) is None
+            for item in request.dependency_ids
+        ):
+            raise OrchestrationApplicationError("orchestration_request_invalid")
+        requested = _parse_utc(
+            request.requested_at_utc, "orchestration_request_invalid"
+        )
         deadline = _parse_utc(request.deadline_at_utc, "orchestration_request_invalid")
         if requested > deadline or deadline < now:
             raise OrchestrationApplicationError("orchestration_request_invalid")
@@ -210,12 +279,18 @@ class OrchestrationTool:
             if request.subject_id is not None or request.logical_local_date is not None:
                 raise OrchestrationApplicationError("orchestration_request_invalid")
             return
-        if not isinstance(request.subject_id, str) or _SUBJECT.fullmatch(request.subject_id) is None:
+        if (
+            not isinstance(request.subject_id, str)
+            or _SUBJECT.fullmatch(request.subject_id) is None
+        ):
             raise OrchestrationApplicationError("orchestration_request_invalid")
         if self._subjects is None or not self._subjects.is_active(request.subject_id):
             raise OrchestrationApplicationError("orchestration_subject_inactive")
         if request.workflow_kind == "mail":
-            if request.logical_local_date is not None or _MAIL_SUBJECT.fullmatch(request.subject_id) is None:
+            if (
+                request.logical_local_date is not None
+                or _MAIL_SUBJECT.fullmatch(request.subject_id) is None
+            ):
                 raise OrchestrationApplicationError("orchestration_request_invalid")
         else:
             logical = _date(request.logical_local_date)
@@ -230,9 +305,7 @@ class OrchestrationTool:
                 and request.parent_workflow_run_id is not None
                 and not is_operator_retry
             ):
-                raise OrchestrationApplicationError(
-                    "orchestration_request_invalid"
-                )
+                raise OrchestrationApplicationError("orchestration_request_invalid")
             if (
                 requested.astimezone(_HONG_KONG).date() != logical
                 and not is_operator_retry
@@ -247,17 +320,26 @@ class OrchestrationTool:
         if request.workflow_kind == "morning":
             if self._morning is None:
                 raise OrchestrationApplicationError("orchestration_dependency_missing")
-            outcome = self._morning.execute(self._analysis_request_instance(request, "morning"))
+            outcome = self._morning.execute(
+                self._analysis_request_instance(request, "morning")
+            )
             return self._analysis_receipt(request, now, outcome)
         if request.workflow_kind == "weekly":
             if self._weekly is None:
                 raise OrchestrationApplicationError("orchestration_dependency_missing")
-            outcome = self._weekly.execute(self._analysis_request_instance(request, "monday"))
+            outcome = self._weekly.execute(
+                self._analysis_request_instance(request, "monday")
+            )
             return self._analysis_receipt(request, now, outcome)
         if request.workflow_kind == "mail":
             if self._mail is None:
                 raise OrchestrationApplicationError("orchestration_dependency_missing")
-            outcome = self._mail.execute(subject_id=int(request.subject_id or "0"), invocation_id=request.invocation_id, max_items=self._mail_max_items, deadline_seconds=self._mail_deadline_seconds)
+            outcome = self._mail.execute(
+                subject_id=int(request.subject_id or "0"),
+                invocation_id=request.invocation_id,
+                max_items=self._mail_max_items,
+                deadline_seconds=self._mail_deadline_seconds,
+            )
             return self._mail_receipt(request, now, outcome)
         if self._health is None:
             raise OrchestrationApplicationError("orchestration_dependency_missing")
@@ -284,51 +366,98 @@ class OrchestrationTool:
     ) -> AnalysisWorkflowRequest:
         assert request.subject_id is not None and request.logical_local_date is not None
         return AnalysisWorkflowRequest(
-            self._workflow_key(request), request.subject_id,
+            self._workflow_key(request),
+            request.subject_id,
             request.logical_local_date,
             _parse_utc(request.requested_at_utc, "orchestration_request_invalid"),
             kind,  # type: ignore[arg-type]
         )
 
-    def _base(self, request: WorkflowRequest, now: datetime, *, status: str, steps: tuple[WorkflowStepReceipt, ...] = (), next_action: str = "none", next_retry: str | None = None, incidents: tuple[str, ...] = (), warnings: tuple[dict[str, str], ...] = (), errors: tuple[dict[str, str], ...] = ()) -> WorkflowReceipt:
+    def _base(
+        self,
+        request: WorkflowRequest,
+        now: datetime,
+        *,
+        status: str,
+        steps: tuple[WorkflowStepReceipt, ...] = (),
+        next_action: str = "none",
+        next_retry: str | None = None,
+        incidents: tuple[str, ...] = (),
+        warnings: tuple[dict[str, str], ...] = (),
+        errors: tuple[dict[str, str], ...] = (),
+    ) -> WorkflowReceipt:
         return WorkflowReceipt(
             workflow_run_id=f"run:{self._workflow_key(request)}",
-            workflow_key=self._workflow_key(request), workflow_kind=request.workflow_kind, status=status,  # type: ignore[arg-type]
-            trigger_kind=request.trigger_kind, scheduled_at_utc=request.requested_at_utc if request.trigger_kind == "scheduled" else None,
-            started_at_utc=_utc_text(now), completed_at_utc=_utc_text(now), logical_local_date=request.logical_local_date,
-            steps=steps, next_action=next_action, next_retry_at_utc=next_retry,
-            incident_ids=incidents, warnings=warnings, errors=errors,
+            workflow_key=self._workflow_key(request),
+            workflow_kind=request.workflow_kind,
+            status=status,
+            trigger_kind=request.trigger_kind,
+            scheduled_at_utc=request.requested_at_utc
+            if request.trigger_kind == "scheduled"
+            else None,
+            started_at_utc=_utc_text(now),
+            completed_at_utc=_utc_text(now),
+            logical_local_date=request.logical_local_date,
+            steps=steps,
+            next_action=next_action,
+            next_retry_at_utc=next_retry,
+            incident_ids=incidents,
+            warnings=warnings,
+            errors=errors,
         )
 
-    def _analysis_receipt(self, request: WorkflowRequest, now: datetime, outcome: AnalysisWorkflowResult) -> WorkflowReceipt:
-        if outcome.status not in _WORKFLOW_STATUSES or outcome.logical_local_date != request.logical_local_date:
+    def _analysis_receipt(
+        self, request: WorkflowRequest, now: datetime, outcome: AnalysisWorkflowResult
+    ) -> WorkflowReceipt:
+        if (
+            outcome.status not in _WORKFLOW_STATUSES
+            or outcome.logical_local_date != request.logical_local_date
+        ):
             raise OrchestrationApplicationError("orchestration_outcome_invalid")
         steps = tuple(
             WorkflowStepReceipt(
-                step_id=item.step_key, layer=item.layer, mode=item.mode,
-                status=item.status if item.status in _STEP_STATUSES else "failed", downstream_run_id=None,
-                downstream_invocation_id=item.invocation_id, receipt_sha256=item.receipt_sha256,
-            ) for item in outcome.steps
+                step_id=item.step_key,
+                layer=item.layer,
+                mode=item.mode,
+                status=item.status if item.status in _STEP_STATUSES else "failed",
+                downstream_run_id=None,
+                downstream_invocation_id=item.invocation_id,
+                receipt_sha256=item.receipt_sha256,
+            )
+            for item in outcome.steps
         )
-        if any(item.status == "failed" and source.status not in _STEP_STATUSES for item, source in zip(steps, outcome.steps)):
+        if any(
+            item.status == "failed" and source.status not in _STEP_STATUSES
+            for item, source in zip(steps, outcome.steps)
+        ):
             raise OrchestrationApplicationError("orchestration_outcome_invalid")
         return self._base(
-            request, now, status=outcome.status, steps=steps,
+            request,
+            now,
+            status=outcome.status,
+            steps=steps,
             next_action=outcome.next_action,
             next_retry=outcome.next_retry_at_utc,
             errors=_safe_error(outcome.error_code) if outcome.error_code else (),
         )
 
-    def _mail_receipt(self, request: WorkflowRequest, now: datetime, outcome: MailWorkflowOutcome) -> WorkflowReceipt:
+    def _mail_receipt(
+        self, request: WorkflowRequest, now: datetime, outcome: MailWorkflowOutcome
+    ) -> WorkflowReceipt:
         if outcome.status not in _WORKFLOW_STATUSES:
             raise OrchestrationApplicationError("orchestration_outcome_invalid")
         if outcome.status == "deferred" and outcome.next_retry_at_utc is None:
             raise OrchestrationApplicationError("orchestration_outcome_invalid")
-        if len(outcome.calls) != len(outcome.receipt_sha256s) and outcome.status == "succeeded":
+        if (
+            len(outcome.calls) != len(outcome.receipt_sha256s)
+            and outcome.status == "succeeded"
+        ):
             raise OrchestrationApplicationError("orchestration_outcome_invalid")
         steps = tuple(
             WorkflowStepReceipt(
-                step_id=f"mail:{index}", layer=call.layer, mode=call.mode,
+                step_id=f"mail:{index}",
+                layer=call.layer,
+                mode=call.mode,
                 status=(
                     "deferred"
                     if outcome.status == "deferred"
@@ -337,9 +466,13 @@ class OrchestrationTool:
                     if index < len(outcome.receipt_sha256s)
                     else "pending"
                 ),
-                downstream_run_id=None, downstream_invocation_id=call.invocation_id,
-                receipt_sha256=outcome.receipt_sha256s[index] if index < len(outcome.receipt_sha256s) else None,
-            ) for index, call in enumerate(outcome.calls)
+                downstream_run_id=None,
+                downstream_invocation_id=call.invocation_id,
+                receipt_sha256=outcome.receipt_sha256s[index]
+                if index < len(outcome.receipt_sha256s)
+                else None,
+            )
+            for index, call in enumerate(outcome.calls)
         )
         errors = _safe_error(outcome.error_code) if outcome.error_code else ()
         return self._base(
@@ -352,8 +485,13 @@ class OrchestrationTool:
             errors=errors,
         )
 
-    def _health_receipt(self, request: WorkflowRequest, now: datetime, outcome: HealthWorkflowOutcome) -> WorkflowReceipt:
-        if type(outcome) is not HealthWorkflowOutcome or outcome.status not in _WORKFLOW_STATUSES:
+    def _health_receipt(
+        self, request: WorkflowRequest, now: datetime, outcome: HealthWorkflowOutcome
+    ) -> WorkflowReceipt:
+        if (
+            type(outcome) is not HealthWorkflowOutcome
+            or outcome.status not in _WORKFLOW_STATUSES
+        ):
             raise OrchestrationApplicationError("orchestration_outcome_invalid")
         step_status = {
             "succeeded": "succeeded",
@@ -362,28 +500,54 @@ class OrchestrationTool:
             "attention_required": "partial",
             "failed": "failed",
         }[outcome.status]
-        evidence = hashlib.sha256(json.dumps(
-            {
-                "invocation_id": request.invocation_id,
-                "status": outcome.status,
-                "next_action": outcome.next_action,
-                "next_retry_at_utc": outcome.next_retry_at_utc,
-                "incident_ids": outcome.incident_ids,
-                "warning_count": len(outcome.warnings),
-                "error_count": len(outcome.errors),
-            },
-            sort_keys=True, separators=(",", ":"),
-        ).encode("utf-8")).hexdigest()
+        evidence = hashlib.sha256(
+            json.dumps(
+                {
+                    "invocation_id": request.invocation_id,
+                    "status": outcome.status,
+                    "next_action": outcome.next_action,
+                    "next_retry_at_utc": outcome.next_retry_at_utc,
+                    "incident_ids": outcome.incident_ids,
+                    "warning_count": len(outcome.warnings),
+                    "error_count": len(outcome.errors),
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        ).hexdigest()
         step = WorkflowStepReceipt(
-            "health_check", "orchestration", "health_check", step_status,
-            None, request.invocation_id, evidence,
+            "health_check",
+            "orchestration",
+            "health_check",
+            step_status,
+            None,
+            request.invocation_id,
+            evidence,
             {
                 "incidents": len(outcome.incident_ids),
                 "warnings": len(outcome.warnings),
                 "errors": len(outcome.errors),
             },
         )
-        return self._base(request, now, status=outcome.status, steps=(step,), next_action=outcome.next_action, next_retry=outcome.next_retry_at_utc, incidents=outcome.incident_ids, warnings=outcome.warnings, errors=outcome.errors)
+        return self._base(
+            request,
+            now,
+            status=outcome.status,
+            steps=(step,),
+            next_action=outcome.next_action,
+            next_retry=outcome.next_retry_at_utc,
+            incidents=outcome.incident_ids,
+            warnings=outcome.warnings,
+            errors=outcome.errors,
+        )
 
-    def _failure(self, request: WorkflowRequest, now: datetime, code: str) -> WorkflowReceipt:
-        return self._base(request, now, status="failed", next_action="operator_review", errors=_safe_error(code))
+    def _failure(
+        self, request: WorkflowRequest, now: datetime, code: str
+    ) -> WorkflowReceipt:
+        return self._base(
+            request,
+            now,
+            status="failed",
+            next_action="operator_review",
+            errors=_safe_error(code),
+        )

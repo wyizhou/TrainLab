@@ -88,15 +88,11 @@ class ProductionOrchestrationApplication:
     def _configured_recipient(self) -> str:
         try:
             value = json.loads(
-                (self._root / "config/trainlab.json").read_text(
-                    encoding="utf-8"
-                )
+                (self._root / "config/trainlab.json").read_text(encoding="utf-8")
             )
             recipient = value["mail"]["recipient_email"]
         except (OSError, TypeError, ValueError, KeyError):
-            raise ValueError(
-                "orchestration_alert_configuration_invalid"
-            ) from None
+            raise ValueError("orchestration_alert_configuration_invalid") from None
         if (
             not isinstance(value, dict)
             or value.get("schema_version") != 1
@@ -120,7 +116,9 @@ class ProductionOrchestrationApplication:
 
     def doctor(self) -> dict[str, Any]:
         result: dict[str, Any] = {
-            "schema_version": "1", "status": "ready", "checks": {},
+            "schema_version": "1",
+            "status": "ready",
+            "checks": {},
         }
         try:
             verify_frozen_contracts(self._root)
@@ -128,7 +126,8 @@ class ProductionOrchestrationApplication:
             foundation = FoundationConfig.load(self._root)
             status = FoundationTool(foundation).execute(
                 FoundationRequest(
-                    "status", "orchestration-doctor",
+                    "status",
+                    "orchestration-doctor",
                     datetime.now(UTC).isoformat().replace("+00:00", "Z"),
                 )
             )
@@ -154,6 +153,7 @@ class ProductionOrchestrationApplication:
         health = None
         try:
             from .health_workflow import HealthWorkflow
+
             alerts = self._alert_service(config, repository)
             health = HealthWorkflow(
                 database_path=foundation.database_path,
@@ -178,13 +178,14 @@ class ProductionOrchestrationApplication:
                 runner, SqlitePlanRevisionResolver(foundation.database_path)
             ),
             health_check=health,
-            mail_deadline_seconds=min(
-                config.workflow_deadline_seconds, 900
-            ),
+            mail_deadline_seconds=min(config.workflow_deadline_seconds, 900),
         )
 
     def run_workflow(
-        self, workflow_kind: str, *, logical_date: str | None,
+        self,
+        workflow_kind: str,
+        *,
+        logical_date: str | None,
         invocation_id: str | None,
     ) -> object:
         foundation, config, repository, subjects = self._components()
@@ -202,17 +203,22 @@ class ProductionOrchestrationApplication:
         elif kind != "health_check":
             raise ValueError("orchestration_workflow_kind_invalid")
         invocation = invocation_id or (
-            "manual-" + kind.replace("_", "-") + "-"
-            + now.strftime("%Y%m%dT%H%M%S")
+            "manual-" + kind.replace("_", "-") + "-" + now.strftime("%Y%m%dT%H%M%S")
         )
         request = WorkflowRequest(
-            kind, subject, logical, invocation, "manual", None, (),
-            (now + timedelta(seconds=config.workflow_deadline_seconds)).isoformat().replace("+00:00", "Z"),
+            kind,
+            subject,
+            logical,
+            invocation,
+            "manual",
+            None,
+            (),
+            (now + timedelta(seconds=config.workflow_deadline_seconds))
+            .isoformat()
+            .replace("+00:00", "Z"),
             now.isoformat().replace("+00:00", "Z"),
         )
-        receipt = self._tool(
-            foundation, config, repository, subjects
-        ).execute(request)
+        receipt = self._tool(foundation, config, repository, subjects).execute(request)
         outcome = receipt.as_json_dict()
         events = WorkflowIncidentCoordinator(repository).observe(
             workflow_key=receipt.workflow_key,
@@ -220,9 +226,7 @@ class ProductionOrchestrationApplication:
             outcome=outcome,
             seen_at_utc=datetime.now(UTC),
         )
-        self._notify_business_incidents(
-            self._alert_service(config, repository), events
-        )
+        self._notify_business_incidents(self._alert_service(config, repository), events)
         return outcome
 
     def _execute_due(self, item: DueItem) -> object:
@@ -233,9 +237,8 @@ class ProductionOrchestrationApplication:
             if (
                 decision is None
                 or decision.workflow_key != item.workflow_key
-                or decision.action not in {
-                    "start_workflow", "resume_workflow", "resume_step"
-                }
+                or decision.action
+                not in {"start_workflow", "resume_workflow", "resume_step"}
             ):
                 return self.reconcile(item.workflow_key)
             aggregate = repository.load_workflow_definition(item.workflow_key)
@@ -257,9 +260,10 @@ class ProductionOrchestrationApplication:
                 invocation = item.workflow_key.removeprefix(prefix)
             elif kind in {"morning", "weekly"}:
                 subject = subject_key
-                invocation = "scheduled-" + hashlib.sha256(
-                    item.workflow_key.encode()
-                ).hexdigest()[:24]
+                invocation = (
+                    "scheduled-"
+                    + hashlib.sha256(item.workflow_key.encode()).hexdigest()[:24]
+                )
             else:
                 raise ValueError("orchestration_due_identity_invalid")
             request = WorkflowRequest(
@@ -280,16 +284,22 @@ class ProductionOrchestrationApplication:
                     else (
                         item.due_at_utc
                         + timedelta(seconds=config.workflow_deadline_seconds)
-                    ).isoformat().replace("+00:00", "Z")
+                    )
+                    .isoformat()
+                    .replace("+00:00", "Z")
                 ),
                 workflow.started_at_utc.isoformat().replace("+00:00", "Z"),
             )
-            return self._tool(
-                foundation, config, repository, subjects
-            ).execute(request).as_json_dict()
+            return (
+                self._tool(foundation, config, repository, subjects)
+                .execute(request)
+                .as_json_dict()
+            )
         subject = (
-            None if item.workflow_kind == "health_check"
-            else str(numeric) if item.workflow_kind == "mail"
+            None
+            if item.workflow_kind == "health_check"
+            else str(numeric)
+            if item.workflow_kind == "mail"
             else subject_key
         )
         if item.workflow_kind == "mail":
@@ -303,20 +313,31 @@ class ProductionOrchestrationApplication:
                 raise ValueError("orchestration_due_identity_invalid")
             invocation = item.workflow_key.removeprefix(prefix)
         else:
-            invocation = "scheduled-" + hashlib.sha256(
-                item.workflow_key.encode()
-            ).hexdigest()[:24]
+            invocation = (
+                "scheduled-"
+                + hashlib.sha256(item.workflow_key.encode()).hexdigest()[:24]
+            )
         request = WorkflowRequest(
-            item.workflow_kind, subject, item.logical_local_date, invocation,
-            item.trigger_kind, None, (),
-            (item.deadline_at_utc or item.due_at_utc + timedelta(
-                seconds=config.workflow_deadline_seconds
-            )).isoformat().replace("+00:00", "Z"),
+            item.workflow_kind,
+            subject,
+            item.logical_local_date,
+            invocation,
+            item.trigger_kind,
+            None,
+            (),
+            (
+                item.deadline_at_utc
+                or item.due_at_utc + timedelta(seconds=config.workflow_deadline_seconds)
+            )
+            .isoformat()
+            .replace("+00:00", "Z"),
             item.due_at_utc.isoformat().replace("+00:00", "Z"),
         )
-        return self._tool(
-            foundation, config, repository, subjects
-        ).execute(request).as_json_dict()
+        return (
+            self._tool(foundation, config, repository, subjects)
+            .execute(request)
+            .as_json_dict()
+        )
 
     @staticmethod
     def _notify_business_incidents(
@@ -325,17 +346,18 @@ class ProductionOrchestrationApplication:
     ) -> None:
         if alerts is None or events is None:
             return
-        for keys, event in (
-            (events.opened, "open"),
-            (events.recovered, "recovery"),
-        ):
-            for incident_key in keys:
-                try:
-                    alerts.deliver(incident_key, event=event)
-                except Exception:
-                    # The incident transition is already durable. Alert
-                    # reconciliation must not invalidate the workflow result.
-                    continue
+        for incident_key in events.opened:
+            try:
+                alerts.deliver(incident_key, event="open")
+            except Exception:
+                # The incident transition is already durable. Alert
+                # reconciliation must not invalidate the workflow result.
+                continue
+        for incident_key in events.recovered:
+            try:
+                alerts.deliver(incident_key, event="recovery")
+            except Exception:
+                continue
 
     def supervisor_run(self) -> object:
         # Idempotent bootstrap is the only normal first-layer mutation.
@@ -343,12 +365,17 @@ class ProductionOrchestrationApplication:
         now = datetime.now(UTC)
         bootstrap = FoundationTool(foundation).execute(
             FoundationRequest(
-                "init", "orchestration-supervisor-bootstrap",
+                "init",
+                "orchestration-supervisor-bootstrap",
                 now.isoformat().replace("+00:00", "Z"),
             )
         )
         if not bootstrap.ready:
-            return {"schema_version": "1", "status": "blocked", "error_code": "foundation_not_ready"}
+            return {
+                "schema_version": "1",
+                "status": "blocked",
+                "error_code": "foundation_not_ready",
+            }
         foundation, config, repository, _subjects = self._components()
         projections = SchedulingProjectionService().project(config, now)
         for projection in projections:
@@ -358,49 +385,56 @@ class ProductionOrchestrationApplication:
         numeric, _subject_key = self._active_subject(foundation.database_path)
         instance = f"host-{os.getpid()}"
         lease = LeaseManager(
-            foundation.database_path, config.state_lock_path, instance,
-            os.getpid(), _Clock(), _ProcessProbe(), config.lease_ttl_seconds,
+            foundation.database_path,
+            config.state_lock_path,
+            instance,
+            os.getpid(),
+            _Clock(),
+            _ProcessProbe(),
+            config.lease_ttl_seconds,
         )
         supervisor = Supervisor(lease)
         queue = DueQueueService(
             repository, lease, _Clock(), subject_id=numeric, host_id=instance
         )
         alerts = self._alert_service(config, repository)
+        alerts_ready_for_new_sends = True
         if alerts is not None:
             try:
-                alerts.reconcile_outstanding()
+                reconciled = alerts.reconcile_outstanding()
+                alerts_ready_for_new_sends = all(
+                    result.alert_status not in {"sending", "delivery_unknown"}
+                    for result in reconciled
+                )
             except Exception:
-                # A prior ambiguous alert remains durable and retryable. Gmail
-                # reconciliation must not prevent the scheduler from starting.
-                pass
+                # Do not erase the durable ambiguity and, critically, do not
+                # attach fresh-send callbacks after reconciliation failed.
+                alerts_ready_for_new_sends = False
         incidents = WorkflowIncidentCoordinator(repository)
         runtime = SupervisorRuntime(
-            supervisor, queue, config, dispatch=self._execute_due,
+            supervisor,
+            queue,
+            config,
+            dispatch=self._execute_due,
             watchdog=SystemdNotifier(),
             incident_notifier=(
                 None
-                if alerts is None
-                else lambda incident_key: alerts.deliver(
-                    incident_key, event="open"
-                )
+                if alerts is None or not alerts_ready_for_new_sends
+                else lambda incident_key: alerts.deliver(incident_key, event="open")
             ),
             incident_recovery_notifier=(
                 None
-                if alerts is None
-                else lambda incident_key: alerts.deliver(
-                    incident_key, event="recovery"
-                )
+                if alerts is None or not alerts_ready_for_new_sends
+                else lambda incident_key: alerts.deliver(incident_key, event="recovery")
             ),
-            business_failure_handler=lambda item, outcome: (
-                incidents.observe(
-                    workflow_key=item.workflow_key,
-                    workflow_kind=item.workflow_kind,
-                    outcome=outcome,
-                    seen_at_utc=datetime.now(UTC),
-                )
+            business_failure_handler=lambda item, outcome: incidents.observe(
+                workflow_key=item.workflow_key,
+                workflow_kind=item.workflow_kind,
+                outcome=outcome,
+                seen_at_utc=datetime.now(UTC),
             ),
         )
-        previous: dict[int, Any] = {}
+        previous: dict[signal.Signals, Any] = {}
         for signum in (signal.SIGTERM, signal.SIGINT):
             previous[signum] = signal.signal(
                 signum, lambda number, _frame: runtime.request_stop(number)
@@ -420,17 +454,19 @@ class ProductionOrchestrationApplication:
         rows = repository.recent_workflows(50)
         if workflow_run_id is not None:
             rows = tuple(
-                row for row in rows
-                if str(row.id) == workflow_run_id
-                or row.workflow_key == workflow_run_id
+                row
+                for row in rows
+                if str(row.id) == workflow_run_id or row.workflow_key == workflow_run_id
             )
         return {
             "schema_version": "1",
             "status": "ready",
             "workflows": [
                 {
-                    "id": str(row.id), "workflow_key": row.workflow_key,
-                    "workflow_kind": row.workflow_kind, "status": row.status,
+                    "id": str(row.id),
+                    "workflow_key": row.workflow_key,
+                    "workflow_kind": row.workflow_kind,
+                    "status": row.status,
                     "logical_local_date": row.logical_local_date,
                     "completed_at_utc": row.completed_at_utc,
                 }
@@ -446,7 +482,11 @@ class ProductionOrchestrationApplication:
         if workflow_run_id is not None:
             target = workflow_run_id
             try:
-                run = repository.get_workflow_by_id(int(target)) if target.isdecimal() else repository.get_workflow(target)
+                run = (
+                    repository.get_workflow_by_id(int(target))
+                    if target.isdecimal()
+                    else repository.get_workflow(target)
+                )
             except (ValueError, TypeError):
                 run = None
             if run is not None:
@@ -456,18 +496,28 @@ class ProductionOrchestrationApplication:
                     handoff is not None
                     and run.status == "started"
                     and run.deadline_at_utc is not None
-                    and datetime.fromisoformat(run.deadline_at_utc.replace("Z", "+00:00")) < now
+                    and datetime.fromisoformat(
+                        run.deadline_at_utc.replace("Z", "+00:00")
+                    )
+                    < now
                 ):
                     reconciled = repository.reconcile_expired_scheduler_handoff(
                         run.workflow_key, at_utc=now
                     )
-                    decisions.append({
-                        "workflow_key": reconciled.workflow_key,
-                        "action": "expired_handoff_reconciled",
-                    })
-                    return {"schema_version": "1", "status": "checked", "decisions": decisions}
+                    decisions.append(
+                        {
+                            "workflow_key": reconciled.workflow_key,
+                            "action": "expired_handoff_reconciled",
+                        }
+                    )
+                    return {
+                        "schema_version": "1",
+                        "status": "checked",
+                        "decisions": decisions,
+                    }
             rows = tuple(
-                row for row in rows
+                row
+                for row in rows
                 if str(row.run_record.id) == workflow_run_id
                 or row.run_record.workflow_key == workflow_run_id
             )
@@ -504,10 +554,7 @@ class ProductionOrchestrationApplication:
             }
 
         now = datetime.now(UTC)
-        invocation = (
-            f"retry-{workflow.id}-"
-            + now.strftime("%Y%m%dT%H%M%S.%fZ")
-        )
+        invocation = f"retry-{workflow.id}-" + now.strftime("%Y%m%dT%H%M%S.%fZ")
         request = WorkflowRequest(
             workflow.workflow_kind,
             subject_key,
@@ -516,14 +563,12 @@ class ProductionOrchestrationApplication:
             "manual",
             str(workflow.id),
             (),
-            (
-                now + timedelta(seconds=config.workflow_deadline_seconds)
-            ).isoformat().replace("+00:00", "Z"),
+            (now + timedelta(seconds=config.workflow_deadline_seconds))
+            .isoformat()
+            .replace("+00:00", "Z"),
             now.isoformat().replace("+00:00", "Z"),
         )
-        receipt = self._tool(
-            foundation, config, repository, subjects
-        ).execute(request)
+        receipt = self._tool(foundation, config, repository, subjects).execute(request)
         outcome = receipt.as_json_dict()
         events = WorkflowIncidentCoordinator(repository).observe(
             workflow_key=receipt.workflow_key,
@@ -531,9 +576,7 @@ class ProductionOrchestrationApplication:
             outcome=outcome,
             seen_at_utc=datetime.now(UTC),
         )
-        self._notify_business_incidents(
-            self._alert_service(config, repository), events
-        )
+        self._notify_business_incidents(self._alert_service(config, repository), events)
         return outcome
 
 

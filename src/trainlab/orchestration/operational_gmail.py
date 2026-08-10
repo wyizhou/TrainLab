@@ -25,8 +25,9 @@ class CurrentEnvironmentOperationalGmail:
         if receipt.status != "already_sent" or receipt.provider_message_id is None:
             return None
         result = {"provider_message_id": receipt.provider_message_id}
-        if receipt.provider_thread_id is not None:
-            result["provider_thread_id"] = receipt.provider_thread_id
+        provider_thread_id = getattr(receipt, "provider_thread_id", None)
+        if provider_thread_id is not None:
+            result["provider_thread_id"] = provider_thread_id
         return result
 
     def send_html(
@@ -52,8 +53,9 @@ class CurrentEnvironmentOperationalGmail:
             )
         self._last_delivery_message_id = receipt.provider_message_id
         result = {"provider_message_id": receipt.provider_message_id}
-        if receipt.provider_thread_id is not None:
-            result["provider_thread_id"] = receipt.provider_thread_id
+        provider_thread_id = getattr(receipt, "provider_thread_id", None)
+        if provider_thread_id is not None:
+            result["provider_thread_id"] = provider_thread_id
         return result
 
     def apply_trainlab_label(self, provider_message_id: str) -> None:

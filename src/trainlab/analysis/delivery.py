@@ -5,6 +5,7 @@ pending delivery to the immutable artifact revisions returned by A3-13 and
 returns an in-memory plain-text/HTML representation for the later delivery
 runner.  It never stores a rendered body or changes artifact/current/run state.
 """
+
 from __future__ import annotations
 
 import json
@@ -14,7 +15,7 @@ import sqlite3
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from hashlib import sha256
-from typing import Any, Callable, Literal, Mapping, Protocol, Sequence
+from typing import Any, Callable, Literal, Mapping, Protocol, Sequence, cast
 from zoneinfo import ZoneInfo
 
 from trainlab.email_templates import (
@@ -30,8 +31,14 @@ from trainlab.email_templates import (
 DeliveryKind = Literal["daily_report", "weekly_report", "plan_revision"]
 
 _DELIVERY_SHAPES: dict[str, tuple[tuple[str, str], ...]] = {
-    "daily_report": (("daily_summary", "daily_summary"), ("daily_training_advice", "daily_advice")),
-    "weekly_report": (("weekly_summary", "weekly_summary"), ("weekly_training_plan", "weekly_plan")),
+    "daily_report": (
+        ("daily_summary", "daily_summary"),
+        ("daily_training_advice", "daily_advice"),
+    ),
+    "weekly_report": (
+        ("weekly_summary", "weekly_summary"),
+        ("weekly_training_plan", "weekly_plan"),
+    ),
     "plan_revision": (("weekly_training_plan", "plan_revision"),),
 }
 _TITLES = {
@@ -59,7 +66,9 @@ class AnalysisDeliveryError(RuntimeError):
     """A controlled A3-14 failure; accepted artifacts remain untouched."""
 
 
-_DELIVERY_STATUSES = frozenset({"pending", "sending", "sent", "already_sent", "delivery_unknown", "failed"})
+_DELIVERY_STATUSES = frozenset(
+    {"pending", "sending", "sent", "already_sent", "delivery_unknown", "failed"}
+)
 _SAFE_PROVIDER_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,255}\Z")
 _SAFE_ERROR_CODE = re.compile(r"analysis_[a-z0-9_]{1,120}\Z")
 _DELIVERY_FAILURE_SUMMARY = "analysis delivery did not complete"
@@ -154,6 +163,25 @@ class PendingDelivery:
     training_load_chart: TrainingLoadChart | None = None
     yesterday_activities: tuple[ActivityOverview, ...] = ()
     heart_rate_zone_comparison: tuple[str, ...] = ()
+    resend_authorization_id: str | None = None
+
+
+@dataclass(frozen=True)
+class ResendAuthorization:
+    """An explicit, immutable authorization for one additional formal send.
+
+    The Foundation schema deliberately has no mutable resend flag.  The
+    authorization identifier is therefore included in the new delivery's
+    immutable idempotency key, which is retained with the delivery audit row.
+    """
+
+    authorization_id: str
+
+    def __post_init__(self) -> None:
+        if not _SAFE_PROVIDER_ID.fullmatch(self.authorization_id):
+            raise AnalysisDeliveryError(
+                "analysis_delivery_resend_authorization_invalid"
+            )
 
 
 def _zone_comparison_lines(
@@ -162,6 +190,7 @@ def _zone_comparison_lines(
     if delivery_kind != "weekly_report":
         return ()
     from .heart_rate_zones_store import latest_zone_candidate
+
     try:
         stored = latest_zone_candidate(connection, subject_id)
     except sqlite3.OperationalError:
@@ -185,10 +214,13 @@ def _zone_comparison_lines(
     hrr = methods.get("hrr", {})
     threshold = methods.get("historical_threshold_proxy", {})
     tanaka = methods.get("tanaka_low_confidence", {})
-    threshold_bpm = threshold.get("heart_rate_bpm") if isinstance(threshold, Mapping) else None
+    threshold_bpm = (
+        threshold.get("heart_rate_bpm") if isinstance(threshold, Mapping) else None
+    )
     threshold_text = (
         f"候选阈值 {threshold_bpm} 次/分钟（仅一致性校验）"
-        if isinstance(threshold_bpm, (int, float)) else "证据不足（仅一致性校验）"
+        if isinstance(threshold_bpm, (int, float))
+        else "证据不足（仅一致性校验）"
     )
     return (
         "HRR（主方法，待确认）：" + zones_text(hrr),
@@ -224,11 +256,21 @@ class AnalysisDeliveryState:
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="microseconds").replace("+00:00", "Z")
+    return (
+        datetime.now(timezone.utc)
+        .isoformat(timespec="microseconds")
+        .replace("+00:00", "Z")
+    )
 
 
 def _canonical(value: object) -> str:
-    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
+    return json.dumps(
+        value,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    )
 
 
 def _safe_header(value: str) -> str:
@@ -244,7 +286,9 @@ def _local_date(value: object) -> str:
     try:
         parsed = date.fromisoformat(value)
     except ValueError:
-        raise AnalysisDeliveryError("analysis_delivery_artifact_content_invalid") from None
+        raise AnalysisDeliveryError(
+            "analysis_delivery_artifact_content_invalid"
+        ) from None
     if parsed.isoformat() != value:
         raise AnalysisDeliveryError("analysis_delivery_artifact_content_invalid")
     return value
@@ -259,38 +303,95 @@ def _structured_content(value: object) -> Mapping[str, object]:
             parse_constant=lambda _value: (_ for _ in ()).throw(ValueError()),
         )
     except (TypeError, ValueError, json.JSONDecodeError):
-        raise AnalysisDeliveryError("analysis_delivery_artifact_content_invalid") from None
+        raise AnalysisDeliveryError(
+            "analysis_delivery_artifact_content_invalid"
+        ) from None
     if not isinstance(parsed, dict):
         raise AnalysisDeliveryError("analysis_delivery_artifact_content_invalid")
     return parsed
 
 
-def _receipt_values(receipt: _PublishReceiptLike | Mapping[str, object]) -> tuple[int, Mapping[str, int]]:
+def _receipt_values(
+    receipt: _PublishReceiptLike | Mapping[str, object],
+) -> tuple[int, Mapping[str, int]]:
     if isinstance(receipt, Mapping):
         run_id, artifact_ids = receipt.get("run_id"), receipt.get("artifact_ids")
     else:
         run_id, artifact_ids = receipt.run_id, receipt.artifact_ids
-    if not isinstance(run_id, int) or isinstance(run_id, bool) or run_id <= 0 or not isinstance(artifact_ids, Mapping):
+    if (
+        not isinstance(run_id, int)
+        or isinstance(run_id, bool)
+        or run_id <= 0
+        or not isinstance(artifact_ids, Mapping)
+    ):
         raise AnalysisDeliveryError("analysis_delivery_publish_receipt_invalid")
     normalized: dict[str, int] = {}
     for kind, artifact_id in artifact_ids.items():
-        if not isinstance(kind, str) or not isinstance(artifact_id, int) or isinstance(artifact_id, bool) or artifact_id <= 0:
+        if (
+            not isinstance(kind, str)
+            or not isinstance(artifact_id, int)
+            or isinstance(artifact_id, bool)
+            or artifact_id <= 0
+        ):
             raise AnalysisDeliveryError("analysis_delivery_publish_receipt_invalid")
         normalized[kind] = artifact_id
     return run_id, normalized
 
 
-def _idempotency_key(run_key: str, delivery_kind: str, artifacts: Sequence[DeliveryArtifact]) -> str:
-    material = {
-        "version": 1,
-        "run_key": run_key,
-        "delivery_kind": delivery_kind,
-        "artifacts": [
-            {"role": item.content_role, "id": item.artifact_id, "revision": item.revision_no, "content_sha256": item.content_sha256}
-            for item in artifacts
-        ],
-    }
-    return "analysis-delivery:v1:" + sha256(_canonical(material).encode("utf-8")).hexdigest()
+def _idempotency_key(
+    subject_id: int,
+    delivery_kind: str,
+    artifacts: Sequence[DeliveryArtifact],
+    *,
+    resend_authorization: ResendAuthorization | None = None,
+) -> str:
+    """Return a business key, not a run/revision key, for formal reports.
+
+    A later analysis run may revise an artifact, but it must not silently
+    produce another email for the same subject and logical report/plan dates.
+    ``plan_revision`` remains revision-addressed because it is explicitly a
+    different business object.
+    """
+    if (
+        not isinstance(subject_id, int)
+        or isinstance(subject_id, bool)
+        or subject_id <= 0
+    ):
+        raise AnalysisDeliveryError("analysis_delivery_subject_invalid")
+    if delivery_kind in {"daily_report", "weekly_report"}:
+        material: Mapping[str, object] = {
+            "version": 2,
+            "subject_id": subject_id,
+            "delivery_kind": delivery_kind,
+            "logical_dates": [
+                {
+                    "role": item.content_role,
+                    "start": item.period_start_local_date,
+                    "end": item.period_end_local_date,
+                }
+                for item in artifacts
+            ],
+        }
+    else:
+        material = {
+            "version": 2,
+            "subject_id": subject_id,
+            "delivery_kind": delivery_kind,
+            "artifacts": [
+                {
+                    "role": item.content_role,
+                    "id": item.artifact_id,
+                    "revision": item.revision_no,
+                    "content_sha256": item.content_sha256,
+                }
+                for item in artifacts
+            ],
+        }
+    digest = sha256(_canonical(material).encode("utf-8")).hexdigest()
+    base = f"analysis-delivery:v2:{digest}"
+    if resend_authorization is None:
+        return base
+    return f"{base}:resend:{resend_authorization.authorization_id}"
 
 
 def _verified_context_snapshot(
@@ -305,9 +406,7 @@ def _verified_context_snapshot(
         str(column[1])
         for column in connection.execute("PRAGMA table_info(analysis_runs)")
     }
-    if not {"context_snapshot_json", "context_snapshot_sha256"}.issubset(
-        run_columns
-    ):
+    if not {"context_snapshot_json", "context_snapshot_sha256"}.issubset(run_columns):
         return None
     row = connection.execute(
         "SELECT context_snapshot_json,context_snapshot_sha256 "
@@ -341,12 +440,13 @@ def _sleep_chart(
         analysis_run_id=analysis_run_id,
         subject_id=subject_id,
     )
-    if snapshot is None or not isinstance(snapshot.get("sleep"), list):
+    sleep_entries = snapshot.get("sleep") if snapshot is not None else None
+    if not isinstance(sleep_entries, list):
         return None
 
     values: dict[str, object] = {}
     source_revision: str | None = None
-    for entry in snapshot["sleep"]:
+    for entry in sleep_entries:
         if not isinstance(entry, dict) or not isinstance(entry.get("content"), dict):
             continue
         content = entry["content"]
@@ -354,7 +454,8 @@ def _sleep_chart(
         latest = content.get("latest")
         if (
             content.get("family") != "morning_sleep"
-            or window != {
+            or window
+            != {
                 "start_local_date": advice_local_date,
                 "end_local_date": advice_local_date,
             }
@@ -416,9 +517,7 @@ def _sleep_chart(
         + durations["lightSleepSeconds"]
         + durations["remSleepSeconds"]
     )
-    accounted_window = (
-        asleep + awake + durations["unmeasurableSleepSeconds"]
-    )
+    accounted_window = asleep + awake + durations["unmeasurableSleepSeconds"]
     # Garmin may round independently reported stage totals by a few seconds.
     # Accept only a tightly bounded discrepancy; material inconsistencies stay
     # fail-closed and are not rendered.
@@ -501,7 +600,7 @@ def _context_metric(
 def _numeric_latest(content: Mapping[str, object] | None) -> tuple[float, str] | None:
     if content is None or not isinstance(content.get("latest"), Mapping):
         return None
-    latest = content["latest"]
+    latest = cast(Mapping[str, object], content["latest"])
     value, local_date = latest.get("value"), latest.get("local_date")
     if (
         isinstance(value, bool)
@@ -571,7 +670,9 @@ def _hrv_metric(
             continue
         matches: list[Mapping[str, object]] = []
         for entry in entries:
-            if not isinstance(entry, Mapping) or not isinstance(entry.get("content"), Mapping):
+            if not isinstance(entry, Mapping) or not isinstance(
+                entry.get("content"), Mapping
+            ):
                 continue
             content = entry["content"]
             key = content.get("metric_key")
@@ -586,11 +687,10 @@ def _hrv_metric(
         if len(matches) == 1:
             return matches[0]
         if len(matches) > 1:
-            for token in (
-                "last_night_average", "overnight_average", "weekly_average"
-            ):
+            for token in ("last_night_average", "overnight_average", "weekly_average"):
                 preferred = [
-                    item for item in matches
+                    item
+                    for item in matches
                     if token in str(item.get("metric_key", "")).casefold()
                 ]
                 if len(preferred) == 1:
@@ -602,9 +702,15 @@ def _hrv_metric(
 def _recovery_metrics(
     snapshot: Mapping[str, object], *, advice_local_date: str
 ) -> tuple[RecoveryMetric, ...]:
-    specs: list[tuple[str, str, Mapping[str, object] | None, Mapping[str, object] | None, str, int]] = []
+    specs: list[
+        tuple[
+            str, str, Mapping[str, object] | None, Mapping[str, object] | None, str, int
+        ]
+    ] = []
     resting = _context_metric(
-        snapshot, section="health", family="health",
+        snapshot,
+        section="health",
+        family="health",
         metric_key="health.garmin.daily.resting_heart_rate_bpm",
     )
     specs.append(("resting_heart_rate", "静息心率", resting, resting, " 次/分钟", 0))
@@ -618,17 +724,26 @@ def _recovery_metrics(
         else hrv_key
     )
     hrv_baseline = (
-        _context_metric(snapshot, section="health", family="health", metric_key=hrv_baseline_key)
-        or _context_metric(snapshot, section="sleep", family="sleep", metric_key=hrv_baseline_key)
-        if hrv_baseline_key else None
+        _context_metric(
+            snapshot, section="health", family="health", metric_key=hrv_baseline_key
+        )
+        or _context_metric(
+            snapshot, section="sleep", family="sleep", metric_key=hrv_baseline_key
+        )
+        if hrv_baseline_key
+        else None
     )
     specs.append(("hrv", "HRV", hrv_current, hrv_baseline, " ms", 0))
     spo2_current = _context_metric(
-        snapshot, section="sleep", family="morning_sleep",
+        snapshot,
+        section="sleep",
+        family="morning_sleep",
         metric_key="sleep.averageSpO2Value",
     )
     spo2_baseline = _context_metric(
-        snapshot, section="sleep", family="sleep",
+        snapshot,
+        section="sleep",
+        family="sleep",
         metric_key="sleep.averageSpO2Value",
     )
     specs.append(("spo2", "平均血氧", spo2_current, spo2_baseline, "%", 1))
@@ -637,26 +752,33 @@ def _recovery_metrics(
     for key, label, current, baseline_content, unit, digits in specs:
         latest = _numeric_latest(current)
         if latest is None:
-            result.append(RecoveryMetric(
-                key=key,  # type: ignore[arg-type]
-                label=label,
-                value_text="未收到",
-                comparison_text="本次分析没有可验证数值",
-                observation_text="不会按正常值处理",
-                available=False,
-            ))
+            result.append(
+                RecoveryMetric(
+                    key=key,  # type: ignore[arg-type]
+                    label=label,
+                    value_text="未收到",
+                    comparison_text="本次分析没有可验证数值",
+                    observation_text="不会按正常值处理",
+                    available=False,
+                )
+            )
             continue
         value, observed = latest
-        result.append(RecoveryMetric(
-            key=key,  # type: ignore[arg-type]
-            label=label,
-            value_text=_metric_value(value, digits=digits) + unit,
-            comparison_text=_baseline_comparison(
-                value, _numeric_average(baseline_content), unit=unit, digits=digits,
-            ),
-            observation_text=_observation_label(observed, advice_local_date),
-            available=True,
-        ))
+        result.append(
+            RecoveryMetric(
+                key=key,  # type: ignore[arg-type]
+                label=label,
+                value_text=_metric_value(value, digits=digits) + unit,
+                comparison_text=_baseline_comparison(
+                    value,
+                    _numeric_average(baseline_content),
+                    unit=unit,
+                    digits=digits,
+                ),
+                observation_text=_observation_label(observed, advice_local_date),
+                available=True,
+            )
+        )
     return tuple(result)
 
 
@@ -676,7 +798,9 @@ def _activity_rows(snapshot: Mapping[str, object]) -> tuple[Mapping[str, object]
         return ()
     rows: list[Mapping[str, object]] = []
     for entry in entries:
-        if not isinstance(entry, Mapping) or not isinstance(entry.get("content"), Mapping):
+        if not isinstance(entry, Mapping) or not isinstance(
+            entry.get("content"), Mapping
+        ):
             continue
         content = entry["content"]
         digest = content.get("aggregate_sha256")
@@ -708,24 +832,33 @@ def _training_load_chart(
 ) -> TrainingLoadChart | None:
     end = date.fromisoformat(summary_local_date)
     start = end - timedelta(days=6)
-    totals = {date.fromordinal(start.toordinal() + offset).isoformat(): [0, 0] for offset in range(7)}
+    totals = {
+        date.fromordinal(start.toordinal() + offset).isoformat(): [0, 0]
+        for offset in range(7)
+    }
     for row in _activity_rows(snapshot):
         local_date = row.get("local_date")
         seconds = _activity_seconds(row)
-        if not isinstance(local_date, str) or local_date not in totals or seconds is None:
+        if (
+            not isinstance(local_date, str)
+            or local_date not in totals
+            or seconds is None
+        ):
             continue
         totals[local_date][0] += seconds
         totals[local_date][1] += 1
     days = tuple(
-        TrainingLoadDay(day, values[0], values[1])
-        for day, values in totals.items()
+        TrainingLoadDay(day, values[0], values[1]) for day, values in totals.items()
     )
     activity_count = sum(item.activity_count for item in days)
     if activity_count == 0:
         return None
     return TrainingLoadChart(
-        start.isoformat(), end.isoformat(),
-        sum(item.duration_seconds for item in days), activity_count, days,
+        start.isoformat(),
+        end.isoformat(),
+        sum(item.duration_seconds for item in days),
+        activity_count,
+        days,
     )
 
 
@@ -747,7 +880,9 @@ def _weather_text(row: Mapping[str, object]) -> str | None:
 
 
 def _yesterday_activities(
-    snapshot: Mapping[str, object], *, summary_local_date: str,
+    snapshot: Mapping[str, object],
+    *,
+    summary_local_date: str,
     requested_highlights: Sequence[str] = (),
 ) -> tuple[ActivityOverview, ...]:
     entries = snapshot.get("activities")
@@ -755,7 +890,9 @@ def _yesterday_activities(
     weather_by_activity: dict[str, Mapping[str, object]] = {}
     if isinstance(entries, list):
         for entry in entries:
-            if not isinstance(entry, Mapping) or not isinstance(entry.get("content"), Mapping):
+            if not isinstance(entry, Mapping) or not isinstance(
+                entry.get("content"), Mapping
+            ):
                 continue
             content = entry["content"]
             identity = content.get("activity_id")
@@ -776,8 +913,10 @@ def _yesterday_activities(
         distance = row.get("distance_m")
         distance_value = (
             float(distance)
-            if isinstance(distance, (int, float)) and not isinstance(distance, bool)
-            and math.isfinite(float(distance)) and float(distance) >= 0
+            if isinstance(distance, (int, float))
+            and not isinstance(distance, bool)
+            and math.isfinite(float(distance))
+            and float(distance) >= 0
             else None
         )
         identity = str(row.get("id"))
@@ -786,22 +925,28 @@ def _yesterday_activities(
         heart_rate = fit.get("avg_heart_rate_bpm")
         heart_rate_value = (
             float(heart_rate)
-            if isinstance(heart_rate, (int, float)) and not isinstance(heart_rate, bool)
-            and math.isfinite(float(heart_rate)) and 0 < float(heart_rate) < 260
+            if isinstance(heart_rate, (int, float))
+            and not isinstance(heart_rate, bool)
+            and math.isfinite(float(heart_rate))
+            and 0 < float(heart_rate) < 260
             else None
         )
         max_heart_rate = fit.get("max_heart_rate_bpm")
         max_heart_rate_value = (
             float(max_heart_rate)
-            if isinstance(max_heart_rate, (int, float)) and not isinstance(max_heart_rate, bool)
-            and math.isfinite(float(max_heart_rate)) and 0 < float(max_heart_rate) < 260
+            if isinstance(max_heart_rate, (int, float))
+            and not isinstance(max_heart_rate, bool)
+            and math.isfinite(float(max_heart_rate))
+            and 0 < float(max_heart_rate) < 260
             else None
         )
         speed = fit.get("avg_speed_mps")
         pace = (
             1000.0 / float(speed)
-            if isinstance(speed, (int, float)) and not isinstance(speed, bool)
-            and math.isfinite(float(speed)) and float(speed) > 0
+            if isinstance(speed, (int, float))
+            and not isinstance(speed, bool)
+            and math.isfinite(float(speed))
+            and float(speed) > 0
             else None
         )
         dynamic: list[str] = []
@@ -812,15 +957,28 @@ def _yesterday_activities(
         }
         for key in requested_highlights:
             value, label, suffix = highlight_values.get(key, (None, "", ""))
-            if isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(float(value)):
-                dynamic.append(f"{label} {_metric_value(float(value), digits=1)}{suffix}")
+            if (
+                isinstance(value, (int, float))
+                and not isinstance(value, bool)
+                and math.isfinite(float(value))
+            ):
+                dynamic.append(
+                    f"{label} {_metric_value(float(value), digits=1)}{suffix}"
+                )
             if len(dynamic) == 2:
                 break
-        result.append(ActivityOverview(
-            _SPORT_LABELS.get(sport, sport), seconds, distance_value,
-            heart_rate_value, _weather_text(weather) or _weather_text(row), pace,
-            max_heart_rate_value, tuple(dynamic),
-        ))
+        result.append(
+            ActivityOverview(
+                _SPORT_LABELS.get(sport, sport),
+                seconds,
+                distance_value,
+                heart_rate_value,
+                _weather_text(weather) or _weather_text(row),
+                pace,
+                max_heart_rate_value,
+                tuple(dynamic),
+            )
+        )
     return tuple(result[:8])
 
 
@@ -831,25 +989,36 @@ def _delivery_daily_visuals(
     analysis_run_id: int,
     subject_id: int,
     artifacts: Sequence[DeliveryArtifact],
-) -> tuple[tuple[RecoveryMetric, ...], TrainingLoadChart | None, tuple[ActivityOverview, ...]]:
+) -> tuple[
+    tuple[RecoveryMetric, ...], TrainingLoadChart | None, tuple[ActivityOverview, ...]
+]:
     if delivery_kind != "daily_report":
         return (), None, ()
-    summary = next((item for item in artifacts if item.content_role == "daily_summary"), None)
-    advice = next((item for item in artifacts if item.content_role == "daily_advice"), None)
+    summary = next(
+        (item for item in artifacts if item.content_role == "daily_summary"), None
+    )
+    advice = next(
+        (item for item in artifacts if item.content_role == "daily_advice"), None
+    )
     snapshot = _verified_context_snapshot(
-        connection, analysis_run_id=analysis_run_id, subject_id=subject_id,
+        connection,
+        analysis_run_id=analysis_run_id,
+        subject_id=subject_id,
     )
     if summary is None or advice is None or snapshot is None:
         return (), None, ()
+    highlights = summary.structured_content_json.get("activity_highlights", [])
+    highlight_values = highlights if isinstance(highlights, list) else []
     return (
         _recovery_metrics(snapshot, advice_local_date=advice.period_start_local_date),
-        _training_load_chart(snapshot, summary_local_date=summary.period_start_local_date),
+        _training_load_chart(
+            snapshot, summary_local_date=summary.period_start_local_date
+        ),
         _yesterday_activities(
             snapshot,
             summary_local_date=summary.period_start_local_date,
             requested_highlights=tuple(
-                value for value in summary.structured_content_json.get("activity_highlights", [])
-                if isinstance(value, str)
+                value for value in highlight_values if isinstance(value, str)
             ),
         ),
     )
@@ -858,12 +1027,18 @@ def _delivery_daily_visuals(
 class AnalysisDeliveryFactory:
     """Seed one pending delivery in a short transaction, with no send capability."""
 
-    def __init__(self, connection: sqlite3.Connection, *, clock: Callable[[], str] = _now) -> None:
+    def __init__(
+        self, connection: sqlite3.Connection, *, clock: Callable[[], str] = _now
+    ) -> None:
         self._connection = connection
         self._clock = clock
 
     def create_pending(
-        self, *, publish_receipt: _PublishReceiptLike | Mapping[str, object], delivery_kind: DeliveryKind
+        self,
+        *,
+        publish_receipt: _PublishReceiptLike | Mapping[str, object],
+        delivery_kind: DeliveryKind,
+        resend_authorization: ResendAuthorization | None = None,
     ) -> PendingDelivery:
         run_id, artifact_ids = _receipt_values(publish_receipt)
         shape = _DELIVERY_SHAPES.get(delivery_kind)
@@ -872,7 +1047,9 @@ class AnalysisDeliveryFactory:
         self._connection.execute("PRAGMA foreign_keys=ON")
         try:
             self._connection.execute("BEGIN IMMEDIATE")
-            pending = self._create_in_transaction(run_id, artifact_ids, delivery_kind, shape)
+            pending = self._create_in_transaction(
+                run_id, artifact_ids, delivery_kind, shape, resend_authorization
+            )
             self._connection.execute("COMMIT")
             return pending
         except Exception:
@@ -885,18 +1062,17 @@ class AnalysisDeliveryFactory:
         *,
         publish_receipt: _PublishReceiptLike | Mapping[str, object],
         delivery_kind: DeliveryKind,
+        resend_authorization: ResendAuthorization | None = None,
     ) -> PendingDelivery:
         """Seed pending delivery inside a caller-owned publication transaction."""
         if not self._connection.in_transaction:
-            raise AnalysisDeliveryError(
-                "analysis_delivery_transaction_required"
-            )
+            raise AnalysisDeliveryError("analysis_delivery_transaction_required")
         run_id, artifact_ids = _receipt_values(publish_receipt)
         shape = _DELIVERY_SHAPES.get(delivery_kind)
         if shape is None:
             raise AnalysisDeliveryError("analysis_delivery_kind_invalid")
         return self._create_in_transaction(
-            run_id, artifact_ids, delivery_kind, shape
+            run_id, artifact_ids, delivery_kind, shape, resend_authorization
         )
 
     def prepare(
@@ -904,14 +1080,24 @@ class AnalysisDeliveryFactory:
         *,
         publish_receipt: _PublishReceiptLike | Mapping[str, object],
         delivery_kind: DeliveryKind,
+        resend_authorization: ResendAuthorization | None = None,
         renderer: Callable[[PendingDelivery], RenderedDelivery] = None,  # type: ignore[assignment]
     ) -> tuple[PendingDelivery, RenderedDelivery]:
         """Commit the pending seed before rendering, so render failures are recoverable."""
-        pending = self.create_pending(publish_receipt=publish_receipt, delivery_kind=delivery_kind)
+        pending = self.create_pending(
+            publish_receipt=publish_receipt,
+            delivery_kind=delivery_kind,
+            resend_authorization=resend_authorization,
+        )
         return pending, (render_delivery if renderer is None else renderer)(pending)
 
     def _create_in_transaction(
-        self, run_id: int, artifact_ids: Mapping[str, int], delivery_kind: str, shape: tuple[tuple[str, str], ...]
+        self,
+        run_id: int,
+        artifact_ids: Mapping[str, int],
+        delivery_kind: str,
+        shape: tuple[tuple[str, str], ...],
+        resend_authorization: ResendAuthorization | None,
     ) -> PendingDelivery:
         if set(artifact_ids) != {artifact_kind for artifact_kind, _ in shape}:
             raise AnalysisDeliveryError("analysis_delivery_artifact_set_invalid")
@@ -927,33 +1113,78 @@ class AnalysisDeliveryFactory:
                 "FROM analysis_artifacts WHERE id=?",
                 (artifact_ids[artifact_kind],),
             ).fetchone()
-            if row is None or row["subject_id"] != run["subject_id"] or row["generated_by_run_id"] != run_id or row["artifact_kind"] != artifact_kind:
-                raise AnalysisDeliveryError("analysis_delivery_artifact_not_published_by_run")
-            artifacts.append(DeliveryArtifact(
-                artifact_id=int(row["id"]), artifact_kind=str(row["artifact_kind"]), content_role=content_role,
-                revision_no=int(row["revision_no"]), content_sha256=str(row["content_sha256"]), user_visible_text=str(row["user_visible_text"]),
-                period_start_local_date=_local_date(row["period_start_local_date"]),
-                period_end_local_date=_local_date(row["period_end_local_date"]),
-                structured_content_json=_structured_content(row["structured_content_json"]),
-                created_at_utc=str(row["created_at_utc"]),
-            ))
+            if (
+                row is None
+                or row["subject_id"] != run["subject_id"]
+                or row["generated_by_run_id"] != run_id
+                or row["artifact_kind"] != artifact_kind
+            ):
+                raise AnalysisDeliveryError(
+                    "analysis_delivery_artifact_not_published_by_run"
+                )
+            artifacts.append(
+                DeliveryArtifact(
+                    artifact_id=int(row["id"]),
+                    artifact_kind=str(row["artifact_kind"]),
+                    content_role=content_role,
+                    revision_no=int(row["revision_no"]),
+                    content_sha256=str(row["content_sha256"]),
+                    user_visible_text=str(row["user_visible_text"]),
+                    period_start_local_date=_local_date(row["period_start_local_date"]),
+                    period_end_local_date=_local_date(row["period_end_local_date"]),
+                    structured_content_json=_structured_content(
+                        row["structured_content_json"]
+                    ),
+                    created_at_utc=str(row["created_at_utc"]),
+                )
+            )
         run_key = _safe_header(str(run["run_key"]))
-        key = _idempotency_key(run_key, delivery_kind, artifacts)
+        business_key = _idempotency_key(
+            int(run["subject_id"]), delivery_kind, artifacts
+        )
+        key = _idempotency_key(
+            int(run["subject_id"]),
+            cast(DeliveryKind, delivery_kind),
+            artifacts,
+            resend_authorization=resend_authorization,
+        )
         existing = self._connection.execute(
-            "SELECT id,subject_id,analysis_run_id,delivery_kind FROM analysis_deliveries WHERE idempotency_key=?", (key,)
+            "SELECT id,subject_id,analysis_run_id,delivery_kind FROM analysis_deliveries WHERE idempotency_key=?",
+            (key,),
         ).fetchone()
         if existing is not None:
-            if existing["subject_id"] != run["subject_id"] or existing["analysis_run_id"] != run_id or existing["delivery_kind"] != delivery_kind:
+            if (
+                existing["subject_id"] != run["subject_id"]
+                or existing["delivery_kind"] != delivery_kind
+            ):
                 raise AnalysisDeliveryError("analysis_delivery_idempotency_conflict")
-            self._verify_existing_relations(int(existing["id"]), artifacts)
-            delivery_id = int(existing["id"])
-        else:
+            return self._pending_from_delivery(int(existing["id"]))
+        original = self._connection.execute(
+            "SELECT id FROM analysis_deliveries WHERE idempotency_key=?",
+            (business_key,),
+        ).fetchone()
+        if original is not None and resend_authorization is None:
+            return self._pending_from_delivery(int(original["id"]))
+        if original is None and resend_authorization is not None:
+            raise AnalysisDeliveryError("analysis_delivery_resend_not_required")
+        if original is not None and delivery_kind not in {
+            "daily_report",
+            "weekly_report",
+        }:
+            raise AnalysisDeliveryError("analysis_delivery_resend_unsupported")
+        if original is not None and resend_authorization is not None:
+            # The explicit authorization is embedded in the otherwise opaque,
+            # immutable key of this separate formal delivery record.
+            pass
+        if original is None or resend_authorization is not None:
             now = self._clock()
             cursor = self._connection.execute(
                 "INSERT INTO analysis_deliveries(subject_id,idempotency_key,analysis_run_id,delivery_kind,status,created_at_utc,updated_at_utc) "
                 "VALUES(?,?,?,?, 'pending',?,?)",
                 (run["subject_id"], key, run_id, delivery_kind, now, now),
             )
+            if cursor.lastrowid is None:
+                raise AnalysisDeliveryError("analysis_delivery_insert_failed")
             delivery_id = int(cursor.lastrowid)
             for ordinal, artifact in enumerate(artifacts):
                 self._connection.execute(
@@ -981,7 +1212,7 @@ class AnalysisDeliveryFactory:
             int(run["subject_id"]),
             run_id,
             run_key,
-            delivery_kind,
+            cast(DeliveryKind, delivery_kind),
             key,
             tuple(artifacts),
             sleep_chart,
@@ -989,18 +1220,38 @@ class AnalysisDeliveryFactory:
             training_load_chart,
             yesterday_activities,
             _zone_comparison_lines(
-                self._connection, delivery_kind=delivery_kind,
+                self._connection,
+                delivery_kind=delivery_kind,
                 subject_id=int(run["subject_id"]),
             ),
+            resend_authorization.authorization_id if resend_authorization else None,
         )
 
-    def _verify_existing_relations(self, delivery_id: int, expected: Sequence[DeliveryArtifact]) -> None:
+    def _pending_from_delivery(self, delivery_id: int) -> PendingDelivery:
+        """Return the original immutable report when business delivery repeats."""
+        return AnalysisDeliveryRepository(
+            self._connection, clock=self._clock
+        ).load_pending(delivery_id)
+
+    def _verify_existing_relations(
+        self, delivery_id: int, expected: Sequence[DeliveryArtifact]
+    ) -> None:
         actual = self._connection.execute(
             "SELECT analysis_artifact_id,content_role,ordinal FROM analysis_delivery_artifacts WHERE analysis_delivery_id=? ORDER BY ordinal",
             (delivery_id,),
         ).fetchall()
-        triples = [(int(row["analysis_artifact_id"]), str(row["content_role"]), int(row["ordinal"])) for row in actual]
-        wanted = [(item.artifact_id, item.content_role, ordinal) for ordinal, item in enumerate(expected)]
+        triples = [
+            (
+                int(row["analysis_artifact_id"]),
+                str(row["content_role"]),
+                int(row["ordinal"]),
+            )
+            for row in actual
+        ]
+        wanted = [
+            (item.artifact_id, item.content_role, ordinal)
+            for ordinal, item in enumerate(expected)
+        ]
         if triples != wanted:
             raise AnalysisDeliveryError("analysis_delivery_relation_conflict")
 
@@ -1014,13 +1265,17 @@ class AnalysisDeliveryRepository:
     artifact relation in the same short ``BEGIN IMMEDIATE`` transaction.
     """
 
-    def __init__(self, connection: sqlite3.Connection, *, clock: Callable[[], str] = _now) -> None:
+    def __init__(
+        self, connection: sqlite3.Connection, *, clock: Callable[[], str] = _now
+    ) -> None:
         self._connection = connection
         self._connection.row_factory = sqlite3.Row
         self._connection.execute("PRAGMA foreign_keys=ON")
         self._clock = clock
 
-    def load_pending(self, delivery_id: int, *, subject_id: int | None = None) -> PendingDelivery:
+    def load_pending(
+        self, delivery_id: int, *, subject_id: int | None = None
+    ) -> PendingDelivery:
         """Load exactly the revisions linked to one delivery, never current rows."""
         self._validate_identifier(delivery_id, "analysis_delivery_id_invalid")
         if subject_id is not None:
@@ -1030,7 +1285,7 @@ class AnalysisDeliveryRepository:
             raise AnalysisDeliveryError("analysis_delivery_ownership_invalid")
         sleep_chart = _delivery_sleep_chart(
             self._connection,
-            delivery_kind=str(row["delivery_kind"]),
+            delivery_kind=cast(DeliveryKind, str(row["delivery_kind"])),
             analysis_run_id=int(row["analysis_run_id"]),
             subject_id=int(row["subject_id"]),
             artifacts=artifacts,
@@ -1045,20 +1300,27 @@ class AnalysisDeliveryRepository:
             )
         )
         return PendingDelivery(
-            delivery_id=int(row["id"]), subject_id=int(row["subject_id"]), analysis_run_id=int(row["analysis_run_id"]),
-            run_key=str(row["run_key"]), delivery_kind=str(row["delivery_kind"]),
-            idempotency_key=str(row["idempotency_key"]), artifacts=tuple(artifacts),
+            delivery_id=int(row["id"]),
+            subject_id=int(row["subject_id"]),
+            analysis_run_id=int(row["analysis_run_id"]),
+            run_key=str(row["run_key"]),
+            delivery_kind=cast(DeliveryKind, str(row["delivery_kind"])),
+            idempotency_key=str(row["idempotency_key"]),
+            artifacts=tuple(artifacts),
             sleep_chart=sleep_chart,
             recovery_metrics=recovery_metrics,
             training_load_chart=training_load_chart,
             yesterday_activities=yesterday_activities,
             heart_rate_zone_comparison=_zone_comparison_lines(
-                self._connection, delivery_kind=str(row["delivery_kind"]),
+                self._connection,
+                delivery_kind=str(row["delivery_kind"]),
                 subject_id=int(row["subject_id"]),
             ),
         )
 
-    def load_rendered(self, delivery_id: int, *, subject_id: int | None = None) -> RenderedDelivery:
+    def load_rendered(
+        self, delivery_id: int, *, subject_id: int | None = None
+    ) -> RenderedDelivery:
         """Re-render the delivery's original revisions; never follow ``is_current``."""
         return render_delivery(self.load_pending(delivery_id, subject_id=subject_id))
 
@@ -1066,53 +1328,93 @@ class AnalysisDeliveryRepository:
     load_pending_delivery = load_pending
     load_rendered_delivery = load_rendered
 
-    def read_state(self, delivery_id: int, *, subject_id: int | None = None) -> AnalysisDeliveryState:
+    def read_state(
+        self, delivery_id: int, *, subject_id: int | None = None
+    ) -> AnalysisDeliveryState:
         pending = self.load_pending(delivery_id, subject_id=subject_id)
         row = self._connection.execute(
             "SELECT * FROM analysis_deliveries WHERE id=?", (pending.delivery_id,)
         ).fetchone()
-        if row is None:  # Defensive: a concurrent destructive writer is not a valid replay.
+        if (
+            row is None
+        ):  # Defensive: a concurrent destructive writer is not a valid replay.
             raise AnalysisDeliveryError("analysis_delivery_missing")
         return self._state_from_row(row)
 
     get_state = read_state
 
-    def claim_for_send(self, subject_id: int, delivery_id: int) -> AnalysisDeliveryState:
+    def claim_for_send(
+        self, subject_id: int, delivery_id: int
+    ) -> AnalysisDeliveryState:
         """Atomically claim a pending/failed record. Unknown records are never resent."""
         return self.transition_delivery_state(subject_id, delivery_id, "sending")
 
     def record_sent(
-        self, subject_id: int, delivery_id: int, *, provider_message_id: str,
-        provider_thread_id: str | None = None, sent_at_utc: str, last_verified_at_utc: str,
+        self,
+        subject_id: int,
+        delivery_id: int,
+        *,
+        provider_message_id: str,
+        provider_thread_id: str | None = None,
+        sent_at_utc: str,
+        last_verified_at_utc: str,
     ) -> AnalysisDeliveryState:
         return self.transition_delivery_state(
-            subject_id, delivery_id, "sent", provider_message_id=provider_message_id,
-            provider_thread_id=provider_thread_id, sent_at_utc=sent_at_utc,
+            subject_id,
+            delivery_id,
+            "sent",
+            provider_message_id=provider_message_id,
+            provider_thread_id=provider_thread_id,
+            sent_at_utc=sent_at_utc,
             last_verified_at_utc=last_verified_at_utc,
         )
 
     def record_search_match(
-        self, subject_id: int, delivery_id: int, *, provider_message_id: str,
-        provider_thread_id: str | None = None, sent_at_utc: str, last_verified_at_utc: str,
+        self,
+        subject_id: int,
+        delivery_id: int,
+        *,
+        provider_message_id: str,
+        provider_thread_id: str | None = None,
+        sent_at_utc: str,
+        last_verified_at_utc: str,
     ) -> AnalysisDeliveryState:
         """Persist one exact provider search result as already-sent evidence."""
         return self.transition_delivery_state(
-            subject_id, delivery_id, "already_sent", recovery_kind="reconcile",
-            provider_message_id=provider_message_id, provider_thread_id=provider_thread_id,
-            sent_at_utc=sent_at_utc, last_verified_at_utc=last_verified_at_utc,
+            subject_id,
+            delivery_id,
+            "already_sent",
+            recovery_kind="reconcile",
+            provider_message_id=provider_message_id,
+            provider_thread_id=provider_thread_id,
+            sent_at_utc=sent_at_utc,
+            last_verified_at_utc=last_verified_at_utc,
         )
 
-    def record_failed(self, subject_id: int, delivery_id: int, *, error_code: str) -> AnalysisDeliveryState:
-        return self.transition_delivery_state(subject_id, delivery_id, "failed", error_code=error_code)
+    def record_failed(
+        self, subject_id: int, delivery_id: int, *, error_code: str
+    ) -> AnalysisDeliveryState:
+        return self.transition_delivery_state(
+            subject_id, delivery_id, "failed", error_code=error_code
+        )
 
     def record_delivery_unknown(
-        self, subject_id: int, delivery_id: int, *, provider_message_id: str | None = None,
-        provider_thread_id: str | None = None, error_code: str,
+        self,
+        subject_id: int,
+        delivery_id: int,
+        *,
+        provider_message_id: str | None = None,
+        provider_thread_id: str | None = None,
+        error_code: str,
     ) -> AnalysisDeliveryState:
         """Use after an ambiguous send or a post-send label failure; do not retry it."""
         return self.transition_delivery_state(
-            subject_id, delivery_id, "delivery_unknown", provider_message_id=provider_message_id,
-            provider_thread_id=provider_thread_id, error_code=error_code,
+            subject_id,
+            delivery_id,
+            "delivery_unknown",
+            provider_message_id=provider_message_id,
+            provider_thread_id=provider_thread_id,
+            error_code=error_code,
         )
 
     def transition_delivery_state(
@@ -1138,18 +1440,25 @@ class AnalysisDeliveryRepository:
         del error_summary
         self._validate_identifier(subject_id, "analysis_delivery_subject_invalid")
         self._validate_identifier(delivery_id, "analysis_delivery_id_invalid")
-        if status not in _DELIVERY_STATUSES or recovery_kind not in {"normal", "reconcile"}:
+        if status not in _DELIVERY_STATUSES or recovery_kind not in {
+            "normal",
+            "reconcile",
+        }:
             raise AnalysisDeliveryError("analysis_delivery_transition_invalid")
         self._validate_provider_id(provider_message_id)
         self._validate_provider_id(provider_thread_id)
         if sent_at_utc is not None and not self._canonical_utc(sent_at_utc):
             raise AnalysisDeliveryError("analysis_delivery_transition_invalid")
-        if last_verified_at_utc is not None and not self._canonical_utc(last_verified_at_utc):
+        if last_verified_at_utc is not None and not self._canonical_utc(
+            last_verified_at_utc
+        ):
             raise AnalysisDeliveryError("analysis_delivery_transition_invalid")
         if error_code is not None and not _SAFE_ERROR_CODE.fullmatch(error_code):
             raise AnalysisDeliveryError("analysis_delivery_transition_invalid")
         if status in {"sent", "already_sent"} and (
-            provider_message_id is None or sent_at_utc is None or last_verified_at_utc is None
+            provider_message_id is None
+            or sent_at_utc is None
+            or last_verified_at_utc is None
         ):
             raise AnalysisDeliveryError("analysis_delivery_evidence_required")
         if status in {"sending", "sent", "already_sent"} and error_code is not None:
@@ -1166,37 +1475,60 @@ class AnalysisDeliveryRepository:
             if current == status:
                 state = self._state_from_row(row)
                 if current in {"sent", "already_sent"} and self._replay_matches(
-                    state, provider_message_id, provider_thread_id, sent_at_utc,
-                    last_verified_at_utc, error_code,
+                    state,
+                    provider_message_id,
+                    provider_thread_id,
+                    sent_at_utc,
+                    last_verified_at_utc,
+                    error_code,
                 ):
                     self._connection.execute("COMMIT")
                     return state
                 raise AnalysisDeliveryError(
-                    "analysis_delivery_replay_conflict" if current in {"sent", "already_sent"}
+                    "analysis_delivery_replay_conflict"
+                    if current in {"sent", "already_sent"}
                     else "analysis_delivery_transition_illegal"
                 )
             if not self._permitted(current, status, recovery_kind):
                 raise AnalysisDeliveryError("analysis_delivery_transition_illegal")
 
-            message_id = self._immutable_provider_value(row["provider_message_id"], provider_message_id)
-            thread_id = self._immutable_provider_value(row["provider_thread_id"], provider_thread_id)
+            message_id = self._immutable_provider_value(
+                row["provider_message_id"], provider_message_id
+            )
+            thread_id = self._immutable_provider_value(
+                row["provider_thread_id"], provider_thread_id
+            )
             if status in {"sent", "already_sent"} and message_id is None:
                 raise AnalysisDeliveryError("analysis_delivery_evidence_required")
             # An ambiguous record intentionally remains non-sendable even when
             # Gmail accepted a message but applying the label later failed.
-            stored_error_code = error_code if status in {"failed", "delivery_unknown"} else None
-            stored_error_summary = _DELIVERY_FAILURE_SUMMARY if stored_error_code is not None else None
+            stored_error_code = (
+                error_code if status in {"failed", "delivery_unknown"} else None
+            )
+            stored_error_summary = (
+                _DELIVERY_FAILURE_SUMMARY if stored_error_code is not None else None
+            )
             cursor = self._connection.execute(
                 "UPDATE analysis_deliveries SET provider_message_id=?,provider_thread_id=?,status=?,sent_at_utc=?,"
                 "last_verified_at_utc=?,error_code=?,error_summary=?,updated_at_utc=? WHERE id=? AND status=?",
                 (
-                    message_id, thread_id, status, sent_at_utc, last_verified_at_utc,
-                    stored_error_code, stored_error_summary, self._clock(), delivery_id, current,
+                    message_id,
+                    thread_id,
+                    status,
+                    sent_at_utc,
+                    last_verified_at_utc,
+                    stored_error_code,
+                    stored_error_summary,
+                    self._clock(),
+                    delivery_id,
+                    current,
                 ),
             )
             if cursor.rowcount != 1:
                 raise AnalysisDeliveryError("analysis_delivery_compare_and_swap_failed")
-            updated = self._connection.execute("SELECT * FROM analysis_deliveries WHERE id=?", (delivery_id,)).fetchone()
+            updated = self._connection.execute(
+                "SELECT * FROM analysis_deliveries WHERE id=?", (delivery_id,)
+            ).fetchone()
             if updated is None:
                 raise AnalysisDeliveryError("analysis_delivery_missing")
             self._connection.execute("COMMIT")
@@ -1213,7 +1545,9 @@ class AnalysisDeliveryRepository:
 
     @staticmethod
     def _validate_provider_id(value: str | None) -> None:
-        if value is not None and (not isinstance(value, str) or not _SAFE_PROVIDER_ID.fullmatch(value)):
+        if value is not None and (
+            not isinstance(value, str) or not _SAFE_PROVIDER_ID.fullmatch(value)
+        ):
             raise AnalysisDeliveryError("analysis_delivery_transition_invalid")
 
     @staticmethod
@@ -1222,7 +1556,11 @@ class AnalysisDeliveryRepository:
             parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
         except ValueError:
             return False
-        return value.endswith("Z") and parsed.tzinfo is not None and parsed.utcoffset() == timezone.utc.utcoffset(parsed)
+        return (
+            value.endswith("Z")
+            and parsed.tzinfo is not None
+            and parsed.utcoffset() == timezone.utc.utcoffset(parsed)
+        )
 
     @staticmethod
     def _immutable_provider_value(existing: object, supplied: str | None) -> str | None:
@@ -1241,42 +1579,68 @@ class AnalysisDeliveryRepository:
                 return recovery_kind == "normal"
             # A provider search is the only route to already_sent. It can also
             # reconcile an ambiguous outcome, but never authorizes a re-send.
-            return recovery_kind == "reconcile" and current in {"pending", "sending", "delivery_unknown", "failed"}
+            return recovery_kind == "reconcile" and current in {
+                "pending",
+                "sending",
+                "delivery_unknown",
+                "failed",
+            }
         if target in {"failed", "delivery_unknown"}:
             return recovery_kind == "normal" and current == "sending"
         return False
 
     @staticmethod
     def _replay_matches(
-        state: AnalysisDeliveryState, provider_message_id: str | None, provider_thread_id: str | None,
-        sent_at_utc: str | None, last_verified_at_utc: str | None, error_code: str | None,
+        state: AnalysisDeliveryState,
+        provider_message_id: str | None,
+        provider_thread_id: str | None,
+        sent_at_utc: str | None,
+        last_verified_at_utc: str | None,
+        error_code: str | None,
     ) -> bool:
         wanted = (
-            state.provider_message_id if provider_message_id is None else provider_message_id,
-            state.provider_thread_id if provider_thread_id is None else provider_thread_id,
+            state.provider_message_id
+            if provider_message_id is None
+            else provider_message_id,
+            state.provider_thread_id
+            if provider_thread_id is None
+            else provider_thread_id,
             state.sent_at_utc if sent_at_utc is None else sent_at_utc,
-            state.last_verified_at_utc if last_verified_at_utc is None else last_verified_at_utc,
+            state.last_verified_at_utc
+            if last_verified_at_utc is None
+            else last_verified_at_utc,
             state.error_code if error_code is None else error_code,
         )
         return wanted == (
-            state.provider_message_id, state.provider_thread_id, state.sent_at_utc,
-            state.last_verified_at_utc, state.error_code,
+            state.provider_message_id,
+            state.provider_thread_id,
+            state.sent_at_utc,
+            state.last_verified_at_utc,
+            state.error_code,
         )
 
     @staticmethod
     def _state_from_row(row: sqlite3.Row) -> AnalysisDeliveryState:
         return AnalysisDeliveryState(
-            delivery_id=int(row["id"]), subject_id=int(row["subject_id"]), analysis_run_id=int(row["analysis_run_id"]),
-            status=str(row["status"]), provider_message_id=row["provider_message_id"],
-            provider_thread_id=row["provider_thread_id"], sent_at_utc=row["sent_at_utc"],
-            last_verified_at_utc=row["last_verified_at_utc"], error_code=row["error_code"],
+            delivery_id=int(row["id"]),
+            subject_id=int(row["subject_id"]),
+            analysis_run_id=int(row["analysis_run_id"]),
+            status=str(row["status"]),
+            provider_message_id=row["provider_message_id"],
+            provider_thread_id=row["provider_thread_id"],
+            sent_at_utc=row["sent_at_utc"],
+            last_verified_at_utc=row["last_verified_at_utc"],
+            error_code=row["error_code"],
             error_summary=row["error_summary"],
         )
 
-    def _load_verified(self, delivery_id: int) -> tuple[sqlite3.Row, list[DeliveryArtifact]]:
+    def _load_verified(
+        self, delivery_id: int
+    ) -> tuple[sqlite3.Row, list[DeliveryArtifact]]:
         row = self._connection.execute(
             "SELECT d.*,r.run_key,r.subject_id AS run_subject_id FROM analysis_deliveries d "
-            "JOIN analysis_runs r ON r.id=d.analysis_run_id WHERE d.id=?", (delivery_id,)
+            "JOIN analysis_runs r ON r.id=d.analysis_run_id WHERE d.id=?",
+            (delivery_id,),
         ).fetchone()
         if row is None:
             raise AnalysisDeliveryError("analysis_delivery_missing")
@@ -1289,34 +1653,69 @@ class AnalysisDeliveryRepository:
             "SELECT a.id AS link_id,a.analysis_artifact_id,a.content_role,a.ordinal,"
             "x.subject_id,x.artifact_kind,x.period_start_local_date,x.period_end_local_date,x.revision_no,x.content_sha256,x.user_visible_text,x.structured_content_json,x.generated_by_run_id,x.created_at_utc "
             "FROM analysis_delivery_artifacts a JOIN analysis_artifacts x ON x.id=a.analysis_artifact_id "
-            "WHERE a.analysis_delivery_id=? ORDER BY a.ordinal", (delivery_id,),
+            "WHERE a.analysis_delivery_id=? ORDER BY a.ordinal",
+            (delivery_id,),
         ).fetchall()
         expected = [(kind, role, ordinal) for ordinal, (kind, role) in enumerate(shape)]
-        actual = [(str(item["artifact_kind"]), str(item["content_role"]), int(item["ordinal"])) for item in links]
+        actual = [
+            (
+                str(item["artifact_kind"]),
+                str(item["content_role"]),
+                int(item["ordinal"]),
+            )
+            for item in links
+        ]
         if actual != expected:
             raise AnalysisDeliveryError("analysis_delivery_relation_conflict")
         artifacts: list[DeliveryArtifact] = []
         for item, (_, role, _) in zip(links, expected, strict=True):
-            if int(item["subject_id"]) != int(row["subject_id"]) or int(item["generated_by_run_id"]) != int(row["analysis_run_id"]):
-                raise AnalysisDeliveryError("analysis_delivery_artifact_not_published_by_run")
-            artifacts.append(DeliveryArtifact(
-                artifact_id=int(item["analysis_artifact_id"]), artifact_kind=str(item["artifact_kind"]),
-                content_role=role, revision_no=int(item["revision_no"]), content_sha256=str(item["content_sha256"]),
-                user_visible_text=str(item["user_visible_text"]),
-                period_start_local_date=_local_date(item["period_start_local_date"]),
-                period_end_local_date=_local_date(item["period_end_local_date"]),
-                structured_content_json=_structured_content(item["structured_content_json"]),
-                created_at_utc=str(item["created_at_utc"]),
-            ))
-        run_key = _safe_header(str(row["run_key"]))
-        if _idempotency_key(run_key, str(row["delivery_kind"]), artifacts) != str(row["idempotency_key"]):
+            if int(item["subject_id"]) != int(row["subject_id"]) or int(
+                item["generated_by_run_id"]
+            ) != int(row["analysis_run_id"]):
+                raise AnalysisDeliveryError(
+                    "analysis_delivery_artifact_not_published_by_run"
+                )
+            artifacts.append(
+                DeliveryArtifact(
+                    artifact_id=int(item["analysis_artifact_id"]),
+                    artifact_kind=str(item["artifact_kind"]),
+                    content_role=role,
+                    revision_no=int(item["revision_no"]),
+                    content_sha256=str(item["content_sha256"]),
+                    user_visible_text=str(item["user_visible_text"]),
+                    period_start_local_date=_local_date(
+                        item["period_start_local_date"]
+                    ),
+                    period_end_local_date=_local_date(item["period_end_local_date"]),
+                    structured_content_json=_structured_content(
+                        item["structured_content_json"]
+                    ),
+                    created_at_utc=str(item["created_at_utc"]),
+                )
+            )
+        key = str(row["idempotency_key"])
+        base_key = _idempotency_key(
+            int(row["subject_id"]), str(row["delivery_kind"]), artifacts
+        )
+        if key != base_key and not key.startswith(base_key + ":resend:"):
             raise AnalysisDeliveryError("analysis_delivery_idempotency_conflict")
         return row, artifacts
 
 
 _ACTIVITY = {"running": "跑步", "rest": "休息"}
-_ROLE = {"easy": "轻松跑", "long": "长距离跑", "tempo": "节奏跑", "speed": "速度训练", "running_strength": "跑步力量训练"}
-_COURSE = {"easy": "轻松跑", "long_easy": "长距离轻松跑", "steady": "稳定跑", "intervals": "间歇跑"}
+_ROLE = {
+    "easy": "轻松跑",
+    "long": "长距离跑",
+    "tempo": "节奏跑",
+    "speed": "速度训练",
+    "running_strength": "跑步力量训练",
+}
+_COURSE = {
+    "easy": "轻松跑",
+    "long_easy": "长距离轻松跑",
+    "steady": "稳定跑",
+    "intervals": "间歇跑",
+}
 _ROLE_COURSE = {
     "easy": "easy",
     "long": "long_easy",
@@ -1392,16 +1791,18 @@ def _sleep_chart_segments(chart: SleepChart) -> tuple[Element, ...]:
         if seconds <= 0:
             continue
         width = f"{seconds * 100 / chart_total:.2f}%"
-        segments.append(element(
-            "td",
-            text(" "),
-            attributes={
-                "width": width,
-                "bgcolor": color,
-                "aria-label": f"{label} {_duration_label(seconds)}",
-                "style": f"width:{width};height:18px;background:{color};font-size:1px;line-height:18px;",
-            },
-        ))
+        segments.append(
+            element(
+                "td",
+                text(" "),
+                attributes={
+                    "width": width,
+                    "bgcolor": color,
+                    "aria-label": f"{label} {_duration_label(seconds)}",
+                    "style": f"width:{width};height:18px;background:{color};font-size:1px;line-height:18px;",
+                },
+            )
+        )
     return tuple(segments)
 
 
@@ -1438,31 +1839,45 @@ def _recovery_metric_cells(metrics: Sequence[RecoveryMetric]) -> tuple[Element, 
     cells: list[Element] = []
     for index, metric in enumerate(metrics):
         border = "border-right:1px solid #D8E2E5;" if index < len(metrics) - 1 else ""
-        cells.append(element(
-            "td",
+        cells.append(
             element(
-                "div", text(metric.label),
-                attributes={"style": "font-size:11px;line-height:1.3;font-weight:600;letter-spacing:.04em;color:#627184;"},
-            ),
-            element(
-                "div", text(metric.value_text),
-                attributes={"style": "margin-top:6px;font-size:20px;line-height:1.3;font-weight:600;color:#142337;"},
-            ),
-            element(
-                "div", text(metric.comparison_text),
-                attributes={"style": "margin-top:5px;font-size:11px;line-height:1.55;color:#33445A;"},
-            ),
-            element(
-                "div", text(metric.observation_text),
-                attributes={"style": "margin-top:3px;font-size:10px;line-height:1.5;color:#8290A0;"},
-            ),
-            attributes={
-                "class": "stat-cell",
-                "width": f"{100 / max(len(metrics), 1):.2f}%",
-                "valign": "top",
-                "style": f"padding:0 14px 2px;{border}",
-            },
-        ))
+                "td",
+                element(
+                    "div",
+                    text(metric.label),
+                    attributes={
+                        "style": "font-size:11px;line-height:1.3;font-weight:600;letter-spacing:.04em;color:#627184;"
+                    },
+                ),
+                element(
+                    "div",
+                    text(metric.value_text),
+                    attributes={
+                        "style": "margin-top:6px;font-size:20px;line-height:1.3;font-weight:600;color:#142337;"
+                    },
+                ),
+                element(
+                    "div",
+                    text(metric.comparison_text),
+                    attributes={
+                        "style": "margin-top:5px;font-size:11px;line-height:1.55;color:#33445A;"
+                    },
+                ),
+                element(
+                    "div",
+                    text(metric.observation_text),
+                    attributes={
+                        "style": "margin-top:3px;font-size:10px;line-height:1.5;color:#8290A0;"
+                    },
+                ),
+                attributes={
+                    "class": "stat-cell",
+                    "width": f"{100 / max(len(metrics), 1):.2f}%",
+                    "valign": "top",
+                    "style": f"padding:0 14px 2px;{border}",
+                },
+            )
+        )
     return tuple(cells)
 
 
@@ -1482,68 +1897,107 @@ def _training_load_rows(chart: TrainingLoadChart) -> tuple[Element, ...]:
             element(
                 "tr",
                 element(
-                    "td", text(" "),
+                    "td",
+                    text(" "),
                     attributes={
                         "width": f"{width:.2f}%",
                         "bgcolor": "#237F8E",
                         "style": f"width:{width:.2f}%;height:9px;background:#237F8E;font-size:1px;line-height:9px;",
                     },
-                ) if width > 0 else element(
-                    "td", text(" "),
+                )
+                if width > 0
+                else element(
+                    "td",
+                    text(" "),
                     attributes={"style": "height:9px;font-size:1px;line-height:9px;"},
                 ),
             ),
             attributes={
-                "role": "presentation", "width": "100%", "cellpadding": "0",
-                "cellspacing": "0", "border": "0",
+                "role": "presentation",
+                "width": "100%",
+                "cellpadding": "0",
+                "cellspacing": "0",
+                "border": "0",
                 "style": "width:100%;background:#EAF0F2;border-radius:5px;overflow:hidden;",
             },
         )
-        rows.append(element(
-            "tr",
+        rows.append(
             element(
-                "td", text(_load_day_label(day.local_date)),
-                attributes={"width": "76", "style": "padding:5px 10px 5px 0;font-size:11px;line-height:1.4;color:#627184;white-space:nowrap;"},
-            ),
-            element(
-                "td", bar,
-                attributes={"style": "padding:5px 12px 5px 0;"},
-            ),
-            element(
-                "td", text(_duration_label(day.duration_seconds)),
-                attributes={"width": "72", "align": "right", "style": "padding:5px 0;font-size:11px;line-height:1.4;color:#33445A;white-space:nowrap;"},
-            ),
-        ))
+                "tr",
+                element(
+                    "td",
+                    text(_load_day_label(day.local_date)),
+                    attributes={
+                        "width": "76",
+                        "style": "padding:5px 10px 5px 0;font-size:11px;line-height:1.4;color:#627184;white-space:nowrap;",
+                    },
+                ),
+                element(
+                    "td",
+                    bar,
+                    attributes={"style": "padding:5px 12px 5px 0;"},
+                ),
+                element(
+                    "td",
+                    text(_duration_label(day.duration_seconds)),
+                    attributes={
+                        "width": "72",
+                        "align": "right",
+                        "style": "padding:5px 0;font-size:11px;line-height:1.4;color:#33445A;white-space:nowrap;",
+                    },
+                ),
+            )
+        )
     return tuple(rows)
 
 
-def _activity_overview_rows(activities: Sequence[ActivityOverview]) -> tuple[Element, ...]:
+def _activity_overview_rows(
+    activities: Sequence[ActivityOverview],
+) -> tuple[Element, ...]:
     rows: list[Element] = []
     for activity in activities:
         details = [f"时长 {_duration_label(activity.duration_seconds)}"]
         if activity.distance_m is not None:
-            details.append(f"距离 {_metric_value(activity.distance_m / 1000, digits=2)} km")
+            details.append(
+                f"距离 {_metric_value(activity.distance_m / 1000, digits=2)} km"
+            )
         if activity.average_pace_seconds_per_km is not None:
-            minutes, seconds = divmod(int(round(activity.average_pace_seconds_per_km)), 60)
+            minutes, seconds = divmod(
+                int(round(activity.average_pace_seconds_per_km)), 60
+            )
             details.append(f"平均配速 {minutes}:{seconds:02d}/km")
         if activity.average_heart_rate_bpm is not None:
-            details.append(f"平均心率 {_metric_value(activity.average_heart_rate_bpm)} 次/分钟")
+            details.append(
+                f"平均心率 {_metric_value(activity.average_heart_rate_bpm)} 次/分钟"
+            )
         if activity.maximum_heart_rate_bpm is not None:
-            details.append(f"最高心率 {_metric_value(activity.maximum_heart_rate_bpm)} 次/分钟")
+            details.append(
+                f"最高心率 {_metric_value(activity.maximum_heart_rate_bpm)} 次/分钟"
+            )
         details.extend(activity.highlight_metrics)
         if activity.weather_text:
             details.append(f"天气 {activity.weather_text}")
-        rows.append(element(
-            "tr",
+        rows.append(
             element(
-                "td", text(activity.sport_label),
-                attributes={"width": "86", "valign": "top", "style": "padding:7px 12px 7px 0;font-size:12px;line-height:1.5;font-weight:600;color:#142337;"},
-            ),
-            element(
-                "td", text(" · ".join(details)),
-                attributes={"style": "padding:7px 0;font-size:12px;line-height:1.6;color:#33445A;"},
-            ),
-        ))
+                "tr",
+                element(
+                    "td",
+                    text(activity.sport_label),
+                    attributes={
+                        "width": "86",
+                        "valign": "top",
+                        "style": "padding:7px 12px 7px 0;font-size:12px;line-height:1.5;font-weight:600;color:#142337;",
+                    },
+                ),
+                element(
+                    "td",
+                    text(" · ".join(details)),
+                    attributes={
+                        "style": "padding:7px 0;font-size:12px;line-height:1.6;color:#33445A;"
+                    },
+                ),
+            )
+        )
     return tuple(rows)
 
 
@@ -1572,12 +2026,16 @@ def _activities_plain(activities: Sequence[ActivityOverview]) -> str:
         if activity.distance_m is not None:
             details.append(_metric_value(activity.distance_m / 1000, digits=2) + " km")
         if activity.average_pace_seconds_per_km is not None:
-            minutes, seconds = divmod(int(round(activity.average_pace_seconds_per_km)), 60)
+            minutes, seconds = divmod(
+                int(round(activity.average_pace_seconds_per_km)), 60
+            )
             details.append(f"{minutes}:{seconds:02d}/km")
         if activity.average_heart_rate_bpm is not None:
             details.append(_metric_value(activity.average_heart_rate_bpm) + " 次/分钟")
         if activity.maximum_heart_rate_bpm is not None:
-            details.append("最高 " + _metric_value(activity.maximum_heart_rate_bpm) + " 次/分钟")
+            details.append(
+                "最高 " + _metric_value(activity.maximum_heart_rate_bpm) + " 次/分钟"
+            )
         details.extend(activity.highlight_metrics)
         if activity.weather_text:
             details.append(activity.weather_text)
@@ -1590,7 +2048,11 @@ def _text(value: object, *, neutral: str = "未提供") -> str:
 
 
 def _number(value: object, *, suffix: str = "") -> str:
-    return f"{value}{suffix}" if isinstance(value, int) and not isinstance(value, bool) and value > 0 else "未提供"
+    return (
+        f"{value}{suffix}"
+        if isinstance(value, int) and not isinstance(value, bool) and value > 0
+        else "未提供"
+    )
 
 
 def _date_label(value: object, *, neutral: str = "未设置") -> str:
@@ -1626,7 +2088,14 @@ def _activity_weather_summary(value: object) -> str:
         if not isinstance(item, Mapping):
             continue
         day = _date_label(item.get("local_date"), neutral="日期未提供")
-        sport = _scalar(item.get("sport") or item.get("activity_kind") or item.get("activity_type")) or "活动"
+        sport = (
+            _scalar(
+                item.get("sport")
+                or item.get("activity_kind")
+                or item.get("activity_type")
+            )
+            or "活动"
+        )
         details: list[str] = []
         for key, label, suffix in (
             ("duration_minutes", "时长", " 分钟"),
@@ -1653,7 +2122,11 @@ def _activity_weather_summary(value: object) -> str:
             details.append(f"天气：{weather_text}")
         suffix = "；".join(details)
         lines.append(f"{day} · {sport}" + (f" · {suffix}" if suffix else ""))
-    return "\n".join(lines) if lines else "本周实际活动与天气明细未随本次报告提供；请以数据说明和后续补录为准。"
+    return (
+        "\n".join(lines)
+        if lines
+        else "本周实际活动与天气明细未随本次报告提供；请以数据说明和后续补录为准。"
+    )
 
 
 def _enum(value: object, choices: Mapping[str, str]) -> str:
@@ -1661,7 +2134,12 @@ def _enum(value: object, choices: Mapping[str, str]) -> str:
 
 
 def _list_text(value: object) -> list[str]:
-    return list(value) if isinstance(value, list) and all(isinstance(item, str) and item.strip() for item in value) else []
+    return (
+        list(value)
+        if isinstance(value, list)
+        and all(isinstance(item, str) and item.strip() for item in value)
+        else []
+    )
 
 
 def _required_text(value: object) -> str:
@@ -1751,7 +2229,11 @@ def _localized(value: object, choices: Mapping[str, str], *, neutral: str) -> st
 
 
 def _rpe(value: object) -> str:
-    return f"RPE {value}" if isinstance(value, int) and not isinstance(value, bool) and 1 <= value <= 10 else "按体感执行"
+    return (
+        f"RPE {value}"
+        if isinstance(value, int) and not isinstance(value, bool) and 1 <= value <= 10
+        else "按体感执行"
+    )
 
 
 def _heart_rate(value: object) -> str | None:
@@ -1798,7 +2280,9 @@ def _created_at_local(value: str) -> str:
     try:
         parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError:
-        raise AnalysisDeliveryError("analysis_delivery_artifact_content_invalid") from None
+        raise AnalysisDeliveryError(
+            "analysis_delivery_artifact_content_invalid"
+        ) from None
     if parsed.tzinfo is None:
         raise AnalysisDeliveryError("analysis_delivery_artifact_content_invalid")
     return parsed.astimezone(ZoneInfo("Asia/Hong_Kong")).strftime("%Y-%m-%d %H:%M")
@@ -1821,8 +2305,7 @@ def _daily_advice_paragraphs(value: str) -> tuple[str, ...]:
     lines = [
         line.strip()
         for line in value.replace("\r\n", "\n").replace("\r", "\n").split("\n")
-        if line.strip()
-        and not line.strip().startswith(("判断置信度：", "数据说明："))
+        if line.strip() and not line.strip().startswith(("判断置信度：", "数据说明："))
     ]
     sentences = [
         sentence.strip()
@@ -1850,8 +2333,7 @@ def _daily_advice_paragraph_nodes(paragraphs: Sequence[str]) -> tuple[Element, .
             text(paragraph),
             attributes={
                 "style": (
-                    "margin-top:10px;font-size:14px;line-height:1.75;"
-                    "color:#33445A;"
+                    "margin-top:10px;font-size:14px;line-height:1.75;color:#33445A;"
                 )
             },
         )
@@ -1864,7 +2346,8 @@ def _stop_condition_nodes(value: object) -> tuple[Element, ...]:
         element(
             "div",
             element(
-                "span", text("•"),
+                "span",
+                text("•"),
                 attributes={"style": "display:inline-block;width:16px;color:#A56D00;"},
             ),
             text(_STOP_CONDITIONS.get(item, "出现需要停止训练的情况")),
@@ -1907,17 +2390,27 @@ def _first_variant(root: Element, variant: str) -> Element:
 
 def _remove_table_with_field(root: Element, field: str) -> None:
     def contains(target: Element) -> bool:
-        return any(field in node.attribute_values("data-field") for node in _walk_elements(target))
+        return any(
+            field in node.attribute_values("data-field")
+            for node in _walk_elements(target)
+        )
 
     def nested_table_contains(target: Element) -> bool:
-        return any(node is not target and node.tag == "table" and contains(node) for node in _walk_elements(target))
+        return any(
+            node is not target and node.tag == "table" and contains(node)
+            for node in _walk_elements(target)
+        )
 
     kept: list[Element | Any] = []
     for child in root.children:
         if not isinstance(child, Element):
             kept.append(child)
             continue
-        if child.tag == "table" and contains(child) and not nested_table_contains(child):
+        if (
+            child.tag == "table"
+            and contains(child)
+            and not nested_table_contains(child)
+        ):
             continue
         _remove_table_with_field(child, field)
         kept.append(child)
@@ -1933,7 +2426,12 @@ def _walk_elements(root: Element):
 
 def _replace_design_example(root: Element, source: str, replacement: str) -> None:
     """Remove literal example copy that is intentionally not a template binding."""
-    root.children = [Text(replacement) if isinstance(child, Text) and child.value == source else child for child in root.children]
+    root.children = [
+        Text(replacement)
+        if isinstance(child, Text) and child.value == source
+        else child
+        for child in root.children
+    ]
     for child in root.children:
         if isinstance(child, Element):
             _replace_design_example(child, source, replacement)
@@ -1948,10 +2446,12 @@ def _weekly_item(template: Element, item: Mapping[str, object], index: int) -> E
     if (
         not isinstance(item.get("item_index"), int)
         or isinstance(item.get("item_index"), bool)
-        or not 0 <= item["item_index"] <= 6
+        or not 0 <= cast(int, item["item_index"]) <= 6
     ):
         raise AnalysisDeliveryError("analysis_delivery_artifact_content_invalid")
-    if item.get("rationale_text") is not None and not isinstance(item.get("rationale_text"), str):
+    if item.get("rationale_text") is not None and not isinstance(
+        item.get("rationale_text"), str
+    ):
         raise AnalysisDeliveryError("analysis_delivery_artifact_content_invalid")
     _required_string_list(item.get("stop_conditions"), maximum=12)
     variant = "running" if activity == "running" else "rest"
@@ -1959,19 +2459,36 @@ def _weekly_item(template: Element, item: Mapping[str, object], index: int) -> E
     fragment.root.discard_attribute("data-variant")
     role = _enum(prescription.get("hansons_session_role"), _ROLE)
     course = _enum(prescription.get("course_type"), _COURSE)
-    warmup = _localized(prescription.get("warmup"), _PRESCRIPTION_TEXT, neutral="按身体状态逐步热身")
-    main_work = _localized(prescription.get("main_set"), _PRESCRIPTION_TEXT, neutral="按课程说明完成主训练")
-    cooldown = _localized(prescription.get("cooldown"), _PRESCRIPTION_TEXT, neutral="逐步降速完成冷身")
+    warmup = _localized(
+        prescription.get("warmup"), _PRESCRIPTION_TEXT, neutral="按身体状态逐步热身"
+    )
+    main_work = _localized(
+        prescription.get("main_set"), _PRESCRIPTION_TEXT, neutral="按课程说明完成主训练"
+    )
+    cooldown = _localized(
+        prescription.get("cooldown"), _PRESCRIPTION_TEXT, neutral="逐步降速完成冷身"
+    )
     heart_rate = _heart_rate(prescription.get("target_bpm_range"))
     # The safety-normalized prescription is canonical.  The duplicated outer
     # list remains validated for schema integrity but never overrides it.
     stop_conditions = _stop_text(prescription.get("stop_conditions"))
     details = "；".join(
-        value for value in (f"热身：{warmup}", f"主训练：{main_work}", f"冷身：{cooldown}", heart_rate, f"停止条件：{stop_conditions}" if stop_conditions else None) if value
+        value
+        for value in (
+            f"热身：{warmup}",
+            f"主训练：{main_work}",
+            f"冷身：{cooldown}",
+            heart_rate,
+            f"停止条件：{stop_conditions}" if stop_conditions else None,
+        )
+        if value
     )
     fields = {
-        "weekday": _WEEKDAYS[date.fromisoformat(local_date).weekday()], "date": _display_date(local_date),
-        "session_title": role if activity == "running" and role != "未提供" else ("跑步训练" if activity == "running" else "休息日"),
+        "weekday": _WEEKDAYS[date.fromisoformat(local_date).weekday()],
+        "date": _display_date(local_date),
+        "session_title": role
+        if activity == "running" and role != "未提供"
+        else ("跑步训练" if activity == "running" else "休息日"),
         "rationale": _text(item.get("rationale_text")),
         "recovery_advice": _text(
             prescription.get("recovery_advice"),
@@ -1979,8 +2496,14 @@ def _weekly_item(template: Element, item: Mapping[str, object], index: int) -> E
         ),
         "hansons_session_role": role,
         "course_type": course,
-        "planned_duration": _number(prescription.get("planned_duration_minutes"), suffix=" 分钟"),
-        "effort_guidance": " · ".join(value for value in (_rpe(prescription.get("prescribed_rpe")), heart_rate) if value),
+        "planned_duration": _number(
+            prescription.get("planned_duration_minutes"), suffix=" 分钟"
+        ),
+        "effort_guidance": " · ".join(
+            value
+            for value in (_rpe(prescription.get("prescribed_rpe")), heart_rate)
+            if value
+        ),
         "main_work": details,
     }
     fragment.set_fields(fields).remove_empty_optional({})
@@ -1990,16 +2513,36 @@ def _weekly_item(template: Element, item: Mapping[str, object], index: int) -> E
 
 
 def _weekly_html(pending: PendingDelivery, *, revision: bool) -> str:
-    summary = next((item for item in pending.artifacts if item.content_role == "weekly_summary"), None)
-    plan = next(item for item in pending.artifacts if item.content_role in {"weekly_plan", "plan_revision"})
+    summary = next(
+        (item for item in pending.artifacts if item.content_role == "weekly_summary"),
+        None,
+    )
+    plan = next(
+        item
+        for item in pending.artifacts
+        if item.content_role in {"weekly_plan", "plan_revision"}
+    )
     content = plan.structured_content_json
     items = content.get("items")
-    if not isinstance(items, list) or (not revision and len(items) != 7) or (revision and not 1 <= len(items) <= 7) or not all(isinstance(item, dict) for item in items):
+    if (
+        not isinstance(items, list)
+        or (not revision and len(items) != 7)
+        or (revision and not 1 <= len(items) <= 7)
+        or not all(isinstance(item, dict) for item in items)
+    ):
         raise AnalysisDeliveryError("analysis_delivery_artifact_content_invalid")
     period = content.get("period")
-    if not isinstance(period, dict) or _local_date(period.get("start_local_date")) != plan.period_start_local_date or _local_date(period.get("end_local_date")) != plan.period_end_local_date:
+    if (
+        not isinstance(period, dict)
+        or _local_date(period.get("start_local_date")) != plan.period_start_local_date
+        or _local_date(period.get("end_local_date")) != plan.period_end_local_date
+    ):
         raise AnalysisDeliveryError("analysis_delivery_artifact_content_invalid")
-    if content.get("timezone") != "Asia/Hong_Kong" or not isinstance(content.get("objective"), Mapping) or not isinstance(content.get("constraints"), Mapping):
+    if (
+        content.get("timezone") != "Asia/Hong_Kong"
+        or not isinstance(content.get("objective"), Mapping)
+        or not isinstance(content.get("constraints"), Mapping)
+    ):
         raise AnalysisDeliveryError("analysis_delivery_artifact_content_invalid")
     start = date.fromisoformat(plan.period_start_local_date)
     end = date.fromisoformat(plan.period_end_local_date)
@@ -2013,7 +2556,9 @@ def _weekly_html(pending: PendingDelivery, *, revision: bool) -> str:
             date.fromordinal(start.toordinal() + index).isoformat()
             for index in range(7)
         ]
-        if item_dates != expected_dates or [item.get("item_index") for item in items] != list(range(7)):
+        if item_dates != expected_dates or [
+            item.get("item_index") for item in items
+        ] != list(range(7)):
             raise AnalysisDeliveryError("analysis_delivery_artifact_content_invalid")
     else:
         item_indexes = [item.get("item_index") for item in items]
@@ -2024,54 +2569,131 @@ def _weekly_html(pending: PendingDelivery, *, revision: bool) -> str:
                 or not 0 <= value <= 6
                 for value in item_indexes
             )
-            or
-            any(not start <= date.fromisoformat(value) <= end for value in item_dates)
+            or any(
+                not start <= date.fromisoformat(value) <= end for value in item_dates
+            )
             or item_dates != sorted(item_dates)
             or len(item_indexes) != len(set(item_indexes))
             or item_indexes != sorted(item_indexes)
         ):
             raise AnalysisDeliveryError("analysis_delivery_artifact_content_invalid")
     template = load_template("weekly_report")
-    summary_text = summary.user_visible_text if summary is not None else plan.user_visible_text
+    summary_text = (
+        summary.user_visible_text if summary is not None else plan.user_visible_text
+    )
     title = "训练计划修订" if revision else "每周训练报告"
     fields = {
-        "brand_name": "TrainLab", "display_date": f"{_display_date(plan.period_start_local_date)}—{_display_date(plan.period_end_local_date)}",
-        "title": title, "subtitle": "现有计划项目" if revision else "本周回顾与未来七天计划",
-        "preheader": "现有训练计划项目", "review_start_date": _display_date(summary.period_start_local_date) if summary else "未提供",
-        "review_end_date": _display_date(summary.period_end_local_date) if summary else "未提供", "weekly_summary_text": summary_text,
-        "recovery_summary": _mapping_text(summary.structured_content_json if summary else None, "recovery_summary", "summary", neutral="详见本周总结"),
-        "training_load_summary": _mapping_text(summary.structured_content_json if summary else None, "training_load_summary", neutral="详见本周总结"),
-        "progress_summary": _mapping_text(summary.structured_content_json if summary else None, "progress_summary", neutral="详见本周总结"),
+        "brand_name": "TrainLab",
+        "display_date": f"{_display_date(plan.period_start_local_date)}—{_display_date(plan.period_end_local_date)}",
+        "title": title,
+        "subtitle": "现有计划项目" if revision else "本周回顾与未来七天计划",
+        "preheader": "现有训练计划项目",
+        "review_start_date": _display_date(summary.period_start_local_date)
+        if summary
+        else "未提供",
+        "review_end_date": _display_date(summary.period_end_local_date)
+        if summary
+        else "未提供",
+        "weekly_summary_text": summary_text,
+        "recovery_summary": _mapping_text(
+            summary.structured_content_json if summary else None,
+            "recovery_summary",
+            "summary",
+            neutral="详见本周总结",
+        ),
+        "training_load_summary": _mapping_text(
+            summary.structured_content_json if summary else None,
+            "training_load_summary",
+            neutral="详见本周总结",
+        ),
+        "progress_summary": _mapping_text(
+            summary.structured_content_json if summary else None,
+            "progress_summary",
+            neutral="详见本周总结",
+        ),
         "training_method": "Hansons Marathon Method",
-        "training_difficulty_level": _number(_find_control(content, ("training_difficulty_level", "configured_level")), suffix=" / 5"),
-        "marathon_goal_time": _text(_find_control(content, ("marathon_target_finish_time",)), neutral="未设置"),
-        "half_marathon_goal_time": _text(_find_control(content, ("half_marathon_target_finish_time",)), neutral="未设置"),
-        "marathon_race_date": "参赛：" + _date_label(_find_control(content, ("marathon_race_date",))),
-        "half_marathon_race_date": "参赛：" + _date_label(_find_control(content, ("half_marathon_race_date",))),
+        "training_difficulty_level": _number(
+            _find_control(content, ("training_difficulty_level", "configured_level")),
+            suffix=" / 5",
+        ),
+        "marathon_goal_time": _text(
+            _find_control(content, ("marathon_target_finish_time",)), neutral="未设置"
+        ),
+        "half_marathon_goal_time": _text(
+            _find_control(content, ("half_marathon_target_finish_time",)),
+            neutral="未设置",
+        ),
+        "marathon_race_date": "参赛："
+        + _date_label(_find_control(content, ("marathon_race_date",))),
+        "half_marathon_race_date": "参赛："
+        + _date_label(_find_control(content, ("half_marathon_race_date",))),
         "actual_activity_weather": _activity_weather_summary(
             _find_control(
                 summary.structured_content_json if summary else None,
-                ("actual_activities", "activity_weather_summary", "actual_activity_summary"),
+                (
+                    "actual_activities",
+                    "activity_weather_summary",
+                    "actual_activity_summary",
+                ),
             )
         ),
-        "plan_objective": _mapping_text(content.get("objective"), "focus", "summary", "description", neutral="详见计划正文"),
-        "plan_constraints": _mapping_text(content.get("constraints"), "summary", "description", neutral="详见计划正文"),
+        "plan_objective": _mapping_text(
+            content.get("objective"),
+            "focus",
+            "summary",
+            "description",
+            neutral="详见计划正文",
+        ),
+        "plan_constraints": _mapping_text(
+            content.get("constraints"), "summary", "description", neutral="详见计划正文"
+        ),
         "plan_note": "每次训练前根据体感与安全信号决定是否降级或停止。",
-        "week_start_date": _display_date(plan.period_start_local_date), "week_end_date": _display_date(plan.period_end_local_date),
-        "attention_items": "", "data_limitation": "", "footer_note": "请以当天真实感受与安全信号为准。",
+        "week_start_date": _display_date(plan.period_start_local_date),
+        "week_end_date": _display_date(plan.period_end_local_date),
+        "attention_items": "",
+        "data_limitation": "",
+        "footer_note": "请以当天真实感受与安全信号为准。",
         "generated_at_local": _created_at_local(plan.created_at_utc),
     }
     repeat = _find_repeat(template.root, "daily_plans")
     repeat_template = repeat.clone()
-    daily_plans = [_weekly_item(repeat_template, item, index) for index, item in enumerate(items)]
+    daily_plans = [
+        _weekly_item(repeat_template, item, index) for index, item in enumerate(items)
+    ]
     _replace_design_example(template.root, "先稳定恢复，再延续训练节奏", "本周回顾")
-    template.remove_empty_optional({"key_findings": [], "heart_rate_zone_comparison": pending.heart_rate_zone_comparison, "attention_items": "", "data_limitation": ""}).replace_repeats({"daily_plans": daily_plans, "key_findings": [], "heart_rate_zone_comparison": tuple(element("div", text(line), attributes={"style": "margin-top:7px;font-size:13px;line-height:1.7;color:#33445A;"}) for line in pending.heart_rate_zone_comparison)}).set_fields(fields)
+    template.remove_empty_optional(
+        {
+            "key_findings": [],
+            "heart_rate_zone_comparison": pending.heart_rate_zone_comparison,
+            "attention_items": "",
+            "data_limitation": "",
+        }
+    ).replace_repeats(
+        {
+            "daily_plans": daily_plans,
+            "key_findings": [],
+            "heart_rate_zone_comparison": tuple(
+                element(
+                    "div",
+                    text(line),
+                    attributes={
+                        "style": "margin-top:7px;font-size:13px;line-height:1.7;color:#33445A;"
+                    },
+                )
+                for line in pending.heart_rate_zone_comparison
+            ),
+        }
+    ).set_fields(fields)
     return template.finalize()
 
 
 def _daily_html(pending: PendingDelivery) -> str:
-    summary = next(item for item in pending.artifacts if item.content_role == "daily_summary")
-    advice = next(item for item in pending.artifacts if item.content_role == "daily_advice")
+    summary = next(
+        item for item in pending.artifacts if item.content_role == "daily_summary"
+    )
+    advice = next(
+        item for item in pending.artifacts if item.content_role == "daily_advice"
+    )
     primary = _validate_daily_payload(
         summary.structured_content_json, advice.structured_content_json
     )
@@ -2096,9 +2718,15 @@ def _daily_html(pending: PendingDelivery) -> str:
     training_load = pending.training_load_chart
     yesterday_activities = pending.yesterday_activities
     fields = {
-        "brand_name": "TrainLab", "display_date": _display_date(advice.period_start_local_date), "title": "每日训练简报",
-        "subtitle": "昨日状态与今日安排", "preheader": "昨日状态与今日安排", "overall_state": _text(summary.structured_content_json.get("overall_state")),
-        "data_completeness": _enum(summary.structured_content_json.get("data_completeness"), _COMPLETENESS),
+        "brand_name": "TrainLab",
+        "display_date": _display_date(advice.period_start_local_date),
+        "title": "每日训练简报",
+        "subtitle": "昨日状态与今日安排",
+        "preheader": "昨日状态与今日安排",
+        "overall_state": _text(summary.structured_content_json.get("overall_state")),
+        "data_completeness": _enum(
+            summary.structured_content_json.get("data_completeness"), _COMPLETENESS
+        ),
         "data_window": (
             f"{_display_date(summary.period_start_local_date)}白天活动与健康；"
             f"{_display_date(summary.period_start_local_date)}晚至{_display_date(advice.period_start_local_date)}早睡眠；"
@@ -2109,48 +2737,83 @@ def _daily_html(pending: PendingDelivery) -> str:
         ),
         "sleep_window": (
             f"{sleep_chart.start_local_time}–{sleep_chart.end_local_time}"
-            if sleep_chart is not None else ""
+            if sleep_chart is not None
+            else ""
         ),
         "sleep_window_duration": (
             _duration_label(sleep_chart.window_seconds)
-            if sleep_chart is not None else ""
+            if sleep_chart is not None
+            else ""
         ),
         "sleep_asleep_duration": (
             _duration_label(sleep_chart.asleep_seconds)
-            if sleep_chart is not None else ""
+            if sleep_chart is not None
+            else ""
         ),
         "sleep_awake_duration": (
             _duration_label(sleep_chart.awake_seconds)
-            if sleep_chart is not None else ""
+            if sleep_chart is not None
+            else ""
         ),
         "training_load_window": (
             f"{_display_date(training_load.start_local_date)}—"
             f"{_display_date(training_load.end_local_date)}"
-            if training_load is not None else ""
+            if training_load is not None
+            else ""
         ),
         "training_load_total": (
             _duration_label(training_load.total_seconds)
-            if training_load is not None else ""
+            if training_load is not None
+            else ""
         ),
         "training_load_count": (
-            f"{training_load.activity_count}次活动"
-            if training_load is not None else ""
+            f"{training_load.activity_count}次活动" if training_load is not None else ""
         ),
-        "confidence": _text(advice.structured_content_json.get("confidence")), "summary_date": _display_date(summary.period_start_local_date),
-        "daily_summary_text": summary.user_visible_text, "advice_date": _display_date(advice.period_start_local_date),
-        "session_title": "跑步训练" if activity == "running" else "休息日", "activity_kind": _ACTIVITY[activity],
-        "total_volume": "恢复优先" if is_rest else _number(primary.get("planned_duration_minutes"), suffix=" 分钟"),
-        "hansons_session_role": "休息" if is_rest else _enum(primary.get("hansons_session_role"), _ROLE),
-        "effort_guidance": "不安排训练" if is_rest else " · ".join(value for value in (_rpe(primary.get("prescribed_rpe")), heart_rate) if value),
-        "warmup": _localized(primary.get("warmup"), _PRESCRIPTION_TEXT, neutral="按身体状态逐步热身"),
-        "main_work": _localized(primary.get("main_set"), _PRESCRIPTION_TEXT, neutral="按课程说明完成主训练"),
-        "cooldown": _localized(primary.get("cooldown"), _PRESCRIPTION_TEXT, neutral="逐步降速完成冷身"),
+        "confidence": _text(advice.structured_content_json.get("confidence")),
+        "summary_date": _display_date(summary.period_start_local_date),
+        "daily_summary_text": summary.user_visible_text,
+        "advice_date": _display_date(advice.period_start_local_date),
+        "session_title": "跑步训练" if activity == "running" else "休息日",
+        "activity_kind": _ACTIVITY[cast(str, activity)],
+        "total_volume": "恢复优先"
+        if is_rest
+        else _number(primary.get("planned_duration_minutes"), suffix=" 分钟"),
+        "hansons_session_role": "休息"
+        if is_rest
+        else _enum(primary.get("hansons_session_role"), _ROLE),
+        "effort_guidance": "不安排训练"
+        if is_rest
+        else " · ".join(
+            value
+            for value in (_rpe(primary.get("prescribed_rpe")), heart_rate)
+            if value
+        ),
+        "warmup": _localized(
+            primary.get("warmup"), _PRESCRIPTION_TEXT, neutral="按身体状态逐步热身"
+        ),
+        "main_work": _localized(
+            primary.get("main_set"), _PRESCRIPTION_TEXT, neutral="按课程说明完成主训练"
+        ),
+        "cooldown": _localized(
+            primary.get("cooldown"), _PRESCRIPTION_TEXT, neutral="逐步降速完成冷身"
+        ),
         "stop_conditions": stop_conditions,
-        "configured_difficulty_level": _number(advice.structured_content_json.get("configured_difficulty_level")),
-        "selected_session_difficulty_level": _number(advice.structured_content_json.get("selected_session_difficulty_level")),
-        "difficulty_adjustment_reason": _text(advice.structured_content_json.get("difficulty_adjustment_reason"), neutral=""),
-        "confidence_reason": _text(advice.structured_content_json.get("confidence_reason")),
-        "data_limitation": _text(advice.structured_content_json.get("data_limitation"), neutral=""),
+        "configured_difficulty_level": _number(
+            advice.structured_content_json.get("configured_difficulty_level")
+        ),
+        "selected_session_difficulty_level": _number(
+            advice.structured_content_json.get("selected_session_difficulty_level")
+        ),
+        "difficulty_adjustment_reason": _text(
+            advice.structured_content_json.get("difficulty_adjustment_reason"),
+            neutral="",
+        ),
+        "confidence_reason": _text(
+            advice.structured_content_json.get("confidence_reason")
+        ),
+        "data_limitation": _text(
+            advice.structured_content_json.get("data_limitation"), neutral=""
+        ),
         "footer_note": "请以当天真实感受与安全信号为准。",
         "generated_at_local": _created_at_local(advice.created_at_utc),
     }
@@ -2159,32 +2822,36 @@ def _daily_html(pending: PendingDelivery) -> str:
     if activity == "rest":
         for field in ("warmup", "main_work", "cooldown"):
             _remove_table_with_field(template.root, field)
-    template.remove_empty_optional({
-        "decision_factors": factors,
-        "sleep_chart": sleep_chart,
-        "recovery_metrics": recovery_metrics,
-        "yesterday_activities": yesterday_activities,
-        "training_load_chart": training_load,
-        "daily_advice_paragraphs": advice_paragraphs,
-        "stop_conditions": fields["stop_conditions"],
-        "difficulty_adjustment_reason": fields["difficulty_adjustment_reason"],
-        "data_limitation": fields["data_limitation"],
-    }).replace_repeats({
-        "decision_factors": factors,
-        "sleep_stage_segments": (
-            _sleep_chart_segments(sleep_chart) if sleep_chart is not None else ()
-        ),
-        "sleep_stage_legend": (
-            _sleep_chart_legend(sleep_chart) if sleep_chart is not None else ()
-        ),
-        "recovery_metrics": _recovery_metric_cells(recovery_metrics),
-        "yesterday_activities": _activity_overview_rows(yesterday_activities),
-        "training_load_days": (
-            _training_load_rows(training_load) if training_load is not None else ()
-        ),
-        "daily_advice_paragraphs": _daily_advice_paragraph_nodes(advice_paragraphs),
-        "stop_conditions": _stop_condition_nodes(primary.get("stop_conditions")),
-    }).set_fields(fields)
+    template.remove_empty_optional(
+        {
+            "decision_factors": factors,
+            "sleep_chart": sleep_chart,
+            "recovery_metrics": recovery_metrics,
+            "yesterday_activities": yesterday_activities,
+            "training_load_chart": training_load,
+            "daily_advice_paragraphs": advice_paragraphs,
+            "stop_conditions": fields["stop_conditions"],
+            "difficulty_adjustment_reason": fields["difficulty_adjustment_reason"],
+            "data_limitation": fields["data_limitation"],
+        }
+    ).replace_repeats(
+        {
+            "decision_factors": factors,
+            "sleep_stage_segments": (
+                _sleep_chart_segments(sleep_chart) if sleep_chart is not None else ()
+            ),
+            "sleep_stage_legend": (
+                _sleep_chart_legend(sleep_chart) if sleep_chart is not None else ()
+            ),
+            "recovery_metrics": _recovery_metric_cells(recovery_metrics),
+            "yesterday_activities": _activity_overview_rows(yesterday_activities),
+            "training_load_days": (
+                _training_load_rows(training_load) if training_load is not None else ()
+            ),
+            "daily_advice_paragraphs": _daily_advice_paragraph_nodes(advice_paragraphs),
+            "stop_conditions": _stop_condition_nodes(primary.get("stop_conditions")),
+        }
+    ).set_fields(fields)
     return template.finalize()
 
 
@@ -2199,8 +2866,12 @@ def render_delivery(pending: PendingDelivery) -> RenderedDelivery:
     period = pending.artifacts[-1]
     report_title = _DELIVERY_PRESENTATION[pending.delivery_kind][0]
     if pending.delivery_kind == "daily_report":
-        summary = next(item for item in pending.artifacts if item.content_role == "daily_summary")
-        advice = next(item for item in pending.artifacts if item.content_role == "daily_advice")
+        summary = next(
+            item for item in pending.artifacts if item.content_role == "daily_summary"
+        )
+        advice = next(
+            item for item in pending.artifacts if item.content_role == "daily_advice"
+        )
         subject = _safe_header(
             f"TrainLab｜{report_title}｜回顾{_display_date(summary.period_start_local_date)}｜"
             f"安排{_display_date(advice.period_start_local_date)}"
@@ -2217,7 +2888,8 @@ def render_delivery(pending: PendingDelivery) -> RenderedDelivery:
             f"{_display_date(summary.period_start_local_date)}白天活动与健康；"
             f"{_display_date(summary.period_start_local_date)}晚至{_display_date(advice.period_start_local_date)}早睡眠；"
             f"{_display_date(advice.period_start_local_date)}早晨恢复（Asia/Hong_Kong）",
-            "睡眠数据：" + _SLEEP_COMPLETENESS.get(
+            "睡眠数据："
+            + _SLEEP_COMPLETENESS.get(
                 sleep_completeness, _SLEEP_COMPLETENESS["unavailable"]
             ),
             "",
@@ -2240,13 +2912,13 @@ def render_delivery(pending: PendingDelivery) -> RenderedDelivery:
             plain.append("昨日运动：" + _activities_plain(pending.yesterday_activities))
         if pending.training_load_chart is not None:
             plain.append(
-                "最近7日训练量："
-                + _training_load_plain(pending.training_load_chart)
+                "最近7日训练量：" + _training_load_plain(pending.training_load_chart)
             )
         advice_paragraphs = _daily_advice_paragraphs(advice.user_visible_text)
+        primary_item = advice.structured_content_json.get("primary_item")
         stop_conditions = _list_text(
-            advice.structured_content_json.get("primary_item", {}).get("stop_conditions")
-            if isinstance(advice.structured_content_json.get("primary_item"), Mapping)
+            primary_item.get("stop_conditions")
+            if isinstance(primary_item, Mapping)
             else None
         )
         plain.extend(("", _TITLES[advice.content_role], *advice_paragraphs))
@@ -2257,37 +2929,73 @@ def render_delivery(pending: PendingDelivery) -> RenderedDelivery:
                 for item in stop_conditions
             )
     elif pending.delivery_kind == "weekly_report":
-        summary = next((item for item in pending.artifacts if item.content_role == "weekly_summary"), None)
+        weekly_summary = next(
+            (
+                item
+                for item in pending.artifacts
+                if item.content_role == "weekly_summary"
+            ),
+            None,
+        )
         subject = _safe_header(
             f"TrainLab｜{report_title}｜回顾"
-            f"{_display_date(summary.period_start_local_date) if summary else '未提供'}—"
-            f"{_display_date(summary.period_end_local_date) if summary else '未提供'}｜计划"
+            f"{_display_date(weekly_summary.period_start_local_date) if weekly_summary else '未提供'}—"
+            f"{_display_date(weekly_summary.period_end_local_date) if weekly_summary else '未提供'}｜计划"
             f"{_display_date(period.period_start_local_date)}—{_display_date(period.period_end_local_date)}"
         )
         plan_content = period.structured_content_json
         plain = [
             report_title,
-            f"回顾日期：{_display_date(summary.period_start_local_date) if summary else '未提供'}—{_display_date(summary.period_end_local_date) if summary else '未提供'}",
+            f"回顾日期：{_display_date(weekly_summary.period_start_local_date) if weekly_summary else '未提供'}—{_display_date(weekly_summary.period_end_local_date) if weekly_summary else '未提供'}",
             f"计划日期：{_display_date(period.period_start_local_date)}—{_display_date(period.period_end_local_date)}",
-            "实际活动与天气：" + _activity_weather_summary(
+            "实际活动与天气："
+            + _activity_weather_summary(
                 _find_control(
-                    summary.structured_content_json if summary else None,
-                    ("actual_activities", "activity_weather_summary", "actual_activity_summary"),
+                    weekly_summary.structured_content_json if weekly_summary else None,
+                    (
+                        "actual_activities",
+                        "activity_weather_summary",
+                        "actual_activity_summary",
+                    ),
                 )
             ),
-            "全马目标：" + _text(_find_control(plan_content, ("marathon_target_finish_time",)), neutral="未设置")
-            + "；" + "参赛：" + _date_label(_find_control(plan_content, ("marathon_race_date",))),
-            "半马目标：" + _text(_find_control(plan_content, ("half_marathon_target_finish_time",)), neutral="未设置")
-            + "；" + "参赛：" + _date_label(_find_control(plan_content, ("half_marathon_race_date",))),
+            "全马目标："
+            + _text(
+                _find_control(plan_content, ("marathon_target_finish_time",)),
+                neutral="未设置",
+            )
+            + "；"
+            + "参赛："
+            + _date_label(_find_control(plan_content, ("marathon_race_date",))),
+            "半马目标："
+            + _text(
+                _find_control(plan_content, ("half_marathon_target_finish_time",)),
+                neutral="未设置",
+            )
+            + "；"
+            + "参赛："
+            + _date_label(_find_control(plan_content, ("half_marathon_race_date",))),
         ]
         if pending.heart_rate_zone_comparison:
-            plain.extend(("", "跑步心率区间三方法对比", *pending.heart_rate_zone_comparison))
+            plain.extend(
+                ("", "跑步心率区间三方法对比", *pending.heart_rate_zone_comparison)
+            )
     else:
-        subject = _safe_header(f"TrainLab｜{report_title}｜{_display_date(period.period_start_local_date)}")
+        subject = _safe_header(
+            f"TrainLab｜{report_title}｜{_display_date(period.period_start_local_date)}"
+        )
         plain = [report_title, f"日期：{_display_date(period.period_start_local_date)}"]
     if pending.delivery_kind != "daily_report":
         for artifact in pending.artifacts:
-            plain.extend(("", _TITLES[artifact.content_role], artifact.user_visible_text.replace("\r\n", "\n").replace("\r", "\n")))
+            plain.extend(
+                (
+                    "",
+                    _TITLES[artifact.content_role],
+                    artifact.user_visible_text.replace("\r\n", "\n").replace(
+                        "\r", "\n"
+                    ),
+                )
+            )
     plain_text = "\n".join(plain)
     if (
         pending.run_key in subject
@@ -2298,4 +3006,6 @@ def render_delivery(pending: PendingDelivery) -> RenderedDelivery:
         or idempotency_key in html
     ):
         raise AnalysisDeliveryError("analysis_delivery_internal_identifier_visible")
-    return RenderedDelivery(subject, {"X-TrainLab-Idempotency-Key": idempotency_key}, plain_text, html)
+    return RenderedDelivery(
+        subject, {"X-TrainLab-Idempotency-Key": idempotency_key}, plain_text, html
+    )
