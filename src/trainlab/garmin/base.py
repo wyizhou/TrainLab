@@ -1782,7 +1782,7 @@ class GarminCollectionBase:
             "document_kind": "garmin_live_auth_refresh_receipt",
             "status": status,
             "failure_stage": failure_stage,
-            "refresh_client_distribution": "python-garminconnect-0.3.6",
+            "refresh_client_distribution": "python-garminconnect-0.3.9",
             "counts": dict(counts),
             "ordering": {
                 "refresh_before_credential_replace": True,

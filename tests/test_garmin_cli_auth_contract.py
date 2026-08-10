@@ -313,7 +313,9 @@ def test_token_permissions_symlink_identity_and_final_401(tmp_path):
         root / "state/l.lock",
     )
     FoundationTool(f).execute(FoundationRequest("init", "f", "2026-01-01T00:00:00Z"))
-    fit = (Path(__file__).parents[1] / "test_data/new/Running.fit").read_bytes()
+    # This path reaches the injected 401 before a FIT payload is parsed or stored.
+    # Keep the auth-boundary test independent of an untracked health-data fixture.
+    fit = b"synthetic-fit-not-parsed"
     c = GarminConfig(f.database_path, f.raw_root, f.state_root, "2026-04-15")
     fake = FakeGarminTransport(fit)
     tool = GarminCollectionTool(

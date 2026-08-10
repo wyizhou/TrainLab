@@ -6,14 +6,14 @@ resource whose installed ``python-garminconnect`` client has no matching
 endpoint is recorded as ``not_supported`` rather than being guessed or
 silently represented as an empty successful response.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Literal
 
-
 CATALOG_VERSION = "garmin-v4"
-ADAPTER_VERSION = "garminconnect-0.3.6"
+ADAPTER_VERSION = "garminconnect-0.3.9"
 PARSER_VERSION = "fitdecode-0.11.0"
 
 Scope = Literal["account", "daily", "range", "activity"]
@@ -36,7 +36,9 @@ class GarminResourceSpec:
     modes: frozenset[Mode]
     empty_state: Literal["empty", "not_enabled", "not_available"]
     allowed_404_state: Literal["not_available", "not_supported", "forbidden"]
-    capability_state: Literal["supported", "not_enabled", "not_available", "not_supported"]
+    capability_state: Literal[
+        "supported", "not_enabled", "not_available", "not_supported"
+    ]
     raw_kind: RawKind
     source_role: str | None
     adapter_version: str
@@ -79,7 +81,9 @@ def _spec(
     modes: frozenset[Mode] = frozenset({"full", "incremental", "snapshot", "repair"}),
     empty: Literal["empty", "not_enabled", "not_available"] = "empty",
     missing: Literal["not_available", "not_supported", "forbidden"] = "not_available",
-    capability: Literal["supported", "not_enabled", "not_available", "not_supported"] = "supported",
+    capability: Literal[
+        "supported", "not_enabled", "not_available", "not_supported"
+    ] = "supported",
     raw: RawKind = "json",
     role: str | None = None,
     parser: str | None = None,
@@ -90,77 +94,586 @@ def _spec(
     if role is None and disposition != "ignored":
         role = "account" if scope == "account" else "health"
     return GarminResourceSpec(
-        kind, method, arguments, scope, disposition, chunk, max_range_days, modes, empty, missing,
-        capability, raw, role, ADAPTER_VERSION, parser, targets, cursor, ignored,
+        kind,
+        method,
+        arguments,
+        scope,
+        disposition,
+        chunk,
+        max_range_days,
+        modes,
+        empty,
+        missing,
+        capability,
+        raw,
+        role,
+        ADAPTER_VERSION,
+        parser,
+        targets,
+        cursor,
+        ignored,
     )
 
 
-_DAY_MODES = frozenset({"full", "incremental", "snapshot", "repair"})
-_NO_SNAPSHOT = frozenset({"full", "incremental", "repair"})
-_ACTIVITY_MODES = frozenset({"full", "incremental", "snapshot", "repair"})
+_DAY_MODES: frozenset[Mode] = frozenset({"full", "incremental", "snapshot", "repair"})
+_NO_SNAPSHOT: frozenset[Mode] = frozenset({"full", "incremental", "repair"})
+_ACTIVITY_MODES: frozenset[Mode] = frozenset(
+    {"full", "incremental", "snapshot", "repair"}
+)
 
 # Each non-ignored method and argument shape is verified against the pinned
-# 0.3.6 class in tests.  Keeping unavailable capabilities explicit means a
+# 0.3.9 class in tests.  Keeping unavailable capabilities explicit means a
 # newer endpoint cannot accidentally start being called before its semantics
 # and canonical projection have been reviewed.
 _SPECS = (
     # Account and devices.
-    _spec("user_profile", "get_user_profile", (), "account", "required", chunk="account_snapshot", missing="forbidden", targets=("data_subjects", "physiology_records")),
-    _spec("user_profile_settings", "get_userprofile_settings", (), "account", "conditional", chunk="account_snapshot", targets=("physiology_records",)),
-    _spec("devices", "get_devices", (), "account", "conditional", chunk="account_snapshot", targets=("devices", "physiology_records")),
-    _spec("primary_device", "get_primary_training_device", (), "account", "conditional", chunk="account_snapshot", targets=("devices", "physiology_records", "physiology_metrics")),
-    _spec("device_settings", "get_device_settings", ("device_id",), "account", "conditional", chunk="per_device", targets=("devices", "physiology_records", "physiology_metrics")),
-    _spec("device_last_used", "get_device_last_used", (), "account", "conditional", chunk="account_snapshot", targets=("devices", "physiology_records", "physiology_metrics")),
-    _spec("personal_records", "get_personal_record", (), "account", "conditional", chunk="account_snapshot", targets=("physiology_records", "physiology_metrics")),
+    _spec(
+        "user_profile",
+        "get_user_profile",
+        (),
+        "account",
+        "required",
+        chunk="account_snapshot",
+        missing="forbidden",
+        targets=("data_subjects", "physiology_records"),
+    ),
+    _spec(
+        "user_profile_settings",
+        "get_userprofile_settings",
+        (),
+        "account",
+        "conditional",
+        chunk="account_snapshot",
+        targets=("physiology_records",),
+    ),
+    _spec(
+        "devices",
+        "get_devices",
+        (),
+        "account",
+        "conditional",
+        chunk="account_snapshot",
+        targets=("devices", "physiology_records"),
+    ),
+    _spec(
+        "primary_device",
+        "get_primary_training_device",
+        (),
+        "account",
+        "conditional",
+        chunk="account_snapshot",
+        targets=("devices", "physiology_records", "physiology_metrics"),
+    ),
+    _spec(
+        "device_settings",
+        "get_device_settings",
+        ("device_id",),
+        "account",
+        "conditional",
+        chunk="per_device",
+        targets=("devices", "physiology_records", "physiology_metrics"),
+    ),
+    _spec(
+        "device_last_used",
+        "get_device_last_used",
+        (),
+        "account",
+        "conditional",
+        chunk="account_snapshot",
+        targets=("devices", "physiology_records", "physiology_metrics"),
+    ),
+    _spec(
+        "personal_records",
+        "get_personal_record",
+        (),
+        "account",
+        "conditional",
+        chunk="account_snapshot",
+        targets=("physiology_records", "physiology_metrics"),
+    ),
     # Daily/range health data.
-    _spec("user_summary", "get_user_summary", ("local_date",), "daily", "required", missing="forbidden", targets=("daily_health",), cursor=True),
-    _spec("steps", "get_steps_data", ("local_date",), "daily", "required", targets=("health_samples", "daily_health"), cursor=True),
-    _spec("floors", "get_floors", ("local_date",), "daily", "conditional", targets=("health_samples", "daily_health"), cursor=True),
-    _spec("heart_rates", "get_heart_rates", ("local_date",), "daily", "conditional", targets=("health_samples", "daily_health"), cursor=True),
-    _spec("rhr", "get_rhr_day", ("local_date",), "daily", "conditional", targets=("health_samples", "daily_health"), cursor=True),
-    _spec("hydration", "get_hydration_data", ("local_date",), "daily", "conditional", targets=("health_samples", "daily_health"), cursor=True),
-    _spec("respiration", "get_respiration_data", ("local_date",), "daily", "conditional", targets=("health_samples", "daily_health"), cursor=True),
-    _spec("spo2", "get_spo2_data", ("local_date",), "daily", "conditional", targets=("health_samples", "daily_health"), cursor=True),
-    _spec("intensity_minutes", "get_intensity_minutes_data", ("local_date",), "daily", "conditional", targets=("daily_health", "physiology_metrics"), cursor=True),
-    _spec("stress", "get_all_day_stress", ("local_date",), "daily", "conditional", targets=("health_samples", "daily_health"), cursor=True),
-    _spec("all_day_events", "get_all_day_events", ("local_date",), "daily", "conditional", targets=("physiology_records",), cursor=True),
-    _spec("sleep", "get_sleep_data", ("local_date",), "daily", "conditional", targets=("sleep_sessions", "sleep_stages", "health_samples"), cursor=True),
-    _spec("lifestyle", "get_lifestyle_logging_data", ("local_date",), "daily", "conditional", targets=("physiology_records", "physiology_metrics"), cursor=True),
-    _spec("hrv", "get_hrv_data", ("local_date",), "daily", "conditional", targets=("health_samples", "physiology_records"), cursor=True),
-    _spec("body_battery", "get_body_battery", ("start_date", "end_date"), "range", "conditional", chunk="bounded_date_range", max_range_days=14, targets=("health_samples", "physiology_records"), cursor=True),
-    _spec("body_battery_events", "get_body_battery_events", ("local_date",), "daily", "conditional", targets=("physiology_records",), cursor=True),
-    _spec("body_composition", "get_body_composition", ("start_date", "end_date"), "range", "conditional", chunk="bounded_date_range", max_range_days=14, targets=("body_measurements",), cursor=True),
-    _spec("weigh_ins", "get_weigh_ins", ("start_date", "end_date"), "range", "conditional", chunk="bounded_date_range", max_range_days=14, targets=("body_measurements",), cursor=True),
-    _spec("blood_pressure", "get_blood_pressure", ("start_date", "end_date"), "range", "conditional", chunk="bounded_date_range", max_range_days=14, targets=("body_measurements", "physiology_records"), cursor=True),
-    _spec("training_readiness", "get_training_readiness", ("local_date",), "daily", "conditional", targets=("physiology_records", "physiology_metrics"), cursor=True),
-    _spec("max_metrics", "get_max_metrics", ("local_date",), "daily", "conditional", targets=("physiology_records", "physiology_metrics"), cursor=True),
-    _spec("lactate_threshold", "get_lactate_threshold", ("start_date", "end_date", "aggregation=daily"), "range", "conditional", chunk="bounded_date_range", max_range_days=14, targets=("physiology_records", "physiology_metrics"), cursor=True),
-    _spec("training_status", "get_training_status", ("local_date",), "daily", "conditional", targets=("physiology_records", "physiology_metrics"), cursor=True),
-    _spec("running_tolerance", "get_running_tolerance", ("start_date", "end_date", "aggregation=weekly"), "range", "conditional", chunk="bounded_date_range", max_range_days=14, targets=("physiology_records", "physiology_metrics"), cursor=True),
-    _spec("endurance_score", "get_endurance_score", ("start_date", "end_date"), "range", "conditional", chunk="bounded_date_range", max_range_days=14, targets=("physiology_records", "physiology_metrics"), cursor=True),
-    _spec("hill_score", "get_hill_score", ("start_date", "end_date"), "range", "conditional", chunk="bounded_date_range", max_range_days=14, targets=("physiology_records", "physiology_metrics"), cursor=True),
-    _spec("race_predictions", "get_race_predictions", ("start_date", "end_date"), "range", "conditional", chunk="bounded_date_range", max_range_days=14, targets=("physiology_records", "physiology_metrics"), cursor=True),
-    _spec("fitness_age", "get_fitnessage_data", ("local_date",), "daily", "conditional", targets=("physiology_records", "physiology_metrics"), cursor=True),
-    _spec("cycling_ftp", "get_cycling_ftp", (), "account", "conditional", chunk="account_snapshot", targets=("physiology_records", "physiology_metrics")),
-    _spec("menstrual_day", "get_menstrual_data_for_date", ("local_date",), "daily", "conditional", empty="not_enabled", targets=("physiology_records", "physiology_metrics"), cursor=True),
-    _spec("menstrual", "get_menstrual_calendar_data", ("start_date", "end_date"), "range", "conditional", chunk="bounded_date_range", max_range_days=14, empty="not_enabled", targets=("physiology_records", "physiology_metrics"), cursor=True),
-    _spec("pregnancy", "get_pregnancy_summary", (), "account", "conditional", chunk="account_snapshot", empty="not_enabled", targets=("physiology_records", "physiology_metrics")),
-    _spec("nutrition_food_log", "get_nutrition_daily_food_log", ("local_date",), "daily", "conditional", empty="not_enabled", targets=("physiology_records", "physiology_metrics"), cursor=True),
-    _spec("nutrition_meals", "get_nutrition_daily_meals", ("local_date",), "daily", "conditional", empty="not_enabled", targets=("physiology_records", "physiology_metrics"), cursor=True),
-    _spec("nutrition_settings", "get_nutrition_daily_settings", ("local_date",), "daily", "conditional", empty="not_enabled", targets=("physiology_records", "physiology_metrics"), cursor=True),
+    _spec(
+        "user_summary",
+        "get_user_summary",
+        ("local_date",),
+        "daily",
+        "required",
+        missing="forbidden",
+        targets=("daily_health",),
+        cursor=True,
+    ),
+    _spec(
+        "steps",
+        "get_steps_data",
+        ("local_date",),
+        "daily",
+        "required",
+        targets=("health_samples", "daily_health"),
+        cursor=True,
+    ),
+    _spec(
+        "floors",
+        "get_floors",
+        ("local_date",),
+        "daily",
+        "conditional",
+        targets=("health_samples", "daily_health"),
+        cursor=True,
+    ),
+    _spec(
+        "heart_rates",
+        "get_heart_rates",
+        ("local_date",),
+        "daily",
+        "conditional",
+        targets=("health_samples", "daily_health"),
+        cursor=True,
+    ),
+    _spec(
+        "rhr",
+        "get_rhr_day",
+        ("local_date",),
+        "daily",
+        "conditional",
+        targets=("health_samples", "daily_health"),
+        cursor=True,
+    ),
+    _spec(
+        "hydration",
+        "get_hydration_data",
+        ("local_date",),
+        "daily",
+        "conditional",
+        targets=("health_samples", "daily_health"),
+        cursor=True,
+    ),
+    _spec(
+        "respiration",
+        "get_respiration_data",
+        ("local_date",),
+        "daily",
+        "conditional",
+        targets=("health_samples", "daily_health"),
+        cursor=True,
+    ),
+    _spec(
+        "spo2",
+        "get_spo2_data",
+        ("local_date",),
+        "daily",
+        "conditional",
+        targets=("health_samples", "daily_health"),
+        cursor=True,
+    ),
+    _spec(
+        "intensity_minutes",
+        "get_intensity_minutes_data",
+        ("local_date",),
+        "daily",
+        "conditional",
+        targets=("daily_health", "physiology_metrics"),
+        cursor=True,
+    ),
+    _spec(
+        "stress",
+        "get_all_day_stress",
+        ("local_date",),
+        "daily",
+        "conditional",
+        targets=("health_samples", "daily_health"),
+        cursor=True,
+    ),
+    _spec(
+        "all_day_events",
+        "get_all_day_events",
+        ("local_date",),
+        "daily",
+        "conditional",
+        targets=("physiology_records",),
+        cursor=True,
+    ),
+    _spec(
+        "sleep",
+        "get_sleep_data",
+        ("local_date",),
+        "daily",
+        "conditional",
+        targets=("sleep_sessions", "sleep_stages", "health_samples"),
+        cursor=True,
+    ),
+    _spec(
+        "lifestyle",
+        "get_lifestyle_logging_data",
+        ("local_date",),
+        "daily",
+        "conditional",
+        targets=("physiology_records", "physiology_metrics"),
+        cursor=True,
+    ),
+    _spec(
+        "hrv",
+        "get_hrv_data",
+        ("local_date",),
+        "daily",
+        "conditional",
+        targets=("health_samples", "physiology_records"),
+        cursor=True,
+    ),
+    _spec(
+        "body_battery",
+        "get_body_battery",
+        ("start_date", "end_date"),
+        "range",
+        "conditional",
+        chunk="bounded_date_range",
+        max_range_days=14,
+        targets=("health_samples", "physiology_records"),
+        cursor=True,
+    ),
+    _spec(
+        "body_battery_events",
+        "get_body_battery_events",
+        ("local_date",),
+        "daily",
+        "conditional",
+        targets=("physiology_records",),
+        cursor=True,
+    ),
+    _spec(
+        "body_composition",
+        "get_body_composition",
+        ("start_date", "end_date"),
+        "range",
+        "conditional",
+        chunk="bounded_date_range",
+        max_range_days=14,
+        targets=("body_measurements",),
+        cursor=True,
+    ),
+    _spec(
+        "weigh_ins",
+        "get_weigh_ins",
+        ("start_date", "end_date"),
+        "range",
+        "conditional",
+        chunk="bounded_date_range",
+        max_range_days=14,
+        targets=("body_measurements",),
+        cursor=True,
+    ),
+    _spec(
+        "blood_pressure",
+        "get_blood_pressure",
+        ("start_date", "end_date"),
+        "range",
+        "conditional",
+        chunk="bounded_date_range",
+        max_range_days=14,
+        targets=("body_measurements", "physiology_records"),
+        cursor=True,
+    ),
+    _spec(
+        "training_readiness",
+        "get_training_readiness",
+        ("local_date",),
+        "daily",
+        "conditional",
+        targets=("physiology_records", "physiology_metrics"),
+        cursor=True,
+    ),
+    _spec(
+        "max_metrics",
+        "get_max_metrics",
+        ("local_date",),
+        "daily",
+        "conditional",
+        targets=("physiology_records", "physiology_metrics"),
+        cursor=True,
+    ),
+    _spec(
+        "lactate_threshold",
+        "get_lactate_threshold",
+        ("start_date", "end_date", "aggregation=daily"),
+        "range",
+        "conditional",
+        chunk="bounded_date_range",
+        max_range_days=14,
+        targets=("physiology_records", "physiology_metrics"),
+        cursor=True,
+    ),
+    _spec(
+        "training_status",
+        "get_training_status",
+        ("local_date",),
+        "daily",
+        "conditional",
+        targets=("physiology_records", "physiology_metrics"),
+        cursor=True,
+    ),
+    _spec(
+        "running_tolerance",
+        "get_running_tolerance",
+        ("start_date", "end_date", "aggregation=weekly"),
+        "range",
+        "conditional",
+        chunk="bounded_date_range",
+        max_range_days=14,
+        targets=("physiology_records", "physiology_metrics"),
+        cursor=True,
+    ),
+    _spec(
+        "endurance_score",
+        "get_endurance_score",
+        ("start_date", "end_date"),
+        "range",
+        "conditional",
+        chunk="bounded_date_range",
+        max_range_days=14,
+        targets=("physiology_records", "physiology_metrics"),
+        cursor=True,
+    ),
+    _spec(
+        "hill_score",
+        "get_hill_score",
+        ("start_date", "end_date"),
+        "range",
+        "conditional",
+        chunk="bounded_date_range",
+        max_range_days=14,
+        targets=("physiology_records", "physiology_metrics"),
+        cursor=True,
+    ),
+    _spec(
+        "race_predictions",
+        "get_race_predictions",
+        ("start_date", "end_date"),
+        "range",
+        "conditional",
+        chunk="bounded_date_range",
+        max_range_days=14,
+        targets=("physiology_records", "physiology_metrics"),
+        cursor=True,
+    ),
+    _spec(
+        "fitness_age",
+        "get_fitnessage_data",
+        ("local_date",),
+        "daily",
+        "conditional",
+        targets=("physiology_records", "physiology_metrics"),
+        cursor=True,
+    ),
+    _spec(
+        "cycling_ftp",
+        "get_cycling_ftp",
+        (),
+        "account",
+        "conditional",
+        chunk="account_snapshot",
+        targets=("physiology_records", "physiology_metrics"),
+    ),
+    _spec(
+        "menstrual_day",
+        "get_menstrual_data_for_date",
+        ("local_date",),
+        "daily",
+        "conditional",
+        empty="not_enabled",
+        targets=("physiology_records", "physiology_metrics"),
+        cursor=True,
+    ),
+    _spec(
+        "menstrual",
+        "get_menstrual_calendar_data",
+        ("start_date", "end_date"),
+        "range",
+        "conditional",
+        chunk="bounded_date_range",
+        max_range_days=14,
+        empty="not_enabled",
+        targets=("physiology_records", "physiology_metrics"),
+        cursor=True,
+    ),
+    _spec(
+        "pregnancy",
+        "get_pregnancy_summary",
+        (),
+        "account",
+        "conditional",
+        chunk="account_snapshot",
+        empty="not_enabled",
+        targets=("physiology_records", "physiology_metrics"),
+    ),
+    _spec(
+        "nutrition_food_log",
+        "get_nutrition_daily_food_log",
+        ("local_date",),
+        "daily",
+        "conditional",
+        empty="not_enabled",
+        targets=("physiology_records", "physiology_metrics"),
+        cursor=True,
+    ),
+    _spec(
+        "nutrition_meals",
+        "get_nutrition_daily_meals",
+        ("local_date",),
+        "daily",
+        "conditional",
+        empty="not_enabled",
+        targets=("physiology_records", "physiology_metrics"),
+        cursor=True,
+    ),
+    _spec(
+        "nutrition_settings",
+        "get_nutrition_daily_settings",
+        ("local_date",),
+        "daily",
+        "conditional",
+        empty="not_enabled",
+        targets=("physiology_records", "physiology_metrics"),
+        cursor=True,
+    ),
     # Completed activity pipeline and enrichments.
-    _spec("activity_inventory", "get_activities", ("offset", "limit"), "activity", "required", chunk="paged_account_history", modes=_ACTIVITY_MODES, role="inventory", targets=("activity_source_revisions",)),
-    _spec("activity_summary", "get_activity", ("activity_id",), "activity", "required", chunk="one_activity", modes=_ACTIVITY_MODES, role="summary", targets=("activities", "activity_source_revisions")),
-    _spec("activity_fit", "download_activity", ("activity_id", "ORIGINAL"), "activity", "conditional", chunk="one_activity", modes=_ACTIVITY_MODES, raw="fit", role="FIT", parser=PARSER_VERSION, targets=("activity_samples", "activity_segments", "fit_metric_definitions", "activity_source_revisions")),
-    _spec("activity_details_fallback", "get_activity_details", ("activity_id", "maxchart", "maxpoly"), "activity", "conditional", chunk="one_activity", modes=_ACTIVITY_MODES, role="details_json_fallback", targets=("activity_source_revisions",)),
-    _spec("activity_splits", "get_activity_splits", ("activity_id",), "activity", "conditional", chunk="one_activity", modes=_ACTIVITY_MODES, role="splits", targets=("activity_source_revisions",)),
-    _spec("activity_typed_splits", "get_activity_typed_splits", ("activity_id",), "activity", "conditional", chunk="one_activity", modes=_ACTIVITY_MODES, role="typed_splits", targets=("activity_source_revisions",)),
-    _spec("activity_split_summaries", "get_activity_split_summaries", ("activity_id",), "activity", "conditional", chunk="one_activity", modes=_ACTIVITY_MODES, role="split_summaries", targets=("activity_source_revisions",)),
-    _spec("activity_exercise_sets", "get_activity_exercise_sets", ("activity_id",), "activity", "conditional", chunk="one_activity", modes=_ACTIVITY_MODES, role="sets", targets=("strength_sets", "activity_source_revisions")),
-    _spec("activity_hr_zones", "get_activity_hr_in_timezones", ("activity_id",), "activity", "conditional", chunk="one_activity", modes=_ACTIVITY_MODES, role="hr_zones", targets=("activity_source_revisions",)),
-    _spec("activity_power_zones", "get_activity_power_in_timezones", ("activity_id",), "activity", "conditional", chunk="one_activity", modes=_ACTIVITY_MODES, role="power_zones", targets=("activity_source_revisions",)),
-    _spec("activity_weather", "get_activity_weather", ("activity_id",), "activity", "conditional", chunk="one_activity", modes=_ACTIVITY_MODES, role="weather", targets=("activity_source_revisions",)),
-    _spec("activity_gear", "get_activity_gear", ("activity_id",), "activity", "conditional", chunk="one_activity", modes=_ACTIVITY_MODES, role="gear", targets=("activity_source_revisions",)),
+    _spec(
+        "activity_inventory",
+        "get_activities",
+        ("offset", "limit"),
+        "activity",
+        "required",
+        chunk="paged_account_history",
+        modes=_ACTIVITY_MODES,
+        role="inventory",
+        targets=("activity_source_revisions",),
+    ),
+    _spec(
+        "activity_summary",
+        "get_activity",
+        ("activity_id",),
+        "activity",
+        "required",
+        chunk="one_activity",
+        modes=_ACTIVITY_MODES,
+        role="summary",
+        targets=("activities", "activity_source_revisions"),
+    ),
+    _spec(
+        "activity_fit",
+        "download_activity",
+        ("activity_id", "ORIGINAL"),
+        "activity",
+        "conditional",
+        chunk="one_activity",
+        modes=_ACTIVITY_MODES,
+        raw="fit",
+        role="FIT",
+        parser=PARSER_VERSION,
+        targets=(
+            "activity_samples",
+            "activity_segments",
+            "fit_metric_definitions",
+            "activity_source_revisions",
+        ),
+    ),
+    _spec(
+        "activity_details_fallback",
+        "get_activity_details",
+        ("activity_id", "maxchart", "maxpoly"),
+        "activity",
+        "conditional",
+        chunk="one_activity",
+        modes=_ACTIVITY_MODES,
+        role="details_json_fallback",
+        targets=("activity_source_revisions",),
+    ),
+    _spec(
+        "activity_splits",
+        "get_activity_splits",
+        ("activity_id",),
+        "activity",
+        "conditional",
+        chunk="one_activity",
+        modes=_ACTIVITY_MODES,
+        role="splits",
+        targets=("activity_source_revisions",),
+    ),
+    _spec(
+        "activity_typed_splits",
+        "get_activity_typed_splits",
+        ("activity_id",),
+        "activity",
+        "conditional",
+        chunk="one_activity",
+        modes=_ACTIVITY_MODES,
+        role="typed_splits",
+        targets=("activity_source_revisions",),
+    ),
+    _spec(
+        "activity_split_summaries",
+        "get_activity_split_summaries",
+        ("activity_id",),
+        "activity",
+        "conditional",
+        chunk="one_activity",
+        modes=_ACTIVITY_MODES,
+        role="split_summaries",
+        targets=("activity_source_revisions",),
+    ),
+    _spec(
+        "activity_exercise_sets",
+        "get_activity_exercise_sets",
+        ("activity_id",),
+        "activity",
+        "conditional",
+        chunk="one_activity",
+        modes=_ACTIVITY_MODES,
+        role="sets",
+        targets=("strength_sets", "activity_source_revisions"),
+    ),
+    _spec(
+        "activity_hr_zones",
+        "get_activity_hr_in_timezones",
+        ("activity_id",),
+        "activity",
+        "conditional",
+        chunk="one_activity",
+        modes=_ACTIVITY_MODES,
+        role="hr_zones",
+        targets=("activity_source_revisions",),
+    ),
+    _spec(
+        "activity_power_zones",
+        "get_activity_power_in_timezones",
+        ("activity_id",),
+        "activity",
+        "conditional",
+        chunk="one_activity",
+        modes=_ACTIVITY_MODES,
+        role="power_zones",
+        targets=("activity_source_revisions",),
+    ),
+    _spec(
+        "activity_weather",
+        "get_activity_weather",
+        ("activity_id",),
+        "activity",
+        "conditional",
+        chunk="one_activity",
+        modes=_ACTIVITY_MODES,
+        role="weather",
+        targets=("activity_source_revisions",),
+    ),
+    _spec(
+        "activity_gear",
+        "get_activity_gear",
+        ("activity_id",),
+        "activity",
+        "conditional",
+        chunk="one_activity",
+        modes=_ACTIVITY_MODES,
+        role="gear",
+        targets=("activity_source_revisions",),
+    ),
 )
 
 _IGNORED = {
@@ -175,6 +688,7 @@ _IGNORED = {
     "get_available_badge_challenges": "excluded:non_health_reward",
     "get_available_badges": "excluded:non_health_reward",
     "get_badge_challenges": "excluded:social_reward",
+    "get_calories_daily": "excluded:daily_calorie_ledger is not a reviewed health source",
     "get_device_alarms": "excluded:non_health_device_setting",
     "get_device_solar_data": "excluded:non_health_device_telemetry",
     "get_earned_badges": "excluded:non_health_reward",
@@ -187,12 +701,21 @@ _IGNORED = {
     "get_golf_scorecard": "excluded:golf_social",
     "get_golf_shot_data": "excluded:golf_social",
     "get_golf_summary": "excluded:golf_social",
+    "get_golf_club_stats": "excluded:golf_social",
+    "get_golf_user_stats": "excluded:golf_social",
+    "get_heart_rate_zones": "excluded:zone configuration is not a source-health observation",
     "get_in_progress_badges": "excluded:non_health_reward",
     "get_inprogress_virtual_challenges": "excluded:social_reward",
     "get_last_activity": "alias:activity_inventory",
     "get_morning_training_readiness": "subset:training_readiness",
     "get_non_completed_badge_challenges": "excluded:social_reward",
     "get_progress_summary_between_dates": "locally_recomputable:completed_activities",
+    "get_functional_threshold_power_range": "excluded:unreviewed range endpoint",
+    "get_hrv_data_range": "alias:hrv; avoids a duplicate health source",
+    "get_max_metrics_range": "alias:max_metrics; avoids a duplicate physiology source",
+    "get_power_zones": "excluded:zone configuration is not a source-health observation",
+    "get_power_zones_for_sport": "excluded:zone configuration is not a source-health observation",
+    "get_rhr_daily": "alias:rhr; avoids a duplicate health source",
     "get_scheduled_workout_by_id": "excluded:future_workout",
     "get_scheduled_workouts": "excluded:future_workout",
     "get_training_plan_by_id": "excluded:future_plan",
@@ -205,7 +728,7 @@ _IGNORED = {
     "get_stats": "alias:user_summary",
     "get_stats_and_body": "client_combination:user_summary+body_composition",
     "get_stress_data": "alias:stress",
-    "get_morning_training_readiness": "subset:training_readiness",
+    "get_sleep_daily": "alias:sleep; avoids a duplicate health source",
     "weekly_steps": "locally_recomputable:daily_steps",
     "weekly_stress": "locally_recomputable:daily_stress",
     "weekly_intensity_minutes": "locally_recomputable:daily_intensity_minutes",
@@ -225,17 +748,32 @@ _IGNORED = {
     "device_solar": "excluded:non_health_device_telemetry",
 }
 
-RESOURCE_CATALOG: dict[str, GarminResourceSpec] = {spec.resource_kind: spec for spec in _SPECS}
-RESOURCE_CATALOG.update({
-    name: _spec(name, None, (), "account", "ignored", chunk="not_planned", modes=frozenset(), raw="none", ignored=reason)
-    for name, reason in _IGNORED.items()
-})
+RESOURCE_CATALOG: dict[str, GarminResourceSpec] = {
+    spec.resource_kind: spec for spec in _SPECS
+}
+RESOURCE_CATALOG.update(
+    {
+        name: _spec(
+            name,
+            None,
+            (),
+            "account",
+            "ignored",
+            chunk="not_planned",
+            modes=frozenset(),
+            raw="none",
+            ignored=reason,
+        )
+        for name, reason in _IGNORED.items()
+    }
+)
 
 # Compatibility names used by the early collection pipeline.  They now derive
 # from the catalog, so a resource cannot be added to a fetch loop without a
 # reviewed resource description.
 HEALTH_RESOURCES = tuple(
-    spec.resource_kind for spec in _SPECS
+    spec.resource_kind
+    for spec in _SPECS
     if spec.scope in {"daily", "range"} and spec.requestable
 )
 
@@ -244,17 +782,29 @@ HEALTH_RESOURCES = tuple(
 # repair requests can still be interpreted, but a normal run may fetch only
 # the reviewed health whitelist.  Activities are sourced from inventory +
 # ORIGINAL FIT; weather is the sole default activity enrichment.
-HEALTH_COLLECTION_ALLOWLIST = frozenset({
-    "sleep", "heart_rates", "rhr", "hrv", "spo2",
-    "max_metrics", "body_composition", "weigh_ins",
-})
-COLLECTED_HEALTH_RESOURCES = tuple(
-    resource for resource in HEALTH_RESOURCES
-    if resource in HEALTH_COLLECTION_ALLOWLIST
+HEALTH_COLLECTION_ALLOWLIST = frozenset(
+    {
+        "sleep",
+        "heart_rates",
+        "rhr",
+        "hrv",
+        "spo2",
+        "max_metrics",
+        "body_composition",
+        "weigh_ins",
+    }
 )
-ACTIVITY_COLLECTION_ALLOWLIST = frozenset({
-    "activity_inventory", "activity_summary", "activity_fit", "activity_weather",
-})
+COLLECTED_HEALTH_RESOURCES = tuple(
+    resource for resource in HEALTH_RESOURCES if resource in HEALTH_COLLECTION_ALLOWLIST
+)
+ACTIVITY_COLLECTION_ALLOWLIST = frozenset(
+    {
+        "activity_inventory",
+        "activity_summary",
+        "activity_fit",
+        "activity_weather",
+    }
+)
 DEFAULT_ACTIVITY_ENRICHMENTS = (("activity_weather", "weather_json"),)
 _ROLE_TO_LEGACY_EXTRA = {
     "splits": "splits_json",
@@ -273,15 +823,26 @@ EXTRA_ROLES = tuple(
 )
 
 
-def specs_for_mode(mode: Mode, *, include_ignored: bool = False) -> tuple[GarminResourceSpec, ...]:
+def specs_for_mode(
+    mode: Mode, *, include_ignored: bool = False
+) -> tuple[GarminResourceSpec, ...]:
     """Deterministic work-plan input for full/incremental/snapshot/repair."""
     return tuple(
-        spec for spec in RESOURCE_CATALOG.values()
-        if (include_ignored and spec.disposition == "ignored") or (spec.requestable and mode in spec.modes)
+        spec
+        for spec in RESOURCE_CATALOG.values()
+        if (include_ignored and spec.disposition == "ignored")
+        or (spec.requestable and mode in spec.modes)
     )
 
 
-def endpoint_capability(spec: GarminResourceSpec, *, http_status: int | None = None, empty: bool = False, enabled: bool = True, adapter_has_method: bool = True) -> str:
+def endpoint_capability(
+    spec: GarminResourceSpec,
+    *,
+    http_status: int | None = None,
+    empty: bool = False,
+    enabled: bool = True,
+    adapter_has_method: bool = True,
+) -> str:
     """Map a catalog-described result to its only permitted semantic state."""
     if spec.disposition == "ignored":
         return "ignored_with_reason"
@@ -300,10 +861,14 @@ def endpoint_capability(spec: GarminResourceSpec, *, http_status: int | None = N
 
 def coverage_plan(mode: Mode) -> tuple[tuple[str, str, bool], ...]:
     """Stable audit-friendly list of resource, scope and cursor eligibility."""
-    return tuple((s.resource_kind, s.scope, s.cursor_eligible) for s in specs_for_mode(mode))
+    return tuple(
+        (s.resource_kind, s.scope, s.cursor_eligible) for s in specs_for_mode(mode)
+    )
 
 
-def health_call_arguments(spec: GarminResourceSpec, local_date: str) -> tuple[tuple[object, ...], dict[str, object]]:
+def health_call_arguments(
+    spec: GarminResourceSpec, local_date: str
+) -> tuple[tuple[object, ...], dict[str, object]]:
     """Translate a reviewed health spec into the pinned adapter call shape.
 
     The transport receives one local date today; range endpoints use that date
@@ -318,7 +883,12 @@ def health_call_arguments(spec: GarminResourceSpec, local_date: str) -> tuple[tu
     if spec.argument_shape == ("start_date", "end_date"):
         return (local_date, local_date), {}
     if spec.resource_kind == "lactate_threshold":
-        return (), {"latest": False, "start_date": local_date, "end_date": local_date, "aggregation": "daily"}
+        return (), {
+            "latest": False,
+            "start_date": local_date,
+            "end_date": local_date,
+            "aggregation": "daily",
+        }
     if spec.resource_kind == "running_tolerance":
         return (local_date, local_date), {"aggregation": "weekly"}
     if spec.resource_kind == "race_predictions":
@@ -326,9 +896,15 @@ def health_call_arguments(spec: GarminResourceSpec, local_date: str) -> tuple[tu
     raise ValueError(f"unsupported_health_call_shape:{spec.resource_kind}")
 
 
-def catalog_change_audit(previous_version: str, current_version: str = CATALOG_VERSION) -> dict[str, str | bool]:
+def catalog_change_audit(
+    previous_version: str, current_version: str = CATALOG_VERSION
+) -> dict[str, str | bool]:
     """A small durable audit payload for a caller that observes catalog change."""
-    return {"previous_version": previous_version, "current_version": current_version, "coverage_audit_required": previous_version != current_version}
+    return {
+        "previous_version": previous_version,
+        "current_version": current_version,
+        "coverage_audit_required": previous_version != current_version,
+    }
 
 
 def catalog_lint(*, adapter_methods: set[str] | None = None) -> list[str]:
