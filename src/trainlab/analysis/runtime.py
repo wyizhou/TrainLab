@@ -4,31 +4,43 @@ This module is intentionally a small composition root.  It does not schedule
 or poll mail.  Delivery is an explicit second phase over an already-persisted
 delivery ID and can never regenerate analysis output.
 """
+
 from __future__ import annotations
 
+import re
+import sqlite3
 from dataclasses import replace
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
-import re
-import sqlite3
 from zoneinfo import ZoneInfo
 
 from ..foundation import FoundationConfig, FoundationTool, IncompatibleError
-from ..util import project_root
-from .config import load_analysis_config
-from .contracts import AnalysisDelivery, AnalysisError, AnalysisRequest, AnalysisReceipt, build_run_key
-from .delivery import AnalysisDeliveryFactory, AnalysisDeliveryRepository
-from .delivery_service import AnalysisDeliveryService, DeliveryExecution
 from ..integrations.gmail_delivery import GmailDeliveryError, GmailDeliveryGateway
 from ..integrations.project_config import configured_recipient_email as _recipient_email
+from ..util import project_root
+from .config import load_analysis_config
+from .contracts import (
+    AnalysisDelivery,
+    AnalysisError,
+    AnalysisReceipt,
+    AnalysisRequest,
+    build_run_key,
+)
+from .delivery import (
+    AnalysisDeliveryFactory,
+    AnalysisDeliveryRepository,
+    ResendAuthorization,
+)
+from .delivery_service import AnalysisDeliveryService, DeliveryExecution
 from .publisher import AnalysisPublisher
 from .run_state import AnalysisRunCoordinator, AnalysisRunRepository, SubjectLockManager
 from .runner import AnalysisCodexRunner
 from .stable_views import StableViewRepository
 
-
 _HONG_KONG = ZoneInfo("Asia/Hong_Kong")
 _SUBJECT_KEY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$")
+
+
 def _utc_now() -> str:
     return datetime.now(UTC).isoformat(timespec="microseconds").replace("+00:00", "Z")
 
@@ -38,7 +50,12 @@ def _strict_date(
 ) -> date | None:
     if value is None:
         return None
-    if len(value) != 10 or value[4] != "-" or value[7] != "-" or not (value[:4] + value[5:7] + value[8:]).isdigit():
+    if (
+        len(value) != 10
+        or value[4] != "-"
+        or value[7] != "-"
+        or not (value[:4] + value[5:7] + value[8:]).isdigit()
+    ):
         raise ValueError(error_code)
     try:
         return date.fromisoformat(value)
@@ -47,7 +64,11 @@ def _strict_date(
 
 
 def build_daily_request(
-    *, subject_id: str, invocation_id: str, summary_date: str | None, now: datetime | None = None
+    *,
+    subject_id: str,
+    invocation_id: str,
+    summary_date: str | None,
+    now: datetime | None = None,
 ) -> AnalysisRequest:
     """Build the sole supported production-analysis request without I/O."""
     if not isinstance(subject_id, str) or _SUBJECT_KEY.fullmatch(subject_id) is None:
@@ -59,28 +80,40 @@ def build_daily_request(
     summary = summary or current - timedelta(days=1)
     if summary >= current:
         raise ValueError("analysis_summary_date_must_be_before_today")
-    requested = (now or datetime.now(UTC)).astimezone(UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
-    return AnalysisRequest.from_dict({
-        "schema_version": "1",
-        "mode": "daily",
-        "subject_id": subject_id,
-        "invocation_id": invocation_id,
-        "run_key": None,
-        "summary_local_date": summary.isoformat(),
-        "advice_local_date": (summary + timedelta(days=1)).isoformat(),
-        "as_of_local_date": None,
-        "plan_id": None,
-        "reason_event_id": None,
-        "effective_local_date": None,
-        "artifact_id": None,
-        "delivery_id": None,
-        "regeneration_reason_code": None,
-        "requested_at_utc": requested,
-    })
+    requested = (
+        (now or datetime.now(UTC))
+        .astimezone(UTC)
+        .isoformat(timespec="seconds")
+        .replace("+00:00", "Z")
+    )
+    return AnalysisRequest.from_dict(
+        {
+            "schema_version": "1",
+            "mode": "daily",
+            "subject_id": subject_id,
+            "invocation_id": invocation_id,
+            "run_key": None,
+            "summary_local_date": summary.isoformat(),
+            "advice_local_date": (summary + timedelta(days=1)).isoformat(),
+            "as_of_local_date": None,
+            "plan_id": None,
+            "reason_event_id": None,
+            "effective_local_date": None,
+            "artifact_id": None,
+            "delivery_id": None,
+            "regeneration_reason_code": None,
+            "resend_authorization_id": None,
+            "requested_at_utc": requested,
+        }
+    )
 
 
 def build_weekly_request(
-    *, subject_id: str, invocation_id: str, as_of_date: str | None,
+    *,
+    subject_id: str,
+    invocation_id: str,
+    as_of_date: str | None,
+    resend_authorization_id: str | None = None,
     now: datetime | None = None,
 ) -> AnalysisRequest:
     """Build one rolling seven-day review plus seven-day plan request."""
@@ -92,26 +125,32 @@ def build_weekly_request(
     as_of = _strict_date(as_of_date) or current
     if as_of > current:
         raise ValueError("analysis_weekly_as_of_date_in_future")
-    requested = (now or datetime.now(UTC)).astimezone(UTC).isoformat(
-        timespec="seconds"
-    ).replace("+00:00", "Z")
-    return AnalysisRequest.from_dict({
-        "schema_version": "1",
-        "mode": "weekly",
-        "subject_id": subject_id,
-        "invocation_id": invocation_id,
-        "run_key": None,
-        "summary_local_date": None,
-        "advice_local_date": None,
-        "as_of_local_date": as_of.isoformat(),
-        "plan_id": None,
-        "reason_event_id": None,
-        "effective_local_date": None,
-        "artifact_id": None,
-        "delivery_id": None,
-        "regeneration_reason_code": None,
-        "requested_at_utc": requested,
-    })
+    requested = (
+        (now or datetime.now(UTC))
+        .astimezone(UTC)
+        .isoformat(timespec="seconds")
+        .replace("+00:00", "Z")
+    )
+    return AnalysisRequest.from_dict(
+        {
+            "schema_version": "1",
+            "mode": "weekly",
+            "subject_id": subject_id,
+            "invocation_id": invocation_id,
+            "run_key": None,
+            "summary_local_date": None,
+            "advice_local_date": None,
+            "as_of_local_date": as_of.isoformat(),
+            "plan_id": None,
+            "reason_event_id": None,
+            "effective_local_date": None,
+            "artifact_id": None,
+            "delivery_id": None,
+            "regeneration_reason_code": None,
+            "resend_authorization_id": resend_authorization_id,
+            "requested_at_utc": requested,
+        }
+    )
 
 
 def build_plan_revision_request(
@@ -142,30 +181,40 @@ def build_plan_revision_request(
     effective = _strict_date(
         effective_date, "analysis_plan_revision_effective_date_invalid"
     )
-    requested = (now or datetime.now(UTC)).astimezone(UTC).isoformat(
-        timespec="seconds"
-    ).replace("+00:00", "Z")
-    return AnalysisRequest.from_dict({
-        "schema_version": "1",
-        "mode": "revise_plan",
-        "subject_id": subject_id,
-        "invocation_id": invocation_id,
-        "run_key": None,
-        "summary_local_date": None,
-        "advice_local_date": None,
-        "as_of_local_date": None,
-        "plan_id": plan_id,
-        "reason_event_id": reason_event_id,
-        "effective_local_date": effective.isoformat() if effective else None,
-        "artifact_id": None,
-        "delivery_id": None,
-        "regeneration_reason_code": None,
-        "requested_at_utc": requested,
-    })
+    requested = (
+        (now or datetime.now(UTC))
+        .astimezone(UTC)
+        .isoformat(timespec="seconds")
+        .replace("+00:00", "Z")
+    )
+    return AnalysisRequest.from_dict(
+        {
+            "schema_version": "1",
+            "mode": "revise_plan",
+            "subject_id": subject_id,
+            "invocation_id": invocation_id,
+            "run_key": None,
+            "summary_local_date": None,
+            "advice_local_date": None,
+            "as_of_local_date": None,
+            "plan_id": plan_id,
+            "reason_event_id": reason_event_id,
+            "effective_local_date": effective.isoformat() if effective else None,
+            "artifact_id": None,
+            "delivery_id": None,
+            "regeneration_reason_code": None,
+            "resend_authorization_id": None,
+            "requested_at_utc": requested,
+        }
+    )
 
 
 def build_regeneration_request(
-    *, subject_id: str, invocation_id: str, artifact_id: str, reason_code: str,
+    *,
+    subject_id: str,
+    invocation_id: str,
+    artifact_id: str,
+    reason_code: str,
     now: datetime | None = None,
 ) -> AnalysisRequest:
     """Build one explicit artifact-regeneration request without I/O."""
@@ -182,44 +231,78 @@ def build_regeneration_request(
         raise ValueError("analysis_artifact_id_invalid")
     if not isinstance(reason_code, str) or not reason_code:
         raise ValueError("analysis_regeneration_reason_required")
-    requested = (now or datetime.now(UTC)).astimezone(UTC).isoformat(
-        timespec="seconds"
-    ).replace("+00:00", "Z")
-    return AnalysisRequest.from_dict({
-        "schema_version": "1", "mode": "regenerate", "subject_id": subject_id,
-        "invocation_id": invocation_id, "run_key": None,
-        "summary_local_date": None, "advice_local_date": None,
-        "as_of_local_date": None, "plan_id": None, "reason_event_id": None,
-        "effective_local_date": None, "artifact_id": artifact_id,
-        "delivery_id": None, "regeneration_reason_code": reason_code,
-        "requested_at_utc": requested,
-    })
+    requested = (
+        (now or datetime.now(UTC))
+        .astimezone(UTC)
+        .isoformat(timespec="seconds")
+        .replace("+00:00", "Z")
+    )
+    return AnalysisRequest.from_dict(
+        {
+            "schema_version": "1",
+            "mode": "regenerate",
+            "subject_id": subject_id,
+            "invocation_id": invocation_id,
+            "run_key": None,
+            "summary_local_date": None,
+            "advice_local_date": None,
+            "as_of_local_date": None,
+            "plan_id": None,
+            "reason_event_id": None,
+            "effective_local_date": None,
+            "artifact_id": artifact_id,
+            "delivery_id": None,
+            "regeneration_reason_code": reason_code,
+            "resend_authorization_id": None,
+            "requested_at_utc": requested,
+        }
+    )
 
 
 def build_status_request(
-    *, subject_id: str, run_key: str | None = None, now: datetime | None = None,
+    *,
+    subject_id: str,
+    run_key: str | None = None,
+    now: datetime | None = None,
 ) -> AnalysisRequest:
     """Build the read-only status request without an invocation identity."""
     if not isinstance(subject_id, str) or _SUBJECT_KEY.fullmatch(subject_id) is None:
         raise ValueError("analysis_subject_id_invalid")
-    requested = (now or datetime.now(UTC)).astimezone(UTC).isoformat(
-        timespec="seconds"
-    ).replace("+00:00", "Z")
-    return AnalysisRequest.from_dict({
-        "schema_version": "1", "mode": "status", "subject_id": subject_id,
-        "invocation_id": None, "run_key": run_key,
-        "summary_local_date": None, "advice_local_date": None,
-        "as_of_local_date": None, "plan_id": None, "reason_event_id": None,
-        "effective_local_date": None, "artifact_id": None, "delivery_id": None,
-        "regeneration_reason_code": None, "requested_at_utc": requested,
-    })
+    requested = (
+        (now or datetime.now(UTC))
+        .astimezone(UTC)
+        .isoformat(timespec="seconds")
+        .replace("+00:00", "Z")
+    )
+    return AnalysisRequest.from_dict(
+        {
+            "schema_version": "1",
+            "mode": "status",
+            "subject_id": subject_id,
+            "invocation_id": None,
+            "run_key": run_key,
+            "summary_local_date": None,
+            "advice_local_date": None,
+            "as_of_local_date": None,
+            "plan_id": None,
+            "reason_event_id": None,
+            "effective_local_date": None,
+            "artifact_id": None,
+            "delivery_id": None,
+            "regeneration_reason_code": None,
+            "resend_authorization_id": None,
+            "requested_at_utc": requested,
+        }
+    )
 
 
 def _active_subject_key(connection: object) -> str:
     """Read only the active public subject key; fail closed unless it is unique."""
-    rows = list(connection.execute(
-        "SELECT subject_key FROM data_subjects WHERE is_active=1 ORDER BY id"
-    ))  # type: ignore[union-attr]
+    rows = list(
+        connection.execute(
+            "SELECT subject_key FROM data_subjects WHERE is_active=1 ORDER BY id"
+        )
+    )  # type: ignore[union-attr]
     if len(rows) != 1:
         raise ValueError("analysis_active_subject_not_unique")
     subject_key = rows[0][0]
@@ -229,17 +312,20 @@ def _active_subject_key(connection: object) -> str:
 
 
 def _active_subject_id(connection: object) -> int:
-    rows = list(connection.execute(
-        "SELECT id FROM data_subjects WHERE is_active=1 ORDER BY id"
-    ))  # type: ignore[union-attr]
+    rows = list(
+        connection.execute("SELECT id FROM data_subjects WHERE is_active=1 ORDER BY id")
+    )  # type: ignore[union-attr]
     if len(rows) != 1:
         raise ValueError("analysis_active_subject_not_unique")
     return int(rows[0][0])
 
 
 def run_analysis_only(
-    *, invocation_id: str, summary_date: str | None = None, deliver: bool = False,
-    root: Path | None = None
+    *,
+    invocation_id: str,
+    summary_date: str | None = None,
+    deliver: bool = False,
+    root: Path | None = None,
 ) -> AnalysisReceipt:
     """Execute one L3 daily route and always release its Foundation connection."""
     root = (root or project_root()).resolve()
@@ -254,8 +340,10 @@ def run_analysis_only(
         )
         if isinstance(connection, sqlite3.Connection):
             from .heart_rate_zones_store import ensure_zone_candidate
+
             ensure_zone_candidate(
-                connection, _active_subject_id(connection),
+                connection,
+                _active_subject_id(connection),
                 as_of_local_date=request.summary_local_date,
                 effective_at_utc=request.requested_at_utc,
                 weekly_refresh=False,
@@ -264,7 +352,9 @@ def run_analysis_only(
         repository = AnalysisRunRepository(connection)
         coordinator = AnalysisRunCoordinator(
             repository,
-            SubjectLockManager(config.lock_path, trusted_root=config.lock_path.parent.parent),
+            SubjectLockManager(
+                config.lock_path, trusted_root=config.lock_path.parent.parent
+            ),
         )
         # Delay this import so the production entry remains compatible while
         # the independently-owned daily route is being integrated.
@@ -301,10 +391,25 @@ def run_analysis_only(
 
 
 def run_weekly_analysis(
-    *, invocation_id: str, as_of_date: str | None = None, deliver: bool = False,
+    *,
+    invocation_id: str,
+    as_of_date: str | None = None,
+    deliver: bool = False,
+    resend_authorization_id: str | None = None,
     root: Path | None = None,
 ) -> AnalysisReceipt:
     """Execute one A3-18 weekly route through the sole production entry."""
+    if resend_authorization_id is not None:
+        if as_of_date is None:
+            raise ValueError("analysis_weekly_resend_as_of_required")
+        if deliver:
+            raise ValueError("analysis_weekly_resend_delivery_forbidden")
+        return run_current_weekly_correction(
+            invocation_id=invocation_id,
+            as_of_date=as_of_date,
+            resend_authorization_id=resend_authorization_id,
+            root=root,
+        )
     root = (root or project_root()).resolve()
     foundation = FoundationConfig.load(root)
     config = load_analysis_config(root, root / "config" / "analysis.yaml")
@@ -317,9 +422,14 @@ def run_weekly_analysis(
         )
         if isinstance(connection, sqlite3.Connection):
             from .heart_rate_zones_store import ensure_zone_candidate
+
             ensure_zone_candidate(
-                connection, _active_subject_id(connection),
-                as_of_local_date=(date.fromisoformat(str(request.as_of_local_date)) - timedelta(days=1)).isoformat(),
+                connection,
+                _active_subject_id(connection),
+                as_of_local_date=(
+                    date.fromisoformat(str(request.as_of_local_date))
+                    - timedelta(days=1)
+                ).isoformat(),
                 effective_at_utc=request.requested_at_utc,
                 weekly_refresh=True,
             )
@@ -360,6 +470,91 @@ def run_weekly_analysis(
             receipt,
             _execute_delivery(connection, config, delivery_id, "retry_delivery"),
             artifact_ids,
+        )
+    finally:
+        connection.close()
+
+
+def run_current_weekly_correction(
+    *,
+    invocation_id: str,
+    as_of_date: str,
+    resend_authorization_id: str,
+    root: Path | None = None,
+) -> AnalysisReceipt:
+    """Create an authorized pending delivery for the current weekly artifacts.
+
+    This deliberately does not construct a route, model runner, publisher, or
+    delivery gateway.  The caller has already supplied the one immutable
+    authorization that distinguishes this correction from the original
+    business delivery.
+    """
+    authorization = ResendAuthorization(resend_authorization_id)
+    as_of = _strict_date(as_of_date, "analysis_weekly_as_of_date_invalid")
+    assert as_of is not None
+    if as_of.weekday() != 0:
+        raise ValueError("analysis_weekly_monday_required")
+    if as_of > datetime.now(UTC).astimezone(_HONG_KONG).date():
+        raise ValueError("analysis_weekly_as_of_date_in_future")
+    root = (root or project_root()).resolve()
+    foundation = FoundationConfig.load(root)
+    connection = FoundationTool(foundation)._connect(foundation.database_path)
+    started = _utc_now()
+    try:
+        request = build_weekly_request(
+            subject_id=_active_subject_key(connection),
+            invocation_id=invocation_id,
+            as_of_date=as_of_date,
+            resend_authorization_id=authorization.authorization_id,
+        )
+        if request.resend_authorization_id != authorization.authorization_id:
+            raise ValueError("analysis_weekly_resend_authorization_invalid")
+        rows = connection.execute(
+            "SELECT id,artifact_kind,generated_by_run_id FROM analysis_artifacts "
+            "WHERE subject_id=? AND is_current=1 AND "
+            "((artifact_kind='weekly_summary' AND period_start_local_date=? "
+            "AND period_end_local_date=?) OR (artifact_kind='weekly_training_plan' "
+            "AND period_start_local_date=? AND period_end_local_date=?)) "
+            "ORDER BY artifact_kind",
+            (
+                _active_subject_id(connection),
+                (as_of - timedelta(days=7)).isoformat(),
+                (as_of - timedelta(days=1)).isoformat(),
+                as_of.isoformat(),
+                (as_of + timedelta(days=6)).isoformat(),
+            ),
+        ).fetchall()
+        if len(rows) != 2:
+            raise ValueError("analysis_weekly_current_artifacts_invalid")
+        artifacts = {str(row["artifact_kind"]): int(row["id"]) for row in rows}
+        run_ids = {int(row["generated_by_run_id"]) for row in rows}
+        if (
+            set(artifacts) != {"weekly_summary", "weekly_training_plan"}
+            or len(run_ids) != 1
+        ):
+            raise ValueError("analysis_weekly_current_artifacts_invalid")
+        pending = AnalysisDeliveryFactory(connection).create_pending(
+            publish_receipt={"run_id": run_ids.pop(), "artifact_ids": artifacts},
+            delivery_kind="weekly_report",
+            resend_authorization=authorization,
+        )
+        delivery = AnalysisDelivery(
+            delivery_id=str(pending.delivery_id),
+            status="pending",
+            artifact_ids=tuple(str(item.artifact_id) for item in pending.artifacts),
+        )
+        return AnalysisReceipt(
+            run_key=pending.run_key,
+            invocation_id=invocation_id,
+            mode="weekly",
+            status="partial",
+            started_at_utc=started,
+            completed_at_utc=_utc_now(),
+            analysis_run_id=str(pending.analysis_run_id),
+            quality_gate_state="ready",
+            artifact_ids=delivery.artifact_ids,
+            delivery=delivery,
+            next_action="retry_delivery",
         )
     finally:
         connection.close()
@@ -430,8 +625,12 @@ def run_plan_revision_analysis(
 
 
 def run_regeneration_analysis(
-    *, invocation_id: str, artifact_id: str, reason_code: str,
-    deliver: bool = False, root: Path | None = None,
+    *,
+    invocation_id: str,
+    artifact_id: str,
+    reason_code: str,
+    deliver: bool = False,
+    root: Path | None = None,
 ) -> AnalysisReceipt:
     """Execute one A3-20 regeneration through the production entry."""
     root = (root or project_root()).resolve()
@@ -440,8 +639,10 @@ def run_regeneration_analysis(
     connection = FoundationTool(foundation)._connect(foundation.database_path)
     try:
         request = build_regeneration_request(
-            subject_id=_active_subject_key(connection), invocation_id=invocation_id,
-            artifact_id=artifact_id, reason_code=reason_code,
+            subject_id=_active_subject_key(connection),
+            invocation_id=invocation_id,
+            artifact_id=artifact_id,
+            reason_code=reason_code,
         )
         repository = AnalysisRunRepository(connection)
         coordinator = AnalysisRunCoordinator(
@@ -453,17 +654,21 @@ def run_regeneration_analysis(
         from .regenerate import RegenerateRoute
 
         receipt = RegenerateRoute(
-            config=config, coordinator=coordinator,
+            config=config,
+            coordinator=coordinator,
             stable_views=StableViewRepository(connection),
-            runner=AnalysisCodexRunner(config), publisher=AnalysisPublisher(connection),
-            delivery=AnalysisDeliveryFactory(connection), connection=connection,
+            runner=AnalysisCodexRunner(config),
+            publisher=AnalysisPublisher(connection),
+            delivery=AnalysisDeliveryFactory(connection),
+            connection=connection,
         ).execute(request)
         if not deliver or receipt.status not in {"partial", "unchanged", "succeeded"}:
             return receipt
         delivery_id = _receipt_delivery_id(connection, receipt)
         if delivery_id is None:
             return replace(
-                receipt, status="partial",
+                receipt,
+                status="partial",
                 errors=receipt.errors + (_error("analysis_delivery_missing"),),
                 next_action="retry_delivery",
             )
@@ -481,7 +686,9 @@ def run_regeneration_analysis(
 
 
 def run_analysis_status(
-    *, run_key: str | None = None, root: Path | None = None,
+    *,
+    run_key: str | None = None,
+    root: Path | None = None,
 ) -> AnalysisReceipt:
     """Read A3-21 status using only the Foundation database connection."""
     root = (root or project_root()).resolve()
@@ -509,7 +716,10 @@ def run_analysis_status(
 
 
 def run_delivery_recovery(
-    *, invocation_id: str, delivery_id: int, reconcile: bool = False,
+    *,
+    invocation_id: str,
+    delivery_id: int,
+    reconcile: bool = False,
     root: Path | None = None,
 ) -> AnalysisReceipt:
     """Recover one persisted delivery without invoking the analysis generator."""
@@ -528,23 +738,38 @@ def run_delivery_recovery(
         ).fetchone()
         if row is None or not isinstance(row[0], str):
             raise ValueError("analysis_delivery_subject_not_active")
-        request = AnalysisRequest.from_dict({
-            "schema_version": "1", "mode": mode, "subject_id": row[0],
-            "invocation_id": invocation_id, "run_key": None,
-            "summary_local_date": None, "advice_local_date": None,
-            "as_of_local_date": None, "plan_id": None, "reason_event_id": None,
-            "effective_local_date": None, "artifact_id": None,
-            "delivery_id": str(delivery_id), "regeneration_reason_code": None,
-            "requested_at_utc": started,
-        })
+        request = AnalysisRequest.from_dict(
+            {
+                "schema_version": "1",
+                "mode": mode,
+                "subject_id": row[0],
+                "invocation_id": invocation_id,
+                "run_key": None,
+                "summary_local_date": None,
+                "advice_local_date": None,
+                "as_of_local_date": None,
+                "plan_id": None,
+                "reason_event_id": None,
+                "effective_local_date": None,
+                "artifact_id": None,
+                "delivery_id": str(delivery_id),
+                "regeneration_reason_code": None,
+                "resend_authorization_id": None,
+                "requested_at_utc": started,
+            }
+        )
         result = _execute_delivery(connection, config, delivery_id, mode)
-        delivery = _contract_delivery(result, tuple(str(x.artifact_id) for x in pending.artifacts))
+        delivery = _contract_delivery(
+            result, tuple(str(x.artifact_id) for x in pending.artifacts)
+        )
         succeeded = result.status in {"sent", "already_sent"}
         return AnalysisReceipt(
             run_key=build_run_key(request),
-            invocation_id=invocation_id, mode=mode,
+            invocation_id=invocation_id,
+            mode=mode,
             status="succeeded" if succeeded else "partial",
-            started_at_utc=started, completed_at_utc=_utc_now(),
+            started_at_utc=started,
+            completed_at_utc=_utc_now(),
             analysis_run_id=str(pending.analysis_run_id),
             quality_gate_state="ready",
             artifact_ids=delivery.artifact_ids,
@@ -564,9 +789,14 @@ def _execute_delivery(
     except ValueError:
         state = AnalysisDeliveryRepository(connection).read_state(delivery_id)  # type: ignore[arg-type]
         return DeliveryExecution(
-            delivery_id, state.status, state.provider_message_id,
-            state.provider_thread_id, "analysis_delivery_recipient_not_configured",
-            "reconcile_delivery" if state.status in {"sending", "delivery_unknown"} else "retry_delivery",
+            delivery_id,
+            state.status,
+            state.provider_message_id,
+            state.provider_thread_id,
+            "analysis_delivery_recipient_not_configured",
+            "reconcile_delivery"
+            if state.status in {"sending", "delivery_unknown"}
+            else "retry_delivery",
         )
     try:
         gateway = GmailDeliveryGateway(
@@ -575,9 +805,14 @@ def _execute_delivery(
     except GmailDeliveryError as error:
         state = AnalysisDeliveryRepository(connection).read_state(delivery_id)  # type: ignore[arg-type]
         return DeliveryExecution(
-            delivery_id, state.status, state.provider_message_id,
-            state.provider_thread_id, f"analysis_delivery_{error.code.removeprefix('gmail_')}",
-            "reconcile_delivery" if state.status in {"sending", "delivery_unknown"} else "retry_delivery",
+            delivery_id,
+            state.status,
+            state.provider_message_id,
+            state.provider_thread_id,
+            f"analysis_delivery_{error.code.removeprefix('gmail_')}",
+            "reconcile_delivery"
+            if state.status in {"sending", "delivery_unknown"}
+            else "retry_delivery",
         )
     service = AnalysisDeliveryService(AnalysisDeliveryRepository(connection), gateway)  # type: ignore[arg-type]
     return service.execute(delivery_id, mode)  # type: ignore[arg-type]
@@ -612,15 +847,24 @@ def _receipt_delivery_id(connection: object, receipt: AnalysisReceipt) -> int | 
     return int(rows[0][0]) if len(rows) == 1 else None
 
 
-def _contract_delivery(result: DeliveryExecution, artifact_ids: tuple[str, ...]) -> AnalysisDelivery:
-    error = None if result.error_code is None else {
-        "code": result.error_code,
-        "summary": "analysis delivery did not complete",
-    }
+def _contract_delivery(
+    result: DeliveryExecution, artifact_ids: tuple[str, ...]
+) -> AnalysisDelivery:
+    error = (
+        None
+        if result.error_code is None
+        else {
+            "code": result.error_code,
+            "summary": "analysis delivery did not complete",
+        }
+    )
     return AnalysisDelivery(
-        str(result.delivery_id), result.status, artifact_ids,
+        str(result.delivery_id),
+        result.status,
+        artifact_ids,
         provider_message_id=result.provider_message_id,
-        provider_thread_id=result.provider_thread_id, error=error,
+        provider_thread_id=result.provider_thread_id,
+        error=error,
     )
 
 
@@ -700,25 +944,35 @@ def _regeneration_content_same(connection: object, run_id: int) -> bool | None:
 
 
 def _merge_daily_delivery(
-    receipt: AnalysisReceipt, result: DeliveryExecution,
+    receipt: AnalysisReceipt,
+    result: DeliveryExecution,
     persisted_artifact_ids: tuple[str, ...],
 ) -> AnalysisReceipt:
     return _merge_delivery(receipt, result, persisted_artifact_ids)
 
 
 def _merge_delivery(
-    receipt: AnalysisReceipt, result: DeliveryExecution,
+    receipt: AnalysisReceipt,
+    result: DeliveryExecution,
     persisted_artifact_ids: tuple[str, ...],
 ) -> AnalysisReceipt:
     artifacts = receipt.artifact_ids or persisted_artifact_ids
     delivery = _contract_delivery(result, artifacts)
     terminal = result.status in {"sent", "already_sent"}
-    status = ("unchanged" if receipt.status == "unchanged" else "succeeded") if terminal else "partial"
+    status = (
+        ("unchanged" if receipt.status == "unchanged" else "succeeded")
+        if terminal
+        else "partial"
+    )
     errors = receipt.errors
     if result.error_code is not None:
         errors += (_error(result.error_code),)
     return replace(
-        receipt, status=status, artifact_ids=artifacts, delivery=delivery, errors=errors,
+        receipt,
+        status=status,
+        artifact_ids=artifacts,
+        delivery=delivery,
+        errors=errors,
         next_action=result.next_action,
     )
 

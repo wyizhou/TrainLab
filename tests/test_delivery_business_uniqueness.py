@@ -165,6 +165,77 @@ def test_authorized_resend_has_immutable_explicit_audit_key() -> None:
         )
 
 
+def test_weekly_authorized_resend_binds_new_artifacts_and_keeps_original() -> None:
+    connection = database()
+    published(connection)
+    factory = AnalysisDeliveryFactory(connection)
+    original_receipt = _next_run_with_same_business_dates(
+        connection, delivery_kind="weekly_report"
+    )
+    original = factory.create_pending(
+        publish_receipt=original_receipt, delivery_kind="weekly_report"
+    )
+    source_rows = connection.execute(
+        "SELECT * FROM analysis_artifacts WHERE generated_by_run_id=2 ORDER BY id"
+    ).fetchall()
+    connection.execute(
+        "INSERT INTO analysis_runs(id,run_key,subject_id,analysis_kind,status) "
+        "VALUES(3,'analysis:1:weekly:correction',1,'weekly','started')"
+    )
+    current_ids: dict[str, int] = {}
+    for source in source_rows:
+        cursor = connection.execute(
+            "INSERT INTO analysis_artifacts(subject_id,artifact_kind,period_start_local_date,"
+            "period_end_local_date,revision_no,generated_by_run_id,schema_version,"
+            "structured_content_json,user_visible_text,content_sha256,is_current,"
+            "supersedes_artifact_id,created_at_utc) VALUES(?,?,?,?,?,3,?,?,?,?,?,?,?)",
+            (
+                1,
+                source["artifact_kind"],
+                source["period_start_local_date"],
+                source["period_end_local_date"],
+                3,
+                source["schema_version"],
+                source["structured_content_json"],
+                source["user_visible_text"],
+                source["content_sha256"],
+                0,
+                source["id"],
+                source["created_at_utc"],
+            ),
+        )
+        current_ids[str(source["artifact_kind"])] = int(cursor.lastrowid)
+    connection.commit()
+    current_receipt = {"run_id": 3, "artifact_ids": current_ids}
+
+    assert (
+        factory.create_pending(
+            publish_receipt=current_receipt, delivery_kind="weekly_report"
+        ).delivery_id
+        == original.delivery_id
+    )
+    authorization = ResendAuthorization("user-confirmed-20260811")
+    corrected = factory.create_pending(
+        publish_receipt=current_receipt,
+        delivery_kind="weekly_report",
+        resend_authorization=authorization,
+    )
+    replay = factory.create_pending(
+        publish_receipt=current_receipt,
+        delivery_kind="weekly_report",
+        resend_authorization=authorization,
+    )
+    assert replay.delivery_id == corrected.delivery_id
+    assert corrected.delivery_id != original.delivery_id
+    assert tuple(item.artifact_id for item in corrected.artifacts) == tuple(
+        current_ids[kind] for kind in ("weekly_summary", "weekly_training_plan")
+    )
+    assert tuple(item.artifact_id for item in original.artifacts) == tuple(
+        original_receipt["artifact_ids"][kind]
+        for kind in ("weekly_summary", "weekly_training_plan")
+    )
+
+
 def test_ops_open_and_recovery_keys_are_distinct_event_scoped_business_keys() -> None:
     incident = "workflow:failed:morning:fixed"
     assert alert_idempotency_key(incident, "open") == alert_idempotency_key(
