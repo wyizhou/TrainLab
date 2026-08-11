@@ -11,7 +11,12 @@ from trainlab.analysis.context import (
 from trainlab.analysis.contracts import AnalysisRequest
 from trainlab.analysis.harness import HarnessBundle, SchemaEvidence
 from trainlab.analysis.run_state import RunDecision
-from trainlab.analysis.weekly import WeeklyRoute, _periods, weekly_plan_contract
+from trainlab.analysis.weekly import (
+    WeeklyRoute,
+    _periods,
+    _prior_artifact_state,
+    weekly_plan_contract,
+)
 
 
 def request(invocation: str = "weekly-one") -> AnalysisRequest:
@@ -262,6 +267,47 @@ def test_first_run_contract_marks_absent_prior_artifacts() -> None:
         "plan": "no_prior_artifact",
     }
     assert contract["days"] == 7 and contract["items_per_day"] == 1
+
+
+def test_prior_artifact_state_requires_the_immediately_preceding_summary() -> None:
+    review = {
+        "start_local_date": "2026-08-03",
+        "end_local_date": "2026-08-09",
+    }
+    snapshot = SimpleNamespace(
+        views={
+            "v_current_weekly_summaries": (
+                {
+                    "artifact_kind": "weekly_summary",
+                    "period_start_local_date": "2026-07-20",
+                    "period_end_local_date": "2026-07-26",
+                },
+            ),
+            "v_current_training_plans": (),
+        }
+    )
+    assert _prior_artifact_state(snapshot, review) == {
+        "summary": "no_prior_artifact",
+        "plan": "no_prior_artifact",
+    }
+
+    snapshot.views["v_current_weekly_summaries"] = (
+        {
+            "artifact_kind": "weekly_summary",
+            "period_start_local_date": "2026-07-27",
+            "period_end_local_date": "2026-08-02",
+        },
+    )
+    snapshot.views["v_current_training_plans"] = (
+        {
+            "plan_start_local_date": "2026-08-03",
+            "plan_end_local_date": "2026-08-09",
+        },
+    )
+    assert _prior_artifact_state(snapshot, review) == {
+        "summary": "available",
+        "plan": "available",
+    }
 
 
 def test_blocked_week_never_runs_generator_publisher_or_delivery(

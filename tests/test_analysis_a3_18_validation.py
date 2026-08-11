@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+import json
 from copy import deepcopy
 from dataclasses import replace
 from datetime import date, timedelta
-import json
 
 import pytest
 
@@ -12,7 +12,6 @@ from trainlab.analysis.result_validation import (
     AnalysisResultValidator,
     ResultValidationExpectation,
 )
-
 
 RUN_KEY = "analysis:1:weekly:2026-07-26:fixture"
 REVIEW = {"start_local_date": "2026-07-19", "end_local_date": "2026-07-25"}
@@ -216,7 +215,9 @@ def test_regeneration_validates_complete_weekly_and_plan_revision_shapes(shape: 
     (lambda value: value["training_plan"]["items"].__setitem__(1, {**value["training_plan"]["items"][1], "item_index": 0}), "analysis_result_weekly_item_sequence_invalid"),
 ])
 def test_weekly_shape_and_prior_state_fail_closed(mutate, expected_code: str) -> None:
-    value = output(); mutate(value); code(value, expected_code)
+    value = output()
+    mutate(value)
+    code(value, expected_code)
 
 
 def test_available_prior_state_is_required_in_both_artifacts() -> None:
@@ -311,6 +312,148 @@ def test_available_prior_sources_must_both_be_used() -> None:
         "analysis_result_weekly_prior_source_usage_required",
         exp,
     )
+
+
+def _exact_prior_manifest() -> list[dict[str, object]]:
+    return [
+        {
+            "ordinal": 1,
+            "input_role": "artifact.prior_model_output",
+            "source_entity_type": "analysis_artifact",
+            "source_entity_id": "69",
+            "source_revision_id": "69-r1",
+            "source_window": {
+                "start_local_date": "2026-07-12",
+                "end_local_date": "2026-07-18",
+            },
+        },
+        {
+            "ordinal": 2,
+            "input_role": "plan.current_revision",
+            "source_entity_type": "analysis_artifact",
+            "source_entity_id": "70",
+            "source_revision_id": "70-r1",
+            "source_window": {
+                "start_local_date": "2026-07-19",
+                "end_local_date": "2026-07-25",
+            },
+        },
+    ]
+
+
+def _available_prior_value_and_expectation():
+    prior = {"summary": "available", "plan": "available"}
+    value = output(prior=prior)
+    exp = expectation(prior=prior)
+    rows = _exact_prior_manifest()
+    object.__setattr__(exp, "input_manifest", [*exp.input_manifest, *rows])
+    value["source_usage"].extend(
+        {
+            "ordinal": row["ordinal"],
+            "input_role": row["input_role"],
+            "source_entity_id": row["source_entity_id"],
+            "source_revision_id": row["source_revision_id"],
+        }
+        for row in rows
+    )
+    return value, exp
+
+
+def test_weekly_prior_lineage_requires_exact_unique_summary_and_plan_sources() -> None:
+    value, exp = _available_prior_value_and_expectation()
+    assert validate(value, exp).result["mode"] == "weekly"
+
+    missing_summary, missing_summary_exp = _available_prior_value_and_expectation()
+    object.__setattr__(
+        missing_summary_exp,
+        "input_manifest",
+        [row for row in missing_summary_exp.input_manifest if row["ordinal"] != 1],
+    )
+    missing_summary["source_usage"] = [
+        row for row in missing_summary["source_usage"] if row["ordinal"] != 1
+    ]
+    code(missing_summary, "analysis_result_weekly_prior_source_invalid", missing_summary_exp)
+
+    missing_plan, missing_plan_exp = _available_prior_value_and_expectation()
+    object.__setattr__(
+        missing_plan_exp,
+        "input_manifest",
+        [row for row in missing_plan_exp.input_manifest if row["ordinal"] != 2],
+    )
+    missing_plan["source_usage"] = [
+        row for row in missing_plan["source_usage"] if row["ordinal"] != 2
+    ]
+    code(missing_plan, "analysis_result_weekly_prior_source_invalid", missing_plan_exp)
+
+    duplicate_summary, duplicate_summary_exp = _available_prior_value_and_expectation()
+    object.__setattr__(
+        duplicate_summary_exp,
+        "input_manifest",
+        [
+            *duplicate_summary_exp.input_manifest,
+            {**_exact_prior_manifest()[0], "ordinal": 3, "source_entity_id": "71"},
+        ],
+    )
+    code(duplicate_summary, "analysis_result_weekly_prior_source_invalid", duplicate_summary_exp)
+
+    duplicate_plan, duplicate_plan_exp = _available_prior_value_and_expectation()
+    object.__setattr__(
+        duplicate_plan_exp,
+        "input_manifest",
+        [
+            *duplicate_plan_exp.input_manifest,
+            {**_exact_prior_manifest()[1], "ordinal": 3, "source_entity_id": "71"},
+        ],
+    )
+    code(duplicate_plan, "analysis_result_weekly_prior_source_invalid", duplicate_plan_exp)
+
+
+@pytest.mark.parametrize(
+    ("mutate", "expected_code"),
+    [
+        (
+            lambda value, exp: value["source_usage"].pop(1),
+            "analysis_result_weekly_prior_source_usage_required",
+        ),
+        (
+            lambda value, exp: value["source_usage"].pop(),
+            "analysis_result_weekly_prior_source_usage_required",
+        ),
+        (
+            lambda value, exp: exp.input_manifest[1].update(
+                input_role="plan.current_revision"
+            ),
+            "analysis_result_weekly_prior_source_invalid",
+        ),
+        (
+            lambda value, exp: exp.input_manifest[1].update(
+                source_window={
+                    "start_local_date": "2026-07-11",
+                    "end_local_date": "2026-07-18",
+                }
+            ),
+            "analysis_result_weekly_prior_source_invalid",
+        ),
+        (
+            lambda value, exp: exp.input_manifest[1].update(
+                source_entity_type="training_plan"
+            ),
+            "analysis_result_weekly_prior_source_invalid",
+        ),
+        (
+            lambda value, exp: value["source_usage"].append(
+                dict(value["source_usage"][1])
+            ),
+            "analysis_result_source_usage_invalid",
+        ),
+    ],
+)
+def test_weekly_prior_source_usage_rejects_invalid_lineage(
+    mutate, expected_code: str
+) -> None:
+    value, exp = _available_prior_value_and_expectation()
+    mutate(value, exp)
+    code(value, expected_code, exp)
 
 
 def test_weekly_plan_prose_cannot_invent_bpm_without_evidence() -> None:

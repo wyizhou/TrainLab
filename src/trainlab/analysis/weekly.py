@@ -30,15 +30,21 @@ from .daily import (
     _validate_with_bounded_corrections,
     daily_primary_item_contract,
 )
-from .features import adherence_statistics, snapshot_plan_matches, training_history_features
+from .features import (
+    adherence_statistics,
+    snapshot_plan_matches,
+    training_history_features,
+)
 from .harness import SchemaEvidence, resolve_harness_bundle
 from .publisher import AnalysisPublisher, RunEvidence
 from .quality_gate import QualityGate, QualityGateRequest
-from .result_validation import AnalysisResultValidationError, ResultValidationExpectation
+from .result_validation import (
+    AnalysisResultValidationError,
+    ResultValidationExpectation,
+)
 from .run_state import AnalysisRunCoordinator, AnalysisRunStateError
 from .stable_views import StableSnapshot, StableViewRepository
 from .training_difficulty import training_control_contracts
-
 
 _SG = ZoneInfo("Asia/Hong_Kong")
 
@@ -111,10 +117,13 @@ def _prior_artifact_state(
     snapshot: object, review: Mapping[str, str]
 ) -> dict[str, str]:
     summaries = _snapshot_rows(snapshot, "v_current_weekly_summaries")
+    review_start = date.fromisoformat(review["start_local_date"])
+    prior_summary_start = (review_start - timedelta(days=7)).isoformat()
+    prior_summary_end = (review_start - timedelta(days=1)).isoformat()
     prior_summary = any(
         row.get("artifact_kind") == "weekly_summary"
-        and isinstance(row.get("period_end_local_date"), str)
-        and row["period_end_local_date"] < review["start_local_date"]
+        and row.get("period_start_local_date") == prior_summary_start
+        and row.get("period_end_local_date") == prior_summary_end
         for row in summaries
     )
     plans = _snapshot_rows(snapshot, "v_current_training_plans")
