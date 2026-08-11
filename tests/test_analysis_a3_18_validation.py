@@ -408,6 +408,7 @@ def test_available_prior_state_is_required_in_both_artifacts() -> None:
             "ordinal": 1,
             "input_role": "artifact.prior_model_output",
             "source_entity_type": "analysis_artifact",
+            "source_artifact_kind": "weekly_summary",
             "source_entity_id": "previous-summary",
             "source_revision_id": "previous-summary-r1",
             "source_window": {
@@ -419,6 +420,7 @@ def test_available_prior_state_is_required_in_both_artifacts() -> None:
             "ordinal": 2,
             "input_role": "plan.current_revision",
             "source_entity_type": "analysis_artifact",
+            "source_artifact_kind": "weekly_training_plan",
             "source_entity_id": "previous-plan",
             "source_revision_id": "previous-plan-r1",
             "source_window": {
@@ -452,6 +454,7 @@ def test_available_prior_sources_must_both_be_used() -> None:
             "ordinal": 1,
             "input_role": "artifact.prior_model_output",
             "source_entity_type": "analysis_artifact",
+            "source_artifact_kind": "weekly_summary",
             "source_entity_id": "previous-summary",
             "source_revision_id": "previous-summary-r1",
             "source_window": {
@@ -463,6 +466,7 @@ def test_available_prior_sources_must_both_be_used() -> None:
             "ordinal": 2,
             "input_role": "plan.current_revision",
             "source_entity_type": "analysis_artifact",
+            "source_artifact_kind": "weekly_training_plan",
             "source_entity_id": "previous-plan",
             "source_revision_id": "previous-plan-r1",
             "source_window": {
@@ -493,6 +497,7 @@ def _exact_prior_manifest() -> list[dict[str, object]]:
             "ordinal": 1,
             "input_role": "artifact.prior_model_output",
             "source_entity_type": "analysis_artifact",
+            "source_artifact_kind": "weekly_summary",
             "source_entity_id": "69",
             "source_revision_id": "69-r1",
             "source_window": {
@@ -504,6 +509,7 @@ def _exact_prior_manifest() -> list[dict[str, object]]:
             "ordinal": 2,
             "input_role": "plan.current_revision",
             "source_entity_type": "analysis_artifact",
+            "source_artifact_kind": "weekly_training_plan",
             "source_entity_id": "70",
             "source_revision_id": "70-r1",
             "source_window": {
@@ -622,6 +628,12 @@ def test_weekly_prior_lineage_requires_exact_unique_summary_and_plan_sources() -
         (
             lambda value, exp: exp.input_manifest[1].update(
                 source_entity_type="training_plan"
+            ),
+            "analysis_result_weekly_prior_source_invalid",
+        ),
+        (
+            lambda value, exp: exp.input_manifest[2].update(
+                source_artifact_kind="weekly_summary"
             ),
             "analysis_result_weekly_prior_source_invalid",
         ),

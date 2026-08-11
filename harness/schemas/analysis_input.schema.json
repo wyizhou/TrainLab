@@ -176,6 +176,14 @@
           "type": "string",
           "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
         },
+        "source_artifact_kind": {
+          "enum": [
+            "daily_summary",
+            "daily_training_advice",
+            "weekly_summary",
+            "weekly_training_plan"
+          ]
+        },
         "source_entity_id": {"type": "string", "minLength": 1, "maxLength": 192},
         "source_revision_id": {"type": "string", "minLength": 1, "maxLength": 192},
         "source_window": {"$ref": "#/$defs/period"},

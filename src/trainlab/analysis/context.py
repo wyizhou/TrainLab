@@ -8,14 +8,14 @@ canonical JSON document without logging or writing it.
 
 from __future__ import annotations
 
+import json
+import math
+import re
 from copy import deepcopy
 from dataclasses import asdict, dataclass
 from datetime import date, datetime, timedelta, timezone
 from hashlib import sha256
-import json
-import math
 from pathlib import Path
-import re
 from typing import Any, Literal, Mapping, Protocol, Sequence
 from zoneinfo import ZoneInfo
 
@@ -74,7 +74,9 @@ _MAX_SNAPSHOT_ITEMS = int(_POLICY["maximum_snapshot_items"])
 _MAX_SAMPLE_SUMMARIES = int(_POLICY["maximum_technical_sample_summaries"])
 _MAX_SAMPLE_ROWS = int(_POLICY["maximum_technical_sample_rows"])
 _PRUNE_CODES = tuple(_POLICY["pruning_order"])
-_BASELINE_WINDOW_DAYS = int(_POLICY.get("baseline_window_days", _POLICY["completed_window_days"]))
+_BASELINE_WINDOW_DAYS = int(
+    _POLICY.get("baseline_window_days", _POLICY["completed_window_days"])
+)
 _SHORT_WINDOW_DAYS = int(_POLICY.get("short_window_days", 7))
 _TREND_WINDOW_DAYS = int(_POLICY.get("trend_window_days", 90))
 _COMPLETED_WINDOW_DAYS = _BASELINE_WINDOW_DAYS
@@ -204,10 +206,7 @@ def _json_compatible(value: Any) -> Any:
     if isinstance(value, list):
         return [_json_compatible(item) for item in value]
     if isinstance(value, Mapping):
-        return {
-            key: _json_compatible(child)
-            for key, child in value.items()
-        }
+        return {key: _json_compatible(child) for key, child in value.items()}
     return deepcopy(value)
 
 
@@ -299,14 +298,11 @@ def _utc(value: Any) -> datetime:
         _fail("analysis_context_utc_invalid")
     fraction = value[19:-1]
     is_shortest_fraction = (
-        len(fraction) > 1
-        and len(fraction) < 7
-        and fraction[-1] != "0"
+        len(fraction) > 1 and len(fraction) < 7 and fraction[-1] != "0"
     )
     is_fixed_microsecond_fraction = len(fraction) == 7
-    if (
-        (fraction and parsed.microsecond == 0)
-        or (fraction and not (is_shortest_fraction or is_fixed_microsecond_fraction))
+    if (fraction and parsed.microsecond == 0) or (
+        fraction and not (is_shortest_fraction or is_fixed_microsecond_fraction)
     ):
         _fail("analysis_context_utc_not_canonical")
     return parsed
@@ -396,21 +392,28 @@ class ContextBuildRequest:
         summary = advice = review = plan = None
         effective: date | None = None
         if source_route == "daily":
-            if any(
-                value is not None
-                for value in (
-                    self.review_end_local_date,
-                    self.plan_start_local_date,
-                    self.plan_end_local_date,
-                    self.effective_local_date,
-                    self.plan_id,
-                    self.reason_event_id,
+            if (
+                any(
+                    value is not None
+                    for value in (
+                        self.review_end_local_date,
+                        self.plan_start_local_date,
+                        self.plan_end_local_date,
+                        self.effective_local_date,
+                        self.plan_id,
+                        self.reason_event_id,
+                    )
                 )
-            ) or self.summary_local_date is None or self.advice_local_date is None:
+                or self.summary_local_date is None
+                or self.advice_local_date is None
+            ):
                 _fail("analysis_context_daily_window_invalid")
             summary_day = _local_date(self.summary_local_date)
             advice_day = _local_date(self.advice_local_date)
-            if advice_day != summary_day + timedelta(days=1) or summary_day >= local_as_of:
+            if (
+                advice_day != summary_day + timedelta(days=1)
+                or summary_day >= local_as_of
+            ):
                 _fail("analysis_context_daily_window_invalid")
             summary = _period(summary_day, summary_day)
             advice = _period(advice_day, advice_day)
@@ -419,18 +422,21 @@ class ContextBuildRequest:
                 summary_day,
             )
         elif source_route == "weekly":
-            if any(
-                value is not None
-                for value in (
-                    self.summary_local_date,
-                    self.advice_local_date,
-                    self.plan_start_local_date,
-                    self.plan_end_local_date,
-                    self.effective_local_date,
-                    self.plan_id,
-                    self.reason_event_id,
+            if (
+                any(
+                    value is not None
+                    for value in (
+                        self.summary_local_date,
+                        self.advice_local_date,
+                        self.plan_start_local_date,
+                        self.plan_end_local_date,
+                        self.effective_local_date,
+                        self.plan_id,
+                        self.reason_event_id,
+                    )
                 )
-            ) or self.review_end_local_date is None:
+                or self.review_end_local_date is None
+            ):
                 _fail("analysis_context_weekly_window_invalid")
             review_end = _local_date(self.review_end_local_date)
             review_start = review_end - timedelta(days=6)
@@ -496,7 +502,9 @@ class ContextBuildRequest:
             end = periods["review"]["end_local_date"]
         else:
             end = periods["plan"]["end_local_date"]
-        start = (date.fromisoformat(end) - timedelta(days=_TREND_WINDOW_DAYS - 1)).isoformat()
+        start = (
+            date.fromisoformat(end) - timedelta(days=_TREND_WINDOW_DAYS - 1)
+        ).isoformat()
         return start, end
 
 
@@ -598,7 +606,9 @@ def load_context_source(
             if isinstance(error, ContextBuildError):
                 raise
             _fail("analysis_explicit_fit_loader_failed")
-        if not isinstance(loaded, tuple) or any(not isinstance(row, Mapping) for row in loaded):
+        if not isinstance(loaded, tuple) or any(
+            not isinstance(row, Mapping) for row in loaded
+        ):
             _fail("analysis_explicit_fit_loader_invalid")
         explicit = loaded
     return ContextSource(
@@ -637,7 +647,7 @@ class _Candidate:
         )
 
     def manifest(self, ordinal: int) -> dict[str, Any]:
-        return {
+        manifest = {
             "input_role": self.input_role,
             "source_entity_type": self.entity_type,
             "source_entity_id": self.entity_id,
@@ -651,6 +661,12 @@ class _Candidate:
             "input_sha256": _sha(self.content),
             "ordinal": ordinal,
         }
+        if self.entity_type == "analysis_artifact":
+            artifact_kind = self.content.get("artifact_kind")
+            if not isinstance(artifact_kind, str):
+                _fail("analysis_context_artifact_kind_invalid")
+            manifest["source_artifact_kind"] = artifact_kind
+        return manifest
 
 
 @dataclass(frozen=True)
@@ -747,7 +763,9 @@ def _row_revision(row: Mapping[str, Any], entity_type: str, entity_id: str) -> s
     return f"snapshot:{entity_type}:{entity_id}:{_sha(_sanitize_row(row))}"
 
 
-def _row_date_window(row: Mapping[str, Any], fallback: tuple[str, str]) -> tuple[str, str]:
+def _row_date_window(
+    row: Mapping[str, Any], fallback: tuple[str, str]
+) -> tuple[str, str]:
     for start_key, end_key in (
         ("period_start_local_date", "period_end_local_date"),
         ("plan_start_local_date", "plan_end_local_date"),
@@ -919,7 +937,9 @@ def _revision_universe(snapshot: StableSnapshot) -> frozenset[str]:
             "active_weather_revision_id",
         ):
             if row.get(key) is not None:
-                revisions.add(_identifier(row[key], "analysis_context_revision_invalid"))
+                revisions.add(
+                    _identifier(row[key], "analysis_context_revision_invalid")
+                )
         if row.get("id") is not None and "availability_state" in row:
             revisions.add(f"coverage:{_identifier(row['id'])}")
         # A3-08 represents a plan item's immutable source with the plan's
@@ -929,15 +949,16 @@ def _revision_universe(snapshot: StableSnapshot) -> frozenset[str]:
         if row.get("analysis_artifact_id") is not None:
             revisions.add(_identifier(row["analysis_artifact_id"]))
         if (
-            row.get("artifact_kind")
-            in {"weekly_summary", "weekly_training_plan"}
+            row.get("artifact_kind") in {"weekly_summary", "weekly_training_plan"}
             and row.get("id") is not None
         ):
             revisions.add(_identifier(row["id"]))
     return frozenset(revisions)
 
 
-def _completed_window(periods: Mapping[str, Any], source_route: SourceRoute) -> tuple[str, str]:
+def _completed_window(
+    periods: Mapping[str, Any], source_route: SourceRoute
+) -> tuple[str, str]:
     if source_route == "daily":
         return (
             periods["summary"]["start_local_date"],
@@ -952,7 +973,9 @@ def _completed_window(periods: Mapping[str, Any], source_route: SourceRoute) -> 
     return effective, effective
 
 
-def _trend_window(periods: Mapping[str, Any], source_route: SourceRoute) -> tuple[str, str]:
+def _trend_window(
+    periods: Mapping[str, Any], source_route: SourceRoute
+) -> tuple[str, str]:
     """Return the compact 90-day trend window without widening target dates."""
     if source_route == "daily":
         end = periods["advice"]["end_local_date"]
@@ -966,7 +989,9 @@ def _trend_window(periods: Mapping[str, Any], source_route: SourceRoute) -> tupl
     )
 
 
-def _input_window(periods: Mapping[str, Any], source_route: SourceRoute) -> tuple[str, str]:
+def _input_window(
+    periods: Mapping[str, Any], source_route: SourceRoute
+) -> tuple[str, str]:
     return _trend_window(periods, source_route)
 
 
@@ -1008,16 +1033,12 @@ def _flatten_compact_values(
     return []
 
 
-def _observation_date(
-    row: Mapping[str, Any], fallback: tuple[str, str]
-) -> str:
+def _observation_date(row: Mapping[str, Any], fallback: tuple[str, str]) -> str:
     start, end = _row_date_window(row, fallback)
     return end if end >= start else start
 
 
-def _source_reference(
-    row: Mapping[str, Any], entity_type: str
-) -> tuple[str, str]:
+def _source_reference(row: Mapping[str, Any], entity_type: str) -> tuple[str, str]:
     identity = _row_identity(row, entity_type)
     return identity, _row_revision(row, entity_type, identity)
 
@@ -1066,7 +1087,10 @@ def _numeric_summary(values: Sequence[float], dates: Sequence[str]) -> dict[str,
 
 
 def _compact_series_content(
-    *, family: str, metric_key: str, unit: str | None,
+    *,
+    family: str,
+    metric_key: str,
+    unit: str | None,
     observations: Sequence[Mapping[str, Any]],
     window: tuple[str, str],
 ) -> dict[str, Any]:
@@ -1091,9 +1115,7 @@ def _compact_series_content(
     if len(observation_keys) != len(ordered):
         _fail("analysis_context_duplicate_lineage")
     source_ids = sorted({str(item["source_id"]) for item in ordered})
-    revision_ids = sorted(
-        {str(item["source_revision_id"]) for item in ordered}
-    )
+    revision_ids = sorted({str(item["source_revision_id"]) for item in ordered})
     material = [
         {
             "local_date": item["local_date"],
@@ -1157,8 +1179,12 @@ def _compact_series_content(
 
 
 def _add_compact_observations(
-    candidates: list[_Candidate], *,
-    section: str, role: str, entity_type: str, family: str,
+    candidates: list[_Candidate],
+    *,
+    section: str,
+    role: str,
+    entity_type: str,
+    family: str,
     observations: Sequence[Mapping[str, Any]],
     window: tuple[str, str],
 ) -> None:
@@ -1207,14 +1233,16 @@ def _health_observations(
         for metric_key, value in _flatten_compact_values(values):
             if value is None or not _health_metric_allowed(metric_key):
                 continue
-            output.append({
-                "metric_key": f"health.{metric_key}",
-                "unit": None,
-                "value": value,
-                "local_date": local_date,
-                "source_id": source_id,
-                "source_revision_id": revision,
-            })
+            output.append(
+                {
+                    "metric_key": f"health.{metric_key}",
+                    "unit": None,
+                    "value": value,
+                    "local_date": local_date,
+                    "source_id": source_id,
+                    "source_revision_id": revision,
+                }
+            )
     return output
 
 
@@ -1222,18 +1250,40 @@ def _health_metric_allowed(metric_key: str) -> bool:
     """Apply the health whitelist at the analysis boundary as well as ingest."""
     key = metric_key.casefold().replace(" ", "_").replace("-", "_")
     allowed_tokens = (
-        "heart_rate", "heartrate", "resting_heart_rate", "restingheartrate",
-        "hrv", "heart_rate_variability", "spo2", "pulse_ox",
-        "vo2_max", "vo2max", "max_vo2", "weight", "body_weight",
+        "heart_rate",
+        "heartrate",
+        "resting_heart_rate",
+        "restingheartrate",
+        "hrv",
+        "heart_rate_variability",
+        "spo2",
+        "pulse_ox",
+        "vo2_max",
+        "vo2max",
+        "max_vo2",
+        "weight",
+        "body_weight",
     )
     return any(token in key for token in allowed_tokens)
 
 
-_MORNING_RECOVERY_TOKENS = frozenset({
-    "sleep", "sleep_score", "resting_heart_rate", "restingheart rate",
-    "heart_rate", "heartrate", "hrv", "spo2", "pulse_ox", "vo2_max",
-    "vo2max", "weight", "body_weight",
-})
+_MORNING_RECOVERY_TOKENS = frozenset(
+    {
+        "sleep",
+        "sleep_score",
+        "resting_heart_rate",
+        "restingheart rate",
+        "heart_rate",
+        "heartrate",
+        "hrv",
+        "spo2",
+        "pulse_ox",
+        "vo2_max",
+        "vo2max",
+        "weight",
+        "body_weight",
+    }
+)
 
 
 def _morning_recovery_observations(
@@ -1256,21 +1306,28 @@ def _morning_recovery_observations(
         source_id, revision = _source_reference(row, "daily_health")
         for metric_key, value in _flatten_compact_values(values):
             first = metric_key.split(".", 1)[0].casefold().replace(" ", "_")
-            if value is None or not any(token in first or token in metric_key.casefold() for token in _MORNING_RECOVERY_TOKENS):
+            if value is None or not any(
+                token in first or token in metric_key.casefold()
+                for token in _MORNING_RECOVERY_TOKENS
+            ):
                 continue
-            output.append({
-                "metric_key": f"morning_recovery.{metric_key}",
-                "unit": None,
-                "value": value,
-                "local_date": local_date,
-                "source_id": source_id,
-                "source_revision_id": revision,
-            })
+            output.append(
+                {
+                    "metric_key": f"morning_recovery.{metric_key}",
+                    "unit": None,
+                    "value": value,
+                    "local_date": local_date,
+                    "source_id": source_id,
+                    "source_revision_id": revision,
+                }
+            )
     return output
 
 
 def _sleep_observations(
-    rows: Sequence[Mapping[str, Any]], window: tuple[str, str], *,
+    rows: Sequence[Mapping[str, Any]],
+    window: tuple[str, str],
+    *,
     include_session_timestamps: bool = False,
 ) -> list[dict[str, Any]]:
     output: list[dict[str, Any]] = []
@@ -1286,68 +1343,92 @@ def _sleep_observations(
                     include_session_timestamps=include_session_timestamps,
                 ):
                     continue
-                output.append({
-                    "metric_key": f"sleep.{metric_key}",
+                output.append(
+                    {
+                        "metric_key": f"sleep.{metric_key}",
+                        "unit": None,
+                        "value": value,
+                        "local_date": local_date,
+                        "source_id": source_id,
+                        "source_revision_id": revision,
+                    }
+                )
+        if row.get("session_type") is not None:
+            output.append(
+                {
+                    "metric_key": "sleep.session_type",
                     "unit": None,
-                    "value": value,
+                    "value": row["session_type"],
                     "local_date": local_date,
                     "source_id": source_id,
                     "source_revision_id": revision,
-                })
-        if row.get("session_type") is not None:
-            output.append({
-                "metric_key": "sleep.session_type",
-                "unit": None,
-                "value": row["session_type"],
-                "local_date": local_date,
-                "source_id": source_id,
-                "source_revision_id": revision,
-            })
+                }
+            )
         if row.get("start_time_utc") and row.get("end_time_utc"):
             duration = (
                 _utc(row["end_time_utc"]) - _utc(row["start_time_utc"])
             ).total_seconds() / 60
             if duration >= 0:
-                output.append({
-                    "metric_key": "sleep.session_duration",
-                    "unit": "min",
-                    "value": _rounded(duration),
-                    "local_date": local_date,
-                    "source_id": source_id,
-                    "source_revision_id": revision,
-                })
+                output.append(
+                    {
+                        "metric_key": "sleep.session_duration",
+                        "unit": "min",
+                        "value": _rounded(duration),
+                        "local_date": local_date,
+                        "source_id": source_id,
+                        "source_revision_id": revision,
+                    }
+                )
     return output
 
 
-_SLEEP_METRIC_NAMES = frozenset({
-    "calendardate",
-    "sleeptimeseconds", "deepsleepseconds", "lightsleepseconds",
-    "remsleepseconds", "awakesleepseconds", "unmeasurablesleepseconds",
-    "averagespo2value", "lowestspo2value", "averageheartrate",
-    "restingheartrate", "averagerespirationvalue", "lowestrespirationvalue",
-    "highestrespirationvalue", "avgsleepstress", "awakecount",
-    "sleepwindowconfirmed", "sleepwindowconfirmationtype",
-})
-_SLEEP_METRIC_PATHS = frozenset({
-    "sleepscores.overall.value", "sleepscores.overall.qualifier",
-})
-_SLEEP_SESSION_TIMESTAMP_NAMES = frozenset({
-    "sleepstarttimestampgmt", "sleependtimestampgmt",
-})
+_SLEEP_METRIC_NAMES = frozenset(
+    {
+        "calendardate",
+        "sleeptimeseconds",
+        "deepsleepseconds",
+        "lightsleepseconds",
+        "remsleepseconds",
+        "awakesleepseconds",
+        "unmeasurablesleepseconds",
+        "averagespo2value",
+        "lowestspo2value",
+        "averageheartrate",
+        "restingheartrate",
+        "averagerespirationvalue",
+        "lowestrespirationvalue",
+        "highestrespirationvalue",
+        "avgsleepstress",
+        "awakecount",
+        "sleepwindowconfirmed",
+        "sleepwindowconfirmationtype",
+    }
+)
+_SLEEP_METRIC_PATHS = frozenset(
+    {
+        "sleepscores.overall.value",
+        "sleepscores.overall.qualifier",
+    }
+)
+_SLEEP_SESSION_TIMESTAMP_NAMES = frozenset(
+    {
+        "sleepstarttimestampgmt",
+        "sleependtimestampgmt",
+    }
+)
 
 
 def _sleep_metric_allowed(
-    metric_key: str, *, include_session_timestamps: bool = False,
+    metric_key: str,
+    *,
+    include_session_timestamps: bool = False,
 ) -> bool:
     """Expose only compact recovery facts, never provider/account metadata."""
     normalized = metric_key.casefold().replace("_", "")
     return (
         normalized in _SLEEP_METRIC_NAMES
         or normalized in _SLEEP_METRIC_PATHS
-        or (
-            include_session_timestamps
-            and normalized in _SLEEP_SESSION_TIMESTAMP_NAMES
-        )
+        or (include_session_timestamps and normalized in _SLEEP_SESSION_TIMESTAMP_NAMES)
     )
 
 
@@ -1369,21 +1450,21 @@ def _physiology_observations(
         )
         for key in ("status_key", "status_text"):
             if row.get(key) is not None:
-                output.append({
-                    "metric_key": f"physiology.{prefix}.{key}",
-                    "unit": None,
-                    "value": row[key],
-                    "local_date": local_date,
-                    "source_id": source_id,
-                    "source_revision_id": revision,
-                })
+                output.append(
+                    {
+                        "metric_key": f"physiology.{prefix}.{key}",
+                        "unit": None,
+                        "value": row[key],
+                        "local_date": local_date,
+                        "source_id": source_id,
+                        "source_revision_id": revision,
+                    }
+                )
     for row in metrics:
         parent = parents.get(_identifier(row.get("physiology_record_id")))
         if parent is None:
             continue
-        source_id, revision = _source_reference(
-            parent, "physiology_record"
-        )
+        source_id, revision = _source_reference(parent, "physiology_record")
         local_date = _observation_date(parent, window)
         prefix = ".".join(
             _compact_path_segment(parent.get(key) or "unknown")
@@ -1405,14 +1486,16 @@ def _physiology_observations(
             full_key = f"physiology.{prefix}.{metric_key}"
             if suffix:
                 full_key += f".{suffix}"
-            output.append({
-                "metric_key": full_key,
-                "unit": str(unit) if unit is not None else None,
-                "value": value,
-                "local_date": local_date,
-                "source_id": source_id,
-                "source_revision_id": revision,
-            })
+            output.append(
+                {
+                    "metric_key": full_key,
+                    "unit": str(unit) if unit is not None else None,
+                    "value": value,
+                    "local_date": local_date,
+                    "source_id": source_id,
+                    "source_revision_id": revision,
+                }
+            )
     return output
 
 
@@ -1578,9 +1661,7 @@ def _base_candidates(
         for row in snapshot.views["v_current_physiology_records"]
         if _within(row, *baseline_window)
     ]
-    physiology_ids = {
-        _identifier(row.get("id")) for row in physiology_records
-    }
+    physiology_ids = {_identifier(row.get("id")) for row in physiology_records}
     physiology_metrics = [
         row
         for row in snapshot.views["v_current_physiology_metrics"]
@@ -1596,7 +1677,8 @@ def _base_candidates(
         window=baseline_window,
     )
     trend_health_rows = [
-        row for row in snapshot.views["v_current_daily_health"]
+        row
+        for row in snapshot.views["v_current_daily_health"]
         if _within(row, *trend_window)
     ]
     _add_compact_observations(
@@ -1632,7 +1714,8 @@ def _base_candidates(
         window=baseline_window,
     )
     trend_sleep_rows = [
-        row for row in snapshot.views["v_current_sleep_sessions"]
+        row
+        for row in snapshot.views["v_current_sleep_sessions"]
         if _within(row, *trend_window)
     ]
     _add_compact_observations(
@@ -1648,7 +1731,8 @@ def _base_candidates(
         advice_day = periods["advice"]["end_local_date"]
         morning_window = (advice_day, advice_day)
         morning_sleep_rows = [
-            row for row in trend_sleep_rows
+            row
+            for row in trend_sleep_rows
             if _observation_date(row, trend_window) == advice_day
         ]
         _add_compact_observations(
@@ -1658,7 +1742,8 @@ def _base_candidates(
             entity_type="morning_sleep_aggregate",
             family="morning_sleep",
             observations=_sleep_observations(
-                morning_sleep_rows, morning_window,
+                morning_sleep_rows,
+                morning_window,
                 include_session_timestamps=True,
             ),
             window=morning_window,
@@ -1675,12 +1760,14 @@ def _base_candidates(
         window=baseline_window,
     )
     trend_physiology_records = [
-        row for row in snapshot.views["v_current_physiology_records"]
+        row
+        for row in snapshot.views["v_current_physiology_records"]
         if _within(row, *trend_window)
     ]
     trend_ids = {_identifier(row.get("id")) for row in trend_physiology_records}
     trend_physiology_metrics = [
-        row for row in snapshot.views["v_current_physiology_metrics"]
+        row
+        for row in snapshot.views["v_current_physiology_metrics"]
         if _identifier(row.get("physiology_record_id")) in trend_ids
     ]
     _add_compact_observations(
@@ -1697,7 +1784,9 @@ def _base_candidates(
 
     activities: dict[str, Mapping[str, Any]] = {}
     activity_window = (
-        (date.fromisoformat(complete_end) - timedelta(days=_SHORT_WINDOW_DAYS - 1)).isoformat(),
+        (
+            date.fromisoformat(complete_end) - timedelta(days=_SHORT_WINDOW_DAYS - 1)
+        ).isoformat(),
         complete_end,
     )
     for row in snapshot.views["v_current_activities"]:
@@ -1707,15 +1796,18 @@ def _base_candidates(
         revision = _row_revision(row, "activity", identity)
         activities[identity] = row
         summary = {
-            key: value for key, value in _sanitize_row(row).items()
+            key: value
+            for key, value in _sanitize_row(row).items()
             if not key.startswith(("fit_", "weather_"))
             and key not in {"active_fit_revision_id", "active_weather_revision_id"}
         }
-        summary.update({
-            "source_count": 1,
-            "source_revision_count": 1,
-            "aggregate_sha256": _sha(summary),
-        })
+        summary.update(
+            {
+                "source_count": 1,
+                "source_revision_count": 1,
+                "aggregate_sha256": _sha(summary),
+            }
+        )
         _add_row(
             candidates,
             section="activities",
@@ -1731,10 +1823,13 @@ def _base_candidates(
         fit_values = {
             key.removeprefix("fit_"): row.get(key)
             for key in (
-                "fit_avg_heart_rate_bpm", "fit_max_heart_rate_bpm",
+                "fit_avg_heart_rate_bpm",
+                "fit_max_heart_rate_bpm",
                 "fit_avg_running_cadence_spm",
-                "fit_avg_speed_mps", "fit_avg_power_w",
-                "fit_avg_temperature_c", "fit_total_ascent_m",
+                "fit_avg_speed_mps",
+                "fit_avg_power_w",
+                "fit_avg_temperature_c",
+                "fit_total_ascent_m",
             )
             if row.get(key) is not None
         }
@@ -1744,7 +1839,11 @@ def _base_candidates(
                 section="activities",
                 role="activity.fit_summary",
                 entity_type="activity_fit_summary",
-                row={"activity_id": identity, "local_date": row.get("local_date"), **fit_values},
+                row={
+                    "activity_id": identity,
+                    "local_date": row.get("local_date"),
+                    **fit_values,
+                },
                 fallback_window=activity_window,
                 trust="provider_fact",
                 entity_id=f"{identity}:fit",
@@ -1754,8 +1853,10 @@ def _base_candidates(
             key.removeprefix("weather_"): row.get(key)
             for key in (
                 "weather_temperature_provider_value",
-                "weather_relative_humidity_percent", "weather_condition",
-                "weather_wind_speed_provider_value", "weather_observed_at",
+                "weather_relative_humidity_percent",
+                "weather_condition",
+                "weather_wind_speed_provider_value",
+                "weather_observed_at",
             )
             if row.get(key) is not None
         }
@@ -1766,7 +1867,11 @@ def _base_candidates(
                 section="activities",
                 role="activity.weather_summary",
                 entity_type="activity_weather_summary",
-                row={"activity_id": identity, "local_date": row.get("local_date"), **weather_values},
+                row={
+                    "activity_id": identity,
+                    "local_date": row.get("local_date"),
+                    **weather_values,
+                },
                 fallback_window=activity_window,
                 trust="provider_fact",
                 entity_id=f"{identity}:weather",
@@ -1793,7 +1898,9 @@ def _base_candidates(
             if activity is None:
                 _fail("fit_context_activity_not_in_snapshot")
             active_revision = activity.get("active_fit_revision_id")
-            if active_revision is None or str(active_revision) != str(entry["source_revision_id"]):
+            if active_revision is None or str(active_revision) != str(
+                entry["source_revision_id"]
+            ):
                 _fail("fit_context_revision_not_current")
             local_day = str(activity.get("local_date"))
             _add_row(
@@ -1903,16 +2010,16 @@ def _base_candidates(
             if origin not in allowed_origins:
                 _fail("analysis_context_feature_origin_invalid")
             lineage = row.get("input_revision_ids")
-            if (
-                not isinstance(lineage, (list, tuple))
-                or any(
-                    isinstance(item, bool) or not isinstance(item, (str, int))
-                    for item in lineage
-                )
+            if not isinstance(lineage, (list, tuple)) or any(
+                isinstance(item, bool) or not isinstance(item, (str, int))
+                for item in lineage
             ):
                 _fail("analysis_context_feature_lineage_invalid")
             revisions = tuple(sorted({_identifier(item) for item in lineage}))
-            if len(revisions) != len(lineage) or not set(revisions) <= snapshot_revisions:
+            if (
+                len(revisions) != len(lineage)
+                or not set(revisions) <= snapshot_revisions
+            ):
                 _fail("analysis_context_feature_lineage_invalid")
             if row.get("subject_id") not in (None, request.subject_id):
                 _fail("analysis_context_cross_subject")
@@ -1938,14 +2045,15 @@ def _base_candidates(
     prior_rows = _prior_artifact_rows(snapshot)
     artifacts_by_id: dict[str, list[Mapping[str, Any]]] = {}
     for artifact_row in prior_rows:
-        artifacts_by_id.setdefault(
-            _identifier(artifact_row.get("id")), []
-        ).append(artifact_row)
+        artifacts_by_id.setdefault(_identifier(artifact_row.get("id")), []).append(
+            artifact_row
+        )
     current_plans = snapshot.views["v_current_training_plans"]
     regeneration_artifact: tuple[str, str] | None = None
     if request.route == "regenerate":
         matches = [
-            row for row in snapshot.views["v_current_analysis_artifacts"]
+            row
+            for row in snapshot.views["v_current_analysis_artifacts"]
             if row.get("id") == request.artifact_id
             and row.get("subject_id") == request.subject_id
         ]
@@ -1970,12 +2078,13 @@ def _base_candidates(
     plan_ids: set[str] = set()
     current_plan_artifacts: set[tuple[str, str]] = set()
     for row in current_plans:
-        if (
-            request.source_route() == "revise_plan"
-            and row.get("id") != request.plan_id
-        ):
+        if request.source_route() == "revise_plan" and row.get("id") != request.plan_id:
             continue
-        if not _within(row, complete_start, periods["plan"]["end_local_date"] if periods["plan"] else complete_end):
+        if not _within(
+            row,
+            complete_start,
+            periods["plan"]["end_local_date"] if periods["plan"] else complete_end,
+        ):
             continue
         identity = _identifier(row.get("id"))
         plan_ids.add(identity)
@@ -2038,7 +2147,8 @@ def _base_candidates(
     if request.source_route() == "revise_plan":
         effective = periods["effective_local_date"]
         matching_reasons = [
-            row for row in snapshot.plan_reasons
+            row
+            for row in snapshot.plan_reasons
             if row.get("id") == request.reason_event_id
             and row.get("current_plan_id") == request.plan_id
             and row.get("effective_local_date") == effective
@@ -2080,8 +2190,7 @@ def _base_candidates(
     weekly_rows = [
         row
         for row in prior_rows
-        if row.get("artifact_kind")
-        in {"weekly_summary", "weekly_training_plan"}
+        if row.get("artifact_kind") in {"weekly_summary", "weekly_training_plan"}
         and str(row.get("period_end_local_date", "")) < complete_start
     ]
     latest_weekly: dict[str, Mapping[str, Any]] = {}
@@ -2139,8 +2248,10 @@ def _base_candidates(
         )
         if expiry is not None and expiry <= effective:
             _fail("analysis_context_fact_range_invalid")
-        if scope == "message_only" or effective > as_of or (
-            expiry is not None and as_of >= expiry
+        if (
+            scope == "message_only"
+            or effective > as_of
+            or (expiry is not None and as_of >= expiry)
         ):
             continue
         _add_row(
@@ -2217,7 +2328,9 @@ def _prepare_candidates(candidates: list[_Candidate]) -> list[_Candidate]:
             _fail("analysis_context_duplicate_lineage")
         seen.add(key)
         candidate.original_ordinal = ordinal
-    quality = [candidate for candidate in ordered if candidate.section == "quality_gate"]
+    quality = [
+        candidate for candidate in ordered if candidate.section == "quality_gate"
+    ]
     if len(quality) != 1:
         _fail("analysis_context_quality_gate_invalid")
     return ordered
@@ -2317,9 +2430,9 @@ def _omissions_for_selected(
         ]
     grouped: dict[tuple[str, str], list[_Candidate]] = {}
     for candidate in selected:
-        grouped.setdefault(
-            (candidate.input_role, candidate.entity_type), []
-        ).append(candidate)
+        grouped.setdefault((candidate.input_role, candidate.entity_type), []).append(
+            candidate
+        )
     omissions: list[dict[str, Any]] = []
     for (role, entity_type), members in sorted(grouped.items()):
         ordered = sorted(members, key=lambda item: item.original_ordinal)
@@ -2333,31 +2446,35 @@ def _omissions_for_selected(
                 )
             )
             continue
-        aggregate = _sha([
+        aggregate = _sha(
+            [
+                {
+                    "entity_id": item.entity_id,
+                    "revision_id": item.revision_id,
+                    "original_ordinal": item.original_ordinal,
+                    "before_sha256": _sha(item.content),
+                }
+                for item in ordered
+            ]
+        )
+        omissions.append(
             {
-                "entity_id": item.entity_id,
-                "revision_id": item.revision_id,
-                "original_ordinal": item.original_ordinal,
-                "before_sha256": _sha(item.content),
+                "stage": stage,
+                "reason_code": _PRUNE_CODES[stage - 1],
+                "input_role": role,
+                "source_entity_type": entity_type,
+                "source_entity_id": (
+                    f"group:{len(ordered)}:{ordered[0].original_ordinal}:"
+                    f"{ordered[-1].original_ordinal}"
+                ),
+                "source_revision_id": f"aggregate:{aggregate}",
+                "original_ordinal": ordered[0].original_ordinal,
+                "before_sha256": aggregate,
+                "after_sha256": None,
+                "removed_fields": [],
+                "omitted_count": len(ordered),
             }
-            for item in ordered
-        ])
-        omissions.append({
-            "stage": stage,
-            "reason_code": _PRUNE_CODES[stage - 1],
-            "input_role": role,
-            "source_entity_type": entity_type,
-            "source_entity_id": (
-                f"group:{len(ordered)}:{ordered[0].original_ordinal}:"
-                f"{ordered[-1].original_ordinal}"
-            ),
-            "source_revision_id": f"aggregate:{aggregate}",
-            "original_ordinal": ordered[0].original_ordinal,
-            "before_sha256": aggregate,
-            "after_sha256": None,
-            "removed_fields": [],
-            "omitted_count": len(ordered),
-        })
+        )
     return omissions
 
 
@@ -2441,9 +2558,7 @@ def _prune(
             eligible.sort(key=lambda candidate: candidate.original_ordinal)
         if not eligible:
             continue
-        full_remaining, full_omissions = stage_state(
-            eligible, stage, len(eligible)
-        )
+        full_remaining, full_omissions = stage_state(eligible, stage, len(eligible))
         full_context, full_serialized, full_size = _render(
             request,
             periods,
@@ -2462,12 +2577,16 @@ def _prune(
             )
             continue
         low, high = 1, len(eligible)
-        best = (full_remaining, full_omissions, full_context, full_serialized, full_size)
+        best = (
+            full_remaining,
+            full_omissions,
+            full_context,
+            full_serialized,
+            full_size,
+        )
         while low <= high:
             middle = (low + high) // 2
-            trial_remaining, trial_omissions = stage_state(
-                eligible, stage, middle
-            )
+            trial_remaining, trial_omissions = stage_state(eligible, stage, middle)
             trial_context, trial_serialized, trial_size = _render(
                 request,
                 periods,
@@ -2583,9 +2702,9 @@ def _validate_manifest_bindings(context: Mapping[str, Any]) -> None:
                     or not str(omission.get("source_entity_id", "")).startswith(
                         f"group:{omitted_count}:"
                     )
-                    or not str(
-                        omission.get("source_revision_id", "")
-                    ).startswith("aggregate:")
+                    or not str(omission.get("source_revision_id", "")).startswith(
+                        "aggregate:"
+                    )
                 )
             )
         ):
@@ -2647,15 +2766,11 @@ class AnalysisContextBuilder:
         candidates = _prepare_candidates(candidates)
         context, serialized, size = _prune(request, periods, candidates)
         validate_analysis_context(context)
-        if serialized != _canonical(context) or size != len(
-            serialized.encode("utf-8")
-        ):
+        if serialized != _canonical(context) or size != len(serialized.encode("utf-8")):
             _fail("analysis_context_serialization_invalid")
         return ContextBuildResult(
             context=context,
             canonical_json=serialized,
-            context_snapshot_sha256=sha256(
-                serialized.encode("utf-8")
-            ).hexdigest(),
+            context_snapshot_sha256=sha256(serialized.encode("utf-8")).hexdigest(),
             utf8_bytes=size,
         )

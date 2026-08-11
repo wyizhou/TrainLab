@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+import json
 from dataclasses import asdict, replace
 from datetime import date, timedelta
 from hashlib import sha256
-import json
 from pathlib import Path
 
 import pytest
@@ -28,7 +28,6 @@ from trainlab.analysis.context import (
 from trainlab.analysis.harness import HarnessBundle, SchemaEvidence
 from trainlab.analysis.quality_gate import QualityGateResult
 from trainlab.analysis.stable_views import StableSnapshot, StableSubjectContext
-
 
 VIEW_NAMES = (
     "v_current_daily_health",
@@ -208,10 +207,16 @@ def test_static_schema_and_context_policy_are_versioned_and_frozen():
     Draft202012Validator.check_schema(schema)
     assert schema["additionalProperties"] is False
     assert ANALYSIS_INPUT_SCHEMA_VERSION == "1"
-    assert ANALYSIS_INPUT_SCHEMA_SHA256 == "2e55ae4d25b87e2ef285678e280add38de4e3b458443c32c27676e839504d16d"
+    assert (
+        ANALYSIS_INPUT_SCHEMA_SHA256
+        == "c5e8c77b261c3a7b33f93cf1f4b3b5f8dad3e03ef88070e6130a3918ee81a750"
+    )
     assert ANALYSIS_INPUT_SCHEMA_SHA256 == sha256(schema_path.read_bytes()).hexdigest()
     assert CONTEXT_POLICY_VERSION == "2.1.0-compact-7-28-90d"
-    assert CONTEXT_POLICY_SHA256 == "0480fd3077254de6932796143952d38b110592704c7e895b5dac622da3f78acb"
+    assert (
+        CONTEXT_POLICY_SHA256
+        == "0480fd3077254de6932796143952d38b110592704c7e895b5dac622da3f78acb"
+    )
     assert CONTEXT_POLICY_SHA256 == sha256(policy_path.read_bytes()).hexdigest()
     assert policy["default_max_context_bytes"] == 1_100_000
     assert policy["completed_window_days"] == 28
@@ -293,31 +298,36 @@ def test_revision_context_selects_exact_plan_and_reason_ids() -> None:
         reason_event_id=9,
     )
     plan = {
-        "id": 7, "subject_id": 1, "analysis_artifact_id": 70,
+        "id": 7,
+        "subject_id": 1,
+        "analysis_artifact_id": 70,
         "plan_start_local_date": "2026-07-21",
         "plan_end_local_date": "2026-07-27",
-        "timezone": "Asia/Hong_Kong", "status": "active",
-        "objective_json": "{}", "constraints_json": "{}",
+        "timezone": "Asia/Hong_Kong",
+        "status": "active",
+        "objective_json": "{}",
+        "constraints_json": "{}",
         "created_at_utc": "2026-07-20T00:00:00Z",
     }
-    plan_artifact = artifact(
-        70, "weekly_training_plan", "2026-07-21", "2026-07-27"
-    )
+    plan_artifact = artifact(70, "weekly_training_plan", "2026-07-21", "2026-07-27")
     plan_artifact.pop("is_current")
     plan_artifact.pop("trust_class")
     reasons = tuple(
         {
-            "id": identity, "subject_id": 1,
+            "id": identity,
+            "subject_id": 1,
             "event_type": "plan_revision_reason_recorded",
             "actor_role": "trainlab",
             "occurred_at_utc": "2026-07-23T00:00:00Z",
-            "trust_level": "system_generated", "created_by": "mail_agent",
+            "trust_level": "system_generated",
+            "created_by": "mail_agent",
             "source_mail_message_id": identity,
             "source_mail_thread_id": identity,
             "source_revision_id": identity,
             "change_kind": "availability",
             "affected_local_dates": ["2026-07-24"],
-            "constraints": {}, "effective_local_date": "2026-07-24",
+            "constraints": {},
+            "effective_local_date": "2026-07-24",
             "current_plan_id": 7,
         }
         for identity in (9, 10)
@@ -328,10 +338,13 @@ def test_revision_context_selects_exact_plan_and_reason_ids() -> None:
             "v_current_training_plans": (plan,),
             "v_training_plan_items": tuple(
                 {
-                    "id": index + 1, "subject_id": 1,
-                    "training_plan_id": 7, "item_index": index,
+                    "id": index + 1,
+                    "subject_id": 1,
+                    "training_plan_id": 7,
+                    "item_index": index,
                     "local_date": f"2026-07-{21 + index:02d}",
-                    "activity_kind": "rest", "prescription_json": "{}",
+                    "activity_kind": "rest",
+                    "prescription_json": "{}",
                     "rationale_text": "旧计划",
                 }
                 for index in range(7)
@@ -341,7 +354,8 @@ def test_revision_context_selects_exact_plan_and_reason_ids() -> None:
     )
     result = build(request, value)
     selected = [
-        item for item in result.context["input_manifest"]
+        item
+        for item in result.context["input_manifest"]
         if item["source_entity_type"] == "conversation_event"
     ]
     assert len(selected) == 1
@@ -368,18 +382,16 @@ def test_invalid_windows_bool_limits_and_unbound_regenerate_fail_closed(build_re
 
 def test_repository_seam_uses_only_bounded_snapshot_and_sample_summary():
     value = snapshot(
-        views={
-            "v_current_activities": (
-                activity(1, "2026-07-23", "activity-rev"),
-            )
-        }
+        views={"v_current_activities": (activity(1, "2026-07-23", "activity-rev"),)}
     )
 
     class Repository:
         calls = []
 
         def snapshot(self, subject_id, start_local_date, end_local_date):
-            self.calls.append(("snapshot", subject_id, start_local_date, end_local_date))
+            self.calls.append(
+                ("snapshot", subject_id, start_local_date, end_local_date)
+            )
             return value
 
         def technical_samples(
@@ -411,7 +423,7 @@ def test_repository_seam_uses_only_bounded_snapshot_and_sample_summary():
     source = load_context_source(repository, daily(), (sample,))
     assert source.snapshot is value and len(source.technical_samples) == 1
     assert repository.calls == [
-            ("snapshot", 1, "2026-04-26", "2026-07-24"),
+        ("snapshot", 1, "2026-04-26", "2026-07-24"),
         (
             "samples",
             1,
@@ -456,7 +468,10 @@ def test_manifest_is_one_to_one_recomputable_and_permutation_stable():
     )
     assert ordered.context_snapshot_sha256 == reversed_features.context_snapshot_sha256
     assert ordered.canonical_json == reversed_features.canonical_json
-    assert first.context_snapshot_sha256 == build(daily(), second_snapshot).context_snapshot_sha256
+    assert (
+        first.context_snapshot_sha256
+        == build(daily(), second_snapshot).context_snapshot_sha256
+    )
     manifests = first.context["input_manifest"]
     items = [first.context["quality_gate"]]
     for section in (
@@ -645,9 +660,7 @@ def test_duplicate_lineage_and_self_reported_hash_or_raw_mail_are_rejected():
     with pytest.raises(ContextBuildError, match="duplicate_lineage"):
         build(
             daily(),
-            snapshot(
-                views={"v_current_daily_health": (duplicate, dict(duplicate))}
-            ),
+            snapshot(views={"v_current_daily_health": (duplicate, dict(duplicate))}),
         )
     for forbidden in (
         {"input_sha256": "0" * 64},
@@ -733,7 +746,12 @@ def test_context_canonicalizes_valid_foundation_json_but_rejects_duplicate_keys(
     valid = snapshot(
         views={
             "v_current_daily_health": (
-                health(1, "2026-07-23", "health-1", values_json='{ "heart_rate_z": 2, "heart_rate_a": 1 }'),
+                health(
+                    1,
+                    "2026-07-23",
+                    "health-1",
+                    values_json='{ "heart_rate_z": 2, "heart_rate_a": 1 }',
+                ),
             )
         }
     )
@@ -804,12 +822,8 @@ def test_twenty_eight_baseline_days_are_aggregated_and_today_is_excluded() -> No
 def test_compact_hash_changes_with_source_revision_without_exposing_details() -> None:
     base = snapshot(
         views={
-            "v_current_daily_health": (
-                health(1, "2026-07-23", "health-1"),
-            ),
-            "v_current_activities": (
-                activity(1, "2026-07-23", "activity-1"),
-            ),
+            "v_current_daily_health": (health(1, "2026-07-23", "health-1"),),
+            "v_current_activities": (activity(1, "2026-07-23", "activity-1"),),
             "v_activity_segments": (
                 {
                     "id": 10,
@@ -871,9 +885,9 @@ def test_physiology_values_are_aggregated_as_derived_statistics():
 
     result = build(daily(), value)
     physiology = result.context["physiology"][0]
-    manifest = {
-        item["ordinal"]: item for item in result.context["input_manifest"]
-    }[physiology["ordinal"]]
+    manifest = {item["ordinal"]: item for item in result.context["input_manifest"]}[
+        physiology["ordinal"]
+    ]
     assert manifest["value_origin"] == "derived_statistic"
     assert physiology["content"]["aggregate_sha256"]
 
@@ -891,11 +905,7 @@ def test_canonical_context_parser_rejects_whitespace_and_manifest_tampering():
 
 def test_technical_samples_are_summary_only_activity_bound_and_hard_bounded():
     value = snapshot(
-        views={
-            "v_current_activities": (
-                activity(1, "2026-07-23", "activity-rev"),
-            )
-        }
+        views={"v_current_activities": (activity(1, "2026-07-23", "activity-rev"),)}
     )
     sample = {
         "activity_id": 1,
@@ -992,9 +1002,7 @@ def pruning_snapshot():
             "activity_id": activities[index % len(activities)]["id"],
             "segment_type": "lap",
             "segment_index": index,
-            "start_time_utc": activities[index % len(activities)][
-                "start_time_utc"
-            ],
+            "start_time_utc": activities[index % len(activities)]["start_time_utc"],
             "end_time_utc": activities[index % len(activities)]["end_time_utc"],
             "duration_seconds": 60,
             "distance_m": 200,
@@ -1013,12 +1021,8 @@ def pruning_snapshot():
         )
         for index in range(7)
     )
-    prior_summary = artifact(
-        200, "weekly_summary", "2026-07-07", "2026-07-13"
-    )
-    prior_plan = artifact(
-        201, "weekly_training_plan", "2026-07-14", "2026-07-20"
-    )
+    prior_summary = artifact(200, "weekly_summary", "2026-07-07", "2026-07-13")
+    prior_plan = artifact(201, "weekly_training_plan", "2026-07-14", "2026-07-20")
     plan = {
         "id": 50,
         "subject_id": 1,
@@ -1132,7 +1136,9 @@ def test_compact_context_is_deterministic_and_excludes_activity_details():
 
 def test_default_context_includes_bounded_fit_and_weather_activity_summaries():
     row = activity(
-        1, "2026-07-23", "summary-1",
+        1,
+        "2026-07-23",
+        "summary-1",
         active_fit_revision_id="fit-1",
         active_weather_revision_id="weather-1",
         fit_avg_heart_rate_bpm=149,
@@ -1149,17 +1155,17 @@ def test_default_context_includes_bounded_fit_and_weather_activity_summaries():
     )
     result = build(daily(), snapshot(views={"v_current_activities": (row,)}))
     roles = {
-        item["ordinal"]: item["input_role"]
-        for item in result.context["input_manifest"]
+        item["ordinal"]: item["input_role"] for item in result.context["input_manifest"]
     }
     entries = {
-        roles[item["ordinal"]]: item["content"]
-        for item in result.context["activities"]
+        roles[item["ordinal"]]: item["content"] for item in result.context["activities"]
     }
     assert entries["activity.fit_summary"]["avg_heart_rate_bpm"] == 149
     assert entries["activity.fit_summary"]["avg_temperature_c"] == 29
     assert entries["activity.weather_summary"]["relative_humidity_percent"] == 100
-    assert entries["activity.weather_summary"]["provider_numeric_units"] == "unspecified"
+    assert (
+        entries["activity.weather_summary"]["provider_numeric_units"] == "unspecified"
+    )
     assert "fit_avg_heart_rate_bpm" not in entries["activity.summary"]
     assert "weather_condition" not in entries["activity.summary"]
 
@@ -1177,10 +1183,13 @@ def test_sleep_context_whitelist_excludes_provider_metadata():
         "providerFeedback": "not-for-analysis",
     }
     row = {
-        "id": 1, "subject_id": 1, "session_type": "main_sleep",
+        "id": 1,
+        "subject_id": 1,
+        "session_type": "main_sleep",
         "start_time_utc": "2026-07-22T16:00:00Z",
         "end_time_utc": "2026-07-23T00:00:00Z",
-        "values_json": json.dumps(values), "source_revision_id": "sleep-1",
+        "values_json": json.dumps(values),
+        "source_revision_id": "sleep-1",
     }
     result = build(daily(), snapshot(views={"v_current_sleep_sessions": (row,)}))
     encoded = json.dumps(result.context["sleep"], ensure_ascii=False)
@@ -1200,12 +1209,10 @@ def test_compaction_keeps_quality_gaps_current_plan_prior_week_and_policies():
     assert chosen.context["gaps"]
     assert chosen.context["current_plan"]
     prior_kinds = {
-        item["content"]["artifact_kind"]
-        for item in chosen.context["prior_artifacts"]
+        item["content"]["artifact_kind"] for item in chosen.context["prior_artifacts"]
     }
     current_plan_kinds = {
-        item["content"].get("artifact_kind")
-        for item in chosen.context["current_plan"]
+        item["content"].get("artifact_kind") for item in chosen.context["current_plan"]
     }
     assert "weekly_summary" in prior_kinds
     assert "weekly_training_plan" in current_plan_kinds
@@ -1243,11 +1250,7 @@ def test_weekly_adherence_accepts_exact_prior_plan_artifact_lineage():
 
 def test_feature_lineage_must_be_unique_current_snapshot_evidence():
     value = snapshot(
-        views={
-            "v_current_daily_health": (
-                health(1, "2026-07-23", "health-rev"),
-            )
-        }
+        views={"v_current_daily_health": (health(1, "2026-07-23", "health-rev"),)}
     )
     duplicate = {
         "key": "feature",
@@ -1265,11 +1268,7 @@ def test_feature_lineage_must_be_unique_current_snapshot_evidence():
 
 def test_conflict_unknown_and_prior_output_origins_are_preserved_not_promoted():
     value = snapshot(
-        views={
-            "v_current_daily_health": (
-                health(1, "2026-07-23", "health-rev"),
-            )
-        }
+        views={"v_current_daily_health": (health(1, "2026-07-23", "health-rev"),)}
     )
     records = tuple(
         {
