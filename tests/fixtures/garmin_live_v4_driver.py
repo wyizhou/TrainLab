@@ -61,12 +61,12 @@ FROZEN_INDEX_MAP_SHA256 = (
     "77c4f47e72c431c5f4f4a10afd188397a37cf27c658b53d4ec9b9c63c4fa5c85"
 )
 DISTRIBUTION_RECORD_SHA256 = (
-    "38c09ab9e3d89023eb9472ad9a9503898c8dd141ce1dfe8e661e9487cedddec3"
+    "2d640ae8825806901c1fc328b77877a335193a510fd5f0c6654be3bcc45be76b"
 )
-SOURCE_SHA256 = "b627166417000fc04032b103668216f28367fb6060b4f8705feeb6319ec63014"
+SOURCE_SHA256 = "1218c122170b2bb701988a7d06fbf8217dc56e3e317b7028e606cc49a4012000"
 RECORD_ENTRY_HASHES = {
-    "garminconnect/__init__.py": "WMxLY51Aq5q14d6mLpIy-XT8srwulgZq_fAiDbkeof4",
-    "garminconnect/client.py": "F2vh3Qg5NuSO3Pg7ybkotB-Ja_G6_uxZ_5OFXtSo4TY",
+    "garminconnect/__init__.py": "5d5DJl9MXIQ5z6eh9ejb6qsiebr9FpXoWoxKpiU5JNE",
+    "garminconnect/client.py": "5QT1piuoTRYXvoZOZtok7N8B7JsKJ3h7h0-eaTbyoHQ",
 }
 
 
@@ -367,7 +367,7 @@ def _verify_head_clean_source(worktree: Path, manifest_paths: list[str]) -> None
 
 
 def _verify_static_gate() -> None:
-    """Bind this driver to the approved plan, source tree and 0.3.6 RECORD."""
+    """Bind this driver to the approved plan, source tree and 0.3.9 RECORD."""
     _verify_control_plane()
     _verify_t12_edge_input()
     if _sha256_file(TASK_PATH) != APPROVED_TASK_SHA256:
@@ -388,9 +388,9 @@ def _verify_static_gate() -> None:
     import importlib.metadata
 
     distribution = importlib.metadata.distribution("garminconnect")
-    if distribution.version != "0.3.6":
+    if distribution.version != "0.3.9":
         raise LiveGateError("garminconnect_version")
-    record = Path(distribution.locate_file("garminconnect-0.3.6.dist-info/RECORD"))
+    record = Path(distribution.locate_file("garminconnect-0.3.9.dist-info/RECORD"))
     if _sha256_file(record) != DISTRIBUTION_RECORD_SHA256:
         raise LiveGateError("garminconnect_record")
     rows = {
@@ -579,7 +579,7 @@ def _isolate_loggers() -> list[tuple[logging.Logger, bool, list[logging.Handler]
 
 
 class _ProviderGate:
-    """Exact low-level 0.3.6 boundary; no facade login or retry is available."""
+    """Exact low-level 0.3.9 boundary; no facade login or retry is available."""
 
     def __init__(self, client: Any, minimum_interval_ns: int) -> None:
         self.client = client

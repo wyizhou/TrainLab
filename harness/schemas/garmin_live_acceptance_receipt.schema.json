@@ -115,7 +115,7 @@
       "type": "object", "additionalProperties": false,
       "required": ["schema_version", "document_kind", "status", "failure_stage", "refresh_client_distribution", "counts", "ordering", "credential_authority", "progress", "previous_auth_receipt_sha256", "auth_refresh_receipt_sha256"],
       "properties": {
-        "schema_version": {"const": "1"}, "document_kind": {"const": "garmin_live_auth_refresh_receipt"}, "status": {"enum": ["prepared", "rotation_checkpoint", "succeeded", "stopped"]}, "failure_stage": {"enum": ["none", "preflight", "prepared_receipt_persist", "refresh", "rotation", "token_revalidated", "parent_fsync", "reload", "checkpoint_persist", "social_profile", "user_settings", "cached_identity", "final_receipt_persist", "authority_recheck"]}, "refresh_client_distribution": {"const": "python-garminconnect-0.3.6"},
+        "schema_version": {"const": "1"}, "document_kind": {"const": "garmin_live_auth_refresh_receipt"}, "status": {"enum": ["prepared", "rotation_checkpoint", "succeeded", "stopped"]}, "failure_stage": {"enum": ["none", "preflight", "prepared_receipt_persist", "refresh", "rotation", "token_revalidated", "parent_fsync", "reload", "checkpoint_persist", "social_profile", "user_settings", "cached_identity", "final_receipt_persist", "authority_recheck"]}, "refresh_client_distribution": {"const": "python-garminconnect-0.3.9"},
         "counts": {"$ref": "#/$defs/auth_refresh_counts"}, "ordering": {"$ref": "#/$defs/auth_refresh_ordering"}, "credential_authority": {"$ref": "#/$defs/credential_authority"}, "progress": {"$ref": "#/$defs/auth_refresh_progress"}, "previous_auth_receipt_sha256": {"$ref": "#/$defs/hash"}, "auth_refresh_receipt_sha256": {"$ref": "#/$defs/hash"}
       }
     },

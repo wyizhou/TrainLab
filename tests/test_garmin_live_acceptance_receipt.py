@@ -376,7 +376,7 @@ def _auth_refresh_receipt(
         "document_kind": "garmin_live_auth_refresh_receipt",
         "status": status,
         "failure_stage": "none",
-        "refresh_client_distribution": "python-garminconnect-0.3.6",
+        "refresh_client_distribution": "python-garminconnect-0.3.9",
         "counts": counts,
         "ordering": {
             "refresh_before_credential_replace": True,
