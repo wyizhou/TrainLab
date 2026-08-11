@@ -78,10 +78,16 @@ def _default_dates(request: AnalysisRequest) -> AnalysisRequest:
         )
     ):
         raise ValueError("analysis_weekly_fields_invalid")
-    local_today = datetime.fromisoformat(
-        request.requested_at_utc.replace("Z", "+00:00")
-    ).astimezone(_SG).date()
-    as_of = date.fromisoformat(request.as_of_local_date) if request.as_of_local_date else local_today
+    local_today = (
+        datetime.fromisoformat(request.requested_at_utc.replace("Z", "+00:00"))
+        .astimezone(_SG)
+        .date()
+    )
+    as_of = (
+        date.fromisoformat(request.as_of_local_date)
+        if request.as_of_local_date
+        else local_today
+    )
     if as_of > local_today:
         raise ValueError("analysis_weekly_as_of_in_future")
     if as_of.weekday() != 0:
@@ -173,7 +179,9 @@ def _plan_adherence(
         for row in getattr(snapshot, "coverage", ())
         if isinstance(row, Mapping)
         and row.get("resource_kind") == "activity_inventory"
-        and review["start_local_date"] <= str(row.get("local_date")) <= review["end_local_date"]
+        and review["start_local_date"]
+        <= str(row.get("local_date"))
+        <= review["end_local_date"]
     )
     if plans:
         matches = snapshot_plan_matches(snapshot)  # type: ignore[arg-type]
@@ -275,9 +283,7 @@ class WeeklyRoute:
                 run_key=prepared.decision.run_key,
                 analysis_run_id=str(prepared.decision.run_id),
                 errors=(
-                    self._error(
-                        "service", _safe_code(error, "analysis_weekly_failed")
-                    ),
+                    self._error("service", _safe_code(error, "analysis_weekly_failed")),
                 ),
             )
 
@@ -354,20 +360,24 @@ class WeeklyRoute:
                 weekly_plan_contract(prior_state),
                 *training_control_contracts(self.config),
                 *(
-                    training_history_features(snapshot, end_local_date=review["end_local_date"])
-                    if isinstance(snapshot, StableSnapshot) else ()
+                    training_history_features(
+                        snapshot, end_local_date=review["end_local_date"]
+                    )
+                    if isinstance(snapshot, StableSnapshot)
+                    else ()
                 ),
             ),
             plan_adherence=adherence,
         )
-        run_result = self.runner.execute(
-            bundle, built.canonical_json.encode("utf-8")
-        )
+        run_result = self.runner.execute(bundle, built.canonical_json.encode("utf-8"))
         safety_bases = {
-            (date.fromisoformat(plan["start_local_date"]) + timedelta(days=index)).isoformat():
-            _safety_base(
+            (
+                date.fromisoformat(plan["start_local_date"]) + timedelta(days=index)
+            ).isoformat(): _safety_base(
                 context_request.subject_id,
-                (date.fromisoformat(plan["start_local_date"]) + timedelta(days=index)).isoformat(),
+                (
+                    date.fromisoformat(plan["start_local_date"]) + timedelta(days=index)
+                ).isoformat(),
                 request.requested_at_utc,
                 snapshot,
             )
@@ -430,7 +440,9 @@ class WeeklyRoute:
             for kind in ("weekly_summary", "weekly_training_plan")
         )
         try:
-            delivery = self._create_pending_delivery(published, prepared.decision.run_key)
+            delivery = self._create_pending_delivery(
+                published, prepared.decision.run_key
+            )
         except Exception as error:
             return self._receipt(
                 request,
@@ -447,9 +459,7 @@ class WeeklyRoute:
                 errors=(
                     self._error(
                         "service",
-                        _safe_code(
-                            error, "analysis_weekly_delivery_pending_failed"
-                        ),
+                        _safe_code(error, "analysis_weekly_delivery_pending_failed"),
                     ),
                 ),
             )
@@ -500,12 +510,14 @@ class WeeklyRoute:
             repository = getattr(self.coordinator, "_repository", None)
             connection = getattr(repository, "_conn", None)
             if connection is not None:
+
                 def resolver(subject_key: str) -> int | None:
                     row = connection.execute(
                         "SELECT id FROM data_subjects WHERE subject_key=? AND is_active=1",
                         (subject_key,),
                     ).fetchone()
                     return int(row[0]) if row is not None else None
+
         value = resolver(request.subject_id) if callable(resolver) else None
         if isinstance(value, int) and not isinstance(value, bool) and value > 0:
             return value
@@ -538,8 +550,7 @@ class WeeklyRoute:
         if request.as_of_local_date:
             review, plan = _periods(request.as_of_local_date)
         return AnalysisReceipt(
-            run_key
-            or "analysis:invalid:weekly:invalid:invalid",
+            run_key or "analysis:invalid:weekly:invalid:invalid",
             request.invocation_id,
             "weekly",
             status,

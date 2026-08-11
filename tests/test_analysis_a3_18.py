@@ -33,8 +33,20 @@ def config(tmp_path: Path) -> AnalysisConfig:
     schema = tmp_path / "result.json"
     schema.write_text("{}")
     return AnalysisConfig(
-        "1", tmp_path, "Asia/Hong_Kong", tmp_path, schema, schema, 1_000_000,
-        14, 28, 7, 60, 60, tmp_path / "lock", tmp_path,
+        "1",
+        tmp_path,
+        "Asia/Hong_Kong",
+        tmp_path,
+        schema,
+        schema,
+        1_000_000,
+        14,
+        28,
+        7,
+        60,
+        60,
+        tmp_path / "lock",
+        tmp_path,
     )
 
 
@@ -177,7 +189,9 @@ class Delivery:
         )
 
 
-def route(tmp_path: Path, *, gate: Gate | None = None, delivery: Delivery | None = None):
+def route(
+    tmp_path: Path, *, gate: Gate | None = None, delivery: Delivery | None = None
+):
     coordinator = Coordinator()
     views = Views()
     context = Context()
@@ -253,9 +267,10 @@ def test_ready_weekly_route_publishes_plan_and_only_seeds_pending_delivery(
         f"2026-07-{day:02d}" for day in range(27, 32)
     } | {"2026-08-01", "2026-08-02"}
     assert context.kwargs["plan_adherence"]
-    assert {
-        item["key"] for item in context.kwargs["deterministic_features"]
-    } >= {"training_difficulty_contract_v1", "race_goal_contract_v1"}
+    assert {item["key"] for item in context.kwargs["deterministic_features"]} >= {
+        "training_difficulty_contract_v1",
+        "race_goal_contract_v1",
+    }
 
 
 def test_first_run_contract_marks_absent_prior_artifacts() -> None:
@@ -314,9 +329,7 @@ def test_blocked_week_never_runs_generator_publisher_or_delivery(
     tmp_path: Path,
 ) -> None:
     gate = Gate("blocked")
-    service, coordinator, _, runner, _, publisher, delivery = route(
-        tmp_path, gate=gate
-    )
+    service, coordinator, _, runner, _, publisher, delivery = route(tmp_path, gate=gate)
     receipt = service.execute(request())
     assert receipt.status == "deferred"
     assert runner.calls == publisher.calls == delivery.calls == 0

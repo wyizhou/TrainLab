@@ -16,13 +16,20 @@ from trainlab.analysis.result_validation import (
 RUN_KEY = "analysis:1:weekly:2026-07-26:fixture"
 REVIEW = {"start_local_date": "2026-07-19", "end_local_date": "2026-07-25"}
 PLAN = {"start_local_date": "2026-07-26", "end_local_date": "2026-08-01"}
-STOP = ["acute_pain", "chest_pain", "fainting_or_dizziness", "unusual_shortness_of_breath"]
+STOP = [
+    "acute_pain",
+    "chest_pain",
+    "fainting_or_dizziness",
+    "unusual_shortness_of_breath",
+]
 
 
 def rest() -> dict[str, object]:
     return {
-        "activity_kind": "rest", "evidence": ["scheduled_recovery"],
-        "uncertainty": "normal_training_uncertainty", "daily_activity_allowed": True,
+        "activity_kind": "rest",
+        "evidence": ["scheduled_recovery"],
+        "uncertainty": "normal_training_uncertainty",
+        "daily_activity_allowed": True,
         "recovery_signals": ["recovery_status_reassessed"],
         "seek_professional_help_if": ["concerning_symptom_appears"],
     }
@@ -30,105 +37,244 @@ def rest() -> dict[str, object]:
 
 def running(*, zone: int | None = None) -> dict[str, object]:
     return {
-        "activity_kind": "running", "hansons_session_role": "speed" if zone else "easy",
+        "activity_kind": "running",
+        "hansons_session_role": "speed" if zone else "easy",
         "course_type": "intervals" if zone else "easy",
-        "warmup": "gentle_warmup", "main_set": "structured_intervals" if zone else "talk_test_easy",
-        "cooldown": "gentle_cooldown", "planned_duration_minutes": 40,
+        "warmup": "gentle_warmup",
+        "main_set": "structured_intervals" if zone else "talk_test_easy",
+        "cooldown": "gentle_cooldown",
+        "planned_duration_minutes": 40,
         "total_volume": "interval_session_by_duration" if zone else "easy_by_duration",
-        "target_zone": zone, "target_bpm_range": None, "prescribed_rpe": 8 if zone else 4,
+        "target_zone": zone,
+        "target_bpm_range": None,
+        "prescribed_rpe": 8 if zone else 4,
         "talk_test": "short_phrases" if zone else "full_sentences",
-        "work_intervals": ([] if zone is None else [{"work_seconds": 60, "recovery_seconds": 60, "repetitions": 4, "target_zone": zone}]),
-        "stop_conditions": STOP, "rationale": "quality_session_appropriate" if zone else "recovery_appropriate",
+        "work_intervals": (
+            []
+            if zone is None
+            else [
+                {
+                    "work_seconds": 60,
+                    "recovery_seconds": 60,
+                    "repetitions": 4,
+                    "target_zone": zone,
+                }
+            ]
+        ),
+        "stop_conditions": STOP,
+        "rationale": "quality_session_appropriate" if zone else "recovery_appropriate",
     }
 
 
 def base(day: str, *, red_flag: bool = False, zones: bool = False) -> dict[str, object]:
     zone_evidence: list[object] = []
     if zones:
-        zone_evidence = [{
-            "evidence_id": "running-zones", "source_kind": "garmin_sport_zones",
-            "source_revision_id": "zones-1", "current": True, "reliability": "reliable",
-            "effective_from_utc": "2026-01-01T00:00:00Z", "expires_at_utc": None,
-            "sport": "running", "heart_rate_bpm": None, "measurement_method": "provider_profile",
-            "zones": [{"zone": index, "minimum_bpm": 100 + (index - 1) * 10, "maximum_bpm": 109 + (index - 1) * 10} for index in range(1, 6)],
-        }]
+        zone_evidence = [
+            {
+                "evidence_id": "running-zones",
+                "source_kind": "garmin_sport_zones",
+                "source_revision_id": "zones-1",
+                "current": True,
+                "reliability": "reliable",
+                "effective_from_utc": "2026-01-01T00:00:00Z",
+                "expires_at_utc": None,
+                "sport": "running",
+                "heart_rate_bpm": None,
+                "measurement_method": "provider_profile",
+                "zones": [
+                    {
+                        "zone": index,
+                        "minimum_bpm": 100 + (index - 1) * 10,
+                        "maximum_bpm": 109 + (index - 1) * 10,
+                    }
+                    for index in range(1, 6)
+                ],
+            }
+        ]
     signals: list[object] = []
     if red_flag:
-        signals = [{
-            "signal_id": "injury", "kind": "acute_injury", "origin": "user_asserted",
-            "source_revision_id": "injury-1", "current": True, "active": True,
-            "effective_from_utc": "2026-07-01T00:00:00Z", "expires_at_utc": None,
-        }]
-    return {"schema_version": "1", "subject_id": 1, "advice_local_date": day,
-            "as_of_utc": f"{day}T00:00:00Z", "zone_evidence": zone_evidence,
-            "safety_signals": signals, "quality_sessions": [], "substitution": None}
-
-
-def plan_item(index: int, prescription: dict[str, object] | None = None) -> dict[str, object]:
-    day = (date.fromisoformat(PLAN["start_local_date"]) + timedelta(days=index)).isoformat()
-    candidate = prescription or rest()
-    return {"item_index": index, "local_date": day, "activity_kind": candidate["activity_kind"],
-            "prescription": candidate, "rationale_text": "根据本周恢复安排。", "stop_conditions": []}
-
-
-def output(*, prior: dict[str, str] | None = None, prescriptions: list[dict[str, object]] | None = None) -> dict[str, object]:
-    prior = prior or {"summary": "no_prior_artifact", "plan": "no_prior_artifact"}
-    items = [plan_item(index, prescriptions[index] if prescriptions else None) for index in range(7)]
-    training_plan = {"period": PLAN, "timezone": "Asia/Hong_Kong", "objective": {"focus": "恢复"},
-                     "constraints": {"clock_time_forbidden": True}, "prior_artifact_state": prior, "items": items}
+        signals = [
+            {
+                "signal_id": "injury",
+                "kind": "acute_injury",
+                "origin": "user_asserted",
+                "source_revision_id": "injury-1",
+                "current": True,
+                "active": True,
+                "effective_from_utc": "2026-07-01T00:00:00Z",
+                "expires_at_utc": None,
+            }
+        ]
     return {
-        "schema_version": "1", "run_key": RUN_KEY, "mode": "weekly", "subject_id": 1, "status": "accepted",
+        "schema_version": "1",
+        "subject_id": 1,
+        "advice_local_date": day,
+        "as_of_utc": f"{day}T00:00:00Z",
+        "zone_evidence": zone_evidence,
+        "safety_signals": signals,
+        "quality_sessions": [],
+        "substitution": None,
+    }
+
+
+def plan_item(
+    index: int, prescription: dict[str, object] | None = None
+) -> dict[str, object]:
+    day = (
+        date.fromisoformat(PLAN["start_local_date"]) + timedelta(days=index)
+    ).isoformat()
+    candidate = prescription or rest()
+    return {
+        "item_index": index,
+        "local_date": day,
+        "activity_kind": candidate["activity_kind"],
+        "prescription": candidate,
+        "rationale_text": "根据本周恢复安排。",
+        "stop_conditions": [],
+    }
+
+
+def output(
+    *,
+    prior: dict[str, str] | None = None,
+    prescriptions: list[dict[str, object]] | None = None,
+) -> dict[str, object]:
+    prior = prior or {"summary": "no_prior_artifact", "plan": "no_prior_artifact"}
+    items = [
+        plan_item(index, prescriptions[index] if prescriptions else None)
+        for index in range(7)
+    ]
+    training_plan = {
+        "period": PLAN,
+        "timezone": "Asia/Hong_Kong",
+        "objective": {"focus": "恢复"},
+        "constraints": {"clock_time_forbidden": True},
+        "prior_artifact_state": prior,
+        "items": items,
+    }
+    return {
+        "schema_version": "1",
+        "run_key": RUN_KEY,
+        "mode": "weekly",
+        "subject_id": 1,
+        "status": "accepted",
         "artifacts": [
-            {"artifact_kind": "weekly_summary", "period": REVIEW,
-             "structured_content": {"prior_artifact_state": prior, "summary": "本周恢复稳定。"},
-             "user_visible_text": "本周健康、睡眠和训练数据已完成复盘，恢复总体稳定。"},
-            {"artifact_kind": "weekly_training_plan", "period": PLAN,
-             "structured_content": deepcopy(training_plan),
-             "user_visible_text": "未来七天以恢复和循序渐进为主，按身体感受调整。"},
+            {
+                "artifact_kind": "weekly_summary",
+                "period": REVIEW,
+                "structured_content": {
+                    "prior_artifact_state": prior,
+                    "summary": "本周恢复稳定。",
+                },
+                "user_visible_text": "本周健康、睡眠和训练数据已完成复盘，恢复总体稳定。",
+            },
+            {
+                "artifact_kind": "weekly_training_plan",
+                "period": PLAN,
+                "structured_content": deepcopy(training_plan),
+                "user_visible_text": "未来七天以恢复和循序渐进为主，按身体感受调整。",
+            },
         ],
         "training_plan": training_plan,
-        "source_usage": [{"ordinal": 0, "input_role": "health", "source_entity_id": "weekly:2026-07-19", "source_revision_id": "health-1"}],
+        "source_usage": [
+            {
+                "ordinal": 0,
+                "input_role": "health",
+                "source_entity_id": "weekly:2026-07-19",
+                "source_revision_id": "health-1",
+            }
+        ],
         "quality_disclosures": [],
-        "safety": {"safety_state": "normal", "plan_items": [
-            {"item_index": item["item_index"], "local_date": item["local_date"], "safety_state": "normal", "primary_item": item["prescription"]}
-            for item in items
-        ]},
+        "safety": {
+            "safety_state": "normal",
+            "plan_items": [
+                {
+                    "item_index": item["item_index"],
+                    "local_date": item["local_date"],
+                    "safety_state": "normal",
+                    "primary_item": item["prescription"],
+                }
+                for item in items
+            ],
+        },
         "warnings": [],
     }
 
 
-def expectation(*, prior: dict[str, str] | None = None, red_flag: bool = False, zones: bool = False) -> ResultValidationExpectation:
-    days = [(date.fromisoformat(PLAN["start_local_date"]) + timedelta(days=index)).isoformat() for index in range(7)]
+def expectation(
+    *, prior: dict[str, str] | None = None, red_flag: bool = False, zones: bool = False
+) -> ResultValidationExpectation:
+    days = [
+        (
+            date.fromisoformat(PLAN["start_local_date"]) + timedelta(days=index)
+        ).isoformat()
+        for index in range(7)
+    ]
     return ResultValidationExpectation(
-        run_key=RUN_KEY, mode="weekly", subject_id=1, target_periods={"review": REVIEW, "plan": PLAN},
-        input_manifest=[{"ordinal": 0, "input_role": "health", "source_entity_id": "weekly:2026-07-19", "source_revision_id": "health-1"}],
-        quality_gate={"state": "ready", "blockers": [], "warnings": []}, safety_request_base={},
-        weekly_safety_request_bases={day: base(day, red_flag=red_flag, zones=zones) for day in days},
-        prior_artifact_state=prior or {"summary": "no_prior_artifact", "plan": "no_prior_artifact"},
+        run_key=RUN_KEY,
+        mode="weekly",
+        subject_id=1,
+        target_periods={"review": REVIEW, "plan": PLAN},
+        input_manifest=[
+            {
+                "ordinal": 0,
+                "input_role": "health",
+                "source_entity_id": "weekly:2026-07-19",
+                "source_revision_id": "health-1",
+            }
+        ],
+        quality_gate={"state": "ready", "blockers": [], "warnings": []},
+        safety_request_base={},
+        weekly_safety_request_bases={
+            day: base(day, red_flag=red_flag, zones=zones) for day in days
+        },
+        prior_artifact_state=prior
+        or {"summary": "no_prior_artifact", "plan": "no_prior_artifact"},
     )
 
 
 def validate(value: dict[str, object], exp: ResultValidationExpectation | None = None):
-    return AnalysisResultValidator().validate(json.dumps(value, ensure_ascii=False).encode(), exp or expectation())
+    return AnalysisResultValidator().validate(
+        json.dumps(value, ensure_ascii=False).encode(), exp or expectation()
+    )
 
 
-def code(value: dict[str, object], expected_code: str, exp: ResultValidationExpectation | None = None) -> None:
+def code(
+    value: dict[str, object],
+    expected_code: str,
+    exp: ResultValidationExpectation | None = None,
+) -> None:
     with pytest.raises(AnalysisResultValidationError) as caught:
         validate(value, exp)
     assert caught.value.code == expected_code
 
 
-def test_weekly_first_run_has_exact_windows_plan_items_and_host_safety_normalization() -> None:
+def test_weekly_first_run_has_exact_windows_plan_items_and_host_safety_normalization() -> (
+    None
+):
     accepted = validate(output()).result
     plan = accepted["training_plan"]
-    assert plan["prior_artifact_state"] == {"summary": "no_prior_artifact", "plan": "no_prior_artifact"}
+    assert plan["prior_artifact_state"] == {
+        "summary": "no_prior_artifact",
+        "plan": "no_prior_artifact",
+    }
     assert [item["item_index"] for item in plan["items"]] == list(range(7))
     assert [item["local_date"] for item in plan["items"]] == [
-        (date.fromisoformat(PLAN["start_local_date"]) + timedelta(days=index)).isoformat() for index in range(7)
+        (
+            date.fromisoformat(PLAN["start_local_date"]) + timedelta(days=index)
+        ).isoformat()
+        for index in range(7)
     ]
-    weekly_artifact = next(item for item in accepted["artifacts"] if item["artifact_kind"] == "weekly_training_plan")
+    weekly_artifact = next(
+        item
+        for item in accepted["artifacts"]
+        if item["artifact_kind"] == "weekly_training_plan"
+    )
     assert weekly_artifact["structured_content"] == plan
-    assert accepted["safety"]["plan_items"][0]["primary_item"] == plan["items"][0]["prescription"]
+    assert (
+        accepted["safety"]["plan_items"][0]["primary_item"]
+        == plan["items"][0]["prescription"]
+    )
 
 
 def test_weekly_prior_artifact_state_is_host_canonicalized() -> None:
@@ -161,10 +307,7 @@ def test_weekly_plan_artifact_uses_the_canonical_top_level_plan() -> None:
     value = output()
     value["artifacts"][1]["structured_content"] = {}
     accepted = validate(value).result
-    assert (
-        accepted["artifacts"][1]["structured_content"]
-        == accepted["training_plan"]
-    )
+    assert accepted["artifacts"][1]["structured_content"] == accepted["training_plan"]
 
 
 def test_weekly_user_visible_text_cannot_narrate_raw_device_fields() -> None:
@@ -174,26 +317,32 @@ def test_weekly_user_visible_text_cannot_narrate_raw_device_fields() -> None:
 
 
 @pytest.mark.parametrize("shape", ["weekly", "plan_revision"])
-def test_regeneration_validates_complete_weekly_and_plan_revision_shapes(shape: str) -> None:
+def test_regeneration_validates_complete_weekly_and_plan_revision_shapes(
+    shape: str,
+) -> None:
     run_key = "analysis:1:regenerate:42:fixture"
     value = output()
     value["run_key"] = run_key
     value["mode"] = "regenerate"
     if shape == "plan_revision":
         value["artifacts"] = [value["artifacts"][1]]
-    value["source_usage"] = [{
-        "ordinal": 0,
-        "input_role": "regeneration.source_artifact",
-        "source_entity_id": "42",
-        "source_revision_id": "3",
-    }]
-    source_manifest = [{
-        "ordinal": 0,
-        "input_role": "regeneration.source_artifact",
-        "source_entity_type": "analysis_artifact",
-        "source_entity_id": "42",
-        "source_revision_id": "3",
-    }]
+    value["source_usage"] = [
+        {
+            "ordinal": 0,
+            "input_role": "regeneration.source_artifact",
+            "source_entity_id": "42",
+            "source_revision_id": "3",
+        }
+    ]
+    source_manifest = [
+        {
+            "ordinal": 0,
+            "input_role": "regeneration.source_artifact",
+            "source_entity_type": "analysis_artifact",
+            "source_entity_id": "42",
+            "source_revision_id": "3",
+        }
+    ]
     exp = replace(
         expectation(),
         run_key=run_key,
@@ -207,13 +356,37 @@ def test_regeneration_validates_complete_weekly_and_plan_revision_shapes(shape: 
     assert len(accepted["training_plan"]["items"]) == 7
 
 
-@pytest.mark.parametrize("mutate,expected_code", [
-    (lambda value: value["training_plan"]["items"].pop(), "analysis_result_schema_invalid"),
-    (lambda value: value["training_plan"]["items"][0].update(stop_conditions={}), "analysis_result_schema_invalid"),
-    (lambda value: value["training_plan"]["items"][0].update(activity_kind="climbing", prescription={"activity_kind": "climbing"}), "analysis_result_schema_invalid"),
-    (lambda value: value["training_plan"]["items"][0].update(activity_kind="strength", prescription={"activity_kind": "strength"}), "analysis_result_schema_invalid"),
-    (lambda value: value["training_plan"]["items"].__setitem__(1, {**value["training_plan"]["items"][1], "item_index": 0}), "analysis_result_weekly_item_sequence_invalid"),
-])
+@pytest.mark.parametrize(
+    "mutate,expected_code",
+    [
+        (
+            lambda value: value["training_plan"]["items"].pop(),
+            "analysis_result_schema_invalid",
+        ),
+        (
+            lambda value: value["training_plan"]["items"][0].update(stop_conditions={}),
+            "analysis_result_schema_invalid",
+        ),
+        (
+            lambda value: value["training_plan"]["items"][0].update(
+                activity_kind="climbing", prescription={"activity_kind": "climbing"}
+            ),
+            "analysis_result_schema_invalid",
+        ),
+        (
+            lambda value: value["training_plan"]["items"][0].update(
+                activity_kind="strength", prescription={"activity_kind": "strength"}
+            ),
+            "analysis_result_schema_invalid",
+        ),
+        (
+            lambda value: value["training_plan"]["items"].__setitem__(
+                1, {**value["training_plan"]["items"][1], "item_index": 0}
+            ),
+            "analysis_result_weekly_item_sequence_invalid",
+        ),
+    ],
+)
 def test_weekly_shape_and_prior_state_fail_closed(mutate, expected_code: str) -> None:
     value = output()
     mutate(value)
@@ -372,7 +545,11 @@ def test_weekly_prior_lineage_requires_exact_unique_summary_and_plan_sources() -
     missing_summary["source_usage"] = [
         row for row in missing_summary["source_usage"] if row["ordinal"] != 1
     ]
-    code(missing_summary, "analysis_result_weekly_prior_source_invalid", missing_summary_exp)
+    code(
+        missing_summary,
+        "analysis_result_weekly_prior_source_invalid",
+        missing_summary_exp,
+    )
 
     missing_plan, missing_plan_exp = _available_prior_value_and_expectation()
     object.__setattr__(
@@ -394,7 +571,11 @@ def test_weekly_prior_lineage_requires_exact_unique_summary_and_plan_sources() -
             {**_exact_prior_manifest()[0], "ordinal": 3, "source_entity_id": "71"},
         ],
     )
-    code(duplicate_summary, "analysis_result_weekly_prior_source_invalid", duplicate_summary_exp)
+    code(
+        duplicate_summary,
+        "analysis_result_weekly_prior_source_invalid",
+        duplicate_summary_exp,
+    )
 
     duplicate_plan, duplicate_plan_exp = _available_prior_value_and_expectation()
     object.__setattr__(
@@ -405,7 +586,11 @@ def test_weekly_prior_lineage_requires_exact_unique_summary_and_plan_sources() -
             {**_exact_prior_manifest()[1], "ordinal": 3, "source_entity_id": "71"},
         ],
     )
-    code(duplicate_plan, "analysis_result_weekly_prior_source_invalid", duplicate_plan_exp)
+    code(
+        duplicate_plan,
+        "analysis_result_weekly_prior_source_invalid",
+        duplicate_plan_exp,
+    )
 
 
 @pytest.mark.parametrize(
@@ -477,20 +662,30 @@ def test_weekly_plan_cannot_choose_a_training_clock_time(apply_clock) -> None:
     value = output()
     apply_clock(value)
     if "rationale_text" in value["training_plan"]["items"][0]:
-        value["artifacts"][1]["structured_content"] = deepcopy(
-            value["training_plan"]
-        )
+        value["artifacts"][1]["structured_content"] = deepcopy(value["training_plan"])
     code(value, "analysis_result_training_clock_time_forbidden")
 
 
 def test_three_high_intensity_days_are_rejected_after_daily_safety_checks() -> None:
-    prescriptions = [running(zone=4) if index in {0, 2, 4} else rest() for index in range(7)]
-    code(output(prescriptions=prescriptions), "analysis_result_weekly_high_intensity_frequency_exceeded", expectation(zones=True))
+    prescriptions = [
+        running(zone=4) if index in {0, 2, 4} else rest() for index in range(7)
+    ]
+    code(
+        output(prescriptions=prescriptions),
+        "analysis_result_weekly_high_intensity_frequency_exceeded",
+        expectation(zones=True),
+    )
 
 
 def test_high_intensity_running_days_need_at_least_48_hours_between_dates() -> None:
-    prescriptions = [running(zone=4) if index in {0, 1} else rest() for index in range(7)]
-    code(output(prescriptions=prescriptions), "analysis_result_weekly_high_intensity_recovery_insufficient", expectation(zones=True))
+    prescriptions = [
+        running(zone=4) if index in {0, 1} else rest() for index in range(7)
+    ]
+    code(
+        output(prescriptions=prescriptions),
+        "analysis_result_weekly_high_intensity_recovery_insufficient",
+        expectation(zones=True),
+    )
 
 
 def test_hansons_sos_roles_cannot_be_scheduled_on_consecutive_days() -> None:
@@ -501,7 +696,9 @@ def test_hansons_sos_roles_cannot_be_scheduled_on_consecutive_days() -> None:
         target_zone=3,
         prescribed_rpe=6,
     )
-    prescriptions = [deepcopy(tempo) if index in {0, 1} else rest() for index in range(7)]
+    prescriptions = [
+        deepcopy(tempo) if index in {0, 1} else rest() for index in range(7)
+    ]
     code(
         output(prescriptions=prescriptions),
         "analysis_result_hansons_sos_recovery_insufficient",
@@ -510,7 +707,9 @@ def test_hansons_sos_roles_cannot_be_scheduled_on_consecutive_days() -> None:
 
 
 def test_red_flag_requires_the_entire_week_to_be_safety_suspended() -> None:
-    value = output(prescriptions=[rest(), running(), rest(), rest(), rest(), rest(), rest()])
+    value = output(
+        prescriptions=[rest(), running(), rest(), rest(), rest(), rest(), rest()]
+    )
     # A base only carrying a red flag on day zero cannot safely leave later
     # days active; the validator requires a fully suspended weekly outcome.
     exp = expectation()
