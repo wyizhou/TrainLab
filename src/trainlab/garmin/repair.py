@@ -874,7 +874,7 @@ class RepairAuditMixin:
                 budget.max_new_raw_objects,
             )
             if (
-                request.mode != "full"
+                request.mode not in {"full", "repair"}
                 or request.health_from_local_date is None
                 or request.through_local_date is None
                 or not request.resource_kinds

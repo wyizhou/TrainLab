@@ -16,6 +16,7 @@ from trainlab.garmin import (
     SyncReceipt,
     SyncRequest,
 )
+from trainlab.garmin import cli as garmin_cli
 from trainlab.garmin.cli import _validate_garmin_cli_args, add_root_subparser
 from trainlab.garmin_client import GarminConnectTransport, TokenStore
 
@@ -70,6 +71,35 @@ def _bounded_args() -> argparse.Namespace:
     )
 
 
+def _bounded_repair_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    add_root_subparser(parser.add_subparsers(dest="root", required=True))
+    return parser.parse_args(
+        [
+            "garmin",
+            "repair",
+            "--from",
+            "2026-08-03",
+            "--through",
+            "2026-08-09",
+            "--resource",
+            "activity_inventory",
+            "--bounded-production",
+            "--cached-tokens-only",
+            "--max-provider-entries",
+            "2",
+            "--max-wall-seconds",
+            "10",
+            "--max-activities",
+            "1",
+            "--max-fit-downloads",
+            "1",
+            "--max-new-raw-objects",
+            "1",
+        ]
+    )
+
+
 @pytest.mark.parametrize(
     ("attribute", "value"),
     [
@@ -93,6 +123,71 @@ def test_cli_rejects_incomplete_budget_before_initialization(attribute, value):
 
 def test_cli_accepts_exact_explicit_budget():
     _validate_garmin_cli_args(_bounded_args())
+
+
+@pytest.mark.parametrize(
+    ("attribute", "value"),
+    [
+        ("health_from", None),
+        ("through", None),
+        ("resource", []),
+        ("cached_tokens_only", False),
+        ("max_provider_entries", 0),
+        ("max_wall_seconds", 0),
+        ("max_activities", 0),
+        ("max_fit_downloads", 0),
+        ("max_new_raw_objects", 0),
+    ],
+)
+def test_cli_repair_rejects_incomplete_budget_before_initialization(attribute, value):
+    args = _bounded_repair_args()
+    setattr(args, attribute, value)
+    with pytest.raises(ValueError, match="production_budget"):
+        _validate_garmin_cli_args(args)
+
+
+def test_cli_accepts_exact_explicit_repair_budget():
+    _validate_garmin_cli_args(_bounded_repair_args())
+
+
+def test_cli_preserves_repair_budget_in_request_before_tool_execution(
+    monkeypatch, tmp_path
+):
+    config = GarminConfig(
+        tmp_path / "data.db",
+        tmp_path / "raw",
+        tmp_path / "state",
+        "2026-01-01",
+    )
+    seen: list[SyncRequest] = []
+
+    class Tool:
+        def __init__(self, *_args, **_kwargs):
+            pass
+
+        def execute(self, request):
+            seen.append(request)
+            return SyncReceipt(
+                mode="repair",
+                status="succeeded",
+                requested_range={"from": "2026-08-03", "through": "2026-08-09"},
+                effective_range={"from": "2026-08-03", "through": "2026-08-09"},
+                completed_at_utc="2026-08-10T00:00:00Z",
+            )
+
+    monkeypatch.setattr(
+        garmin_cli.FoundationConfig,
+        "load",
+        lambda _root: type("Foundation", (), {"state_root": tmp_path / "state"})(),
+    )
+    monkeypatch.setattr(garmin_cli, "load_garmin_config", lambda *_args: config)
+    monkeypatch.setattr(garmin_cli, "GarminCollectionTool", Tool)
+    result = garmin_cli.garmin_cli_execute(
+        _bounded_repair_args(), transport_factory=lambda *_args, **_kwargs: object()
+    )
+
+    assert result.status == "succeeded"
+    assert seen[0].production_budget == ProductionBudgetSpec(2, 10, 1, 1, 1)
 
 
 def test_guard_stops_before_every_ceiling():
@@ -157,6 +252,35 @@ def test_collection_contract_requires_the_matching_runtime_guard(tmp_path):
     assert receipt.production_budget["limits"] == guard.report()["limits"]
     assert receipt.production_budget["counts"] == guard.report()["counts"]
     assert receipt.production_budget["elapsed_seconds"] >= 0
+
+
+def test_collection_contract_accepts_bounded_repair_and_rejects_other_modes(tmp_path):
+    spec = _spec()
+    config = GarminConfig(
+        tmp_path / "data.db",
+        tmp_path / "raw",
+        tmp_path / "state",
+        "2026-01-01",
+    )
+    bounded_repair = SyncRequest(
+        "repair",
+        health_from_local_date="2026-08-03",
+        through_local_date="2026-08-09",
+        resource_kinds=("activity_inventory",),
+        production_budget=spec,
+    )
+    GarminCollectionTool(config, budget_guard=ProductionBudgetGuard(spec))._validate(
+        bounded_repair
+    )
+    invalid = SyncRequest(
+        "incremental",
+        through_local_date="2026-08-09",
+        production_budget=spec,
+    )
+    with pytest.raises(ValueError, match="production_budget"):
+        GarminCollectionTool(
+            config, budget_guard=ProductionBudgetGuard(spec)
+        )._validate(invalid)
 
 
 class _Session:

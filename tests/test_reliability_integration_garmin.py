@@ -10,7 +10,7 @@ from typing import Any
 import pytest
 from jsonschema import Draft202012Validator
 
-from trainlab.garmin import SyncRequest
+from trainlab.garmin import ProductionBudgetSpec, SyncRequest
 from trainlab.orchestration.fakes import FakeGarmin
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -32,7 +32,7 @@ def _validator(name: str) -> Draft202012Validator:
     )
 
 
-def _request(mode: str) -> dict[str, object]:
+def _request(mode: str, *, bounded: bool = False) -> dict[str, object]:
     values: dict[str, Any] = {
         "mode": mode,
         "invocation_id": f"integration-{mode}-001",
@@ -46,7 +46,11 @@ def _request(mode: str) -> dict[str, object]:
         values["through_local_date"] = "2026-08-03"
     elif mode == "repair":
         values["health_from_local_date"] = "2026-08-03"
+        values["through_local_date"] = "2026-08-03"
+        values["resource_kinds"] = ("activity_inventory",)
         values["repair_strategy"] = "reconcile"
+        if bounded:
+            values["production_budget"] = ProductionBudgetSpec(2, 10, 1, 1, 1)
     request = asdict(SyncRequest(**values))
     request["resource_kinds"] = list(request["resource_kinds"])
     request["activity_ids"] = list(request["activity_ids"])
@@ -93,3 +97,13 @@ def test_garmin_flow_runs_twice_with_schema_valid_unchanged_effect(
     assert {item["invocation_id"] for item in fake.invocations} == {
         request["invocation_id"]
     }
+
+
+def test_bounded_repair_flow_is_schema_valid_and_replays_without_provider_effect() -> (
+    None
+):
+    request = _request("repair", bounded=True)
+    receipt = _receipt("repair")
+    assert not list(_validator("garmin_sync_request.schema.json").iter_errors(request))
+    fake = FakeGarmin({"repair": receipt})
+    assert fake.execute(request) == receipt
