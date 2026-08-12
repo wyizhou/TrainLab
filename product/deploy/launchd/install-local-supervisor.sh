@@ -5,12 +5,14 @@ set -eu
 
 label="com.trainlab.orchestrator-supervisor"
 replace="false"
-if [ "${1:-}" = "--replace" ]; then
-  replace="true"
-elif [ "$#" -ne 0 ]; then
-  echo "usage: $0 [--replace]" >&2
-  exit 64
-fi
+start="true"
+for argument in "$@"; do
+  case "$argument" in
+    --replace) replace="true" ;;
+    --no-start) start="false" ;;
+    *) echo "usage: $0 [--replace] [--no-start]" >&2; exit 64 ;;
+  esac
+done
 
 script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
 project_root=$(CDPATH= cd -- "$script_dir/../.." && pwd -P)
@@ -70,6 +72,10 @@ if [ "$replace" = "true" ]; then
 fi
 mv -f "$temporary" "$target"
 trap - EXIT HUP INT TERM
+if [ "$start" != "true" ]; then
+  echo "installed $label without loading; review and bootstrap explicitly"
+  exit 0
+fi
 launchctl bootstrap "gui/$uid" "$target"
 launchctl kickstart -k "gui/$uid/$label"
 echo "installed $label"

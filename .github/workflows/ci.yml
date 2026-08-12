@@ -18,6 +18,9 @@ jobs:
   linux-quality:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: product
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -54,10 +57,16 @@ jobs:
             scripts/verify_repository_quality.py
       - name: Compile Python sources
         run: python -m compileall -q src scripts
+      - name: Build and inspect data-free product artifacts
+        working-directory: .
+        run: python tools/build_product.py
 
   linux-tests:
     runs-on: ubuntu-24.04
     timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: product
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -75,6 +84,9 @@ jobs:
   macos-launchd:
     runs-on: macos-14
     timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: product
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7

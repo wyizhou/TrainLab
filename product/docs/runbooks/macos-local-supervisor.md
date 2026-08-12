@@ -29,6 +29,15 @@ LaunchAgent 的工作目录固定在 `~/Library/Application Support/TrainLab`，
 ./deploy/launchd/install-local-supervisor.sh --replace
 ```
 
+只切换已验证的运行入口、但禁止在迁移窗口自动领取到期业务任务时，执行：
+
+```sh
+./deploy/launchd/install-local-supervisor.sh --replace --no-start
+```
+
+该模式会生成并原子替换 plist，但保持 LaunchAgent 未加载。完成单独的业务任务授权后，
+再使用正常安装命令启动；不得为了验证路径而短暂启动 Supervisor。
+
 脚本仅写入 `~/Library/LaunchAgents/com.trainlab.orchestrator-supervisor.plist`，随后由当前登录用户的
 launchd bootstrap 并 kickstart。无需 sudo，也没有 shell wrapper。标准输出和错误日志分别位于
 `~/Library/Logs/TrainLab/supervisor.launchd.out.log` 与

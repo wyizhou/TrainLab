@@ -1,8 +1,5 @@
-# TrainLab production agent entry
+# Claude Code project instructions
 
-Follow the repository-wide rules in `AGENTS.md`.
+`AGENTS.md` is the repository-wide authority.
 
-Always load `harness/shared/HARNESS.md`; load the analysis or mail Harness only
-for that route. `harness/runtime/HARNESS.md` is historical evidence, not a
-production Harness. Never load files under `archive/` or any development
-Harness. Run production analysis only through `trainlab run`.
+@AGENTS.md

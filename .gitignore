@@ -6,7 +6,6 @@ __pycache__/
 *.egg-info/
 build/
 dist/
-.orchestration/
 
 # Personal health data and runtime-only files are excluded from normal commits.
 # A deliberately sanitized snapshot can still be added explicitly with git -f.
@@ -26,6 +25,12 @@ state/*
 !state/.gitkeep
 logs/*
 !logs/.gitkeep
+product/state/**
+!product/state/.gitkeep
+product/logs/**
+!product/logs/.gitkeep
+product/test_data/**
+!product/test_data/.gitkeep
 *.lock
 !requirements.lock
 core
@@ -51,6 +56,13 @@ config/trainlab.production.yaml
 config/rclone.conf
 config/trainlab.json
 config/orchestration.yaml
+product/config/gmail_mcp.yaml
+product/config/foundation.yaml
+product/config/garmin.yaml
+product/config/trainlab.production.yaml
+product/config/rclone.conf
+product/config/trainlab.json
+product/config/orchestration.yaml
 credentials.json
 gmail-mcp.credentials.json
 token.json

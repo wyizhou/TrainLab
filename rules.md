@@ -1,6 +1,4 @@
-# TrainLab 协商约定
-
-本文件记录用户与 Agent 已明确确认、后续所有工作都必须遵守的长期操作约定，尤其用于防止已经发生过的问题再次出现。`AGENTS.md` 强制所有 Agent 在开始任务前读取本文件。
+# TrainLab approved rules
 
 ## 维护规则
 
@@ -10,7 +8,7 @@
 4. 本文件不得记录凭据、令牌、账号、个人健康数据、原始 FIT/JSON 内容或其他敏感信息。
 5. 若本文件与系统、开发者指令或用户当前明确指令冲突，遵循更高优先级指令，并在继续前向用户说明冲突。
 
-## A-001：Garmin 在线验收必须严格限定同步范围
+## A-001: Garmin 在线验收必须严格限定同步范围
 
 - 确认日期：2026-08-09
 - 适用范围：Garmin 在线验收、增量同步测试、重复同步测试、快照测试、审计测试，以及任何使用隔离数据库访问真实 Garmin Provider 的测试。
@@ -35,20 +33,39 @@
 
 > 2026-08-09 的 v5 Garmin 在线验收原计划使用短窗口，但增量请求只有结束日期、开始日期为 `null`。空隔离数据库没有同步游标，程序随后采用了 `2022-01-01` 的历史起点，使测试错误扩大为全历史重新获取。执行被停止，隔离证据被保留，正式 FIT、raw 和 SQLite 未被替换。该事故不是因为已有数据不满足要求，而是验收边界合同不完整。
 
-## 后续条目模板
+## A-002: 开发 Harness 与产品 Harness 分层
 
-```text
-## A-NNN：约定标题
-
-- 确认日期：YYYY-MM-DD
-- 适用范围：
-- 替代条目：无（或列出编号）
+- 确认日期：2026-08-12
+- 适用范围：TrainLab 仓库开发、验证、产品运行和发布。
+- 替代范围：只替代 A-001 第 5、6 条所述的开发编排载体；不改变其外部影响必须重新获得批准的安全要求。
 
 必须遵守：
 
+1. 仓库根 agentForge 只管理开发过程；`product/harness/` 只管理 TrainLab 产品运行行为。
+2. TrainLab 开发禁止加载或调用 `orchestrate-parallel-work`，禁止恢复 `.orchestration`、Graph Dashboard、hash-bound handoff 或连续 attempt-version 审批机制。
+3. A-001 要求重新批准时，使用一个明确更新范围的 agentForge exec plan 和用户批准记录，不再生成编排版本目录或 handoff hash。
+4. 不卸载、不修改、不复制或链接用户级的全局 `orchestrate-parallel-work` skill。
+5. `product/` 是唯一产品源码和运行根；`dist/` 只能由白名单构建，不得包含本地私有数据。
+6. `product/src/trainlab/orchestration` 是产品业务模块，不属于本条禁止范围。
+
+协商原因：
+
+> 旧编排控制面为同一目标生成了大量版本、重复门禁和不稳定的 handoff，妨碍了开发和审计。用户决定采用 agentForge 的文件式 Roadmap 与执行计划，并与 TrainLab 产品运行 Harness 明确分层。
+
+## Rule template
+
+```text
+## A-NNN: Title
+
+- Confirmation date: YYYY-MM-DD
+- Scope:
+- Supersedes: none
+
+Requirements:
+
 1. ...
 
-事故背景或协商原因：
+Reason:
 
 > ...
 ```

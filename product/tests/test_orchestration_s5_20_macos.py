@@ -55,10 +55,12 @@ def test_macos_deployment_scripts_are_shell_valid_and_only_manage_the_one_label(
     assert "real_python" in install and "resolve(strict=True)" in install and "/Volumes/*" in install
     assert "touch \"$stdout_log\" \"$stderr_log\"" in install
     assert "chmod 600 \"$stdout_log\" \"$stderr_log\"" in install
+    assert "--no-start" in install
+    assert 'if [ "$start" != "true" ]' in install
     assert shutil.which("plutil") is not None
 
 
 def test_macos_runbook_explains_the_single_service_and_non_destructive_rollback() -> None:
     text = RUNBOOK.read_text(encoding="utf-8")
-    for required in ("唯一", "LaunchAgent", "-m trainlab supervisor run", "__PYVENV_LAUNCHER__", "外置卷", "--replace", "回滚", "不会删除日志、数据库、原始健康数据、FIT 文件或凭据"):
+    for required in ("唯一", "LaunchAgent", "-m trainlab supervisor run", "__PYVENV_LAUNCHER__", "外置卷", "--replace", "--no-start", "回滚", "不会删除日志、数据库、原始健康数据、FIT 文件或凭据"):
         assert required in text
