@@ -72,7 +72,10 @@ def _safe_bundle_files(
         or not bundle.files
     ):
         raise AnalysisRunnerError("analysis_runner_harness_invalid")
-    root = config.project_root.resolve()
+    # Harness files and schemas are immutable package resources.  They are not
+    # expected to exist under the mutable instance root used by an isolated
+    # preview or an installed runtime.
+    root = config.harness_root.resolve().parent
     contents: list[tuple[str, bytes]] = []
     for item in bundle.files:
         candidate = root / item.path_id
@@ -103,7 +106,7 @@ def _safe_output_schema(config: AnalysisConfig, bundle: HarnessBundle) -> bytes:
     """Load the already declared output schema without exposing its host path."""
 
     expected_hash = bundle.schema_evidence.output_schema_sha256
-    root = config.project_root.resolve()
+    root = config.harness_root.resolve().parent
     candidate = config.output_schema
     try:
         resolved = candidate.resolve(strict=True)

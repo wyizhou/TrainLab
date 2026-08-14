@@ -38,7 +38,11 @@
 - Ruff、format-check、mypy、schema 和 source-layout 门禁均从 `source/` 执行；正式运行
   不依赖 wheel、bundle、Supervisor 或仓库 `.venv`。
 
-## 活动计划链接
+## 最近完成计划
 
-当前没有活动 exec plan；最近完成的 M4 计划已归档至
-`docs/exec-plans/completed/M4-source-root-0001-product-consolidation.md`。
+M5 自适应教练画像与本地报告校准已通过独立 Validator；exec plan 已归档至
+`docs/exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md`。
+真实隔离库因活动覆盖不完整按合同延期，未伪造报告；预览 renderer 的 HTML/JSON、权限和无副作用回归通过。
+最近完成的 M4 计划已归档至
+`docs/exec-plans/completed/M4-source-root-0001-product-consolidation.md`；M4 基线提交为
+`bab3649`（`feat: complete source runtime migration`）。

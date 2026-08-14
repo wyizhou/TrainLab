@@ -133,6 +133,9 @@ class ResultValidationExpectation:
     # production daily routes always provide an explicit state.
     today_plan_state: str | None = None
     today_plan_item: Mapping[str, Any] | None = None
+    # Weekly capacity is host-owned evidence.  Legacy fixtures may omit it;
+    # production weekly routes provide it whenever a confirmed profile exists.
+    capacity_assessment: Mapping[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -402,17 +405,12 @@ def _ensure_course_contracts(
             structured = advice["structured_content"]
             primary = structured.get("primary_item")
             if isinstance(primary, dict):
-                contract = primary.get("course_contract")
-                if not isinstance(contract, Mapping):
-                    contract = _course_contract_for_item(
-                        primary,
-                        local_date=str(
-                            advice.get("period", {}).get("start_local_date")
-                        ),
-                    )
-                    if contract is not None:
-                        primary["course_contract"] = contract
-                if isinstance(contract, Mapping):
+                contract = _course_contract_for_item(
+                    primary,
+                    local_date=str(advice["period"]["start_local_date"]),
+                )
+                if contract is not None:
+                    primary["course_contract"] = contract
                     _validate_course_contract(
                         contract,
                         "daily.primary_item.course_contract",
@@ -424,19 +422,20 @@ def _ensure_course_contracts(
             item for item in training_plan.get("items", ()) if isinstance(item, dict)
         )
     for item in plans:
-        contract = item.get("course_contract")
-        if not isinstance(contract, Mapping):
+        prescription = item.get("prescription")
+        if isinstance(prescription, Mapping):
+            source = dict(prescription)
+            source.setdefault("activity_kind", item.get("activity_kind"))
             contract = _course_contract_for_item(
-                item.get("prescription", {}), local_date=str(item.get("local_date"))
+                source, local_date=str(item.get("local_date"))
             )
             if contract is not None:
                 item["course_contract"] = contract
-        if isinstance(contract, Mapping):
-            _validate_course_contract(
-                contract,
-                f"training_plan.items.{item.get('item_index')}.course_contract",
-                str(item.get("local_date")),
-            )
+                _validate_course_contract(
+                    contract,
+                    f"training_plan.items.{item.get('item_index')}.course_contract",
+                    str(item.get("local_date")),
+                )
 
 
 def _schema_validate(payload: Mapping[str, Any]) -> None:
@@ -912,6 +911,130 @@ def _validate_hansons_sos_spacing(
         _reject("analysis_result_hansons_sos_recovery_insufficient", path)
 
 
+def _distance_km(item: Mapping[str, Any]) -> float | None:
+    prescription = item.get("prescription")
+    if not isinstance(prescription, Mapping):
+        return None
+    for key in ("planned_distance_km",):
+        value = prescription.get(key)
+        if (
+            isinstance(value, (int, float))
+            and not isinstance(value, bool)
+            and value >= 0
+        ):
+            return float(value)
+    for key in ("planned_distance_m", "distance_m"):
+        value = prescription.get(key)
+        if (
+            isinstance(value, (int, float))
+            and not isinstance(value, bool)
+            and value >= 0
+        ):
+            return float(value) / 1000.0
+    return None
+
+
+def _validate_weekly_capacity(
+    training_plan: Mapping[str, Any],
+    items: Sequence[Mapping[str, Any]],
+    expected: ResultValidationExpectation,
+) -> None:
+    assessment = expected.capacity_assessment
+    if not isinstance(assessment, Mapping):
+        return
+    if assessment.get("status") != "ready":
+        _reject("analysis_result_weekly_capacity_unavailable", "training_plan")
+    allowed = assessment.get("allowed_range")
+    frequency = assessment.get("frequency")
+    if not isinstance(allowed, Mapping) or not isinstance(frequency, Mapping):
+        _reject("analysis_result_weekly_capacity_invalid", "training_plan.constraints")
+    running_items = [item for item in items if item.get("activity_kind") == "running"]
+    raw_distances = [_distance_km(item) for item in running_items]
+    if any(value is None for value in raw_distances):
+        _reject(
+            "analysis_result_weekly_running_distance_required", "training_plan.items"
+        )
+    distances = [value for value in raw_distances if value is not None]
+    total_km = sum(value or 0.0 for value in distances)
+    minimum = allowed.get("minimum_km")
+    maximum = allowed.get("maximum_km")
+    if (
+        not isinstance(minimum, (int, float))
+        or isinstance(minimum, bool)
+        or not isinstance(maximum, (int, float))
+        or isinstance(maximum, bool)
+        or total_km < float(minimum) - 1e-6
+        or total_km > float(maximum) + 1e-6
+    ):
+        _reject("analysis_result_weekly_capacity_out_of_range", "training_plan.items")
+    maximum_frequency = frequency.get("maximum")
+    minimum_frequency = frequency.get("minimum")
+    allowed_weekdays = frequency.get("allowed_weekdays")
+    if (
+        not isinstance(maximum_frequency, int)
+        or isinstance(maximum_frequency, bool)
+        or not isinstance(minimum_frequency, int)
+        or isinstance(minimum_frequency, bool)
+        or not isinstance(allowed_weekdays, list)
+        or any(
+            not isinstance(day, int) or isinstance(day, bool) or not 1 <= day <= 7
+            for day in allowed_weekdays
+        )
+        or len(running_items) > maximum_frequency
+        or len(running_items) < minimum_frequency
+    ):
+        _reject("analysis_result_weekly_frequency_out_of_range", "training_plan.items")
+    if any(
+        (
+            date.fromisoformat(str(item["local_date"])).isoweekday()
+            not in allowed_weekdays
+        )
+        for item in running_items
+    ):
+        _reject(
+            "analysis_result_weekly_running_weekday_forbidden", "training_plan.items"
+        )
+    profile = expected.coaching_profile
+    if isinstance(profile, Mapping):
+        climbing_days = {
+            int(entry["weekday"])
+            for entry in profile.get("climbing_schedule", ())
+            if isinstance(entry, Mapping)
+            and isinstance(entry.get("weekday"), int)
+            and not isinstance(entry.get("weekday"), bool)
+        }
+        if any(
+            item.get("activity_kind") == "climbing"
+            and date.fromisoformat(str(item["local_date"])).isoweekday()
+            not in climbing_days
+            for item in items
+        ):
+            _reject(
+                "analysis_result_weekly_climbing_weekday_forbidden",
+                "training_plan.items",
+            )
+    longest = max(distances, default=0.0)
+    long_run_max = assessment.get("long_run_max_km")
+    if (
+        not isinstance(long_run_max, (int, float))
+        or isinstance(long_run_max, bool)
+        or longest > float(long_run_max) + 1e-6
+    ):
+        _reject("analysis_result_weekly_long_run_out_of_range", "training_plan.items")
+    if isinstance(profile, Mapping) and profile.get("race_goal") is None:
+        forbidden = {
+            "race_pace",
+            "race_pace_seconds_per_km",
+            "goal_pace_seconds_per_km",
+        }
+        for path, value in _strings({"training_plan": training_plan}):
+            if any(key in path.lower() for key in forbidden):
+                _reject("analysis_result_race_pace_anchor_forbidden", path)
+    constraints = training_plan.get("constraints")
+    if isinstance(constraints, dict):
+        constraints["capacity_assessment"] = dict(assessment)
+
+
 def _validate_weekly_safety(
     payload: dict[str, Any], expected: ResultValidationExpectation
 ) -> None:
@@ -1081,6 +1204,7 @@ def _validate_weekly_safety(
                 capacity_change if decision == "advance" else "none"
             ),
         }
+    _validate_weekly_capacity(training_plan, normalized, expected)
     plan_artifact = next(
         item
         for item in payload["artifacts"]

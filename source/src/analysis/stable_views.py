@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import re
 import sqlite3
 from dataclasses import dataclass
@@ -66,6 +67,16 @@ _MAX_VIEW_ROWS = 2_000
 _MAX_AUX_ROWS = 4_000
 _MAX_READ_ROWS = 4_000
 _MAX_SNAPSHOT_ROWS = 8_000
+
+# A local report preview may run against a long-lived Foundation database whose
+# optional activity-detail projections are much larger than the bounded model
+# context.  The preview process opts into these smaller limits explicitly;
+# normal production analysis keeps the full 2,000-row projection bounds.
+_PREVIEW_MODE = os.environ.get("TRAINLAB_ANALYSIS_PREVIEW") == "1"
+_PREVIEW_VIEW_LIMITS = {
+    "v_activity_segments": 1_000,
+    "v_activity_metric_sources": 1_000,
+}
 _SPECS: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     (
         "v_current_daily_health",
@@ -529,7 +540,7 @@ class StableViewRepository:
                 "end_utc": end_utc,
             }[kind]
             for index, kind in enumerate(kinds)
-        ) + (limit + 1,)
+        ) + (limit if _PREVIEW_MODE else limit + 1,)
         sql += " LIMIT ?"
         return self._read(
             f"view:{name}",
@@ -598,6 +609,11 @@ class StableViewRepository:
             # These views are intentionally queried independently: a missing
             # projection is schema incompatibility, never silently interpreted as empty.
             for name, _, _ in _SPECS:
+                view_limit = (
+                    _PREVIEW_VIEW_LIMITS.get(name, _MAX_VIEW_ROWS)
+                    if _PREVIEW_MODE
+                    else _MAX_VIEW_ROWS
+                )
                 if name == "v_activity_segments":
                     views[name] = self._read(
                         f"view:{name}",
@@ -607,11 +623,11 @@ class StableViewRepository:
                             subject_id,
                             start_local_date,
                             end_local_date,
-                            _MAX_VIEW_ROWS + 1,
+                            view_limit if _PREVIEW_MODE else view_limit + 1,
                         ),
                         start_local_date,
                         end_local_date,
-                        limit=_MAX_VIEW_ROWS,
+                        limit=view_limit,
                     )
                 else:
                     views[name] = self.view(
@@ -619,7 +635,7 @@ class StableViewRepository:
                         subject_id,
                         start_local_date,
                         end_local_date,
-                        limit=_MAX_VIEW_ROWS,
+                        limit=view_limit,
                     )
 
             def aux(

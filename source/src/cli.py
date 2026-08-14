@@ -11,6 +11,7 @@ import json
 import sqlite3
 import uuid
 from datetime import date, timedelta
+from pathlib import Path
 
 from .foundation import main as foundation_main
 from .garmin.cli import garmin_cli_execute
@@ -71,6 +72,9 @@ def _parser() -> argparse.ArgumentParser:
     regenerate.add_argument("--reason", required=True)
     regenerate.add_argument("--invocation-id")
     regenerate.add_argument("--deliver", action="store_true")
+    preview = analysis_sub.add_parser("preview")
+    preview.add_argument("--delivery-id", type=int, required=True)
+    preview.add_argument("--output-dir", type=Path, required=True)
 
     from .mail_agent.cli import add_root_subparser as add_mail_subparser
 
@@ -83,6 +87,19 @@ def _parser() -> argparse.ArgumentParser:
         default="all",
     )
     facts.add_argument("--as-of-utc")
+
+    coaching = subparsers.add_parser(
+        "coaching", help="manage confirmed coaching profile"
+    )
+    coaching_sub = coaching.add_subparsers(dest="coaching_mode", required=True)
+    profile = coaching_sub.add_parser("profile")
+    profile_sub = profile.add_subparsers(dest="profile_mode", required=True)
+    profile_sub.add_parser("show")
+    propose = profile_sub.add_parser("propose")
+    propose.add_argument("--request-id", required=True)
+    propose.add_argument("--input-json", type=str, required=True)
+    apply = profile_sub.add_parser("apply")
+    apply.add_argument("--candidate-id", required=True)
     return parser
 
 
@@ -95,6 +112,16 @@ def _analysis_main(args: argparse.Namespace) -> int:
         run_regeneration_analysis,
         run_weekly_analysis,
     )
+
+    if args.analysis_mode == "preview":
+        from .analysis.preview import render_delivery_preview
+        from .util import instance_root
+
+        result = render_delivery_preview(
+            instance_root(), args.delivery_id, args.output_dir
+        )
+        print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+        return 0
 
     invocation_id = getattr(args, "invocation_id", None)
     if args.analysis_mode == "status":
@@ -141,6 +168,37 @@ def _analysis_main(args: argparse.Namespace) -> int:
     return exit_code_for(receipt.status)
 
 
+def _coaching_main(args: argparse.Namespace) -> int:
+    from .coaching.profile import (
+        apply_profile_candidate,
+        current_profile,
+        propose_profile,
+    )
+    from .util import instance_root
+
+    root = instance_root()
+    if args.coaching_mode != "profile":  # pragma: no cover - argparse enforces this
+        raise AssertionError(args.coaching_mode)
+    if args.profile_mode == "show":
+        payload = {
+            "schema_version": "1",
+            "status": "confirmed",
+            "profile": current_profile(root),
+        }
+    elif args.profile_mode == "propose":
+        payload = propose_profile(
+            root,
+            request_id=args.request_id,
+            input_path=Path(args.input_json),
+        )
+    elif args.profile_mode == "apply":
+        payload = apply_profile_candidate(root, candidate_id=args.candidate_id)
+    else:  # pragma: no cover - argparse enforces this
+        raise AssertionError(args.profile_mode)
+    print(json.dumps(payload, ensure_ascii=False, sort_keys=True))
+    return 0
+
+
 def main(argv: list[str] | None = None, *, mail_tool=None) -> int:
     args = _parser().parse_args(argv)
     if args.command == "foundation":
@@ -160,6 +218,16 @@ def main(argv: list[str] | None = None, *, mail_tool=None) -> int:
             return _analysis_main(args)
         except (ValueError, OSError) as error:
             _parser().error(str(error))
+    if args.command == "coaching":
+        try:
+            return _coaching_main(args)
+        except (ValueError, OSError) as error:
+            print(
+                json.dumps(
+                    {"schema_version": "1", "status": "failed", "error": str(error)}
+                )
+            )
+            return 2
     if args.command == "mail":
         from .mail_agent.cli import mail_cli_execute
         from .mail_agent.contracts import MailTool, exit_code_for_status

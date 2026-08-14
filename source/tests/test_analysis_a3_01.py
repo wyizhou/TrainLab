@@ -90,6 +90,7 @@ def test_import_boundary_is_empty_and_reproducible() -> None:
     assert set(first) == {
         "__init__.py",
         "boundary.py",
+        "capacity.py",
         "cli.py",
         "config.py",
         "context.py",
@@ -104,6 +105,7 @@ def test_import_boundary_is_empty_and_reproducible() -> None:
         "heart_rate_zones.py",
         "heart_rate_zones_store.py",
         "publisher.py",
+        "preview.py",
         "quality_gate.py",
         "regenerate.py",
         "revise_plan.py",

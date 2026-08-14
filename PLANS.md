@@ -107,3 +107,17 @@ agentForge 开发 Harness；产品代码和实例入口位于 `source/`；旧运
 | [x] `M4-0002` Foundation v4 离线 Garmin 重建 | `completed` | high | M4-0001 | serial | `source/tools`、候选 state、`data-backup` 归档 | 同一 completed plan |
 | [x] `M4-0003` 运行时教练 Harness v2 与课程合同 | `completed` | high | M4-0002 | serial | `source/src/resources/harness`、analysis 合同/测试 | 同一 completed plan |
 | [x] `M4-0004` 原子切换私人数据与独立验收 | `completed` | high | M4-0003 | serial | source 实例入口、验证证据、计划归档 | 同一 completed plan |
+
+### [x] `M5` 自适应教练画像与本地报告校准 — `completed`
+
+用户于 2026-08-14 批准。M5 在已提交的 M4 基线之上严格串行执行：先保存基线，随后建立
+AI 提案/用户确认的教练画像管理，按近期完整周动态评估容量，最后只在仓库外隔离实例中
+生成周报、日报及 HTML/JSON 预览。M5 不调用 Garmin/Gmail、不补数、不发送邮件、不修改
+正式 `source/state`，不推送远端；M5 代码在用户另行批准前不自动提交。
+
+| 任务 | 状态 | 优先级 | 显式依赖 | Batch | 预期写入范围 | Exec plan |
+| --- | --- | --- | --- | --- | --- | --- |
+| [x] `M5-0001` 保存 M4 单一本地基线 | `completed` | high | M4 | serial | Git 基线提交 | [`completed`](docs/exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md) |
+| [x] `M5-0002` AI 教练画像管理与确认应用 | `completed` | high | M5-0001 | serial | `source/src/coaching`、CLI、私有 profile state、画像测试 | [`completed`](docs/exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md) |
+| [x] `M5-0003` 动态周容量与排课合同 | `completed` | high | M5-0002 | serial | `source/src/analysis`、运行时 schema、容量/排课测试 | 同一 completed plan |
+| [x] `M5-0004` 隔离数据库报告预览 | `completed` | high | M5-0003 | serial | `source/src/analysis`、预览 CLI、隔离预览测试 | 同一 completed plan |

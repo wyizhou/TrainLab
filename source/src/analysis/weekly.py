@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Mapping, Protocol
 from zoneinfo import ZoneInfo
 
+from .capacity import WeeklyCapacityError, assess_weekly_capacity
 from .config import AnalysisConfig
 from .context import (
     ANALYSIS_INPUT_SCHEMA_SHA256,
@@ -216,6 +217,7 @@ def _host_progression_inputs(
     summary_gate: Any,
     plan_gate: Any,
     adherence: tuple[Mapping[str, Any], ...],
+    capacity_assessment: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build progression inputs from deterministic host evidence only."""
 
@@ -235,12 +237,23 @@ def _host_progression_inputs(
         ),
         0,
     )
+    capacity_change = "none"
+    if (
+        isinstance(capacity_assessment, Mapping)
+        and capacity_assessment.get("status") == "ready"
+        and capacity_assessment.get("decision") == "advance"
+        and summary_gate.state == "ready"
+        and plan_gate.state == "ready"
+        and minimum_evidence == 1
+        and unconfirmed == 0
+    ):
+        capacity_change = "volume"
     return {
         "recovery_ready": summary_gate.state == "ready" and plan_gate.state == "ready",
         "adherence_stable": minimum_evidence == 1 and unconfirmed == 0,
         # A capacity change is never inferred from model prose.  An explicit
         # future profile/configuration change can opt into it later.
-        "capacity_change": "none",
+        "capacity_change": capacity_change,
         "evidence": "host_quality_gate_and_plan_adherence_v1",
     }
 
@@ -381,6 +394,76 @@ class WeeklyRoute:
             )
         prior_state = _prior_artifact_state(snapshot, review)
         adherence = _plan_adherence(snapshot, review)
+        capacity_assessment: Mapping[str, Any] | None = None
+        profile = self.config.coaching_profile_contract
+        if isinstance(profile, Mapping) and profile.get("status") == "confirmed":
+            try:
+                capacity_assessment = assess_weekly_capacity(
+                    activities=_snapshot_rows(snapshot, "v_current_activities"),
+                    coverage=tuple(
+                        row for row in snapshot.coverage if isinstance(row, Mapping)
+                    ),
+                    plan_start=date.fromisoformat(plan["start_local_date"]),
+                    recovery_ready=gate.state == "ready" and plan_gate.state == "ready",
+                    adherence_stable=(
+                        next(
+                            (
+                                row.get("value")
+                                for row in adherence
+                                if row.get("key")
+                                == "plan_adherence.unconfirmed.count.7d"
+                            ),
+                            0,
+                        )
+                        == 0
+                        and next(
+                            (
+                                row.get("value")
+                                for row in adherence
+                                if row.get("key")
+                                == "plan_adherence.minimum_evidence.7d"
+                            ),
+                            0,
+                        )
+                        == 1
+                    ),
+                    available_weekdays=tuple(
+                        profile.get("available_weekdays", (1, 3, 5, 7))
+                    ),
+                    hard_load_max=int(profile.get("hard_load_max", 3)),
+                    hard_load_min_gap_days=int(
+                        profile.get("hard_load_min_gap_days", 2)
+                    ),
+                )
+            except (TypeError, ValueError, WeeklyCapacityError):
+                capacity_assessment = {
+                    "schema_version": "1",
+                    "status": "deferred",
+                    "decision": "hold",
+                    "reason": "capacity_assessment_failed_closed",
+                }
+            if capacity_assessment.get("status") != "ready":
+                self.coordinator.finish(prepared, "failed")
+                return self._receipt(
+                    request,
+                    "deferred",
+                    started,
+                    run_key=prepared.decision.run_key,
+                    analysis_run_id=str(prepared.decision.run_id),
+                    quality=gate.state,
+                    next_action="repair_data",
+                    warnings=(
+                        AnalysisWarning(
+                            "weekly_capacity_unavailable",
+                            "weekly_capacity",
+                            str(
+                                capacity_assessment.get(
+                                    "reason", "weekly_capacity_unavailable"
+                                )
+                            ),
+                        ),
+                    ),
+                )
         output_sha = sha256(Path(self.config.output_schema).read_bytes()).hexdigest()
         bundle = self.harness_resolver(
             self.config,
@@ -392,6 +475,11 @@ class WeeklyRoute:
                 output_sha,
             ),
         )
+        capacity_features = (
+            (("weekly_capacity_assessment_v1", capacity_assessment),)
+            if capacity_assessment is not None
+            else ()
+        )
         built = self.context_builder.build(
             context_request,
             ContextSource(snapshot=snapshot),
@@ -400,6 +488,7 @@ class WeeklyRoute:
             deterministic_features=(
                 weekly_plan_contract(prior_state),
                 *training_control_contracts(self.config),
+                *capacity_features,
                 *(
                     training_history_features(
                         snapshot, end_local_date=review["end_local_date"]
@@ -436,10 +525,12 @@ class WeeklyRoute:
             prior_artifact_state=prior_state,
             available_training_weekdays=self.config.available_training_weekdays,
             coaching_profile=self.config.coaching_profile_contract,
+            capacity_assessment=capacity_assessment,
             progression_inputs=_host_progression_inputs(
                 summary_gate=gate,
                 plan_gate=plan_gate,
                 adherence=adherence,
+                capacity_assessment=capacity_assessment,
             ),
         )
         validator = self.validator

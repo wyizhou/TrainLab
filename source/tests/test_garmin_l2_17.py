@@ -63,7 +63,14 @@ def test_current_root_commands_are_manual_only() -> None:
     action = next(
         item for item in parser._actions if isinstance(item, argparse._SubParsersAction)
     )
-    assert set(action.choices) == {"foundation", "garmin", "analysis", "mail", "facts"}
+    assert set(action.choices) == {
+        "foundation",
+        "garmin",
+        "analysis",
+        "coaching",
+        "mail",
+        "facts",
+    }
     assert parser.parse_args(["foundation", "status"]).command == "foundation"
     assert (
         parser.parse_args(["analysis", "daily", "--report-date", "2026-08-13"]).command

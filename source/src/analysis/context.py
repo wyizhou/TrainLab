@@ -152,6 +152,9 @@ _FOUNDATION_ORIGIN_TO_CONTEXT = {
     "sensor_observed": "provider_fact",
     "user_entered": "user_asserted",
     "profile_setting": "user_asserted",
+    # Configuration is an explicit, owner-controlled input.  Normalize its
+    # storage label to the trust vocabulary accepted by the model context.
+    "project_config": "user_asserted",
 }
 
 
@@ -2086,8 +2089,11 @@ def _base_candidates(
         for section_row in section_rows:
             if not isinstance(section_row, Mapping):
                 _fail("analysis_context_feature_invalid")
-            feature_row = section_row
+            feature_row = dict(section_row)
             origin = feature_row.get("value_origin")
+            if isinstance(origin, str):
+                origin = _FOUNDATION_ORIGIN_TO_CONTEXT.get(origin, origin)
+                feature_row["value_origin"] = origin
             allowed_origins = (
                 _TRUST
                 if section == "deterministic_features"
