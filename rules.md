@@ -52,6 +52,117 @@
 
 > 旧编排控制面为同一目标生成了大量版本、重复门禁和不稳定的 handoff，妨碍了开发和审计。用户决定采用 agentForge 的文件式 Roadmap 与执行计划，并与 TrainLab 产品运行 Harness 明确分层。
 
+## A-003: TrainLab 采用 agentForge 0.4.2 根项目布局
+
+- 确认日期：2026-08-12
+- 适用范围：TrainLab 源码、测试、项目描述、产品 Harness、本地运行目录、构建和发布。
+- 替代范围：替代 A-002 第 1、5、6 条中的 `product/` 路径和“根目录只管理开发过程”表述；
+  保留 A-002 第 2、3、4 条以及其禁止旧控制面的全部安全目的。A-001 不受影响。
+
+必须遵守：
+
+1. 仓库根同时承载 agentForge 开发 Harness 和 TrainLab 项目；两者通过文件职责分层，
+   不再通过 `product/` 目录分层。
+2. `src/trainlab/` 是唯一产品实现，`tests/` 是唯一产品测试根；新功能测试使用
+   `tests/<feature-slug>/`。根 `pyproject.toml` 和 `requirements.lock` 是唯一 Python
+   项目描述与锁文件。
+3. TrainLab 产品运行 Harness 位于根 `harness/`；根 `AGENTS.md` 等开发 Harness 不得
+   当作产品运行提示，产品 Harness 也不得管理开发 Roadmap。
+4. `state/`、`config/`、`logs/` 和 `test_data/` 是本地运行目录，继续执行现有私有数据、
+   权限和 Git ignore 边界；不得因迁移改变数据字节或把私有内容加入 Git。
+5. `dist/` 是 TrainLab 实际技术栈需要的白名单生成目录，可以保留，但不是源码且不得
+   纳入 Git；构建产物不得包含运行数据、凭据或 agentForge 开发状态。
+6. `product/` 在迁移完成后必须不存在；CI、质量门、构建、部署和文档命令均从仓库根执行。
+7. `src/trainlab/orchestration` 是产品业务模块，不属于对旧 `.orchestration`、Graph、
+   Dashboard 或 hash-bound handoff 控制面的禁止范围。
+
+协商原因：
+
+> 用户复核 agentForge 0.4.2 后明确指出，上一阶段把 `product/` 作为永久项目级适配是
+> 错误解释；要求完全遵循最新版脚手架，将实现迁到根 `src/`、测试迁到根 `tests/`，
+> 并同步更新其余项目结构与运行路径。
+
+## A-004: 私人测试数据不得作为仓库测试夹具
+
+- 确认日期：2026-08-12
+- 适用范围：TrainLab 测试夹具、本地测试数据、隐私边界和跨设备验证。
+- 替代范围：替代 A-003 第 4 条中把 `test_data/` 作为长期本地运行目录的表述；
+  `state/`、`config/`、`logs/` 及 A-001 的正式数据保护要求不变。
+
+必须遵守：
+
+1. 仓库根不得创建或依赖 `test_data/`；测试需要的 FIT 由
+   `tests/fixtures/synthetic_fit.py` 确定性生成。
+2. 合成夹具不得从个人 FIT、健康数据、账号资料或生产数据库复制值或派生内容。
+3. 私人测试资料若确需保留，必须位于仓库外，不得进入 Git、测试包或发布产物。
+4. 构建器继续把 `test_data` 和 FIT 视为禁止发布内容，防止该路径意外恢复后泄漏。
+
+协商原因：
+
+> 历史私人 FIT 使测试依赖单台电脑，且没有必要作为长期样本保存。用户批准改用
+> 合成夹具，在保持解析、错误和边界测试强度的同时删除项目内私人测试数据。
+
+## A-005: 产品代码资源与私人实例数据分离
+
+- 确认日期：2026-08-13
+- 适用范围：TrainLab wheel、runtime bundle、本地实例、部署和生产入口。
+- 替代范围：替代 A-003 第 3 条的根 `harness/` 路径，以及第 4 条中把私有运行目录
+  视为源码 checkout 固有组成的表述；A-001、A-002 的旧控制面禁令和 A-004 不受影响。
+
+必须遵守：
+
+1. TrainLab 产品 Harness、schema、policy、公开默认值和邮件模板是不可变产品资源，
+   随 wheel 存放于 `src/trainlab/` 对应包内；仓库根不得保留第二份运行时权威副本。
+2. 私有配置、`state/`、`logs/`、数据库、raw、FIT 和凭据只属于外置 instance root；
+   wheel、runtime bundle 和升级流程不得复制、覆盖、删除或展示这些内容。
+3. 正式部署产物由标准 application wheel、锁定的运行依赖 wheelhouse、部署资产、
+   安全示例和逐成员 SHA-256 manifest 组成；不得发布裸 `src/` 或源码 checkout 快照。
+4. 构建器必须使用根 `requirements.lock` 的完整、带 hash 依赖锁，校验 application
+   wheel、依赖 wheel 和 archive 成员，并提供解包前验证入口。`dist/` 仍只是一种默认
+   生成位置，仓库日常状态不得依赖其存在。
+5. 安装后的产品通过 `TRAINLAB_INSTANCE_ROOT` 定位实例；不得依赖仓库根 `.venv`、
+   `PYTHONPATH=src`、开发 Harness、当前工作目录或源码相对路径。
+6. `src/trainlab/orchestration/` 继续作为产品 Supervisor、定时调度和恢复层；它不属于
+   已删除的 `.orchestration`、Graph/Dashboard 或 hash-bound 开发控制面。
+
+协商原因：
+
+> 用户要求把 TrainLab 收敛为 agentForge 0.4.2 根项目，同时形成真正可安装、可验证且
+> 不携带私人数据的产品产物；开发 Harness 不能替代产品自动调度，源码 checkout 也不应
+> 被当作正式安装包。
+
+## A-006: 根开发 Harness 与 source 产品工程分离
+
+- 确认日期：2026-08-13
+- 适用范围：TrainLab 仓库布局、本机直接运行、测试、构建、实例数据和发布。
+- 替代范围：替代 A-003 第 1～7 条与 A-005 第 1、2、4、5、6 条的目录路径和本机运行
+  方式；保留 A-001、A-002 的旧控制面禁令、A-004 的私人测试数据禁令，以及 A-005
+  第 3 条的安全发布产物要求。
+
+必须遵守：
+
+1. 仓库根只承载 agentForge 开发 Harness、Roadmap、exec plans、开发 skills/references、
+   GitHub 配置、根索引和版本记录；TrainLab 产品工程完整位于 `source/`。
+2. `source/trainlab/` 是唯一产品包实现；`source/tests/` 是唯一产品测试根；
+   `source/pyproject.toml` 与 `source/requirements.lock` 是唯一产品项目描述和依赖锁。
+3. 产品 Harness、schema、policy、公开默认值和邮件模板仍作为不可变包资源位于
+   `source/trainlab/resources/`，不得在仓库根保留第二份权威副本。
+4. 本机直接运行使用 `source/` 中的明确脚本入口，例如
+   `python source/garmin.py auth` 或 `python source/trainlab.py ...`；脚本必须加载同一份
+   `source/trainlab/` 产品代码，不得建立第二套实现。
+5. 本机私有 `config/`、`state/`、`logs/` 和产品凭据位置收拢到 `source/`，真实内容继续
+   被 Git 精确忽略；安全 example、README 和空目录标记可以跟踪。迁移不得改变私人数据
+   字节、属主或权限。
+6. `source/` 同时保留 tests、deploy、产品 docs、scripts、tools 和可选 wheel/runtime
+   bundle 构建能力；发布产物仍必须排除私人数据、凭据、开发 Harness 和旧控制面。
+7. 根不得恢复 `product/`、根产品 `harness/`、`.orchestration`、Graph/Dashboard 或
+   hash-bound handoff；`source/trainlab/orchestration/` 仍是产品业务调度层。
+
+协商原因：
+
+> 用户希望一眼区分开发 Harness 与可运行产品：根目录只保留 agentForge，所有产品源码、
+> 测试、依赖、配置与本机实例统一进入 `source/`，并可用一个 Python 脚本直接运行。
+
 ## Rule template
 
 ```text
@@ -68,4 +179,34 @@ Requirements:
 Reason:
 
 > ...
+
+## A-007: `source/` 单产品工程与离线 Foundation v4
+
+- 确认日期：2026-08-13
+- 适用范围：本仓库的产品源码、运行入口、测试、实例数据迁移和运行时教练 Harness。
+- 替代范围：替代 A-003、A-005、A-006 中关于 `product/`、根 `src/`、wheel/bundle、Supervisor
+  和产品 Orchestration 的路径与交付方式；A-001、A-002、A-004 的安全边界保持不变。
+
+必须遵守：
+
+1. 根目录只维护 agentForge 开发 Harness；TrainLab 唯一产品工程位于 `source/`，其唯一
+   Python 源码包位于 `source/src/`，唯一测试根位于 `source/tests/`，唯一直接入口为
+   `source/index.py`。
+2. 不恢复 `orchestrate-parallel-work`、`.orchestration`、Graph/Dashboard、hash-bound
+   handoff、Supervisor 或后台服务模板；产品 `orchestration` 目录和自动调度 CLI 已退役。
+3. `source/pyproject.toml` 只保存 Python 版本、依赖和检查配置；不声明 wheel、bundle、
+   setuptools 构建或 console-script 发布。日常运行使用 `python source/index.py ...`。
+4. `source/config/`、`source/state/`、`source/logs/`、数据库、raw、FIT、token、凭据和
+   `data-backup/` 私有忽略；只允许 README、examples、`.gitkeep` 进入 Git。
+5. Foundation v4 新库只从 Garmin raw/FIT 离线重建，不迁移 AI 报告、邮件、用户事实、
+   交付或旧调度历史；旧实例只原子归档到 `data-backup/`，不删除、不覆盖。
+6. 运行时教练 Harness 只接受有界、可追溯的 schema JSON；课程和日报/周报合同必须经过
+   确定性安全门。不得读取聊天、数据库、FIT、网络或凭据来替代有界输入。
+7. 本阶段不调用 Garmin/Gmail、不发送邮件、不执行正式分析或 Supervisor，不提交、推送、
+   发布或部署；完成必须由全新只读 Validator `PASS` 后再等待用户决定。
+
+协商原因：
+
+> 用户明确要求把开发 Harness 与产品工程分开，用 `source/` 直接运行，并清理历史
+> Orchestration；旧实例数据需要可回滚归档，不能在迁移中丢失。
 ```

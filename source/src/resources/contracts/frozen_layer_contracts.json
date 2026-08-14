@@ -1,0 +1,9 @@
+{
+  "schema_version": "1",
+  "contract_hashes": {
+    "01-data-foundation.md": "ddbc9b50d41b97cc5329199e10baf8a3729c2c4c7fefce44ca903d7320aad413",
+    "02-data-collection.md": "01df60d9525bb3017cabc73b7bc82c5dceb30167372bd9cf5ae9e65387406b34",
+    "03-data-analysis.md": "a45878e8bd2cfd56e6bff4b9f033dbb3231c1575cee770c79a8b39eef7f15804",
+    "04-mail-agent.md": "26e4e164e7a52fd2c98c3de7b7ea850f18ecbf88b3848baa514c2177206f3eaa"
+  }
+}

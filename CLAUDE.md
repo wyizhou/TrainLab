@@ -1,5 +1,5 @@
-# Claude Code project instructions
+# Claude Code 项目指令
 
-`AGENTS.md` is the repository-wide authority.
+`AGENTS.md` 是本仓库的权威项目指引。
 
 @AGENTS.md

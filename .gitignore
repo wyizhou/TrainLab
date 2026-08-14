@@ -3,6 +3,9 @@
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
 *.egg-info/
 build/
 dist/
@@ -10,8 +13,6 @@ dist/
 # Personal health data and runtime-only files are excluded from normal commits.
 # A deliberately sanitized snapshot can still be added explicitly with git -f.
 *.[Ff][Ii][Tt]
-source/
-test_data/
 raw/
 data.db
 data.db-wal
@@ -21,34 +22,45 @@ data.db-journal
 *.db-*
 *.sqlite
 *.sqlite3
-state/*
-!state/.gitkeep
-logs/*
-!logs/.gitkeep
-product/state/**
-!product/state/.gitkeep
-product/logs/**
-!product/logs/.gitkeep
-product/test_data/**
-!product/test_data/.gitkeep
 *.lock
-!requirements.lock
-core
-core.*
+!source/requirements.lock
 
-# Garmin Full archives are permanent local evidence, never Git content.
-# Raw provider JSON and extracted FIT files stay on disk indefinitely; the
-# database and runtime state that reference them are local-only as well.
-/state/raw/garmin/json/
-/state/raw/garmin/fit/
-/state/data.db
-/state/data.db-*
-/state/runtime/
+# The old runtime is retained outside the product tree for rollback/audit only.
+/data-backup/
+
+# Product instance data is local-only. Public documentation and examples are
+# re-included below so the source tree itself remains visible to Git.
+/source/state/**
+!/source/state/.gitkeep
+/source/logs/**
+!/source/logs/.gitkeep
+/source/config/**
+!/source/config/README.md
+!/source/config/examples/
+!/source/config/examples/**
+/source/**/raw/
+/source/**/test_data/
+/source/**/private/
+/source/*.db
+/source/*.db-*
+/source/*.sqlite
+/source/*.sqlite3
+/source/credentials.json
+/source/gcp-oauth.keys.json
+/source/token.json
+/source/*token*.json
+/source/**/garmin_tokens.json
+/source/**/secrets/
+
+# Legacy root instance paths are ignored only during the migration window.
+/state/
+/logs/
+/config/*.yaml
+/config/*.json
 
 # Credentials must never enter repository history.
 .env
 .env.*
-state/**/secrets/garmin/
 config/gmail_mcp.yaml
 config/foundation.yaml
 config/garmin.yaml
@@ -56,13 +68,6 @@ config/trainlab.production.yaml
 config/rclone.conf
 config/trainlab.json
 config/orchestration.yaml
-product/config/gmail_mcp.yaml
-product/config/foundation.yaml
-product/config/garmin.yaml
-product/config/trainlab.production.yaml
-product/config/rclone.conf
-product/config/trainlab.json
-product/config/orchestration.yaml
 credentials.json
 gmail-mcp.credentials.json
 token.json

@@ -1,0 +1,421 @@
+from __future__ import annotations
+
+import hashlib
+import json
+import sqlite3
+from pathlib import Path
+
+from jsonschema import Draft202012Validator
+
+from src.cli import _parser
+from src.foundation import (
+    FOUNDATION_SCHEMA_VERSION,
+    TABLES,
+    VIEWS,
+    FoundationConfig,
+    FoundationRequest,
+    FoundationTool,
+)
+from src.resources import resource_bytes
+
+
+def request(mode: str, root: Path, target: int | None = None) -> FoundationRequest:
+    return FoundationRequest(
+        mode=mode,
+        invocation_id=f"test-{mode}",
+        requested_at_utc="2026-07-23T00:00:00Z",
+        target_schema_version=target,
+    )
+
+
+def foundation_tool(root: Path) -> FoundationTool:
+    return FoundationTool(
+        FoundationConfig(
+            root,
+            root / "data.db",
+            root / "raw",
+            root / "state",
+            root / "state" / "foundation-ready.json",
+            root / "state" / "locks" / "foundation.lock",
+        )
+    )
+
+
+def test_init_creates_full_schema_and_views(tmp_path: Path) -> None:
+    root = tmp_path / "foundation"
+    tool = foundation_tool(root)
+    receipt = tool.execute(request("init", root))
+    assert receipt.status == "initialized"
+    assert receipt.ready
+    assert receipt.foundation_schema_version == FOUNDATION_SCHEMA_VERSION
+    db = sqlite3.connect(root / "data.db")
+    names = {row[0] for row in db.execute("SELECT name FROM sqlite_master")}
+    assert set(TABLES) <= names
+    assert set(VIEWS) <= names
+    assert (root / "state" / "foundation-ready.json").exists()
+    assert (root / "raw" / "garmin" / "fit").is_dir()
+    assert db.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
+
+
+def test_init_is_strict_noop_and_read_modes_do_not_write(tmp_path: Path) -> None:
+    root = tmp_path / "foundation"
+    tool = foundation_tool(root)
+    assert tool.execute(request("init", root)).status == "initialized"
+    db_path = root / "data.db"
+    before = hashlib.sha256(db_path.read_bytes()).hexdigest()
+    assert tool.execute(request("init", root)).status == "already_initialized"
+    assert tool.execute(request("status", root)).status == "ready"
+    assert tool.execute(request("verify", root)).status == "ready"
+    after = hashlib.sha256(db_path.read_bytes()).hexdigest()
+    assert before == after
+
+
+def test_explicit_migrate_and_incompatible_roots(tmp_path: Path) -> None:
+    root = tmp_path / "foundation"
+    tool = foundation_tool(root)
+    assert tool.execute(request("init", root)).status == "initialized"
+    assert (
+        tool.execute(request("migrate", root, FOUNDATION_SCHEMA_VERSION)).status
+        == "already_initialized"
+    )
+    assert (
+        tool.execute(request("migrate", root, FOUNDATION_SCHEMA_VERSION + 1)).status
+        == "incompatible"
+    )
+    bad = tmp_path / "bad"
+    bad.mkdir()
+    sqlite3.connect(bad / "data.db").close()
+    assert foundation_tool(bad).execute(request("init", bad)).status == "incompatible"
+
+
+def test_explicit_migrate_repairs_exact_legacy_v3_timezone_contract(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "foundation"
+    tool = foundation_tool(root)
+    assert tool.execute(request("init", root)).status == "initialized"
+    db = sqlite3.connect(root / "data.db")
+    try:
+        db.execute("PRAGMA foreign_keys=ON")
+        db.execute(
+            "INSERT INTO data_subjects(subject_key,timezone,created_at_utc) "
+            "VALUES('timezone-subject','Asia/Hong_Kong','2026-01-01T00:00:00Z')"
+        )
+        subject = db.execute("SELECT id FROM data_subjects").fetchone()[0]
+        db.execute(
+            "INSERT INTO analysis_runs(run_key,subject_id,analysis_kind,status,started_at_utc) "
+            "VALUES('timezone-run',?,'weekly','succeeded','2026-01-01T00:00:00Z')",
+            (subject,),
+        )
+        run = db.execute("SELECT id FROM analysis_runs").fetchone()[0]
+        db.execute(
+            "INSERT INTO analysis_artifacts(subject_id,artifact_kind,period_start_local_date,"
+            "period_end_local_date,revision_no,generated_by_run_id,schema_version,"
+            "structured_content_json,user_visible_text,content_sha256,is_current,created_at_utc) "
+            "VALUES(?,'weekly_training_plan','2026-01-05','2026-01-11',1,?,'1','{}','plan',?,1,"
+            "'2026-01-01T00:00:00Z')",
+            (subject, run, "a" * 64),
+        )
+        artifact = db.execute("SELECT id FROM analysis_artifacts").fetchone()[0]
+        db.execute(
+            "INSERT INTO training_plans(subject_id,analysis_artifact_id,plan_start_local_date,"
+            "plan_end_local_date,timezone,status,created_at_utc) "
+            "VALUES(?,?,'2026-01-05','2026-01-11','Asia/Hong_Kong','active',"
+            "'2026-01-01T00:00:00Z')",
+            (subject, artifact),
+        )
+        db.commit()
+
+        saved = tuple(
+            row[0]
+            for row in db.execute(
+                "SELECT sql FROM sqlite_master WHERE type IN ('view','trigger') "
+                "AND sql IS NOT NULL AND (type='view' OR name IN ("
+                "'trg_training_plan_item_window','trg_training_plan_artifact_insert',"
+                "'trg_training_plan_artifact_update')) ORDER BY type,name"
+            )
+        )
+        legacy_subjects = TABLES["data_subjects"].replace(
+            "DEFAULT 'Asia/Hong_Kong'", "DEFAULT 'Asia/Singapore'"
+        )
+        legacy_plans = TABLES["training_plans"].replace(
+            "CHECK(timezone='Asia/Hong_Kong')", "CHECK(timezone='Asia/Singapore')"
+        )
+        db.execute("PRAGMA foreign_keys=OFF")
+        db.execute("BEGIN IMMEDIATE")
+        for name in VIEWS:
+            db.execute(f"DROP VIEW {name}")
+        for name in (
+            "trg_training_plan_item_window",
+            "trg_training_plan_artifact_insert",
+            "trg_training_plan_artifact_update",
+        ):
+            db.execute(f"DROP TRIGGER {name}")
+        db.execute(f"CREATE TABLE data_subjects__legacy ({legacy_subjects})")
+        db.execute(
+            "INSERT INTO data_subjects__legacy SELECT id,subject_key,'Asia/Singapore',"
+            "is_active,created_at_utc FROM data_subjects"
+        )
+        db.execute(f"CREATE TABLE training_plans__legacy ({legacy_plans})")
+        db.execute(
+            "INSERT INTO training_plans__legacy SELECT id,subject_id,analysis_artifact_id,"
+            "plan_start_local_date,plan_end_local_date,'Asia/Singapore',status,objective_json,"
+            "constraints_json,created_at_utc FROM training_plans"
+        )
+        db.execute("DROP TABLE training_plans")
+        db.execute("DROP TABLE data_subjects")
+        db.execute("ALTER TABLE data_subjects__legacy RENAME TO data_subjects")
+        db.execute("ALTER TABLE training_plans__legacy RENAME TO training_plans")
+        for statement in saved:
+            db.execute(statement)
+        db.execute("COMMIT")
+        db.execute("PRAGMA foreign_keys=ON")
+    finally:
+        db.close()
+
+    receipt = tool.execute(request("migrate", root, FOUNDATION_SCHEMA_VERSION))
+    assert receipt.status == "already_initialized"
+    assert [item["code"] for item in receipt.warnings] == [
+        "legacy_timezone_contract_repaired"
+    ]
+    db = sqlite3.connect(root / "data.db")
+    try:
+        assert db.execute("SELECT DISTINCT timezone FROM data_subjects").fetchall() == [
+            ("Asia/Hong_Kong",)
+        ]
+        assert db.execute(
+            "SELECT DISTINCT timezone FROM training_plans"
+        ).fetchall() == [("Asia/Hong_Kong",)]
+        assert db.execute("PRAGMA foreign_key_check").fetchone() is None
+        assert (
+            "Asia/Hong_Kong"
+            in db.execute(
+                "SELECT sql FROM sqlite_master WHERE name='training_plans'"
+            ).fetchone()[0]
+        )
+    finally:
+        db.close()
+
+
+def test_key_constraints_and_delivery_ownership_tables(tmp_path: Path) -> None:
+    root = tmp_path / "foundation"
+    tool = foundation_tool(root)
+    assert tool.execute(request("init", root)).status == "initialized"
+    db = sqlite3.connect(root / "data.db")
+    db.execute("PRAGMA foreign_keys=ON")
+    db.execute(
+        "INSERT INTO data_subjects(subject_key,created_at_utc) VALUES('s','2026-01-01T00:00:00Z')"
+    )
+    subject = db.execute("SELECT id FROM data_subjects").fetchone()[0]
+    db.execute(
+        "INSERT INTO source_revisions(provider,resource_kind,provider_object_id,revision_no,payload_hash) VALUES('g','x','1',1,?)",
+        ("a" * 64,),
+    )
+    revision = db.execute("SELECT id FROM source_revisions").fetchone()[0]
+    db.execute(
+        "INSERT INTO activities(subject_id,provider,provider_activity_id,start_time_utc,local_date) VALUES(?,?,?,?,?)",
+        (subject, "garmin", "a", "2026-01-01T00:00:00Z", "2026-01-01"),
+    )
+    activity = db.execute("SELECT id FROM activities").fetchone()[0]
+    db.execute(
+        "INSERT INTO activity_samples(activity_id,source_revision_id,stream_kind,sample_index,extras_json) VALUES(?,?,?,?,?)",
+        (activity, revision, "fit", 0, "{}"),
+    )
+    for table in ("analysis_deliveries", "mail_deliveries"):
+        assert db.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table,)
+        ).fetchone()
+    assert not db.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='operational_alert_deliveries'"
+    ).fetchone()
+    with __import__("pytest").raises(sqlite3.IntegrityError):
+        db.execute(
+            "INSERT INTO raw_objects(sha256,relative_path,media_type,size_bytes,provider,resource_kind,fetched_at_utc) VALUES('x','../escape','x',0,'x','x','t')"
+        )
+
+
+def test_explicit_backup_and_rebuild_are_isolated(tmp_path: Path) -> None:
+    root = tmp_path / "foundation"
+    tool = foundation_tool(root)
+    assert tool.execute(request("init", root)).status == "initialized"
+    backup = tool.backup_database(tmp_path / "backup" / "data.db")
+    copied = sqlite3.connect(backup)
+    assert copied.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
+    copied.close()
+    rebuilt = tool.rebuild_into(tmp_path / "rebuilt")
+    assert rebuilt != root
+    assert (
+        foundation_tool(rebuilt).execute(request("verify", rebuilt)).status == "ready"
+    )
+
+
+def test_authenticated_encrypted_backup_restore_and_tamper(tmp_path: Path) -> None:
+    root = tmp_path / "foundation"
+    instance = foundation_tool(root)
+    assert instance.execute(request("init", root)).status == "initialized"
+    key = b"k" * 32
+    encrypted = instance.backup_encrypted(tmp_path / "secure.tlfb", lambda: key)
+    restored = FoundationTool.restore_encrypted(
+        encrypted, tmp_path / "restored.db", key
+    )
+    original = sqlite3.connect(root / "data.db")
+    copy = sqlite3.connect(restored)
+    assert (
+        original.execute("SELECT COUNT(*) FROM sqlite_master").fetchone()
+        == copy.execute("SELECT COUNT(*) FROM sqlite_master").fetchone()
+    )
+    original.close()
+    copy.close()
+    with __import__("pytest").raises(Exception):
+        FoundationTool.restore_encrypted(encrypted, tmp_path / "wrong.db", b"x" * 32)
+    tampered = tmp_path / "tampered.tlfb"
+    data = bytearray(encrypted.read_bytes())
+    data[-1] ^= 1
+    tampered.write_bytes(data)
+    with __import__("pytest").raises(Exception):
+        FoundationTool.restore_encrypted(tampered, tmp_path / "tampered.db", key)
+    with __import__("pytest").raises(FileExistsError):
+        FoundationTool.restore_encrypted(encrypted, restored, key)
+
+
+def test_contract_field_coverage_and_read_only_modes(tmp_path: Path) -> None:
+    root = tmp_path / "foundation"
+    instance = foundation_tool(root)
+    assert instance.execute(request("init", root)).status == "initialized"
+    db = root / "data.db"
+    before = {
+        path.name: (path.stat().st_mtime_ns, path.stat().st_size)
+        for path in root.rglob("*")
+        if path.is_file()
+    }
+    assert instance.execute(request("status", root)).status == "ready"
+    assert instance.execute(request("verify", root)).status == "ready"
+    after = {
+        path.name: (path.stat().st_mtime_ns, path.stat().st_size)
+        for path in root.rglob("*")
+        if path.is_file()
+    }
+    assert before == after
+    conn = sqlite3.connect(db)
+    required = {
+        "analysis_runs": {"analysis_kind", "target_start_local_date"},
+    }
+    for table, columns in required.items():
+        actual = {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
+        assert columns <= actual
+    assert not any(
+        "orchestration" in name or "scheduler" in name
+        for name in {
+            row[0]
+            for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        }
+    )
+
+
+def test_ready_missing_object_or_unsafe_permission_is_not_repaired(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "foundation"
+    instance = foundation_tool(root)
+    assert instance.execute(request("init", root)).status == "initialized"
+    (root / "raw" / "garmin" / "fit").rmdir()
+    assert instance.execute(request("init", root)).status == "incompatible"
+    assert not (root / "raw" / "garmin" / "fit").exists()
+    other = tmp_path / "other"
+    instance = foundation_tool(other)
+    assert instance.execute(request("init", other)).status == "initialized"
+    (other / "data.db").chmod(0o644)
+    assert instance.execute(request("verify", other)).status == "incompatible"
+
+
+def test_active_and_stale_lock_semantics(tmp_path: Path) -> None:
+    root = tmp_path / "foundation"
+    instance = foundation_tool(root)
+    lock = root / "state" / "locks" / "foundation.lock"
+    lock.parent.mkdir(parents=True)
+    root.chmod(0o700)
+    (root / "state").chmod(0o700)
+    lock.parent.chmod(0o700)
+    lock.write_text(json.dumps({"pid": __import__("os").getpid()}))
+    lock.chmod(0o600)
+    assert instance.execute(request("init", root)).status == "lock_busy"
+    lock.write_text(
+        json.dumps(
+            {
+                "pid": 99999999,
+                "uid": __import__("os").getuid(),
+                "started_at_utc": "2026-07-23T00:00:00Z",
+            }
+        )
+    )
+    lock.chmod(0o600)
+    assert instance.execute(request("init", root)).status == "initialized"
+    assert (root / "state" / "foundation-lock-recoveries.jsonl").exists()
+
+
+def test_public_request_and_receipt_schemas(tmp_path: Path) -> None:
+    request_schema = json.loads(
+        resource_bytes("harness/schemas/foundation_request.schema.json")
+    )
+    receipt_schema = json.loads(
+        resource_bytes("harness/schemas/foundation_receipt.schema.json")
+    )
+    payload = {
+        "mode": "init",
+        "invocation_id": "i",
+        "requested_at_utc": "2026-07-23T00:00:00Z",
+        "target_schema_version": None,
+    }
+    assert not list(Draft202012Validator(request_schema).iter_errors(payload))
+    assert list(
+        Draft202012Validator(request_schema).iter_errors(
+            {**payload, "data_root": "/tmp"}
+        )
+    )
+    receipt = foundation_tool(tmp_path / "schema").execute(
+        request("init", tmp_path / "schema")
+    )
+    assert not list(
+        Draft202012Validator(receipt_schema).iter_errors(json.loads(receipt.json()))
+    )
+
+
+def test_cli_has_only_fixed_foundation_shape() -> None:
+    parser = _parser()
+    assert parser.parse_args(["foundation", "init"]).foundation_mode == "init"
+    assert (
+        parser.parse_args(
+            ["foundation", "migrate", "--target-version", "1"]
+        ).target_version
+        == 1
+    )
+    with __import__("pytest").raises(SystemExit):
+        parser.parse_args(["foundation", "--data-root", "/tmp", "init"])
+
+
+def test_versioned_owner_config_loads() -> None:
+    root = Path(__file__).resolve().parents[1]
+    config = FoundationConfig.load(root)
+    assert config.data_root == (root / "state").resolve()
+
+
+def test_manual_section_715_manifest_matches_sqlite(tmp_path: Path) -> None:
+    root = tmp_path / "foundation"
+    assert foundation_tool(root).execute(request("init", root)).status == "initialized"
+    manifest = json.loads(
+        resource_bytes("harness/schemas/foundation_schema_manifest.json")
+    )
+    conn = sqlite3.connect(root / "data.db")
+    actual = {
+        row[0]
+        for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
+    }
+    assert set(manifest["tables"]) == actual
+    for table, spec in manifest["tables"].items():
+        columns = {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
+        assert set(spec["columns"]) <= columns
+        foreign = {
+            row[3]: row[2] for row in conn.execute(f"PRAGMA foreign_key_list({table})")
+        }
+        for column, target in spec.get("fk", {}).items():
+            assert foreign[column] == target

@@ -1,38 +1,44 @@
-# TrainLab project memory
+# TrainLab 项目记忆
 
-## Maintenance
+本文件用于跨会话外置持久上下文，由主协调 Agent 根据已验证证据维护。
 
-- Store stable preferences, verified facts, established validation commands,
-  and the current active-plan link only.
-- Task steps and checkpoints belong in the exec plan.
-- Never store credentials, personal health data, raw payloads, mail content, or
-  unverified assumptions here.
+## 维护约定
 
-## User preferences
+- 只保存稳定偏好、已验证项目事实、已建立的 lint/test 命令和活动计划链接。
+- 不重复任务步骤或检查点；exec plan 是任务状态的唯一事实源。
+- 不保存密钥、凭据、个人健康数据、raw/FIT 内容、邮件内容、完整对话或未经验证的假设。
+- 更新或删除过期事实；Validator 和 Worker 只返回发现，不直接修改本文件。
 
-- Project-facing documentation defaults to Chinese; protocol identifiers,
-  paths, commands, and status values retain their technical spelling.
-- Development uses the root agentForge Harness. TrainLab runtime behavior is
-  governed independently by the product Harness under `product/harness/`.
-- `orchestrate-parallel-work` is disabled only for this repository; the global
-  installation is not modified.
+## 用户偏好
 
-## Verified project facts
+- 项目说明文档默认使用中文；路径、命令、状态枚举和协议标识符保留技术拼写。
+- 开发使用根 agentForge Harness；产品运行 Harness/schema/policy 作为不可变资源位于
+  `source/src/resources/harness/`，日常从 `source/index.py` 手动运行。
+- `orchestrate-parallel-work` 只在本仓库禁用；不修改其全局安装。
 
-- TrainLab is Python 3.12 with a setuptools `src/` layout.
-- The product timezone contract uses `Asia/Hong_Kong`.
-- Private `state`, `logs`, `test_data`, FIT, raw data, databases, credentials,
-  and private configuration must never enter Git or `dist/`.
-- `product/` is the approved sole product source/runtime root after migration.
-- `dist/` is generated from an explicit allowlist and is never a source tree.
+## 已验证的项目事实
 
-## Established validation commands
+- 根开发 Harness 固定适配 agentForge `v0.4.2`，上游标签提交为
+  `ccc934ece6b7b64368c08bc3ce431678511ecfa3`。
+- TrainLab 的唯一产品工程位于 `source/`；产品包为 `source/src/`，直接入口为
+  `source/index.py`，默认实例根为 `source/`，显式 `TRAINLAB_INSTANCE_ROOT` 可覆盖。
+- Foundation v4 新库不含 Orchestration/Supervisor 表和视图；旧 state/config/logs/数据库
+  归档在被 Git 忽略的 `data-backup/`，不删除、不进入产品新库。
+- 产品时区合同使用 `Asia/Hong_Kong`；运行时教练 Harness v2 已加入课程、教练画像、
+  睡眠半开区间和跑攀硬负荷合同。
+- 私有 state、logs、FIT、raw、数据库、凭据和私有配置不得进入 Git 或 `dist/`。
+- 项目不再使用或忽略根 `test_data/`；六类 Garmin FIT 测试输入由
+  `tests/fixtures/synthetic_fit.py` 确定性生成，私人测试资料只能留在仓库外。
+- 根 `references/` 只由用户主动要求维护；产品说明和运行资料位于 `source/docs/`。
 
-- `product/.venv/bin/python product/scripts/verify_repository_quality.py all`
-- `cd product && .venv/bin/python -m pytest`
-- The maintained Ruff and mypy target lists are documented in
-  `product/README.md` and CI.
+## 已建立的验证命令
 
-## Active plan
+- `cd source && python3.12 tools/verify_repository_quality.py all`
+- `cd source && python3.12 -m pytest`
+- Ruff、format-check、mypy、schema 和 source-layout 门禁均从 `source/` 执行；正式运行
+  不依赖 wheel、bundle、Supervisor 或仓库 `.venv`。
 
-No active plan.
+## 活动计划链接
+
+当前没有活动 exec plan；最近完成的 M4 计划已归档至
+`docs/exec-plans/completed/M4-source-root-0001-product-consolidation.md`。
