@@ -113,7 +113,7 @@ agentForge 开发 Harness；产品代码和实例入口位于 `source/`；旧运
 用户于 2026-08-14 批准。M5 在已提交的 M4 基线之上严格串行执行：先保存基线，随后建立
 AI 提案/用户确认的教练画像管理，按近期完整周动态评估容量，最后只在仓库外隔离实例中
 生成周报、日报及 HTML/JSON 预览。M5 不调用 Garmin/Gmail、不补数、不发送邮件、不修改
-正式 `source/state`，不推送远端；M5 代码在用户另行批准前不自动提交。
+正式 `source/state`，不推送远端；M5 已按批准保存为本地基线，未推送远端。
 
 | 任务 | 状态 | 优先级 | 显式依赖 | Batch | 预期写入范围 | Exec plan |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -121,3 +121,16 @@ AI 提案/用户确认的教练画像管理，按近期完整周动态评估容�
 | [x] `M5-0002` AI 教练画像管理与确认应用 | `completed` | high | M5-0001 | serial | `source/src/coaching`、CLI、私有 profile state、画像测试 | [`completed`](docs/exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md) |
 | [x] `M5-0003` 动态周容量与排课合同 | `completed` | high | M5-0002 | serial | `source/src/analysis`、运行时 schema、容量/排课测试 | 同一 completed plan |
 | [x] `M5-0004` 隔离数据库报告预览 | `completed` | high | M5-0003 | serial | `source/src/analysis`、预览 CLI、隔离预览测试 | 同一 completed plan |
+
+### [ ] `M6` 活动证据一致性与真实报告预览 — `blocked`
+
+用户于 2026-08-14 批准离线优先路径。M6 先保存 M5 本地基线，再审计并修复 inventory
+生命周期证据，在仓库外 candidate 中生成真实周报、日报和 HTML/JSON 预览。正式
+`source/state`、Garmin、Gmail、邮件和远端 Git 均不触碰；在线核验另立阶段。
+
+| 任务 | 状态 | 优先级 | 显式依赖 | Batch | 预期写入范围 | Exec plan |
+| --- | --- | --- | --- | --- | --- | --- |
+| [x] `M6-0001` 保存 M5 单一本地基线 | `completed` | high | M5 | serial-m6 | 本地 Git 提交 | [`active`](docs/exec-plans/active/M6-activity-evidence-0001-lifecycle-and-preview.md) |
+| [ ] `M6-0002` 审计并统一 inventory 生命周期证据 | `validated` | high | M6-0001 | serial-m6 | `source/src/garmin`、`source/tools`、生命周期测试 | [`active`](docs/exec-plans/active/M6-activity-evidence-0001-lifecycle-and-preview.md) |
+| [ ] `M6-0003` candidate 离线修复与完整性验证 | `validated` | high | M6-0002 | serial-m6 | candidate-only 数据工具和测试 | 同一 active plan |
+| [ ] `M6-0004` 真实周报、日报和 HTML/JSON 预览 | `blocked` | high | M6-0003 | serial-m6 | candidate-only 预览证据和测试 | 同一 active plan |

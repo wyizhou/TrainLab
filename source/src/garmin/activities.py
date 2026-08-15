@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from .contracts import *  # noqa: F403
+from .lifecycle import ActivityInventoryObservation, next_activity_state
 
 
 class ActivityCollectionMixin(GarminCollectionHost):
@@ -164,6 +165,7 @@ class ActivityCollectionMixin(GarminCollectionHost):
                     receipt,
                 )
 
+        absence_proven = self._inventory_absence_proven(request, inventory_complete)
         self._apply_activity_inventory_state(
             conn,
             subject,
@@ -171,13 +173,9 @@ class ActivityCollectionMixin(GarminCollectionHost):
             start,
             through,
             request.mode,
-            # Every successfully completed *full run* is one inventory
-            # observation, even when its raw page hashes equal the previous
-            # full run.  A repeated invocation_id returns its persisted run
-            # before reaching this method, so it cannot manufacture another
-            # observation.  Incremental/snapshot windows are not comparable
-            # full inventories and can only reactivate activities they see.
-            complete=request.mode == "full" and inventory_complete,
+            complete=inventory_complete,
+            absence_proven=absence_proven,
+            observation_id=inventory_key,
         )
         if inventory_complete:
             self.repo.capability(
@@ -198,6 +196,21 @@ class ActivityCollectionMixin(GarminCollectionHost):
         if request.mode == "full":
             return f"garmin:inventory:activities:full:through:{through.isoformat()}"
         return f"garmin:inventory:activities:{request.mode}:{start.isoformat()}:{through.isoformat()}"
+
+    def _inventory_absence_proven(
+        self, request: SyncRequest, inventory_complete: bool
+    ) -> bool:
+        """Only a bounded complete result or verified full paging proves absence."""
+
+        if not inventory_complete or request.mode == "snapshot":
+            return False
+        if request.mode == "repair":
+            return True
+        if request.mode != "full" or self.budget_guard is not None:
+            return False
+        return callable(
+            getattr(self._transport(), "activity_count", None)
+        ) and callable(getattr(self._transport(), "activity_page", None))
 
     def _collect_activity_inventory(
         self,
@@ -3181,8 +3194,11 @@ class ActivityCollectionMixin(GarminCollectionHost):
         mode: str,
         *,
         complete: bool,
+        absence_proven: bool,
+        observation_id: str,
     ) -> None:
-        query = """SELECT id,provider_activity_id,provider_state
+        query = """SELECT id,provider_activity_id,local_date,provider_state,
+                          provider_deleted_at_utc
                    FROM activities
                    WHERE subject_id=? AND provider='garmin' AND local_date<=?"""
         parameters: list[Any] = [subject, through.isoformat()]
@@ -3191,19 +3207,44 @@ class ActivityCollectionMixin(GarminCollectionHost):
             parameters.append(start.isoformat())
         rows = list(conn.execute(query, parameters))
         now = self._now_utc().isoformat().replace("+00:00", "Z")
+        observation = ActivityInventoryObservation(
+            observation_id=observation_id,
+            mode=mode,
+            start_local_date=None if mode == "full" else start,
+            through_local_date=through,
+            seen_ids=frozenset(seen_ids),
+            complete=complete,
+            absence_proven=absence_proven,
+            observed_at_utc=now,
+        )
         conn.execute("BEGIN IMMEDIATE")
         try:
             for row in rows:
                 provider_id = str(row["provider_activity_id"])
-                if provider_id in seen_ids:
+                current_state = str(row["provider_state"])
+                next_state = next_activity_state(
+                    current_state,
+                    provider_id,
+                    date.fromisoformat(str(row["local_date"])),
+                    observation,
+                    last_transition_at_utc=(
+                        str(row["provider_deleted_at_utc"])
+                        if row["provider_deleted_at_utc"]
+                        else None
+                    ),
+                )
+                if next_state == "active":
                     self._set_activity_active(conn, subject, provider_id)
-                elif complete and row["provider_state"] == "active":
+                elif next_state == "suspected_missing" and current_state == "active":
                     conn.execute(
                         """UPDATE activities SET provider_state='suspected_missing',
                                   first_missing_at_utc=?,last_missing_at_utc=? WHERE id=?""",
                         (now, now, row["id"]),
                     )
-                elif complete and row["provider_state"] == "suspected_missing":
+                elif (
+                    next_state == "provider_deleted"
+                    and current_state == "suspected_missing"
+                ):
                     conn.execute(
                         """UPDATE activities SET provider_state='provider_deleted',
                                   last_missing_at_utc=?,provider_deleted_at_utc=? WHERE id=?""",

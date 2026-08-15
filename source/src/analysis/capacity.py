@@ -25,6 +25,9 @@ _RUNNING_SPORTS = frozenset(
 )
 _COMPLETE_COVERAGE = frozenset({"fetched", "empty", "complete"})
 _DEFAULT_WEEKDAYS = (1, 3, 5, 7)
+_UNRESOLVED_LIFECYCLE_STATES = frozenset(
+    {"suspected_missing", "provider_deleted", "unresolved"}
+)
 
 
 class WeeklyCapacityError(ValueError):
@@ -111,6 +114,67 @@ def _week_stats(
     }
 
 
+def _has_unresolved_lifecycle(
+    activities: tuple[Mapping[str, Any], ...],
+    plan_start: date,
+) -> bool:
+    """Return whether the four-week evidence window has unresolved activity state."""
+
+    window_start = plan_start - timedelta(days=28)
+    window_end = plan_start - timedelta(days=1)
+    for row in activities:
+        local_date = row.get("local_date")
+        state = row.get("provider_state")
+        if not isinstance(local_date, str) or state not in _UNRESOLVED_LIFECYCLE_STATES:
+            continue
+        try:
+            observed = date.fromisoformat(local_date)
+        except ValueError:
+            continue
+        if window_start <= observed <= window_end:
+            return True
+    return False
+
+
+def _deferred_result(
+    *,
+    period: Mapping[str, str],
+    weekdays: tuple[int, ...],
+    hard_load_max: int,
+    hard_load_min_gap_days: int,
+    reason: str,
+) -> dict[str, Any]:
+    result = {
+        "schema_version": "1",
+        "status": "deferred",
+        "decision": "hold",
+        "plan_period": dict(period),
+        "complete_weeks": [],
+        "baseline": {
+            "weekly_km_median": 0,
+            "frequency_median_floor": 0,
+            "longest_run_km_median": 0,
+            "hard_load_median_floor": 0,
+        },
+        "allowed_range": {"minimum_km": 0, "maximum_km": 0},
+        "frequency": {
+            "minimum": 0,
+            "maximum": 0,
+            "allowed_weekdays": list(weekdays),
+        },
+        "long_run_max_km": 0,
+        "hard_load": {
+            "maximum": hard_load_max,
+            "minimum_gap_days": hard_load_min_gap_days,
+        },
+        "single_change_dimension": "none",
+        "race_pace_anchor": False,
+        "reason": reason,
+    }
+    _validate(result)
+    return result
+
+
 def assess_weekly_capacity(
     *,
     activities: tuple[Mapping[str, Any], ...],
@@ -142,34 +206,23 @@ def assess_weekly_capacity(
         "start_local_date": plan_start.isoformat(),
         "end_local_date": (plan_start + timedelta(days=6)).isoformat(),
     }
+    if _has_unresolved_lifecycle(activities, plan_start):
+        return _deferred_result(
+            period=period,
+            weekdays=weekdays,
+            hard_load_max=hard_load_max,
+            hard_load_min_gap_days=hard_load_min_gap_days,
+            reason="activity_lifecycle_unresolved",
+        )
     if len(weeks) < 2:
-        result = {
-            "schema_version": "1",
-            "status": "deferred",
-            "decision": "hold",
-            "plan_period": period,
-            "complete_weeks": weeks,
-            "baseline": {
-                "weekly_km_median": 0,
-                "frequency_median_floor": 0,
-                "longest_run_km_median": 0,
-                "hard_load_median_floor": 0,
-            },
-            "allowed_range": {"minimum_km": 0, "maximum_km": 0},
-            "frequency": {
-                "minimum": 0,
-                "maximum": 0,
-                "allowed_weekdays": list(weekdays),
-            },
-            "long_run_max_km": 0,
-            "hard_load": {
-                "maximum": hard_load_max,
-                "minimum_gap_days": hard_load_min_gap_days,
-            },
-            "single_change_dimension": "none",
-            "race_pace_anchor": False,
-            "reason": "insufficient_complete_weeks",
-        }
+        result = _deferred_result(
+            period=period,
+            weekdays=weekdays,
+            hard_load_max=hard_load_max,
+            hard_load_min_gap_days=hard_load_min_gap_days,
+            reason="insufficient_complete_weeks",
+        )
+        result["complete_weeks"] = weeks
         _validate(result)
         return result
 

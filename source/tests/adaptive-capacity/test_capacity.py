@@ -98,3 +98,23 @@ def test_capacity_holds_when_adherence_is_not_stable() -> None:
     assert result["decision"] == "hold"
     assert result["allowed_range"] == {"minimum_km": 36.0, "maximum_km": 42.0}
     assert result["single_change_dimension"] == "none"
+
+
+def test_capacity_defers_when_recent_activity_lifecycle_is_unresolved() -> None:
+    activities, coverage = _rows()
+    activities = (
+        *activities,
+        {
+            "local_date": "2026-08-03",
+            "sport": "running",
+            "provider_state": "provider_deleted",
+            "distance_m": 5000,
+        },
+    )
+    result = assess_weekly_capacity(
+        activities=activities,
+        coverage=coverage,
+        plan_start=date(2026, 8, 10),
+    )
+    assert result["status"] == "deferred"
+    assert result["reason"] == "activity_lifecycle_unresolved"

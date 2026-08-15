@@ -288,6 +288,42 @@ def test_weekly_first_run_has_exact_windows_plan_items_and_host_safety_normaliza
     )
 
 
+def test_mixed_running_climbing_rest_week_passes_strict_contracts() -> None:
+    climbing = {
+        "activity_kind": "climbing",
+        "rationale": "schedule_appropriate",
+        "course_type": "technique_or_easy_volume",
+        "planned_duration_minutes": 45,
+        "prescribed_rpe": 4,
+        "hard_session": False,
+        "garmin_mapping": "unsupported_skip",
+        "recovery_cost_hours": 24,
+    }
+    prescriptions = [
+        running(),
+        climbing,
+        rest(),
+        running(),
+        rest(),
+        climbing,
+        rest(),
+    ]
+    accepted = validate(output(prescriptions=prescriptions)).result
+    assert [item["activity_kind"] for item in accepted["training_plan"]["items"]] == [
+        "running",
+        "climbing",
+        "rest",
+        "running",
+        "rest",
+        "climbing",
+        "rest",
+    ]
+    climbing_item = accepted["training_plan"]["items"][1]["prescription"]
+    assert climbing_item["planned_duration_minutes"] == 45
+    assert climbing_item["garmin_mapping"] == "unsupported_skip"
+    assert accepted["safety"]["safety_state"] in {"normal", "warning"}
+
+
 def test_host_profile_limits_hard_loads_independently_of_model_constraints() -> None:
     hard = running(zone=4)
     value = output(

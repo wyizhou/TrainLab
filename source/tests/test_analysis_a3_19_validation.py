@@ -276,12 +276,22 @@ def test_revision_enforces_red_flag_bpm_and_clock_time_rules() -> None:
             "work_intervals": [],
             "stop_conditions": STOP,
             "rationale": "recovery_appropriate",
+            "hard_session": True,
+            "planned_distance_km": 10,
+            "target_pace_seconds_per_km": 300,
+            "course_name": "不应保留的质量课",
         },
     )
     unsafe["artifacts"][0]["structured_content"] = unsafe["training_plan"]
     protected = validate(unsafe, exp).result
     assert protected["safety"]["safety_state"] == "suspended"
     assert protected["training_plan"]["items"][0]["activity_kind"] == "rest"
+    protected_prescription = protected["training_plan"]["items"][0]["prescription"]
+    assert protected_prescription["activity_kind"] == "rest"
+    assert "hard_session" not in protected_prescription
+    assert "planned_distance_km" not in protected_prescription
+    assert "target_pace_seconds_per_km" not in protected_prescription
+    assert "course_name" not in protected_prescription
     value = output()
     value["artifacts"][0]["user_visible_text"] = "建议在 08:00 训练。"
     rejects(value, "analysis_result_training_clock_time_forbidden")

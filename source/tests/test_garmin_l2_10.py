@@ -89,6 +89,18 @@ class ActivityTransport:
         raise AssertionError("L2-10 must not fetch enrichments")
 
 
+class ListOnlyTransport:
+    """Transport facade without count/page proof for a historical full list."""
+
+    def __init__(self, delegate: ActivityTransport) -> None:
+        self._delegate = delegate
+
+    def __getattr__(self, name: str):
+        if name in {"activity_count", "activity_page"}:
+            raise AttributeError(name)
+        return getattr(self._delegate, name)
+
+
 def _setup(tmp_path: Path, entries: list[dict[str, object]]):
     root = tmp_path / "data"
     foundation = FoundationConfig(
@@ -310,6 +322,23 @@ def test_incremental_is_window_bounded_and_snapshot_absence_never_marks_missing(
         assert (
             conn.execute(
                 "SELECT provider_state FROM activities WHERE provider_activity_id='3'"
+            ).fetchone()[0]
+            == "active"
+        )
+
+
+def test_non_paged_full_list_cannot_mark_historical_absence(
+    tmp_path: Path,
+) -> None:
+    config, tool, transport = _setup(tmp_path, [_entry(1, "2026-04-15")])
+    assert _full(tool, "paged-seed").status == "succeeded"
+    transport.entries = []
+    tool.transport = ListOnlyTransport(transport)
+    assert _full(tool, "unproven-full").status == "succeeded"
+    with sqlite3.connect(config.database_path) as conn:
+        assert (
+            conn.execute(
+                "SELECT provider_state FROM activities WHERE provider_activity_id='1'"
             ).fetchone()[0]
             == "active"
         )

@@ -61,6 +61,68 @@ _REASON_CODES = frozenset(_POLICY["reason_codes"])
 _TOKENS = _POLICY["controlled_tokens"]
 
 
+def _selected_primary_branch_error(
+    payload: Mapping[str, Any],
+) -> tuple[str, str] | None:
+    """Return a stable error from the activity-kind branch of ``primary_items``.
+
+    Draft 2020-12 reports all failed ``oneOf`` branches together.  Sorting those
+    errors can make an unrelated ``additionalProperties`` error from a
+    non-matching branch hide the useful ``required``, ``type`` or ``pattern``
+    failure in the branch selected by ``activity_kind``.  Revalidate only that
+    branch and return schema vocabulary, never candidate values or messages.
+    """
+
+    primary_items = payload.get("primary_items")
+    if not isinstance(primary_items, list) or not primary_items:
+        return None
+    candidate = primary_items[0]
+    if not isinstance(candidate, Mapping):
+        return None
+    kind = candidate.get("activity_kind")
+    if not isinstance(kind, str) or kind not in {
+        "running",
+        "climbing",
+        "strength",
+        "rest",
+    }:
+        return None
+    branch_schema = {
+        "$schema": _REQUEST_SCHEMA.get("$schema"),
+        "$defs": _REQUEST_SCHEMA.get("$defs", {}),
+        "$ref": f"#/$defs/{kind}_item",
+    }
+    branch_validator = Draft202012Validator(branch_schema, format_checker=_FORMAT)
+    errors = sorted(
+        branch_validator.iter_errors(candidate),
+        key=lambda item: (
+            tuple(str(part) for part in item.absolute_path),
+            str(item.validator),
+        ),
+    )
+    if not errors:
+        return None
+    error = errors[0]
+    prefix = "primary_items.0"
+    if error.validator == "required":
+        branch_definition = _REQUEST_SCHEMA.get("$defs", {}).get(f"{kind}_item", {})
+        required_fields = (
+            branch_definition.get("required", [])
+            if isinstance(branch_definition, Mapping)
+            else []
+        )
+        missing = [field for field in required_fields if field not in candidate]
+        field = (
+            sorted(str(value) for value in missing)[0]
+            if isinstance(missing, list) and missing
+            else "item"
+        )
+        return f"{prefix}.{field}", "required"
+    relative = ".".join(str(part) for part in error.absolute_path)
+    location = f"{prefix}.{relative}" if relative else prefix
+    return location, str(error.validator)
+
+
 def _schema_error(
     validator: Draft202012Validator, payload: Mapping[str, Any], kind: str
 ) -> None:
@@ -72,9 +134,31 @@ def _schema_error(
         ),
     )
     if errors:
+        if kind == "request":
+            branch_error = _selected_primary_branch_error(payload)
+            if branch_error is not None:
+                location, reason = branch_error
+                raise SafetyRuleError(
+                    f"training_safety_{kind}_schema_invalid:{location}:{reason}"
+                )
         error = errors[0]
         location = ".".join(str(part) for part in error.absolute_path) or "root"
-        raise SafetyRuleError(f"training_safety_{kind}_schema_invalid:{location}")
+        # Preserve only schema vocabulary in the stable error.  For a
+        # ``oneOf`` failure, the first deterministic child validator makes
+        # the rejection actionable without retaining candidate values.
+        reason = str(error.validator)
+        if error.context:
+            child = sorted(
+                error.context,
+                key=lambda item: (
+                    tuple(str(part) for part in item.absolute_path),
+                    str(item.validator),
+                ),
+            )[0]
+            reason = str(child.validator)
+        raise SafetyRuleError(
+            f"training_safety_{kind}_schema_invalid:{location}:{reason}"
+        )
 
 
 def _canonical(value: Any) -> str:

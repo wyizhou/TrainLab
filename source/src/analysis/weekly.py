@@ -476,7 +476,16 @@ class WeeklyRoute:
             ),
         )
         capacity_features = (
-            (("weekly_capacity_assessment_v1", capacity_assessment),)
+            (
+                {
+                    "key": "weekly_capacity_assessment_v1",
+                    "algorithm_version": "weekly-capacity-assessment-v1",
+                    "value_origin": "derived_statistic",
+                    "input_revision_ids": [],
+                    "contract_version": "1",
+                    "capacity_assessment": dict(capacity_assessment),
+                },
+            )
             if capacity_assessment is not None
             else ()
         )

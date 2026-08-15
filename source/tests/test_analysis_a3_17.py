@@ -18,6 +18,7 @@ from src.analysis.daily import (
 )
 from src.analysis.harness import HarnessBundle, SchemaEvidence
 from src.analysis.quality_gate import QualityGateResult
+from src.analysis.result_validation import _candidate_for_safety
 from src.analysis.run_state import AnalysisRunStateError, RunDecision
 from src.analysis.safety_rules import evaluate_training_safety
 
@@ -210,7 +211,9 @@ def test_every_daily_primary_item_template_is_accepted_by_safety_policy():
     for key in (
         "running_template",
         "rest_template",
+        "climbing_template",
     ):
+        candidate = _candidate_for_safety(contract[key])
         result = evaluate_training_safety(
             {
                 "schema_version": "1",
@@ -221,7 +224,7 @@ def test_every_daily_primary_item_template_is_accepted_by_safety_policy():
                 "safety_signals": [],
                 "quality_sessions": [],
                 "substitution": None,
-                "primary_items": [contract[key]],
+                "primary_items": [candidate],
             }
         )
         assert result["status"] != "rejected", key

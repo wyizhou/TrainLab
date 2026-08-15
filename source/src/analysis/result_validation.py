@@ -63,6 +63,65 @@ _RAW_DEVICE_NARRATION = re.compile(
 _DEVICE_DIAGNOSIS = re.compile(
     r"(?:低氧血症|心脏(?:可能)?有问题|睡眠呼吸(?:存在)?疾病)"
 )
+_COURSE_PRESCRIPTION_FIELDS = frozenset(
+    {
+        "planned_distance_m",
+        "planned_distance_km",
+        "distance_m",
+        "pace_seconds_per_km",
+        "target_pace_seconds_per_km",
+        "course_name",
+        "purpose",
+        "rationale_text",
+        "hard_session",
+        "recovery_cost_hours",
+    }
+)
+_CLIMBING_COURSE_PRESCRIPTION_FIELDS = frozenset(
+    {
+        "course_type",
+        "planned_duration_minutes",
+        "planned_duration_seconds",
+        "prescribed_rpe",
+        "garmin_mapping",
+    }
+)
+_SAFETY_ITEM_FIELDS_BY_KIND = {
+    "running": frozenset(
+        {
+            "activity_kind",
+            "cooldown",
+            "course_type",
+            "hansons_session_role",
+            "main_set",
+            "planned_duration_minutes",
+            "planned_duration_seconds",
+            "prescribed_rpe",
+            "rationale",
+            "stop_conditions",
+            "talk_test",
+            "target_bpm_range",
+            "target_zone",
+            "total_volume",
+            "warmup",
+            "work_intervals",
+        }
+    ),
+    "climbing": frozenset({"activity_kind", "rationale"}),
+    "strength": frozenset(
+        {"activity_kind", "movements", "rationale", "stop_conditions"}
+    ),
+    "rest": frozenset(
+        {
+            "activity_kind",
+            "daily_activity_allowed",
+            "evidence",
+            "recovery_signals",
+            "seek_professional_help_if",
+            "uncertainty",
+        }
+    ),
+}
 _UNCONFIRMED_ACTIVITY_CLAIM = re.compile(
     r"(?:昨天|昨日).{0,12}(?:没有训练|没有运动|未训练|未执行计划)"
 )
@@ -147,6 +206,57 @@ class ValidatedAnalysisResult:
 
 def _reject(code: str, path: str = "root") -> Never:
     raise AnalysisResultValidationError(code, path)
+
+
+def _safety_candidate_error_code(error: SafetyRuleError) -> str:
+    """Return a bounded, content-free code suitable for a correction prompt."""
+
+    parts = str(error).split(":")
+    raw = re.sub(r"[^a-z0-9_]+", "_", parts[0].lower()).strip("_")
+    location = (
+        re.sub(r"[^a-z0-9]+", "_", parts[1].lower()).strip("_")
+        if len(parts) > 1
+        else "root"
+    )
+    reason = (
+        re.sub(r"[^a-z0-9]+", "_", parts[2].lower()).strip("_")
+        if len(parts) > 2
+        else "rule"
+    )
+    raw = raw.removeprefix("training_safety_")[:12] or "rule"
+    location = location[:24] or "root"
+    reason = reason[:16] or "rule"
+    return f"analysis_result_safety_invalid_{raw}_{location}_{reason}"
+
+
+def _restore_course_prescription_fields(
+    normalized: dict[str, Any], original: Mapping[str, Any]
+) -> None:
+    """Keep model dose metadata only when safety kept the same activity."""
+
+    if normalized.get("activity_kind") != original.get("activity_kind"):
+        return
+    if normalized.get("activity_kind") == "rest":
+        return
+    fields = _COURSE_PRESCRIPTION_FIELDS
+    if normalized.get("activity_kind") == "climbing":
+        fields = fields | _CLIMBING_COURSE_PRESCRIPTION_FIELDS
+    for field in fields:
+        if field in original:
+            normalized[field] = original[field]
+
+
+def _candidate_for_safety(original: Mapping[str, Any]) -> dict[str, Any]:
+    """Project a model item to the strict safety-item vocabulary.
+
+    Course metadata and dose extensions are host-owned.  They are validated
+    separately and must not make the deterministic safety schema reject an
+    otherwise valid running, climbing, rest, or strength item.
+    """
+
+    kind = original.get("activity_kind")
+    fields = _SAFETY_ITEM_FIELDS_BY_KIND.get(kind if isinstance(kind, str) else "", ())
+    return {key: value for key, value in original.items() if key in fields}
 
 
 def _as_mapping(value: Mapping[str, Any] | Any, code: str) -> Mapping[str, Any]:
@@ -1056,12 +1166,18 @@ def _validate_weekly_safety(
                 f"weekly_safety_request_bases.{local_date}",
             )
         request = dict(base)
-        request["primary_items"] = [item["prescription"]]
+        original_prescription = dict(item["prescription"])
+        candidate_for_safety = _candidate_for_safety(original_prescription)
+        # ``course_contract`` is a host-validated wrapper, not a training
+        # safety request field.  Strip it before the deterministic safety
+        # schema check, then rebuild the contract from the normalized result
+        # below.  Daily validation follows the same boundary.
+        request["primary_items"] = [candidate_for_safety]
         try:
             evidence = evaluate_training_safety(request)
-        except SafetyRuleError:
+        except SafetyRuleError as error:
             _reject(
-                "analysis_result_safety_candidate_invalid",
+                _safety_candidate_error_code(error),
                 f"training_plan.items.{index}.prescription",
             )
         primary_items = evidence.get("primary_items")
@@ -1076,6 +1192,10 @@ def _validate_weekly_safety(
                 f"training_plan.items.{index}.prescription",
             )
         safe = dict(primary_items[0])
+        # Preserve only the bounded course-dose fields for the host-owned
+        # course contract; they are intentionally not part of the safety
+        # request schema.
+        _restore_course_prescription_fields(safe, original_prescription)
         # Weekly can be safely normalized by the host, but it cannot silently
         # change the date identity.  The item type follows the normalized
         # primary prescription, including a safety-induced rest day.
@@ -1603,13 +1723,15 @@ def _validate_revision_safety(
                 "analysis_result_revision_safety_base_invalid",
                 f"weekly_safety_request_bases.{item['local_date']}",
             )
+        original_prescription = dict(item["prescription"])
+        candidate_for_safety = _candidate_for_safety(original_prescription)
         try:
             evidence = evaluate_training_safety(
-                {**base, "primary_items": [item["prescription"]]}
+                {**base, "primary_items": [candidate_for_safety]}
             )
-        except SafetyRuleError:
+        except SafetyRuleError as error:
             _reject(
-                "analysis_result_safety_candidate_invalid",
+                _safety_candidate_error_code(error),
                 f"training_plan.items.{index}.prescription",
             )
         primary = evidence.get("primary_items")
@@ -1624,6 +1746,7 @@ def _validate_revision_safety(
                 f"training_plan.items.{index}.prescription",
             )
         safe = dict(primary[0])
+        _restore_course_prescription_fields(safe, original_prescription)
         item["prescription"], item["activity_kind"] = safe, safe.get("activity_kind")
         normalized_contract = _course_contract_for_item(
             safe, local_date=str(item["local_date"])
@@ -1850,8 +1973,8 @@ def _validate_safety(
             "analysis_result_primary_item_missing",
             "artifacts.daily_training_advice.structured_content.primary_item",
         )
-    candidate_for_safety = dict(candidate)
-    candidate_for_safety.pop("course_contract", None)
+    original_candidate = dict(candidate)
+    candidate_for_safety = _candidate_for_safety(original_candidate)
     base = _as_mapping(
         expected.safety_request_base, "analysis_result_safety_request_invalid"
     )
@@ -1864,9 +1987,9 @@ def _validate_safety(
     request["primary_items"] = [candidate_for_safety]
     try:
         evidence = evaluate_training_safety(request)
-    except SafetyRuleError:
+    except SafetyRuleError as error:
         _reject(
-            "analysis_result_safety_candidate_invalid",
+            _safety_candidate_error_code(error),
             "artifacts.daily_training_advice.structured_content.primary_item",
         )
     primary_items = evidence.get("primary_items")
@@ -1895,6 +2018,7 @@ def _validate_safety(
     # normalized prescription.  Never require the model to reproduce the rule
     # engine's derived output.
     normalized_primary = dict(expected_primary)
+    _restore_course_prescription_fields(normalized_primary, original_candidate)
     normalized_contract = _course_contract_for_item(
         expected_primary,
         local_date=str(advice["period"]["start_local_date"]),

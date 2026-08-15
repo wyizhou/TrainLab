@@ -156,6 +156,7 @@ def daily_primary_item_contract() -> Mapping[str, Any]:
         },
         "climbing_template": {
             "activity_kind": "climbing",
+            "rationale": "recovery_appropriate",
             "course_type": "technique_or_easy_volume",
             "planned_duration_minutes": 45,
             "prescribed_rpe": 4,

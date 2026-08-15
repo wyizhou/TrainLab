@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trainlab.local/schemas/activity_lifecycle_audit_v1.schema.json",
+  "title": "Activity lifecycle audit v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "status",
+    "start_local_date",
+    "end_local_date",
+    "observation_count",
+    "absence_proven_count",
+    "seen_activity_count",
+    "reactivated_count",
+    "unresolved_count",
+    "parse_failure_count",
+    "raw_hash_mismatch_count",
+    "provider_calls",
+    "observations"
+  ],
+  "properties": {
+    "schema_version": {"const": "1"},
+    "status": {"enum": ["audited", "applied"]},
+    "start_local_date": {"type": "string", "format": "date"},
+    "end_local_date": {"type": "string", "format": "date"},
+    "observation_count": {"type": "integer", "minimum": 0},
+    "absence_proven_count": {"type": "integer", "minimum": 0},
+    "seen_activity_count": {"type": "integer", "minimum": 0},
+    "reactivated_count": {"type": "integer", "minimum": 0},
+    "unresolved_count": {"type": "integer", "minimum": 0},
+    "parse_failure_count": {"type": "integer", "minimum": 0},
+    "raw_hash_mismatch_count": {"type": "integer", "minimum": 0},
+    "provider_calls": {"const": 0},
+    "observations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "revision_id",
+          "observation_id",
+          "mode",
+          "start_local_date",
+          "through_local_date",
+          "observed_at_utc",
+          "entry_count",
+          "seen_activity_count",
+          "absence_proven",
+          "reason_codes",
+          "payload_sha256"
+        ],
+        "properties": {
+          "revision_id": {"type": "integer", "minimum": 1},
+          "observation_id": {"type": "string", "maxLength": 256},
+          "mode": {"enum": ["full", "repair", "incremental", "snapshot"]},
+          "start_local_date": {"type": ["string", "null"], "format": "date"},
+          "through_local_date": {"type": "string", "format": "date"},
+          "observed_at_utc": {"type": "string", "format": "date-time", "pattern": "Z$"},
+          "entry_count": {"type": "integer", "minimum": 0},
+          "seen_activity_count": {"type": "integer", "minimum": 0},
+          "absence_proven": {"type": "boolean"},
+          "reason_codes": {
+            "type": "array",
+            "items": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$"},
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "payload_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        }
+      }
+    }
+  }
+}
