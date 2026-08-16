@@ -12,66 +12,55 @@ TrainLab/
 ├── docs/ references/ skills/ .github/
 ├── data-backup/          # 本机忽略的旧数据归档
 └── source/
-    ├── index.py          # 唯一直接入口
-    ├── src/              # 唯一产品 Python 包
-    ├── tests/            # 唯一产品测试
-    ├── config/           # 仅 README/examples 跟踪，真实配置忽略
-    ├── state/ logs/      # 私有实例目录，忽略
-    ├── scripts/ tools/ docs/
-    ├── pyproject.toml
-    └── requirements.lock
+    ├── AGENTS.md         # 无状态运行 Harness
+    ├── skills/           # 本地 Skills、脚本与合同测试
+    ├── templates/        # fixed/open-report 邮件外壳
+    ├── config.json       # 非秘密运行参数
+    ├── goal.module.md    # 可跟踪的脱敏目标模板
+    ├── goal.md           # 私有用户目标，忽略
+    ├── state/            # 私有 SQLite、raw 与运行状态，忽略
+    └── requirements.txt
 ```
 
 `data-backup/` 仅保存旧实例的可回滚归档，不是当前运行目录；它完全被 Git 忽略。
 真实配置、数据库、raw、FIT、token、日志和 state 不会进入 Git，也不会被测试或发布
 产物展示。
 
-## 直接运行
+## 无状态运行
 
-在仓库根目录执行：
-
-```sh
-python3.12 source/index.py --help
-python3.12 source/index.py foundation status
-python3.12 source/index.py garmin auth
-python3.12 source/index.py analysis daily --report-date YYYY-MM-DD
-python3.12 source/index.py analysis weekly --week-ending YYYY-MM-DD
-```
-
-入口会默认把实例根设为 `source/`；设置 `TRAINLAB_INSTANCE_ROOT` 可使用另一个
-经过权限检查的实例目录。`index.py` 只转发到 `source/src/`，不复制业务实现。
-运行报告默认不发送；任何 Garmin、Gmail、正式分析、同步或邮件交付都需要单独的
-用户授权，本迁移不会自动执行。
+从仓库根目录执行 `codex exec -C source`。运行时先读取 `source/AGENTS.md`、`config.json`、
+私有 `goal.md`、需要的 Skill 和 `state/trainlab.db`，再运行对应脚本；结果、状态、批准和
+外部动作都追加写入 SQLite。当前 cron 只保留配置，不安装或启用。
 
 ## 安装依赖与检查
 
 项目不要求仓库内 `.venv`，可使用用户选择的 Python 3.12 环境：
 
 ```sh
-python3.12 -m pip install --require-hashes -r source/requirements.lock
+python3.12 -m pip install -r source/requirements.txt
 cd source
-python3.12 -m pytest -q
-python3.12 tools/verify_repository_quality.py all
-python3.12 -m ruff check src tests scripts tools index.py
-python3.12 -m ruff format --check src tests scripts tools index.py
-python3.12 -m mypy src
+python3.12 -m pytest skills/_tests -q
+python3.12 -m ruff --config skills/_shared/ruff.toml check skills
+python3.12 -m ruff format --check skills
+python3.12 -m mypy --config-file skills/_shared/mypy.ini skills
 ```
 
-CI 的所有产品步骤都以 `source/` 为工作目录。`source/pyproject.toml` 只保存 Python
-版本、依赖和测试/静态检查配置，不声明 wheel、bundle 或 console script 发布。
+CI 的所有产品步骤都以 `source/` 为工作目录；Ruff 和 mypy 配置位于
+`source/skills/_shared/`。产品不再声明 wheel、bundle 或 console script 发布。
 
 ## 运行时边界
 
-TrainLab 运行 Harness 位于 `source/src/resources/harness/`，只接受有 schema、来源和
-lineage 的有界 JSON。分析层不自行读取数据库、FIT、聊天、网络或凭据；Garmin 和
-Gmail 的外部写入必须由各自明确授权的边界完成。产品不再包含历史自动 Orchestration、
-Supervisor 或后台服务入口，日/周分析和同步均通过显式一次性命令执行。
+TrainLab 运行 Harness 位于 `source/AGENTS.md` 和 `source/skills/`，只接受有来源和 lineage
+的有界输入。脚本负责读取 raw 并写入 SQLite，AI 负责受约束的解释和决策；Garmin、Gmail
+和 Sites 的外部写入必须由各自明确授权的边界完成。产品不再包含历史自动 Orchestration、
+Supervisor 或后台服务入口。
 
 ## 数据重建说明
 
-旧实例已在本机归档到 `data-backup/<timestamp>/`。新 Foundation v4 候选库只从
+旧实例已在本机归档到 `data-backup/<timestamp>/`。新 raw-first 数据库只从
 Garmin raw/FIT 离线重建，不迁移旧 AI 报告、邮件、用户事实、交付或后台运行历史；
-候选库完成完整性、外键、哈希和权限验证后才会成为 `source/state/`。
+数据库完成完整性、外键、哈希和权限验证后已切换为 `source/state/`；旧 state 仍保留在
+本机 `data-backup/` 的切换归档中。
 
 ## 开发规则
 

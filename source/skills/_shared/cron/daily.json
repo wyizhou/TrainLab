@@ -1,0 +1,11 @@
+{
+  "schema_version": "1",
+  "name": "trainlab-daily",
+  "timezone": "Asia/Hong_Kong",
+  "schedule": "0 12 * * *",
+  "install": false,
+  "command": "codex exec -C source --ephemeral --output-schema skills/_shared/cron/daily.schema.json -",
+  "prompt_file": "skills/_shared/prompts/daily.txt",
+  "steps": ["garmin-sync", "training-coach.daily", "training-report-publisher", "gmail-sender"],
+  "external_actions_enabled": false
+}

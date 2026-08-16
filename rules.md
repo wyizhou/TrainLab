@@ -209,4 +209,40 @@ Reason:
 
 > 用户明确要求把开发 Harness 与产品工程分开，用 `source/` 直接运行，并清理历史
 > Orchestration；旧实例数据需要可回滚归档，不能在迁移中丢失。
+
 ```
+
+## A-008: AI + Skills 运行 Harness 与 raw-first 状态边界
+
+- 确认日期：2026-08-15
+- 适用范围：TrainLab `source/` 运行目录、Skills、无状态 cron、SQLite 状态、Garmin/Gmail
+  适配器和本地报告流程。
+- 替代范围：替代 A-003、A-005、A-006、A-007 中关于 `source/src`、`source/tests`、统一
+  CLI、旧产品 Harness、Foundation 业务事实表、wheel/bundle 和后台运行层的交付要求；
+  A-001、A-002、A-004 及其外部影响安全边界保持不变。
+
+必须遵守：
+
+1. `source/` 只保留运行时 Harness、六个本地 Skills、模板、非秘密系统配置、私有 goal 和
+   私有 state；根目录继续只承载 agentForge 开发 Harness。不得恢复 `orchestrate-parallel-work`、
+   `.orchestration`、Graph/Dashboard 或旧集中式 CLI。
+2. 每次 `cron + codex exec` 都视为无状态运行。`source/AGENTS.md`、`config.json`、私有
+   `goal.md`、对应 Skill 和 `source/state/trainlab.db` 是唯一恢复上下文；任何 Skill 的结果、
+   状态、批准和外部动作必须追加写 SQLite，不得依赖聊天记忆或未记录的临时文件。
+3. 健康与运动原始证据只保留为 owner-only raw 文件；新数据库不建立健康、睡眠或活动业务事实
+   表。数据库只保存 raw 索引、活动采集控制状态、Skill 运行/输出、批准和外部动作。
+4. Garmin 正常同步只处理昨日完整数据及今日早晨结束的主睡眠，不自动回读最近 14 天；补数、
+   Garmin 写入、Gmail 读写和 Sites 发布均须有明确范围、批准、幂等记录和可对账结果。
+5. `source/goal.md` 和 `source/state/**` 永远不入 Git；`goal.module.md` 只提供脱敏结构模板。
+   AI、Skill 和定时流程不得自行改写长期 goal。用户或已记录的自动运行授权可以批准具体课表，
+   但批准必须绑定输出 SHA-256。
+6. 新建和迁移必须先在仓库外 owner-only candidate 中完成；正式 `source/state` 只有在 raw 哈希
+   闭包、SQLite 完整性、权限、回滚和独立 Validator 通过后才可原子切换。旧 state 归档到
+   `data-backup/`，不删除、不覆盖、不作为新系统数据源。
+7. 本阶段只生成 cron 配置，不安装、不启用、不调用 Garmin、Gmail 或 Sites；完成后等待用户另行
+   批准外部运行和提交。
+
+协商原因：
+
+> 用户明确要求运行层简单化为 AI + Skills，并让无状态 cron 可以仅靠文件和 SQLite 恢复；
+> 原始健康/活动文件保留可重算证据，业务输出和动作状态集中落地 SQLite。

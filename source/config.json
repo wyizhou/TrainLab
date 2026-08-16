@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "timezone": "Asia/Hong_Kong",
+  "state_database": "state/trainlab.db",
+  "raw_root": "state/raw",
+  "goal_file": "goal.md",
+  "daily_sync_local_time": "12:00",
+  "weekly_sync_local_time": "12:30",
+  "default_report_mode": "open_report",
+  "fallback_report_mode": "fixed_email",
+  "sites_enabled": false,
+  "external_actions_enabled": false,
+  "provider": "garmin",
+  "email_recipient_mode": "authenticated_self",
+  "activity_hash_version": "provider-nul-id-sha256-v1",
+  "raw_naming_version": "date-hash-format-v1"
+}

@@ -72,8 +72,8 @@
 | [x] `M1-0002` 建立唯一产品源码 | `completed` | high | M1-0001 | serial | `product/`、CI、构建工具 | [`completed`](docs/exec-plans/completed/M1-product-root-0002-source-migration.md) |
 | [x] `M1-0003` 迁移运行数据并切换根路径 | `completed` | high | M1-0002 | serial | 本地 state/config/logs、LaunchAgent 路径 | [`completed`](docs/exec-plans/completed/M1-runtime-root-0003-data-switch.md) |
 
-当前没有未完成的已批准 Roadmap 任务。非 Roadmap 的 agentForge 0.4.2 升级由当前
-`ADHOC-0001` exec plan 管理，不改变本表批准范围。
+该阶段当时没有未完成的已批准 Roadmap 任务；非 Roadmap 的 agentForge 0.4.2 升级
+曾由已归档的 `ADHOC-0001` exec plan 管理，不改变本表批准范围。
 
 ### [x] `M2` agentForge 0.4.2 根项目布局迁移 — `completed`
 
@@ -122,7 +122,7 @@ AI 提案/用户确认的教练画像管理，按近期完整周动态评估容�
 | [x] `M5-0003` 动态周容量与排课合同 | `completed` | high | M5-0002 | serial | `source/src/analysis`、运行时 schema、容量/排课测试 | 同一 completed plan |
 | [x] `M5-0004` 隔离数据库报告预览 | `completed` | high | M5-0003 | serial | `source/src/analysis`、预览 CLI、隔离预览测试 | 同一 completed plan |
 
-### [ ] `M6` 活动证据一致性与真实报告预览 — `blocked`
+### [ ] `M6` 活动证据一致性与真实报告预览 — `cancelled/superseded`
 
 用户于 2026-08-14 批准离线优先路径。M6 先保存 M5 本地基线，再审计并修复 inventory
 生命周期证据，在仓库外 candidate 中生成真实周报、日报和 HTML/JSON 预览。正式
@@ -130,7 +130,21 @@ AI 提案/用户确认的教练画像管理，按近期完整周动态评估容�
 
 | 任务 | 状态 | 优先级 | 显式依赖 | Batch | 预期写入范围 | Exec plan |
 | --- | --- | --- | --- | --- | --- | --- |
-| [x] `M6-0001` 保存 M5 单一本地基线 | `completed` | high | M5 | serial-m6 | 本地 Git 提交 | [`active`](docs/exec-plans/active/M6-activity-evidence-0001-lifecycle-and-preview.md) |
-| [ ] `M6-0002` 审计并统一 inventory 生命周期证据 | `validated` | high | M6-0001 | serial-m6 | `source/src/garmin`、`source/tools`、生命周期测试 | [`active`](docs/exec-plans/active/M6-activity-evidence-0001-lifecycle-and-preview.md) |
-| [ ] `M6-0003` candidate 离线修复与完整性验证 | `validated` | high | M6-0002 | serial-m6 | candidate-only 数据工具和测试 | 同一 active plan |
-| [ ] `M6-0004` 真实周报、日报和 HTML/JSON 预览 | `blocked` | high | M6-0003 | serial-m6 | candidate-only 预览证据和测试 | 同一 active plan |
+| [ ] `M6-0001` 保存 M5 单一本地基线 | `cancelled/superseded` | high | M5 | serial-m6 | 本地 Git 提交 | [`completed`](docs/exec-plans/completed/M6-activity-evidence-0001-lifecycle-and-preview.md) |
+| [ ] `M6-0002` 审计并统一 inventory 生命周期证据 | `cancelled/superseded` | high | M6-0001 | serial-m6 | `source/src/garmin`、`source/tools`、生命周期测试 | 同一 completed plan |
+| [ ] `M6-0003` candidate 离线修复与完整性验证 | `cancelled/superseded` | high | M6-0002 | serial-m6 | candidate-only 数据工具和测试 | 同一 completed plan |
+| [ ] `M6-0004` 真实周报、日报和 HTML/JSON 预览 | `cancelled/superseded` | high | M6-0003 | serial-m6 | candidate-only 预览证据和测试 | 同一 completed plan |
+
+### [x] `ADHOC-0011` AI + Skills 运行架构 — `completed`
+
+用户于 2026-08-15 批准。严格串行保存当前工作区保护提交，建立 `source/` 运行 Harness、
+六个本地 Skills、六表 SQLite 状态和两个 cron 配置；在仓库外 candidate 重组可证明 raw，
+将旧 state 完整归档后再原子切换。Garmin、Gmail、Sites、cron 安装和新架构代码提交均不在
+本阶段授权范围内。
+
+| 任务 | 状态 | 优先级 | 显式依赖 | Batch | 预期写入范围 | Exec plan |
+| --- | --- | --- | --- | --- | --- | --- |
+| [x] `ADHOC-0011-0001` 保存当前 M6 工作区保护提交 | `completed` | high | M6 | serial-adhoc-0011 | Git 本地保护提交 | [`completed`](docs/exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md) |
+| [x] `ADHOC-0011-0002` 建立 source Harness、Skills、模板和 SQLite 工具 | `completed` | high | ADHOC-0011-0001 | serial-adhoc-0011 | `source/AGENTS.md`、`source/skills`、模板、共享脚本、SQLite Schema | [`completed`](docs/exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md) |
+| [x] `ADHOC-0011-0003` candidate raw 重组和新数据库建立 | `completed` | high | ADHOC-0011-0002 | serial-adhoc-0011 | 仓库外 candidate、脱敏迁移收据 | [`completed`](docs/exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md) |
+| [x] `ADHOC-0011-0004` 归档旧 state、原子切换和离线验证 | `completed` | high | ADHOC-0011-0003 | serial-adhoc-0011 | `data-backup` 归档、`source/state`、只读 cron 配置 | [`completed`](docs/exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md) |

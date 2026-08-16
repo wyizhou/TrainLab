@@ -12,32 +12,43 @@
 ## 用户偏好
 
 - 项目说明文档默认使用中文；路径、命令、状态枚举和协议标识符保留技术拼写。
-- 开发使用根 agentForge Harness。当前产品仍从 `source/index.py` 运行，但用户已确认下一代
-  `source/` 将改为完全由 `source/AGENTS.md` 与六个本地 Skills 驱动；这是已规划、尚未实施
-  的替代方向。
+- 开发使用根 agentForge Harness。ADHOC-0011 已获批准；本机已完成 raw-first state 切换和旧
+  集中式入口归档。`source/AGENTS.md` 与六个本地 Skills 是目标运行层，但当前 Skills 多为准备器或
+  骨架，cron 保持关闭，尚不能视为端到端可运行系统。
 - `orchestrate-parallel-work` 只在本仓库禁用；不修改其全局安装。
 
 ## 已验证的项目事实
 
 - 根开发 Harness 固定适配 agentForge `v0.4.2`，上游标签提交为
   `ccc934ece6b7b64368c08bc3ce431678511ecfa3`。
-- TrainLab 的唯一产品工程位于 `source/`；产品包为 `source/src/`，直接入口为
-  `source/index.py`，默认实例根为 `source/`，显式 `TRAINLAB_INSTANCE_ROOT` 可覆盖。
-- Foundation v4 新库不含 Orchestration/Supervisor 表和视图；旧 state/config/logs/数据库
+- TrainLab 的目标产品运行目录为 `source/`；本机工作树不再依赖集中式 `source/src` 包或统一 CLI，
+  运行入口由 `source/AGENTS.md`、本地 Skills 和 SQLite 状态组成。该目标树尚未提交，当前 HEAD 的
+  clean checkout 仍是旧架构。
+- 当前运行库是 raw-first 六表 SQLite，不含 Orchestration/Supervisor 表和视图；旧 state/config/logs/数据库
   归档在被 Git 忽略的 `data-backup/`，不删除、不进入产品新库。
-- 产品时区合同使用 `Asia/Hong_Kong`；运行时教练 Harness v2 已加入课程、教练画像、
-  睡眠半开区间和跑攀硬负荷合同。
+- 产品时区合同使用 `Asia/Hong_Kong`；训练规则和报告目标采用 AI + 本地 Skills 设计。当前脚本只
+  实现部分确定性边界，尚未形成日报、周报、课表和外部动作的完整闭环。
 - 私有 state、logs、FIT、raw、数据库、凭据和私有配置不得进入 Git 或 `dist/`。
-- 项目不再使用或忽略根 `test_data/`；六类 Garmin FIT 测试输入由
-  `tests/fixtures/synthetic_fit.py` 确定性生成，私人测试资料只能留在仓库外。
-- 根 `references/` 只由用户主动要求维护；产品说明和运行资料位于 `source/docs/`。
+- 项目不再使用或忽略根 `test_data/`；当前 Skill 合同测试不携带私人 Garmin 输入，
+  私人 raw/FIT 只能留在被忽略的 state 或仓库外归档。
+- 根 `references/` 只由用户主动要求维护；运行说明和 Skill 合同位于 `source/AGENTS.md`、
+  `source/skills/` 与 `source/templates/`。
+- 2026-08-16 只读核验确认：当前 Codex 环境中的 `garmin` 与 `gmail` MCP 均已启用，且最小
+  只读调用成功；项目内 `garmin-sync` 与 `gmail-sender` 仍只生成请求计划或消息信封，尚未接通
+  MCP 执行、落账和对账闭环。实际启用前仍须重新核验认证与外部动作授权。
 
 ## 已建立的验证命令
 
-- `cd source && python3.12 tools/verify_repository_quality.py all`
-- `cd source && python3.12 -m pytest`
-- Ruff、format-check、mypy、schema 和 source-layout 门禁均从 `source/` 执行；正式运行
-  不依赖 wheel、bundle、Supervisor 或仓库 `.venv`。
+- `cd source && python -m pytest skills/_tests -q`
+- `cd source && ruff --config skills/_shared/ruff.toml check skills`
+- `cd source && ruff format --check skills`
+- `cd source && mypy --config-file skills/_shared/mypy.ini skills`
+- Skill JSON/agent metadata、编译和 Git ignore 门禁从 `source/` 执行；`git diff --check` 从仓库根执行；
+  正式运行不依赖 wheel、bundle、Supervisor 或仓库 `.venv`。
+
+## 当前活动计划
+
+- 无。
 
 ## 最近完成计划
 
@@ -49,8 +60,7 @@ M5 自适应教练画像与本地报告校准已通过独立 Validator；exec pl
 `bab3649`（`feat: complete source runtime migration`）。
 
 M5 已保存为本地基线提交 `0687d9f`（`feat: add adaptive coaching and local report previews`）。
-M6 活动计划当前位于
-`docs/exec-plans/active/M6-activity-evidence-0001-lifecycle-and-preview.md`；离线优先审计
+M6 活动计划已被 ADHOC-0011 取消/替代；其 completed plan 保留离线优先审计
 目标周活动 inventory 生命周期，正式 state、Garmin、Gmail 和邮件保持不变。M6-0002/0003
 已通过独立 Validator；M6-0004 因 candidate weekly 被确定性 safety 门拒绝而 blocked，
 未生成真实 daily/preview。用户已暂停继续优化；ADHOC-0009 只读来源审计已归档至
@@ -59,23 +69,26 @@ M6 活动计划当前位于
 TrainLab 生理候选；是否恢复 M6、删除流程或另立在线核验由用户后续决定。ADHOC-0010
 已归档至 `docs/exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md`：raw 按来源、
 格式和写入月份组织，业务语义以 revision 为准；8 个 Finder `.DS_Store` 不是 raw 证据且会
-阻断严格 raw 树校验，尚未删除。当前需求草案位于
-`docs/exec-plans/active/ADHOC-0011-state-raw-retention-and-tuning.md`：用户已确认 active raw
+阻断严格 raw 树校验，旧 state 归档时不复制。ADHOC-0011 已归档至
+`docs/exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md`：用户已批准 active raw
 最终移除 `backup`、`gmail`、`legacy`，保留 Provider 层与 `raw/garmin`；FIT、GPX、TCX
 规划直接平铺到 `raw/garmin/activities/`，文件名使用运动日期、共同活动关联哈希和格式
-后缀；每个文件的内容 SHA-256 仍独立保存。具体关联和实施方式留待后续分析，未获明确
-实施指令前不得修改 state 或现有产品代码。后续只读审计确认历史库有 53 种 Garmin JSON
+后缀；每个文件的内容 SHA-256 仍独立保存。ADHOC-0011 已获实施指令；切换后仍不得
+调用 Provider。后续只读审计确认历史库有 53 种 Garmin JSON
 语义资源，但普通同步已使用较窄白名单；请求优化和历史 raw 删除尚未成为已确认需求。
 已确认的未来同步边界为项目主体本地时间每日 12:00：只取昨日完整活动与非睡眠健康数据、
 以及今日早晨结束并按醒来日归属的主睡眠；取消自动 14 日历史回读。数据不完整时只记录，
-只有用户明确指定并批准日期后才补数。该要求目前只写入规划，尚未实施。
+只有用户明确指定并批准日期后才补数；该边界已写入 `garmin-sync` 计划脚本，正式 Provider
+调用仍关闭。
 用户进一步确认未来 Garmin raw 使用 `health/` 与 `activities/` 两类业务证据：健康文件按
 `日期-资源-内容哈希.json` 平铺，活动文件与同 activity hash 的天气 JSON 平铺；
 `activity_inventory` 仅作为可重新初始化的数据库控制状态，不建立 collection 目录；
-未来取消 `activity_summary`，活动只从 FIT/GPX/TCX 确定性重建。以上仍是规划，尚未实施。
+未来取消 `activity_summary`，活动只从 FIT/GPX/TCX 确定性重建；candidate 已按该边界索引，
+正式 state 已在无外部调用的条件下切换，并通过切换后独立复核；旧 state 原样归档。
 用户确认未来重构时重置 `source/state/` 下除 `raw/` 外的全部旧运行状态，包括当前数据库，
 且不迁移旧数据库内容；新数据库只从确认保留的健康 raw 与活动原始文件重建，inventory 等
-控制状态重新初始化。该要求不授权现在删除 state，也不替代 raw 内部整理需求。
+控制状态重新初始化。ADHOC-0011 已实施；旧 state 已完整保留在本次切换归档中，可回滚但不作为
+新系统数据源。
 用户进一步确认下一代最小运行结构完全由 AI 与本地 Skills 驱动：私有 `goal.md` 和
 `state/**` 被 Git 忽略，跟踪 `goal.module.md` 及 Garmin health/activities 的 `.gitkeep`
 骨架；首批本地 Skill 为 `garmin-sync`、`training-coach`、`garmin-training-sender`、
@@ -89,14 +102,15 @@ TrainLab 生理候选；是否恢复 M6、删除流程或另立在线核验由�
 总结，每周模式输出周总结及结构化课表。课表既可由用户直接批准，也可由已获用户预授权的
 定时 AI 按固定安全规则审核批准并交给
 `garmin-training-sender`；定时自动运行不要求逐次人工确认，普通未授权 AI 调用则不能批准
-Garmin 写入。以上除报告 Skill 骨架外仍是需求规划，尚未实施运行替代。
+Garmin 写入。六个本地 Skill、模板和 cron 配置已经落地；旧运行层已在切换后独立复核前移出
+产品树并保留在归档中。
 `garmin-sync` 将通过本地 Garmin MCP，依据 SQLite 采集状态增量获取 activities/health raw
 并同步状态；`gmail-sender` 使用本地 Gmail MCP 收取和发送邮件。六个 Skill 均采用脚本优先，
 把可确定、可重复的工作放入各自 `scripts/`，以减少 Token 和运行差异。早期提议的
 `data-build` 已从目标中移除；`training-coach` 自带
 脚本按任务窗口解析 health JSON、FIT、GPX、TCX 与天气 raw，只向 AI 提供有界证据。
-用户确认未来只设置两个 `cron + codex exec` 无状态流程：每日 12:00 依次运行
-`garmin-sync → training-coach → training-report-publisher → gmail-sender`；每周日 12:00 依次
+用户确认未来只设置两个 `cron + codex exec` 无状态流程：每日 12:00、每周日 12:30 依次运行
+`garmin-sync → training-coach → training-report-publisher → gmail-sender`；每周日依次
 运行 `garmin-sync → training-coach` 每周模式、
 `garmin-training-sender → training-report-publisher → gmail-sender`。每次从 AGENTS、goal、
 config、文件和 SQLite 恢复，
@@ -108,7 +122,10 @@ config、文件和 SQLite 恢复，
 写入 `source/state/trainlab.db`。首批表为 `raw_files`、`activity_inventory`、`skill_runs`、
 `skill_outputs`、`approvals`、`external_actions`。因为 AI 输出无法从 raw 原样重现，数据库需
 要一致性备份。六表字段、SQLite Online Backup/恢复/保留和六 Skill 输入输出/幂等合同已写入
-ADHOC-0011，并已通过全新高风险 Validator；尚未实施数据库或 state 变更。
+ADHOC-0011，并已在仓库外 candidate 建立新数据库；r22 候选与切换后 `source/state` 均通过独立
+Validator。正式 `source/state` 已原子切换到 r22，旧 state、旧配置/日志和退役源码原样归档在
+`data-backup/adhoc0011-cutover-20260815T165449Z/`；追加不可变、摘要绑定、精确批准范围、外部动作
+语义与状态机、损坏数据库隔离和锁先行恢复已补入当前运行层。
 用户确认正常日报只解析当前新增 raw，并复用 SQLite 中此前 14 份日总结；正常周报使用本周期
 7 份日总结和此前 4 份周总结。历史 raw 仅在总结缺失、数据矛盾、缺少必要细节、需要复核 FIT
 或用户明确要求时定向读取，不做无条件历史全窗口重算。日/周总结保存结构化 JSON 与文本；

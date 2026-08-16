@@ -1,1 +1,0 @@
-"""TrainLab acceptance tests."""

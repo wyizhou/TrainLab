@@ -23,28 +23,34 @@ data.db-journal
 *.sqlite
 *.sqlite3
 *.lock
-!source/requirements.lock
 
 # The old runtime is retained outside the product tree for rollback/audit only.
 /data-backup/
 
-# Product instance data is local-only. Public documentation and examples are
-# re-included below so the source tree itself remains visible to Git.
+# Product instance data is local-only. Public runtime contracts, Skills and
+# templates remain trackable; private goal/config/state contents do not.
 /source/state/**
-!/source/state/.gitkeep
+!/source/state/
+!/source/state/raw/
+!/source/state/raw/garmin/
+!/source/state/raw/garmin/health/
+!/source/state/raw/garmin/health/.gitkeep
+!/source/state/raw/garmin/activities/
+!/source/state/raw/garmin/activities/.gitkeep
 /source/logs/**
+!/source/logs/
 !/source/logs/.gitkeep
 /source/config/**
 !/source/config/README.md
 !/source/config/examples/
 !/source/config/examples/**
-/source/**/raw/
 /source/**/test_data/
 /source/**/private/
 /source/*.db
 /source/*.db-*
 /source/*.sqlite
 /source/*.sqlite3
+/source/goal.md
 /source/credentials.json
 /source/gcp-oauth.keys.json
 /source/token.json

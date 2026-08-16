@@ -1,21 +1,26 @@
 # TrainLab 运行 Skills
 
-本目录是未来 `source/AGENTS.md` 使用的运行 Skill 索引。根目录 `skills/` 属于 agentForge
-开发 Harness；两者不得混用。
+`source/AGENTS.md` 是运行入口；本文件是索引。每次无状态运行先读这里，再只读本次任务
+所需的 `SKILL.md`。根目录 `skills/` 是开发 Harness，不能混用；`_shared/` 没有 `SKILL.md`，
+不是可触发 Skill。
 
-| Skill | 状态 | 触发场景 | 读取范围 | 写入范围 | 外部副作用 |
-| --- | --- | --- | --- | --- | --- |
-| `garmin-sync` | 规划中 | 每日有界同步、人工补数 | SQLite 采集状态、Garmin MCP | raw 与 SQLite 状态 | 经授权读取 Garmin |
-| `training-coach` | 规划中 | 日总结、周总结和课表 | goal、当前 raw 摘要、历史总结 | SQLite 输出 | 无 |
-| `weekly-fitness-summary` | 规划中 | 周训练复盘 | 本周日报、既有周总结、定向证据 | SQLite 输出 | 无 |
-| `garmin-training-sender` | 规划中 | 已批准课表写入 Garmin | 已批准课程合同、SQLite 幂等状态 | SQLite 外部动作状态 | 经授权修改 Garmin |
-| `gmail-sender` | 规划中 | 查询、接收或发送邮件 | 已批准邮件内容、Gmail MCP | SQLite 外部动作状态 | 经授权读取或修改 Gmail |
-| [`training-report-publisher`](training-report-publisher/SKILL.md) | 已建立 | 日报、周报和课表展示 | 已验证、哈希绑定的 Skill 输出 | SQLite 报告与邮件渲染输出 | Sites 仅另行授权后可写 |
+| Skill | 作用 | 触发 | 读取 | 写入/外部副作用 |
+| --- | --- | --- | --- | --- |
+| `garmin-sync` | 昨日健康/活动与今晨主睡眠的有界 raw 同步 | 每日 cron、获批补数 | SQLite、raw、Garmin MCP | raw + SQLite；在线调用需另批 |
+| `training-coach` | 日总结，或周总结与跑攀课表 | 用户或定时 AI 输入 | goal、SQLite 输出、脚本有界证据 | SQLite；不调用外部服务 |
+| `weekly-fitness-summary` | 周训练与恢复趋势复盘 | 周教练按需调用 | 7 日总结、4 周总结 | SQLite 输出；不调用外部服务 |
+| `garmin-training-sender` | 管理已拥有的 `-GTS` My Workouts 与日历 | 已批准课表 | 课表输出、批准、动作状态、Garmin MCP | SQLite + Garmin 写入（本阶段关闭） |
+| `training-report-publisher` | 生成 open_report/fixed_email HTML | 教练完成后 | 已验证 Skill 输出、模板 | SQLite；Sites 本阶段关闭 |
+| `gmail-sender` | 有界查询、收件和自投递 | 报告发布后 | 精确邮件输出、批准、动作状态、Gmail MCP | SQLite + Gmail 写入（本阶段关闭） |
 
-“规划中”表示仅已确认需求，当前目录尚未提供可执行 Skill，不得假装调用成功。
+所有 Skill 必须：
 
-未来可建立 `_shared/` 保存单一、受测的 SQLite、canonical JSON、权限和摘要帮助代码；它没有
-`SKILL.md`，不是可调用 Skill，也不得包含任何训练或 Provider 业务判断。
+- 使用稳定错误码记录 `succeeded/failed/blocked/unknown`；
+- 通过共享脚本写入 `state/trainlab.db`，输出不可覆盖；
+- 不把 raw 正文、FIT 样本、token、收件地址或隐藏推理写入上下文；
+- 外部动作执行前记录 `prepared → backup_barrier`，结果不确定时保持 `unknown`。
 
-`training-report-publisher` 只通过名称调用已安装的 `$data-analytics:build-report`，并在另有
-授权时调用 `$data-analytics:publish-artifact-to-sites`；项目不复制或修改插件 Skill 原件。
+本阶段只保留两个 cron 配置，不安装或启用：
+
+- `source/skills/_shared/cron/daily.json`：每日 12:00 Asia/Hong_Kong；
+- `source/skills/_shared/cron/weekly.json`：周日 12:30 Asia/Hong_Kong。

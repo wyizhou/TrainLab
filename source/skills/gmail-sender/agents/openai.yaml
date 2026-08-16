@@ -1,0 +1,4 @@
+interface:
+  display_name: "Gmail Sender"
+  short_description: "Prepare bounded self-delivery email actions"
+  default_prompt: "Use $gmail-sender to validate a TrainLab report email envelope without sending it."

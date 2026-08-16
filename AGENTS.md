@@ -14,8 +14,8 @@
 - `docs/exec-plans/tech-debt-tracker.md` 保存有证据但不阻塞当前交付的技术债候选。
 - `CHANGELOG.md` 保存未发布的重要项目变更和正式发布；仅在相关工作中按需读取。
 
-根目录只承载 agentForge 开发 Harness 与 Git/CI 元数据。TrainLab 产品工程、运行 Harness
-和测试位于 `source/`；产品运行 Harness 作为不可变资源位于
+根目录只承载 agentForge 开发 Harness 与 Git/CI 元数据。TrainLab 下一代运行 Harness、Skills、
+模板和实例状态位于 `source/`；运行时不再依赖旧的 `source/src` 集中式产品包、统一 CLI 或
 `source/src/resources/harness/`。两层 Harness 通过职责和目录分离，不得互相冒充或替代。
 
 ## 每个上下文的启动流程
@@ -30,13 +30,13 @@
 6. 检查 `docs/exec-plans/active/`，存在匹配计划时完整恢复该计划。
 7. 检查 `references/`，仅在当前任务需要时读取相关专题文件，不读取全部知识库。
 8. 检查 `skills/`，仅在触发条件匹配时读取对应 `skills/<name>/SKILL.md`。
-9. 产品工作还必须完整读取 `source/src/resources/harness/shared/HARNESS.md`；分析工作加读
-   `source/src/resources/harness/analysis/HARNESS.md`，邮件工作加读
-   `source/src/resources/harness/mail/HARNESS.md`。
+9. 若旧迁移树仍存在，仅在审计旧行为时读取 `source/src/resources/harness/**`；新运行工作以
+   `source/AGENTS.md`、`source/skills/README.md` 和被触发的 Skill 为准，不得把旧 Harness
+   当作新运行合同。
 
 已退役的 `harness/runtime/HARNESS.md` 不得恢复。不得把根开发 Harness 当作产品运行
-指令。产品通过 `python source/index.py ...` 直接运行；不创建或要求仓库 `.venv`，
-实例根由 `TRAINLAB_INSTANCE_ROOT` 指定或默认使用 `source/`。
+指令。旧 `source/index.py` 入口已经退役；新运行通过 `codex exec -C source` 按
+`source/AGENTS.md` 和 Skills 执行，不创建或要求仓库 `.venv`。
 
 不检查或修改仓库的纯概念问答，不受 Git 门禁和执行计划要求约束。
 
@@ -132,11 +132,13 @@
 
 ## 功能测试与实施顺序
 
-A-003 已批准严格采用 agentForge 0.4.2 根项目布局：实现位于 `src/`，测试位于 `tests/`。
-现有测试保持当前布局；新功能使用：
+A-003 的根 `src/`/`tests/` 布局仅适用于历史开发 Harness；当前 A-008 已替代产品运行层
+的旧目录合同。新运行功能的确定性脚本、合同和测试位于 `source/skills/`：
 
 ```text
-tests/<feature-slug>/
+source/skills/<skill>/scripts/
+source/skills/<skill>/references/
+source/skills/_tests/
 ```
 
 每项功能或缺陷修复按以下顺序执行：

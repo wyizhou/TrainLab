@@ -1,8 +1,0 @@
-{
-  "schema_version": "1",
-  "fixture_kind": "synthetic_test_isolation",
-  "subject_id": "synthetic-subject",
-  "provider": "fake-provider",
-  "mail_recipient": "synthetic-subject@example.invalid",
-  "mail_marker_prefix": "TrainLab-Test:"
-}
