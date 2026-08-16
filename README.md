@@ -30,7 +30,7 @@ TrainLab/
 
 从仓库根目录执行 `codex exec -C source`。运行时先读取 `source/AGENTS.md`、`config.json`、
 私有 `goal.md`、需要的 Skill 和 `state/trainlab.db`，再运行对应脚本；结果、状态、批准和
-外部动作都追加写入 SQLite。当前 cron 只保留配置，不安装或启用。
+外部动作都追加写入 SQLite。当前只保留无状态 `auto.txt` Prompt，不安装或启用 cron。
 
 ## 安装依赖与检查
 
@@ -39,10 +39,10 @@ TrainLab/
 ```sh
 python3.12 -m pip install -r source/requirements.txt
 cd source
-python3.12 -m pytest skills/_tests -q
-python3.12 -m ruff --config skills/_shared/ruff.toml check skills
-python3.12 -m ruff format --check skills
-python3.12 -m mypy --config-file skills/_shared/mypy.ini skills
+python3.12 -m pytest tests/code -q
+python3.12 -m ruff --config skills/_shared/ruff.toml check skills tests/code
+python3.12 -m ruff format --check skills tests/code
+python3.12 -m mypy --config-file skills/_shared/mypy.ini skills tests/code
 ```
 
 CI 的所有产品步骤都以 `source/` 为工作目录；Ruff 和 mypy 配置位于

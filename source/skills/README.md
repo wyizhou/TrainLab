@@ -15,12 +15,22 @@
 
 所有 Skill 必须：
 
-- 使用稳定错误码记录 `succeeded/failed/blocked/unknown`；
+- 使用稳定错误码记录 `pending/running/succeeded/failed/blocked/interrupted/cancelled`；
+- `unknown` 只表示 `external_actions` 的外部结果，不能写入 Skill run 状态；
 - 通过共享脚本写入 `state/trainlab.db`，输出不可覆盖；
 - 不把 raw 正文、FIT 样本、token、收件地址或隐藏推理写入上下文；
-- 外部动作执行前记录 `prepared → backup_barrier`，结果不确定时保持 `unknown`。
+- 外部动作执行前记录 `prepared → external_barrier`，结果不确定时保持 `unknown`。
 
-本阶段只保留两个 cron 配置，不安装或启用：
+本阶段只保留一个供无状态运行读取的自动 Prompt，不安装或启用 cron：
 
-- `source/skills/_shared/cron/daily.json`：每日 12:00 Asia/Hong_Kong；
-- `source/skills/_shared/cron/weekly.json`：周日 12:30 Asia/Hong_Kong。
+- `source/skills/_shared/prompts/auto.txt`：不接受日期、模式或 request-id；槽位由确定性
+  resolver 按 `Asia/Hong_Kong` 计算。
+
+公开运行形式：
+
+```text
+codex exec -C /absolute/path/to/source --ephemeral - < /absolute/path/to/source/skills/_shared/prompts/auto.txt
+```
+
+`--output-schema` 只用于测试或外部程序读取最终回执，SQLite 中的
+`workflow_receipt_v1` 才是下一次运行的事实源。

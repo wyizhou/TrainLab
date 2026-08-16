@@ -13,7 +13,8 @@ import os
 import re
 import secrets
 import sqlite3
-from datetime import datetime, timezone
+from contextlib import contextmanager
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
@@ -229,7 +230,7 @@ CREATE TABLE IF NOT EXISTS skill_outputs (
   id INTEGER PRIMARY KEY,
   skill_run_id INTEGER NOT NULL REFERENCES skill_runs(id) ON DELETE RESTRICT,
   output_kind TEXT NOT NULL CHECK (output_kind IN (
-    'sync_summary','bounded_evidence','daily_summary','weekly_summary','training_plan',
+    'sync_summary','bounded_evidence','daily_summary','weekly_fitness_review','weekly_summary','training_plan',
     'report_artifact','email_render','garmin_workout_contract','execution_summary'
   )),
   logical_key TEXT NOT NULL,
@@ -334,7 +335,7 @@ CREATE TABLE IF NOT EXISTS external_actions (
 CREATE INDEX IF NOT EXISTS idx_skill_runs_dedupe ON skill_runs(dedupe_key, created_at_utc);
 CREATE UNIQUE INDEX IF NOT EXISTS uq_skill_runs_active_dedupe
   ON skill_runs(dedupe_key)
-  WHERE status IN ('pending','running','succeeded');
+  WHERE status IN ('pending','running');
 CREATE INDEX IF NOT EXISTS idx_skill_outputs_kind ON skill_outputs(output_kind, period_end_date);
 CREATE INDEX IF NOT EXISTS idx_raw_files_date ON raw_files(data_class, data_date);
 CREATE INDEX IF NOT EXISTS idx_actions_status ON external_actions(provider, status);
@@ -641,6 +642,66 @@ CREATE TRIGGER IF NOT EXISTS trg_output_append_only_update
 BEFORE UPDATE ON skill_outputs
 BEGIN
   SELECT RAISE(ABORT, 'skill_outputs_append_only');
+END;
+CREATE TRIGGER IF NOT EXISTS trg_output_append_only_insert
+BEFORE INSERT ON skill_outputs
+WHEN EXISTS (
+  SELECT 1 FROM skill_outputs
+  WHERE logical_key=NEW.logical_key AND revision_no=NEW.revision_no
+)
+BEGIN
+  SELECT RAISE(ABORT, 'skill_outputs_revision_exists');
+END;
+CREATE TRIGGER IF NOT EXISTS trg_raw_append_only_insert
+BEFORE INSERT ON raw_files
+WHEN EXISTS (
+  SELECT 1 FROM raw_files
+  WHERE logical_key=NEW.logical_key AND revision_no=NEW.revision_no
+)
+BEGIN
+  SELECT RAISE(ABORT, 'raw_files_revision_exists');
+END;
+CREATE TRIGGER IF NOT EXISTS trg_approval_append_only_insert
+BEFORE INSERT ON approvals
+WHEN EXISTS (SELECT 1 FROM approvals WHERE approval_key=NEW.approval_key)
+BEGIN
+  SELECT RAISE(ABORT, 'approval_exists');
+END;
+CREATE TRIGGER IF NOT EXISTS trg_external_action_append_only_insert
+BEFORE INSERT ON external_actions
+WHEN EXISTS (SELECT 1 FROM external_actions WHERE idempotency_key=NEW.idempotency_key)
+BEGIN
+  SELECT RAISE(ABORT, 'external_action_exists');
+END;
+CREATE TRIGGER IF NOT EXISTS trg_skill_run_append_only_insert
+BEFORE INSERT ON skill_runs
+WHEN EXISTS (
+  SELECT 1 FROM skill_runs
+  WHERE run_key=NEW.run_key OR (dedupe_key=NEW.dedupe_key AND attempt_no=NEW.attempt_no)
+)
+BEGIN
+  SELECT RAISE(ABORT, 'skill_run_exists');
+END;
+CREATE TRIGGER IF NOT EXISTS trg_skill_run_identity_immutable
+BEFORE UPDATE ON skill_runs
+WHEN NOT (
+  OLD.id IS NEW.id
+  AND OLD.run_key IS NEW.run_key
+  AND OLD.workflow_key IS NEW.workflow_key
+  AND OLD.dedupe_key IS NEW.dedupe_key
+  AND OLD.parent_run_id IS NEW.parent_run_id
+  AND OLD.skill_name IS NEW.skill_name
+  AND OLD.operation IS NEW.operation
+  AND OLD.trigger_kind IS NEW.trigger_kind
+  AND OLD.target_from_date IS NEW.target_from_date
+  AND OLD.target_through_date IS NEW.target_through_date
+  AND OLD.attempt_no IS NEW.attempt_no
+  AND OLD.input_manifest_json IS NEW.input_manifest_json
+  AND OLD.input_sha256 IS NEW.input_sha256
+  AND OLD.created_at_utc IS NEW.created_at_utc
+)
+BEGIN
+  SELECT RAISE(ABORT, 'skill_run_identity_immutable');
 END;
 CREATE TRIGGER IF NOT EXISTS trg_approval_append_only_delete
 BEFORE DELETE ON approvals
@@ -992,7 +1053,8 @@ def connect(
 ) -> sqlite3.Connection:
     db_path = path or state_path()
     if not read_only:
-        db_path.parent.mkdir(parents=True, exist_ok=True)
+        if not db_path.is_file():
+            raise FileNotFoundError("state_missing")
     if read_only:
         if immutable:
             uri = f"file:{db_path.resolve()}?mode=ro&immutable=1"
@@ -1014,6 +1076,10 @@ def connect(
     connection.create_function("trainlab_output_sha", 5, _output_sha)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys=ON")
+    connection.execute("PRAGMA recursive_triggers=ON")
+    if connection.execute("PRAGMA recursive_triggers").fetchone()[0] != 1:
+        connection.close()
+        raise RuntimeError("sqlite_recursive_triggers_unavailable")
     connection.execute("PRAGMA busy_timeout=5000")
     if not read_only:
         connection.execute("PRAGMA journal_mode=WAL")
@@ -1021,6 +1087,25 @@ def connect(
         connection.execute("PRAGMA user_version=1")
         connection.commit()
     return connection
+
+
+@contextmanager
+def workflow_lock(database: Path):
+    """Hold the owner-only workflow lock for one complete candidate run."""
+    lock_path = database.parent / "trainlab.lock"
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    lock_fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)
+    os.chmod(lock_path, 0o600)
+    try:
+        fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError as exc:
+        os.close(lock_fd)
+        raise RuntimeError("state_lock_unavailable") from exc
+    try:
+        yield
+    finally:
+        fcntl.flock(lock_fd, fcntl.LOCK_UN)
+        os.close(lock_fd)
 
 
 def init_database(path: Path | None = None) -> Path:
@@ -1031,12 +1116,10 @@ def init_database(path: Path | None = None) -> Path:
         db_path.parent / "raw/garmin",
         db_path.parent / "raw/garmin/health",
         db_path.parent / "raw/garmin/activities",
-        db_path.parent / "backups",
-        db_path.parent / "backups/sqlite",
-        db_path.parent / "recovery-quarantine",
     ):
         directory.mkdir(parents=True, exist_ok=True)
         os.chmod(directory, 0o700)
+    db_path.touch(mode=0o600, exist_ok=True)
     connection = connect(db_path)
     connection.close()
     os.chmod(db_path, 0o600)
@@ -1058,20 +1141,63 @@ def begin_run(
     target_through_date: str | None = None,
     parent_run_id: int | None = None,
 ) -> int:
-    now = utc_now()
+    now_dt = datetime.now(timezone.utc).replace(microsecond=0)
+    now = now_dt.isoformat().replace("+00:00", "Z")
+    lease_expires = (now_dt + timedelta(minutes=30)).isoformat().replace("+00:00", "Z")
     manifest_text = canonical_json(input_manifest)
     digest = input_sha256 or sha256_text(manifest_text)
+    connection.execute("BEGIN IMMEDIATE")
     row = connection.execute(
-        "SELECT id FROM skill_runs WHERE run_key=?", (run_key,)
+        "SELECT id, status, lease_expires_at_utc FROM skill_runs WHERE run_key=?",
+        (run_key,),
     ).fetchone()
-    if row:
-        return int(row[0])
+    if row and row[1] in {"pending", "running", "succeeded"}:
+        if row[1] == "running" and row[2] is not None:
+            try:
+                expired = (
+                    datetime.strptime(str(row[2]), "%Y-%m-%dT%H:%M:%SZ").replace(
+                        tzinfo=timezone.utc
+                    )
+                    <= now_dt
+                )
+            except ValueError:
+                expired = True
+            if expired:
+                connection.execute(
+                    "UPDATE skill_runs SET status='interrupted', finished_at_utc=?, "
+                    "heartbeat_at_utc=?, lease_expires_at_utc=NULL, "
+                    "error_code='lease_expired' WHERE id=?",
+                    (now, now, int(row[0])),
+                )
+            else:
+                connection.commit()
+                return int(row[0])
+        else:
+            connection.commit()
+            return int(row[0])
+    same_input = connection.execute(
+        "SELECT id FROM skill_runs WHERE dedupe_key=? AND input_sha256=? "
+        "AND status='succeeded' ORDER BY attempt_no DESC LIMIT 1",
+        (dedupe_key, digest),
+    ).fetchone()
+    if same_input:
+        connection.commit()
+        return int(same_input[0])
+    attempt_no = int(
+        connection.execute(
+            "SELECT COALESCE(MAX(attempt_no), 0) + 1 FROM skill_runs WHERE dedupe_key=?",
+            (dedupe_key,),
+        ).fetchone()[0]
+    )
+    if attempt_no > 1:
+        run_key = run_key.removesuffix(":attempt-1") + f":attempt-{attempt_no}"
     cursor = connection.execute(
         """INSERT INTO skill_runs
         (run_key, workflow_key, dedupe_key, parent_run_id, skill_name, operation,
          trigger_kind, target_from_date, target_through_date, attempt_no,
-         input_manifest_json, input_sha256, status, created_at_utc)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, 'running', ?)""",
+         input_manifest_json, input_sha256, status, created_at_utc,
+         started_at_utc, heartbeat_at_utc, lease_expires_at_utc)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'running', ?, ?, ?, ?)""",
         (
             run_key,
             workflow_key,
@@ -1082,9 +1208,13 @@ def begin_run(
             trigger_kind,
             target_from_date,
             target_through_date,
+            attempt_no,
             manifest_text,
             digest,
             now,
+            now,
+            now,
+            lease_expires,
         ),
     )
     connection.commit()
@@ -1101,10 +1231,33 @@ def finish_run(
 ) -> None:
     if status not in {"succeeded", "failed", "blocked", "interrupted", "cancelled"}:
         raise ValueError(f"invalid terminal run status: {status}")
+    current = connection.execute(
+        "SELECT status FROM skill_runs WHERE id=?", (run_id,)
+    ).fetchone()
+    if current is None:
+        raise ValueError("unknown_run")
+    if current[0] not in {"pending", "running"}:
+        if current[0] != status:
+            raise ValueError("terminal_run_immutable")
+        return
     now = utc_now()
     connection.execute(
-        "UPDATE skill_runs SET status=?, finished_at_utc=?, heartbeat_at_utc=?, error_code=?, error_summary=? WHERE id=?",
+        "UPDATE skill_runs SET status=?, finished_at_utc=?, heartbeat_at_utc=?, "
+        "lease_expires_at_utc=NULL, error_code=?, error_summary=? WHERE id=?",
         (status, now, now, error_code, error_summary, run_id),
+    )
+    connection.commit()
+
+
+def heartbeat_run(connection: sqlite3.Connection, run_id: int) -> None:
+    """Refresh a running workflow lease without changing its identity."""
+    now_dt = datetime.now(timezone.utc).replace(microsecond=0)
+    now = now_dt.isoformat().replace("+00:00", "Z")
+    lease = (now_dt + timedelta(minutes=30)).isoformat().replace("+00:00", "Z")
+    connection.execute(
+        "UPDATE skill_runs SET heartbeat_at_utc=?, lease_expires_at_utc=? "
+        "WHERE id=? AND status='running'",
+        (now, lease, run_id),
     )
     connection.commit()
 
@@ -1124,15 +1277,21 @@ def record_skill_result(
 
     connection = connect(database)
     try:
+        input_manifest = {
+            "operation": operation,
+            "logical_key": logical_key,
+            "payload": dict(payload),
+        }
+        dedupe_key = sha256_text(canonical_json(input_manifest))
         run_id = begin_run(
             connection,
-            run_key=f"{logical_key}:{sha256_text(canonical_json(payload))[:16]}",
-            workflow_key=skill_name,
-            dedupe_key=logical_key,
+            run_key=f"{dedupe_key}:attempt-1",
+            workflow_key=str(payload.get("workflow_key", logical_key)),
+            dedupe_key=dedupe_key,
             skill_name=skill_name,
             operation=operation,
             trigger_kind="skill",
-            input_manifest={"operation": operation},
+            input_manifest=input_manifest,
         )
         output_id = append_output(
             connection,
@@ -1172,10 +1331,6 @@ def append_output(
     period_end_date: str | None = None,
     supersedes_output_id: int | None = None,
 ) -> int:
-    next_revision = connection.execute(
-        "SELECT COALESCE(MAX(revision_no), 0) + 1 FROM skill_outputs WHERE logical_key=?",
-        (logical_key,),
-    ).fetchone()[0]
     content_text_json = (
         canonical_json(content_json) if content_json is not None else None
     )
@@ -1192,6 +1347,20 @@ def append_output(
             }
         )
     )
+    existing = connection.execute(
+        "SELECT id FROM skill_outputs WHERE logical_key=? AND content_sha256=?",
+        (logical_key, digest),
+    ).fetchone()
+    if existing:
+        return int(existing[0])
+    previous = connection.execute(
+        "SELECT id, revision_no FROM skill_outputs WHERE logical_key=? "
+        "ORDER BY revision_no DESC LIMIT 1",
+        (logical_key,),
+    ).fetchone()
+    next_revision = int(previous[1]) + 1 if previous else 1
+    if previous and supersedes_output_id is None:
+        supersedes_output_id = int(previous[0])
     cursor = connection.execute(
         """INSERT INTO skill_outputs
         (skill_run_id, output_kind, logical_key, revision_no, supersedes_output_id,

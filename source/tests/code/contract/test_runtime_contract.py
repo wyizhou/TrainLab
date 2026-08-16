@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 PYTHON = sys.executable
 sys.path.insert(0, str(ROOT))
 from skills._shared.state import (  # noqa: E402
@@ -32,13 +32,22 @@ def run_script(path: Path, *args: str) -> subprocess.CompletedProcess[str]:
     )
 
 
-def test_goal_module_and_private_mode() -> None:
+def test_goal_module_and_private_mode(tmp_path: Path) -> None:
+    module = ROOT / "goal.module.md"
+    goal = tmp_path / "goal.md"
+    goal.write_text(
+        module.read_text(encoding="utf-8")
+        .replace("【请填写】", "测试值")
+        .replace("【无则填写“无”】", "无"),
+        encoding="utf-8",
+    )
+    goal.chmod(0o600)
     result = run_script(
         ROOT / "skills/_shared/scripts/validate_goal.py",
         "--goal",
-        str(ROOT / "goal.md"),
+        str(goal),
         "--module",
-        str(ROOT / "goal.module.md"),
+        str(module),
     )
     assert result.returncode == 0, result.stdout + result.stderr
 
@@ -110,19 +119,35 @@ def test_course_rejects_missing_dose(tmp_path: Path) -> None:
 
 def test_gts_prepare_is_network_free(tmp_path: Path) -> None:
     course = tmp_path / "course.json"
+    items = []
+    for offset in range(7):
+        kind = "running" if offset in {0, 2, 4, 6} else "rest"
+        item = {
+            "date": f"2026-08-{17 + offset:02d}",
+            "activity_kind": kind,
+            "name": "Easy-6KM-GTS" if kind == "running" else "恢复日",
+            "purpose": "easy" if kind == "running" else "recovery",
+            "load_level": "moderate" if kind == "running" else "low",
+            "garmin_mapping_status": "candidate"
+            if kind == "running"
+            else "unsupported_skip",
+            "rpe": 3 if kind == "running" else 1,
+            "downgrade_rule": "睡眠差时休息。",
+            "stop_conditions": ["疼痛或异常呼吸立即停止。"],
+            "steps": [{"name": "主课", "end_condition": "完成目标"}],
+        }
+        if kind == "running":
+            item["distance_km"] = 6
+        items.append(item)
     course.write_text(
         json.dumps(
             {
-                "items": [
-                    {
-                        "date": "2026-08-17",
-                        "activity_kind": "running",
-                        "name": "Easy-6KM-GTS",
-                        "purpose": "easy",
-                        "distance_km": 6,
-                        "garmin_mapping_status": "candidate",
-                    }
-                ]
+                "schema_version": "training_plan_v1",
+                "status": "succeeded",
+                "items": items,
+                "progression_rule": "hold",
+                "progression_dimension": "none",
+                "provider_calls": 0,
             }
         ),
         encoding="utf-8",

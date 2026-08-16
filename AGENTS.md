@@ -132,13 +132,14 @@
 
 ## 功能测试与实施顺序
 
-A-003 的根 `src/`/`tests/` 布局仅适用于历史开发 Harness；当前 A-008 已替代产品运行层
-的旧目录合同。新运行功能的确定性脚本、合同和测试位于 `source/skills/`：
+A-003 的根 `src/`/`tests/` 布局仅适用于历史开发 Harness；当前 A-008/A-009 已替代产品运行层
+的旧目录合同。新运行功能的确定性脚本位于 `source/skills/`，测试按 A-009 分层：
 
 ```text
 source/skills/<skill>/scripts/
 source/skills/<skill>/references/
-source/skills/_tests/
+source/tests/code/{unit,contract,integration,fixtures}/
+source/tests/ai/{cases,rubrics,schemas,templates,results}/
 ```
 
 每项功能或缺陷修复按以下顺序执行：

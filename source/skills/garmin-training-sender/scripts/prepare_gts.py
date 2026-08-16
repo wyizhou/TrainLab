@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+from skills._shared.scripts.schema_validation import require_valid_payload  # noqa: E402
 from skills._shared.state import record_skill_result  # noqa: E402
 
 
@@ -22,12 +23,21 @@ def main() -> int:
     items = payload.get("items") if isinstance(payload, dict) else None
     errors: list[str] = []
     actions: list[dict[str, object]] = []
+    try:
+        require_valid_payload(payload, "training_plan_v1")
+    except ValueError:
+        errors.append("garmin_contract_invalid")
     if not isinstance(items, list) or not items:
         errors.append("garmin_contract_invalid")
     else:
         for item in items:
             if not isinstance(item, dict):
                 errors.append("garmin_contract_invalid")
+                continue
+            if (
+                item.get("activity_kind") != "running"
+                or item.get("garmin_mapping_status") != "candidate"
+            ):
                 continue
             name = str(item.get("name", ""))
             if not name.endswith("-GTS"):

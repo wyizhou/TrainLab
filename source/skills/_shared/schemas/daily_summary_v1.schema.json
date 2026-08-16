@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trainlab.local/schemas/daily_summary_v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "report_date", "review_date", "sleep_wake_date", "summary", "safety", "provider_calls"],
+  "properties": {
+    "schema_version": {"type": "string", "const": "daily_summary_v1"},
+    "status": {"type": "string", "enum": ["succeeded", "blocked"]},
+    "report_date": {"type": "string", "format": "date"},
+    "review_date": {"type": "string", "format": "date"},
+    "sleep_wake_date": {"type": "string", "format": "date"},
+    "evidence_file_count": {"type": "integer", "minimum": 0},
+    "bounded_metrics": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/bounded_metric"}},
+    "evidence_resources": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "history_daily_sha256": {"type": "array", "maxItems": 14, "items": {"type": "string", "pattern": "^[0-9a-f]{64}$"}},
+    "history_daily_dates": {"type": "array", "maxItems": 14, "items": {"type": "string", "format": "date"}},
+    "summary": {"type": "string", "minLength": 1},
+    "safety": {"type": "string", "enum": ["ready", "caution", "blocked"]},
+    "provider_calls": {"type": "integer", "const": 0},
+    "error_code": {"type": "string", "minLength": 1}
+  },
+  "allOf": [
+    {"if": {"properties": {"status": {"const": "succeeded"}}}, "then": {"required": ["bounded_metrics", "evidence_resources"]}},
+    {"if": {"properties": {"status": {"const": "blocked"}}}, "then": {"required": ["error_code"]}}
+  ],
+  "$defs": {
+    "numeric_summary": {"type": "object", "additionalProperties": false, "required": ["count"], "properties": {"count": {"type": "integer", "minimum": 0}, "minimum": {"type": "number"}, "maximum": {"type": "number"}, "average": {"type": "number"}}},
+    "metrics": {"type": "object", "additionalProperties": false, "properties": {"resource": {"type": "string"}, "metric": {"type": "string"}, "numeric_summary": {"$ref": "#/$defs/numeric_summary"}, "aggregate": {"$ref": "#/$defs/numeric_summary"}, "duration_seconds": {"type": ["number", "null"]}, "sleep_start": {"type": "string"}, "sleep_end": {"type": "string"}, "stage_group_count": {"type": "integer", "minimum": 0}, "completeness": {"type": "string"}, "trackpoint_count": {"type": "integer", "minimum": 0}, "time_point_count": {"type": "integer", "minimum": 0}, "distance_km": {"type": "number", "minimum": 0}, "duration_available": {"type": "boolean"}, "source_name": {"type": "string"}, "field_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}}, "activity_kind": {"type": "string"}, "pace_seconds_per_km": {"type": "number", "exclusiveMinimum": 0}, "heart_rate_average": {"type": "number", "minimum": 0}, "heart_rate_maximum": {"type": "number", "minimum": 0}, "lap_count": {"type": "integer", "minimum": 0}, "uncertainty": {"type": "string"}}},
+    "bounded_metric": {"type": "object", "additionalProperties": false, "required": ["sha256", "data_date", "format", "metrics"], "properties": {"raw_file_id": {"type": "integer", "minimum": 1}, "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "data_date": {"type": "string", "format": "date"}, "format": {"type": "string", "enum": ["json", "fit", "gpx", "tcx"]}, "metrics": {"$ref": "#/$defs/metrics"}}}
+  }
+}

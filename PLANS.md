@@ -148,3 +148,18 @@ AI 提案/用户确认的教练画像管理，按近期完整周动态评估容�
 | [x] `ADHOC-0011-0002` 建立 source Harness、Skills、模板和 SQLite 工具 | `completed` | high | ADHOC-0011-0001 | serial-adhoc-0011 | `source/AGENTS.md`、`source/skills`、模板、共享脚本、SQLite Schema | [`completed`](docs/exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md) |
 | [x] `ADHOC-0011-0003` candidate raw 重组和新数据库建立 | `completed` | high | ADHOC-0011-0002 | serial-adhoc-0011 | 仓库外 candidate、脱敏迁移收据 | [`completed`](docs/exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md) |
 | [x] `ADHOC-0011-0004` 归档旧 state、原子切换和离线验证 | `completed` | high | ADHOC-0011-0003 | serial-adhoc-0011 | `data-backup` 归档、`source/state`、只读 cron 配置 | [`completed`](docs/exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md) |
+
+### [x] `M7` AI + Skills 执行闭环与双层测试体系 — `completed`
+
+用户于 2026-08-16 批准。M7 在 ADHOC-0011 的本地 AI + Skills 运行树上继续严格串行，先保存
+基线，再修复 SQLite 状态与自动槽位判定，完成不调用外部服务的日报/周报离线闭环，并建立
+确定性代码测试与按需 AI 语义验收两层测试。正式 `source/state`、Garmin、Gmail、Sites、cron
+安装和远程 Git 均不触碰；仅在仓库外合成 candidate 中验证闭环。
+
+| 任务 | 状态 | 优先级 | 显式依赖 | Batch | 预期写入范围 | Exec plan |
+| --- | --- | --- | --- | --- | --- | --- |
+| [x] `M7-0001` 保存基线并更新测试治理 | `completed` | high | ADHOC-0011 | serial-m7 | 本地基线提交、A-009、AGENTS/CI/计划 | [`completed`](docs/exec-plans/completed/M7-ai-skills-0001-runtime-closure.md) |
+| [x] `M7-0002` 状态合同与唯一自动入口 | `completed` | high | M7-0001 | serial-m7 | `source/skills/_shared`、SQLite 测试 | 同一 exec plan |
+| [x] `M7-0003` 六个 Skills 离线业务闭环 | `completed` | high | M7-0002 | serial-m7 | Skill 脚本、schemas、candidate-only workflow | 同一 exec plan |
+| [x] `M7-0004` code 与 AI 双层测试 | `completed` | high | M7-0003 | serial-m7 | `source/tests/code`、`source/tests/ai` | 同一 exec plan |
+| [x] `M7-0005` 独立验证与第二个本地提交 | `completed` | high | M7-0004 | serial-m7 | 验证收据、最终本地提交、计划归档 | 同一 exec plan |

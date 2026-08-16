@@ -13,8 +13,8 @@
 
 - 项目说明文档默认使用中文；路径、命令、状态枚举和协议标识符保留技术拼写。
 - 开发使用根 agentForge Harness。ADHOC-0011 已获批准；本机已完成 raw-first state 切换和旧
-  集中式入口归档。`source/AGENTS.md` 与六个本地 Skills 是目标运行层，但当前 Skills 多为准备器或
-  骨架，cron 保持关闭，尚不能视为端到端可运行系统。
+  集中式入口归档。M7 离线 Skills 闭环与双层测试已通过独立 Validator；cron 保持关闭，外部
+  MCP 写入仍未启用。
 - `orchestrate-parallel-work` 只在本仓库禁用；不修改其全局安装。
 
 ## 已验证的项目事实
@@ -22,12 +22,12 @@
 - 根开发 Harness 固定适配 agentForge `v0.4.2`，上游标签提交为
   `ccc934ece6b7b64368c08bc3ce431678511ecfa3`。
 - TrainLab 的目标产品运行目录为 `source/`；本机工作树不再依赖集中式 `source/src` 包或统一 CLI，
-  运行入口由 `source/AGENTS.md`、本地 Skills 和 SQLite 状态组成。该目标树尚未提交，当前 HEAD 的
-  clean checkout 仍是旧架构。
+  运行入口由 `source/AGENTS.md`、本地 Skills 和 SQLite 状态组成。M7 目标树已保存为本地
+  `feat: complete AI skills workflow and test harness` 提交，并通过 clean checkout 合成验证。
 - 当前运行库是 raw-first 六表 SQLite，不含 Orchestration/Supervisor 表和视图；旧 state/config/logs/数据库
   归档在被 Git 忽略的 `data-backup/`，不删除、不进入产品新库。
-- 产品时区合同使用 `Asia/Hong_Kong`；训练规则和报告目标采用 AI + 本地 Skills 设计。当前脚本只
-  实现部分确定性边界，尚未形成日报、周报、课表和外部动作的完整闭环。
+- 产品时区合同使用 `Asia/Hong_Kong`；训练规则和报告目标采用 AI + 本地 Skills 设计。当前离线
+  脚本已形成日报、周报、课表、报告、邮件信封和 GTS 合同的 candidate 闭环；真实外部动作仍关闭。
 - 私有 state、logs、FIT、raw、数据库、凭据和私有配置不得进入 Git 或 `dist/`。
 - 项目不再使用或忽略根 `test_data/`；当前 Skill 合同测试不携带私人 Garmin 输入，
   私人 raw/FIT 只能留在被忽略的 state 或仓库外归档。
@@ -39,22 +39,27 @@
 
 ## 已建立的验证命令
 
-- `cd source && python -m pytest skills/_tests -q`
-- `cd source && ruff --config skills/_shared/ruff.toml check skills`
-- `cd source && ruff format --check skills`
-- `cd source && mypy --config-file skills/_shared/mypy.ini skills`
+- `cd source && PYTHONDONTWRITEBYTECODE=1 python -m pytest tests/code -q`
+- `cd source && ruff --config skills/_shared/ruff.toml check skills tests/code`
+- `cd source && ruff format --check skills tests/code`
+- `cd source && mypy --config-file skills/_shared/mypy.ini skills tests/code`
 - Skill JSON/agent metadata、编译和 Git ignore 门禁从 `source/` 执行；`git diff --check` 从仓库根执行；
-  正式运行不依赖 wheel、bundle、Supervisor 或仓库 `.venv`。
+  AI 语义验收按需执行，不读取正式 state/raw；正式运行不依赖 wheel、bundle、Supervisor 或仓库 `.venv`。
 
 ## 当前活动计划
 
-- 无。
+- 当前没有 active exec plan。M7 `AI + Skills 执行闭环与双层测试体系` 已完成离线验证并归档；
+  后续若启用 Garmin/Gmail/Sites、cron 或真实外部写入，必须另立并单独批准阶段。
 
 ## 最近完成计划
 
 M5 自适应教练画像与本地报告校准已通过独立 Validator；exec plan 已归档至
 `docs/exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md`。
 真实隔离库因活动覆盖不完整按合同延期，未伪造报告；预览 renderer 的 HTML/JSON、权限和无副作用回归通过。
+M7 `AI + Skills 执行闭环与双层测试体系` 已通过全新集成 Validator；已建立
+`feat: complete AI skills workflow and test harness` 本地提交。`source/tests/code` 的 31 项
+确定性测试、Ruff、format、mypy、compile、8 个 Schema、日报资源分桶、恢复红旗和周报证据闭环
+均通过；正式 `source/state`、Garmin、Gmail、Sites 和 cron 均未被修改或调用。
 最近完成的 M4 计划已归档至
 `docs/exec-plans/completed/M4-source-root-0001-product-consolidation.md`；M4 基线提交为
 `bab3649`（`feat: complete source runtime migration`）。

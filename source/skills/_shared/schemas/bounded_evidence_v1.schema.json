@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trainlab.local/schemas/bounded_evidence_v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "window", "evidence", "file_count", "raw_values_included", "provider_calls"],
+  "properties": {
+    "schema_version": {"type": "string", "const": "bounded_evidence_v1"},
+    "status": {"type": "string", "enum": ["ready", "blocked"]},
+    "window": {"type": "object", "additionalProperties": false, "required": ["from_date", "through_date"], "properties": {"from_date": {"type": "string", "format": "date"}, "through_date": {"type": "string", "format": "date"}}},
+    "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence_item"}},
+    "file_count": {"type": "integer", "minimum": 0},
+    "raw_values_included": {"type": "boolean", "const": false},
+    "provider_calls": {"type": "integer", "const": 0},
+    "error_code": {"type": "string", "minLength": 1}
+  },
+  "allOf": [
+    {"if": {"properties": {"status": {"const": "ready"}}}, "then": {"properties": {"evidence": {"minItems": 1}, "file_count": {"minimum": 1}}}},
+    {"if": {"properties": {"status": {"const": "blocked"}}}, "then": {"properties": {"evidence": {"maxItems": 0}, "file_count": {"const": 0}}, "required": ["error_code"]}}
+  ],
+  "$defs": {
+    "numeric_summary": {"type": "object", "additionalProperties": false, "required": ["count"], "properties": {"count": {"type": "integer", "minimum": 0}, "minimum": {"type": "number"}, "maximum": {"type": "number"}, "average": {"type": "number"}}},
+    "metrics": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "resource": {"type": "string"}, "metric": {"type": "string"}, "numeric_summary": {"$ref": "#/$defs/numeric_summary"}, "aggregate": {"$ref": "#/$defs/numeric_summary"},
+        "duration_seconds": {"type": ["number", "null"]}, "sleep_start": {"type": "string"}, "sleep_end": {"type": "string"}, "stage_group_count": {"type": "integer", "minimum": 0}, "completeness": {"type": "string", "enum": ["complete", "partial"]},
+        "trackpoint_count": {"type": "integer", "minimum": 0}, "time_point_count": {"type": "integer", "minimum": 0}, "distance_km": {"type": "number", "minimum": 0}, "duration_available": {"type": "boolean"}, "source_name": {"type": "string"},
+        "field_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}}, "activity_kind": {"type": "string"}, "pace_seconds_per_km": {"type": "number", "exclusiveMinimum": 0}, "heart_rate_average": {"type": "number", "minimum": 0}, "heart_rate_maximum": {"type": "number", "minimum": 0}, "lap_count": {"type": "integer", "minimum": 0}, "uncertainty": {"type": "string"}
+      }
+    },
+    "shape": {"type": "object", "additionalProperties": false, "properties": {"type": {"type": "string"}, "key_count": {"type": "integer", "minimum": 0}, "keys": {"type": "array", "items": {"type": "string"}, "maxItems": 40}, "truncated_keys": {"type": "boolean"}, "length": {"type": "integer", "minimum": 0}, "item_types": {"type": "array", "items": {"type": "string"}}, "truncated_items": {"type": "boolean"}}},
+    "parsed_evidence": {"type": "object", "additionalProperties": false, "required": ["parser"], "properties": {"parser": {"type": "string", "enum": ["json", "gpx", "tcx", "fitdecode", "none"]}, "shape": {"$ref": "#/$defs/shape"}, "root_tag": {"type": "string"}, "element_count": {"type": "integer", "minimum": 0}, "message_count": {"type": "integer", "minimum": 0}, "message_types": {"type": "array", "items": {"type": "string"}, "maxItems": 40}, "truncated": {"type": "boolean"}, "metrics": {"$ref": "#/$defs/metrics"}, "error_code": {"type": "string"}}},
+    "evidence_item": {"type": "object", "additionalProperties": false, "required": ["relative_path", "data_date", "format", "bytes", "sha256", "evidence"], "properties": {"relative_path": {"type": "string", "minLength": 1}, "data_date": {"type": "string", "format": "date"}, "format": {"type": "string", "enum": ["json", "fit", "gpx", "tcx"]}, "bytes": {"type": "integer", "minimum": 0}, "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "raw_file_id": {"type": "integer", "minimum": 1}, "evidence": {"$ref": "#/$defs/parsed_evidence"}}}
+  }
+}

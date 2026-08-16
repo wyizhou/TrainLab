@@ -57,6 +57,9 @@ data.db-journal
 /source/*token*.json
 /source/**/garmin_tokens.json
 /source/**/secrets/
+/source/tests/ai/results/**
+!/source/tests/ai/results/
+!/source/tests/ai/results/.gitkeep
 
 # Legacy root instance paths are ignored only during the migration window.
 /state/

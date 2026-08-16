@@ -246,3 +246,28 @@ Reason:
 
 > 用户明确要求运行层简单化为 AI + Skills，并让无状态 cron 可以仅靠文件和 SQLite 恢复；
 > 原始健康/活动文件保留可重算证据，业务输出和动作状态集中落地 SQLite。
+
+## A-009: AI + Skills 双层测试布局
+
+- 确认日期：2026-08-16
+- 适用范围：`source/` 运行 Harness 的确定性代码测试、AI 语义验收和持续质量门。
+- 替代范围：仅替代 A-008 关于测试目录的约定；A-001、A-002、A-004、A-008 的数据、隐私、
+  外部授权和 raw-first 边界保持不变。
+
+必须遵守：
+
+1. 确定性测试唯一位于 `source/tests/code/`，按 `unit/`、`contract/`、`integration/` 和
+   `fixtures/` 组织；已退役的 `source/skills/_tests/` 不得与其并存。
+2. AI 语义验收位于 `source/tests/ai/`，包含 cases、rubrics、schemas、templates 和被 Git
+   忽略的 results；正常运行不得读取测试目录。
+3. Schema、哈希、权限、状态机、幂等和外部副作用必须由 code 测试确定性判断；AI 评测只判断
+   解释、证据一致性、训练合理性和是否编造，`REVIEW` 不得计为通过。
+4. 测试只使用合成输入或仓库外隔离实例，不读取正式 goal、state、raw、凭据，不调用 Garmin、
+   Gmail 或 Sites。AI 评测按需运行，不默认进入 PR CI。
+5. CI 和质量门必须同时覆盖 `skills` 与 `tests/code`，并检查 `tests/ai` 的结构、Schema、隐私
+   和忽略边界；不得通过删除测试、降低断言或静默忽略诊断取得绿灯。
+
+协商原因：
+
+> 用户希望把“代码是否正确”和“AI 是否按 Harness 产出”分开验收，同时保持无状态运行和私人
+> 数据隔离；两层测试能分别提供可重复的机器门和可读的语义复核。

@@ -1,4 +1,0 @@
-按 source/AGENTS.md 执行每日总结流程。依次使用 garmin-sync、training-coach 每日模式、
-training-report-publisher 和 gmail-sender；只处理昨日完整健康与运动以及今日早晨已结束的主睡眠。
-由脚本解析当前新增 raw，并结合 SQLite 中前 14 份日总结生成结果；把所有 Skill 输出写入 SQLite，
-禁止重复采集、无条件重算历史 raw 或重复发送。当前阶段禁止 Garmin、Gmail 和 Sites 外部调用。

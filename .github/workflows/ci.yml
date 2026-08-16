@@ -21,15 +21,15 @@ jobs:
       - name: Install runtime dependencies
         run: python -m pip install -r requirements.txt
       - name: Test
-        run: python -m pytest skills/_tests -q
+        run: python -m pytest tests/code -q
       - name: Ruff
-        run: ruff --config skills/_shared/ruff.toml check skills
+        run: ruff --config skills/_shared/ruff.toml check skills tests/code
       - name: Ruff format
-        run: ruff format --check skills
+        run: ruff format --check skills tests/code
       - name: Mypy
-        run: mypy --config-file skills/_shared/mypy.ini skills
+        run: mypy --config-file skills/_shared/mypy.ini skills tests/code
       - name: Compile
-        run: python -m compileall -q skills
+        run: python -m compileall -q skills tests/code
       - name: JSON and agent metadata
         run: |
           python - <<'PY'
@@ -38,6 +38,15 @@ jobs:
 
           for path in Path("skills").rglob("*.json"):
               json.loads(path.read_text(encoding="utf-8"))
+          for path in Path("tests/ai").rglob("*.json"):
+              json.loads(path.read_text(encoding="utf-8"))
+          for directory in ("cases", "rubrics", "schemas", "templates", "results"):
+              if not (Path("tests/ai") / directory).is_dir():
+                  raise SystemExit(f"missing AI evaluation directory: {directory}")
+          for path in (Path("tests/ai") / "cases").glob("*.md"):
+              text = path.read_text(encoding="utf-8").lower()
+              if "expected" not in text or "verdict" not in text:
+                  raise SystemExit(f"AI case missing expected/verdict fields: {path}")
           for path in Path("skills").rglob("*.yaml"):
               if not path.read_text(encoding="utf-8").strip():
                   raise SystemExit(f"empty agent metadata: {path}")
@@ -48,16 +57,20 @@ jobs:
           test -f requirements.txt
           test -f goal.module.md
           test -d skills
+          test -d tests/code
+          test -d tests/ai
           test -d state
+          test ! -e skills/_tests
           test ! -e src
-          test ! -e tests
           test ! -e index.py
           test ! -e requirements.lock
+          test ! -e tests/ai/results/live
           git check-ignore -q goal.md
           git check-ignore -q credentials.json
           git check-ignore -q gcp-oauth.keys.json
           git check-ignore -q state/trainlab.db
           git check-ignore -q ../data-backup
+          git check-ignore -q tests/ai/results/example.json
       - name: Diff check
         working-directory: .
         run: git diff --check

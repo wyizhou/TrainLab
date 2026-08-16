@@ -15,7 +15,7 @@ SQLite approvals and this file before any action.
 - Un-schedule future owned GTS entries, delete only owned unexecuted GTS templates, create new templates,
   read back and validate structure, then schedule them on the calendar.
 - Never delete completed activities, non-GTS workouts or a name containing `GTS` in the middle.
-- Every action uses `prepared → backup_barrier → call → verify/reconcile`, an idempotency key and a
+- Every action uses `prepared → external_barrier → call → verify/reconcile`, an idempotency key and a
   persisted `external_actions` row. Crash or uncertain outcome is `unknown`, never an automatic retry.
 
 Run `scripts/prepare_gts.py` first. It validates `-GTS` names and emits a no-network action plan. This

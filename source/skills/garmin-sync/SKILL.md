@@ -21,10 +21,12 @@ Read `source/AGENTS.md`, `config.json`, SQLite state and this file before acting
 ## Script-first workflow
 
 1. Run `scripts/plan_window.py --run-date YYYY-MM-DD` to produce the bounded request plan.
-2. Verify the plan has no 14-day readback, no summary resource, and zero external calls in this stage.
-3. Under an independently approved online run, the host may execute the exact MCP calls and then persist
+2. Run `scripts/index_raw.py --source-root PATH --database PATH` before analysis to index existing raw
+   bytes and verify their path, mode and SHA without contacting Garmin.
+3. Verify the plan has no 14-day readback, no summary resource, and zero external calls in this stage.
+4. Under an independently approved online run, the host may execute the exact MCP calls and then persist
    raw hashes, `activity_inventory`, `skill_runs` and errors in SQLite.
-4. Any uncertain identity, path collision, missing date, budget overflow or unknown provider outcome is
+5. Any uncertain identity, path collision, missing date, budget overflow or unknown provider outcome is
    `blocked` and must be reconciled before another attempt.
 
 Outputs are bounded JSON summaries only; never print tokens, raw payloads, routes or health samples.

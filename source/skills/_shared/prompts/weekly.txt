@@ -1,5 +1,0 @@
-按 source/AGENTS.md 执行每周总结与排课流程。依次使用 garmin-sync、weekly-fitness-summary、
-training-coach 每周模式、garmin-training-sender、training-report-publisher 和 gmail-sender；
-training-coach 使用本周期 7 份日总结与此前 4 份周总结，按需使用 raw 解析脚本；按预授权定时 AI
-规则审核 exact plan SHA，安全替换本项目的 GTS Workout 并排入日历，最后准备周邮件。当前阶段禁止
-Garmin、Gmail 和 Sites 外部调用，所有输出和状态必须写入 SQLite。

@@ -12,6 +12,9 @@
 4. 读取 `state/trainlab.db` 的最近运行、输出、批准和外部动作；数据库缺失或锁不可用时停止。
 5. 由脚本生成有界证据后再交给 AI。不得把完整 raw、FIT、凭据或邮件历史直接放入上下文。
 
+测试只用于开发和验收，不是正常运行输入。确定性测试在 `tests/code/`，AI 语义验收在
+`tests/ai/`；运行时不得读取这两个目录。
+
 ## 硬性训练规则
 
 - Hansons 只作为跑步课程的缩放参考，不覆盖恢复和安全证据。
@@ -39,5 +42,7 @@
 `training-report-publisher` 负责 HTML/邮件表现层，`gmail-sender` 负责邮件外部动作，
 `garmin-training-sender` 负责已批准的 Garmin Connect My Workouts `-GTS` 模板。
 
-任何脚本失败都必须使用稳定错误码写入 SQLite，而不是只打印一段不可恢复的文本。脚本应优先
+任何脚本失败都必须使用稳定错误码写入 SQLite，而不是只打印一段不可恢复的文本。Skill run
+状态只能使用 `pending/running/succeeded/failed/blocked/interrupted/cancelled`；`unknown`
+只表示外部动作结果。脚本应优先
 完成可重复的哈希、窗口、Schema、权限、幂等和报告渲染工作，AI 只负责解释和受约束的决策。

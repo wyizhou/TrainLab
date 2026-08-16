@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trainlab.local/schemas/weekly_fitness_review_v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "period", "daily_summary_count", "evidence_consistency", "provider_calls"],
+  "properties": {
+    "schema_version": {"type": "string", "const": "weekly_fitness_review_v1"},
+    "status": {"type": "string", "enum": ["succeeded", "blocked"]},
+    "period": {"type": "string", "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])/[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"},
+    "daily_summary_count": {"type": "integer", "const": 7},
+    "daily_input_sha256": {"type": "array", "minItems": 7, "maxItems": 7, "items": {"type": "string", "pattern": "^[0-9a-f]{64}$"}},
+    "activity_days": {"type": "integer", "minimum": 0, "maximum": 7},
+    "sleep_complete_days": {"type": "integer", "minimum": 0, "maximum": 7},
+    "evidence_consistency": {"type": "string", "enum": ["verified", "blocked"]},
+    "provider_calls": {"type": "integer", "const": 0},
+    "error_code": {"type": "string"}
+  }
+}
