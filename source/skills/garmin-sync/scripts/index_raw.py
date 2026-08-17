@@ -56,7 +56,8 @@ def _metadata(path: Path, raw_root: Path) -> dict[str, Any]:
     if path.stat().st_mode & 0o777 != 0o600:
         raise ValueError("raw_file_mode_invalid")
     data_date = _data_date(path.name)
-    suffix = ".weather.json" if path.name.endswith(".weather.json") else path.suffix
+    is_weather = path.name.endswith(".weather.json")
+    suffix = ".json" if is_weather else path.suffix
     file_format = suffix.lstrip(".")
     if file_format not in {"json", *FORMATS}:
         raise ValueError("raw_format_unsupported")
@@ -68,11 +69,7 @@ def _metadata(path: Path, raw_root: Path) -> dict[str, Any]:
         data_class = "health"
         binding_state = "not_applicable"
     else:
-        resource_kind = (
-            "activity_weather"
-            if path.name.endswith(".weather.json")
-            else f"activity_{file_format}"
-        )
+        resource_kind = "activity_weather" if is_weather else f"activity_{file_format}"
         data_class = "activity"
         binding_state = "unresolved"
     return {
@@ -82,7 +79,7 @@ def _metadata(path: Path, raw_root: Path) -> dict[str, Any]:
         "logical_key": f"garmin:raw:{relative}",
         "data_date": data_date,
         "relative_path": relative,
-        "file_format": "json" if path.name.endswith(".weather.json") else file_format,
+        "file_format": file_format,
         "byte_size": path.stat().st_size,
         "sha256": sha256_file(path),
         "activity_binding_state": binding_state,

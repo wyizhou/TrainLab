@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "status", "error_code", "period", "daily_input_sha256",
+    "summary", "evidence_refs", "goal_sha256", "training_plan", "provider_calls"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "weekly_ai_result_v1"},
+    "status": {"type": "string", "enum": ["succeeded", "blocked"]},
+    "error_code": {"type": ["string", "null"]},
+    "period": {"type": "string"},
+    "daily_input_sha256": {"type": "array", "items": {"type": "string"}},
+    "summary": {"type": "string"},
+    "evidence_refs": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["output_id", "sha256", "claim"],
+        "properties": {
+          "output_id": {"type": "integer", "minimum": 1},
+          "sha256": {"type": "string"},
+          "claim": {"type": "string"}
+        }
+      }
+    },
+    "goal_sha256": {"type": ["string", "null"]},
+    "training_plan": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "schema_version", "status", "items", "progression_rule",
+        "progression_dimension", "previous_week_distance_km",
+        "current_week_distance_km", "previous_week_intensity_score",
+        "current_week_intensity_score", "evidence_running_distance_km",
+        "evidence_caution_days", "evidence_daily_count", "provider_calls"
+      ],
+      "properties": {
+        "schema_version": {"type": "string", "const": "training_plan_v1"},
+        "status": {"type": "string", "enum": ["succeeded", "blocked"]},
+        "items": {
+          "type": "array", "minItems": 7, "maxItems": 7,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": [
+              "date", "activity_kind", "name", "purpose", "load_level",
+              "garmin_mapping_status", "distance_km", "duration_minutes",
+              "pace_min_seconds_per_km", "pace_max_seconds_per_km",
+              "heart_rate_min_bpm", "heart_rate_max_bpm", "rpe", "steps",
+              "downgrade_rule", "stop_conditions"
+            ],
+            "properties": {
+              "date": {"type": "string"},
+              "activity_kind": {"type": "string", "enum": ["running", "climbing", "rest"]},
+              "name": {"type": "string", "minLength": 1},
+              "purpose": {"type": "string", "minLength": 1},
+              "load_level": {"type": "string", "enum": ["low", "moderate", "hard"]},
+              "garmin_mapping_status": {"type": "string", "enum": ["candidate", "requires_review", "unsupported_skip"]},
+              "distance_km": {"type": ["number", "null"]},
+              "duration_minutes": {"type": ["number", "null"]},
+              "pace_min_seconds_per_km": {"type": ["number", "null"]},
+              "pace_max_seconds_per_km": {"type": ["number", "null"]},
+              "heart_rate_min_bpm": {"type": ["number", "null"]},
+              "heart_rate_max_bpm": {"type": ["number", "null"]},
+              "rpe": {"type": "number", "minimum": 1, "maximum": 10},
+              "steps": {
+                "type": "array",
+                "items": {
+                  "type": "object", "additionalProperties": false,
+                  "required": ["name", "end_condition"],
+                  "properties": {
+                    "name": {"type": "string", "minLength": 1},
+                    "end_condition": {"type": "string", "minLength": 1}
+                  }
+                }
+              },
+              "downgrade_rule": {"type": "string", "minLength": 1},
+              "stop_conditions": {"type": "array", "items": {"type": "string", "minLength": 1}}
+            }
+          }
+        },
+        "progression_rule": {"type": "string", "enum": ["advance", "hold", "deload"]},
+        "progression_dimension": {"type": "string", "enum": ["distance", "intensity", "none"]},
+        "previous_week_distance_km": {"type": ["number", "null"]},
+        "current_week_distance_km": {"type": ["number", "null"]},
+        "previous_week_intensity_score": {"type": ["number", "null"]},
+        "current_week_intensity_score": {"type": ["number", "null"]},
+        "evidence_running_distance_km": {"type": ["number", "null"]},
+        "evidence_caution_days": {"type": ["integer", "null"]},
+        "evidence_daily_count": {"type": ["integer", "null"]},
+        "provider_calls": {"type": "integer", "const": 0}
+      }
+    },
+    "provider_calls": {"type": "integer", "const": 0}
+  }
+}

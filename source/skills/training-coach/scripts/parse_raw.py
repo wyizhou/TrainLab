@@ -12,12 +12,15 @@ import xml.etree.ElementTree as ET
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from skills._shared.scripts.schema_validation import (  # noqa: E402
     require_valid_payload,
 )
 from skills._shared.state import connect, record_skill_result  # noqa: E402
+
+HKT = ZoneInfo("Asia/Hong_Kong")
 
 
 def digest(path: Path) -> str:
@@ -99,43 +102,319 @@ def _find_named(value: Any, names: set[str]) -> list[Any]:
     return found
 
 
-def _json_metrics(value: Any, resource: str) -> dict[str, Any]:
+def _normalize_key(value: object) -> str:
+    return str(value).lower().replace("_", "").replace("-", "")
+
+
+def _resource_from_filename(path: Path) -> str:
+    """Map the persisted filename to a controlled semantic resource name."""
+    name = path.name
+    if name.endswith(".weather.json"):
+        return "activity_weather"
+    tail = name[9:] if len(name) >= 9 and name[8] == "-" else name
+    resource = tail.removesuffix(".json").rsplit("-", 1)[0]
+    return "activity_weather" if resource == "weather" else resource
+
+
+def _numbers(value: Any) -> list[float]:
     numbers: list[float] = []
     _walk_numbers(value, numbers)
+    return numbers
+
+
+def _first_number(value: Any, names: set[str]) -> float | None:
+    for item in _find_named(value, names):
+        numbers = _numbers(item)
+        if numbers:
+            return numbers[0]
+    return None
+
+
+def _first_text(value: Any, names: set[str]) -> str | None:
+    for item in _find_named(value, names):
+        if isinstance(item, str) and item.strip():
+            return item
+    return None
+
+
+def _parse_timestamp(value: object) -> datetime | None:
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        numeric = float(value)
+        if numeric > 10_000_000_000:
+            numeric /= 1000
+        try:
+            return datetime.fromtimestamp(numeric, tz=timezone.utc)
+        except (OverflowError, OSError, ValueError):
+            return None
+    if not isinstance(value, str) or not value.strip():
+        return None
+    text = value.strip().replace("Z", "+00:00")
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _sleep_metrics(value: Any) -> dict[str, Any]:
+    sleep_dtos = _find_named(value, {"dailysleepdto"})
+    source = next((item for item in sleep_dtos if isinstance(item, dict)), value)
+    starts = _find_named(
+        source,
+        {
+            "sleepstarttimestampgmt",
+            "sleepstarttimestamp",
+            "sleepstart",
+            "starttime",
+            "bedtime",
+            "startgmt",
+        },
+    )
+    ends = _find_named(
+        source,
+        {
+            "sleependtimestampgmt",
+            "sleependtimestamp",
+            "sleepend",
+            "endtime",
+            "waketime",
+            "wake",
+            "endgmt",
+        },
+    )
+    start_value = next(
+        (item for item in starts if _parse_timestamp(item) is not None), None
+    )
+    end_value = next(
+        (item for item in ends if _parse_timestamp(item) is not None), None
+    )
+    start = _parse_timestamp(start_value)
+    end = _parse_timestamp(end_value)
+    duration = _first_number(
+        source,
+        {"sleeptimeseconds", "durationseconds", "duration", "sleeptime"},
+    )
+    if duration is None and start is not None and end is not None and end > start:
+        duration = (end - start).total_seconds()
+    stages = _find_named(value, {"levels", "stages", "sleeplevels", "sleepstages"})
+    metrics: dict[str, Any] = {
+        "resource": "sleep",
+        "uncertainty": "named_fields",
+        "completeness": "complete"
+        if start is not None
+        and end is not None
+        and duration is not None
+        and end > start
+        else "partial",
+    }
+    if start is not None:
+        metrics["sleep_start"] = start.isoformat().replace("+00:00", "Z")
+    if end is not None:
+        metrics["sleep_end"] = end.isoformat().replace("+00:00", "Z")
+    if duration is not None and duration >= 0:
+        metrics["duration_seconds"] = round(duration, 3)
+    if end is not None:
+        metrics["sleep_wake_date"] = end.astimezone(HKT).date().isoformat()
+    if stages:
+        metrics["stage_group_count"] = sum(
+            len(item) if isinstance(item, list) else 1 for item in stages
+        )
+    return metrics
+
+
+def _heart_rate_points(value: Any) -> list[float]:
+    """Extract HR values without treating timestamps as heart-rate samples."""
+    points: list[float] = []
+    for item in _find_named(
+        value,
+        {"heartratevalues", "heartratesamples", "heartratereadings", "readings"},
+    ):
+        if isinstance(item, dict):
+            for key, child in item.items():
+                if _normalize_key(key) in {
+                    "heartrate",
+                    "heartratebpm",
+                    "bpm",
+                    "value",
+                    "averageheartrate",
+                }:
+                    points.extend(_numbers(child))
+        elif isinstance(item, list):
+            for point in item:
+                if isinstance(point, dict):
+                    points.extend(_heart_rate_points(point))
+                elif isinstance(point, (list, tuple)):
+                    numeric = _numbers(point)
+                    if numeric:
+                        points.append(numeric[-1])
+                elif isinstance(point, (int, float)) and not isinstance(point, bool):
+                    points.append(float(point))
+    return [item for item in points if 20 <= item <= 260]
+
+
+def _date_token(value: object) -> str | None:
+    if isinstance(value, str):
+        text = value.strip()
+        if len(text) == 10 and text[4] == "-" and text[7] == "-":
+            try:
+                date.fromisoformat(text)
+            except ValueError:
+                return None
+            return text
+        if len(text) == 8 and text.isdigit():
+            try:
+                return datetime.strptime(text, "%Y%m%d").date().isoformat()
+            except ValueError:
+                return None
+    parsed = _parse_timestamp(value)
+    return parsed.astimezone(HKT).date().isoformat() if parsed else None
+
+
+def _weight_for_date(value: Any, expected_date: str | None) -> float | None:
+    """Read only a dated Garmin weight measurement and normalize to kg."""
+    if expected_date is None:
+        return None
+    weight_keys = {
+        "weight",
+        "weightkg",
+        "weightinkg",
+        "weightgrams",
+        "weightvalue",
+    }
+    date_keys = {
+        "summarydate",
+        "calendardate",
+        "localdate",
+        "measurementdate",
+        "date",
+    }
+    candidates: list[float] = []
+
+    def walk(
+        node: Any, inherited_date: str | None = None, blocked: bool = False
+    ) -> None:
+        if isinstance(node, dict):
+            normalized = {_normalize_key(key): child for key, child in node.items()}
+            node_date = next(
+                (
+                    _date_token(child)
+                    for key, child in normalized.items()
+                    if key in date_keys
+                ),
+                None,
+            )
+            if node_date is not None and node_date != expected_date:
+                return
+            effective_date = node_date or inherited_date
+            for key, child in normalized.items():
+                child_blocked = blocked or any(
+                    token in key for token in ("previous", "next", "trend", "average")
+                )
+                if (
+                    effective_date == expected_date
+                    and not child_blocked
+                    and key in weight_keys
+                    and isinstance(child, (int, float))
+                    and not isinstance(child, bool)
+                ):
+                    number = float(child)
+                    if math.isfinite(number):
+                        candidates.append(number)
+                if isinstance(child, (dict, list)):
+                    walk(child, effective_date, child_blocked)
+        elif isinstance(node, list):
+            for child in node[:1000]:
+                walk(child, inherited_date, blocked)
+
+    walk(value)
+    if not candidates:
+        return None
+    raw = candidates[-1]
+    kg = raw / 1000.0 if raw > 300 else raw
+    return round(kg, 3) if 30 <= kg <= 300 else None
+
+
+def _json_metrics(
+    value: Any, resource: str, *, expected_date: str | None = None
+) -> dict[str, Any]:
+    """Return resource-specific aggregates; never average unrelated JSON numbers."""
+    if resource == "sleep":
+        return _sleep_metrics(value)
+
     metrics: dict[str, Any] = {
         "resource": resource,
-        "numeric_summary": _numeric_summary(numbers),
-        "uncertainty": "bounded_aggregate",
+        "uncertainty": "named_fields",
     }
-    aliases = {
-        "rhr": "resting_heart_rate",
-        "heart_rates": "heart_rate",
-        "hrv": "hrv",
-        "spo2": "spo2",
-        "max_metrics": "vo2_max",
-        "weigh_ins": "weight",
-    }
-    if resource in aliases:
-        metrics["metric"] = aliases[resource]
-        metrics["aggregate"] = _numeric_summary(numbers)
-    if resource == "sleep":
-        durations = _find_named(value, {"duration", "durationseconds", "sleeptime"})
-        starts = _find_named(value, {"starttime", "sleepstart", "bedtime"})
-        ends = _find_named(value, {"endtime", "waketime", "wake"})
-        stages = _find_named(value, {"levels", "stages", "sleeplevels"})
-        if durations:
-            metrics["duration_seconds"] = next(
-                (item for item in durations if isinstance(item, (int, float))), None
-            )
-        if starts and isinstance(starts[0], str):
-            metrics["sleep_start"] = starts[0]
-        if ends and isinstance(ends[0], str):
-            metrics["sleep_end"] = ends[0]
-        if stages:
-            metrics["stage_group_count"] = sum(
-                len(item) if isinstance(item, list) else 1 for item in stages
-            )
-        metrics["completeness"] = "complete" if starts and ends else "partial"
+    if resource == "rhr":
+        resting = _first_number(
+            value,
+            {
+                "restingheartrate",
+                "restingheartratevalue",
+                "wellnessrestingheartrate",
+                "value",
+            },
+        )
+        metrics["metric"] = "resting_heart_rate"
+        if resting is not None:
+            metrics["resting_heart_rate_bpm"] = resting
+        return metrics
+    if resource == "hrv":
+        metrics["metric"] = "hrv"
+        for output, names in {
+            "last_night_average": {"lastnightavg", "lastnightaverage"},
+            "weekly_average": {"weeklyavg", "weeklyaverage"},
+            "last_night_5_min_high": {"lastnight5minhigh"},
+        }.items():
+            number = _first_number(value, names)
+            if number is not None:
+                metrics[output] = number
+        return metrics
+    if resource == "heart_rates":
+        points = _heart_rate_points(value)
+        explicit_average = _first_number(
+            value, {"averageheartrate", "heartrateaverage", "dailyaverage"}
+        )
+        metrics["metric"] = "heart_rate"
+        metrics["sample_count"] = len(points)
+        if points:
+            metrics["aggregate"] = _numeric_summary(points)
+            metrics["median"] = round(sorted(points)[len(points) // 2], 3)
+        if explicit_average is not None:
+            metrics["average"] = explicit_average
+        resting = _first_number(value, {"restingheartrate", "restingheartratevalue"})
+        if resting is not None:
+            metrics["resting_heart_rate_bpm"] = resting
+        return metrics
+    if resource == "max_metrics":
+        number = _first_number(
+            value, {"vo2maxprecisevalue", "vo2maxvalue", "vo2max", "vo2maxprecise"}
+        )
+        metrics["metric"] = "vo2_max"
+        if number is not None:
+            metrics["vo2_max"] = number
+        return metrics
+    if resource == "weigh_ins":
+        number = _weight_for_date(value, expected_date)
+        metrics["metric"] = "weight"
+        if number is not None:
+            metrics["weight"] = number
+            metrics["unit"] = "kg"
+        return metrics
+    if resource == "activity_weather" or resource == "weather":
+        metrics["resource"] = "activity_weather"
+        for output, names in {
+            "temperature": {"temperature", "temperaturec", "temp"},
+            "humidity": {"humidity", "relativehumidity"},
+            "wind_speed": {"windspeed", "windvelocity"},
+        }.items():
+            number = _first_number(value, names)
+            if number is not None:
+                metrics[output] = number
+        metrics["units"] = "provider_unspecified"
+        return metrics
     return metrics
 
 
@@ -146,11 +425,37 @@ def _xml_metrics(path: Path, root: ET.Element) -> dict[str, Any]:
         if tag in {"trkpt", "Trackpoint"}:
             points.append(element)
     coordinates: list[tuple[float, float]] = []
+    explicit_distances: list[float] = []
     for point in points:
+        lat = point.attrib.get("lat")
+        lon = point.attrib.get("lon")
+        if lat is None or lon is None:
+            position = next(
+                (
+                    child
+                    for child in point.iter()
+                    if child.tag.rsplit("}", 1)[-1] == "Position"
+                ),
+                None,
+            )
+            if position is not None:
+                values = {
+                    child.tag.rsplit("}", 1)[-1]: child.text
+                    for child in position.iter()
+                }
+                lat = values.get("LatitudeDegrees")
+                lon = values.get("LongitudeDegrees")
         try:
-            coordinates.append((float(point.attrib["lat"]), float(point.attrib["lon"])))
-        except (KeyError, TypeError, ValueError):
-            continue
+            if lat is not None and lon is not None:
+                coordinates.append((float(lat), float(lon)))
+        except (TypeError, ValueError):
+            pass
+        for child in point.iter():
+            if child.tag.rsplit("}", 1)[-1] in {"DistanceMeters", "Distance"}:
+                try:
+                    explicit_distances.append(float(str(child.text)))
+                except (TypeError, ValueError):
+                    pass
     distance_km = 0.0
     for left, right in zip(coordinates, coordinates[1:]):
         lat1, lon1 = map(math.radians, left)
@@ -160,6 +465,8 @@ def _xml_metrics(path: Path, root: ET.Element) -> dict[str, Any]:
             + math.cos(lat1) * math.cos(lat2) * math.sin((lon2 - lon1) / 2) ** 2
         )
         distance_km += 6371.0 * 2 * math.asin(math.sqrt(min(1.0, a)))
+    if explicit_distances:
+        distance_km = max(distance_km, max(explicit_distances) / 1000.0)
     times = [
         child.text
         for point in points
@@ -199,11 +506,19 @@ def parse_evidence(path: Path) -> dict[str, Any]:
         try:
             with path.open("r", encoding="utf-8") as handle:
                 value = json.load(handle)
-            resource = path.name[9:].removesuffix(".json").rsplit("-", 1)[0]
+            resource = _resource_from_filename(path)
+            expected_date = None
+            if len(path.name) >= 8 and path.name[:8].isdigit():
+                try:
+                    expected_date = (
+                        datetime.strptime(path.name[:8], "%Y%m%d").date().isoformat()
+                    )
+                except ValueError:
+                    expected_date = None
             return {
                 "parser": "json",
                 "shape": json_shape(value),
-                "metrics": _json_metrics(value, resource),
+                "metrics": _json_metrics(value, resource, expected_date=expected_date),
             }
         except (OSError, UnicodeDecodeError, json.JSONDecodeError):
             return {"parser": "json", "error_code": "raw_json_invalid"}

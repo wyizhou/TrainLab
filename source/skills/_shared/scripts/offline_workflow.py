@@ -209,16 +209,45 @@ def _render(
 
 def _prepare_email(database: Path, report_dir: Path, kind: str) -> int:
     html = (report_dir / "report.html").read_text(encoding="utf-8")
-    content = json.loads((report_dir / "report.json").read_text(encoding="utf-8"))
+    connection = connect(database, read_only=True, immutable=True)
+    try:
+        report_row = connection.execute(
+            "SELECT id,content_sha256,title_text,content_text,content_html,lineage_json "
+            "FROM skill_outputs WHERE output_kind='email_render' "
+            "AND content_html=? ORDER BY id DESC LIMIT 1",
+            (html,),
+        ).fetchone()
+    finally:
+        connection.close()
+    if report_row is None:
+        raise RuntimeError("email_report_output_missing")
+    try:
+        report_lineage = json.loads(str(report_row[5]))
+    except json.JSONDecodeError as exc:
+        raise RuntimeError("email_report_lineage_invalid") from exc
+    source_item = next(
+        (
+            item
+            for item in report_lineage
+            if isinstance(item, dict) and item.get("source_output_id") is not None
+        ),
+        None,
+    )
     envelope = report_dir / "email.json"
     envelope.write_text(
         json.dumps(
             {
-                "subject": str(content.get("title") or f"TrainLab {kind}"),
-                "text": json.dumps(
-                    content.get("content", content), ensure_ascii=False, indent=2
-                ),
-                "html": html,
+                "subject": str(report_row[2] or f"TrainLab {kind}"),
+                "text": str(report_row[3] or ""),
+                "html": str(report_row[4] or html),
+                "report_output_id": int(report_row[0]),
+                "report_output_sha256": str(report_row[1]),
+                "source_output_id": source_item.get("source_output_id")
+                if isinstance(source_item, dict)
+                else None,
+                "source_output_sha256": source_item.get("source_output_sha256")
+                if isinstance(source_item, dict)
+                else None,
             },
             ensure_ascii=False,
             sort_keys=True,
@@ -248,7 +277,7 @@ def _prepare_email(database: Path, report_dir: Path, kind: str) -> int:
         row = connection.execute(
             "SELECT id FROM skill_outputs WHERE output_kind='bounded_evidence' "
             "AND logical_key=? ORDER BY revision_no DESC LIMIT 1",
-            (f"gmail-sender:message:{envelope.resolve()}",),
+            (f"gmail-sender:message:{payload.get('marker')}",),
         ).fetchone()
     finally:
         connection.close()
@@ -313,6 +342,7 @@ def _daily_payload(
             else "合成 candidate 的昨日健康、运动与昨夜睡眠摘要。"
         ),
         "safety": "caution" if recovery_flags else "ready",
+        "stop_conditions": ["疼痛、胸痛、晕眩、异常呼吸或明显恢复不足时停止或降级。"],
         "provider_calls": 0,
     }
 
@@ -569,7 +599,11 @@ def _run_daily_unlocked(
     rendered = _render(database, "daily", report, output_dir)
     email_id = _prepare_email(database, output_dir, "daily")
     render_ids = (
-        list(rendered["output_ids"].values())
+        [
+            int(value)
+            for key, value in rendered["output_ids"].items()
+            if key in {"report_artifact", "email_render"}
+        ]
         if isinstance(rendered.get("output_ids"), dict)
         else list(rendered.get("output_ids") or [])
     )
@@ -929,7 +963,11 @@ def _run_weekly_unlocked(
     rendered = _render(database, "weekly", report, output_dir)
     email_id = _prepare_email(database, output_dir, "weekly")
     render_ids = (
-        list(rendered["output_ids"].values())
+        [
+            int(value)
+            for key, value in rendered["output_ids"].items()
+            if key in {"report_artifact", "email_render"}
+        ]
         if isinstance(rendered.get("output_ids"), dict)
         else list(rendered.get("output_ids") or [])
     )

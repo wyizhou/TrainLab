@@ -26,8 +26,8 @@
   `feat: complete AI skills workflow and test harness` 提交，并通过 clean checkout 合成验证。
 - 当前运行库是 raw-first 六表 SQLite，不含 Orchestration/Supervisor 表和视图；旧 state/config/logs/数据库
   归档在被 Git 忽略的 `data-backup/`，不删除、不进入产品新库。
-- 产品时区合同使用 `Asia/Hong_Kong`；训练规则和报告目标采用 AI + 本地 Skills 设计。当前离线
-  脚本已形成日报、周报、课表、报告、邮件信封和 GTS 合同的 candidate 闭环；真实外部动作仍关闭。
+- 产品时区合同使用 `Asia/Hong_Kong`；训练规则和报告目标采用 AI + 本地 Skills 设计。M8 已在仓库外
+  candidate 中完成真实 AI 日报、周报、课表、报告、邮件信封和 GTS 合同闭环；真实外部动作仍关闭。
 - 私有 state、logs、FIT、raw、数据库、凭据和私有配置不得进入 Git 或 `dist/`。
 - 项目不再使用或忽略根 `test_data/`；当前 Skill 合同测试不携带私人 Garmin 输入，
   私人 raw/FIT 只能留在被忽略的 state 或仓库外归档。
@@ -48,8 +48,8 @@
 
 ## 当前活动计划
 
-- 当前没有 active exec plan。M7 `AI + Skills 执行闭环与双层测试体系` 已完成离线验证并归档；
-  后续若启用 Garmin/Gmail/Sites、cron 或真实外部写入，必须另立并单独批准阶段。
+- 当前没有活动执行计划。M8 `真实私人数据离线 AI 教练闭环` 已完成；后续真实 Garmin/Gmail/Sites
+  写入、cron 启用或正式 state 切换必须另行获得用户授权并建立新计划。
 
 ## 最近完成计划
 
@@ -60,6 +60,11 @@ M7 `AI + Skills 执行闭环与双层测试体系` 已通过全新集成 Validat
 `feat: complete AI skills workflow and test harness` 本地提交。`source/tests/code` 的 31 项
 确定性测试、Ruff、format、mypy、compile、8 个 Schema、日报资源分桶、恢复红旗和周报证据闭环
 均通过；正式 `source/state`、Garmin、Gmail、Sites 和 cron 均未被修改或调用。
+M8 `真实私人数据离线 AI 教练闭环` 已通过三名全新只读 Validator；固定真实窗口的 8 份日报、1 份
+周报、8/16 模型前阻断、精确七日报历史选择、报告/邮件/GTS prepared、工作流回执和重放均通过。
+candidate raw 为 9336 项、119992332 字节，正式 state before/after 指纹一致；Code/AI/Data-Privacy
+均为 `PASS`。r31 曾因普通 `mode=ro` 读取触碰正式 SHM 的失败记录保留，不能声称整个 M8 历史从未触碰
+sidecar；M8 仍未授权真实外部写入或 cron。
 最近完成的 M4 计划已归档至
 `docs/exec-plans/completed/M4-source-root-0001-product-consolidation.md`；M4 基线提交为
 `bab3649`（`feat: complete source runtime migration`）。

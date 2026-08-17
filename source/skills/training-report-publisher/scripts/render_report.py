@@ -8,8 +8,10 @@ import json
 import os
 import re
 import sys
+import tempfile
 from html import escape
 from pathlib import Path
+from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from skills._shared.state import (  # noqa: E402
@@ -25,10 +27,17 @@ from skills._shared.state import (  # noqa: E402
 def body_html(value: object) -> str:
     if isinstance(value, dict):
         blocks = []
-        for key, item in value.items():
+        for key, item in sorted(value.items(), key=lambda pair: str(pair[0])):
             label = escape(str(key))
             text = (
-                escape(json.dumps(item, ensure_ascii=False, indent=2))
+                escape(
+                    json.dumps(
+                        item,
+                        ensure_ascii=False,
+                        indent=2,
+                        sort_keys=True,
+                    )
+                )
                 if isinstance(item, (dict, list))
                 else escape(str(item))
             )
@@ -40,6 +49,27 @@ def body_html(value: object) -> str:
 
 
 _PLACEHOLDER_RE = re.compile(r"\{\{\s*([A-Za-z0-9_.-]+)\s*\}\}")
+
+
+def _atomic_owner_only_write(path: Path, content: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{path.name}.", dir=path.parent
+    )
+    temporary = Path(temporary_name)
+    try:
+        os.fchmod(descriptor, 0o600)
+        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+            handle.write(content)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+    except Exception:
+        try:
+            temporary.unlink()
+        except FileNotFoundError:
+            pass
+        raise
 
 
 def _field_values(payload: dict[str, object]) -> dict[str, object]:
@@ -103,16 +133,43 @@ def persist_outputs(
     *,
     kind: str,
     mode: str,
+    title_text: str,
     payload: dict[str, object],
     html: str,
-) -> dict[str, int]:
+) -> dict[str, Any]:
     period = str(payload.get("period") or "")
     content_text = json.dumps(payload, ensure_ascii=False, sort_keys=True, indent=2)
     input_digest = sha256_text(canonical_json(payload) + "\n" + html)
     logical_base = f"training-report-publisher:{kind}:{mode}"
-    lineage = [{"input_sha256": input_digest}]
     connection = connect(database)
     try:
+        source_payload = payload
+        source = connection.execute(
+            "SELECT id,content_sha256 FROM skill_outputs "
+            "WHERE output_kind IN ('daily_summary','weekly_summary') "
+            "AND content_json=? ORDER BY id DESC LIMIT 1",
+            (canonical_json(source_payload),),
+        ).fetchone()
+        content_value = payload.get("content")
+        if source is None and isinstance(content_value, dict):
+            source_payload = content_value
+            source = connection.execute(
+                "SELECT id,content_sha256 FROM skill_outputs "
+                "WHERE output_kind IN ('daily_summary','weekly_summary') "
+                "AND content_json=? ORDER BY id DESC LIMIT 1",
+                (canonical_json(source_payload),),
+            ).fetchone()
+        if source is None:
+            raise ValueError("report_source_output_missing")
+        source_id = int(source[0])
+        source_sha = str(source[1])
+        lineage = [
+            {
+                "output_id": source_id,
+                "output_sha256": source_sha,
+            },
+            {"input_sha256": input_digest},
+        ]
         existing = connection.execute(
             "SELECT id, output_kind FROM skill_outputs "
             "WHERE logical_key IN (?, ?) AND lineage_json LIKE ?",
@@ -123,7 +180,11 @@ def persist_outputs(
             ),
         ).fetchall()
         if len(existing) == 2:
-            return {str(row[1]): int(row[0]) for row in existing}
+            return {
+                **{str(row[1]): int(row[0]) for row in existing},
+                "source_output_id": source_id,
+                "source_output_sha256": source_sha,
+            }
         run_id = begin_run(
             connection,
             run_key=f"{logical_base}:{input_digest}",
@@ -143,7 +204,7 @@ def persist_outputs(
             logical_key=f"{logical_base}:report",
             schema_name=f"{kind}_report_artifact",
             schema_version="1",
-            title_text=str(payload.get("title") or ""),
+            title_text=title_text,
             content_json=payload,
             content_text=content_text,
             content_html=html,
@@ -163,7 +224,7 @@ def persist_outputs(
             logical_key=f"{logical_base}:email",
             schema_name=f"{kind}_email_render",
             schema_version="1",
-            title_text=str(payload.get("title") or ""),
+            title_text=title_text,
             content_json=payload,
             content_text=content_text,
             content_html=html,
@@ -172,13 +233,20 @@ def persist_outputs(
                     "output_id": report_id,
                     "output_sha256": report_sha,
                     "input_sha256": input_digest,
+                    "source_output_id": source_id,
+                    "source_output_sha256": source_sha,
                 }
             ],
             period_start_date=period.split("/", 1)[0] if "/" in period else None,
             period_end_date=period.split("/", 1)[-1] if "/" in period else None,
         )
         finish_run(connection, run_id, status="succeeded")
-        return {"report_artifact": report_id, "email_render": email_id}
+        return {
+            "report_artifact": report_id,
+            "email_render": email_id,
+            "source_output_id": source_id,
+            "source_output_sha256": source_sha,
+        }
     except Exception:
         try:
             if "run_id" in locals():
@@ -231,19 +299,18 @@ def main() -> int:
     )
     args.output_dir.mkdir(parents=True, exist_ok=True)
     os.chmod(args.output_dir, 0o700)
-    (args.output_dir / "report.json").write_text(
+    _atomic_owner_only_write(
+        args.output_dir / "report.json",
         json.dumps(payload, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
-        encoding="utf-8",
     )
-    (args.output_dir / "report.html").write_text(html, encoding="utf-8")
-    os.chmod(args.output_dir / "report.json", 0o600)
-    os.chmod(args.output_dir / "report.html", 0o600)
+    _atomic_owner_only_write(args.output_dir / "report.html", html)
     output_ids = None
     if args.database:
         output_ids = persist_outputs(
             args.database,
             kind=args.kind,
             mode=args.mode,
+            title_text=title,
             payload=payload,
             html=html,
         )

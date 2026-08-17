@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import json
 import sqlite3
 import subprocess
@@ -18,6 +19,7 @@ from skills._shared.state import (  # noqa: E402
     append_output,
     begin_run,
     connect,
+    finish_run,
     require_lastrowid,
 )
 
@@ -233,6 +235,17 @@ def test_mail_prepare_rejects_script_html(tmp_path: Path) -> None:
     assert "email_render_invalid" in result.stdout
 
 
+def test_report_html_is_stable_for_nested_mapping_order() -> None:
+    path = ROOT / "skills/training-report-publisher/scripts/render_report.py"
+    spec = importlib.util.spec_from_file_location("trainlab_render_report", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    first = module.body_html({"metrics": {"b": 2, "a": [{"d": 4, "c": 3}]}})
+    second = module.body_html({"metrics": {"a": [{"c": 3, "d": 4}], "b": 2}})
+    assert first == second
+
+
 def test_render_report_persists_report_and_email_outputs(tmp_path: Path) -> None:
     database = tmp_path / "trainlab.db"
     run_script(
@@ -250,6 +263,36 @@ def test_render_report_persists_report_and_email_outputs(tmp_path: Path) -> None
         ),
         encoding="utf-8",
     )
+    connection = connect(database)
+    try:
+        source_run = begin_run(
+            connection,
+            run_key="render-source",
+            workflow_key="weekly:2026-08-09",
+            dedupe_key="render-source",
+            skill_name="training-coach",
+            operation="weekly_coach",
+            trigger_kind="skill",
+            input_manifest={"test": "render-source"},
+        )
+        source_payload = {
+            "title": "Test",
+            "period": "2026-08-10/2026-08-16",
+            "content": {"课程": "课程占位"},
+        }
+        append_output(
+            connection,
+            skill_run_id=source_run,
+            output_kind="weekly_summary",
+            logical_key="render-source-output",
+            schema_name="weekly_ai_result_v1",
+            schema_version="1",
+            content_json=source_payload,
+            content_text="source",
+        )
+        finish_run(connection, source_run, status="succeeded")
+    finally:
+        connection.close()
     output_dir = tmp_path / "render"
     result = run_script(
         ROOT / "skills/training-report-publisher/scripts/render_report.py",
@@ -295,6 +338,25 @@ def test_render_report_persists_report_and_email_outputs(tmp_path: Path) -> None
     assert "Long" not in html
     assert "RPE 4" not in html
     assert "质量课程" not in html
+
+    replay_dir = tmp_path / "replay-render"
+    replay = run_script(
+        ROOT / "skills/training-report-publisher/scripts/render_report.py",
+        "--input-json",
+        str(payload),
+        "--kind",
+        "weekly",
+        "--output-dir",
+        str(replay_dir),
+        "--database",
+        str(database),
+    )
+    assert replay.returncode == 0, replay.stdout + replay.stderr
+    first_ids = json.loads(result.stdout)["output_ids"]
+    replay_ids = json.loads(replay.stdout)["output_ids"]
+    assert replay_ids == first_ids
+    assert replay_ids["source_output_id"] > 0
+    assert len(replay_ids["source_output_sha256"]) == 64
     assert "休息与轻度恢复" not in html
     verified = run_script(
         ROOT / "skills/_shared/scripts/verify_state.py", "--database", str(database)

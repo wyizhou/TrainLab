@@ -1272,6 +1272,10 @@ def record_skill_result(
     payload: Mapping[str, Any],
     status: str = "succeeded",
     error_code: str | None = None,
+    title_text: str | None = None,
+    content_text: str | None = None,
+    content_html: str | None = None,
+    lineage: Iterable[Mapping[str, Any]] = (),
 ) -> int:
     """Persist one bounded script result and its terminal run state."""
 
@@ -1300,8 +1304,15 @@ def record_skill_result(
             logical_key=logical_key,
             schema_name=f"{skill_name}_{operation}",
             schema_version="1",
+            title_text=title_text,
             content_json=dict(payload),
-            content_text=json.dumps(payload, ensure_ascii=False, sort_keys=True),
+            content_text=(
+                content_text
+                if content_text is not None
+                else json.dumps(payload, ensure_ascii=False, sort_keys=True)
+            ),
+            content_html=content_html,
+            lineage=lineage,
         )
         finish_run(
             connection,

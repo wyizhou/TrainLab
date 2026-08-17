@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trainlab.local/schemas/activity_overview_v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "provider_calls"],
+  "properties": {
+    "schema_version": {"const": "activity_overview_v1"},
+    "status": {"enum": ["ready", "blocked"]},
+    "error_code": {"type": "string", "minLength": 1},
+    "activity_inventory_id": {"type": "integer", "minimum": 1},
+    "raw_file_id": {"type": "integer", "minimum": 1},
+    "raw_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "data_date": {"type": "string", "format": "date"},
+    "format": {"enum": ["fit", "gpx", "tcx"]},
+    "summary": {"$ref": "#/$defs/summary"},
+    "sequence_resolution_seconds": {"const": 30},
+    "sequence": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/bin"}},
+    "gps_included": {"const": false},
+    "provider_calls": {"const": 0}
+  },
+  "allOf": [
+    {"if": {"properties": {"status": {"const": "ready"}}}, "then": {"required": ["activity_inventory_id", "raw_file_id", "raw_sha256", "data_date", "format", "summary", "sequence_resolution_seconds", "sequence", "gps_included"]}},
+    {"if": {"properties": {"status": {"const": "blocked"}}}, "then": {"required": ["error_code"]}}
+  ],
+  "$defs": {
+    "summary": {"type": "object", "additionalProperties": false, "required": ["duration_seconds", "lap_count", "source_format"], "properties": {"activity_kind": {"type": ["string", "null"]}, "duration_seconds": {"type": "number", "minimum": 0}, "distance_km": {"type": ["number", "null"], "minimum": 0}, "lap_count": {"type": "integer", "minimum": 0}, "source_format": {"enum": ["fit", "gpx", "tcx"]}}},
+    "bin": {"type": "object", "additionalProperties": false, "required": ["offset_seconds", "sample_count", "metrics"], "properties": {"offset_seconds": {"type": "integer", "minimum": 0}, "sample_count": {"type": "integer", "minimum": 1}, "metrics": {"type": "object", "additionalProperties": {"type": "number"}}}}
+  }
+}

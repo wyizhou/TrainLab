@@ -163,3 +163,19 @@ AI 提案/用户确认的教练画像管理，按近期完整周动态评估容�
 | [x] `M7-0003` 六个 Skills 离线业务闭环 | `completed` | high | M7-0002 | serial-m7 | Skill 脚本、schemas、candidate-only workflow | 同一 exec plan |
 | [x] `M7-0004` code 与 AI 双层测试 | `completed` | high | M7-0003 | serial-m7 | `source/tests/code`、`source/tests/ai` | 同一 exec plan |
 | [x] `M7-0005` 独立验证与第二个本地提交 | `completed` | high | M7-0004 | serial-m7 | 验证收据、最终本地提交、计划归档 | 同一 exec plan |
+
+### [x] `M8` 真实私人数据离线 AI 教练闭环 — `completed`
+
+用户于 2026-08-16 批准。M8 在 M7 离线合成闭环之上，使用真实 Garmin raw、私人 goal 和仓库外
+candidate 验证真正由 AI 生成的日报、周报与课表。健康只提供资源专用总览；活动提供 30 秒序列，
+AI 可在固定预算内按需细读活动片段。禁止向 AI 提供 GPS、原始文件字节、凭据或完整历史日报正文。
+不修改正式 `source/state`，不调用 Garmin/Gmail/Sites，不发送邮件、不操作 Workout、不安装 cron、
+不提交、不推送。冻结计划后不得为得到 PASS 修改目标、日期、Schema、阈值、测试预期或失败语义。
+
+| 任务 | 状态 | 优先级 | 显式依赖 | Batch | 预期写入范围 | Exec plan |
+| --- | --- | --- | --- | --- | --- | --- |
+| [x] `M8-0001` 冻结基线、Roadmap 与反绿灯规则 | `completed` | high | M7 | serial-m8 | Roadmap、active exec plan、治理记录 | [`completed`](docs/exec-plans/completed/M8-real-data-0001-ai-coach-closure.md) |
+| [x] `M8-0002` 真实健康/活动解析与片段证据 | `completed` | high | M8-0001 | serial-m8 | `source/skills`、Schemas、code tests | 同一 exec plan |
+| [x] `M8-0003` 真正 AI 日报/周报提交与幂等 | `completed` | high | M8-0002 | serial-m8 | `source/skills`、AI tests | 同一 exec plan |
+| [x] `M8-0004` Candidate 真实日期闭环 | `completed` | high | M8-0003 | serial-m8 | 仓库外 candidate、私有报告 | 同一 exec plan |
+| [x] `M8-0005` Code、AI、数据/隐私独立验证 | `completed` | high | M8-0004 | serial-m8 | 验证证据、计划回写 | 同一 exec plan |
