@@ -48,9 +48,7 @@
 
 ## 当前活动计划
 
-- 当前活动计划为 [`ADHOC-0014 M9 本地完整交付`](docs/exec-plans/active/ADHOC-0014-m9-local-delivery.md)：
-  将 M9 私人 Candidate 持久归档到被 Git 忽略的 `data-backup/`，把非私人实现保存为本地提交，
-  并从干净 worktree 完整验证；不推送、不修改正式 state、不调用外部服务。
+- 当前没有活动中的 exec plan。
 
 ## 最近完成计划
 
@@ -59,8 +57,15 @@ M9 `单日 Garmin MCP 有界真实只读闭环` 已于 2026-08-18 完成并归�
 使用 8 次 MCP/9 次 Provider，新增 6 个文件并在相同输入重放时保持 Provider 为 0；r07 公开
 Schema canary 与唯一 attempt 4 成功，日报、报告和 workflow receipt 的确定性重放保持 ID、SHA、
 HTML 和数据库行数不变。207 项代码门及 Code、AI、Data/Privacy 三类全新只读 Validator 均 PASS；
-正式 state 与 Token 保持不变，Gmail、Workout、Sites、cron 和 external actions 均为 0。M9 代码
-未提交、未推送，也未迁移到正式 state。
+正式 state 与 Token 保持不变，Gmail、Workout、Sites、cron 和 external actions 均为 0；M9
+随后由 ADHOC-0014 完成本地交付，仍未推送，也未迁移到正式 state。
+
+ADHOC-0014 已把 M9 保存为本地可交付版本：非私人实现提交为 `11df68d`
+（`feat: complete bounded Garmin MCP daily closure`）；完整 r04 Candidate 归档于被 Git 忽略的
+`data-backup/m9-delivery-20260818T121622Z/`，9,439文件、134,625,152B、聚合SHA-256闭合。
+detached clean worktree 的207项测试及全部静态门通过，全新只读 Delivery Validator 返回 PASS；
+正式 state、Token和远端均未修改。执行计划归档至
+`docs/exec-plans/completed/ADHOC-0014-m9-local-delivery.md`。
 
 M5 自适应教练画像与本地报告校准已通过独立 Validator；exec plan 已归档至
 `docs/exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md`。
