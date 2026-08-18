@@ -6,7 +6,7 @@
 
 | Skill | 作用 | 触发 | 读取 | 写入/外部副作用 |
 | --- | --- | --- | --- | --- |
-| `garmin-sync` | 昨日健康/活动与今晨主睡眠的有界 raw 同步 | 每日 cron、获批补数 | SQLite、raw、Garmin MCP | raw + SQLite；在线调用需另批 |
+| `garmin-sync` | 昨日健康/活动与今晨主睡眠的有界 raw 同步 | 自动运行、获批补数或冻结的单次在线范围 | SQLite、raw、Garmin MCP | raw + SQLite；每次在线调用需精确批准 |
 | `training-coach` | 日总结，或周总结与跑攀课表 | 用户或定时 AI 输入 | goal、SQLite 输出、脚本有界证据 | SQLite；不调用外部服务 |
 | `weekly-fitness-summary` | 周训练与恢复趋势复盘 | 周教练按需调用 | 7 日总结、4 周总结 | SQLite 输出；不调用外部服务 |
 | `garmin-training-sender` | 管理已拥有的 `-GTS` My Workouts 与日历 | 已批准课表 | 课表输出、批准、动作状态、Garmin MCP | SQLite + Garmin 写入（本阶段关闭） |
@@ -34,3 +34,6 @@ codex exec -C /absolute/path/to/source --ephemeral - < /absolute/path/to/source/
 
 `--output-schema` 只用于测试或外部程序读取最终回执，SQLite 中的
 `workflow_receipt_v1` 才是下一次运行的事实源。
+
+M9 的一次性恢复入口另有版本化证据链：公开合成 Schema canary 通过后，才允许唯一的私人
+attempt 4；它不是普通自动运行接口，不改变 `auto.txt`，也不授权 Garmin 或其他外部动作。

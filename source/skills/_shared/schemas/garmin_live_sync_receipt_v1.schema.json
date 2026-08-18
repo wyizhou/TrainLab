@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trainlab.local/schemas/garmin_live_sync_receipt_v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "status", "workflow_key", "timezone", "run_date",
+    "health_activity_date", "sleep_wake_date", "request_sha256", "token_unchanged",
+    "provider_entries", "mcp_tool_calls", "activity_ids", "fit_files",
+    "weather_calls", "new_files", "inventory_complete", "inventory_count",
+    "call_output_ids", "raw_file_ids", "activity_inventory_ids", "external_actions"
+  ],
+  "properties": {
+    "schema_version": {"const": "garmin_live_sync_receipt_v1"},
+    "status": {"enum": ["succeeded", "blocked", "failed", "reused"]},
+    "workflow_key": {"const": "daily:2026-08-17"},
+    "timezone": {"const": "Asia/Hong_Kong"},
+    "run_date": {"const": "2026-08-17"},
+    "health_activity_date": {"const": "2026-08-16"},
+    "sleep_wake_date": {"const": "2026-08-17"},
+    "request_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "token_unchanged": {"type": "boolean"},
+    "provider_entries": {"type": "integer", "minimum": 0, "maximum": 12},
+    "mcp_tool_calls": {"type": "integer", "minimum": 0, "maximum": 11},
+    "activity_ids": {"type": "integer", "minimum": 0, "maximum": 10},
+    "fit_files": {"type": "integer", "minimum": 0, "maximum": 2},
+    "weather_calls": {"type": "integer", "minimum": 0, "maximum": 2},
+    "new_files": {"type": "integer", "minimum": 0, "maximum": 11},
+    "inventory_complete": {"type": "boolean"},
+    "inventory_count": {"type": "integer", "minimum": 0, "maximum": 10},
+    "call_output_ids": {"type": "array", "items": {"type": "integer", "minimum": 1}, "maxItems": 11},
+    "raw_file_ids": {"type": "array", "items": {"type": "integer", "minimum": 1}, "maxItems": 31},
+    "activity_inventory_ids": {"type": "array", "items": {"type": "integer", "minimum": 1}, "maxItems": 10},
+    "receipt_output_id": {"type": "integer", "minimum": 1},
+    "external_actions": {"const": 0},
+    "error_code": {"type": "string", "minLength": 1}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"enum": ["succeeded", "reused"]}}},
+      "then": {
+        "properties": {"token_unchanged": {"const": true}, "inventory_complete": {"const": true}}
+      }
+    },
+    {
+      "if": {"properties": {"status": {"enum": ["blocked", "failed"]}}},
+      "then": {"required": ["error_code"]}
+    }
+  ]
+}

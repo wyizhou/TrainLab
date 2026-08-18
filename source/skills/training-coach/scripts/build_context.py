@@ -7,6 +7,8 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import os
+import stat
 import sys
 from datetime import date, timedelta
 from pathlib import Path
@@ -51,7 +53,7 @@ def _raw_rows(
     try:
         rows = connection.execute(
             "SELECT id,relative_path,resource_kind,file_format,sha256,data_date,"
-            "activity_inventory_id FROM raw_files WHERE data_date=? "
+            "activity_inventory_id,byte_size FROM raw_files WHERE data_date=? "
             "AND integrity_state='verified' ORDER BY id",
             (day,),
         ).fetchall()
@@ -71,9 +73,35 @@ def _raw_rows(
                 "sha256": str(row[4]),
                 "data_date": str(row[5]),
                 "activity_inventory_id": int(row[6]) if row[6] is not None else None,
+                "byte_size": int(row[7]),
             }
         )
     return result
+
+
+def _verified_raw_path(source_root: Path, row: dict[str, Any]) -> Path:
+    raw_root = Path(os.path.abspath(source_root / "state/raw"))
+    relative = Path(str(row["relative_path"]))
+    if relative.is_absolute() or ".." in relative.parts:
+        raise ValueError("raw_evidence_integrity_invalid")
+    path = Path(os.path.abspath(raw_root / relative))
+    try:
+        metadata = path.lstat()
+    except OSError as exc:
+        raise ValueError("raw_evidence_integrity_invalid") from exc
+    if (
+        path.resolve(strict=True) != path
+        or not path.is_relative_to(raw_root)
+        or not stat.S_ISREG(metadata.st_mode)
+        or stat.S_ISLNK(metadata.st_mode)
+        or metadata.st_uid != os.getuid()
+        or metadata.st_nlink != 1
+        or stat.S_IMODE(metadata.st_mode) != 0o600
+        or metadata.st_size != int(row["byte_size"])
+        or hashlib.sha256(path.read_bytes()).hexdigest() != str(row["sha256"])
+    ):
+        raise ValueError("raw_evidence_integrity_invalid")
+    return path
 
 
 def _health_evidence(
@@ -81,8 +109,12 @@ def _health_evidence(
 ) -> list[dict[str, Any]]:
     evidence = []
     for row in rows:
-        path = source_root / "state/raw" / row["relative_path"]
-        parsed = parser.parse_evidence(path)
+        path = _verified_raw_path(source_root, row)
+        parsed = parser.parse_evidence(
+            path,
+            resource_override=str(row["resource"]),
+            expected_date_override=str(row["data_date"]),
+        )
         metrics = parsed.get("metrics") if isinstance(parsed, dict) else None
         evidence.append(
             {
@@ -97,12 +129,44 @@ def _health_evidence(
     return evidence
 
 
+def _has_substantive_health_metric(item: dict[str, Any]) -> bool:
+    metrics = item.get("metrics")
+    if not isinstance(metrics, dict):
+        return False
+    for name in (
+        "resting_heart_rate_bpm",
+        "last_night_average",
+        "weekly_average",
+        "last_night_5_min_high",
+        "median",
+        "average",
+        "vo2_max",
+        "weight",
+    ):
+        value = metrics.get(name)
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            return True
+    sample_count = metrics.get("sample_count")
+    if isinstance(sample_count, int) and not isinstance(sample_count, bool):
+        if sample_count > 0:
+            return True
+    aggregate = metrics.get("aggregate")
+    return (
+        isinstance(aggregate, dict)
+        and isinstance(aggregate.get("count"), int)
+        and not isinstance(aggregate.get("count"), bool)
+        and int(aggregate["count"]) > 0
+    )
+
+
 def _activity_evidence(
     database: Path,
     source_root: Path,
     rows: list[dict[str, Any]],
     activity_module: Any,
     parser: Any,
+    *,
+    allowed_raw_ids: set[int] | None = None,
 ) -> list[dict[str, Any]]:
     inventory_ids = sorted(
         {
@@ -115,21 +179,44 @@ def _activity_evidence(
     result = []
     for inventory_id in inventory_ids:
         try:
+            activity_rows = [
+                row for row in rows if row["activity_inventory_id"] == inventory_id
+            ]
+            for row in activity_rows:
+                _verified_raw_path(source_root, row)
+            media_rows = [
+                row for row in activity_rows if row["format"] in {"fit", "gpx", "tcx"}
+            ]
+            if not media_rows:
+                raise ValueError("activity_raw_missing")
+            selected_raw_file_id: int | None = None
+            selected_media: dict[str, Any] | None = None
+            if allowed_raw_ids is not None:
+                if len(media_rows) != 1:
+                    raise ValueError("activity_raw_receipt_ambiguous")
+                selected_media = media_rows[0]
+                selected_raw_file_id = int(selected_media["raw_file_id"])
             evidence = activity_module.build_activity_evidence(
-                database, source_root, int(inventory_id), resolution_seconds=30
+                database,
+                source_root,
+                int(inventory_id),
+                raw_file_id=selected_raw_file_id,
+                resolution_seconds=30,
             )
+            if selected_media is not None and (
+                evidence.get("raw_file_id") != selected_media["raw_file_id"]
+                or evidence.get("raw_sha256") != selected_media["sha256"]
+            ):
+                raise ValueError("activity_raw_receipt_mismatch")
             weather = next(
-                (
-                    row
-                    for row in rows
-                    if row["activity_inventory_id"] == inventory_id
-                    and row["resource"] == "activity_weather"
-                ),
+                (row for row in activity_rows if row["resource"] == "activity_weather"),
                 None,
             )
             if weather is not None:
                 parsed_weather = parser.parse_evidence(
-                    source_root / "state/raw" / weather["relative_path"]
+                    _verified_raw_path(source_root, weather),
+                    resource_override="activity_weather",
+                    expected_date_override=str(weather["data_date"]),
                 )
                 evidence["weather"] = {
                     "raw_file_id": weather["raw_file_id"],
@@ -298,44 +385,112 @@ def _recent_trend(database: Path, report_date: date) -> dict[str, Any]:
     return trend
 
 
+def _live_receipt(
+    database: Path, output_id: int, report_date: date
+) -> tuple[dict[str, Any], str]:
+    connection = connect(database, read_only=True, immutable=True)
+    try:
+        row = connection.execute(
+            "SELECT so.content_json,so.content_sha256,so.schema_name,sr.status "
+            "FROM skill_outputs so JOIN skill_runs sr ON sr.id=so.skill_run_id "
+            "WHERE so.id=?",
+            (output_id,),
+        ).fetchone()
+    finally:
+        connection.close()
+    if row is None or str(row[2]) != "garmin_live_sync_receipt_v1":
+        raise ValueError("garmin_live_sync_receipt_missing")
+    if str(row[3]) != "succeeded":
+        raise ValueError("garmin_live_sync_receipt_incomplete")
+    receipt = json.loads(str(row[0]))
+    if (
+        receipt.get("status") != "succeeded"
+        or receipt.get("workflow_key") != f"daily:{report_date.isoformat()}"
+        or receipt.get("inventory_complete") is not True
+    ):
+        raise ValueError("garmin_live_sync_receipt_incomplete")
+    return receipt, str(row[1])
+
+
 def build_daily_context(
-    database: Path, source_root: Path, report_date: date
+    database: Path,
+    source_root: Path,
+    report_date: date,
+    *,
+    live_sync_output_id: int | None = None,
 ) -> dict[str, Any]:
     review_date = report_date - timedelta(days=1)
     parser = _load_parse_module()
     activity_module = _load_activity_module()
+    receipt: dict[str, Any] | None = None
+    receipt_sha: str | None = None
+    allowed_raw_ids: set[int] | None = None
+    if live_sync_output_id is not None:
+        receipt, receipt_sha = _live_receipt(database, live_sync_output_id, report_date)
+        allowed_raw_ids = {
+            int(value)
+            for value in receipt.get("raw_file_ids", [])
+            if isinstance(value, int) and not isinstance(value, bool)
+        }
+
     review_health = [
         row
         for row in _raw_rows(database, review_date.isoformat(), health=True)
         if row["resource"] != "sleep"
+        and (allowed_raw_ids is None or row["raw_file_id"] in allowed_raw_ids)
     ]
     sleep_rows = [
         row
         for row in _raw_rows(database, report_date.isoformat(), health=True)
         if row["resource"] == "sleep"
+        and (allowed_raw_ids is None or row["raw_file_id"] in allowed_raw_ids)
     ]
-    review_activity = _raw_rows(database, review_date.isoformat(), health=False)
+    review_activity = [
+        row
+        for row in _raw_rows(database, review_date.isoformat(), health=False)
+        if row["resource"] != "activity_inventory"
+        and (allowed_raw_ids is None or row["raw_file_id"] in allowed_raw_ids)
+    ]
     health = _health_evidence(source_root, review_health + sleep_rows, parser)
     sleep = [item for item in health if item["resource"] == "sleep"]
     activities = _activity_evidence(
-        database, source_root, review_activity, activity_module, parser
+        database,
+        source_root,
+        review_activity,
+        activity_module,
+        parser,
+        allowed_raw_ids=allowed_raw_ids,
     )
     errors: list[str] = []
-    if not review_health:
+    review_health_evidence = [
+        item for item in health if item.get("resource") != "sleep"
+    ]
+    if not any(_has_substantive_health_metric(item) for item in review_health_evidence):
         errors.append("daily_review_health_missing")
+    ambiguous_sleep = any(
+        item["metrics"].get("metric") == "main_sleep_ambiguous" for item in sleep
+    )
     matching_sleep = [
         item
         for item in sleep
         if item["metrics"].get("completeness") == "complete"
         and item["metrics"].get("sleep_wake_date") == report_date.isoformat()
     ]
-    if not matching_sleep:
+    if ambiguous_sleep:
+        errors.append("daily_sleep_evidence_ambiguous")
+    elif not matching_sleep:
         errors.append("daily_sleep_evidence_missing")
     elif len(matching_sleep) != 1:
         errors.append("daily_sleep_evidence_ambiguous")
     if review_activity and not activities:
         errors.append("daily_activity_evidence_missing")
-    return {
+    if receipt is not None:
+        expected_inventory = int(receipt.get("inventory_count", -1))
+        if expected_inventory < 0 or len(activities) != expected_inventory:
+            errors.append("daily_activity_inventory_mismatch")
+        if any(item.get("status") == "blocked" for item in activities):
+            errors.append("daily_activity_evidence_blocked")
+    result = {
         "schema_version": "daily_ai_context_v1",
         "status": "ready" if not errors else "blocked",
         "report_date": report_date.isoformat(),
@@ -348,6 +503,16 @@ def build_daily_context(
         "errors": errors,
         "provider_calls": 0,
     }
+    if receipt is not None and receipt_sha is not None:
+        if live_sync_output_id is None:
+            raise RuntimeError("garmin_live_sync_output_id_missing")
+        result["live_sync"] = {
+            "output_id": int(live_sync_output_id),
+            "sha256": receipt_sha,
+            "inventory_complete": True,
+            "inventory_count": int(receipt["inventory_count"]),
+        }
+    return result
 
 
 def build_weekly_context(

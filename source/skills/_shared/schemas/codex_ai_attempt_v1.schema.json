@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trainlab.local/schemas/codex_ai_attempt_v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "attempt", "status", "error_code", "error_category", "exit_code",
+    "started_at_utc", "finished_at_utc", "elapsed_milliseconds", "timeout_seconds",
+    "max_log_bytes", "command_contract", "context_sha256", "prompt_sha256", "schema_sha256",
+    "events_captured_bytes", "events_sha256", "stderr_captured_bytes", "stderr_sha256",
+    "result_bytes", "result_sha256", "provider_calls", "external_actions"
+  ],
+  "properties": {
+    "schema_version": {"const": "codex_ai_attempt_v1"},
+    "attempt": {"enum": [2, 3]},
+    "status": {"enum": ["succeeded", "failed"]},
+    "error_code": {"type": ["string", "null"], "minLength": 1},
+    "error_category": {
+      "type": ["string", "null"],
+      "enum": [
+        null,
+        "transport_retryable", "server_5xx_retryable", "schema_non_retryable",
+        "auth_non_retryable", "sandbox_non_retryable", "cli_non_retryable",
+        "unknown_non_retryable"
+      ]
+    },
+    "exit_code": {"type": "integer"},
+    "started_at_utc": {"type": "string", "format": "date-time"},
+    "finished_at_utc": {"type": "string", "format": "date-time"},
+    "elapsed_milliseconds": {"type": "integer", "minimum": 0},
+    "timeout_seconds": {"type": "number", "exclusiveMinimum": 0, "maximum": 180},
+    "max_log_bytes": {"type": "integer", "minimum": 1, "maximum": 2097152},
+    "command_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ephemeral", "ignore_user_config", "sandbox", "json_events", "output_schema"],
+      "properties": {
+        "ephemeral": {"const": true},
+        "ignore_user_config": {"const": true},
+        "sandbox": {"const": "read-only"},
+        "json_events": {"const": true},
+        "output_schema": {
+          "enum": ["daily_ai_result_v1", "daily_ai_result_codex_v1"]
+        }
+      }
+    },
+    "context_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "prompt_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "schema_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "intent_bytes": {"type": "integer", "minimum": 1, "maximum": 1048576},
+    "intent_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "events_captured_bytes": {"type": "integer", "minimum": 0, "maximum": 2097152},
+    "events_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "stderr_captured_bytes": {"type": "integer", "minimum": 0, "maximum": 2097152},
+    "stderr_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "result_bytes": {"type": ["integer", "null"], "minimum": 1, "maximum": 1048576},
+    "result_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+    "provider_calls": {"const": 0},
+    "external_actions": {"const": 0}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"attempt": {"const": 3}}},
+      "then": {"required": ["intent_bytes", "intent_sha256"]}
+    },
+    {
+      "if": {"properties": {"status": {"const": "succeeded"}}},
+      "then": {
+        "properties": {
+          "error_code": {"const": null},
+          "error_category": {"const": null},
+          "exit_code": {"const": 0},
+          "result_bytes": {"type": "integer", "minimum": 1, "maximum": 1048576},
+          "result_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        },
+        "required": ["result_bytes", "result_sha256"]
+      }
+    },
+    {
+      "if": {"properties": {"status": {"const": "failed"}}},
+      "then": {
+        "properties": {
+          "error_code": {"type": "string", "minLength": 1},
+          "error_category": {
+            "type": "string",
+            "enum": [
+              "transport_retryable", "server_5xx_retryable", "schema_non_retryable",
+              "auth_non_retryable", "sandbox_non_retryable", "cli_non_retryable",
+              "unknown_non_retryable"
+            ]
+          },
+          "result_bytes": {"const": null},
+          "result_sha256": {"const": null}
+        }
+      }
+    }
+  ]
+}

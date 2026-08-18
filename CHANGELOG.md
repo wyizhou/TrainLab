@@ -5,6 +5,11 @@
 
 ## Unreleased
 
+- 为 M9 日报恢复增加 Structured Outputs wire v2、递归兼容检查、公开合成 Schema canary，
+  并将下游证据链版本化为 attempt 2/3 失败后唯一 attempt 4；旧 wire 与失败证据保持不变。
+- 完成 M9 单日 Garmin MCP 有界只读采集与离线日报闭环：固定日期、工具、依赖和预算，使用
+  cached-token-only 的离线启动器，把 MCP Capture、FIT、调用收据和离线 AI 日报仅写入
+  仓库外 Candidate；Gmail、Workout、Sites、cron 与正式 state 保持关闭。
 - 引入 agentForge `v0.4.2` 开发 Harness，并将 TrainLab 收敛为根 `src/`、根 `tests/`
   的唯一项目布局；移除临时 `product/`、旧开发编排控制面和无消费者的 legacy 文档。
 - 将产品 Harness、Schema、策略和公开默认值迁入 wheel 的不可变

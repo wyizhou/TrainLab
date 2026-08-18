@@ -136,6 +136,7 @@ def persist_outputs(
     title_text: str,
     payload: dict[str, object],
     html: str,
+    include_email_render: bool = True,
 ) -> dict[str, Any]:
     period = str(payload.get("period") or "")
     content_text = json.dumps(payload, ensure_ascii=False, sort_keys=True, indent=2)
@@ -179,9 +180,15 @@ def persist_outputs(
                 f'%"input_sha256":"{input_digest}"%',
             ),
         ).fetchall()
-        if len(existing) == 2:
+        expected_existing = 2 if include_email_render else 1
+        selected_existing = [
+            row
+            for row in existing
+            if include_email_render or str(row[1]) == "report_artifact"
+        ]
+        if len(selected_existing) == expected_existing:
             return {
-                **{str(row[1]): int(row[0]) for row in existing},
+                **{str(row[1]): int(row[0]) for row in selected_existing},
                 "source_output_id": source_id,
                 "source_output_sha256": source_sha,
             }
@@ -217,36 +224,40 @@ def persist_outputs(
                 "SELECT content_sha256 FROM skill_outputs WHERE id=?", (report_id,)
             ).fetchone()[0]
         )
-        email_id = append_output(
-            connection,
-            skill_run_id=run_id,
-            output_kind="email_render",
-            logical_key=f"{logical_base}:email",
-            schema_name=f"{kind}_email_render",
-            schema_version="1",
-            title_text=title_text,
-            content_json=payload,
-            content_text=content_text,
-            content_html=html,
-            lineage=[
-                {
-                    "output_id": report_id,
-                    "output_sha256": report_sha,
-                    "input_sha256": input_digest,
-                    "source_output_id": source_id,
-                    "source_output_sha256": source_sha,
-                }
-            ],
-            period_start_date=period.split("/", 1)[0] if "/" in period else None,
-            period_end_date=period.split("/", 1)[-1] if "/" in period else None,
-        )
+        email_id = None
+        if include_email_render:
+            email_id = append_output(
+                connection,
+                skill_run_id=run_id,
+                output_kind="email_render",
+                logical_key=f"{logical_base}:email",
+                schema_name=f"{kind}_email_render",
+                schema_version="1",
+                title_text=title_text,
+                content_json=payload,
+                content_text=content_text,
+                content_html=html,
+                lineage=[
+                    {
+                        "output_id": report_id,
+                        "output_sha256": report_sha,
+                        "input_sha256": input_digest,
+                        "source_output_id": source_id,
+                        "source_output_sha256": source_sha,
+                    }
+                ],
+                period_start_date=period.split("/", 1)[0] if "/" in period else None,
+                period_end_date=period.split("/", 1)[-1] if "/" in period else None,
+            )
         finish_run(connection, run_id, status="succeeded")
-        return {
+        result = {
             "report_artifact": report_id,
-            "email_render": email_id,
             "source_output_id": source_id,
             "source_output_sha256": source_sha,
         }
+        if email_id is not None:
+            result["email_render"] = email_id
+        return result
     except Exception:
         try:
             if "run_id" in locals():
@@ -270,6 +281,7 @@ def main() -> int:
         "--mode", choices=("open_report", "fixed_email"), default="open_report"
     )
     parser.add_argument("--database", type=Path, default=None)
+    parser.add_argument("--no-email-render", action="store_true")
     args = parser.parse_args()
     payload = json.loads(args.input_json.read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
@@ -313,6 +325,7 @@ def main() -> int:
             title_text=title,
             payload=payload,
             html=html,
+            include_email_render=not args.no_email_render,
         )
     print(
         json.dumps(

@@ -158,9 +158,54 @@ def _parse_timestamp(value: object) -> datetime | None:
     return parsed.astimezone(timezone.utc)
 
 
-def _sleep_metrics(value: Any) -> dict[str, Any]:
-    sleep_dtos = _find_named(value, {"dailysleepdto"})
-    source = next((item for item in sleep_dtos if isinstance(item, dict)), value)
+def _sleep_sessions(value: Any) -> list[tuple[dict[str, Any], bool]]:
+    """Return distinct sleep sessions and whether their container denotes a nap."""
+
+    sessions: list[tuple[dict[str, Any], bool]] = []
+    seen: set[int] = set()
+
+    def add(child: object, *, forced_nap: bool) -> None:
+        items = child if isinstance(child, list) else [child]
+        for item in items:
+            if isinstance(item, dict) and id(item) not in seen:
+                seen.add(id(item))
+                sessions.append((item, forced_nap))
+
+    def walk(node: object) -> None:
+        if isinstance(node, dict):
+            for key, child in node.items():
+                normalized = _normalize_key(key)
+                if normalized in {
+                    "dailysleepdto",
+                    "sleepsession",
+                    "sleepsessions",
+                }:
+                    add(child, forced_nap=False)
+                elif normalized in {"nap", "naps", "napdata", "napslist"}:
+                    add(child, forced_nap=True)
+                walk(child)
+        elif isinstance(node, list):
+            for child in node:
+                walk(child)
+
+    walk(value)
+    if not sessions and isinstance(value, dict):
+        add(value, forced_nap=False)
+    return sessions
+
+
+def _session_is_nap(source: dict[str, Any], *, forced_nap: bool) -> bool:
+    if forced_nap:
+        return True
+    for item in _find_named(source, {"isnap", "sleeptype", "sleepsessiontype"}):
+        if item is True:
+            return True
+        if isinstance(item, str) and "nap" in item.strip().lower():
+            return True
+    return False
+
+
+def _single_sleep_metrics(source: dict[str, Any]) -> dict[str, Any]:
     starts = _find_named(
         source,
         {
@@ -198,9 +243,10 @@ def _sleep_metrics(value: Any) -> dict[str, Any]:
     )
     if duration is None and start is not None and end is not None and end > start:
         duration = (end - start).total_seconds()
-    stages = _find_named(value, {"levels", "stages", "sleeplevels", "sleepstages"})
+    stages = _find_named(source, {"levels", "stages", "sleeplevels", "sleepstages"})
     metrics: dict[str, Any] = {
         "resource": "sleep",
+        "metric": "main_sleep",
         "uncertainty": "named_fields",
         "completeness": "complete"
         if start is not None
@@ -222,6 +268,30 @@ def _sleep_metrics(value: Any) -> dict[str, Any]:
             len(item) if isinstance(item, list) else 1 for item in stages
         )
     return metrics
+
+
+def _sleep_metrics(value: Any) -> dict[str, Any]:
+    sessions = _sleep_sessions(value)
+    main_sessions = [
+        item
+        for item, forced_nap in sessions
+        if not _session_is_nap(item, forced_nap=forced_nap)
+    ]
+    if len(main_sessions) > 1:
+        return {
+            "resource": "sleep",
+            "metric": "main_sleep_ambiguous",
+            "uncertainty": "multiple_main_sleep_candidates",
+            "completeness": "partial",
+        }
+    if not main_sessions:
+        return {
+            "resource": "sleep",
+            "metric": "nap_only",
+            "uncertainty": "no_main_sleep_candidate",
+            "completeness": "partial",
+        }
+    return _single_sleep_metrics(main_sessions[0])
 
 
 def _heart_rate_points(value: Any) -> list[float]:
@@ -364,9 +434,16 @@ def _json_metrics(
     if resource == "hrv":
         metrics["metric"] = "hrv"
         for output, names in {
-            "last_night_average": {"lastnightavg", "lastnightaverage"},
-            "weekly_average": {"weeklyavg", "weeklyaverage"},
-            "last_night_5_min_high": {"lastnight5minhigh"},
+            "last_night_average": {
+                "lastnightavg",
+                "lastnightaverage",
+                "lastnightavghrvms",
+            },
+            "weekly_average": {"weeklyavg", "weeklyaverage", "weeklyavghrvms"},
+            "last_night_5_min_high": {
+                "lastnight5minhigh",
+                "lastnight5minhighhrvms",
+            },
         }.items():
             number = _first_number(value, names)
             if number is not None:
@@ -500,15 +577,24 @@ def _xml_metrics(path: Path, root: ET.Element) -> dict[str, Any]:
     }
 
 
-def parse_evidence(path: Path) -> dict[str, Any]:
+def parse_evidence(
+    path: Path,
+    *,
+    resource_override: str | None = None,
+    expected_date_override: str | None = None,
+) -> dict[str, Any]:
     suffix = path.suffix.lower()
     if suffix == ".json":
         try:
             with path.open("r", encoding="utf-8") as handle:
                 value = json.load(handle)
-            resource = _resource_from_filename(path)
-            expected_date = None
-            if len(path.name) >= 8 and path.name[:8].isdigit():
+            resource = resource_override or _resource_from_filename(path)
+            expected_date = expected_date_override
+            if (
+                expected_date is None
+                and len(path.name) >= 8
+                and path.name[:8].isdigit()
+            ):
                 try:
                     expected_date = (
                         datetime.strptime(path.name[:8], "%Y%m%d").date().isoformat()

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trainlab.local/schemas/garmin_mcp_capture_v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "source_type", "status", "call_index", "tool", "arguments",
+    "duration_ms", "response_sha256", "response_bytes", "media_type",
+    "capture_relative_path"
+  ],
+  "properties": {
+    "schema_version": {"const": "garmin_mcp_capture_v1"},
+    "source_type": {"const": "mcp_capture"},
+    "status": {"enum": ["succeeded", "missing", "failed"]},
+    "call_index": {"type": "integer", "minimum": 1, "maximum": 11},
+    "tool": {
+      "enum": [
+        "get_rhr_day", "get_hrv_data", "get_heart_rates", "get_vo2max_trend",
+        "get_weigh_ins", "get_sleep_data", "get_activities_by_date",
+        "download_activity_file", "get_activity_weather"
+      ]
+    },
+    "arguments": {"type": "object"},
+    "duration_ms": {"type": "integer", "minimum": 0, "maximum": 90000},
+    "response_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "response_bytes": {"type": "integer", "minimum": 0},
+    "media_type": {"enum": ["application/json", "text/plain", "application/vnd.garmin.fit"]},
+    "capture_relative_path": {"type": ["string", "null"]},
+    "raw_file_id": {"type": "integer", "minimum": 1},
+    "activity_inventory_id": {"type": "integer", "minimum": 1},
+    "error_code": {"type": "string", "minLength": 1}
+  }
+}

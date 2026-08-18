@@ -76,6 +76,50 @@ def _raw_sha_map(database: Path) -> dict[int, str]:
     return {int(row[0]): str(row[1]) for row in rows}
 
 
+def _live_receipt_errors(context: dict[str, Any], database: Path) -> list[str]:
+    live_sync = context.get("live_sync")
+    if live_sync is None:
+        return []
+    if not isinstance(live_sync, dict) or not isinstance(
+        live_sync.get("output_id"), int
+    ):
+        return ["garmin_live_sync_receipt_missing"]
+    connection = connect(database, read_only=True, immutable=True)
+    try:
+        row = connection.execute(
+            "SELECT so.content_json,so.content_sha256,so.schema_name,sr.status "
+            "FROM skill_outputs so JOIN skill_runs sr ON sr.id=so.skill_run_id "
+            "WHERE so.id=?",
+            (int(live_sync["output_id"]),),
+        ).fetchone()
+    finally:
+        connection.close()
+    if row is None or str(row[2]) != "garmin_live_sync_receipt_v1":
+        return ["garmin_live_sync_receipt_missing"]
+    if str(row[3]) != "succeeded":
+        return ["garmin_live_sync_receipt_incomplete"]
+    try:
+        receipt = json.loads(str(row[0]))
+    except json.JSONDecodeError:
+        return ["garmin_live_sync_receipt_missing"]
+    raw_ids = receipt.get("raw_file_ids")
+    if (
+        receipt.get("status") != "succeeded"
+        or receipt.get("workflow_key") != "daily:2026-08-17"
+        or receipt.get("inventory_complete") is not True
+        or live_sync.get("sha256") != str(row[1])
+        or not isinstance(raw_ids, list)
+        or any(
+            isinstance(value, bool) or not isinstance(value, int) for value in raw_ids
+        )
+    ):
+        return ["garmin_live_sync_receipt_incomplete"]
+    context_ids = set(_evidence_payloads(context))
+    if not context_ids.issubset(set(raw_ids)):
+        return ["ai_evidence_outside_live_receipt"]
+    return []
+
+
 def _drop_null_optional_plan_fields(payload: dict[str, Any]) -> dict[str, Any]:
     """Normalize strict model nulls before validating the domain plan contract."""
     if not isinstance(payload.get("training_plan"), dict):
@@ -211,6 +255,7 @@ def _validate_daily(
     errors: list[str] = _schema_errors(payload, "daily_ai_result_v1")
     if errors:
         return errors
+    errors.extend(_live_receipt_errors(context, database))
     for field in ("report_date", "review_date", "sleep_wake_date"):
         if payload.get(field) != context.get(field):
             errors.append("daily_date_mismatch")

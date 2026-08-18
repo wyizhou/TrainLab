@@ -8,8 +8,11 @@ payloads.  FIT/GPX/TCX are parsed locally; the provider is never contacted.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
+import os
+import stat
 import sys
 import xml.etree.ElementTree as ET
 from collections import defaultdict
@@ -229,25 +232,59 @@ def _bins(records: list[dict[str, object]], resolution: int) -> list[dict[str, A
 
 
 def _load_activity(
-    database: Path, source_root: Path, inventory_id: int
+    database: Path,
+    source_root: Path,
+    inventory_id: int,
+    *,
+    raw_file_id: int | None = None,
 ) -> tuple[Path, int, str, str, str]:
     connection = connect(database, read_only=True, immutable=True)
     try:
+        parameters: tuple[int, ...]
+        exact_clause = ""
+        if raw_file_id is None:
+            parameters = (inventory_id,)
+        else:
+            exact_clause = "AND id=? "
+            parameters = (inventory_id, raw_file_id)
         rows = connection.execute(
-            "SELECT id,relative_path,file_format,sha256,data_date FROM raw_files "
+            "SELECT id,relative_path,file_format,sha256,data_date,byte_size FROM raw_files "
             "WHERE activity_inventory_id=? AND integrity_state='verified' "
-            "AND file_format IN ('fit','gpx','tcx') ORDER BY CASE file_format "
-            "WHEN 'fit' THEN 0 WHEN 'gpx' THEN 1 ELSE 2 END, id",
-            (inventory_id,),
+            f"AND file_format IN ('fit','gpx','tcx') {exact_clause}"
+            "ORDER BY CASE file_format WHEN 'fit' THEN 0 WHEN 'gpx' THEN 1 ELSE 2 END, "
+            "revision_no DESC, id DESC",
+            parameters,
         ).fetchall()
     finally:
         connection.close()
     if not rows:
-        raise ValueError("activity_raw_missing")
+        raise ValueError(
+            "activity_raw_receipt_mismatch"
+            if raw_file_id is not None
+            else "activity_raw_missing"
+        )
     row = rows[0]
-    path = source_root / "state/raw" / str(row[1])
-    if not path.is_file() or path.is_symlink():
-        raise ValueError("activity_raw_unavailable")
+    raw_root = Path(os.path.abspath(source_root / "state/raw"))
+    relative = Path(str(row[1]))
+    if relative.is_absolute() or ".." in relative.parts:
+        raise ValueError("activity_raw_integrity_invalid")
+    path = Path(os.path.abspath(raw_root / relative))
+    try:
+        metadata = path.lstat()
+    except OSError as exc:
+        raise ValueError("activity_raw_integrity_invalid") from exc
+    if (
+        path.resolve(strict=True) != path
+        or not path.is_relative_to(raw_root)
+        or not stat.S_ISREG(metadata.st_mode)
+        or stat.S_ISLNK(metadata.st_mode)
+        or metadata.st_uid != os.getuid()
+        or metadata.st_nlink != 1
+        or stat.S_IMODE(metadata.st_mode) != 0o600
+        or metadata.st_size != int(row[5])
+        or hashlib.sha256(path.read_bytes()).hexdigest() != str(row[3])
+    ):
+        raise ValueError("activity_raw_integrity_invalid")
     return path, int(row[0]), str(row[2]), str(row[3]), str(row[4])
 
 
@@ -256,6 +293,7 @@ def build_activity_evidence(
     source_root: Path,
     inventory_id: int,
     *,
+    raw_file_id: int | None = None,
     resolution_seconds: int = 30,
     start_offset_seconds: int | None = None,
     end_offset_seconds: int | None = None,
@@ -263,7 +301,7 @@ def build_activity_evidence(
     if resolution_seconds not in {1, 5, 30}:
         raise ValueError("activity_resolution_invalid")
     path, raw_file_id, file_format, raw_sha256, data_date = _load_activity(
-        database, source_root, inventory_id
+        database, source_root, inventory_id, raw_file_id=raw_file_id
     )
     if file_format == "fit":
         records, summary = _fit_records(path)
@@ -311,6 +349,7 @@ def main() -> int:
     parser.add_argument("--database", type=Path, required=True)
     parser.add_argument("--source-root", type=Path, required=True)
     parser.add_argument("--activity-inventory-id", type=int, required=True)
+    parser.add_argument("--raw-file-id", type=int)
     parser.add_argument("--resolution-seconds", type=int, default=30)
     parser.add_argument("--start-offset-seconds", type=int)
     parser.add_argument("--end-offset-seconds", type=int)
@@ -320,6 +359,7 @@ def main() -> int:
             args.database,
             args.source_root,
             args.activity_inventory_id,
+            raw_file_id=args.raw_file_id,
             resolution_seconds=args.resolution_seconds,
             start_offset_seconds=args.start_offset_seconds,
             end_offset_seconds=args.end_offset_seconds,

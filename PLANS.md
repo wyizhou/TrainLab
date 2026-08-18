@@ -179,3 +179,18 @@ AI 可在固定预算内按需细读活动片段。禁止向 AI 提供 GPS、原
 | [x] `M8-0003` 真正 AI 日报/周报提交与幂等 | `completed` | high | M8-0002 | serial-m8 | `source/skills`、AI tests | 同一 exec plan |
 | [x] `M8-0004` Candidate 真实日期闭环 | `completed` | high | M8-0003 | serial-m8 | 仓库外 candidate、私有报告 | 同一 exec plan |
 | [x] `M8-0005` Code、AI、数据/隐私独立验证 | `completed` | high | M8-0004 | serial-m8 | 验证证据、计划回写 | 同一 exec plan |
+
+### [x] `M9` 单日 Garmin MCP 有界真实只读闭环 — `completed`
+
+用户于 2026-08-17 批准。M9 先将已验证 M8 保存为本地提交，再以固定香港时区单日窗口在
+仓库外 candidate 中接通本地 Garmin MCP，只读采集 2026-08-16 健康与活动和醒来日为
+2026-08-17 的主睡眠，并生成离线日报。Provider、工具、日期、数量和墙钟预算均冻结；失败不自动
+重试或扩大范围。正式 `source/state`、Gmail、Workout、Sites、cron 和远程 Git 均不触碰。
+
+| 任务 | 状态 | 优先级 | 显式依赖 | Batch | 预期写入范围 | Exec plan |
+| --- | --- | --- | --- | --- | --- | --- |
+| [x] `M9-0001` 保存 M8 本地基线 | `completed` | high | M8 | serial-m9 | 本地 Git 提交 | [`completed`](docs/exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md) |
+| [x] `M9-0002` Garmin MCP 有界只读采集器 | `completed` | high | M9-0001 | serial-m9 | `source/skills/garmin-sync`、共享 Schema、code tests | 同一 exec plan |
+| [x] `M9-0003` 冻结在线范围与离线预验 | `completed` | high | M9-0002 | serial-m9 | fake MCP、预算/Token/幂等验证 | 同一 exec plan |
+| [x] `M9-0004` Candidate 真实采集与离线日报 | `completed` | high | M9-0003 | serial-m9 | r04 真实只读采集、r07 公开 canary、唯一 attempt 4、日报/报告/receipt 与幂等重放 | 同一 exec plan |
+| [x] `M9-0005` Code、AI、数据/隐私独立验证 | `completed` | high | M9-0004 | serial-m9 | 207 项代码门与三类全新只读 Validator 均 PASS；正式 state/Token 不变、外部动作 0 | 同一 exec plan |

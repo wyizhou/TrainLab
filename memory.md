@@ -48,10 +48,19 @@
 
 ## 当前活动计划
 
-- 当前没有活动执行计划。M8 `真实私人数据离线 AI 教练闭环` 已完成；后续真实 Garmin/Gmail/Sites
-  写入、cron 启用或正式 state 切换必须另行获得用户授权并建立新计划。
+- 当前活动计划为 [`ADHOC-0014 M9 本地完整交付`](docs/exec-plans/active/ADHOC-0014-m9-local-delivery.md)：
+  将 M9 私人 Candidate 持久归档到被 Git 忽略的 `data-backup/`，把非私人实现保存为本地提交，
+  并从干净 worktree 完整验证；不推送、不修改正式 state、不调用外部服务。
 
 ## 最近完成计划
+
+M9 `单日 Garmin MCP 有界真实只读闭环` 已于 2026-08-18 完成并归档至
+`docs/exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md`。r04 Candidate 的固定单日读取
+使用 8 次 MCP/9 次 Provider，新增 6 个文件并在相同输入重放时保持 Provider 为 0；r07 公开
+Schema canary 与唯一 attempt 4 成功，日报、报告和 workflow receipt 的确定性重放保持 ID、SHA、
+HTML 和数据库行数不变。207 项代码门及 Code、AI、Data/Privacy 三类全新只读 Validator 均 PASS；
+正式 state 与 Token 保持不变，Gmail、Workout、Sites、cron 和 external actions 均为 0。M9 代码
+未提交、未推送，也未迁移到正式 state。
 
 M5 自适应教练画像与本地报告校准已通过独立 Validator；exec plan 已归档至
 `docs/exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md`。
@@ -65,6 +74,7 @@ M8 `真实私人数据离线 AI 教练闭环` 已通过三名全新只读 Valida
 candidate raw 为 9336 项、119992332 字节，正式 state before/after 指纹一致；Code/AI/Data-Privacy
 均为 `PASS`。r31 曾因普通 `mode=ro` 读取触碰正式 SHM 的失败记录保留，不能声称整个 M8 历史从未触碰
 sidecar；M8 仍未授权真实外部写入或 cron。
+M8 交付已保存为本地提交 `69ed9b4`（`feat: complete real-data AI coaching closure`），未推送。
 最近完成的 M4 计划已归档至
 `docs/exec-plans/completed/M4-source-root-0001-product-consolidation.md`；M4 基线提交为
 `bab3649`（`feat: complete source runtime migration`）。

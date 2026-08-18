@@ -32,5 +32,11 @@ the input envelope must identify the source and exact evidence references.
 - `scripts/parse_raw.py` creates bounded metadata and aggregate evidence from selected raw files. It never
   emits raw JSON, FIT samples or credentials.
 - `scripts/validate_course.py` validates the course contract before the result is written to SQLite.
+- `scripts/run_codex_daily.py` is the thin M9 owner-only entry. `scripts/codex_attempt_runtime.py`
+  holds the single-writer pending-to-terminal state machine, dual-Schema validation and evidence closure.
+- `scripts/run_schema_canary.py` validates the versioned wire Schema once with public synthetic data before
+  the one approved private attempt. It accepts no Candidate, goal, health, activity or token input.
+- These scripts do not call Garmin, Gmail, Workout or Sites. A valid M9 downstream result requires the
+  immutable `attempt 2 failed → attempt 3 failed → canary succeeded → attempt 4 succeeded` chain.
 
 On malformed input return a stable domain error and persist the failed/blocked run in SQLite.

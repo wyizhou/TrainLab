@@ -13,6 +13,10 @@ from pathlib import Path
 from typing import Any
 
 
+class PromptBlocked(ValueError):
+    """The deterministic Host context is not eligible for a model call."""
+
+
 def _module() -> Any:
     path = Path(__file__).resolve().parent / "build_context.py"
     spec = importlib.util.spec_from_file_location("trainlab_build_context", path)
@@ -65,10 +69,18 @@ def create(
     source_root: Path,
     context_path: Path,
     prompt_path: Path,
+    live_sync_output_id: int | None = None,
 ) -> dict[str, Any]:
+    if prompt_path.exists() or prompt_path.is_symlink():
+        raise PromptBlocked("prompt_path_already_exists")
     module = _module()
     context = (
-        module.build_daily_context(database, source_root, target)
+        module.build_daily_context(
+            database,
+            source_root,
+            target,
+            live_sync_output_id=live_sync_output_id,
+        )
         if mode == "daily"
         else module.build_weekly_context(database, source_root, target)
     )
@@ -76,6 +88,14 @@ def create(
         context_path,
         json.dumps(context, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
     )
+    if context.get("status") != "ready":
+        errors = context.get("errors")
+        error_code = (
+            next((item for item in errors if isinstance(item, str) and item), None)
+            if isinstance(errors, list)
+            else None
+        )
+        raise PromptBlocked(error_code or f"{mode}_context_not_ready")
     prompt = (
         _instructions(mode)
         + "\n\nHost evidence JSON (the only allowed input):\n"
@@ -94,15 +114,20 @@ def main() -> int:
     parser.add_argument("--source-root", type=Path, required=True)
     parser.add_argument("--context-json", type=Path, required=True)
     parser.add_argument("--prompt", type=Path, required=True)
+    parser.add_argument("--live-sync-output-id", type=int)
     args = parser.parse_args()
-    create(
-        args.mode,
-        date.fromisoformat(args.date),
-        args.database,
-        args.source_root,
-        args.context_json,
-        args.prompt,
-    )
+    try:
+        create(
+            args.mode,
+            date.fromisoformat(args.date),
+            args.database,
+            args.source_root,
+            args.context_json,
+            args.prompt,
+            args.live_sync_output_id,
+        )
+    except PromptBlocked:
+        return 2
     return 0
 
 
