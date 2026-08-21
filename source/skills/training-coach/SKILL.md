@@ -36,6 +36,8 @@ the input envelope must identify the source and exact evidence references.
   holds the single-writer pending-to-terminal state machine, dual-Schema validation and evidence closure.
 - `scripts/run_schema_canary.py` validates the versioned wire Schema once with public synthetic data before
   the one approved private attempt. It accepts no Candidate, goal, health, activity or token input.
+- `scripts/run_rolling_week.py` is the M10-only coordinator for seven fixed daily reports plus one weekly
+  report. It uses `--ignore-user-config`, performs no Provider writes and emits prepared email/GTS contracts.
 - These scripts do not call Garmin, Gmail, Workout or Sites. A valid M9 downstream result requires the
   immutable `attempt 2 failed → attempt 3 failed → canary succeeded → attempt 4 succeeded` chain.
 

@@ -184,7 +184,8 @@ source/tests/ai/{cases,rubrics,schemas,templates,results}/
 - `source/` 是唯一产品工程；不生成或维护 wheel、bundle、dist 或 deploy 发布层。
 - 普通工作不创建版本。值得记录的变更先进入 `CHANGELOG.md` 的 `Unreleased`；只有用户明确要求发布并批准版本号后才能建立正式版本。
 - 不安装、卸载、复制或修改用户级全局 Skill；不得恢复 `.orchestration`、Graph/Dashboard 或 hash-bound 审批工作流。
-- Gmail MCP 服务器必须是当前环境中启用的精确 `gmail` 绑定，使用 `@artymclabin/gmail-mcp`；不静默安装、认证或回退到主机专用传输。
+- Gmail 运行路径按 A-010 使用官方 Gmail REST API；不得回退 Gmail MCP、SMTP 或 Codex Gmail
+  Connector。Garmin MCP 的现有绑定和授权边界不受影响；不得静默安装或认证 Provider。
 
 ## 完成交付
 

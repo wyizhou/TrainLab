@@ -26,6 +26,8 @@ Read `source/AGENTS.md`, `config.json`, SQLite state and this file before acting
 1. Run `scripts/plan_window.py --run-date YYYY-MM-DD` for ordinary offline planning. For the frozen M9
    window, `scripts/live_sync.py` constructs and validates the exact request internally; callers cannot
    change its date, resources or budgets.
+   The M10 one-off acceptance uses `scripts/rolling_week_sync.py`; its 2026-08-11 through 2026-08-18
+   window and budgets are also fixed internally and it is not a general backfill interface.
 2. Run `scripts/index_raw.py --source-root PATH --database PATH` before analysis to index existing raw
    bytes and verify their path, mode and SHA without contacting Garmin.
 3. Verify the plan has no 14-day readback, no summary resource, and zero external calls in this stage.

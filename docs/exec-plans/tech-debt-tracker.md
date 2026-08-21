@@ -11,3 +11,4 @@
 | ID | 来源任务 | 发现与证据 | 影响与范围 | 建议行动 | 状态 | 人工决定 | Roadmap/Exec plan |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | TD-0001 | M4-0004 / M4 运行源码类型门禁修复 | `cd source && python -m mypy src` 已为 0；同一范围外的 tests/tools 类型检查仍有约 522 项历史诊断，未通过忽略或排除隐藏 | 不阻塞当前源码运行门；测试/工具类型审计价值较低，后续修改这些目录时仍可能漏报边界错误 | 单独评估 tests/tools 的类型债；先按功能风险分批修复并保留完整 pytest、Ruff 和编译门 | candidate | 待人工决定是否提升为独立任务 | M4 / 后续独立 exec plan |
+| TD-0002 | M10-0004 / Gmail REST canary 人工收件复核 | `training-report-publisher/scripts/render_report.py` 的通用 `body_html` 会将 `bounded_metrics`、`evidence_ref` 等严格 JSON 字段直接展示 | 不影响 AI 结果、证据、邮件传输或账本正确性，但日报/周报邮件不适合日常阅读 | 后续与用户单独讨论中文人类可读 view-model、单位转换和工程字段隐藏；底层 JSON 继续作为审计证据 | deferred | 用户于 2026-08-20 明确延后讨论，不阻塞 M10 传输闭环 | M10 / 后续人工决定 |

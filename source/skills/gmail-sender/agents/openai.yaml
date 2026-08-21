@@ -1,4 +1,4 @@
 interface:
-  display_name: "Gmail Sender"
-  short_description: "Prepare bounded self-delivery email actions"
-  default_prompt: "Use $gmail-sender to validate a TrainLab report email envelope without sending it."
+  display_name: "Gmail REST Sender"
+  short_description: "Prepare and verify approved Gmail REST self-delivery"
+  default_prompt: "Use $gmail-sender to validate a TrainLab report email envelope; send through Gmail REST only when the current plan contains explicit approval."

@@ -1,7 +1,10 @@
 fitdecode==0.11.0
+google-auth==2.56.2
+google-auth-oauthlib==1.4.0
 jsonschema==4.25.1
 mcp==1.29.0
 mypy==2.3.0
 pytest==8.4.2
+requests==2.34.2
 ruff==0.16.1
 types-jsonschema==4.25.1.20250822

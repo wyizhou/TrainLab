@@ -412,12 +412,44 @@ def _live_receipt(
     return receipt, str(row[1])
 
 
+def _rolling_receipt(
+    database: Path, output_id: int, report_date: date
+) -> tuple[dict[str, Any], dict[str, Any], str]:
+    connection = connect(database, read_only=True, immutable=True)
+    try:
+        row = connection.execute(
+            "SELECT so.content_json,so.content_sha256,so.schema_name,sr.status "
+            "FROM skill_outputs so JOIN skill_runs sr ON sr.id=so.skill_run_id "
+            "WHERE so.id=?",
+            (output_id,),
+        ).fetchone()
+    finally:
+        connection.close()
+    if row is None or str(row[2]) != "garmin_rolling_week_receipt_v1":
+        raise ValueError("garmin_rolling_sync_receipt_missing")
+    if str(row[3]) != "succeeded":
+        raise ValueError("garmin_rolling_sync_receipt_incomplete")
+    receipt = json.loads(str(row[0]))
+    windows = receipt.get("daily_windows")
+    window = windows.get(report_date.isoformat()) if isinstance(windows, dict) else None
+    if (
+        receipt.get("status") != "succeeded"
+        or receipt.get("workflow_key") != "m10:rolling-week:2026-08-11/2026-08-18"
+        or not isinstance(window, dict)
+        or window.get("report_date") != report_date.isoformat()
+        or window.get("inventory_complete") is not True
+    ):
+        raise ValueError("garmin_rolling_sync_receipt_incomplete")
+    return receipt, window, str(row[1])
+
+
 def build_daily_context(
     database: Path,
     source_root: Path,
     report_date: date,
     *,
     live_sync_output_id: int | None = None,
+    rolling_sync_output_id: int | None = None,
 ) -> dict[str, Any]:
     review_date = report_date - timedelta(days=1)
     parser = _load_parse_module()
@@ -425,7 +457,19 @@ def build_daily_context(
     receipt: dict[str, Any] | None = None
     receipt_sha: str | None = None
     allowed_raw_ids: set[int] | None = None
-    if live_sync_output_id is not None:
+    receipt_window: dict[str, Any] | None = None
+    if live_sync_output_id is not None and rolling_sync_output_id is not None:
+        raise ValueError("multiple_live_sync_receipts")
+    if rolling_sync_output_id is not None:
+        receipt, receipt_window, receipt_sha = _rolling_receipt(
+            database, rolling_sync_output_id, report_date
+        )
+        allowed_raw_ids = {
+            int(value)
+            for value in receipt_window.get("raw_file_ids", [])
+            if isinstance(value, int) and not isinstance(value, bool)
+        }
+    elif live_sync_output_id is not None:
         receipt, receipt_sha = _live_receipt(database, live_sync_output_id, report_date)
         allowed_raw_ids = {
             int(value)
@@ -485,7 +529,8 @@ def build_daily_context(
     if review_activity and not activities:
         errors.append("daily_activity_evidence_missing")
     if receipt is not None:
-        expected_inventory = int(receipt.get("inventory_count", -1))
+        inventory_source = receipt_window if receipt_window is not None else receipt
+        expected_inventory = int(inventory_source.get("inventory_count", -1))
         if expected_inventory < 0 or len(activities) != expected_inventory:
             errors.append("daily_activity_inventory_mismatch")
         if any(item.get("status") == "blocked" for item in activities):
@@ -504,34 +549,69 @@ def build_daily_context(
         "provider_calls": 0,
     }
     if receipt is not None and receipt_sha is not None:
-        if live_sync_output_id is None:
+        receipt_output_id = (
+            rolling_sync_output_id
+            if rolling_sync_output_id is not None
+            else live_sync_output_id
+        )
+        if receipt_output_id is None:
             raise RuntimeError("garmin_live_sync_output_id_missing")
         result["live_sync"] = {
-            "output_id": int(live_sync_output_id),
+            "output_id": int(receipt_output_id),
             "sha256": receipt_sha,
             "inventory_complete": True,
-            "inventory_count": int(receipt["inventory_count"]),
+            "inventory_count": int(
+                (receipt_window if receipt_window is not None else receipt)[
+                    "inventory_count"
+                ]
+            ),
         }
     return result
 
 
 def build_weekly_context(
-    database: Path, source_root: Path, week_ending: date
+    database: Path,
+    source_root: Path,
+    week_ending: date,
+    *,
+    required_daily_output_ids: list[int] | None = None,
 ) -> dict[str, Any]:
     start = week_ending - timedelta(days=6)
     connection = connect(database, read_only=True, immutable=True)
     try:
         rows = connection.execute(
-            "SELECT id,content_json,content_sha256,period_start_date FROM skill_outputs "
-            "WHERE output_kind='daily_summary' AND period_start_date>=? AND period_start_date<=? "
-            "ORDER BY period_start_date",
+            "SELECT so.id,so.content_json,so.content_sha256,so.period_start_date "
+            "FROM skill_outputs so JOIN skill_runs sr ON sr.id=so.skill_run_id "
+            "WHERE so.output_kind='daily_summary' AND so.schema_name='daily_ai_result_v1' "
+            "AND sr.status='succeeded' AND sr.skill_name='training-coach' "
+            "AND sr.operation='daily_coach' AND so.period_start_date>=? "
+            "AND so.period_start_date<=? ORDER BY so.period_start_date,so.id",
             (start.isoformat(), week_ending.isoformat()),
         ).fetchall()
     finally:
         connection.close()
-    by_date = {str(row[3]): row for row in rows}
+    by_date: dict[str, Any] = {}
+    required_ids = (
+        set(required_daily_output_ids)
+        if required_daily_output_ids is not None
+        else None
+    )
+    for row in rows:
+        if required_ids is not None and int(row[0]) not in required_ids:
+            continue
+        day = str(row[3])
+        if day in by_date:
+            if required_ids is not None:
+                raise ValueError("weekly_daily_output_ambiguous")
+        by_date[day] = row
     expected = [(start + timedelta(days=i)).isoformat() for i in range(7)]
     missing = [day for day in expected if day not in by_date]
+    if required_daily_output_ids is not None and (
+        len(required_daily_output_ids) != 7
+        or len(set(required_daily_output_ids)) != 7
+        or {int(row[0]) for row in by_date.values()} != set(required_daily_output_ids)
+    ):
+        raise ValueError("weekly_daily_output_mismatch")
     dailies = []
     for day in expected:
         row = by_date.get(day)

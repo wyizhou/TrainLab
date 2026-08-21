@@ -68,6 +68,8 @@ jobs:
           git check-ignore -q goal.md
           git check-ignore -q credentials.json
           git check-ignore -q gcp-oauth.keys.json
+          git check-ignore -q gmail-api-token.json
+          git check-ignore -q gmail-api-auth-receipt.json
           git check-ignore -q state/trainlab.db
           git check-ignore -q ../data-backup
           git check-ignore -q tests/ai/results/example.json

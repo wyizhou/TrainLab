@@ -8,6 +8,9 @@
 
 1. 读取本文件和 `config.json`。
 2. 读取私有 `goal.md`；文件缺失、权限不是 `0600` 或结构无效时立即 `blocked`。
+   Gmail 自投递还必须读取私有 `email.json`；首次配置时从可跟踪的空模板
+   `email.module.json` 复制并填写。`email.json` 只能包含当前认证邮箱地址，必须为 `0600`
+   且被 Git 忽略，缺失、占位、权限错误或地址无效时不得调用 Gmail。
 3. 读取 `skills/README.md`，再只读取本次任务需要的 `SKILL.md` 和其脚本说明。
 4. 读取 `state/trainlab.db` 的最近运行、输出、批准和外部动作；数据库缺失或锁不可用时停止。
 5. 由脚本生成有界证据后再交给 AI。不得把完整 raw、FIT、凭据或邮件历史直接放入上下文。
@@ -31,10 +34,13 @@
 - 日常 Garmin 同步只处理昨日完整数据和今日早晨结束的主睡眠，不自动回读最近 14 天。
 - 补数、Garmin Workout 写入、Gmail 查询/发送和 Sites 发布必须有明确范围、批准、幂等键和对账。
 - 本阶段 cron 只生成配置，不安装或启用；没有授权时不得调用 Garmin、Gmail 或 Sites。
-- `credentials.json`、`gcp-oauth.keys.json` 或 MCP 认证状态缺失、过期或格式不明时，Skill
-  必须安全停止并把 `credential_unavailable` 或更具体的脱敏错误写入 SQLite；不得猜测认证、
-  读取或记录密码/MFA/token 内容，也不得自动安装、刷新或引导外部写入。需要认证时只向用户
-  说明下一步人工认证入口。
+- Garmin MCP 凭据或认证状态缺失、过期或格式不明时，Skill 必须安全停止并写入脱敏错误；
+  不得猜测密码、MFA 或 token 内容。Gmail 按 A-010 使用 owner-only
+  `gcp-oauth.keys.json` 与 `gmail-api-token.json`：首次授权只能由用户在系统浏览器完成，运行时
+  只允许正常刷新该专用 token，并以 `0600` 临时文件、fsync 和原子改名更新；旧
+  `credentials.json` 只作为 Gmail MCP 历史保留且不得读取或覆盖。
+- `email.json` 不是凭据，只保存 Gmail 自投递地址；地址可以进入私有 Candidate 的精确动作
+  请求以便审计，但不得进入 Git、报告正文或公开日志。
 
 ## 输入和输出
 

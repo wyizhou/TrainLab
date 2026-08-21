@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "m10_gmail_rest_preview_v3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "batch_id", "transport", "parent_marker_sha256",
+    "parent_database_sha256", "parent_preview_output_id",
+    "parent_preview_output_sha256", "prior_results", "emails",
+    "prior_api_calls", "prior_send_calls", "gmail_api_budget",
+    "gmail_send_budget", "provider_budget", "preview_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": "m10_gmail_rest_preview_v3"},
+    "batch_id": {"const": "m10-r08-gmail-rest-corrected-subjects"},
+    "transport": {"const": "gmail_rest"},
+    "parent_marker_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "parent_database_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "parent_preview_output_id": {"type": "integer", "minimum": 1},
+    "parent_preview_output_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "prior_results": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "ordinal", "action_id", "result_output_id", "result_output_sha256",
+          "requested_message_id", "actual_message_id", "gmail_message_id", "eml_sha256"
+        ],
+        "properties": {
+          "ordinal": {"type": "integer", "minimum": 1, "maximum": 8},
+          "action_id": {"type": "integer", "minimum": 1},
+          "result_output_id": {"type": "integer", "minimum": 1},
+          "result_output_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "requested_message_id": {"type": "string", "pattern": "^<trainlab\\.[0-9a-f]{64}@trainlab\\.invalid>$"},
+          "actual_message_id": {"type": "string", "pattern": "^<[^<>\\s@]+@[^<>\\s@]+>$"},
+          "gmail_message_id": {"type": "string", "pattern": "^[A-Za-z0-9_-]{1,256}$"},
+          "eml_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        }
+      }
+    },
+    "emails": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "ordinal", "prior_source_output_id", "prior_source_output_sha256",
+          "source_output_id", "source_output_sha256", "envelope_relative_path",
+          "envelope_sha256", "recipient_sha256", "subject", "subject_sha256",
+          "requested_message_id", "mime_sha256", "request_sha256"
+        ],
+        "properties": {
+          "ordinal": {"type": "integer", "minimum": 1, "maximum": 8},
+          "prior_source_output_id": {"type": "integer", "minimum": 1},
+          "prior_source_output_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "source_output_id": {"type": "integer", "minimum": 1},
+          "source_output_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "envelope_relative_path": {"type": "string", "minLength": 1},
+          "envelope_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "recipient_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "subject": {"type": "string", "minLength": 1},
+          "subject_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "requested_message_id": {"type": "string", "pattern": "^<trainlab\\.[0-9a-f]{64}@trainlab\\.invalid>$"},
+          "mime_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "request_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        }
+      }
+    },
+    "prior_api_calls": {"const": 32},
+    "prior_send_calls": {"const": 8},
+    "gmail_api_budget": {"const": 160},
+    "gmail_send_budget": {"const": 16},
+    "provider_budget": {"const": 161},
+    "preview_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

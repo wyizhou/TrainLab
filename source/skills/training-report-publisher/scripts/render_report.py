@@ -137,29 +137,88 @@ def persist_outputs(
     payload: dict[str, object],
     html: str,
     include_email_render: bool = True,
+    source_output_id: int | None = None,
 ) -> dict[str, Any]:
     period = str(payload.get("period") or "")
+    template_root = Path(__file__).resolve().parents[3] / "templates"
+    template_path = (
+        template_root / "fixed" / f"{kind}_report.html"
+        if mode == "fixed_email"
+        else template_root / "open-report" / f"{kind}_report.html"
+    )
+    expected_html = render(
+        template_path.read_text(encoding="utf-8"),
+        title_text,
+        period,
+        body_html(payload.get("content", payload)),
+        fixed=mode == "fixed_email",
+        payload=payload,
+    )
+    if html != expected_html:
+        raise ValueError("report_html_mismatch")
     content_text = json.dumps(payload, ensure_ascii=False, sort_keys=True, indent=2)
     input_digest = sha256_text(canonical_json(payload) + "\n" + html)
     logical_base = f"training-report-publisher:{kind}:{mode}"
     connection = connect(database)
     try:
-        source_payload = payload
-        source = connection.execute(
-            "SELECT id,content_sha256 FROM skill_outputs "
-            "WHERE output_kind IN ('daily_summary','weekly_summary') "
-            "AND content_json=? ORDER BY id DESC LIMIT 1",
-            (canonical_json(source_payload),),
-        ).fetchone()
-        content_value = payload.get("content")
-        if source is None and isinstance(content_value, dict):
-            source_payload = content_value
+        expected_source_kind = "daily_summary" if kind == "daily" else "weekly_summary"
+        expected_source_schema = (
+            "daily_ai_result_v1" if kind == "daily" else "weekly_ai_result_v1"
+        )
+        if source_output_id is not None:
+            source = connection.execute(
+                "SELECT id,content_sha256,content_json,period_start_date,"
+                "period_end_date FROM skill_outputs "
+                "WHERE id=? AND output_kind=? AND schema_name=?",
+                (source_output_id, expected_source_kind, expected_source_schema),
+            ).fetchone()
+            source_content = payload.get("content")
+            source_period = None
+            if source is not None:
+                start_date = str(source[3] or "")
+                end_date = str(source[4] or "")
+                source_period = (
+                    start_date
+                    if start_date and start_date == end_date
+                    else f"{start_date}/{end_date}"
+                )
+                expected_title = (
+                    f"TrainLab · M10验收 · 每日训练简报 · {source_period}"
+                    if kind == "daily"
+                    else f"TrainLab · M10验收 · 每周训练总结 · {source_period}"
+                )
+            if source is not None and (
+                not isinstance(source_content, dict)
+                or canonical_json(source_content) != str(source[2])
+            ):
+                raise ValueError("report_source_content_mismatch")
+            if source is not None and (
+                set(payload) != {"title", "period", "content"}
+                or title_text != expected_title
+                or payload.get("title") != expected_title
+                or payload.get("period") != source_period
+            ):
+                raise ValueError("report_source_envelope_mismatch")
+        else:
+            source_payload = payload
             source = connection.execute(
                 "SELECT id,content_sha256 FROM skill_outputs "
-                "WHERE output_kind IN ('daily_summary','weekly_summary') "
-                "AND content_json=? ORDER BY id DESC LIMIT 1",
-                (canonical_json(source_payload),),
+                "WHERE output_kind=? AND content_json=? ORDER BY id DESC LIMIT 1",
+                (
+                    expected_source_kind,
+                    canonical_json(source_payload),
+                ),
             ).fetchone()
+            content_value = payload.get("content")
+            if source is None and isinstance(content_value, dict):
+                source = connection.execute(
+                    "SELECT id,content_sha256 FROM skill_outputs "
+                    "WHERE output_kind=? AND content_json=? ORDER BY id DESC LIMIT 1",
+                    (
+                        expected_source_kind,
+                        canonical_json(content_value),
+                    ),
+                ).fetchone()
         if source is None:
             raise ValueError("report_source_output_missing")
         source_id = int(source[0])

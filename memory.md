@@ -14,7 +14,7 @@
 - 项目说明文档默认使用中文；路径、命令、状态枚举和协议标识符保留技术拼写。
 - 开发使用根 agentForge Harness。ADHOC-0011 已获批准；本机已完成 raw-first state 切换和旧
   集中式入口归档。M7 离线 Skills 闭环与双层测试已通过独立 Validator；cron 保持关闭，外部
-  MCP 写入仍未启用。
+  MCP 自动写入仍未启用。M10 已完成一次用户明确确认的有界端到端写入验收，未授权长期自动化。
 - `orchestrate-parallel-work` 只在本仓库禁用；不修改其全局安装。
 
 ## 已验证的项目事实
@@ -33,9 +33,12 @@
   私人 raw/FIT 只能留在被忽略的 state 或仓库外归档。
 - 根 `references/` 只由用户主动要求维护；运行说明和 Skill 合同位于 `source/AGENTS.md`、
   `source/skills/` 与 `source/templates/`。
-- 2026-08-16 只读核验确认：当前 Codex 环境中的 `garmin` 与 `gmail` MCP 均已启用，且最小
-  只读调用成功；项目内 `garmin-sync` 与 `gmail-sender` 仍只生成请求计划或消息信封，尚未接通
-  MCP 执行、落账和对账闭环。实际启用前仍须重新核验认证与外部动作授权。
+- 2026-08-19 M10 的4项临时Garmin测试Workout已完整创建、排期、取消和删除，残留0。Gmail
+  MCP真实投递与r05本地事实链未能交付，现由A-010替换为官方Gmail REST；该变化不代表长期
+  启用，cron和自动外部写入继续关闭，每次新写入仍需精确授权。
+- M10 已于2026-08-20完成：4项临时Garmin测试Workout生命周期结束且残留0；官方Gmail REST
+  成功闭合r07旧标题8封与r08更正标题8封，累计16封。最终Code、AI和Delivery/Data-Privacy
+  Validator均PASS；正式state、Token边界和确定性重放闭合。该结果不授权长期自动发送或cron。
 
 ## 已建立的验证命令
 
@@ -48,9 +51,17 @@
 
 ## 当前活动计划
 
-- 当前没有活动中的 exec plan。
+- 无。TD-0002邮件可读性样式债保持`deferred`，等待用户后续单独讨论，不自动提升为新计划。
 
 ## 最近完成计划
+
+M10 `滚动七日真实端到端验收` 已于2026-08-20完成并归档至
+`docs/exec-plans/completed/M10-live-e2e-0001-rolling-week.md`。7份日报、1份周报和周计划完成真实
+闭环；4项临时Garmin测试Workout已创建、排期、取消和删除，残留0；r07旧标题8封与r08更正
+标题8封均通过官方Gmail REST闭合，累计16个不同Gmail ID。r08最终API64/send16，含认证Profile
+总Provider65；稳定重放Provider增量0。最终Code、AI、Delivery/Data-Privacy三名全新只读Validator
+均PASS；正式state 9347项指纹与Token边界保持闭合。历史FAIL与r04/r05 unknown证据继续保留，
+TD-0002保持deferred；M10未授权长期外部写入、Sites或cron。
 
 M9 `单日 Garmin MCP 有界真实只读闭环` 已于 2026-08-18 完成并归档至
 `docs/exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md`。r04 Candidate 的固定单日读取

@@ -51,8 +51,11 @@ data.db-journal
 /source/*.sqlite
 /source/*.sqlite3
 /source/goal.md
+/source/email.json
 /source/credentials.json
 /source/gcp-oauth.keys.json
+/source/gmail-api-token.json
+/source/gmail-api-auth-receipt.json
 /source/token.json
 /source/*token*.json
 /source/**/garmin_tokens.json

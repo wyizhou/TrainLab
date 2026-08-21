@@ -271,3 +271,74 @@ Reason:
 
 > 用户希望把“代码是否正确”和“AI 是否按 Harness 产出”分开验收，同时保持无状态运行和私人
 > 数据隔离；两层测试能分别提供可重复的机器门和可读的语义复核。
+
+## A-010: Gmail REST 直接投递边界
+
+- 确认日期：2026-08-19
+- 适用范围：TrainLab 的 Gmail 认证、自投递、远端对账和崩溃恢复。
+- 替代范围：仅替代 Gmail 必须通过 `@artymclabin/gmail-mcp` 的传输约定；Garmin MCP 与
+  A-001、A-004、A-008、A-009 保持不变。
+
+必须遵守：
+
+1. Gmail 只允许官方 Gmail REST API，不得回退 Gmail MCP、SMTP 或 Codex Gmail Connector。
+2. OAuth 使用 Desktop installed-app 浏览器流程，权限固定为 `gmail.send` 与 `gmail.readonly`；
+   OAuth client、专用 token、邮箱地址和邮件正文不得进入 Git、SQLite 或公开日志。
+3. 每封邮件必须先持久化确定性 intent，并使用稳定 RFC822 `Message-ID` 对账；发送开始后不得
+   自动重发，响应不确定时只能查询该 Message-ID。
+4. Candidate、owner-only 文件和单写者进程属于可信运行环境；SQLite 是运行账本，不承担对
+   同 UID 恶意篡改、root、内核、磁盘或硬件故障的不可伪造远程证明。
+5. REST message ID、RAW MIME、收件人、主题、text、HTML 与 Message-ID 闭合后才能成功；
+   认证、权限、重复命中或内容不一致均安全停止。
+
+协商原因：
+
+> Gmail MCP 的跨进程结果保存与本地 SQLite 证明无法构成可靠远程事实根；用户批准改为官方
+> REST API、稳定 Message-ID 和单写者恢复流程，并明确收敛应用层威胁模型。
+
+## A-011: Gmail 实际 Message-ID 与单次发送对账
+
+- 确认日期：2026-08-20
+- 适用范围：TrainLab Gmail REST 发送、RAW 核验、崩溃恢复和 M10 邮件续跑。
+- 替代范围：仅替代 A-010 第 3、5 条中“Gmail 必须原样保留本地预设 RFC822
+  `Message-ID`”的假设；A-010 的 REST-only、OAuth、隐私、单写者和信任边界不变。
+
+必须遵守：
+
+1. 本地预设 RFC822 `Message-ID` 继续用于确定性 intent、MIME 和幂等键，但不得假设
+   Gmail 会原样保留它。
+2. `messages.send` 每个业务请求最多一次。响应丢失或无法确认进程停止时必须保持
+   `unknown`，不得自动重发。
+3. 发送成功必须同时绑定 Gmail message ID、该 ID 读回 RAW 中唯一的实际 RFC822
+   `Message-ID`、收件人、主题、text 和 HTML；任一不一致都不得成功落账。
+4. 成功响应和 RAW 已耐久化时，允许按 Gmail 实际 `Message-ID` 进行确认查询；
+   查询必须唯一命中同一 Gmail message ID。
+5. 已发送 canary 可以用既有 send/RAW 证据和用户明确收件确认做零 Provider
+   追加对账；不得改写原始失败证据或补发第九封。
+
+协商原因：
+
+> M10 r06 真实 canary 的 Gmail `messages.send` 返回成功，且按 Gmail ID 读回的收件人、
+> 主题、text 和 HTML 均一致，但 Gmail 将本地 `@trainlab.invalid` Message-ID 改写为
+> Provider 实际 ID。用户确认收件后，批准保留本地幂等意图并以 Gmail 实际身份完成对账。
+
+## A-012: M10 更正标题邮件批次
+
+- 确认日期：2026-08-20
+- 适用范围：仅限 M10 r08 的 8 封更正标题邮件。
+- 替代范围：仅替代 A-011 第 5 条在原 r07 范围内“不得补发第九封”的总量上限；
+  A-010/A-011 的 REST-only、单次发送、实际 Message-ID、内容核验、隐私和信任边界不变。
+
+必须遵守：
+
+1. r06/r07 已发送的 8 封及全部成功证据永久保留，不改写、不删除。
+2. r08 获准新增恰好 8 个更正标题的独立业务请求，完成后邮箱累计恰好 16 封；禁止第 17 封。
+3. r08 每个请求使用新的 MIME、批准、动作和本地 Message-ID；每个请求最多调用一次
+   `messages.send`，不得复用或覆盖旧记录。
+4. r08 第一封为 canary；Provider RAW 闭合且用户明确确认收到后，才允许发送其余 7 封。
+5. 标题之外的 AI 输出、训练证据、安全判断和课表保持不变；正文样式债 TD-0002 继续延期。
+
+协商原因：
+
+> 用户确认旧 8 封已经全部收到，但标题设计错误，明确授权保留旧邮件并重新发送 8 封标题
+> 正确的邮件。因此这是一个版本化的新业务批次，不是对旧请求的自动重发。

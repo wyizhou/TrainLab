@@ -94,7 +94,10 @@ def _live_receipt_errors(context: dict[str, Any], database: Path) -> list[str]:
         ).fetchone()
     finally:
         connection.close()
-    if row is None or str(row[2]) != "garmin_live_sync_receipt_v1":
+    if row is None or str(row[2]) not in {
+        "garmin_live_sync_receipt_v1",
+        "garmin_rolling_week_receipt_v1",
+    }:
         return ["garmin_live_sync_receipt_missing"]
     if str(row[3]) != "succeeded":
         return ["garmin_live_sync_receipt_incomplete"]
@@ -103,10 +106,26 @@ def _live_receipt_errors(context: dict[str, Any], database: Path) -> list[str]:
     except json.JSONDecodeError:
         return ["garmin_live_sync_receipt_missing"]
     raw_ids = receipt.get("raw_file_ids")
+    report_date = context.get("report_date")
+    if str(row[2]) == "garmin_rolling_week_receipt_v1":
+        windows = receipt.get("daily_windows")
+        window = windows.get(report_date) if isinstance(windows, dict) else None
+        if (
+            receipt.get("workflow_key") != "m10:rolling-week:2026-08-11/2026-08-18"
+            or not isinstance(window, dict)
+            or window.get("report_date") != report_date
+            or window.get("inventory_complete") is not True
+        ):
+            return ["garmin_live_sync_receipt_incomplete"]
+        raw_ids = window.get("raw_file_ids")
+    else:
+        if (
+            receipt.get("workflow_key") != "daily:2026-08-17"
+            or receipt.get("inventory_complete") is not True
+        ):
+            return ["garmin_live_sync_receipt_incomplete"]
     if (
         receipt.get("status") != "succeeded"
-        or receipt.get("workflow_key") != "daily:2026-08-17"
-        or receipt.get("inventory_complete") is not True
         or live_sync.get("sha256") != str(row[1])
         or not isinstance(raw_ids, list)
         or any(

@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "garmin_rolling_week_receipt_v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "status", "workflow_key", "timezone", "request_sha256",
+    "token_unchanged", "provider_entries", "mcp_tool_calls", "fit_files",
+    "weather_calls", "new_files", "inventory_by_date", "daily_windows",
+    "call_output_ids", "raw_file_ids", "activity_inventory_ids", "external_actions"
+  ],
+  "properties": {
+    "schema_version": {"const": "garmin_rolling_week_receipt_v1"},
+    "status": {"enum": ["succeeded", "blocked"]},
+    "workflow_key": {"const": "m10:rolling-week:2026-08-11/2026-08-18"},
+    "timezone": {"const": "Asia/Hong_Kong"},
+    "request_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "token_unchanged": {"type": "boolean"},
+    "provider_entries": {"type": "integer", "minimum": 0, "maximum": 47},
+    "mcp_tool_calls": {"type": "integer", "minimum": 0, "maximum": 46},
+    "fit_files": {"type": "integer", "minimum": 0, "maximum": 7},
+    "weather_calls": {"type": "integer", "minimum": 0, "maximum": 7},
+    "new_files": {"type": "integer", "minimum": 0, "maximum": 46},
+    "inventory_by_date": {
+      "type": "object",
+      "minProperties": 0,
+      "maxProperties": 7,
+      "additionalProperties": {"type": "integer", "minimum": 0, "maximum": 10}
+    },
+    "daily_windows": {
+      "type": "object",
+      "minProperties": 0,
+      "maxProperties": 7,
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "report_date", "review_date", "inventory_complete", "inventory_count",
+          "raw_file_ids", "activity_inventory_ids"
+        ],
+        "properties": {
+          "report_date": {"type": "string", "format": "date"},
+          "review_date": {"type": "string", "format": "date"},
+          "inventory_complete": {"const": true},
+          "inventory_count": {"type": "integer", "minimum": 0, "maximum": 10},
+          "raw_file_ids": {"type": "array", "items": {"type": "integer", "minimum": 1}, "uniqueItems": true},
+          "activity_inventory_ids": {"type": "array", "items": {"type": "integer", "minimum": 1}, "uniqueItems": true}
+        }
+      }
+    },
+    "call_output_ids": {"type": "array", "items": {"type": "integer", "minimum": 1}, "uniqueItems": true},
+    "raw_file_ids": {"type": "array", "items": {"type": "integer", "minimum": 1}, "uniqueItems": true},
+    "activity_inventory_ids": {"type": "array", "items": {"type": "integer", "minimum": 1}, "uniqueItems": true},
+    "external_actions": {"const": 0},
+    "error_code": {"type": "string"},
+    "receipt_output_id": {"type": "integer", "minimum": 1}
+  }
+}

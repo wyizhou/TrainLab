@@ -5,6 +5,17 @@
 
 ## Unreleased
 
+- M10 Gmail 投递停止继续修补 MCP，改为官方 REST：新增 Desktop OAuth、owner-only 专用 Token、
+  Google官方端点门、profile失败回执、确定性 RFC822 Message-ID、每阶段最多5次只读恢复、
+  单次发送、RAW 读回、canary 人工确认和崩溃后只读对账；r04/r05失败证据及旧 `unknown`
+  原样保留。r07允许以 Gmail ID 和 RAW 实际 Message-ID 闭合 Provider 改写，保留已收到的
+  旧标题canary，并只为剩余6份日报与1份周报建立新标题动作。r08按用户A-012授权保留
+  已发送8封，再建立8个更正标题的独立请求，最终累计上限16封。
+- 增加 M10 固定滚动七日 Candidate 采集、7 日报/1 周报 AI 编排、精确 Gmail 自投递请求、
+  临时 `-E2E-20260818-GTS` Workout 预览及 append-only 外部动作账本；所有真实写入仍由
+  对话中的精确确认门控制。早期真实释放曾因 Gmail `invalid_grant` 安全停止，失败证据永久
+  保留；最终4项测试Workout完成完整生命周期并清理为残留0，官方Gmail REST闭合旧标题8封和
+  更正标题8封，累计16封。最终Code、AI与Delivery/Data-Privacy Validator均PASS。
 - 为 M9 日报恢复增加 Structured Outputs wire v2、递归兼容检查、公开合成 Schema canary，
   并将下游证据链版本化为 attempt 2/3 失败后唯一 attempt 4；旧 wire 与失败证据保持不变。
 - 完成 M9 单日 Garmin MCP 有界只读采集与离线日报闭环：固定日期、工具、依赖和预算，使用

@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "m10_gmail_rest_preview_v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "batch_id", "transport", "parent_preview_output_id",
+    "parent_preview_output_sha256", "emails", "gmail_api_budget",
+    "gmail_send_budget", "preview_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": "m10_gmail_rest_preview_v1"},
+    "batch_id": {"const": "m10-r06-gmail-rest"},
+    "transport": {"const": "gmail_rest"},
+    "parent_preview_output_id": {"type": "integer", "minimum": 1},
+    "parent_preview_output_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "emails": {
+      "type": "array", "minItems": 8, "maxItems": 8,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": [
+          "ordinal", "source_output_id", "source_output_sha256",
+          "envelope_relative_path", "envelope_sha256", "recipient_sha256",
+          "subject_sha256", "message_id", "mime_sha256", "request_sha256"
+        ],
+        "properties": {
+          "ordinal": {"type": "integer", "minimum": 1, "maximum": 8},
+          "source_output_id": {"type": "integer", "minimum": 1},
+          "source_output_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "envelope_relative_path": {"type": "string", "minLength": 1},
+          "envelope_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "recipient_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "subject_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "message_id": {"type": "string", "pattern": "^<trainlab\\.[0-9a-f]{64}@trainlab\\.invalid>$"},
+          "mime_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "request_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        }
+      }
+    },
+    "gmail_api_budget": {"const": 129},
+    "gmail_send_budget": {"const": 8},
+    "preview_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

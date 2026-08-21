@@ -70,6 +70,8 @@ def create(
     context_path: Path,
     prompt_path: Path,
     live_sync_output_id: int | None = None,
+    rolling_sync_output_id: int | None = None,
+    required_daily_output_ids: list[int] | None = None,
 ) -> dict[str, Any]:
     if prompt_path.exists() or prompt_path.is_symlink():
         raise PromptBlocked("prompt_path_already_exists")
@@ -80,9 +82,15 @@ def create(
             source_root,
             target,
             live_sync_output_id=live_sync_output_id,
+            rolling_sync_output_id=rolling_sync_output_id,
         )
         if mode == "daily"
-        else module.build_weekly_context(database, source_root, target)
+        else module.build_weekly_context(
+            database,
+            source_root,
+            target,
+            required_daily_output_ids=required_daily_output_ids,
+        )
     )
     _atomic_owner_only_write(
         context_path,
@@ -115,6 +123,7 @@ def main() -> int:
     parser.add_argument("--context-json", type=Path, required=True)
     parser.add_argument("--prompt", type=Path, required=True)
     parser.add_argument("--live-sync-output-id", type=int)
+    parser.add_argument("--rolling-sync-output-id", type=int)
     args = parser.parse_args()
     try:
         create(
@@ -125,6 +134,7 @@ def main() -> int:
             args.context_json,
             args.prompt,
             args.live_sync_output_id,
+            args.rolling_sync_output_id,
         )
     except PromptBlocked:
         return 2

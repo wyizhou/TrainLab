@@ -194,3 +194,19 @@ AI 可在固定预算内按需细读活动片段。禁止向 AI 提供 GPS、原
 | [x] `M9-0003` 冻结在线范围与离线预验 | `completed` | high | M9-0002 | serial-m9 | fake MCP、预算/Token/幂等验证 | 同一 exec plan |
 | [x] `M9-0004` Candidate 真实采集与离线日报 | `completed` | high | M9-0003 | serial-m9 | r04 真实只读采集、r07 公开 canary、唯一 attempt 4、日报/报告/receipt 与幂等重放 | 同一 exec plan |
 | [x] `M9-0005` Code、AI、数据/隐私独立验证 | `completed` | high | M9-0004 | serial-m9 | 207 项代码门与三类全新只读 Validator 均 PASS；正式 state/Token 不变、外部动作 0 | 同一 exec plan |
+
+### [x] `M10` 滚动七日真实端到端验收 — `completed`
+
+用户于 2026-08-18 批准。M10 使用仓库外全新 Candidate，复用正式库已有证据并有界补齐
+2026-08-11～17 的活动/健康与醒来日为 2026-08-12～18 的主睡眠，生成 7 份日报、1 份周报和
+2026-08-19～25 周计划。全部离线结果通过后，自投递 8 封 Gmail；最多创建、验证并排期 4 个
+本次独占命名的 Garmin 跑步 Workout，随后解除本次排期并删除本次 Workout。正式 state、既有
+Workout/日历课程、goal、凭据和远端 Git 不修改。
+
+| 任务 | 状态 | 优先级 | 显式依赖 | Batch | 预期写入范围 | Exec plan |
+| --- | --- | --- | --- | --- | --- | --- |
+| [x] `M10-0001` 冻结治理、窗口与外部预算 | `completed` | high | M9 | serial-m10 | Roadmap、exec plan、运行合同 | [`completed`](docs/exec-plans/completed/M10-live-e2e-0001-rolling-week.md) |
+| [x] `M10-0002` 七日 Candidate 补数和完整报告闭环 | `completed` | high | M10-0001 | serial-m10 | Garmin sync、教练/报告运行器、Schemas、Candidate | 同一 exec plan |
+| [x] `M10-0003` Gmail/Garmin 外部动作执行器与离线验证 | `completed` | high | M10-0002 | serial-m10 | Gmail/GTS Skills、共享状态、code tests | 同一 exec plan |
+| [x] `M10-0004` 精确写入确认、真实发送和 Workout 生命周期 | `completed` | high | M10-0003 | serial-m10 | Garmin测试生命周期完成且残留0；r07旧标题8封和r08更正标题8封全部闭合，累计16封 | 同一 exec plan |
+| [x] `M10-0005` AI、数据/隐私与清理独立验收 | `completed` | high | M10-0004 | serial-m10 | Code、AI、Delivery/Data-Privacy最终Validator均PASS；正式state/Token和重放闭合 | 同一 exec plan |
