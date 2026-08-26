@@ -124,8 +124,8 @@ M11 v4-r20 的 business-only Prompt 语义闭包。最终停在新公开 canary 
 
 | 步骤 | 状态 | 证据 |
 | --- | --- | --- |
-| 1. 建立恢复分支、冻结计划、隐私审计、恢复快照并推送 | blocked | 本地恢复提交 `fb8d291` 已建立；HTTPS push 因现有 GitHub OAuth token 缺少 `workflow` scope 被远端拒绝，SSH 身份不可用。 |
-| 2. 恢复 Python 3.12 隔离环境并运行修改前基线 | pending | 待步骤1。 |
+| 1. 建立恢复分支、冻结计划、隐私审计、恢复快照并推送 | done | 本地提交 `fb8d291` 与阻塞记录 `e40072f` 已推送；远端分支精确指向 `e40072f`。 |
+| 2. 恢复 Python 3.12 隔离环境并运行修改前基线 | blocked | exact requirements 解析到 `cryptography==50.0.1`，macOS x86_64 无可用 wheel；源码构建因无 Rust 且 rustup 代理 503 在测试前失败。诊断探测确认 `cryptography==47.0.0` 有兼容 wheel 且全部固定依赖可导入。 |
 | 3. 测试先行统一 Finder 元数据和内容指纹合同 | pending | 待基线。 |
 | 4. Migration/State Validator 与批次提交推送 | pending | 待实现。 |
 | 5. M11 新失败 Failure Analyst | pending | 待迁移批次 PASS。 |
@@ -134,11 +134,11 @@ M11 v4-r20 的 business-only Prompt 语义闭包。最终停在新公开 canary 
 
 ## 当前检查点
 
-- 当前 Loop：迁移恢复快照远端保护。
-- 最近完成：本地恢复提交 `fb8d291` 已建立；owner-only 证据根为 0700；149 个文件通过明确清单和隐私审计。
-- 当前焦点：取得完成已授权 push 所需的 GitHub workflow scope。
-- 下一动作：用户明确批准扩展 GitHub OAuth `workflow` scope 后刷新凭据并仅重试恢复分支 push；成功前不进入产品修改。
-- 阻塞项：GitHub HTTPS token scopes 仅有 `gist/read:org/repo`，因提交历史包含 `.github/workflows/ci.yml`，远端拒绝创建分支；SSH 返回 `Permission denied (publickey)`。
+- 当前 Loop：Python 3.12 依赖可移植性归因。
+- 最近完成：exact requirements 在测试启动前失败；无源码构建探测证明 50.0.1 无 macOS x86_64 wheel，47.0.0 可由 wheel 安装且全部项目固定依赖可导入。
+- 当前焦点：等待人工决定是否把 `cryptography==47.0.0` 加入 `source/requirements.txt` 作为可移植传递依赖固定。
+- 下一动作：仅在用户批准依赖合同修正后添加精确 pin、补环境回归并重新执行未开始的修改前完整基线。
+- 阻塞项：当前 requirements 在 macOS x86_64 不能无 Rust 安装；安装系统 Rust 超出批准方案，临时命令覆盖又不满足 exact requirements 合同。
 - blocker_type：`ENVIRONMENT_FAILURE`
 - 诊断状态：`not_triggered`
 - 已变更文件：本计划；分支引用。
@@ -158,6 +158,7 @@ M11 v4-r20 的 business-only Prompt 语义闭包。最终停在新公开 canary 
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | M11-V4-R20-F01 | VC-010 | AC-013/GATE-004 | wire 删除 `minItems`，Prompt 机器语义未表达，公开 rest 输出空 `technique_notes` 后业务拒绝 | r19 canary | 尚未实施 r20；先归因 | 不适用 | active plan 记录与当前 Schema/Prompt/parity | pending Failure Analyst |
 | ADHOC-0017-F01 | VC-001 | AC-001/GATE-001 | 恢复分支 push 被 GitHub workflow scope 门拒绝 | migration snapshot | HTTPS token scope 与 SSH 身份只读核对 | 不适用 | GitHub remote rejection、`gh auth status`、SSH publickey rejection | blocked：等待新认证权限 |
+| ADHOC-0017-F02 | VC-001 | AC-002/GATE-002 | fixed requirements 在 macOS x86_64 解析到无 wheel 的 cryptography 50.0.1 | baseline environment | exact install、no-build wheel probe、现有 conda Python 3.12 探测、47.0.0 full-requirements import probe | 不适用 | uv resolver/build 输出；Rust 缺失；47.0.0 52 packages 导入成功 | blocked：等待人工批准固定传递依赖 |
 
 ## 决策与发现
 
@@ -196,3 +197,5 @@ Validator 必须返回 `contract_version`、`overall_verdict`、`criterion_resul
 | --- | --- | --- | --- |
 | 2026-08-26 / start | 用户批准完整串行方案；恢复分支已建立；owner-only 证据根完成；149 个计划内文件经 staged path、高置信凭据、synthetic email 和 diff 检查 | 无私人路径或真实凭据进入 index；r19 临时证据仍缺失，raw 有 Finder 元数据 | 建立并推送 WIP 恢复快照 |
 | 2026-08-26 / snapshot-push-blocked | 建立本地提交 `fb8d291`；HTTPS 与 SSH 两条 GitHub 路径均只读核对 | HTTPS token 缺少 `workflow` scope，SSH 无可用 public key；本地分支安全但尚未远端保护 | 请求用户批准刷新 GitHub OAuth workflow scope，成功前停止后续实现 |
+| 2026-08-26 / snapshot-pushed | 用户明确授权刷新 `workflow` scope；GitHub device flow 成功；恢复分支推送并核对远端 SHA `e40072f` | 推送授权阻塞已消除；未创建 PR、未触碰 main | 恢复 Python 3.12 隔离质量门并记录修改前基线 |
+| 2026-08-26 / baseline-env-blocked | bundled Python 3.12.13 + exact requirements 在测试前复现；无源码构建和现有 Conda 环境均核对；47.0.0 wheel 与全依赖导入成功 | requirements 未固定传递依赖，解析到不支持 macOS x86_64 wheel 的 cryptography 50.0.1；不是项目测试失败 | 请求人工批准增加 `cryptography==47.0.0`，不改业务代码或降低测试 |
