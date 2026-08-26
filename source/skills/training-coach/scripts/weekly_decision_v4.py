@@ -47,8 +47,14 @@ ZONE_PRESCRIPTION = re.compile(
     r"(?<![A-Za-z0-9])(?:z|zone)\s*[1-5](?![A-Za-z0-9])", re.ASCII | re.IGNORECASE
 )
 HEART_RATE_PRESCRIPTION = re.compile(r"(?:目标|阈值|最大)心率|心率区间")
-PROMPT_SEMANTICS_BEGIN = "TRAINLAB_PROMPT_SEMANTICS_V1_BEGIN"
-PROMPT_SEMANTICS_END = "TRAINLAB_PROMPT_SEMANTICS_V1_END"
+PROMPT_SEMANTICS_V1_BEGIN = "TRAINLAB_PROMPT_SEMANTICS_V1_BEGIN"
+PROMPT_SEMANTICS_V1_END = "TRAINLAB_PROMPT_SEMANTICS_V1_END"
+PROMPT_SEMANTICS_V2_BEGIN = "TRAINLAB_PROMPT_SEMANTICS_V2_BEGIN"
+PROMPT_SEMANTICS_V2_END = "TRAINLAB_PROMPT_SEMANTICS_V2_END"
+# Backward-compatible aliases keep the immutable r19 Prompt tests auditable.
+PROMPT_SEMANTICS_BEGIN = PROMPT_SEMANTICS_V1_BEGIN
+PROMPT_SEMANTICS_END = PROMPT_SEMANTICS_V1_END
+BUSINESS_ONLY_KEYWORDS = WIRE_REMOVABLE_KEYWORDS - {"$schema", "$id"}
 HOST_FORBIDDEN_FIELD_ORDER = (
     "period",
     "plan_dates",
@@ -118,6 +124,43 @@ def require_wire_schema_parity(business_schema: object, wire_schema: object) -> 
     require_supported_schema(wire_schema)
 
 
+def _json_pointer(parts: tuple[str, ...]) -> str:
+    return "".join("/" + part.replace("~", "~0").replace("/", "~1") for part in parts)
+
+
+def business_only_constraints_from_schemas(
+    business_schema: object, wire_schema: object
+) -> list[dict[str, Any]]:
+    """Extract every validation constraint intentionally removed from wire."""
+
+    require_wire_schema_parity(business_schema, wire_schema)
+    constraints: list[dict[str, Any]] = []
+
+    def visit(node: object, parts: tuple[str, ...]) -> None:
+        if isinstance(node, list):
+            for index, item in enumerate(node):
+                visit(item, (*parts, str(index)))
+            return
+        if not isinstance(node, dict):
+            return
+        pointer = _json_pointer(parts)
+        for keyword in BUSINESS_ONLY_KEYWORDS:
+            if keyword in node:
+                constraints.append(
+                    {
+                        "json_pointer": pointer,
+                        "keyword": keyword,
+                        "value": deepcopy(node[keyword]),
+                    }
+                )
+        for key, value in node.items():
+            if key not in WIRE_REMOVABLE_KEYWORDS:
+                visit(value, (*parts, str(key)))
+
+    visit(business_schema, ())
+    return sorted(constraints, key=lambda item: (item["json_pointer"], item["keyword"]))
+
+
 def _schema_object(value: object, error: str) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise ValueError(error)
@@ -136,12 +179,18 @@ def _schema_string_values(value: object) -> list[str]:
 
 
 def prompt_semantics_from_schemas(
-    business_schema: object, host_schema: object
+    business_schema: object,
+    wire_schema_or_host: object,
+    host_schema: object | None = None,
 ) -> dict[str, Any]:
     """Derive the Prompt's complete machine structure from authoritative schemas."""
 
     business = _schema_object(business_schema, "weekly_prompt_schema_topology_invalid")
-    host = _schema_object(host_schema, "weekly_prompt_schema_topology_invalid")
+    v2 = host_schema is not None
+    host = _schema_object(
+        host_schema if v2 else wire_schema_or_host,
+        "weekly_prompt_schema_topology_invalid",
+    )
     properties = _schema_object(
         business.get("properties"), "weekly_prompt_schema_topology_invalid"
     )
@@ -258,14 +307,21 @@ def prompt_semantics_from_schemas(
     ):
         raise ValueError("weekly_prompt_schema_topology_invalid")
 
-    return {
-        "schema_version": "weekly_prompt_semantics_v1",
+    result = {
+        "schema_version": (
+            "weekly_prompt_semantics_v2" if v2 else "weekly_prompt_semantics_v1"
+        ),
         "root_allowed_fields": sorted(properties),
         "root_required_fields": sorted(required),
         "day_slots": list(DAY_KEYS),
         "course_variants": variants,
         "forbidden_host_fields": list(HOST_FORBIDDEN_FIELD_ORDER),
     }
+    if v2:
+        result["business_only_constraints"] = business_only_constraints_from_schemas(
+            business, wire_schema_or_host
+        )
+    return result
 
 
 def parse_prompt_semantics(prompt_bytes: bytes) -> dict[str, Any]:
@@ -275,14 +331,32 @@ def parse_prompt_semantics(prompt_bytes: bytes) -> dict[str, Any]:
         prompt = prompt_bytes.decode("utf-8")
     except UnicodeDecodeError as exc:
         raise ValueError("weekly_prompt_semantics_invalid") from exc
-    begin_count = prompt.count(PROMPT_SEMANTICS_BEGIN)
-    end_count = prompt.count(PROMPT_SEMANTICS_END)
-    if begin_count == 0 or end_count == 0:
+    markers = (
+        (
+            PROMPT_SEMANTICS_V1_BEGIN,
+            PROMPT_SEMANTICS_V1_END,
+            "weekly_prompt_semantics_v1",
+        ),
+        (
+            PROMPT_SEMANTICS_V2_BEGIN,
+            PROMPT_SEMANTICS_V2_END,
+            "weekly_prompt_semantics_v2",
+        ),
+    )
+    present = [
+        (begin, end, schema_name)
+        for begin, end, schema_name in markers
+        if prompt.count(begin) or prompt.count(end)
+    ]
+    if not present:
         raise ValueError("weekly_prompt_semantics_missing")
-    if begin_count != 1 or end_count != 1:
+    if len(present) != 1:
         raise ValueError("weekly_prompt_semantics_duplicate")
-    prefix, remainder = prompt.split(PROMPT_SEMANTICS_BEGIN, 1)
-    body, suffix = remainder.split(PROMPT_SEMANTICS_END, 1)
+    begin, end, schema_name = present[0]
+    if prompt.count(begin) != 1 or prompt.count(end) != 1:
+        raise ValueError("weekly_prompt_semantics_duplicate")
+    prefix, remainder = prompt.split(begin, 1)
+    body, suffix = remainder.split(end, 1)
     del prefix, suffix
     if not body.startswith("\n") or not body.endswith("\n"):
         raise ValueError("weekly_prompt_semantics_noncanonical")
@@ -293,9 +367,7 @@ def parse_prompt_semantics(prompt_bytes: bytes) -> dict[str, Any]:
         value = json.loads(line)
     except json.JSONDecodeError as exc:
         raise ValueError("weekly_prompt_semantics_invalid") from exc
-    if not isinstance(value, dict) or validate_payload(
-        value, "weekly_prompt_semantics_v1"
-    ):
+    if not isinstance(value, dict) or validate_payload(value, schema_name):
         raise ValueError("weekly_prompt_semantics_invalid")
     if canonical_json(value) != line:
         raise ValueError("weekly_prompt_semantics_noncanonical")
@@ -303,10 +375,15 @@ def parse_prompt_semantics(prompt_bytes: bytes) -> dict[str, Any]:
 
 
 def require_prompt_schema_semantic_parity(
-    prompt_bytes: bytes, business_schema: object, host_schema: object
+    prompt_bytes: bytes,
+    business_schema: object,
+    wire_schema_or_host: object,
+    host_schema: object | None = None,
 ) -> None:
     parsed = parse_prompt_semantics(prompt_bytes)
-    expected = prompt_semantics_from_schemas(business_schema, host_schema)
+    expected = prompt_semantics_from_schemas(
+        business_schema, wire_schema_or_host, host_schema
+    )
     if parsed != expected:
         raise ValueError("weekly_prompt_schema_semantic_parity_failed")
 
@@ -484,7 +561,7 @@ def validate_weekly_ai_result_v4(
 def load_and_require_repository_schema_parity() -> dict[str, Any]:
     root = Path(__file__).resolve().parents[2] / "_shared/schemas"
     prompt_path = (
-        Path(__file__).resolve().parents[2] / "_shared/prompts/weekly-content-v4-v4.txt"
+        Path(__file__).resolve().parents[2] / "_shared/prompts/weekly-content-v4-v5.txt"
     )
     business = json.loads(
         (root / "weekly_model_decision_v1.schema.json").read_text(encoding="utf-8")
@@ -498,7 +575,9 @@ def load_and_require_repository_schema_parity() -> dict[str, Any]:
         (root / "weekly_ai_result_v4.schema.json").read_text(encoding="utf-8")
     )
     require_wire_schema_parity(business, wire)
-    require_prompt_schema_semantic_parity(prompt_path.read_bytes(), business, host)
+    require_prompt_schema_semantic_parity(
+        prompt_path.read_bytes(), business, wire, host
+    )
     return {
         "business_path": root / "weekly_model_decision_v1.schema.json",
         "wire_path": root / "weekly_model_decision_v1_codex.schema.json",

@@ -54,6 +54,9 @@ FROZEN_PROMPT_TEMPLATE_V3_SHA256 = (
 FROZEN_PROMPT_TEMPLATE_V4_SHA256 = (
     "faae52bcf6a901b63246429f2086a56673435946a64eeaa64044f0962d36ca84"
 )
+FROZEN_PROMPT_TEMPLATE_V5_SHA256 = (
+    "57d494eca34ec921e76d6fedbac2b3de2fb729efb1b4defec892a8fd47f33839"
+)
 EXPECTED_ACTIVITY_PERIOD = {
     "activity_start_date": "2026-08-11",
     "activity_end_date": "2026-08-17",
@@ -153,6 +156,12 @@ def _prompt_template_v4_path() -> Path:
     )
 
 
+def _prompt_template_v5_path() -> Path:
+    return (
+        Path(__file__).resolve().parents[2] / "_shared/prompts/weekly-content-v4-v5.txt"
+    )
+
+
 def _goal_template_path() -> Path:
     return Path(__file__).resolve().parents[3] / "goal.module.md"
 
@@ -167,6 +176,21 @@ def _regular_source_file(path: Path) -> bool:
 
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def require_non_git_ancestry(path: Path) -> None:
+    """Fail closed when a model work path is inside any Git worktree marker."""
+
+    resolved = path.resolve()
+    for ancestor in (resolved, *resolved.parents):
+        marker = ancestor / ".git"
+        try:
+            marker.lstat()
+        except FileNotFoundError:
+            continue
+        except OSError as exc:
+            raise ValueError("weekly_model_work_root_git_check_failed") from exc
+        raise ValueError("weekly_model_work_root_git_forbidden")
 
 
 def require_authoritative_contracts() -> dict[str, Any]:
@@ -269,17 +293,17 @@ def require_authoritative_contracts_v3() -> dict[str, Any]:
 
 
 def require_authoritative_contracts_v4() -> dict[str, Any]:
-    """Return VC-010 contracts with the r19 Schema-derived Prompt."""
+    """Return VC-010 contracts with the r20 business-only Prompt semantics."""
 
     contracts = require_authoritative_contracts_v3()
-    prompt_path = _prompt_template_v4_path()
+    prompt_path = _prompt_template_v5_path()
     if (
         not _regular_source_file(prompt_path)
-        or _sha256(prompt_path) != FROZEN_PROMPT_TEMPLATE_V4_SHA256
+        or _sha256(prompt_path) != FROZEN_PROMPT_TEMPLATE_V5_SHA256
     ):
         raise ValueError("weekly_model_prompt_template_source_drift")
     contracts["prompt_template_path"] = prompt_path
-    contracts["prompt_template_sha256"] = FROZEN_PROMPT_TEMPLATE_V4_SHA256
+    contracts["prompt_template_sha256"] = FROZEN_PROMPT_TEMPLATE_V5_SHA256
     return contracts
 
 

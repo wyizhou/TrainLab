@@ -200,6 +200,134 @@ def test_prompt_and_manifest_drift_still_calls_no_model_or_attempt(
     assert not (root / "weekly-ai-attempt-v3").exists()
 
 
+def test_builder_parity_failure_creates_no_candidate(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    context_path = tmp_path / "context.json"
+    _owner_write(context_path, _context())
+    root = tmp_path / "candidate"
+
+    def fail_contracts() -> dict[str, Any]:
+        raise BUILDER.CandidateV3Error("weekly_prompt_schema_semantic_parity_failed")
+
+    monkeypatch.setattr(BUILDER, "_contracts", fail_contracts)
+    with pytest.raises(
+        BUILDER.CandidateV3Error,
+        match="weekly_prompt_schema_semantic_parity_failed",
+    ):
+        BUILDER.prepare_public_candidate(context_path, root)
+    assert not root.exists()
+
+
+@pytest.mark.parametrize("marker_kind", ["directory", "file"])
+def test_builder_rejects_git_ancestry_before_candidate_creation(
+    tmp_path: Path, marker_kind: str
+) -> None:
+    git_root = tmp_path / "git-root"
+    git_root.mkdir()
+    marker = git_root / ".git"
+    if marker_kind == "directory":
+        marker.mkdir()
+    else:
+        marker.write_text("gitdir: /private/nonexistent\n", encoding="utf-8")
+    context_path = git_root / "context.json"
+    _owner_write(context_path, _context())
+    root = git_root / "candidate"
+    with pytest.raises(BUILDER.CandidateV3Error, match="work_root_git_forbidden"):
+        BUILDER.prepare_public_candidate(context_path, root)
+    assert not root.exists()
+
+
+@pytest.mark.parametrize("marker_kind", ["directory", "file"])
+def test_runner_rejects_git_ancestry_before_pending_or_model(
+    tmp_path: Path, marker_kind: str
+) -> None:
+    root = _candidate(tmp_path)
+    marker = tmp_path / ".git"
+    if marker_kind == "directory":
+        marker.mkdir()
+    else:
+        marker.write_text("gitdir: /private/nonexistent\n", encoding="utf-8")
+    calls = 0
+
+    def fake_run(*_args: object, **_kwargs: object) -> SimpleNamespace:
+        nonlocal calls
+        calls += 1
+        return SimpleNamespace(
+            returncode=0,
+            stdout=canonical_json(_decision()).encode(),
+            stderr=b"",
+        )
+
+    with pytest.raises(ValueError, match="work_root_git_forbidden"):
+        RUNNER.run_weekly_content_v3(root, run_process=fake_run)
+    assert calls == 0
+    assert not (root / "weekly-ai-attempt-v3.pending").exists()
+    assert not (root / "weekly-ai-attempt-v3").exists()
+
+
+def test_synchronized_schema_prompt_drift_calls_no_model_or_attempt(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = _candidate(tmp_path)
+    schema_root = SOURCE / "skills/_shared/schemas"
+    prompt_path = SOURCE / "skills/_shared/prompts/weekly-content-v4-v5.txt"
+    business = json.loads(
+        (schema_root / "weekly_model_decision_v1.schema.json").read_text()
+    )
+    host = json.loads((schema_root / "weekly_ai_result_v4.schema.json").read_text())
+    business["$defs"]["text"]["maxLength"] = 200
+    wire = RUNNER.DECISION.project_wire_schema(business)
+
+    def reject_synchronized_drift() -> dict[str, Any]:
+        RUNNER.DECISION.require_prompt_schema_semantic_parity(
+            prompt_path.read_bytes(), business, wire, host
+        )
+        return {}
+
+    monkeypatch.setattr(
+        RUNNER.DECISION,
+        "load_and_require_repository_schema_parity",
+        reject_synchronized_drift,
+    )
+    calls = 0
+
+    def fake_run(*_args: object, **_kwargs: object) -> SimpleNamespace:
+        nonlocal calls
+        calls += 1
+        return SimpleNamespace(returncode=0, stdout=b"{}", stderr=b"")
+
+    with pytest.raises(ValueError, match="weekly_prompt_schema_semantic_parity"):
+        RUNNER.run_weekly_content_v3(root, run_process=fake_run)
+    assert calls == 0
+    assert not (root / "weekly-ai-attempt-v3.pending").exists()
+    assert not (root / "weekly-ai-attempt-v3").exists()
+
+
+@pytest.mark.parametrize("field", ["technique_notes", "stop_conditions"])
+def test_rest_empty_arrays_are_business_failures_without_final_results(
+    tmp_path: Path, field: str
+) -> None:
+    root = _candidate(tmp_path)
+    value = _decision()
+    rest = value["training_plan"]["days"]["day_4"]
+    assert rest["activity_kind"] == "rest"
+    rest[field] = []
+    receipt = RUNNER.run_weekly_content_v3(
+        root,
+        run_process=lambda *_args, **_kwargs: SimpleNamespace(
+            returncode=0,
+            stdout=canonical_json(value).encode(),
+            stderr=b"",
+        ),
+    )
+    assert receipt["error_code"] == "weekly_model_v3_business_contract_invalid"
+    attempt = root / "weekly-ai-attempt-v3"
+    assert (attempt / "wire-result.json").is_file()
+    assert not (attempt / "ai-result.json").exists()
+    assert not (attempt / "reader-result.json").exists()
+
+
 def test_private_finalizer_has_no_external_result_path() -> None:
     parameters = inspect.signature(BUILDER.finalize_private_candidate).parameters
     assert tuple(parameters) == ("candidate_root",)
@@ -288,9 +416,103 @@ def test_private_runner_accepts_candidate_internal_canary_proof(
             stderr=b"",
         )
 
-    private_receipt = RUNNER.run_weekly_content_v3(private, run_process=fake_run)
+    private_receipt = RUNNER.run_weekly_content_v3(
+        private,
+        expected_canary_proof_sha256=RUNNER.file_sha256(proof_path),
+        run_process=fake_run,
+    )
     assert private_receipt["status"] == "succeeded"
     assert calls == 1
+
+
+def test_private_runner_requires_candidate_external_canary_proof_authority(
+    tmp_path: Path,
+) -> None:
+    canary = _candidate(tmp_path / "canary-source")
+    receipt = RUNNER.run_weekly_content_v3(
+        canary,
+        run_process=lambda *_args, **_kwargs: SimpleNamespace(
+            returncode=0,
+            stdout=canonical_json(_decision()).encode(),
+            stderr=b"",
+        ),
+    )
+    assert receipt["status"] == "succeeded"
+    proof = BUILDER.verified_public_canary_proof(canary)
+    private = _candidate(tmp_path / "private-source")
+    proof_path = private / "canary-proof.json"
+    _owner_write(proof_path, proof)
+    manifest_path = private / "candidate-manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["candidate_kind"] = "private_weekly"
+    manifest["canary_proof_sha256"] = RUNNER.file_sha256(proof_path)
+    _owner_write(manifest_path, manifest)
+    calls = 0
+
+    def fake_run(*_args: object, **_kwargs: object) -> SimpleNamespace:
+        nonlocal calls
+        calls += 1
+        return SimpleNamespace(returncode=0, stdout=b"{}", stderr=b"")
+
+    with pytest.raises(ValueError, match="canary_proof_authority_required"):
+        RUNNER.run_weekly_content_v3(private, run_process=fake_run)
+    assert calls == 0
+    assert not (private / "weekly-ai-attempt-v3.pending").exists()
+    assert not (private / "weekly-ai-attempt-v3").exists()
+
+
+def test_coordinated_canary_proof_and_manifest_rewrite_is_rejected(
+    tmp_path: Path,
+) -> None:
+    canary = _candidate(tmp_path / "canary-source")
+    receipt = RUNNER.run_weekly_content_v3(
+        canary,
+        run_process=lambda *_args, **_kwargs: SimpleNamespace(
+            returncode=0,
+            stdout=canonical_json(_decision()).encode(),
+            stderr=b"",
+        ),
+    )
+    assert receipt["status"] == "succeeded"
+    proof = BUILDER.verified_public_canary_proof(canary)
+    private = _candidate(tmp_path / "private-source")
+    proof_path = private / "canary-proof.json"
+    _owner_write(proof_path, proof)
+    trusted_proof_sha = RUNNER.file_sha256(proof_path)
+    manifest_path = private / "candidate-manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["candidate_kind"] = "private_weekly"
+    manifest["canary_proof_sha256"] = trusted_proof_sha
+    _owner_write(manifest_path, manifest)
+
+    forged = dict(proof)
+    for field in (
+        "canary_manifest_sha256",
+        "canary_receipt_sha256",
+        "wire_result_sha256",
+        "ai_result_sha256",
+        "reader_result_sha256",
+    ):
+        forged[field] = "f" * 64
+    _owner_write(proof_path, forged)
+    manifest["canary_proof_sha256"] = RUNNER.file_sha256(proof_path)
+    _owner_write(manifest_path, manifest)
+    calls = 0
+
+    def fake_run(*_args: object, **_kwargs: object) -> SimpleNamespace:
+        nonlocal calls
+        calls += 1
+        return SimpleNamespace(returncode=0, stdout=b"{}", stderr=b"")
+
+    with pytest.raises(ValueError, match="canary_proof_authority_mismatch"):
+        RUNNER.run_weekly_content_v3(
+            private,
+            expected_canary_proof_sha256=trusted_proof_sha,
+            run_process=fake_run,
+        )
+    assert calls == 0
+    assert not (private / "weekly-ai-attempt-v3.pending").exists()
+    assert not (private / "weekly-ai-attempt-v3").exists()
 
 
 def test_business_text_change_cannot_change_host_dates(tmp_path: Path) -> None:

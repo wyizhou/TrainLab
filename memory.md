@@ -64,7 +64,7 @@
 
 - 迁移恢复与 M11 r20 前置收口正在按严格串行方案执行：
   `docs/exec-plans/active/ADHOC-0017-workspace-migration-recovery.md`。
-- M11 content-first v4 的r19公开canary失败已由全新Failure Analyst归因为`IMPLEMENTATION_DEFECT`、`safe_auto_fix=true`、`contract_change_required=false`：wire允许空数组，但业务Schema继续要求rest的`technique_notes`/`stop_conditions`非空。当前在VC-010内实施r20通用Prompt约束派生；未自动重试，私人周报调用仍为0，正式state不变：
+- M11 content-first v4 的r19公开canary失败已由全新Failure Analyst归因为`IMPLEMENTATION_DEFECT`、`safe_auto_fix=true`、`contract_change_required=false`。r20的53条Prompt业务限制、非Gitwork root和Candidate外canary proof authority均已闭合，932项门、全新Code Validator r3及最终Integration Validator均PASS。当前停在申请一次全新公开canary授权并升级合同的门前；未建立Candidate或调用模型，私人周报调用仍为0，正式state不变：
   `docs/exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md`。
 
 ## 最近完成计划

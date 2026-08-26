@@ -1,6 +1,6 @@
 # 执行计划：M11 v4 内容优先日报、技术周报与固定周计划
 
-- 状态：`active`
+- 状态：`validated`
 - 负责人：主协调 Agent
 - Roadmap ID：`M11-0016..M11-0019`
 - 阶段/子项目：`M11/email-presentation`
@@ -432,6 +432,10 @@ Host assembler和Reader合同SHA。Runner必须保存`wire-result.json`，随后
 | 32 | Failure Analyst / M11-v4-r19 Prompt parity | 高：区分Prompt语义parity缺口的实现、合同或验证责任 | high | high | r18最终验证后进入DIAGNOSIS_PENDING；r19实施前必须正式归因 | available | 只读 | VC-010、A-018/A-019、当前Prompt/Schema/parity实现与失败特征 | completed：M11-V4-F08=`IMPLEMENTATION_DEFECT`、`safe_auto_fix=true`、`contract_change_required=false`、confidence=0.995；允许在VC-010内实施一次针对性修正 |
 | 33 | Code Validator / M11-v4-r19 VC-010 | 高：Prompt/business/wire/Host三层parity与完整模型前门 | high | high | 公开canary前必须独立复验当前快照 | available | 只读 | 仅VC-010、A-018/A-019、适用规则和当前仓库结果 | PASS：909 tests、39项专项、Ruff/format/mypy、AST/Schema/Markdown/隐私/diff、正式state与零调用均闭合；无blocking finding |
 | 34 | Failure Analyst / M11-v4-r20 | 高：wire兼容投影遗漏业务限制的公开canary失败归因 | high | high | 当前新失败必须在VC-010内先区分实现、合同、验证和环境责任 | available | 只读 | 仅VC-010、A-018/A-019、适用规则、当前代码和可核验失败记录 | completed：`M11-R19-CANARY-REST-NONEMPTY-001`=`IMPLEMENTATION_DEFECT`、`safe_auto_fix=true`、`contract_change_required=false`、confidence=0.97 |
+| 35 | Code Validator / M11-v4-r20 VC-010 | 高：business/wire/Prompt/Host统一parity、旧Prompt不可变与零模型前副作用 | high | high | 新模型授权门前的高风险代码终验 | available | 只读 | 仅VC-010、A-018/A-019、适用规则和当前仓库结果 | FAIL：`AC-009/INV-006/TM-006`；模型work root可位于Git ancestry内但Runner仍无条件skip；其余适用标准和门PASS |
+| 36 | Code Validator / M11-v4-r20-r2 VC-010 | 高：非Gitwork root、business-only parity与完整模型前门 | high | high | 单一有效FAIL定向修复后必须由另一全新Agent独立复验 | available | 只读 | 仅VC-010、A-018/A-019、适用规则和当前仓库结果 | FAIL：`AC-005/015、TM-009、GATE-004`；Candidate内proof与manifest可协同改写后绕过真实canary闭合；其余适用标准和门PASS |
+| 37 | Code Validator / M11-v4-r20-r3 VC-010 | 高：Candidate外canary authority、非Gitwork root与全部模型前门 | high | high | 新失败特征定向修复后必须由另一全新Agent独立复验 | available | 只读 | 仅VC-010、A-018/A-019、适用规则和当前仓库结果 | PASS：932 tests、全部静态门与AC/INV/TM闭合；无blocking finding |
+| 38 | Integration Validator / ADHOC-0017+M11 | 高：迁移恢复与M11 r20组合结果 | high | high | 最终远端交付前必须独立复核迁移/state/r20/隐私组合边界 | available | 只读 | 仅VC-001+VC-010、适用规则和当前仓库结果 | PASS：932 tests、正式state、r20对抗矩阵、Git/隐私和零调用全部闭合；无blocking/unknown |
 
 Validator 只按冻结合同验收，不得临时扩张威胁模型。首次 FAIL 只汇总一个修正批次并交全新
 最终 Validator；最终仍 FAIL/INCONCLUSIVE 时停止，不循环补丁或执行真实模型调用。
@@ -458,21 +462,21 @@ Validator 只按冻结合同验收，不得临时扩张威胁模型。首次 FAI
 | M11-0018-04 v4-r17命令合同修正与原闭环续跑 | blocked | 命令修正与Validator均PASS；唯一模型调用已返回，wire Schema通过但业务合同因period、课程phase集和事实bpm误判共8项失败，依冻结规则停止且不重试 |
 | M11-0018-05 v4-r18三层同构修正与公开canary | blocked | 首次3项缺口已修复且896 tests/静态门PASS；Final Code Validator发现Prompt与Schema缺少自动语义parity，绑定AC-013/GATE-004；依冻结停止规则不再修补或调用模型 |
 | M11-0018-06 v4-r19 Prompt语义同构闭包与原流程续跑 | blocked | Code Validator PASS后唯一公开canary完成1次模型调用；wire通过，但day_3/day_6休息课的`technique_notes=[]`违反业务Schema `minItems:1`，终态`model_failed`；依计划不重试，私人调用0 |
-| M11-0018-07 v4-r20 business-only Prompt语义闭包 | active | Failure Analyst三条件满足；VC-010不变，先测试后从业务Schema自动派生wire删除但业务保留的限制；本轮模型/外部调用0 |
+| M11-0018-07 v4-r20 business-only Prompt语义闭包 | validated | Prompt/Schema、非Gitwork root和Candidate外canary proof authority闭合；932项门及全新Code Validator r3 PASS |
 | M11-0019-01 三类最终内容/架构/数据验证 | pending | 全部PASS |
 | M11-0019-02 交付预览与OpenDesign内容包，等待用户确认 | pending | 不执行高保真或邮件 |
 
 ## 当前检查点
 
-- 当前 Loop：M11 v4-r20 business-only Prompt语义闭包实施。
-- 最近完成：全新Failure Analyst返回`IMPLEMENTATION_DEFECT`、`safe_auto_fix=true`、`contract_change_required=false`，三项准入条件全部满足。
-- 当前焦点：测试先行实现通用Schema差分约束派生与Prompt parity；保留旧Prompt字节/SHA、业务Schema、Host/Reader和历史失败证据不变。
-- 下一动作：先建立全部删除关键词、空数组、同步漂移和零模型前副作用红灯，再实施Prompt v5与语义v2；完整门后交全新Code Validator。
-- 阻塞项：wire允许移除`minItems`，而当前Prompt语义块未表达该业务层非空数组约束；模型合理地产生空数组后被最终业务校验拒绝。
+- 当前 Loop：新公开canary人工授权门。
+- 最近完成：全新Code Validator r3与最终Integration Validator均PASS；932 tests、正式state、r20对抗矩阵、Git/隐私和零调用全部闭合。
+- 当前焦点：r20代码阶段已validated，本轮不建立Candidate、不调用模型；旧VC-010的公开canary授权已耗尽。
+- 下一动作：仅允许申请一次全新公开canary的明确人工授权并升级合同；批准前私人周报调用保持0。
+- 阻塞项：无。
 - blocker_type：`none`
 - 诊断状态：`completed`（M11-R19-CANARY-REST-NONEMPTY-001）
-- 已变更文件：本计划、M11 Roadmap/活动指针、v4 Schema/共享健康验证器、Candidate Builder、Codex Runner、内容合同测试及 source 运行/Skill说明。
-- 待验证项：r20定向/完整代码门与全新Code Validator；新公开canary和私人周报均不在本轮调用范围。
+- 已变更文件：本计划、M11 Roadmap/活动指针、Prompt v5、语义v2 Schema、Prompt/business/wire/Host parity、Candidate Builder/Runner和r20合同/集成测试。
+- 待验证项：无代码门；新公开canary必须另获人工授权并升级合同，私人周报仍不在本轮调用范围。
 
 ## 决策与发现
 
@@ -523,7 +527,7 @@ Validator 只按冻结合同验收，不得临时扩张威胁模型。首次 FAI
 - 逐字冻结合同版本：`VC-010`。
 - 中性交接：仅冻结合同、A-018/A-019、适用规则和当前仓库结果；不提供历史 Validator verdict 或实施者辩护。
 - r19结果：Code Validator按VC-010 PASS；随后唯一公开canary wire通过但业务Schema因rest空`technique_notes`阻断。
-- r20当前结果：`pending`——Failure Analyst三条件已满足；新实现尚未交独立Code Validator，r19历史PASS不得替代r20裁决。
+- r20当前结果：`active`——首轮Code Validator有效FAIL仅绑定`AC-009/INV-006/TM-006`；其余适用标准PASS，当前只修该交付边界。
 
 ## 集成级独立验证
 
@@ -601,3 +605,10 @@ Validator 只按冻结合同验收，不得临时扩张威胁模型。首次 FAI
 | 2026-08-25 / r19-diagnosis-and-gates-57 | Failure Analyst确认M11-V4-F08可安全自动修复；v4 Prompt语义parity实现、909 tests/静态门及全新Code Validator均PASS，随后执行唯一公开canary | canary wire通过但业务层返回`training_plan.days.day_3:anyOf`、`day_6:anyOf`；两节rest的`technique_notes=[]`违反业务Schema `minItems:1`。终态receipt SHA `a9c02a82…a760812`，模型1、私人模型0、Provider/外部调用0，正式state不变 | 依固定停止规则转blocked，不重试、不建立私人Candidate；等待用户批准是否把wire不可表达的业务约束纳入下一版自动Prompt语义 |
 | 2026-08-26 / r20-diagnosis-pending-58 | 用户批准迁移收口与r20串行方案；Migration/State批次已由全新Validator PASS并推送 | 原r19 Candidate迁移后不可用，只保留已记录receipt SHA；新失败尚未正式归因 | 统一blocked/DIAGNOSIS_PENDING/pending；交全新只读high/high Failure Analyst，三条件同时满足才实施r20 |
 | 2026-08-26 / r20-diagnosis-pass-59 | 全新只读high/high Failure Analyst完成固定归因 | `M11-R19-CANARY-REST-NONEMPTY-001`为实现缺陷，可安全自动修复且无需升级VC-010；历史Candidate不可用不影响窄归因 | 恢复active；按测试先行实施通用business-only constraints，模型与外部调用保持0 |
+| 2026-08-26 / r20-gates-pass-60 | 旧实现6项红灯后完成通用Schema差分、Prompt v5/语义v2、Builder创建前parity和公共合成fixture；266项M11与926项完整测试PASS | 53条实际业务限制与八类删除关键词闭合；旧Prompt v3/v4 SHA不变；Ruff/format/mypy/AST/Schema/Markdown/隐私/state/diff全PASS | 状态转validating；交全新只读high/high Code Validator，模型与外部调用0 |
+| 2026-08-26 / r20-code-validator-fail-61 | 全新Code Validator独立完成926 tests与完整门并返回FAIL | Prompt/Schema、旧SHA、53条/八类约束均PASS；work root可在Git ancestry内但Runner仍使用`--skip-git-repo-check`，绑定AC-009/INV-006/TM-006 | 不触发诊断阈值；仅测试先行修复非Git前检，完成后交另一全新Code Validator |
+| 2026-08-26 / r20-non-git-gates-pass-62 | `.git`目录与worktree文件标记4项旧实现红灯后，在Builder/Candidate与Runner pending/model之前共享拒绝Git ancestry | 275项M11、930项完整测试、Ruff/format/mypy/compile、103 JSON/88 Schema、6 metadata、81 Markdown/23链接、隐私/state/diff门PASS | 状态保持validating；交另一全新只读high/high Code Validator，模型与外部调用0 |
+| 2026-08-26 / r20-code-validator-r2-fail-63 | 全新Code Validator r2独立完成41项专项、930项完整测试和全部门 | 非Git、53条约束及命令合同PASS；Candidate内canary proof与manifest可协同改写后进入私人模型，绑定AC-005/015、TM-009、GATE-004 | 新失败特征未触发诊断门；仅增加Candidate外proof SHA authority前检，完成后交另一全新Code Validator |
+| 2026-08-26 / r20-canary-authority-gates-pass-64 | 私人Runner新增Candidate外精确proof SHA；缺失authority与proof/manifest协同改写两项旧实现红灯后转绿 | 277项M11、932项完整测试、Ruff/format/mypy/compile、103 JSON/88 Schema、6 metadata、81 Markdown/23链接、隐私/state/diff门PASS | 状态转validating；交全新只读high/high Code Validator r3，模型与外部调用0 |
+| 2026-08-26 / r20-code-validator-r3-pass-65 | 全新Code Validator r3按VC-010独立返回PASS | 最终932 tests；非Git、53条约束、Candidate外canary authority、Prompt/business/wire/Host、正式state与零调用全部闭合；无blocking finding | M11 r20转validated；进入迁移+M11最终组合Integration Validator |
+| 2026-08-26 / r20-integration-pass-66 | 全新Integration Validator按VC-001+VC-010独立返回PASS | 932 tests、正式state、r20对抗矩阵、Git/隐私与零模型/外部调用全部闭合；无blocking或unknown | 保持validated并停在全新公开canary人工授权/合同升级门前；不建立Candidate |

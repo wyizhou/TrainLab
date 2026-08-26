@@ -1,6 +1,6 @@
 # 执行计划：迁移工作区保护、状态可迁移性与 M11 r20 收口
 
-- 状态：`validating`
+- 状态：`integrating`
 - 负责人：主协调 Agent
 - Roadmap ID：`ADHOC-0017`
 - 阶段/子项目：`不适用 / M11 前置恢复`
@@ -119,8 +119,10 @@ M11 v4-r20 的 business-only Prompt 语义闭包。最终停在新公开 canary 
 | 2 | Migration/State Validator / ADHOC-0017-r2 | VC-001 | 高：私人状态与跨机完整性 | high | high | 首轮独立性协议失效，按同一合同重新独立验证 | available | 只读 | 固定 Validator 输出；状态批次 PASS 门 | FAIL：仅 AC-001/GATE-001/TM-001，7 个公开状态批次结果尚未提交推送；其余适用标准 PASS |
 | 3 | Migration/State Validator / ADHOC-0017-r3 | VC-001 | 高：私人状态与跨机完整性 | high | high | 修复单一交付缺口后重新独立验证 | available | 只读 | 固定 Validator 输出；状态批次 PASS 门 | PASS：914 tests、完整静态门、正式state/指纹/隐私、Git clean且HEAD=origin；无blocking finding |
 | 4 | Failure Analyst / M11-v4-r20 | VC-010 | 高：新模型业务失败归因 | high | high | A-019 强制归因 | available | 只读 | 固定 Failure Analyst 输出；三条件门 | completed：`IMPLEMENTATION_DEFECT`、`safe_auto_fix=true`、`contract_change_required=false`、confidence=0.97 |
-| 5 | M11 Code Validator / M11-v4-r20 | VC-010 | 高：Prompt/Schema/模型前门 | high | high | 高风险代码终验 | available | 只读 | 固定 Validator 输出；M11 PASS 门 | pending |
-| 6 | Integration Validator / ADHOC-0017+M11 | VC-001 + VC-010 | 高：迁移与M11组合结果 | high | high | 最终整体终验 | available | 只读 | 固定 Validator 输出；完整门与零外部动作 PASS | pending |
+| 5 | M11 Code Validator / M11-v4-r20 | VC-010 | 高：Prompt/Schema/模型前门 | high | high | 高风险代码终验 | available | 只读 | 固定 Validator 输出；M11 PASS 门 | FAIL：AC-009/INV-006/TM-006，work root非Git边界未强制；其余适用标准PASS |
+| 6 | M11 Code Validator / M11-v4-r20-r2 | VC-010 | 高：非Git工作目录前检与Prompt/Schema模型前门 | high | high | 单一有效FAIL修复后必须由全新Agent重新独立裁定 | available | 只读 | 固定 Validator 输出；M11 PASS 门 | FAIL：AC-005/015、TM-009、GATE-004；Candidate内proof与manifest可协同改写后进入私人调用 |
+| 7 | M11 Code Validator / M11-v4-r20-r3 | VC-010 | 高：独立canary authority与全部模型前门 | high | high | 新失败特征定向修复后必须由另一全新Agent复验 | available | 只读 | 固定 Validator 输出；M11 PASS 门 | PASS：932 tests、全部静态门及AC/INV/TM闭合；无blocking finding |
+| 8 | Integration Validator / ADHOC-0017+M11 | VC-001 + VC-010 | 高：迁移与M11组合结果 | high | high | 最终整体终验 | available | 只读 | 固定 Validator 输出；完整门与零外部动作 PASS | dispatched |
 
 ## 工作分解
 
@@ -131,20 +133,20 @@ M11 v4-r20 的 business-only Prompt 语义闭包。最终停在新公开 canary 
 | 3. 测试先行统一 Finder 元数据和内容指纹合同 | done | 4 个新行为节点红→绿；3 个 Finder 文件按原 SHA 移入 owner-only Git ignored 隔离归档；正式 state PASS，内容指纹 `673f01dc…f5c50d`。 |
 | 4. Migration/State Validator 与批次提交推送 | done | 全新r3 Validator PASS；914 tests、完整静态门、正式state/指纹/隐私、Git clean与远端同步闭合。 |
 | 5. M11 新失败 Failure Analyst | done | 固定三条件全部满足；VC-010保持冻结，无需合同升级。 |
-| 6. 测试先行实施 r20 通用约束派生 | in_progress | 先建立全部删除关键词、空数组、漂移、旧SHA和零副作用回归，再实施Prompt v5/语义v2。 |
-| 7. M11 Code Validator、集成 Validator、回写与推送 | pending | 待完整门。 |
+| 6. 测试先行实施 r20 通用约束派生 | done | 旧实现6项红灯后转绿；266项M11、926项完整测试及全部静态/Schema/Markdown/隐私/state门PASS。 |
+| 7. M11 Code Validator、集成 Validator、回写与推送 | in_progress | Code Validator r3与最终Integration Validator均PASS；932 tests及全部门闭合，正在执行明确清单提交推送。 |
 
 ## 当前检查点
 
-- 当前 Loop：M11 r20测试先行业务约束派生。
-- 最近完成：全新Failure Analyst确认实现缺陷、安全自动修复且无需升级VC-010，三条件全部满足。
-- 当前焦点：从business/wire Schema自动派生版本化business-only constraints，并由Prompt和共享parity入口闭合。
-- 下一动作：定向红灯后实施Prompt v5/语义v2；完整门和全新Code Validator PASS前不建立Candidate或调用模型。
+- 当前 Loop：最终明确清单提交与远端同步。
+- 最近完成：全新Integration Validator按VC-001+VC-010返回PASS；迁移快照、932 tests、正式state、r20对抗矩阵、Git/隐私及零外部调用闭合。
+- 当前焦点：回写真实终验事实，仅暂存已验证公开文件并推送恢复分支。
+- 下一动作：核对远端精确SHA后归档本计划；M11停在申请一次新公开canary授权门前。
 - 阻塞项：无。
 - blocker_type：`none`
 - 诊断状态：`not_triggered`
-- 已变更文件：`source/skills/_shared/state_fingerprint.py`、状态验证/Candidate 指纹脚本、3 份状态合同测试；3 个 Finder 文件已移入 ignored owner-only 隔离目录。
-- 待验证项：Migration/State Validator、M11 Failure Analyst、r20 与最终两级 Validator。
+- 已变更文件：r20 Prompt/Schema/parity、Candidate Builder/Runner、合同/集成测试及治理文件；全部为已验证公开普通文件，私人路径命中0。
+- 待验证项：最终明确清单提交、推送和远端SHA核对。
 
 ## Validator 结论处理
 
@@ -153,8 +155,8 @@ M11 v4-r20 的 business-only Prompt 语义闭包。最终停在新公开 canary 
 | migration-state-r1 | fresh high/high read-only | VC-001 | INCONCLUSIVE | 独立性协议失效；报告不得产生可执行 FAIL 或 PASS | 不修改实现、不采用报告观察；以同一冻结合同交全新 Validator | 否 | Migration/State Validator r2 |
 | migration-state-r2 | fresh high/high read-only | VC-001 | FAIL | AC-001/GATE-001/TM-001：5 tracked + 2 untracked、0 staged；其余适用标准和全部门 PASS | 精确隐私复核后按明确清单提交并推送，不修改实现 | 否 | Migration/State Validator r3 |
 | migration-state-r3 | fresh high/high read-only | VC-001 | PASS | AC-001～004/007、INV、TM、GATE-001～005全部适用项闭合；无blocking finding | 状态批次完成，进入M11归因 | 否 | M11 Failure Analyst |
-| m11-r20 | pending | VC-010 | pending | pending | PASS 后进入整体终验 | 按 A-019 | Integration Validator |
-| integration | pending | VC-001+VC-010 | pending | pending | PASS 后回写并停在 canary 门前 | 否 | 无 |
+| m11-r20 | fresh high/high read-only r3 | VC-010 | PASS | 932 tests、全部AC/INV/TM与模型前门闭合；无blocking finding | 转validated并进入整体终验 | 否 | Integration Validator |
+| integration | fresh high/high read-only | VC-001+VC-010 | PASS | 迁移快照、正式state、r20对抗矩阵、Git/隐私与零调用全部闭合；无blocking/unknown | 回写并停在canary授权门前 | 否 | 无 |
 
 ## 失败尝试与诊断
 
@@ -181,14 +183,14 @@ Validator 必须返回 `contract_version`、`overall_verdict`、`criterion_resul
 
 - 逐字冻结合同版本：`VC-001`；M11 子批次使用 `VC-010`。
 - 中性交接：仅冻结合同、适用规则和当前仓库结果。
-- `overall_verdict`：`pending`
+- `overall_verdict`：`PASS`
 
 ## 集成级独立验证
 
 - 集成范围：迁移/状态批次与 M11 r20 串行组合结果。
 - 逐字冻结合同版本：`VC-001 + VC-010`。
 - 中性交接：仅冻结合同、适用规则和当前仓库结果。
-- `overall_verdict`：`pending`
+- `overall_verdict`：`PASS`
 
 ## PLANS 回写清单
 
@@ -212,3 +214,7 @@ Validator 必须返回 `contract_version`、`overall_verdict`、`criterion_resul
 | 2026-08-26 / migration-delivery-fixed | 7 个公开文件经精确清单、凭据/私人路径与 cached diff 检查后提交为 `58815ff` 并推送；HEAD 与远端分支 SHA 一致 | 单一交付缺口已消除；实现和正式 state 未改变 | 交第三个全新只读 high/high Validator 按同一 VC-001 复核 |
 | 2026-08-26 / migration-state-pass | 第三轮全新Validator按VC-001返回PASS；914 tests、静态门、正式state、portable fingerprint、隐私与Git同步全部闭合 | 原28项历史计数无法从现存对象严格还原，仅列advisory，不影响当前可达性与隐私结论 | 进入M11状态统一与全新Failure Analyst归因门 |
 | 2026-08-26 / m11-r20-diagnosis-pass | 全新只读high/high Failure Analyst按VC-010完成固定归因 | `IMPLEMENTATION_DEFECT`、`safe_auto_fix=true`、`contract_change_required=false`；可在原合同内一次定向修复 | 测试先行实施通用business-only constraints；模型和外部调用保持0 |
+| 2026-08-26 / m11-r20-gates-pass | 旧实现6项准确红灯后完成Prompt v5/语义v2、通用约束派生、Builder/Runner共享parity和公共fixture | 266项M11、926项完整测试、静态/Schema/Markdown/隐私/state/diff门PASS；旧Prompt SHA不变 | 交全新只读high/high M11 Code Validator；PASS后进入组合终验 |
+| 2026-08-26 / m11-r20-validator-fail | 全新Code Validator完成926 tests与完整门并返回FAIL | business-only闭包PASS；唯一阻塞绑定AC-009/INV-006/TM-006，非Gitwork root未被强制证明 | 一次针对性测试先行修复后交另一全新Code Validator |
+| 2026-08-26 / m11-r20-code-pass | 非Git前检与Candidate外canary authority两轮定向修复闭合；全新Code Validator r3返回PASS | 932 tests与全部静态门PASS，53条业务限制、Git隔离、proof authority和零调用均闭合 | 转validated并交最终Integration Validator |
+| 2026-08-26 / integration-pass | 全新Integration Validator按VC-001+VC-010独立返回PASS | 迁移快照、正式state内容指纹、r20对抗矩阵、Git/隐私和零模型/外部调用无blocking或unknown | 明确清单提交推送，随后归档ADHOC；M11停在新canary授权门前 |

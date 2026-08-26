@@ -85,6 +85,13 @@ def _contracts() -> dict[str, Any]:
     return contracts
 
 
+def _require_non_git_candidate_parent(candidate_root: Path) -> None:
+    try:
+        MODEL_CONTEXT.require_non_git_ancestry(candidate_root.parent)
+    except ValueError as exc:
+        raise CandidateV3Error(str(exc)) from exc
+
+
 def _remove_new_work_root(path: Path) -> None:
     """Remove only a work root created during this same Candidate build."""
 
@@ -96,12 +103,12 @@ def _model_inputs(
     candidate_root: Path,
     context: dict[str, Any],
     *,
+    contracts: dict[str, Any],
     candidate_kind: str,
     source_manifest_sha256: str | None,
     parent_candidate: str | None,
     private_values: dict[str, Any],
 ) -> dict[str, Any]:
-    contracts = _contracts()
     try:
         validated_context = MODEL_CONTEXT.require_model_context_v2(context)
     except ValueError as exc:
@@ -168,6 +175,8 @@ def _model_inputs(
 def prepare_public_candidate(
     context_path: Path, candidate_root: Path
 ) -> dict[str, Any]:
+    contracts = _contracts()
+    _require_non_git_candidate_parent(candidate_root)
     if candidate_root.exists():
         raise CandidateV3Error("m11_v4_v3_candidate_exists")
     LEGACY._owner_directory(candidate_root)
@@ -180,6 +189,7 @@ def prepare_public_candidate(
     return _model_inputs(
         candidate_root,
         context,
+        contracts=contracts,
         candidate_kind="public_canary",
         source_manifest_sha256=None,
         parent_candidate=None,
@@ -242,6 +252,8 @@ def verified_public_canary_proof(canary_candidate: Path) -> dict[str, Any]:
 def prepare_private_candidate(
     parent_candidate: Path, canary_candidate: Path, candidate_root: Path
 ) -> dict[str, Any]:
+    contracts = _contracts()
+    _require_non_git_candidate_parent(candidate_root)
     canary_proof = verified_public_canary_proof(canary_candidate)
     legacy_manifest = LEGACY.prepare_candidate(parent_candidate, candidate_root)
     legacy_manifest_path = candidate_root / "candidate-manifest.json"
@@ -255,6 +267,7 @@ def prepare_private_candidate(
     return _model_inputs(
         candidate_root,
         context,
+        contracts=contracts,
         candidate_kind="private_weekly",
         source_manifest_sha256=source_manifest_sha256,
         parent_candidate=str(parent_candidate),

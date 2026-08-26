@@ -133,7 +133,11 @@ def _terminal_replay(final_root: Path) -> dict[str, Any] | None:
     return {**receipt, "reused": True}
 
 
-def _preflight(candidate_root: Path) -> tuple[dict[str, Any], Path, dict[str, Any]]:
+def _preflight(
+    candidate_root: Path,
+    *,
+    expected_canary_proof_sha256: str | None,
+) -> tuple[dict[str, Any], Path, dict[str, Any]]:
     manifest = _validated_manifest(candidate_root / "candidate-manifest.json")
     if (
         manifest["status"] != "prepared"
@@ -165,14 +169,21 @@ def _preflight(candidate_root: Path) -> tuple[dict[str, Any], Path, dict[str, An
         raise ValueError("weekly_model_v3_authoritative_contract_drift")
     proof_path = candidate_root / "canary-proof.json"
     if manifest["candidate_kind"] == "public_canary":
+        if expected_canary_proof_sha256 is not None:
+            raise ValueError("weekly_model_v3_canary_proof_authority_unexpected")
         if manifest["canary_proof_sha256"] is not None or proof_path.exists():
             raise ValueError("weekly_model_v3_canary_proof_unexpected")
     else:
         if manifest["canary_proof_sha256"] is None or not proof_path.exists():
             raise ValueError("weekly_model_v3_canary_proof_missing")
         _owner_file(proof_path)
-        if file_sha256(proof_path) != manifest["canary_proof_sha256"]:
+        proof_sha256 = file_sha256(proof_path)
+        if proof_sha256 != manifest["canary_proof_sha256"]:
             raise ValueError("weekly_model_v3_canary_proof_drift")
+        if expected_canary_proof_sha256 is None:
+            raise ValueError("weekly_model_v3_canary_proof_authority_required")
+        if proof_sha256 != expected_canary_proof_sha256:
+            raise ValueError("weekly_model_v3_canary_proof_authority_mismatch")
         proof = json.loads(proof_path.read_text(encoding="utf-8"))
         if validate_payload(proof, "m11_v4_public_canary_proof_v1") or (
             proof["status"] != "succeeded"
@@ -182,6 +193,7 @@ def _preflight(candidate_root: Path) -> tuple[dict[str, Any], Path, dict[str, An
         ):
             raise ValueError("weekly_model_v3_canary_proof_invalid")
     work_root = Path(manifest["ai_work_root"]).resolve()
+    MODEL_CONTEXT.require_non_git_ancestry(work_root)
     resolved_candidate = candidate_root.resolve()
     if (
         work_root == resolved_candidate
@@ -229,6 +241,7 @@ def _preflight(candidate_root: Path) -> tuple[dict[str, Any], Path, dict[str, An
 def run_weekly_content_v3(
     candidate_root: Path,
     *,
+    expected_canary_proof_sha256: str | None = None,
     executable: str = "codex",
     run_process: Callable[..., Any] = subprocess.run,
 ) -> dict[str, Any]:
@@ -242,7 +255,10 @@ def run_weekly_content_v3(
     pending_root = candidate_root / "weekly-ai-attempt-v3.pending"
     if pending_root.exists() or final_root.exists():
         raise ValueError("weekly_model_v3_attempt_already_started")
-    manifest, work_root, context = _preflight(candidate_root)
+    manifest, work_root, context = _preflight(
+        candidate_root,
+        expected_canary_proof_sha256=expected_canary_proof_sha256,
+    )
     manifest_path = candidate_root / "candidate-manifest.json"
     prompt_path = work_root / "prompt.txt"
     wire_path = work_root / "weekly_model_decision_v1_codex.schema.json"
@@ -392,11 +408,14 @@ def run_weekly_content_v3(
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--candidate-root", type=Path, required=True)
+    parser.add_argument("--expected-canary-proof-sha256")
     parser.add_argument("--codex-executable", default="codex")
     args = parser.parse_args()
     try:
         result = run_weekly_content_v3(
-            args.candidate_root, executable=args.codex_executable
+            args.candidate_root,
+            expected_canary_proof_sha256=args.expected_canary_proof_sha256,
+            executable=args.codex_executable,
         )
     except (ValueError, OSError, json.JSONDecodeError) as exc:
         print(json.dumps({"status": "blocked", "error_code": str(exc)}, sort_keys=True))

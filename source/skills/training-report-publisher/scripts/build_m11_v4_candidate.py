@@ -710,6 +710,10 @@ def _bounded_model_context(
 
 
 def _separate_model_work_root(candidate_root: Path) -> Path:
+    try:
+        MODEL_CONTEXT.require_non_git_ancestry(candidate_root.parent)
+    except ValueError as exc:
+        raise CandidateV4Error(str(exc)) from exc
     name = tempfile.mkdtemp(prefix="trainlab-m11-v4-model-", dir=candidate_root.parent)
     work_root = Path(name)
     work_root.chmod(0o700)
@@ -727,6 +731,10 @@ def _separate_model_work_root(candidate_root: Path) -> Path:
 def prepare_candidate(parent_candidate: Path, candidate_root: Path) -> dict[str, Any]:
     try:
         authoritative_contracts = MODEL_CONTEXT.require_authoritative_contracts()
+    except ValueError as exc:
+        raise CandidateV4Error(str(exc)) from exc
+    try:
+        MODEL_CONTEXT.require_non_git_ancestry(candidate_root.parent)
     except ValueError as exc:
         raise CandidateV4Error(str(exc)) from exc
     if candidate_root.exists():

@@ -8,7 +8,9 @@
 - 收敛 M11 content-first v4 的模型输出合同：模型只输出七日决策槽位，Host确定性注入周期、
   日期和成功状态；跑步/攀岩课程使用四个必填步骤对象，休息仅使用检查清单。业务Schema确定性
   投影为Structured Outputs wire；新增由业务/Host Schema确定性派生的Prompt规范语义块，自动
-  校验根字段、七个槽位、课程类型、步骤和Host字段三层同构。历史RHR及活动平均/最高心率仅由
+  校验根字段、七个槽位、课程类型、步骤和Host字段三层同构，并把wire删除的53条业务限制稳定
+  绑定到Prompt。模型工作目录强制位于非Git祖先，私人调用另需Candidate外canary proof SHA。
+  历史RHR及活动平均/最高心率仅由
   Reader从已验证证据展示；新增Candidate/intent/receipt v3和只接受Candidate内结果的Finalizer，
   不改变旧失败证据。
 - 将根开发 Harness 从 agentForge `v0.4.2` 三方适配到 `v0.4.4`：新增每任务冻结验证合同、
