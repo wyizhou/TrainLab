@@ -163,6 +163,47 @@ def test_weight_parser_uses_exact_date_and_normalizes_grams(tmp_path: Path) -> N
     assert metrics["unit"] == "kg"
 
 
+def test_vo2_parser_uses_only_the_expected_observation_date(tmp_path: Path) -> None:
+    module_spec = importlib.util.spec_from_file_location(
+        "trainlab_parse_vo2",
+        SOURCE / "skills/training-coach/scripts/parse_raw.py",
+    )
+    assert module_spec and module_spec.loader
+    module = importlib.util.module_from_spec(module_spec)
+    module_spec.loader.exec_module(module)
+    path = tmp_path / ("20260810-max_metrics-" + "a" * 64 + ".json")
+    path.write_text(
+        json.dumps(
+            [
+                {
+                    "generic": {
+                        "calendarDate": "2026-08-09",
+                        "vo2MaxPreciseValue": 62.0,
+                    }
+                },
+                {
+                    "generic": {
+                        "calendarDate": "2026-08-10",
+                        "vo2MaxPreciseValue": 51.0,
+                    }
+                },
+            ]
+        ),
+        encoding="utf-8",
+    )
+    metrics = module.parse_evidence(path)["metrics"]
+    assert metrics["vo2_max"] == 51.0
+    assert metrics["unit"] == "ml/kg/min"
+
+    conflicting = tmp_path / ("20260811-max_metrics-" + "b" * 64 + ".json")
+    conflicting.write_text(
+        json.dumps({"generic": {"calendarDate": "2026-08-10", "vo2MaxValue": 51.0}}),
+        encoding="utf-8",
+    )
+    conflicting_metrics = module.parse_evidence(conflicting)["metrics"]
+    assert "vo2_max" not in conflicting_metrics
+
+
 def test_fit_parser_emits_bounded_activity_metrics(monkeypatch, tmp_path: Path) -> None:
     class Field:
         def __init__(self, name: str, value: object) -> None:

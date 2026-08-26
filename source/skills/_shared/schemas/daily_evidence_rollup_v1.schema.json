@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trainlab.local/schemas/daily_evidence_rollup_v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "report_date", "review_date", "sleep_wake_date", "health", "activities", "recent_trend", "recent_health_metrics", "planned_course_ref", "planned_course_context", "planned_course", "comparable_pace_reference", "provider_calls"],
+  "properties": {
+    "schema_version": {"type": "string", "const": "daily_evidence_rollup_v1"},
+    "status": {"type": "string", "const": "ready"},
+    "report_date": {"type": "string", "format": "date"},
+    "review_date": {"type": "string", "format": "date"},
+    "sleep_wake_date": {"type": "string", "format": "date"},
+    "health": {"type": "array", "items": {"type": "object"}},
+    "activities": {"type": "array", "items": {"type": "object"}},
+    "recent_trend": {"type": "object"},
+    "recent_health_metrics": {"type": "object"},
+    "planned_course_ref": {"type": "object", "additionalProperties": false, "required": ["output_id", "sha256"], "properties": {"output_id": {"type": "integer", "minimum": 1}, "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}},
+    "planned_course_context": {"type": "string", "enum": ["verified_original", "test_baseline"]},
+    "planned_course": {"type": "object"},
+    "comparable_pace_reference": {"type": ["object", "null"]},
+    "provider_calls": {"type": "integer", "const": 0}
+  }
+}

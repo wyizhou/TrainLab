@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trainlab.local/schemas/m11_v4_public_canary_proof_v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "canary_manifest_sha256", "canary_receipt_sha256", "wire_result_sha256", "ai_result_sha256", "reader_result_sha256", "model_calls", "provider_calls", "external_actions"],
+  "properties": {
+    "schema_version": {"type": "string", "const": "m11_v4_public_canary_proof_v1"},
+    "status": {"type": "string", "const": "succeeded"},
+    "canary_manifest_sha256": {"$ref": "#/$defs/sha"},
+    "canary_receipt_sha256": {"$ref": "#/$defs/sha"},
+    "wire_result_sha256": {"$ref": "#/$defs/sha"},
+    "ai_result_sha256": {"$ref": "#/$defs/sha"},
+    "reader_result_sha256": {"$ref": "#/$defs/sha"},
+    "model_calls": {"type": "integer", "const": 1},
+    "provider_calls": {"type": "integer", "const": 0},
+    "external_actions": {"type": "integer", "const": 0}
+  },
+  "$defs": {"sha": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+}

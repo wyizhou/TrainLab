@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trainlab.local/schemas/weekly_reader_content_v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "title", "activity_period", "sleep_wake_period", "plan_period", "sections", "charts", "provider_calls"],
+  "properties": {
+    "schema_version": {"type": "string", "const": "weekly_reader_content_v1"},
+    "status": {"type": "string", "const": "ready"},
+    "title": {"type": "string", "minLength": 1},
+    "activity_period": {"type": "string", "minLength": 1},
+    "sleep_wake_period": {"type": "string", "minLength": 1},
+    "plan_period": {"type": "string", "minLength": 1},
+    "sections": {"type": "array", "minItems": 7, "maxItems": 7, "items": {"$ref": "https://trainlab.local/schemas/daily_reader_content_v1.schema.json#/$defs/section"}},
+    "charts": {"type": "array", "maxItems": 3, "items": {"$ref": "https://trainlab.local/schemas/daily_reader_content_v1.schema.json#/$defs/chart"}},
+    "provider_calls": {"type": "integer", "const": 0}
+  }
+}

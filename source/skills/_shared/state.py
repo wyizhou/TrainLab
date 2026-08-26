@@ -113,6 +113,19 @@ def _valid_schema_payload(value: object, schema_name: object) -> int:
         "daily_ai_result_v1",
         "weekly_ai_result_v1",
         "training_plan_v1",
+        "daily_ai_result_v2",
+        "weekly_ai_result_v2",
+        "training_plan_v2",
+        "daily_evidence_rollup_v1",
+        "weekly_evidence_digest_v1",
+        "activity_technical_evidence_v1",
+        "daily_completed_observation_v1",
+        "daily_health_analysis_v3",
+        "weekly_training_evidence_v2",
+        "training_plan_v3",
+        "weekly_ai_result_v3",
+        "daily_reader_content_v1",
+        "weekly_reader_content_v1",
         "m10_mcp_call_result_v1",
         "m10_gmail_rest_preview_v1",
         "m10_gmail_rest_intent_v1",
@@ -128,15 +141,10 @@ def _valid_schema_payload(value: object, schema_name: object) -> int:
     if name not in allowed:
         return 0
     try:
-        from jsonschema import Draft202012Validator, FormatChecker
-
         payload = json.loads(str(value))
-        schema_path = (
-            Path(__file__).resolve().parent / "schemas" / f"{name}.schema.json"
-        )
-        schema = json.loads(schema_path.read_text(encoding="utf-8"))
-        validator = Draft202012Validator(schema, format_checker=FormatChecker())
-        return int(not any(validator.iter_errors(payload)))
+        from skills._shared.scripts.schema_validation import validate_payload
+
+        return int(not validate_payload(payload, name))
     except (OSError, TypeError, ValueError, json.JSONDecodeError):
         return 0
 

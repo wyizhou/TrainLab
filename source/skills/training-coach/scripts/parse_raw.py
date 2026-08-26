@@ -205,7 +205,85 @@ def _session_is_nap(source: dict[str, Any], *, forced_nap: bool) -> bool:
     return False
 
 
-def _single_sleep_metrics(source: dict[str, Any]) -> dict[str, Any]:
+def _sleep_stage_metrics(value: Any, source: dict[str, Any]) -> dict[str, Any] | None:
+    names = {
+        "deep": "deepsleepseconds",
+        "light": "lightsleepseconds",
+        "rem": "remsleepseconds",
+        "awake": "awakesleepseconds",
+    }
+    durations: dict[str, float] = {}
+    for stage, key in names.items():
+        duration = _first_number(source, {key})
+        if duration is None or not math.isfinite(duration) or duration < 0:
+            return None
+        durations[stage] = round(duration, 3)
+
+    level_groups = _find_named(value, {"sleeplevels"})
+    raw_levels = next(
+        (item for item in level_groups if isinstance(item, list) and item), None
+    )
+    timeline: list[dict[str, Any]] = []
+    if raw_levels is not None:
+        stage_codes = {0: "deep", 1: "light", 2: "rem", 3: "awake"}
+        for item in raw_levels:
+            if not isinstance(item, dict):
+                return None
+            level = _first_number(item, {"activitylevel"})
+            starts = _find_named(item, {"startgmt", "starttime", "start"})
+            ends = _find_named(item, {"endgmt", "endtime", "end"})
+            start = next(
+                (
+                    _parse_timestamp(candidate)
+                    for candidate in starts
+                    if _parse_timestamp(candidate) is not None
+                ),
+                None,
+            )
+            end = next(
+                (
+                    _parse_timestamp(candidate)
+                    for candidate in ends
+                    if _parse_timestamp(candidate) is not None
+                ),
+                None,
+            )
+            if (
+                level is None
+                or not level.is_integer()
+                or int(level) not in stage_codes
+                or start is None
+                or end is None
+                or end <= start
+            ):
+                return None
+            timeline.append(
+                {
+                    "stage": stage_codes[int(level)],
+                    "start": start.isoformat().replace("+00:00", "Z"),
+                    "end": end.isoformat().replace("+00:00", "Z"),
+                    "duration_seconds": round((end - start).total_seconds(), 3),
+                }
+            )
+        timeline.sort(key=lambda item: str(item["start"]))
+        for previous, current in zip(timeline, timeline[1:]):
+            if str(previous["end"]) > str(current["start"]):
+                return None
+        totals = {stage: 0.0 for stage in names}
+        for item in timeline:
+            totals[str(item["stage"])] += float(item["duration_seconds"])
+        if any(abs(totals[stage] - durations[stage]) > 60 for stage in names):
+            return None
+    return {
+        "source": "garmin_named_sleep_stage_durations",
+        "durations_seconds": durations,
+        "timeline": timeline,
+    }
+
+
+def _single_sleep_metrics(
+    source: dict[str, Any], root: Any | None = None
+) -> dict[str, Any]:
     starts = _find_named(
         source,
         {
@@ -267,6 +345,9 @@ def _single_sleep_metrics(source: dict[str, Any]) -> dict[str, Any]:
         metrics["stage_group_count"] = sum(
             len(item) if isinstance(item, list) else 1 for item in stages
         )
+    stage_metrics = _sleep_stage_metrics(root if root is not None else source, source)
+    if stage_metrics is not None:
+        metrics["sleep_stages"] = stage_metrics
     return metrics
 
 
@@ -291,7 +372,7 @@ def _sleep_metrics(value: Any) -> dict[str, Any]:
             "uncertainty": "no_main_sleep_candidate",
             "completeness": "partial",
         }
-    return _single_sleep_metrics(main_sessions[0])
+    return _single_sleep_metrics(main_sessions[0], value)
 
 
 def _heart_rate_points(value: Any) -> list[float]:
@@ -342,6 +423,49 @@ def _date_token(value: object) -> str | None:
     return parsed.astimezone(HKT).date().isoformat() if parsed else None
 
 
+def _node_date(
+    normalized: dict[str, Any], date_keys: set[str]
+) -> tuple[str | None, bool]:
+    """Return one explicit node date and reject malformed or conflicting dates."""
+    dates: set[str] = set()
+    found = False
+    for key, child in normalized.items():
+        if key not in date_keys:
+            continue
+        found = True
+        parsed = _date_token(child)
+        if parsed is None:
+            return None, True
+        dates.add(parsed)
+    if not found:
+        return None, False
+    if len(dates) != 1:
+        return None, True
+    return next(iter(dates)), False
+
+
+def _node_unit(
+    normalized: dict[str, Any], unit_keys: set[str]
+) -> tuple[str | None, bool]:
+    """Return one normalized explicit unit and reject malformed or conflicting units."""
+    units: set[str] = set()
+    found = False
+    for key, child in normalized.items():
+        if key not in unit_keys:
+            continue
+        found = True
+        if not isinstance(child, str) or not child.strip():
+            return None, True
+        units.add(
+            "".join(character for character in child.lower() if character.isalnum())
+        )
+    if not found:
+        return None, False
+    if len(units) != 1:
+        return None, True
+    return next(iter(units)), False
+
+
 def _weight_for_date(value: Any, expected_date: str | None) -> float | None:
     """Read only a dated Garmin weight measurement and normalize to kg."""
     if expected_date is None:
@@ -360,24 +484,37 @@ def _weight_for_date(value: Any, expected_date: str | None) -> float | None:
         "measurementdate",
         "date",
     }
+    unit_keys = {
+        "unit",
+        "units",
+        "unitkey",
+        "unitofmeasure",
+        "measurementunit",
+        "weightunit",
+        "weightunitkey",
+    }
+    kg_units = {"kg", "kilogram", "kilograms"}
+    gram_units = {"g", "gram", "grams"}
     candidates: list[float] = []
 
     def walk(
-        node: Any, inherited_date: str | None = None, blocked: bool = False
+        node: Any,
+        inherited_date: str | None = None,
+        inherited_unit: str | None = None,
+        blocked: bool = False,
     ) -> None:
         if isinstance(node, dict):
             normalized = {_normalize_key(key): child for key, child in node.items()}
-            node_date = next(
-                (
-                    _date_token(child)
-                    for key, child in normalized.items()
-                    if key in date_keys
-                ),
-                None,
-            )
+            node_date, invalid_date = _node_date(normalized, date_keys)
+            if invalid_date:
+                return
             if node_date is not None and node_date != expected_date:
                 return
             effective_date = node_date or inherited_date
+            node_unit, invalid_unit = _node_unit(normalized, unit_keys)
+            if invalid_unit:
+                return
+            effective_unit = node_unit or inherited_unit
             for key, child in normalized.items():
                 child_blocked = blocked or any(
                     token in key for token in ("previous", "next", "trend", "average")
@@ -391,19 +528,103 @@ def _weight_for_date(value: Any, expected_date: str | None) -> float | None:
                 ):
                     number = float(child)
                     if math.isfinite(number):
-                        candidates.append(number)
+                        if effective_unit in kg_units:
+                            kg = number
+                        elif effective_unit in gram_units:
+                            kg = number / 1000.0
+                        elif effective_unit is None:
+                            kg = number / 1000.0 if number > 300 else number
+                        else:
+                            kg = math.nan
+                        if math.isfinite(kg) and 30 <= kg <= 300:
+                            candidates.append(round(kg, 3))
                 if isinstance(child, (dict, list)):
-                    walk(child, effective_date, child_blocked)
+                    walk(child, effective_date, effective_unit, child_blocked)
         elif isinstance(node, list):
             for child in node[:1000]:
-                walk(child, inherited_date, blocked)
+                walk(child, inherited_date, inherited_unit, blocked)
 
     walk(value)
-    if not candidates:
+    return candidates[-1] if candidates else None
+
+
+def _vo2_for_date(value: Any, expected_date: str | None) -> float | None:
+    """Read only a VO₂ Max observation explicitly bound to the expected date."""
+    if expected_date is None:
         return None
-    raw = candidates[-1]
-    kg = raw / 1000.0 if raw > 300 else raw
-    return round(kg, 3) if 30 <= kg <= 300 else None
+    vo2_keys = {
+        "vo2maxprecisevalue",
+        "vo2maxvalue",
+        "vo2max",
+        "vo2maxprecise",
+    }
+    date_keys = {
+        "summarydate",
+        "calendardate",
+        "localdate",
+        "measurementdate",
+        "date",
+    }
+    unit_keys = {
+        "unit",
+        "units",
+        "unitkey",
+        "unitofmeasure",
+        "measurementunit",
+        "vo2maxunit",
+        "vo2maxunitkey",
+    }
+    accepted_units = {
+        "mlkgmin",
+        "mlperkgpermin",
+        "millilitersperkilogramperminute",
+    }
+    candidates: list[float] = []
+
+    def walk(
+        node: Any,
+        inherited_date: str | None = None,
+        inherited_unit: str | None = None,
+        blocked: bool = False,
+    ) -> None:
+        if isinstance(node, dict):
+            normalized = {_normalize_key(key): child for key, child in node.items()}
+            node_date, invalid_date = _node_date(normalized, date_keys)
+            if invalid_date:
+                return
+            if node_date is not None and node_date != expected_date:
+                return
+            effective_date = node_date or inherited_date
+            node_unit, invalid_unit = _node_unit(normalized, unit_keys)
+            if invalid_unit:
+                return
+            effective_unit = node_unit or inherited_unit
+            for key, child in normalized.items():
+                child_blocked = blocked or any(
+                    token in key for token in ("previous", "next", "trend", "average")
+                )
+                if (
+                    effective_date == expected_date
+                    and not child_blocked
+                    and key in vo2_keys
+                    and isinstance(child, (int, float))
+                    and not isinstance(child, bool)
+                ):
+                    number = float(child)
+                    if (
+                        math.isfinite(number)
+                        and 10 <= number <= 100
+                        and (effective_unit is None or effective_unit in accepted_units)
+                    ):
+                        candidates.append(number)
+                if isinstance(child, (dict, list)):
+                    walk(child, effective_date, effective_unit, child_blocked)
+        elif isinstance(node, list):
+            for child in node[:1000]:
+                walk(child, inherited_date, inherited_unit, blocked)
+
+    walk(value)
+    return round(candidates[-1], 3) if candidates else None
 
 
 def _json_metrics(
@@ -466,12 +687,11 @@ def _json_metrics(
             metrics["resting_heart_rate_bpm"] = resting
         return metrics
     if resource == "max_metrics":
-        number = _first_number(
-            value, {"vo2maxprecisevalue", "vo2maxvalue", "vo2max", "vo2maxprecise"}
-        )
+        number = _vo2_for_date(value, expected_date)
         metrics["metric"] = "vo2_max"
         if number is not None:
             metrics["vo2_max"] = number
+            metrics["unit"] = "ml/kg/min"
         return metrics
     if resource == "weigh_ins":
         number = _weight_for_date(value, expected_date)

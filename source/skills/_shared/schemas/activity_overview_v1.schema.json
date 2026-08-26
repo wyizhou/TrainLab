@@ -24,7 +24,8 @@
     {"if": {"properties": {"status": {"const": "blocked"}}}, "then": {"required": ["error_code"]}}
   ],
   "$defs": {
-    "summary": {"type": "object", "additionalProperties": false, "required": ["duration_seconds", "lap_count", "source_format"], "properties": {"activity_kind": {"type": ["string", "null"]}, "duration_seconds": {"type": "number", "minimum": 0}, "distance_km": {"type": ["number", "null"], "minimum": 0}, "lap_count": {"type": "integer", "minimum": 0}, "source_format": {"enum": ["fit", "gpx", "tcx"]}}},
+    "summary": {"type": "object", "additionalProperties": false, "required": ["duration_seconds", "lap_count", "source_format"], "properties": {"activity_kind": {"type": ["string", "null"]}, "duration_seconds": {"type": "number", "minimum": 0}, "distance_km": {"type": ["number", "null"], "minimum": 0}, "lap_count": {"type": "integer", "minimum": 0}, "source_format": {"enum": ["fit", "gpx", "tcx"]}, "heart_rate_average_bpm": {"type": "number", "minimum": 0}, "heart_rate_maximum_bpm": {"type": "number", "minimum": 0}, "observed_heart_rate_zones": {"$ref": "#/$defs/observed_heart_rate_zones"}}},
+    "observed_heart_rate_zones": {"type": "object", "additionalProperties": false, "required": ["source", "reference_mesg", "reference_index", "durations_seconds", "definition_sha256"], "properties": {"source": {"const": "fit_session_time_in_hr_zone"}, "reference_mesg": {"const": "session"}, "reference_index": {"const": 0}, "durations_seconds": {"type": "array", "minItems": 7, "maxItems": 7, "items": {"type": "number", "minimum": 0}}, "definition_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}},
     "bin": {"type": "object", "additionalProperties": false, "required": ["offset_seconds", "sample_count", "metrics"], "properties": {"offset_seconds": {"type": "integer", "minimum": 0}, "sample_count": {"type": "integer", "minimum": 1}, "metrics": {"type": "object", "additionalProperties": {"type": "number"}}}}
   }
 }

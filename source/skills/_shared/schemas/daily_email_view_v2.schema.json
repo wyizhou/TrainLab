@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trainlab.local/schemas/daily_email_view_v2.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "report_date", "safety", "yesterday_summary", "review_health_summary", "recovery_summary", "planned_course_context", "planned_course", "adjustment", "effective_course", "decision_reasons", "adjustment_reason_codes", "evidence_labels", "provider_calls"],
+  "properties": {
+    "schema_version": {"type": "string", "const": "daily_email_view_v2"},
+    "report_date": {"type": "string", "format": "date"},
+    "safety": {"type": "string", "enum": ["ready", "caution", "blocked"]},
+    "yesterday_summary": {"type": "string", "minLength": 1},
+    "review_health_summary": {"type": "string", "minLength": 1},
+    "recovery_summary": {"type": "string", "minLength": 1},
+    "planned_course_context": {"type": "string", "enum": ["verified_original", "test_baseline"]},
+    "planned_course": {"$ref": "https://trainlab.local/schemas/training_plan_v2.schema.json#/$defs/course"},
+    "adjustment": {"type": "string", "enum": ["as_planned", "modified", "rest", "blocked", "unavailable"]},
+    "effective_course": {"$ref": "https://trainlab.local/schemas/training_plan_v2.schema.json#/$defs/course"},
+    "decision_reasons": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "adjustment_reason_codes": {"type": "array", "minItems": 1, "items": {"type": "string", "enum": ["as_planned", "deload", "red_flag", "insufficient_recovery", "schedule", "blocked"]}},
+    "evidence_labels": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "provider_calls": {"type": "integer", "const": 0}
+  }
+}

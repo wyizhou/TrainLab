@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
+from referencing import Registry, Resource
 
 
 def schema_root() -> Path:
@@ -20,7 +21,18 @@ def validate_payload(payload: object, schema_name: str) -> list[str]:
     if not schema_path.is_file():
         return ["schema_not_found"]
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
-    validator = Draft202012Validator(schema, format_checker=FormatChecker())
+    resources: list[tuple[str, Resource[object]]] = []
+    for candidate in schema_root().glob("*.schema.json"):
+        candidate_schema = json.loads(candidate.read_text(encoding="utf-8"))
+        identifier = candidate_schema.get("$id")
+        if isinstance(identifier, str):
+            resources.append((identifier, Resource.from_contents(candidate_schema)))
+    registry = Registry().with_resources(resources)
+    validator = Draft202012Validator(
+        schema,
+        format_checker=FormatChecker(),
+        registry=registry,
+    )
     errors = sorted(validator.iter_errors(payload), key=lambda error: list(error.path))
     result = [
         f"{'.'.join(str(part) for part in error.path) or '$'}:{error.validator}"

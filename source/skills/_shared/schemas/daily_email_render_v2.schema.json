@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trainlab.local/schemas/daily_email_render_v2.schema.json",
+  "$ref": "#/$defs/render",
+  "$defs": {
+    "render": {"type": "object", "additionalProperties": false, "required": ["schema_version", "kind", "subject", "text", "html", "view_sha256", "asset_manifest", "provider_calls"], "properties": {
+      "schema_version": {"type": "string", "const": "daily_email_render_v2"}, "kind": {"type": "string", "const": "daily"},
+      "subject": {"type": "string", "pattern": "^TrainLab · 每日训练简报 · [0-9]{4}-[0-9]{2}-[0-9]{2}$"}, "text": {"type": "string", "minLength": 1}, "html": {"type": "string", "minLength": 1, "maxLength": 81920},
+      "view_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "asset_manifest": {"type": "object", "additionalProperties": false, "required": ["schema_version", "assets"], "properties": {"schema_version": {"type": "string", "const": "email_inline_asset_manifest_v1"}, "assets": {"type": "array", "maxItems": 8, "items": {"type": "object"}}}}, "provider_calls": {"type": "integer", "const": 0}
+    }}
+  }
+}

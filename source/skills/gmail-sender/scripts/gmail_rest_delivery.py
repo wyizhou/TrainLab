@@ -7,6 +7,7 @@ import argparse
 import fcntl
 import json
 import os
+import re
 import shutil
 import sqlite3
 import stat
@@ -96,6 +97,8 @@ EXPECTED_EMAIL_PERIODS = (
     ("daily_ai_result_v1", "2026-08-18", "2026-08-18"),
     ("weekly_ai_result_v1", "2026-08-12", "2026-08-18"),
 )
+
+
 RETRYABLE_TRANSPORT_ERRORS = (
     ConnectionError,
     TimeoutError,
@@ -660,6 +663,35 @@ class GmailRestClient:
         if token_file != Path(os.path.abspath(SOURCE_ROOT / "gmail-api-token.json")):
             raise GmailRestError("gmail_rest_token_path_invalid")
         self.token_file = require_owner_file(token_file)
+        descriptor = os.open(
+            self.token_file, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+        )
+        try:
+            metadata = os.fstat(descriptor)
+            current = self.token_file.lstat()
+            if (
+                not stat.S_ISREG(metadata.st_mode)
+                or metadata.st_uid != os.getuid()
+                or stat.S_IMODE(metadata.st_mode) != 0o600
+                or metadata.st_nlink != 1
+                or (metadata.st_dev, metadata.st_ino)
+                != (current.st_dev, current.st_ino)
+            ):
+                raise GmailRestError("gmail_rest_token_file_invalid")
+            chunks: list[bytes] = []
+            total = 0
+            while True:
+                chunk = os.read(descriptor, 65536)
+                if not chunk:
+                    break
+                total += len(chunk)
+                if total > 1024 * 1024:
+                    raise GmailRestError("gmail_rest_token_file_invalid")
+                chunks.append(chunk)
+            token_payload = b"".join(chunks)
+        finally:
+            os.close(descriptor)
+        self._token_sha256 = sha256_bytes(token_payload)
         self.candidate_root = require_owner_directory(candidate_root)
         self.marker = marker
         self.marker_name = marker_name
@@ -675,9 +707,13 @@ class GmailRestClient:
             from google.auth.transport.requests import Request
             from google.oauth2.credentials import Credentials
 
-            credentials = Credentials.from_authorized_user_file(
-                str(self.token_file), list(SCOPES)
-            )
+            try:
+                token_info = json.loads(token_payload.decode("utf-8"))
+                credentials = Credentials.from_authorized_user_info(
+                    token_info, list(SCOPES)
+                )
+            except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+                raise GmailRestError("gmail_rest_auth_invalid") from exc
             if not set(SCOPES).issubset(set(credentials.scopes or ())):
                 raise GmailRestError("gmail_rest_scope_invalid")
             self.credentials = credentials
@@ -687,6 +723,12 @@ class GmailRestClient:
             self.credentials = None
             self.refresh_request = None
             self.session = session_factory(None)
+
+    @property
+    def token_sha256(self) -> str:
+        """Private audit observation; never a cross-process recovery identity."""
+
+        return self._token_sha256
 
     def _reserve_call(
         self, *, action_id: int, send: bool = False, phase: str | None = None
@@ -760,6 +802,76 @@ class GmailRestClient:
         except (GmailRestError, OSError) as exc:
             raise GmailRestError("gmail_rest_capture_failed") from exc
 
+    def recover_sent_gmail_id(
+        self,
+        raw_sha256: str,
+        *,
+        action_id: int,
+    ) -> str | None:
+        """Recover one Gmail ID from the durable, sanitized send capture."""
+
+        action_key = str(action_id)
+        if (
+            len(raw_sha256) != 64
+            or any(character not in "0123456789abcdef" for character in raw_sha256)
+            or action_key not in self.marker["action_send_calls"]
+            or action_key not in self.marker["action_api_calls"]
+            or int(self.marker["action_send_calls"][action_key]) != 1
+            or int(self.marker["action_api_calls"][action_key]) < 1
+        ):
+            raise GmailRestError("gmail_rest_send_capture_invalid")
+        capture_root = self.candidate_root / "gmail-rest/captures"
+        if not capture_root.exists():
+            return None
+        try:
+            capture_root = require_owner_directory(capture_root)
+            candidates = sorted(capture_root.glob(f"*-{action_id}-send.json"))
+            if not candidates:
+                return None
+            if len(candidates) != 1:
+                raise GmailRestError("gmail_rest_send_capture_invalid")
+            capture_path = candidates[0]
+            match = re.fullmatch(
+                rf"(\d{{3}})-{action_id}-send\.json",
+                capture_path.name,
+            )
+            if match is None:
+                raise GmailRestError("gmail_rest_send_capture_invalid")
+            call_index = int(match.group(1))
+            if not 1 <= call_index <= int(self.marker["api_calls"]):
+                raise GmailRestError("gmail_rest_send_capture_invalid")
+            capture = read_owner_json(capture_path)
+            request = {
+                "method": "POST",
+                "url": f"{API_ROOT}/messages/send",
+                "raw_sha256": raw_sha256,
+            }
+            expected_request_sha256 = sha256_text(canonical_json(request))
+            status = capture.get("status_code")
+            response = capture.get("response")
+            if (
+                set(capture)
+                != {
+                    "method",
+                    "url",
+                    "status_code",
+                    "request_sha256",
+                    "response",
+                }
+                or capture.get("method") != "POST"
+                or capture.get("url") != request["url"]
+                or type(status) is not int
+                or not 200 <= status < 300
+                or capture.get("request_sha256") != expected_request_sha256
+                or not isinstance(response, dict)
+            ):
+                raise GmailRestError("gmail_rest_send_capture_invalid")
+            return require_gmail_message_id(response.get("id"))
+        except GmailRestError as exc:
+            if str(exc) == "gmail_rest_send_capture_invalid":
+                raise
+            raise GmailRestError("gmail_rest_send_capture_invalid") from exc
+
     def _refresh_token_if_needed(self) -> None:
         if self.credentials is None:
             return
@@ -769,11 +881,25 @@ class GmailRestClient:
             except Exception as exc:
                 raise GmailRestError("gmail_rest_auth_invalid") from exc
         serialized = self.credentials.to_json().encode("utf-8")
-        if sha256_bytes(serialized) != sha256_file(self.token_file):
+        serialized_sha256 = sha256_bytes(serialized)
+        current_sha256 = getattr(
+            self,
+            "_token_sha256",
+            sha256_file(require_owner_file(self.token_file)),
+        )
+        if serialized_sha256 != current_sha256:
             try:
+                # A-010 trusts the owner-only single writer. atomic_write uses a
+                # 0600 sibling, fsync, same-filesystem rename and parent fsync.
                 atomic_write(self.token_file, serialized)
-            except (GmailRestError, OSError) as exc:
+            except OSError as exc:
                 raise GmailRestError("gmail_rest_token_refresh_persist_failed") from exc
+            except GmailRestError as exc:
+                raise GmailRestError("gmail_rest_token_refresh_persist_failed") from exc
+            published_sha256 = sha256_file(require_owner_file(self.token_file))
+            if published_sha256 != serialized_sha256:
+                raise GmailRestError("gmail_rest_token_refresh_persist_failed")
+            self._token_sha256 = serialized_sha256
 
     def _request_headers(self) -> dict[str, str]:
         if self.credentials is None:
@@ -854,7 +980,6 @@ class GmailRestClient:
                 status=status,
                 call_index=call_index,
             )
-            self._refresh_token_if_needed()
             if status in {401, 403}:
                 raise GmailRestError("gmail_rest_auth_invalid")
             if status == 429 or status >= 500:
@@ -894,8 +1019,7 @@ class GmailRestClient:
                 timeout=30,
             )
             status = int(response.status_code)
-            body = response.json() if getattr(response, "content", b"") else {}
-        except Exception as exc:
+        except RETRYABLE_TRANSPORT_ERRORS as exc:
             self._capture(
                 kind="send-transport",
                 action_id=action_id,
@@ -905,6 +1029,30 @@ class GmailRestClient:
                 call_index=call_index,
             )
             raise GmailRestError("gmail_rest_send_result_unknown") from exc
+        except Exception as exc:
+            self._capture(
+                kind="send-request-error",
+                action_id=action_id,
+                request=request,
+                response={"error": "request"},
+                status=None,
+                call_index=call_index,
+            )
+            raise GmailRestError("gmail_rest_send_result_unknown") from exc
+        try:
+            body = response.json() if getattr(response, "content", b"") else {}
+        except Exception as exc:
+            self._capture(
+                kind="send-invalid-json",
+                action_id=action_id,
+                request=request,
+                response={"error": "invalid_json"},
+                status=status,
+                call_index=call_index,
+            )
+            if status < 200 or status >= 300:
+                raise GmailRestError("gmail_rest_send_rejected") from exc
+            raise GmailRestError("gmail_rest_send_result_unknown") from exc
         self._capture(
             kind="send",
             action_id=action_id,
@@ -913,10 +1061,11 @@ class GmailRestClient:
             status=status,
             call_index=call_index,
         )
-        self._refresh_token_if_needed()
         if status in {401, 403}:
             raise GmailRestError("gmail_rest_auth_invalid")
-        if status < 200 or status >= 300 or not isinstance(body.get("id"), str):
+        if status < 200 or status >= 300:
+            raise GmailRestError("gmail_rest_send_rejected")
+        if not isinstance(body, dict) or not isinstance(body.get("id"), str):
             raise GmailRestError("gmail_rest_send_result_unknown")
         return require_gmail_message_id(body["id"])
 
@@ -990,7 +1139,6 @@ class GmailRestClient:
                 status=status,
                 call_index=call_index,
             )
-            self._refresh_token_if_needed()
             if status in {401, 403}:
                 raise GmailRestError("gmail_rest_auth_invalid")
             if status == 429 or status >= 500:

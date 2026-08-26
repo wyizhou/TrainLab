@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trainlab.local/schemas/daily_completed_observation_v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "report_date", "activity_date", "health_date", "sleep_wake_date", "inventory", "health_inventory", "activities", "health_facts", "health_analysis_ref", "provider_calls"],
+  "properties": {
+    "schema_version": {"type": "string", "const": "daily_completed_observation_v1"},
+    "status": {"type": "string", "enum": ["ready", "blocked"]},
+    "report_date": {"type": "string", "format": "date"},
+    "activity_date": {"type": "string", "format": "date"},
+    "health_date": {"type": "string", "format": "date"},
+    "sleep_wake_date": {"type": "string", "format": "date"},
+    "inventory": {
+      "type": "object", "additionalProperties": false,
+      "required": ["expected_count", "observed_count", "complete"],
+      "properties": {
+        "expected_count": {"type": "integer", "minimum": 0},
+        "observed_count": {"type": "integer", "minimum": 0},
+        "complete": {"type": "boolean"}
+      }
+    },
+    "health_inventory": {
+      "type": "object", "additionalProperties": false,
+      "required": ["expected_raw_file_ids", "observed_raw_file_ids", "complete"],
+      "properties": {
+        "expected_raw_file_ids": {"type": "array", "items": {"type": "integer", "minimum": 1}, "uniqueItems": true},
+        "observed_raw_file_ids": {"type": "array", "items": {"type": "integer", "minimum": 1}, "uniqueItems": true},
+        "complete": {"type": "boolean"}
+      }
+    },
+    "activities": {"type": "array", "items": {"$ref": "#/$defs/activity"}},
+    "health_facts": {"type": "array", "minItems": 6, "maxItems": 6, "items": {"$ref": "https://trainlab.local/schemas/health_fact_v2.schema.json"}},
+    "health_analysis_ref": {"$ref": "#/$defs/output_ref"},
+    "provider_calls": {"type": "integer", "const": 0}
+  },
+  "$defs": {
+    "output_ref": {
+      "type": "object", "additionalProperties": false,
+      "required": ["output_id", "sha256"],
+      "properties": {
+        "output_id": {"type": "integer", "minimum": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "coverage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["summary", "sequence"],
+      "properties": {
+        "summary": {"type": "number", "minimum": 0, "maximum": 1},
+        "sequence": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "activity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["activity_inventory_id", "raw_file_id", "raw_sha256", "activity_date", "activity_kind", "distance_km", "duration_seconds", "coverage", "missing_fields", "uncertainty", "technical_metrics"],
+      "properties": {
+        "activity_inventory_id": {"type": "integer", "minimum": 1},
+        "raw_file_id": {"type": "integer", "minimum": 1},
+        "raw_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "activity_date": {"type": "string", "format": "date"},
+        "activity_kind": {"type": "string", "minLength": 1},
+        "distance_km": {"type": ["number", "null"], "minimum": 0},
+        "duration_seconds": {"type": "number", "minimum": 0},
+        "average_heart_rate_bpm": {"type": ["number", "null"], "minimum": 0},
+        "maximum_heart_rate_bpm": {"type": ["number", "null"], "minimum": 0},
+        "coverage": {"$ref": "#/$defs/coverage"},
+        "missing_fields": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "uncertainty": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "technical_metrics": {"type": "array", "items": {"$ref": "https://trainlab.local/schemas/activity_technical_evidence_v1.schema.json#/$defs/metric"}}
+      }
+    }
+  }
+}

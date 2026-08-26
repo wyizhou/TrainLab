@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trainlab.local/schemas/daily_ai_result_v2.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "report_date", "review_date", "sleep_wake_date", "safety", "planned_course_ref", "planned_course_context", "planned_course", "adjustment", "effective_course", "yesterday_summary", "review_health_summary", "recovery_summary", "decision_reasons", "adjustment_reason_codes", "health_observations", "daily_load", "uncertainty", "stop_conditions", "evidence_refs", "provider_calls"],
+  "properties": {
+    "schema_version": {"type": "string", "const": "daily_ai_result_v2"},
+    "status": {"type": "string", "enum": ["succeeded", "blocked"]},
+    "error_code": {"type": ["string", "null"]},
+    "report_date": {"type": "string", "format": "date"},
+    "review_date": {"type": "string", "format": "date"},
+    "sleep_wake_date": {"type": "string", "format": "date"},
+    "safety": {"type": "string", "enum": ["ready", "caution", "blocked"]},
+    "planned_course_ref": {"type": "object"},
+    "planned_course_context": {"type": "string", "enum": ["verified_original", "test_baseline"]},
+    "planned_course": {"$ref": "https://trainlab.local/schemas/training_plan_v2.schema.json#/$defs/course"},
+    "adjustment": {"type": "string", "enum": ["as_planned", "modified", "rest", "blocked", "unavailable"]},
+    "effective_course": {"$ref": "https://trainlab.local/schemas/training_plan_v2.schema.json#/$defs/course"},
+    "yesterday_summary": {"type": "string", "minLength": 1},
+    "review_health_summary": {"type": "string", "minLength": 1},
+    "recovery_summary": {"type": "string", "minLength": 1},
+    "decision_reasons": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "adjustment_reason_codes": {"type": "array", "minItems": 1, "items": {"type": "string", "enum": ["as_planned", "deload", "red_flag", "insufficient_recovery", "schedule", "blocked"]}},
+    "health_observations": {"type": "object"},
+    "daily_load": {"type": "object"},
+    "uncertainty": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "stop_conditions": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "evidence_refs": {"type": "array", "minItems": 1, "items": {"type": "object", "additionalProperties": false, "required": ["output_id", "sha256", "claim"], "properties": {"output_id": {"type": "integer", "minimum": 1}, "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "claim": {"type": "string", "minLength": 1}}}},
+    "provider_calls": {"type": "integer", "const": 0}
+  }
+}

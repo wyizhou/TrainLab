@@ -63,25 +63,115 @@ def _field_map(frame: object) -> dict[str, object]:
     return result
 
 
-def _fit_records(path: Path) -> tuple[list[dict[str, object]], dict[str, Any]]:
+def _finite_vector(value: object, *, length: int) -> list[float] | None:
+    if not isinstance(value, (list, tuple)) or len(value) != length:
+        return None
+    result: list[float] = []
+    for item in value:
+        if isinstance(item, bool) or not isinstance(item, (int, float)):
+            return None
+        number = float(item)
+        if not math.isfinite(number) or number < 0:
+            return None
+        result.append(number)
+    return result
+
+
+def _session_zone_summary(candidates: list[dict[str, object]]) -> dict[str, Any] | None:
+    """Return only one valid provider session vector; never classify HR samples."""
+
+    if len(candidates) != 1:
+        return None
+    fields = candidates[0]
+    reference_index = fields.get("reference_index")
+    if type(reference_index) is not int or reference_index != 0:
+        return None
+    durations = _finite_vector(fields.get("time_in_hr_zone"), length=7)
+    boundaries = _finite_vector(fields.get("hr_zone_high_boundary"), length=6)
+    if durations is None or boundaries is None:
+        return None
+    if any(right <= left for left, right in zip(boundaries, boundaries[1:])):
+        return None
+    definition_sha256 = hashlib.sha256(
+        json.dumps(boundaries, separators=(",", ":"), ensure_ascii=True).encode()
+    ).hexdigest()
+    return {
+        "source": "fit_session_time_in_hr_zone",
+        "reference_mesg": "session",
+        "reference_index": 0,
+        "durations_seconds": durations,
+        "definition_sha256": definition_sha256,
+    }
+
+
+def _fit_records(
+    path: Path, *, include_technical: bool = False
+) -> tuple[list[dict[str, object]], dict[str, Any]]:
     try:
         import fitdecode
     except ImportError as exc:  # pragma: no cover - environment dependent
         raise ValueError("fitdecode_unavailable") from exc
     records: list[dict[str, object]] = []
     laps = 0
+    technical_laps: list[dict[str, object]] = []
     activity_kind: str | None = None
     all_distances: list[float] = []
+    session_zone_candidates: list[dict[str, object]] = []
+    session_summaries: list[dict[str, object]] = []
     with fitdecode.FitReader(path) as reader:
         for frame in reader:
             name = str(getattr(frame, "name", "")).lower()
             fields = _field_map(frame)
             if name == "lap":
                 laps += 1
+                if include_technical:
+                    intensity = str(fields.get("intensity", "")).strip().lower()
+                    role = {
+                        "interval": "work",
+                        "work": "work",
+                        "recovery": "recovery",
+                        "rest": "recovery",
+                        "warmup": "warmup",
+                        "cooldown": "cooldown",
+                    }.get(intensity, "unclassified")
+                    lap: dict[str, object] = {
+                        "lap_index": len(technical_laps),
+                        "lap_role": role,
+                        "role_source": "fit_lap_intensity"
+                        if role != "unclassified"
+                        else "unclassified",
+                    }
+                    for sources, target in (
+                        (
+                            ("total_timer_time", "total_elapsed_time"),
+                            "duration_seconds",
+                        ),
+                        (("total_distance",), "distance_m"),
+                        (("avg_power",), "average_power_watts"),
+                        (("avg_cadence",), "average_cadence_spm"),
+                        (("avg_heart_rate",), "average_heart_rate_bpm"),
+                    ):
+                        numeric = next(
+                            (
+                                _number(fields.get(source))
+                                for source in sources
+                                if _number(fields.get(source)) is not None
+                            ),
+                            None,
+                        )
+                        if numeric is not None:
+                            lap[target] = numeric
+                    technical_laps.append(lap)
             if name == "sport":
                 candidate = fields.get("sport") or fields.get("sub_sport")
                 if isinstance(candidate, str) and candidate:
                     activity_kind = candidate
+            if name == "session":
+                session_summaries.append(fields)
+            if name == "time_in_zone":
+                reference = str(fields.get("reference_mesg", "")).lower()
+                if reference == "session":
+                    session_zone_candidates.append(fields)
             if name != "record":
                 continue
             timestamp = _timestamp(fields.get("timestamp"))
@@ -91,29 +181,53 @@ def _fit_records(path: Path) -> tuple[list[dict[str, object]], dict[str, Any]]:
             if distance is not None:
                 all_distances.append(distance)
             item: dict[str, object] = {"timestamp": timestamp}
-            for source, target in {
-                "heart_rate": "heart_rate_bpm",
-                "cadence": "cadence_spm",
-                "power": "power_watts",
-                "speed": "speed_mps",
-                "altitude": "elevation_m",
-                "temperature": "temperature_c",
-                "distance": "distance_m",
-            }.items():
-                numeric = _number(fields.get(source))
+            for sources, target in (
+                (("heart_rate",), "heart_rate_bpm"),
+                (("cadence",), "cadence_spm"),
+                (("power",), "power_watts"),
+                (("speed", "enhanced_speed"), "speed_mps"),
+                (("altitude", "enhanced_altitude"), "elevation_m"),
+                (("temperature",), "temperature_c"),
+                (("distance",), "distance_m"),
+                (("step_length",), "step_length_m"),
+                (("stance_time", "ground_contact_time"), "ground_contact_time_ms"),
+                (("vertical_oscillation",), "vertical_oscillation_mm"),
+                (("vertical_ratio",), "vertical_ratio_pct"),
+            ):
+                numeric = next(
+                    (
+                        _number(fields.get(source))
+                        for source in sources
+                        if _number(fields.get(source)) is not None
+                    ),
+                    None,
+                )
                 if numeric is not None:
                     item[target] = numeric
             records.append(item)
     if not records:
         raise ValueError("activity_timestamp_missing")
     duration = (records[-1]["timestamp"] - records[0]["timestamp"]).total_seconds()  # type: ignore[operator]
-    return records, {
+    summary: dict[str, Any] = {
         "activity_kind": activity_kind,
         "duration_seconds": round(max(0.0, duration), 3),
         "distance_km": round(max(all_distances) / 1000, 3) if all_distances else None,
         "lap_count": laps,
         "source_format": "fit",
     }
+    if len(session_summaries) == 1:
+        average = _number(session_summaries[0].get("avg_heart_rate"))
+        maximum = _number(session_summaries[0].get("max_heart_rate"))
+        if average is not None and average >= 0:
+            summary["heart_rate_average_bpm"] = average
+        if maximum is not None and maximum >= 0:
+            summary["heart_rate_maximum_bpm"] = maximum
+    zones = _session_zone_summary(session_zone_candidates)
+    if zones is not None:
+        summary["observed_heart_rate_zones"] = zones
+    if include_technical:
+        summary["technical_laps"] = technical_laps
+    return records, summary
 
 
 def _xml_records(path: Path) -> tuple[list[dict[str, object]], dict[str, Any]]:
@@ -341,6 +455,54 @@ def build_activity_evidence(
         "sequence": sequence,
         "gps_included": False,
         "provider_calls": 0,
+    }
+
+
+def build_activity_technical_input(
+    database: Path,
+    source_root: Path,
+    inventory_id: int,
+    *,
+    raw_file_id: int,
+) -> dict[str, Any]:
+    """Load FIT once during daily evidence construction for v4 technical facts.
+
+    The returned mapping is an internal Host envelope, not an AI or persisted
+    raw payload.  It contains no coordinates, route/name fields or raw bytes.
+    """
+
+    path, verified_raw_id, file_format, raw_sha256, data_date = _load_activity(
+        database, source_root, inventory_id, raw_file_id=raw_file_id
+    )
+    if file_format != "fit":
+        records, summary = _xml_records(path)
+        technical_laps: list[dict[str, object]] = []
+    else:
+        records, summary = _fit_records(path, include_technical=True)
+        raw_laps = summary.pop("technical_laps", [])
+        technical_laps = raw_laps if isinstance(raw_laps, list) else []
+    sequence = _bins(records, 30)
+    expected_bins = max(1, math.ceil(float(summary["duration_seconds"]) / 30))
+    return {
+        "activity_inventory_id": inventory_id,
+        "raw_file_id": verified_raw_id,
+        "raw_sha256": raw_sha256,
+        "activity_date": data_date,
+        "activity_kind": str(summary.get("activity_kind") or "activity"),
+        "distance_km": summary.get("distance_km"),
+        "duration_seconds": float(summary["duration_seconds"]),
+        "average_heart_rate_bpm": summary.get("heart_rate_average_bpm"),
+        "maximum_heart_rate_bpm": summary.get("heart_rate_maximum_bpm"),
+        "coverage": {
+            "summary": 1.0,
+            "sequence": round(min(1.0, len(sequence) / expected_bins), 4),
+        },
+        "missing_fields": [],
+        "uncertainty": [],
+        "sequence_resolution_seconds": 30,
+        "sequence": sequence,
+        "laps": technical_laps,
+        "observed_heart_rate_zones": summary.get("observed_heart_rate_zones"),
     }
 
 
