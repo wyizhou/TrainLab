@@ -1,3 +1,4 @@
+cryptography==47.0.0
 fitdecode==0.11.0
 google-auth==2.56.2
 google-auth-oauthlib==1.4.0

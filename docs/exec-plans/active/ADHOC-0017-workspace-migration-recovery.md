@@ -1,6 +1,6 @@
 # 执行计划：迁移工作区保护、状态可迁移性与 M11 r20 收口
 
-- 状态：`blocked`
+- 状态：`active`
 - 负责人：主协调 Agent
 - Roadmap ID：`ADHOC-0017`
 - 阶段/子项目：`不适用 / M11 前置恢复`
@@ -125,8 +125,8 @@ M11 v4-r20 的 business-only Prompt 语义闭包。最终停在新公开 canary 
 | 步骤 | 状态 | 证据 |
 | --- | --- | --- |
 | 1. 建立恢复分支、冻结计划、隐私审计、恢复快照并推送 | done | 本地提交 `fb8d291` 与阻塞记录 `e40072f` 已推送；远端分支精确指向 `e40072f`。 |
-| 2. 恢复 Python 3.12 隔离环境并运行修改前基线 | blocked | exact requirements 解析到 `cryptography==50.0.1`，macOS x86_64 无可用 wheel；源码构建因无 Rust 且 rustup 代理 503 在测试前失败。诊断探测确认 `cryptography==47.0.0` 有兼容 wheel 且全部固定依赖可导入。 |
-| 3. 测试先行统一 Finder 元数据和内容指纹合同 | pending | 待基线。 |
+| 2. 恢复 Python 3.12 隔离环境并运行修改前基线 | done | 依赖合同准确红灯后转绿；910 tests、Ruff/format/mypy/compile、90 JSON/87 Schema、6 YAML、81 Markdown、本地链接、隐私边界全部 PASS；state 唯一错误为已知 `raw_unregistered_file`。 |
+| 3. 测试先行统一 Finder 元数据和内容指纹合同 | in_progress | 先定义 Finder 严格拒绝、portable content fingerprint 稳定性和字节变化回归。 |
 | 4. Migration/State Validator 与批次提交推送 | pending | 待实现。 |
 | 5. M11 新失败 Failure Analyst | pending | 待迁移批次 PASS。 |
 | 6. 测试先行实施 r20 通用约束派生 | pending | 仅诊断三条件满足时。 |
@@ -134,12 +134,12 @@ M11 v4-r20 的 business-only Prompt 语义闭包。最终停在新公开 canary 
 
 ## 当前检查点
 
-- 当前 Loop：Python 3.12 依赖可移植性归因。
-- 最近完成：exact requirements 在测试启动前失败；无源码构建探测证明 50.0.1 无 macOS x86_64 wheel，47.0.0 可由 wheel 安装且全部项目固定依赖可导入。
-- 当前焦点：等待人工决定是否把 `cryptography==47.0.0` 加入 `source/requirements.txt` 作为可移植传递依赖固定。
-- 下一动作：仅在用户批准依赖合同修正后添加精确 pin、补环境回归并重新执行未开始的修改前完整基线。
-- 阻塞项：当前 requirements 在 macOS x86_64 不能无 Rust 安装；安装系统 Rust 超出批准方案，临时命令覆盖又不满足 exact requirements 合同。
-- blocker_type：`ENVIRONMENT_FAILURE`
+- 当前 Loop：正式 state Finder 元数据与 portable fingerprint 合同。
+- 最近完成：`cryptography==47.0.0` 红→绿；完整基线 910 tests 与全部静态/Schema/Markdown/隐私门 PASS；SQLite integrity/FK/六表通过且唯一 state 错误为已知 raw Finder 元数据。
+- 当前焦点：测试先行统一验证器、Candidate 身份指纹和跨主机内容指纹。
+- 下一动作：新增状态合同失败测试，随后只修改共享状态验证/指纹实现并隔离三个 `.DS_Store`。
+- 阻塞项：无。
+- blocker_type：`none`
 - 诊断状态：`not_triggered`
 - 已变更文件：本计划；分支引用。
 - 待验证项：迁移快照隐私、基线环境、状态合同、r20 与两级 Validator。
@@ -158,7 +158,7 @@ M11 v4-r20 的 business-only Prompt 语义闭包。最终停在新公开 canary 
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | M11-V4-R20-F01 | VC-010 | AC-013/GATE-004 | wire 删除 `minItems`，Prompt 机器语义未表达，公开 rest 输出空 `technique_notes` 后业务拒绝 | r19 canary | 尚未实施 r20；先归因 | 不适用 | active plan 记录与当前 Schema/Prompt/parity | pending Failure Analyst |
 | ADHOC-0017-F01 | VC-001 | AC-001/GATE-001 | 恢复分支 push 被 GitHub workflow scope 门拒绝 | migration snapshot | HTTPS token scope 与 SSH 身份只读核对 | 不适用 | GitHub remote rejection、`gh auth status`、SSH publickey rejection | blocked：等待新认证权限 |
-| ADHOC-0017-F02 | VC-001 | AC-002/GATE-002 | fixed requirements 在 macOS x86_64 解析到无 wheel 的 cryptography 50.0.1 | baseline environment | exact install、no-build wheel probe、现有 conda Python 3.12 探测、47.0.0 full-requirements import probe | 不适用 | uv resolver/build 输出；Rust 缺失；47.0.0 52 packages 导入成功 | blocked：等待人工批准固定传递依赖 |
+| ADHOC-0017-F02 | VC-001 | AC-002/GATE-002 | fixed requirements 在 macOS x86_64 解析到无 wheel 的 cryptography 50.0.1 | baseline environment | exact install、no-build wheel probe、现有 conda Python 3.12 探测、47.0.0 full-requirements import probe | 不适用 | uv resolver/build 输出；Rust 缺失；47.0.0 52 packages 导入成功 | resolved：用户批准精确 pin；合同测试红→绿，完整基线通过 |
 
 ## 决策与发现
 
@@ -199,3 +199,5 @@ Validator 必须返回 `contract_version`、`overall_verdict`、`criterion_resul
 | 2026-08-26 / snapshot-push-blocked | 建立本地提交 `fb8d291`；HTTPS 与 SSH 两条 GitHub 路径均只读核对 | HTTPS token 缺少 `workflow` scope，SSH 无可用 public key；本地分支安全但尚未远端保护 | 请求用户批准刷新 GitHub OAuth workflow scope，成功前停止后续实现 |
 | 2026-08-26 / snapshot-pushed | 用户明确授权刷新 `workflow` scope；GitHub device flow 成功；恢复分支推送并核对远端 SHA `e40072f` | 推送授权阻塞已消除；未创建 PR、未触碰 main | 恢复 Python 3.12 隔离质量门并记录修改前基线 |
 | 2026-08-26 / baseline-env-blocked | bundled Python 3.12.13 + exact requirements 在测试前复现；无源码构建和现有 Conda 环境均核对；47.0.0 wheel 与全依赖导入成功 | requirements 未固定传递依赖，解析到不支持 macOS x86_64 wheel 的 cryptography 50.0.1；不是项目测试失败 | 请求人工批准增加 `cryptography==47.0.0`，不改业务代码或降低测试 |
+| 2026-08-26 / dependency-pin-authorized | 用户明确回复“授权开始” | 允许只增加 `cryptography==47.0.0` 和对应合同回归；不授权 Rust/system 安装或其他依赖变更 | 先红后绿并恢复完整基线 |
+| 2026-08-26 / migrated-baseline-pass | 依赖合同旧文件红灯、精确 pin 后转绿；910 tests、Ruff/format、mypy 108 files、compile、90 JSON/87 Schema、6 YAML、81 Markdown/链接和隐私门 PASS | state integrity/FK/六表正确，唯一错误为预期 `raw_unregistered_file`；未发现其他迁移回归 | 提交依赖修复，进入 Finder 元数据和 portable fingerprint 测试先行 |
