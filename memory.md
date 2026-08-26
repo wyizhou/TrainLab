@@ -33,6 +33,10 @@
 - 产品时区合同使用 `Asia/Hong_Kong`；训练规则和报告目标采用 AI + 本地 Skills 设计。M8 已在仓库外
   candidate 中完成真实 AI 日报、周报、课表、报告、邮件信封和 GTS 合同闭环；真实外部动作仍关闭。
 - 私有 state、logs、FIT、raw、数据库、凭据和私有配置不得进入 Git 或 `dist/`。
+- 2026-08-26 迁移状态批次已由全新只读 Validator 按 VC-001 返回 PASS：正式 state 含 9,336
+  个登记 raw，`formal_state_content_fingerprint_v1` 为
+  `673f01dc3a60d8d36316d3fbc58d75b144012fd0cca200c7086d900f98f5c50d`；该内容指纹不绑定
+  inode/mtime。旧 `7cc9…` 仅是旧主机身份指纹，不用于跨机相等声明。
 - 项目不再使用或忽略根 `test_data/`；当前 Skill 合同测试不携带私人 Garmin 输入，
   私人 raw/FIT 只能留在被忽略的 state 或仓库外归档。
 - 根 `references/` 只由用户主动要求维护；运行说明和 Skill 合同位于 `source/AGENTS.md`、
@@ -60,7 +64,7 @@
 
 - 迁移恢复与 M11 r20 前置收口正在按严格串行方案执行：
   `docs/exec-plans/active/ADHOC-0017-workspace-migration-recovery.md`。
-- M11 content-first v4 当前r19被公开canary阻塞：Prompt/Schema语义parity修复、909项门和Code Validator均PASS；唯一公开模型调用的wire结果通过，但day_3/day_6休息课输出空`technique_notes`，违反业务Schema非空数组约束。未自动重试，私人周报调用仍为0，正式state不变：
+- M11 content-first v4 当前r19被公开canary阻塞：Prompt/Schema语义parity修复、909项门和Code Validator均PASS；唯一公开模型调用的wire结果通过，但day_3/day_6休息课输出空`technique_notes`，违反业务Schema非空数组约束。未自动重试，私人周报调用仍为0，正式state不变；当前统一为`blocked/DIAGNOSIS_PENDING`，等待全新Failure Analyst归因：
   `docs/exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md`。
 
 ## 最近完成计划

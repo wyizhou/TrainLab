@@ -7,7 +7,7 @@
 - Batch ID：`serial-m11-v4`
 - 返工来源：`docs/exec-plans/completed/M11-email-presentation-0001-readable-cid.md`
 - 开始日期：2026-08-24
-- 最后更新：2026-08-25
+- 最后更新：2026-08-26
 
 ## 目标与验收标准
 
@@ -431,6 +431,7 @@ Host assembler和Reader合同SHA。Runner必须保存`wire-result.json`，随后
 | 31 | Final Code Validator / M11-v4-r18 VC-010 | 高：Candidate内结果闭包、canary门、活动日期与完整代码门 | high | high | 首次FAIL后的唯一集中修正必须由全新Agent独立终验 | available | 只读 | 仅VC-010、A-018/A-019、适用规则和当前仓库结果 | FAIL：AC-013/GATE-004；business→wire parity已闭合，但缺少Prompt槽位、variant、步骤和禁用字段与Schema的自动语义parity |
 | 32 | Failure Analyst / M11-v4-r19 Prompt parity | 高：区分Prompt语义parity缺口的实现、合同或验证责任 | high | high | r18最终验证后进入DIAGNOSIS_PENDING；r19实施前必须正式归因 | available | 只读 | VC-010、A-018/A-019、当前Prompt/Schema/parity实现与失败特征 | completed：M11-V4-F08=`IMPLEMENTATION_DEFECT`、`safe_auto_fix=true`、`contract_change_required=false`、confidence=0.995；允许在VC-010内实施一次针对性修正 |
 | 33 | Code Validator / M11-v4-r19 VC-010 | 高：Prompt/business/wire/Host三层parity与完整模型前门 | high | high | 公开canary前必须独立复验当前快照 | available | 只读 | 仅VC-010、A-018/A-019、适用规则和当前仓库结果 | PASS：909 tests、39项专项、Ruff/format/mypy、AST/Schema/Markdown/隐私/diff、正式state与零调用均闭合；无blocking finding |
+| 34 | Failure Analyst / M11-v4-r20 | 高：wire兼容投影遗漏业务限制的公开canary失败归因 | high | high | 当前新失败必须在VC-010内先区分实现、合同、验证和环境责任 | available | 只读 | 仅VC-010、A-018/A-019、适用规则、当前代码和可核验失败记录 | dispatched：固定三条件门；不得修改文件、合同或测试 |
 
 Validator 只按冻结合同验收，不得临时扩张威胁模型。首次 FAIL 只汇总一个修正批次并交全新
 最终 Validator；最终仍 FAIL/INCONCLUSIVE 时停止，不循环补丁或执行真实模型调用。
@@ -462,15 +463,15 @@ Validator 只按冻结合同验收，不得临时扩张威胁模型。首次 FAI
 
 ## 当前检查点
 
-- 当前 Loop：M11 v4-r19 公开canary业务校验阻塞。
-- 最近完成：唯一公开canary已调用1次；wire Schema通过，业务Schema因day_3/day_6休息课的空`technique_notes`数组阻断，失败证据原子闭合。
-- 当前焦点：保持公开Candidate `/private/tmp/trainlab-m11-v4-r19-canary.NvxQ0X/candidate` 不变，并确认私人模型调用为0。
-- 下一动作：依批准计划停止；需要用户批准新的合同/实现修订后，才能建立新canary或调用模型。
+- 当前 Loop：M11 v4-r20 新失败独立归因。
+- 最近完成：迁移/状态批次已独立 PASS 并推送；唯一公开canary历史记录仍为wire通过、业务Schema因day_3/day_6休息课的空`technique_notes`数组阻断。
+- 当前焦点：迁移后原公开Candidate路径不可用，不伪造或重建历史证据；仅以当前代码、VC-010和已记录receipt SHA `a9c02a82…a760812`交全新Failure Analyst。
+- 下一动作：只有Failure Analyst同时返回`IMPLEMENTATION_DEFECT`、`safe_auto_fix=true`、`contract_change_required=false`才实施r20；否则保持blocked并停止。
 - 阻塞项：wire允许移除`minItems`，而当前Prompt语义块未表达该业务层非空数组约束；模型合理地产生空数组后被最终业务校验拒绝。
-- blocker_type：`MODEL_BUSINESS_VALIDATION_FAILED`
-- 诊断状态：`completed`（M11-V4-F08已关闭；本次新失败尚未进入新诊断批次）
+- blocker_type：`DIAGNOSIS_PENDING`
+- 诊断状态：`pending`
 - 已变更文件：本计划、M11 Roadmap/活动指针、v4 Schema/共享健康验证器、Candidate Builder、Codex Runner、内容合同测试及 source 运行/Skill说明。
-- 待验证项：新修订授权、全新公开canary、私人周报调用与三类最终Validator。
+- 待验证项：r19新失败Failure Analyst、r20代码门与全新Code Validator；新公开canary和私人周报均不在本轮调用范围。
 
 ## 决策与发现
 
@@ -519,7 +520,7 @@ Validator 只按冻结合同验收，不得临时扩张威胁模型。首次 FAI
 
 - 逐字冻结合同版本：`VC-010`。
 - 中性交接：仅冻结合同、A-018/A-019、适用规则和当前仓库结果；不提供历史 Validator verdict 或实施者辩护。
-- 结果：`FAIL`——Final Code Validator绑定`AC-013/GATE-004`确认Prompt与Schema缺少自动语义parity；依批准的停止规则不建立公开或私人Candidate。
+- 结果：`blocked / DIAGNOSIS_PENDING`——r19 Code Validator已按VC-010 PASS；随后唯一公开canary wire通过但业务Schema因rest空`technique_notes`阻断。该新失败尚待全新Failure Analyst归因，不据过期r18结论修改实现。
 
 ## 集成级独立验证
 
@@ -595,3 +596,4 @@ Validator 只按冻结合同验收，不得临时扩张威胁模型。首次 FAI
 | 2026-08-25 / r18-final-validator-fail-55 | 全新Final Code Validator独立完成896 tests及全部静态门后返回FAIL | `AC-013/GATE-004`：business→wire parity完整，但Prompt只有字节SHA绑定，没有自动证明槽位、课程variants、步骤和禁用字段与Schema同构 | 依冻结停止规则转blocked/DIAGNOSIS_PENDING；不自动修补、不建立canary、不调用模型，等待用户批准小范围方案 |
 | 2026-08-25 / r19-authorized-56 | 用户批准Prompt语义同构闭包与原流程续跑计划 | 保留失败版Prompt v3；拟新增Schema派生的v4语义块，VC-010不变；实施条件严格绑定Failure Analyst归因 | 保持blocked/DIAGNOSIS_PENDING并派全新只读Failure Analyst；满足三项固定条件后才实施 |
 | 2026-08-25 / r19-diagnosis-and-gates-57 | Failure Analyst确认M11-V4-F08可安全自动修复；v4 Prompt语义parity实现、909 tests/静态门及全新Code Validator均PASS，随后执行唯一公开canary | canary wire通过但业务层返回`training_plan.days.day_3:anyOf`、`day_6:anyOf`；两节rest的`technique_notes=[]`违反业务Schema `minItems:1`。终态receipt SHA `a9c02a82…a760812`，模型1、私人模型0、Provider/外部调用0，正式state不变 | 依固定停止规则转blocked，不重试、不建立私人Candidate；等待用户批准是否把wire不可表达的业务约束纳入下一版自动Prompt语义 |
+| 2026-08-26 / r20-diagnosis-pending-58 | 用户批准迁移收口与r20串行方案；Migration/State批次已由全新Validator PASS并推送 | 原r19 Candidate迁移后不可用，只保留已记录receipt SHA；新失败尚未正式归因 | 统一blocked/DIAGNOSIS_PENDING/pending；交全新只读high/high Failure Analyst，三条件同时满足才实施r20 |

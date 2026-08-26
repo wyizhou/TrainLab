@@ -235,9 +235,10 @@ text、HTML和CID全部闭合，零调用重放及全新Delivery/Data-Privacy Va
 有界 FIT 技术复盘并生成唯一固定周计划。先交付 Markdown 与扁平低保真 HTML；允许一次隔离
 真实周报 Codex 调用，但不调用 Garmin/Gmail/Workout/Sites/cron，不发送邮件或修改正式 state。
 2026-08-24 根开发 Harness 升级到 agentForge v0.4.4 后，M11 以 legacy transition 建立面向
-后续工作的冻结合同；独立 Failure Analyst 已完成归因，用户批准 VC-002 六类健康三状态、
-逐活动证据身份和路径边界。当前先进行全新 Contract Validator 验收，PASS 前不得修改产品实现
-或执行真实模型调用。
+后续工作的冻结合同；多轮合同与实现收敛后当前使用 VC-010。r19 Code Validator 已 PASS，唯一
+公开canary的wire结果通过，但两节rest输出空`technique_notes`后被业务Schema非空约束正确拒绝；
+未重试，私人模型调用为0。当前状态统一为`blocked/DIAGNOSIS_PENDING`，先由全新Failure Analyst
+归因；三项准入条件满足前不得实施r20、建立Candidate或调用模型。
 
 | 任务 | 状态 | 优先级 | 显式依赖 | Batch | 预期写入范围 | Exec plan |
 | --- | --- | --- | --- | --- | --- | --- |

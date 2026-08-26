@@ -117,8 +117,8 @@ M11 v4-r20 的 business-only Prompt 语义闭包。最终停在新公开 canary 
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | Migration/State Validator / ADHOC-0017 | VC-001 | 高：私人状态与跨机完整性 | high | high | 高风险只读终验 | available | 只读 | 固定 Validator 输出；状态批次 PASS 门 | INCONCLUSIVE：验证者主动报告隔离输入受历史材料污染；报告不可用于修复或放行 |
 | 2 | Migration/State Validator / ADHOC-0017-r2 | VC-001 | 高：私人状态与跨机完整性 | high | high | 首轮独立性协议失效，按同一合同重新独立验证 | available | 只读 | 固定 Validator 输出；状态批次 PASS 门 | FAIL：仅 AC-001/GATE-001/TM-001，7 个公开状态批次结果尚未提交推送；其余适用标准 PASS |
-| 3 | Migration/State Validator / ADHOC-0017-r3 | VC-001 | 高：私人状态与跨机完整性 | high | high | 修复单一交付缺口后重新独立验证 | available | 只读 | 固定 Validator 输出；状态批次 PASS 门 | dispatched：仅 VC-001、适用规则和当前仓库结果；不提供历史报告 |
-| 4 | Failure Analyst / M11-v4-r20 | VC-010 | 高：新模型业务失败归因 | high | high | A-019 强制归因 | available | 只读 | 固定 Failure Analyst 输出；三条件门 | pending |
+| 3 | Migration/State Validator / ADHOC-0017-r3 | VC-001 | 高：私人状态与跨机完整性 | high | high | 修复单一交付缺口后重新独立验证 | available | 只读 | 固定 Validator 输出；状态批次 PASS 门 | PASS：914 tests、完整静态门、正式state/指纹/隐私、Git clean且HEAD=origin；无blocking finding |
+| 4 | Failure Analyst / M11-v4-r20 | VC-010 | 高：新模型业务失败归因 | high | high | A-019 强制归因 | available | 只读 | 固定 Failure Analyst 输出；三条件门 | dispatched：仅VC-010、A-018/A-019、适用规则、当前代码与可核验失败记录 |
 | 5 | M11 Code Validator / M11-v4-r20 | VC-010 | 高：Prompt/Schema/模型前门 | high | high | 高风险代码终验 | available | 只读 | 固定 Validator 输出；M11 PASS 门 | pending |
 | 6 | Integration Validator / ADHOC-0017+M11 | VC-001 + VC-010 | 高：迁移与M11组合结果 | high | high | 最终整体终验 | available | 只读 | 固定 Validator 输出；完整门与零外部动作 PASS | pending |
 
@@ -129,17 +129,17 @@ M11 v4-r20 的 business-only Prompt 语义闭包。最终停在新公开 canary 
 | 1. 建立恢复分支、冻结计划、隐私审计、恢复快照并推送 | done | 本地提交 `fb8d291` 与阻塞记录 `e40072f` 已推送；远端分支精确指向 `e40072f`。 |
 | 2. 恢复 Python 3.12 隔离环境并运行修改前基线 | done | 依赖合同准确红灯后转绿；910 tests、Ruff/format/mypy/compile、90 JSON/87 Schema、6 YAML、81 Markdown、本地链接、隐私边界全部 PASS；state 唯一错误为已知 `raw_unregistered_file`。 |
 | 3. 测试先行统一 Finder 元数据和内容指纹合同 | done | 4 个新行为节点红→绿；3 个 Finder 文件按原 SHA 移入 owner-only Git ignored 隔离归档；正式 state PASS，内容指纹 `673f01dc…f5c50d`。 |
-| 4. Migration/State Validator 与批次提交推送 | in_progress | 状态批次提交 `58815ff` 已推送且 HEAD=origin；第三个全新只读 high/high Validator 已记录派发。 |
-| 5. M11 新失败 Failure Analyst | pending | 待迁移批次 PASS。 |
+| 4. Migration/State Validator 与批次提交推送 | done | 全新r3 Validator PASS；914 tests、完整静态门、正式state/指纹/隐私、Git clean与远端同步闭合。 |
+| 5. M11 新失败 Failure Analyst | in_progress | M11状态已统一blocked/DIAGNOSIS_PENDING/pending；全新只读high/high Analyst已记录派发。 |
 | 6. 测试先行实施 r20 通用约束派生 | pending | 仅诊断三条件满足时。 |
 | 7. M11 Code Validator、集成 Validator、回写与推送 | pending | 待完整门。 |
 
 ## 当前检查点
 
-- 当前 Loop：Migration/State 独立验证。
-- 最近完成：状态合同定向 98 tests 与完整 914 tests PASS；Ruff/format、mypy 110 files、compile、隐私/diff PASS；正式 state 9336 raw、SQLite integrity/FK、内容指纹全部闭合。
-- 当前焦点：AC-001/GATE-001/TM-001 的唯一交付缺口已由精确提交 `58815ff` 和远端同步消除；等待第三个全新只读 high/high Validator。
-- 下一动作：只有第三轮 PASS 才进入 M11 Failure Analyst；FAIL/INCONCLUSIVE 按冻结合同处理，不自行认证。
+- 当前 Loop：M11 r19新失败独立归因。
+- 最近完成：第三轮Migration/State Validator有效PASS；914 tests、完整静态门、正式state/指纹/隐私、Git clean与远端同步闭合。
+- 当前焦点：仅将VC-010、A-018/A-019、适用规则、当前代码和可核验失败记录交全新Failure Analyst；不提供实施者预判。
+- 下一动作：只有归因同时满足`IMPLEMENTATION_DEFECT`、`safe_auto_fix=true`、`contract_change_required=false`才进入r20。
 - 阻塞项：无。
 - blocker_type：`none`
 - 诊断状态：`not_triggered`
@@ -152,7 +152,7 @@ M11 v4-r20 的 business-only Prompt 语义闭包。最终停在新公开 canary 
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | migration-state-r1 | fresh high/high read-only | VC-001 | INCONCLUSIVE | 独立性协议失效；报告不得产生可执行 FAIL 或 PASS | 不修改实现、不采用报告观察；以同一冻结合同交全新 Validator | 否 | Migration/State Validator r2 |
 | migration-state-r2 | fresh high/high read-only | VC-001 | FAIL | AC-001/GATE-001/TM-001：5 tracked + 2 untracked、0 staged；其余适用标准和全部门 PASS | 精确隐私复核后按明确清单提交并推送，不修改实现 | 否 | Migration/State Validator r3 |
-| migration-state-r3 | fresh high/high read-only | VC-001 | pending | pending | PASS 后进入 M11 归因 | 否 | M11 Failure Analyst |
+| migration-state-r3 | fresh high/high read-only | VC-001 | PASS | AC-001～004/007、INV、TM、GATE-001～005全部适用项闭合；无blocking finding | 状态批次完成，进入M11归因 | 否 | M11 Failure Analyst |
 | m11-r20 | pending | VC-010 | pending | pending | PASS 后进入整体终验 | 按 A-019 | Integration Validator |
 | integration | pending | VC-001+VC-010 | pending | pending | PASS 后回写并停在 canary 门前 | 否 | 无 |
 
@@ -210,3 +210,4 @@ Validator 必须返回 `contract_version`、`overall_verdict`、`criterion_resul
 | 2026-08-26 / migration-validator-r1-inconclusive | 首轮 Validator 完成 914 tests 与适用静态门，但主动报告其隔离输入受到历史材料污染并返回 INCONCLUSIVE | 报告不具备独立裁决效力，不能用于修改或放行；不向后续 Validator 传播其观察 | 保持 validating，以逐字 VC-001 和当前仓库交第二个全新只读 high/high Validator |
 | 2026-08-26 / migration-validator-r2-fail | 第二轮全新 Validator 独立完成 914 tests、完整静态门、正式 state/指纹/隐私检查；除交付状态外全部适用标准 PASS | 唯一阻塞绑定 AC-001/GATE-001/TM-001：7 个公开状态批次结果尚未暂存、提交、推送 | 不改实现；按明确清单隐私复核、提交推送，再交第三个全新 Validator |
 | 2026-08-26 / migration-delivery-fixed | 7 个公开文件经精确清单、凭据/私人路径与 cached diff 检查后提交为 `58815ff` 并推送；HEAD 与远端分支 SHA 一致 | 单一交付缺口已消除；实现和正式 state 未改变 | 交第三个全新只读 high/high Validator 按同一 VC-001 复核 |
+| 2026-08-26 / migration-state-pass | 第三轮全新Validator按VC-001返回PASS；914 tests、静态门、正式state、portable fingerprint、隐私与Git同步全部闭合 | 原28项历史计数无法从现存对象严格还原，仅列advisory，不影响当前可达性与隐私结论 | 进入M11状态统一与全新Failure Analyst归因门 |
