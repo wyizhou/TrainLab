@@ -1,6 +1,6 @@
 # 执行计划：迁移工作区保护、状态可迁移性与 M11 r20 收口
 
-- 状态：`active`
+- 状态：`validating`
 - 负责人：主协调 Agent
 - Roadmap ID：`ADHOC-0017`
 - 阶段/子项目：`不适用 / M11 前置恢复`
@@ -115,10 +115,12 @@ M11 v4-r20 的 business-only Prompt 语义闭包。最终停在新公开 canary 
 
 | Attempt | Agent 角色/任务 ID | 合同版本 | 风险与复杂度 | 模型档位 | 推理档位 | 选档理由 | 平台支持 | 写入边界 | 产物与门禁 | 结果 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | Migration/State Validator / ADHOC-0017 | VC-001 | 高：私人状态与跨机完整性 | high | high | 高风险只读终验 | available | 只读 | 固定 Validator 输出；状态批次 PASS 门 | pending |
-| 2 | Failure Analyst / M11-v4-r20 | VC-010 | 高：新模型业务失败归因 | high | high | A-019 强制归因 | available | 只读 | 固定 Failure Analyst 输出；三条件门 | pending |
-| 3 | M11 Code Validator / M11-v4-r20 | VC-010 | 高：Prompt/Schema/模型前门 | high | high | 高风险代码终验 | available | 只读 | 固定 Validator 输出；M11 PASS 门 | pending |
-| 4 | Integration Validator / ADHOC-0017+M11 | VC-001 + VC-010 | 高：迁移与M11组合结果 | high | high | 最终整体终验 | available | 只读 | 完整门与零外部动作 PASS | pending |
+| 1 | Migration/State Validator / ADHOC-0017 | VC-001 | 高：私人状态与跨机完整性 | high | high | 高风险只读终验 | available | 只读 | 固定 Validator 输出；状态批次 PASS 门 | INCONCLUSIVE：验证者主动报告隔离输入受历史材料污染；报告不可用于修复或放行 |
+| 2 | Migration/State Validator / ADHOC-0017-r2 | VC-001 | 高：私人状态与跨机完整性 | high | high | 首轮独立性协议失效，按同一合同重新独立验证 | available | 只读 | 固定 Validator 输出；状态批次 PASS 门 | FAIL：仅 AC-001/GATE-001/TM-001，7 个公开状态批次结果尚未提交推送；其余适用标准 PASS |
+| 3 | Migration/State Validator / ADHOC-0017-r3 | VC-001 | 高：私人状态与跨机完整性 | high | high | 修复单一交付缺口后重新独立验证 | available | 只读 | 固定 Validator 输出；状态批次 PASS 门 | pending：精确暂存、提交、推送后派发 |
+| 4 | Failure Analyst / M11-v4-r20 | VC-010 | 高：新模型业务失败归因 | high | high | A-019 强制归因 | available | 只读 | 固定 Failure Analyst 输出；三条件门 | pending |
+| 5 | M11 Code Validator / M11-v4-r20 | VC-010 | 高：Prompt/Schema/模型前门 | high | high | 高风险代码终验 | available | 只读 | 固定 Validator 输出；M11 PASS 门 | pending |
+| 6 | Integration Validator / ADHOC-0017+M11 | VC-001 + VC-010 | 高：迁移与M11组合结果 | high | high | 最终整体终验 | available | 只读 | 固定 Validator 输出；完整门与零外部动作 PASS | pending |
 
 ## 工作分解
 
@@ -126,29 +128,31 @@ M11 v4-r20 的 business-only Prompt 语义闭包。最终停在新公开 canary 
 | --- | --- | --- |
 | 1. 建立恢复分支、冻结计划、隐私审计、恢复快照并推送 | done | 本地提交 `fb8d291` 与阻塞记录 `e40072f` 已推送；远端分支精确指向 `e40072f`。 |
 | 2. 恢复 Python 3.12 隔离环境并运行修改前基线 | done | 依赖合同准确红灯后转绿；910 tests、Ruff/format/mypy/compile、90 JSON/87 Schema、6 YAML、81 Markdown、本地链接、隐私边界全部 PASS；state 唯一错误为已知 `raw_unregistered_file`。 |
-| 3. 测试先行统一 Finder 元数据和内容指纹合同 | in_progress | 先定义 Finder 严格拒绝、portable content fingerprint 稳定性和字节变化回归。 |
-| 4. Migration/State Validator 与批次提交推送 | pending | 待实现。 |
+| 3. 测试先行统一 Finder 元数据和内容指纹合同 | done | 4 个新行为节点红→绿；3 个 Finder 文件按原 SHA 移入 owner-only Git ignored 隔离归档；正式 state PASS，内容指纹 `673f01dc…f5c50d`。 |
+| 4. Migration/State Validator 与批次提交推送 | in_progress | 当前结果 914 tests、Ruff/format/mypy/compile、state/隐私/diff 门 PASS；已记录全新只读 high/high Validator 派发。 |
 | 5. M11 新失败 Failure Analyst | pending | 待迁移批次 PASS。 |
 | 6. 测试先行实施 r20 通用约束派生 | pending | 仅诊断三条件满足时。 |
 | 7. M11 Code Validator、集成 Validator、回写与推送 | pending | 待完整门。 |
 
 ## 当前检查点
 
-- 当前 Loop：正式 state Finder 元数据与 portable fingerprint 合同。
-- 最近完成：`cryptography==47.0.0` 红→绿；完整基线 910 tests 与全部静态/Schema/Markdown/隐私门 PASS；SQLite integrity/FK/六表通过且唯一 state 错误为已知 raw Finder 元数据。
-- 当前焦点：测试先行统一验证器、Candidate 身份指纹和跨主机内容指纹。
-- 下一动作：新增状态合同失败测试，随后只修改共享状态验证/指纹实现并隔离三个 `.DS_Store`。
+- 当前 Loop：Migration/State 独立验证。
+- 最近完成：状态合同定向 98 tests 与完整 914 tests PASS；Ruff/format、mypy 110 files、compile、隐私/diff PASS；正式 state 9336 raw、SQLite integrity/FK、内容指纹全部闭合。
+- 当前焦点：第二轮 Validator 对状态实现、测试、正式 state 和隐私门均判 PASS；唯一有效阻塞为 7 个公开批次文件尚未精确暂存、提交和推送。
+- 下一动作：只消除 AC-001/GATE-001/TM-001 交付缺口，推送后以同一合同交第三个全新只读 high/high Validator；不修改实现。
 - 阻塞项：无。
 - blocker_type：`none`
 - 诊断状态：`not_triggered`
-- 已变更文件：本计划；分支引用。
-- 待验证项：迁移快照隐私、基线环境、状态合同、r20 与两级 Validator。
+- 已变更文件：`source/skills/_shared/state_fingerprint.py`、状态验证/Candidate 指纹脚本、3 份状态合同测试；3 个 Finder 文件已移入 ignored owner-only 隔离目录。
+- 待验证项：Migration/State Validator、M11 Failure Analyst、r20 与最终两级 Validator。
 
 ## Validator 结论处理
 
 | Loop | Validator 身份 | 合同版本 | 结论 | 绑定标准与证据 | 主协调 Agent 处理 | 是否触发诊断 | 下一 Validator |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| migration-state | pending | VC-001 | pending | pending | PASS 后进入 M11 归因 | 否 | M11 Failure Analyst |
+| migration-state-r1 | fresh high/high read-only | VC-001 | INCONCLUSIVE | 独立性协议失效；报告不得产生可执行 FAIL 或 PASS | 不修改实现、不采用报告观察；以同一冻结合同交全新 Validator | 否 | Migration/State Validator r2 |
+| migration-state-r2 | fresh high/high read-only | VC-001 | FAIL | AC-001/GATE-001/TM-001：5 tracked + 2 untracked、0 staged；其余适用标准和全部门 PASS | 精确隐私复核后按明确清单提交并推送，不修改实现 | 否 | Migration/State Validator r3 |
+| migration-state-r3 | fresh high/high read-only | VC-001 | pending | pending | PASS 后进入 M11 归因 | 否 | M11 Failure Analyst |
 | m11-r20 | pending | VC-010 | pending | pending | PASS 后进入整体终验 | 按 A-019 | Integration Validator |
 | integration | pending | VC-001+VC-010 | pending | pending | PASS 后回写并停在 canary 门前 | 否 | 无 |
 
@@ -159,6 +163,7 @@ M11 v4-r20 的 business-only Prompt 语义闭包。最终停在新公开 canary 
 | M11-V4-R20-F01 | VC-010 | AC-013/GATE-004 | wire 删除 `minItems`，Prompt 机器语义未表达，公开 rest 输出空 `technique_notes` 后业务拒绝 | r19 canary | 尚未实施 r20；先归因 | 不适用 | active plan 记录与当前 Schema/Prompt/parity | pending Failure Analyst |
 | ADHOC-0017-F01 | VC-001 | AC-001/GATE-001 | 恢复分支 push 被 GitHub workflow scope 门拒绝 | migration snapshot | HTTPS token scope 与 SSH 身份只读核对 | 不适用 | GitHub remote rejection、`gh auth status`、SSH publickey rejection | blocked：等待新认证权限 |
 | ADHOC-0017-F02 | VC-001 | AC-002/GATE-002 | fixed requirements 在 macOS x86_64 解析到无 wheel 的 cryptography 50.0.1 | baseline environment | exact install、no-build wheel probe、现有 conda Python 3.12 探测、47.0.0 full-requirements import probe | 不适用 | uv resolver/build 输出；Rust 缺失；47.0.0 52 packages 导入成功 | resolved：用户批准精确 pin；合同测试红→绿，完整基线通过 |
+| ADHOC-0017-F03 | VC-001 | AC-001/GATE-001/TM-001 | 状态批次 5 tracked + 2 untracked，尚未暂存、提交和推送 | migration-state-r2 | 全部实现与验证门已 PASS；只执行明确清单交付 | 不适用 | Validator 固定报告与 Git status | active：精确提交推送后由全新 Validator 复核 |
 
 ## 决策与发现
 
@@ -201,3 +206,6 @@ Validator 必须返回 `contract_version`、`overall_verdict`、`criterion_resul
 | 2026-08-26 / baseline-env-blocked | bundled Python 3.12.13 + exact requirements 在测试前复现；无源码构建和现有 Conda 环境均核对；47.0.0 wheel 与全依赖导入成功 | requirements 未固定传递依赖，解析到不支持 macOS x86_64 wheel 的 cryptography 50.0.1；不是项目测试失败 | 请求人工批准增加 `cryptography==47.0.0`，不改业务代码或降低测试 |
 | 2026-08-26 / dependency-pin-authorized | 用户明确回复“授权开始” | 允许只增加 `cryptography==47.0.0` 和对应合同回归；不授权 Rust/system 安装或其他依赖变更 | 先红后绿并恢复完整基线 |
 | 2026-08-26 / migrated-baseline-pass | 依赖合同旧文件红灯、精确 pin 后转绿；910 tests、Ruff/format、mypy 108 files、compile、90 JSON/87 Schema、6 YAML、81 Markdown/链接和隐私门 PASS | state integrity/FK/六表正确，唯一错误为预期 `raw_unregistered_file`；未发现其他迁移回归 | 提交依赖修复，进入 Finder 元数据和 portable fingerprint 测试先行 |
+| 2026-08-26 / state-gates-pass | Finder/Candidate、verify output、跨 inode/mtime 稳定和登记字节变化节点红→绿；3 文件按 SHA 可恢复隔离；98 定向与 914 完整 tests、静态门、正式 state PASS | 新 portable fingerprint 为 `673f01dc3a60d8d36316d3fbc58d75b144012fd0cca200c7086d900f98f5c50d`，entry 9337/raw 9336；旧主机身份指纹不作相等声明 | 状态转 validating，交全新只读 high/high Migration/State Validator |
+| 2026-08-26 / migration-validator-r1-inconclusive | 首轮 Validator 完成 914 tests 与适用静态门，但主动报告其隔离输入受到历史材料污染并返回 INCONCLUSIVE | 报告不具备独立裁决效力，不能用于修改或放行；不向后续 Validator 传播其观察 | 保持 validating，以逐字 VC-001 和当前仓库交第二个全新只读 high/high Validator |
+| 2026-08-26 / migration-validator-r2-fail | 第二轮全新 Validator 独立完成 914 tests、完整静态门、正式 state/指纹/隐私检查；除交付状态外全部适用标准 PASS | 唯一阻塞绑定 AC-001/GATE-001/TM-001：7 个公开状态批次结果尚未暂存、提交、推送 | 不改实现；按明确清单隐私复核、提交推送，再交第三个全新 Validator |

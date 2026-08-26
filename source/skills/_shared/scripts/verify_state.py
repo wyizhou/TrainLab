@@ -12,6 +12,8 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from state_fingerprint import formal_state_content_fingerprint  # noqa: E402
+
 from state import EXPECTED_TABLES, connect, state_path  # noqa: E402
 
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -613,11 +615,15 @@ def main() -> int:
         ).fetchall()
         if duplicate_active:
             errors.append("active_dedupe_duplicate")
-        errors.extend(
-            _raw_errors(connection, database.parent)
-            if tables == EXPECTED_TABLES
-            else ["raw_check_skipped_schema_invalid"]
-        )
+        content_fingerprint: dict[str, object] | None = None
+        if tables == EXPECTED_TABLES:
+            errors.extend(_raw_errors(connection, database.parent))
+            try:
+                content_fingerprint = formal_state_content_fingerprint(database)
+            except ValueError as exc:
+                errors.append(str(exc))
+        else:
+            errors.append("raw_check_skipped_schema_invalid")
         approval_mismatches = connection.execute(
             """SELECT COUNT(*) FROM approvals a JOIN skill_outputs o ON o.id=a.candidate_output_id
                WHERE a.candidate_output_sha256 <> o.content_sha256"""
@@ -639,6 +645,7 @@ def main() -> int:
             "integrity_check": integrity,
             "foreign_key_errors": len(foreign_keys),
             "contract_errors": sorted(set(errors)),
+            "formal_state_content_fingerprint": content_fingerprint,
             "counts": {
                 table: connection.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
                 for table in sorted(EXPECTED_TABLES & tables)

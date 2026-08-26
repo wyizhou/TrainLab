@@ -77,6 +77,22 @@ def test_formal_private_files_reject_wide_mode_and_hardlinks(tmp_path: Path) -> 
         builder._formal_state_fingerprint(root)
 
 
+def test_formal_fingerprint_rejects_finder_metadata_even_when_owner_only(
+    tmp_path: Path,
+) -> None:
+    builder = _module(
+        ROOT / "skills/_shared/scripts/build_m8_candidate.py",
+        "m8_r32_builder_finder_metadata",
+    )
+    root = _formal_root(tmp_path)
+    finder = root / "state/raw/.DS_Store"
+    finder.write_bytes(b"finder")
+    os.chmod(finder, 0o600)
+
+    with pytest.raises(ValueError, match="formal_state_finder_metadata_forbidden"):
+        builder._formal_state_fingerprint(root)
+
+
 def test_formal_database_and_wal_reject_unsafe_metadata(tmp_path: Path) -> None:
     builder = _module(
         ROOT / "skills/_shared/scripts/build_m8_candidate.py",

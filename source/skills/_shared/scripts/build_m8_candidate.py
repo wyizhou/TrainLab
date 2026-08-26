@@ -217,6 +217,8 @@ def _assert_formal_shm_inactive(source_root: Path) -> None:
 def _entry_fingerprint(path: Path, relative: Path) -> dict[str, object]:
     metadata = path.lstat()
     mode = metadata.st_mode
+    if relative.name == ".DS_Store" and relative.parts[:1] == ("raw",):
+        raise ValueError("formal_state_finder_metadata_forbidden")
     if stat.S_ISLNK(mode) or not (stat.S_ISREG(mode) or stat.S_ISDIR(mode)):
         raise ValueError("formal_state_unsupported_entry")
     if metadata.st_uid != os.getuid():
@@ -225,16 +227,7 @@ def _entry_fingerprint(path: Path, relative: Path) -> dict[str, object]:
         if stat.S_IMODE(mode) != 0o700:
             raise ValueError("formal_state_unsafe_entry")
     else:
-        # Finder metadata is not part of the registered evidence set and is
-        # intentionally excluded from every Candidate.  It is still included
-        # in the before/after fingerprint, while all evidence and SQLite files
-        # remain owner-only and single-link.
-        is_finder_metadata = relative.name == ".DS_Store" and str(relative).startswith(
-            "raw/"
-        )
-        if metadata.st_nlink != 1 or (
-            not is_finder_metadata and stat.S_IMODE(mode) != 0o600
-        ):
+        if metadata.st_nlink != 1 or stat.S_IMODE(mode) != 0o600:
             raise ValueError("formal_state_unsafe_entry")
     entry: dict[str, object] = {
         "path": relative.as_posix(),

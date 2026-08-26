@@ -77,6 +77,13 @@ def test_state_schema_is_exact(tmp_path: Path) -> None:
     assert verified.returncode == 0, verified.stdout + verified.stderr
     payload = json.loads(verified.stdout)
     assert payload["schema_exact"] is True
+    content_fingerprint = payload["formal_state_content_fingerprint"]
+    assert (
+        content_fingerprint["schema_version"] == "formal_state_content_fingerprint_v1"
+    )
+    assert content_fingerprint["entry_count"] == 1
+    assert content_fingerprint["raw_file_count"] == 0
+    assert len(content_fingerprint["sha256"]) == 64
     connection = connect(db)
     assert connection.execute("PRAGMA user_version").fetchone()[0] == 1
     for table in (
