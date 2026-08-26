@@ -1,6 +1,6 @@
 # 执行计划：迁移工作区保护、状态可迁移性与 M11 r20 收口
 
-- 状态：`active`
+- 状态：`blocked`
 - 负责人：主协调 Agent
 - Roadmap ID：`ADHOC-0017`
 - 阶段/子项目：`不适用 / M11 前置恢复`
@@ -124,7 +124,7 @@ M11 v4-r20 的 business-only Prompt 语义闭包。最终停在新公开 canary 
 
 | 步骤 | 状态 | 证据 |
 | --- | --- | --- |
-| 1. 建立恢复分支、冻结计划、隐私审计、恢复快照并推送 | in_progress | 分支已从 `main@b172f95` 建立；149 个计划内公开文件已按明确路径清单暂存，敏感路径/高置信凭据扫描与 staged diff check 均无命中。 |
+| 1. 建立恢复分支、冻结计划、隐私审计、恢复快照并推送 | blocked | 本地恢复提交 `fb8d291` 已建立；HTTPS push 因现有 GitHub OAuth token 缺少 `workflow` scope 被远端拒绝，SSH 身份不可用。 |
 | 2. 恢复 Python 3.12 隔离环境并运行修改前基线 | pending | 待步骤1。 |
 | 3. 测试先行统一 Finder 元数据和内容指纹合同 | pending | 待基线。 |
 | 4. Migration/State Validator 与批次提交推送 | pending | 待实现。 |
@@ -134,12 +134,12 @@ M11 v4-r20 的 business-only Prompt 语义闭包。最终停在新公开 canary 
 
 ## 当前检查点
 
-- 当前 Loop：迁移恢复快照。
-- 最近完成：从 `main@b172f95` 创建恢复分支；owner-only 证据根为 0700；149 个文件完成明确清单暂存和隐私审计。
-- 当前焦点：建立并推送 WIP 恢复快照。
-- 下一动作：提交当前 staged snapshot 并仅推送恢复分支，然后恢复 Python 3.12 基线。
-- 阻塞项：无。
-- blocker_type：`none`
+- 当前 Loop：迁移恢复快照远端保护。
+- 最近完成：本地恢复提交 `fb8d291` 已建立；owner-only 证据根为 0700；149 个文件通过明确清单和隐私审计。
+- 当前焦点：取得完成已授权 push 所需的 GitHub workflow scope。
+- 下一动作：用户明确批准扩展 GitHub OAuth `workflow` scope 后刷新凭据并仅重试恢复分支 push；成功前不进入产品修改。
+- 阻塞项：GitHub HTTPS token scopes 仅有 `gist/read:org/repo`，因提交历史包含 `.github/workflows/ci.yml`，远端拒绝创建分支；SSH 返回 `Permission denied (publickey)`。
+- blocker_type：`ENVIRONMENT_FAILURE`
 - 诊断状态：`not_triggered`
 - 已变更文件：本计划；分支引用。
 - 待验证项：迁移快照隐私、基线环境、状态合同、r20 与两级 Validator。
@@ -157,6 +157,7 @@ M11 v4-r20 的 business-only Prompt 语义闭包。最终停在新公开 canary 
 | Failure ID | 合同版本 | 标准 ID | 失败特征 | Loop | 修法或验证尝试 | 是否实质不同 | 证据 | 结果 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | M11-V4-R20-F01 | VC-010 | AC-013/GATE-004 | wire 删除 `minItems`，Prompt 机器语义未表达，公开 rest 输出空 `technique_notes` 后业务拒绝 | r19 canary | 尚未实施 r20；先归因 | 不适用 | active plan 记录与当前 Schema/Prompt/parity | pending Failure Analyst |
+| ADHOC-0017-F01 | VC-001 | AC-001/GATE-001 | 恢复分支 push 被 GitHub workflow scope 门拒绝 | migration snapshot | HTTPS token scope 与 SSH 身份只读核对 | 不适用 | GitHub remote rejection、`gh auth status`、SSH publickey rejection | blocked：等待新认证权限 |
 
 ## 决策与发现
 
@@ -194,3 +195,4 @@ Validator 必须返回 `contract_version`、`overall_verdict`、`criterion_resul
 | 日期/上下文 | 已完成事项与证据 | 发现 | 下一动作 |
 | --- | --- | --- | --- |
 | 2026-08-26 / start | 用户批准完整串行方案；恢复分支已建立；owner-only 证据根完成；149 个计划内文件经 staged path、高置信凭据、synthetic email 和 diff 检查 | 无私人路径或真实凭据进入 index；r19 临时证据仍缺失，raw 有 Finder 元数据 | 建立并推送 WIP 恢复快照 |
+| 2026-08-26 / snapshot-push-blocked | 建立本地提交 `fb8d291`；HTTPS 与 SSH 两条 GitHub 路径均只读核对 | HTTPS token 缺少 `workflow` scope，SSH 无可用 public key；本地分支安全但尚未远端保护 | 请求用户批准刷新 GitHub OAuth workflow scope，成功前停止后续实现 |
