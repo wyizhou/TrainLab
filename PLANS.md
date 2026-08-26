@@ -237,8 +237,9 @@ text、HTML和CID全部闭合，零调用重放及全新Delivery/Data-Privacy Va
 2026-08-24 根开发 Harness 升级到 agentForge v0.4.4 后，M11 以 legacy transition 建立面向
 后续工作的冻结合同；多轮合同与实现收敛后当前使用 VC-010。r19 Code Validator 已 PASS，唯一
 公开canary的wire结果通过，但两节rest输出空`technique_notes`后被业务Schema非空约束正确拒绝；
-未重试，私人模型调用为0。当前状态统一为`blocked/DIAGNOSIS_PENDING`，先由全新Failure Analyst
-归因；三项准入条件满足前不得实施r20、建立Candidate或调用模型。
+未重试，私人模型调用为0。全新Failure Analyst已确认该失败为`IMPLEMENTATION_DEFECT`、
+`safe_auto_fix=true`且`contract_change_required=false`；当前在VC-010内测试先行实施r20通用
+business-only Prompt语义闭包，建立Candidate或调用模型仍不在本轮范围。
 
 | 任务 | 状态 | 优先级 | 显式依赖 | Batch | 预期写入范围 | Exec plan |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -259,5 +260,5 @@ text、HTML和CID全部闭合，零调用重放及全新Delivery/Data-Privacy Va
 | [x] `M11-0015` v3七日报一周报真实Gmail投递 | `completed` | high | M11-0014 | serial-m11-v3-live-r01 | 版本化8项Live Candidate、REST串行投递、RAW/CID与最终独立验收全部PASS | [`completed`](docs/exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md) |
 | [x] `M11-0016` 冻结内容优先治理与日期/安全合同 | `completed` | high | M11-0015 | serial-m11-v4 | A-018、AGENTS/Skills、内容与技术矩阵；全新最终Contract Validator PASS | [`active`](docs/exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md) |
 | [x] `M11-0017` 建立全量观察证据、新版AI与固定课表合同 | `completed/VC-008` | high | M11-0016 | serial-m11-v4 | Contract与Closure Code Validator均PASS；869项及全部静态门独立闭合 | 同一 exec plan |
-| [ ] `M11-0018` 生成Markdown、低保真HTML与真实周报预览 | `blocked/VC-010/r19` | high | M11-0017 | serial-m11-v4 | 唯一公开canary wire通过，但两节rest的空`technique_notes`违反业务Schema非空约束；不重试，私人调用0 | 同一 exec plan |
+| [ ] `M11-0018` 生成Markdown、低保真HTML与真实周报预览 | `active/VC-010/r20` | high | M11-0017 | serial-m11-v4 | Failure Analyst三条件满足；自动派生wire删除但业务保留的Prompt语义约束，模型与外部调用0 | 同一 exec plan |
 | [ ] `M11-0019` 内容/信息架构/数据隐私验证与OpenDesign交接 | `planned` | high | M11-0018 | serial-m11-v4 | 完整门、四类Validator、冻结交接包 | 同一 exec plan |
