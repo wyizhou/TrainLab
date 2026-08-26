@@ -62,12 +62,17 @@
 
 ## 当前活动计划
 
-- 迁移恢复与 M11 r20 前置收口正在按严格串行方案执行：
-  `docs/exec-plans/active/ADHOC-0017-workspace-migration-recovery.md`。
 - M11 content-first v4 的r19公开canary失败已由全新Failure Analyst归因为`IMPLEMENTATION_DEFECT`、`safe_auto_fix=true`、`contract_change_required=false`。r20的53条Prompt业务限制、非Gitwork root和Candidate外canary proof authority均已闭合，932项门、全新Code Validator r3及最终Integration Validator均PASS。当前停在申请一次全新公开canary授权并升级合同的门前；未建立Candidate或调用模型，私人周报调用仍为0，正式state不变：
   `docs/exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md`。
 
 ## 最近完成计划
+
+ADHOC-0017 已完成当前电脑迁移恢复与 M11 r20 代码收口：迁移快照和状态批次已推送，
+`formal_state_content_fingerprint_v1` 为 `673f01dc…f5c50d`；r20自动绑定53条business-only
+Prompt约束，并闭合非Gitwork root与Candidate外canary authority。932项测试、全新Code Validator
+和最终Integration Validator均PASS；收口提交`55289c1`已推送恢复分支。计划归档至
+`docs/exec-plans/completed/ADHOC-0017-workspace-migration-recovery.md`；未建立Candidate、调用模型、
+创建PR或合并main。
 
 ADHOC-0015 已将根开发 Harness 从 agentForge v0.4.2 三方适配到 v0.4.4：六个核心文件、
 A-019、MIT 声明、冻结验证合同、固定 Validator 输出和失败诊断门完成；664 项测试与全部代码门、

@@ -1,12 +1,13 @@
 # 执行计划：迁移工作区保护、状态可迁移性与 M11 r20 收口
 
-- 状态：`integrating`
+- 状态：`completed`
 - 负责人：主协调 Agent
 - Roadmap ID：`ADHOC-0017`
 - 阶段/子项目：`不适用 / M11 前置恢复`
 - Batch ID：`serial-migration-r20`
 - 返工来源：`docs/exec-plans/completed/ADHOC-0016-workspace-migration-audit.md`
 - 开始日期：2026-08-26
+- 完成日期：2026-08-26
 - 最后更新：2026-08-26
 
 ## 目标与验收标准
@@ -122,7 +123,7 @@ M11 v4-r20 的 business-only Prompt 语义闭包。最终停在新公开 canary 
 | 5 | M11 Code Validator / M11-v4-r20 | VC-010 | 高：Prompt/Schema/模型前门 | high | high | 高风险代码终验 | available | 只读 | 固定 Validator 输出；M11 PASS 门 | FAIL：AC-009/INV-006/TM-006，work root非Git边界未强制；其余适用标准PASS |
 | 6 | M11 Code Validator / M11-v4-r20-r2 | VC-010 | 高：非Git工作目录前检与Prompt/Schema模型前门 | high | high | 单一有效FAIL修复后必须由全新Agent重新独立裁定 | available | 只读 | 固定 Validator 输出；M11 PASS 门 | FAIL：AC-005/015、TM-009、GATE-004；Candidate内proof与manifest可协同改写后进入私人调用 |
 | 7 | M11 Code Validator / M11-v4-r20-r3 | VC-010 | 高：独立canary authority与全部模型前门 | high | high | 新失败特征定向修复后必须由另一全新Agent复验 | available | 只读 | 固定 Validator 输出；M11 PASS 门 | PASS：932 tests、全部静态门及AC/INV/TM闭合；无blocking finding |
-| 8 | Integration Validator / ADHOC-0017+M11 | VC-001 + VC-010 | 高：迁移与M11组合结果 | high | high | 最终整体终验 | available | 只读 | 固定 Validator 输出；完整门与零外部动作 PASS | dispatched |
+| 8 | Integration Validator / ADHOC-0017+M11 | VC-001 + VC-010 | 高：迁移与M11组合结果 | high | high | 最终整体终验 | available | 只读 | 固定 Validator 输出；完整门与零外部动作 PASS | PASS：932 tests、正式state、r20对抗矩阵、Git/隐私与零调用闭合；无blocking/unknown |
 
 ## 工作分解
 
@@ -134,19 +135,19 @@ M11 v4-r20 的 business-only Prompt 语义闭包。最终停在新公开 canary 
 | 4. Migration/State Validator 与批次提交推送 | done | 全新r3 Validator PASS；914 tests、完整静态门、正式state/指纹/隐私、Git clean与远端同步闭合。 |
 | 5. M11 新失败 Failure Analyst | done | 固定三条件全部满足；VC-010保持冻结，无需合同升级。 |
 | 6. 测试先行实施 r20 通用约束派生 | done | 旧实现6项红灯后转绿；266项M11、926项完整测试及全部静态/Schema/Markdown/隐私/state门PASS。 |
-| 7. M11 Code Validator、集成 Validator、回写与推送 | in_progress | Code Validator r3与最终Integration Validator均PASS；932 tests及全部门闭合，正在执行明确清单提交推送。 |
+| 7. M11 Code Validator、集成 Validator、回写与推送 | done | Code Validator r3与最终Integration Validator均PASS；收口提交`55289c1`已推送，HEAD与upstream精确一致。 |
 
 ## 当前检查点
 
-- 当前 Loop：最终明确清单提交与远端同步。
-- 最近完成：全新Integration Validator按VC-001+VC-010返回PASS；迁移快照、932 tests、正式state、r20对抗矩阵、Git/隐私及零外部调用闭合。
-- 当前焦点：回写真实终验事实，仅暂存已验证公开文件并推送恢复分支。
-- 下一动作：核对远端精确SHA后归档本计划；M11停在申请一次新公开canary授权门前。
+- 当前 Loop：完成。
+- 最近完成：收口提交`55289c1`已推送`origin/codex/m11-r20-migration-recovery`，HEAD与upstream精确一致。
+- 当前焦点：无；迁移恢复与r20代码收口完成。
+- 下一动作：M11仅允许申请一次全新公开canary人工授权并升级合同；批准前不建立Candidate或调用模型。
 - 阻塞项：无。
 - blocker_type：`none`
 - 诊断状态：`not_triggered`
 - 已变更文件：r20 Prompt/Schema/parity、Candidate Builder/Runner、合同/集成测试及治理文件；全部为已验证公开普通文件，私人路径命中0。
-- 待验证项：最终明确清单提交、推送和远端SHA核对。
+- 待验证项：无。
 
 ## Validator 结论处理
 
@@ -194,9 +195,9 @@ Validator 必须返回 `contract_version`、`overall_verdict`、`criterion_resul
 
 ## PLANS 回写清单
 
-- [ ] Exec plan 已归档到 `completed/`
+- [x] Exec plan 已归档到 `completed/`
 - Roadmap：不适用——ADHOC；M11 状态由其 active plan 单独回写。
-- [ ] `memory.md` 中 ADHOC-0017 活动指针已删除。
+- [x] `memory.md` 中 ADHOC-0017 活动指针已删除。
 
 ## 迭代日志
 
@@ -218,3 +219,4 @@ Validator 必须返回 `contract_version`、`overall_verdict`、`criterion_resul
 | 2026-08-26 / m11-r20-validator-fail | 全新Code Validator完成926 tests与完整门并返回FAIL | business-only闭包PASS；唯一阻塞绑定AC-009/INV-006/TM-006，非Gitwork root未被强制证明 | 一次针对性测试先行修复后交另一全新Code Validator |
 | 2026-08-26 / m11-r20-code-pass | 非Git前检与Candidate外canary authority两轮定向修复闭合；全新Code Validator r3返回PASS | 932 tests与全部静态门PASS，53条业务限制、Git隔离、proof authority和零调用均闭合 | 转validated并交最终Integration Validator |
 | 2026-08-26 / integration-pass | 全新Integration Validator按VC-001+VC-010独立返回PASS | 迁移快照、正式state内容指纹、r20对抗矩阵、Git/隐私和零模型/外部调用无blocking或unknown | 明确清单提交推送，随后归档ADHOC；M11停在新canary授权门前 |
+| 2026-08-26 / delivery-complete | 16个公开文件经明确清单暂存、隐私和cached diff门提交为`55289c1`并推送 | HEAD与upstream精确一致；未创建PR、未合并main、未调用模型或外部服务 | 归档本计划；M11保持validated并等待新canary人工授权/合同升级 |
