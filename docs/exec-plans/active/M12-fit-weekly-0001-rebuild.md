@@ -5,7 +5,7 @@
 - 负责人：主协调 Agent
 - 执行方式：严格串行；独立只读审查不属于并行开发
 - 开始日期：2026-09-05
-- 最后更新：2026-09-05
+- 最后更新：2026-09-06
 - 当前实施合同：VC-003；下方 VC-002 保留为已完成检查点的历史合同。
 - 批准依据：用户批准 M12 后要求开始执行；随后明确增加“每个小功能、模块完成后提交并推送”，并要求立即测试、提交和推送当前项目检查点。除 Git 交付规则外，原 M12 计划不变。
 - Roadmap：M12；M11 未完成部分由新方向替代，历史失败不改写为成功。
@@ -102,11 +102,11 @@
 
 ## 当前检查点
 
-- 当前焦点：M12-0002a 独立 SQLite、FIT 文件保存与不可变解析/输出存储。先使用合成数据测试，不切换正式库。
+- 当前焦点：M12-0002b 已登记历史 FIT 一次性导入；新库基础已交付。使用已验证归档作为一次性迁移输入，不作为新系统运行依赖，不切换正式库。
 - 基准：`db8a3ab7ec31c6bebe32742e785760df4650c97f`，`main`；刚完成的开发 Harness 更新属于已有工作，不覆盖。
-- 下一动作：按 AC-001..003/INV-002/TM-001/GATE-001..004 测试先行建立新存储，验证不依赖旧库或 data-backup；本子模块不运行历史在线同步、模型或发布。
+- 下一动作：按 AC-001..003/INV-002/TM-001/GATE-001..004 先写登记/路径/SHA/身份/重放回归，再实现一次性导入；合成与独立验证通过后仅在仓库外新实例复制已登记 FIT。本子模块不运行历史在线同步、模型或发布。
 - 阻塞项：无；`blocker_type=none`，`diagnosis_status=not_triggered`。
-- 未交付：M12 新库、解析、周报告/发布与调度均尚未实施。
+- 未交付：历史 FIT 导入、同步日期及分页、解析、周报告/发布与调度；新库文件基础已交付。
 
 ## Agent 派发
 
@@ -117,8 +117,21 @@
 
 ## 验证与交付记录
 
+### M12-0002b 一次性登记 FIT 导入
+
+- 先写14项失败回归，再实现迁移器；补充相对路径CLI/脱敏错误后15项通过。只读取已验证归档的登记FIT白名单；不导入健康/未登记文件/旧AI/动作，不把复制成功当作完整历史覆盖。
+- 完整976 passed / 166.33秒；Ruff、format134文件、mypy116文件、114 AST/compile、97 JSON/87 Schema、85 Markdown/42链接、metadata/AI/ignore/layout/diff通过。旧38份测试未改；当前无真实复制、在线或模型调用。
+- 下一步为全新只读high/high导入Validator，VC-003当前AC-001/002/003与适用门；通过后才在仓库外新实例进行真实本地复制并复核不依赖归档。当前尚未提交本模块。
+- 协调者继续核对旧build_candidate/verify_state时发现路径适配错误：raw_files.relative_path相对state/raw，而初版实现和fixture误按state处理。首轮审查取消（不得作为PASS），审查者回收自建全量进程；没有真实复制。先改正合成fixture并新增失败回归，再修复固定raw根连接；这是AC-001实施修正，不变更合同或放宽路径要求。
+- 修正后16项专项、完整977 passed / 162.68秒和全部静态门通过。已验证归档的只读前检确认510 FIT、71,257,974字节，全部登记/身份/日期/大小/SHA/CRC有效；未创建新实例或调用Provider。重新冻结5项文件，另交全新Validator。
+- 全新只读 high/high `m12_import_closure_validator` 代码/合成预检PASS：独立977 passed / 165.66秒及全静态门；5项清单SHA `7bd570be404d77f82e80b5357a16f460d47ace385a37d923a774723525b28da0`，基准30ad925，VC-003摘要不变。
+- 通过后已将510个FIT、71,257,974字节复制到仓库外owner-only新实例；未切换正式库。完整重放回执相同、DB字节SHA/行数/文件均零增量，parses=0、documents=1；没有生成AI内容或调用Provider。
+- 2026-09-06同一只读验收角色完成真实结果补验PASS：逐文件原字节/SHA/CRC/身份、SQLite integrity/FK、0700/0600/无链接、新实例及源前后指纹全部通过；原归档9664项、正式/private9356项不变。私有结果绑定SHA `24663017b1b4b0672c9356ec8b1ad5a3afaca967a27132085b9baf8743ebba7a`；历史分页覆盖仍为not_established。准备本模块正常提交/推送。
+
 ### M12-0002a 独立存储基础
 
+- Git交付：`30ad925321f5f764d6ad3eb9ba2acc50e19d05cd`（`feat: add portable immutable FIT storage`）已正常推送origin/main，ls-remote完全一致。
+- 该提交的Linux CI [33971956269](https://github.com/wyizhou/TrainLab/actions/runs/33971956269) 中M12专项成功；后续旧完整Test为48 failed/913 passed，含既有Darwin candidate_atomic_swap_unavailable，后续lint步骤未运行。新模块Linux专项与整套CI结论明确分开，未隐藏旧失败。
 - 先写失败回归后实现独立 storage；24 项新测试通过，包含真实 CRC 合成 FIT、SHA/身份冲突、跨实例错误、不可变解析/文档、SQL 回滚孤立文件重放、锁、权限、Schema/文件漂移与有限 IO 失败。
 - 当前仅实现 fits/activity_fits/parses/documents 四张基础表；没有复制旧数据库，也未建立正式新实例或导入真实 FIT。同步日期、分页、在线采集和任务动作状态留在本任务后续子模块，不把通用存储当作这些功能已完成。
 - 实际 fitdecode 类型接口已从本地安装包核对并补齐 stub；未屏蔽 mypy。完整 958 passed / 165.34 秒，Ruff/format 132 文件、mypy 114 文件、112 AST/compile、97 JSON/87 Schema、84 Markdown/42 链接及 metadata/AI/ignore/layout/diff 通过；9356 项正式/private指纹不变。
