@@ -19,8 +19,15 @@
 
 ## 已验证的项目事实
 
-- 根开发 Harness 固定适配 agentForge `v0.4.2`，上游标签提交为
-  `ccc934ece6b7b64368c08bc3ce431678511ecfa3`。
+- 根开发 Harness 固定适配 agentForge main `9964970d38df95bbd8fab53166c27c2e5648b82e`，
+  属于 v0.4.4 之后的治理更新，不是新正式版本。按角色读取、按影响选择轻量或正式流程；
+  正式任务冻结合同并独立验证，未知假设不自动成为验收要求。阻塞发现须绑定既有标准，
+  未绑定或无法判断时为 `INCONCLUSIVE`，不得据此修改实现。
+- 详细执行协议集中在 `docs/exec-plans/README.md`，模板仅提供结构；Agent 能力不足可直接
+  升至充分档位且不降低已选维度。验证绑定当前文件快照；只有真实协调回写免重验，语义变更仍须新验证。
+- 同一失败特征采用两种实质不同修法仍失败、连续三轮不收敛或直接出现合同冲突时，任务进入
+  `DIAGNOSIS_PENDING`；只有独立只读 Failure Analyst 可以读取失败历史并在实现缺陷、规划合同
+  冲突、验证缺陷、环境故障和无法确定之间归因。
 - TrainLab 的目标产品运行目录为 `source/`；本机工作树不再依赖集中式 `source/src` 包或统一 CLI，
   运行入口由 `source/AGENTS.md`、本地 Skills 和 SQLite 状态组成。M7 目标树已保存为本地
   `feat: complete AI skills workflow and test harness` 提交，并通过 clean checkout 合成验证。
@@ -54,6 +61,8 @@
 - 无。TD-0002邮件可读性样式债保持`deferred`，等待用户后续单独讨论，不自动提升为新计划。
 
 ## 最近完成计划
+
+ADHOC-0016 开发脚手架适配已通过独立验证，计划归档于 `docs/exec-plans/completed/ADHOC-0016-agentforge-governance-update.md`；仅治理更新进入本次提交，未提交产品工作保留本地。提交和一次推送的实际结果以 Git 与交付报告为准。
 
 M10 `滚动七日真实端到端验收` 已于2026-08-20完成并归档至
 `docs/exec-plans/completed/M10-live-e2e-0001-rolling-week.md`。7份日报、1份周报和周计划完成真实

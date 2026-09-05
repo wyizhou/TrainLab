@@ -20,7 +20,7 @@
 - 依赖通过任务表“显式依赖”列声明。
 - 状态使用 `planned`、`ready`、`active`、`blocked`、`validating`、`validated`、
   `integrating`、`completed`、`rework` 或 `cancelled`。
-- 只有通过全部适用任务级和集成级验证的任务才可标为 `[x] completed`；其他状态保持 `[ ]`。
+- 完成条件遵循执行协议：串行正式任务独立 PASS；实际并行任务另需集成级 PASS；轻量/只读任务按适用证据结束。只有满足适用条件才能标为 `[x] completed`。
 - 子项目或阶段只有在批准范围内全部非取消叶子任务完成后才能勾选。
 - 任务启动后链接 `active/` 计划；完成后更新为 `completed/` 链接。
 

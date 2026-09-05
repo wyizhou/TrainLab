@@ -1,4 +1,3 @@
 # 活动执行计划
 
-状态为 `planned`、`ready`、`active`、`blocked`、`validating`、`validated`、
-`integrating` 或 `rework` 的计划保存在本目录。全新上下文从当前检查点恢复匹配计划。
+非终态计划保存在本目录，状态与完成条件见[执行协议](../README.md#生命周期与归档)。主协调 Agent 在新上下文中用 Git 和实际文件核对匹配计划后恢复；Worker 不自动接管协调状态，Validator 不加载计划历史。

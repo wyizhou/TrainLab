@@ -5,6 +5,7 @@
 
 ## Unreleased
 
+- 适配 agentForge main `9964970` 的开发治理简化（v0.4.4 之后、非新正式版本）：根入口与详细协议分离，按任务影响及角色加载流程，模板改为必填核心加按需章节；保留独立验证与失败诊断，新增受审快照及纯协调回写免重验边界。TrainLab 产品、私人数据和既有 M11 工作不变。
 - M10 Gmail 投递停止继续修补 MCP，改为官方 REST：新增 Desktop OAuth、owner-only 专用 Token、
   Google官方端点门、profile失败回执、确定性 RFC822 Message-ID、每阶段最多5次只读恢复、
   单次发送、RAW 读回、canary 人工确认和崩溃后只读对账；r04/r05失败证据及旧 `unknown`
