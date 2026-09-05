@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trainlab.local/schemas/weekly_ai_result_v2.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "period", "progression_rule", "health_summary", "activity_summary", "insights", "uncertainty", "daily_input_refs", "training_plan", "provider_calls"],
+  "properties": {
+    "schema_version": {"type": "string", "const": "weekly_ai_result_v2"},
+    "status": {"type": "string", "enum": ["succeeded", "blocked"]},
+    "error_code": {"type": ["string", "null"]},
+    "period": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}/[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+    "progression_rule": {"type": "string", "enum": ["advance", "hold", "deload"]},
+    "health_summary": {"type": "string", "minLength": 1},
+    "activity_summary": {"type": "string", "minLength": 1},
+    "insights": {"type": "array", "minItems": 3, "maxItems": 5, "items": {"type": "object", "additionalProperties": false, "required": ["observation", "meaning", "action", "evidence_refs"], "properties": {"observation": {"type": "string", "minLength": 1}, "meaning": {"type": "string", "minLength": 1}, "action": {"type": "string", "minLength": 1}, "evidence_refs": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 1}}}}},
+    "uncertainty": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "daily_input_refs": {"type": "array", "minItems": 7, "maxItems": 7, "items": {"type": "object"}},
+    "training_plan": {"$ref": "https://trainlab.local/schemas/training_plan_v2.schema.json"},
+    "provider_calls": {"type": "integer", "const": 0}
+  }
+}

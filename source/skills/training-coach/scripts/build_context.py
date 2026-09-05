@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import math
 import os
 import stat
 import sys
@@ -15,7 +16,17 @@ from pathlib import Path
 from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
-from skills._shared.state import canonical_json, connect, sha256_text  # noqa: E402
+from skills._shared.scripts.schema_validation import (  # noqa: E402
+    require_valid_payload,
+)
+from skills._shared.state import (  # noqa: E402
+    append_output,
+    begin_run,
+    canonical_json,
+    connect,
+    finish_run,
+    sha256_text,
+)
 
 
 def _load_parse_module() -> Any:
@@ -77,6 +88,39 @@ def _raw_rows(
             }
         )
     return result
+
+
+def _raw_rows_between(
+    database: Path, start_date: str, through_date: str, resources: tuple[str, ...]
+) -> list[dict[str, Any]]:
+    placeholders = ",".join("?" for _ in resources)
+    connection = connect(database, read_only=True, immutable=True)
+    try:
+        rows = connection.execute(
+            "SELECT id,relative_path,resource_kind,file_format,sha256,data_date,"
+            "revision_no,activity_inventory_id,byte_size FROM raw_files "
+            "WHERE data_date>=? AND data_date<=? AND integrity_state='verified' "
+            f"AND resource_kind IN ({placeholders}) "
+            "ORDER BY data_date DESC,revision_no DESC,id DESC",
+            (start_date, through_date, *resources),
+        ).fetchall()
+    finally:
+        connection.close()
+    return [
+        {
+            "raw_file_id": int(row[0]),
+            "relative_path": str(row[1]),
+            "resource": str(row[2]),
+            "format": str(row[3]),
+            "sha256": str(row[4]),
+            "data_date": str(row[5]),
+            "revision_no": int(row[6]),
+            "activity_inventory_id": int(row[7]) if row[7] is not None else None,
+            "byte_size": int(row[8]),
+        }
+        for row in rows
+        if str(row[1]).startswith("garmin/health/")
+    ]
 
 
 def _verified_raw_path(source_root: Path, row: dict[str, Any]) -> Path:
@@ -157,6 +201,233 @@ def _has_substantive_health_metric(item: dict[str, Any]) -> bool:
         and not isinstance(aggregate.get("count"), bool)
         and int(aggregate["count"]) > 0
     )
+
+
+def _missing_recent_health_metric(
+    *, resource: str, unit: str, lookback_days: int
+) -> dict[str, Any]:
+    return {
+        "resource": resource,
+        "status": "missing",
+        "value": None,
+        "unit": unit,
+        "observed_date": None,
+        "age_days": None,
+        "selection_kind": None,
+        "lookback_days": lookback_days,
+        "raw_file_id": None,
+        "sha256": None,
+    }
+
+
+def _select_recent_health_metric(
+    source_root: Path,
+    rows: list[dict[str, Any]],
+    parser: Any,
+    *,
+    report_date: date,
+    review_date: date,
+    resource: str,
+    field: str,
+    unit: str,
+    lookback_days: int,
+) -> dict[str, Any]:
+    """Select the newest verified, correctly dated value inside a fixed window."""
+
+    earliest = review_date - timedelta(days=lookback_days - 1)
+    candidates = sorted(
+        (
+            row
+            for row in rows
+            if row.get("resource") == resource
+            and earliest.isoformat()
+            <= str(row.get("data_date"))
+            <= review_date.isoformat()
+        ),
+        key=lambda row: (
+            str(row["data_date"]),
+            int(row.get("revision_no", 1)),
+            int(row["raw_file_id"]),
+        ),
+        reverse=True,
+    )
+    for row in candidates:
+        try:
+            path = _verified_raw_path(source_root, row)
+            parsed = parser.parse_evidence(
+                path,
+                resource_override=resource,
+                expected_date_override=str(row["data_date"]),
+            )
+        except (OSError, ValueError):
+            continue
+        metrics = parsed.get("metrics") if isinstance(parsed, dict) else None
+        if not isinstance(metrics, dict) or metrics.get("unit") != unit:
+            continue
+        value = metrics.get(field)
+        if (
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not math.isfinite(float(value))
+        ):
+            continue
+        observed = date.fromisoformat(str(row["data_date"]))
+        return {
+            "resource": resource,
+            "status": "ready",
+            "value": float(value),
+            "unit": unit,
+            "observed_date": observed.isoformat(),
+            "age_days": (report_date - observed).days,
+            "selection_kind": "exact_date"
+            if observed == review_date
+            else "latest_prior",
+            "lookback_days": lookback_days,
+            "raw_file_id": int(row["raw_file_id"]),
+            "sha256": str(row["sha256"]),
+        }
+    return _missing_recent_health_metric(
+        resource=resource, unit=unit, lookback_days=lookback_days
+    )
+
+
+def _recent_health_metrics(
+    database: Path, source_root: Path, report_date: date, parser: Any
+) -> dict[str, Any]:
+    review_date = report_date - timedelta(days=1)
+    earliest = review_date - timedelta(days=29)
+    rows = _raw_rows_between(
+        database,
+        earliest.isoformat(),
+        review_date.isoformat(),
+        ("max_metrics", "weigh_ins"),
+    )
+    payload = {
+        "schema_version": "recent_health_metrics_v1",
+        "status": "ready",
+        "report_date": report_date.isoformat(),
+        "review_date": review_date.isoformat(),
+        "metrics": {
+            "vo2_max": _select_recent_health_metric(
+                source_root,
+                rows,
+                parser,
+                report_date=report_date,
+                review_date=review_date,
+                resource="max_metrics",
+                field="vo2_max",
+                unit="ml/kg/min",
+                lookback_days=30,
+            ),
+            "weight": _select_recent_health_metric(
+                source_root,
+                rows,
+                parser,
+                report_date=report_date,
+                review_date=review_date,
+                resource="weigh_ins",
+                field="weight",
+                unit="kg",
+                lookback_days=14,
+            ),
+        },
+        "provider_calls": 0,
+    }
+    require_valid_payload(payload, "recent_health_metrics_v1")
+    return payload
+
+
+def record_recent_health_metrics(
+    evidence_database: Path,
+    evidence_source_root: Path,
+    target_database: Path,
+    report_date: date,
+) -> dict[str, Any]:
+    """Persist a deterministic snapshot without invoking AI or a Provider."""
+
+    parser = _load_parse_module()
+    payload = _recent_health_metrics(
+        evidence_database, evidence_source_root, report_date, parser
+    )
+    manifest = {
+        "schema_version": "recent_health_metrics_input_v1",
+        "report_date": report_date.isoformat(),
+        "review_date": payload["review_date"],
+        "payload_sha256": sha256_text(canonical_json(payload)),
+        "source_refs": [
+            {
+                "raw_file_id": item["raw_file_id"],
+                "sha256": item["sha256"],
+            }
+            for item in payload["metrics"].values()
+            if item["status"] == "ready"
+        ],
+        "provider_calls": 0,
+    }
+    digest = sha256_text(canonical_json(manifest))
+    connection = connect(target_database)
+    try:
+        run_id = begin_run(
+            connection,
+            run_key=(
+                f"training-report-publisher:recent-health:{report_date}:"
+                f"{digest}:attempt-1"
+            ),
+            workflow_key=f"daily:{report_date.isoformat()}",
+            dedupe_key=digest,
+            skill_name="training-report-publisher",
+            operation="render_daily",
+            trigger_kind="manual",
+            input_manifest=manifest,
+            input_sha256=digest,
+            target_from_date=report_date.isoformat(),
+            target_through_date=report_date.isoformat(),
+        )
+        existing = connection.execute(
+            "SELECT id,content_sha256 FROM skill_outputs WHERE skill_run_id=? "
+            "AND schema_name='recent_health_metrics_v1' ORDER BY id",
+            (run_id,),
+        ).fetchall()
+        if len(existing) == 1:
+            return {
+                "output_id": int(existing[0][0]),
+                "output_sha256": str(existing[0][1]),
+                "payload": payload,
+            }
+        if existing:
+            raise ValueError("recent_health_metrics_output_ambiguous")
+        output_id = append_output(
+            connection,
+            skill_run_id=run_id,
+            output_kind="bounded_evidence",
+            logical_key=f"training-coach:recent-health:{report_date.isoformat()}",
+            schema_name="recent_health_metrics_v1",
+            schema_version="1",
+            content_json=payload,
+            content_text=canonical_json(payload),
+            lineage=[
+                {
+                    "raw_file_id": item["raw_file_id"],
+                    "raw_sha256": item["sha256"],
+                }
+                for item in manifest["source_refs"]
+            ],
+            period_start_date=report_date.isoformat(),
+            period_end_date=report_date.isoformat(),
+        )
+        finish_run(connection, run_id, status="succeeded")
+        row = connection.execute(
+            "SELECT content_sha256 FROM skill_outputs WHERE id=?", (output_id,)
+        ).fetchone()
+        if row is None:
+            raise RuntimeError("recent_health_metrics_output_missing")
+        return {
+            "output_id": output_id,
+            "output_sha256": str(row[0]),
+            "payload": payload,
+        }
+    finally:
+        connection.close()
 
 
 def _activity_evidence(
@@ -480,7 +751,7 @@ def build_daily_context(
     review_health = [
         row
         for row in _raw_rows(database, review_date.isoformat(), health=True)
-        if row["resource"] != "sleep"
+        if row["resource"] not in {"sleep", "max_metrics", "weigh_ins"}
         and (allowed_raw_ids is None or row["raw_file_id"] in allowed_raw_ids)
     ]
     sleep_rows = [
@@ -495,7 +766,33 @@ def build_daily_context(
         if row["resource"] != "activity_inventory"
         and (allowed_raw_ids is None or row["raw_file_id"] in allowed_raw_ids)
     ]
-    health = _health_evidence(source_root, review_health + sleep_rows, parser)
+    # A-014 explicitly authorizes only these two bounded historical lookups.
+    # Other health evidence remains bound to the exact daily receipt/date above.
+    recent_health = _recent_health_metrics(database, source_root, report_date, parser)
+    selected_recent = [
+        {
+            "raw_file_id": item["raw_file_id"],
+            "sha256": item["sha256"],
+            "resource": item["resource"],
+            "data_date": item["observed_date"],
+            "metrics": {
+                "resource": item["resource"],
+                "metric": key,
+                key: item["value"],
+                "unit": item["unit"],
+                "observed_date": item["observed_date"],
+                "age_days": item["age_days"],
+                "selection_kind": item["selection_kind"],
+            },
+            "parser": "recent_health_metrics_v1",
+        }
+        for key, item in recent_health["metrics"].items()
+        if item["status"] == "ready"
+    ]
+    health = (
+        _health_evidence(source_root, review_health + sleep_rows, parser)
+        + selected_recent
+    )
     sleep = [item for item in health if item["resource"] == "sleep"]
     activities = _activity_evidence(
         database,
@@ -543,6 +840,7 @@ def build_daily_context(
         "sleep_wake_date": report_date.isoformat(),
         "health": health,
         "activities": activities,
+        "recent_health_metrics": recent_health,
         "recent_trend": _recent_trend(database, report_date),
         "goal": _goal(source_root),
         "errors": errors,

@@ -46,6 +46,9 @@
 - M10 已于2026-08-20完成：4项临时Garmin测试Workout生命周期结束且残留0；官方Gmail REST
   成功闭合r07旧标题8封与r08更正标题8封，累计16封。最终Code、AI和Delivery/Data-Privacy
   Validator均PASS；正式state、Token边界和确定性重放闭合。该结果不授权长期自动发送或cron。
+- M11 已于2026-08-23完成v3真实投递：7份日报和1份周报通过官方Gmail REST严格串行发送，
+  8个Gmail ID、实际Message-ID、RAW/text/HTML/CID闭合；32次REST调用中send恰好8次，重放
+  Provider增量0，Code与Delivery/Data-Privacy Validator均PASS。该结果不授权部署或定时运行。
 
 ## 已建立的验证命令
 
@@ -58,11 +61,32 @@
 
 ## 当前活动计划
 
-- 无。TD-0002邮件可读性样式债保持`deferred`，等待用户后续单独讨论，不自动提升为新计划。
+- M12 FIT-only 周教练重建已获批准，当前先保存旧工作检查点，尚未实现新运行层：
+  `docs/exec-plans/active/M12-fit-weekly-0001-rebuild.md`。用户新增授权：每个小功能/模块通过适用
+  测试与独立验证后提交并推送；不包含私人数据或强制推送。手动启动 Python，首次真实周报
+  在离线验收后的下个正常周日 15:00；M11 未完成方向由 M12 替代，旧失败仍如实保留。
+
+- M11 content-first v4 当前r19被公开canary阻塞：Prompt/Schema语义parity修复、909项门和Code Validator均PASS；唯一公开模型调用的wire结果通过，但day_3/day_6休息课输出空`technique_notes`，违反业务Schema非空数组约束。未自动重试，私人周报调用仍为0，正式state不变：
+  `docs/exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md`。
 
 ## 最近完成计划
 
 ADHOC-0016 开发脚手架适配已通过独立验证，计划归档于 `docs/exec-plans/completed/ADHOC-0016-agentforge-governance-update.md`；仅治理更新进入本次提交，未提交产品工作保留本地。提交和一次推送的实际结果以 Git 与交付报告为准。
+
+ADHOC-0015 已将根开发 Harness 从 agentForge v0.4.2 三方适配到 v0.4.4：六个核心文件、
+A-019、MIT 声明、冻结验证合同、固定 Validator 输出和失败诊断门完成；664 项测试与全部代码门、
+115 项 owner-only 快照恢复演练及正式 state 9,347 项完整指纹均闭合，全新只读 high/high Validator
+返回 `PASS`。计划归档至 `docs/exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md`；
+快照按用户要求保留，M11 只迁移为 `DIAGNOSIS_PENDING`，未运行 Failure Analyst 或模型调用。
+
+M11 `人类可读邮件与 CID 图表闭环` 已于2026-08-23完成并归档至
+`docs/exec-plans/completed/M11-email-presentation-0001-readable-cid.md`；其v3真实投递续批归档至
+`docs/exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md`。v2教练内容保持RPE/体感和
+历史参考配速，不生成心率分区或目标BPM处方；v3共享OpenDesign引擎恢复日报/周报卡片、KPI、
+真实图表和七日时间轴。历史活动心率分区仅使用Garmin/FIT session已记录时长，设备定义不一致时
+周报不聚合。最终594项测试及Code、Design-Fidelity、Data/Privacy三类全新只读Validator全部PASS；
+离线七日报一周报、8份MIME和正式state闭合；随后600项代码门与独立Code Validator通过，8封
+真实Gmail严格串行完成并由Delivery/Data-Privacy Validator复验PASS。部署与定时运行未执行。
 
 M10 `滚动七日真实端到端验收` 已于2026-08-20完成并归档至
 `docs/exec-plans/completed/M10-live-e2e-0001-rolling-week.md`。7份日报、1份周报和周计划完成真实

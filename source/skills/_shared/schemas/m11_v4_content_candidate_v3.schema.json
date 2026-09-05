@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trainlab.local/schemas/m11_v4_content_candidate_v3.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "candidate_kind", "ai_work_root", "prompt_sha256", "context_sha256", "wire_schema_sha256", "business_schema_sha256", "ai_result_schema_sha256", "reader_schema_sha256", "prompt_template_sha256", "context_contract_schema_sha256", "training_goal_contract_schema_sha256", "weekly_evidence_contract_schema_sha256", "health_fact_contract_schema_sha256", "goal_template_sha256", "source_manifest_sha256", "parent_candidate", "candidate_database_sha256_before_ai", "candidate_database_sha256_after_ai", "raw_summary", "daily_output_count", "weekly_evidence_output_id", "weekly_evidence_sha256", "weekly_ai_output_id", "weekly_reader_output_id", "canary_proof_sha256", "model_calls_authorized", "model_calls_completed", "model_attempt_receipt_sha256", "provider_calls", "external_actions"],
+  "properties": {
+    "schema_version": {"type": "string", "const": "m11_v4_content_candidate_v3"},
+    "status": {"type": "string", "enum": ["prepared", "model_succeeded", "model_failed", "ready_for_validation"]},
+    "candidate_kind": {"type": "string", "enum": ["public_canary", "private_weekly"]},
+    "ai_work_root": {"type": "string", "minLength": 1},
+    "prompt_sha256": {"$ref": "#/$defs/sha"},
+    "context_sha256": {"$ref": "#/$defs/sha"},
+    "wire_schema_sha256": {"$ref": "#/$defs/sha"},
+    "business_schema_sha256": {"$ref": "#/$defs/sha"},
+    "ai_result_schema_sha256": {"$ref": "#/$defs/sha"},
+    "reader_schema_sha256": {"$ref": "#/$defs/sha"},
+    "prompt_template_sha256": {"$ref": "#/$defs/sha"},
+    "context_contract_schema_sha256": {"$ref": "#/$defs/sha"},
+    "training_goal_contract_schema_sha256": {"$ref": "#/$defs/sha"},
+    "weekly_evidence_contract_schema_sha256": {"$ref": "#/$defs/sha"},
+    "health_fact_contract_schema_sha256": {"$ref": "#/$defs/sha"},
+    "goal_template_sha256": {"$ref": "#/$defs/sha"},
+    "source_manifest_sha256": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/sha"}]},
+    "parent_candidate": {"type": ["string", "null"]},
+    "candidate_database_sha256_before_ai": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/sha"}]},
+    "candidate_database_sha256_after_ai": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/sha"}]},
+    "raw_summary": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/raw_summary"}]},
+    "daily_output_count": {"type": "integer", "minimum": 0, "maximum": 7},
+    "weekly_evidence_output_id": {"type": ["integer", "null"], "minimum": 1},
+    "weekly_evidence_sha256": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/sha"}]},
+    "weekly_ai_output_id": {"type": ["integer", "null"], "minimum": 1},
+    "weekly_reader_output_id": {"type": ["integer", "null"], "minimum": 1},
+    "canary_proof_sha256": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/sha"}]},
+    "model_calls_authorized": {"type": "integer", "const": 1},
+    "model_calls_completed": {"type": "integer", "minimum": 0, "maximum": 1},
+    "model_attempt_receipt_sha256": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/sha"}]},
+    "provider_calls": {"type": "integer", "const": 0},
+    "external_actions": {"type": "integer", "const": 0}
+  },
+  "$defs": {
+    "sha": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "raw_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["count", "bytes", "manifest_sha256"],
+      "properties": {
+        "count": {"type": "integer", "minimum": 0},
+        "bytes": {"type": "integer", "minimum": 0},
+        "manifest_sha256": {"$ref": "#/$defs/sha"}
+      }
+    }
+  }
+}

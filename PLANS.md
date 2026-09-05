@@ -61,6 +61,29 @@
 
 ## 当前已批准 Roadmap
 
+### [ ] `M12` FIT 运动数据与每周跑步教练重建 — `active`
+
+用户于 2026-09-05 批准：仅采集 2022 年起全部运动 FIT，复用已有文件，建立新 SQLite；
+每日 22:00 同步当日、昨日和已知缺口，周日 15:00 进行一次周分析并发布 PDF、邮件与 Garmin
+跑步课程。旧非核心代码/数据统一归档且不能成为新运行依赖；根开发 Harness 保留，旧运行
+Harness 和每日健康/AI 路径退出新方向。M11 未完成部分由 M12 替代，不追溯改写旧失败记录。
+
+阶段严格串行；手动启动 Python，不安装 cron 或开机启动。离线验收后首份真实周报选择下个
+正常周日 15:00，多周错过只补最新一期并注明原统计周期和“补发”。内容、数据和验收范围以
+[M12 执行计划](docs/exec-plans/active/M12-fit-weekly-0001-rebuild.md) 为准。
+
+唯一新增交付要求：每个小功能/模块通过适用测试与独立验证后，提交并正常推送现有远程分支；
+当前先保存“新方向替代旧方向”的检查点。此授权不包含私人数据、强制推送、部署或跳过验证。
+
+| 任务 | 状态 | 显式依赖 | Batch | 预期成果 |
+| --- | --- | --- | --- | --- |
+| [ ] `M12-0001` 保护检查点、冻结与统一归档 | active | 用户批准 | serial-m12 | 当前项目测试/提交/推送，备份清单与恢复演练 |
+| [ ] `M12-0002` FIT 新库与同步 | planned | M12-0001 | serial-m12 | 历史导入、分页、每日同步表与缺口恢复 |
+| [ ] `M12-0003` 解析与 AI 边界 | planned | M12-0002 | serial-m12 | 分段摘要、脱敏细读、无状态可替换接口 |
+| [ ] `M12-0004` 周分析与发布 | planned | M12-0003 | serial-m12 | 固定跑步计划、Markdown/PDF、Gmail REST/Garmin |
+| [ ] `M12-0005` Python 调度与离线验收 | planned | M12-0004 | serial-m12 | 定时、补发、恢复、完整独立验收 |
+| [ ] `M12-0006` 真实验收与切换 | planned | M12-0005 | serial-m12 | 历史同步及下个正常周日真实闭环、正式切换 |
+
 ### [x] `M1` agentForge 与 product-root 迁移 — `completed`
 
 用户于 2026-08-12 批准。仓库根成为开发 Harness，`product/` 成为唯一 TrainLab 产品
@@ -210,3 +233,53 @@ Workout/日历课程、goal、凭据和远端 Git 不修改。
 | [x] `M10-0003` Gmail/Garmin 外部动作执行器与离线验证 | `completed` | high | M10-0002 | serial-m10 | Gmail/GTS Skills、共享状态、code tests | 同一 exec plan |
 | [x] `M10-0004` 精确写入确认、真实发送和 Workout 生命周期 | `completed` | high | M10-0003 | serial-m10 | Garmin测试生命周期完成且残留0；r07旧标题8封和r08更正标题8封全部闭合，累计16封 | 同一 exec plan |
 | [x] `M10-0005` AI、数据/隐私与清理独立验收 | `completed` | high | M10-0004 | serial-m10 | Code、AI、Delivery/Data-Privacy最终Validator均PASS；正式state/Token和重放闭合 | 同一 exec plan |
+
+### [ ] `M11` 人类可读邮件与 CID 图表闭环 — `rework/content-first-v4`
+
+用户于 2026-08-21 批准。M11 以 M10 已验证的 AI 结果、证据和 Gmail REST 单次发送状态机为
+基础，把日报与周报转换为中文人类可读邮件；仅从明确、已验证的数据数组生成静态 PNG 图表，
+并通过私有 CID 附件嵌入邮件。阶段先完成仓库外真实 Candidate 预览和三类独立验证，停在真实
+canary 授权之前。用户随后批准真实 Gmail 样式 canary；首封日报已成功送达但暴露 VO₂ Max/
+体重仅按精确日期读取的缺口。2026-08-22 用户进一步批准 A-014：使用 30/14 天有界最近值、
+重发一封确定性修正版日报，确认后再发送原周报。用户随后确认邮件技术投递和样式闭合，但内容
+无法直接指导训练，因此批准 A-015 内容返工：不计算心率区间，以 RPE/体感组织 SOS 与详细课程，
+先离线生成七份日报和一份周报供审核。M11 不修改正式 `source/state`、不提交、不推送、不启用
+cron、Sites 或新的外部动作。2026-08-23 用户判定 v2 邮件与 OpenDesign 高保真设计不一致，
+批准 A-016 与 v3 离线返工：冻结既有 AI/课表，恢复共享卡片、KPI、真实图表和七日时间轴；
+历史心率分区只展示 Garmin/FIT session 已记录时长，不由 TrainLab 重新划区或用于课程处方。
+最终 r06 以 594 项测试和 Code、Design-Fidelity、Data/Privacy 三类全新只读 Validator 全部
+`PASS` 完成离线交付；真实 Gmail 重发、部署与定时运行仍需后续单独批准。
+2026-08-23用户进一步明确授权将v3的7份日报和1份周报一次性真实自投递；该批次只复用官方
+Gmail REST单写者并逐封完成RAW/CID闭合，不重跑数据或AI，不授权部署和定时运行。
+M11-0015已严格串行完成32次Gmail REST调用与8次发送；8个Gmail ID、实际Message-ID、RAW、
+text、HTML和CID全部闭合，零调用重放及全新Delivery/Data-Privacy Validator均为`PASS`。
+2026-08-24 用户确认 v3 内容仍不能支持实际决策，批准 A-018 与 content-first v4：日报只保留
+健康/恢复分析、昨日全部运动事实和今日固定课程；周报分析连续七日全部实际运动与健康，加入
+有界 FIT 技术复盘并生成唯一固定周计划。先交付 Markdown 与扁平低保真 HTML；允许一次隔离
+真实周报 Codex 调用，但不调用 Garmin/Gmail/Workout/Sites/cron，不发送邮件或修改正式 state。
+2026-08-24 根开发 Harness 升级到 agentForge v0.4.4 后，M11 以 legacy transition 建立面向
+后续工作的冻结合同；独立 Failure Analyst 已完成归因，用户批准 VC-002 六类健康三状态、
+逐活动证据身份和路径边界。当前先进行全新 Contract Validator 验收，PASS 前不得修改产品实现
+或执行真实模型调用。
+
+| 任务 | 状态 | 优先级 | 显式依赖 | Batch | 预期写入范围 | Exec plan |
+| --- | --- | --- | --- | --- | --- | --- |
+| [x] `M11-0001` 保存 M10 基线并冻结设计与治理 | `completed` | high | M10 | serial-m11 | 本地基线提交、A-013、设计快照、Roadmap/exec plan | [`completed`](docs/exec-plans/completed/M11-email-presentation-0001-readable-cid.md) |
+| [x] `M11-0002` 建立日报/周报 ViewModel 与可读模板 | `completed` | high | M11-0001 | serial-m11 | `training-report-publisher`、Schemas、模板、映射测试 | 同一 exec plan |
+| [x] `M11-0003` 建立 CID MIME v2 与通用 Fake 投递路径 | `completed` | high | M11-0002 | serial-m11 | `gmail-sender`、MIME/RAW 验证、Fake REST 测试 | 同一 exec plan |
+| [x] `M11-0004` 真实 Candidate 私有预览与完整质量门 | `completed` | high | M11-0003 | serial-m11 | 仓库外 owner-only 预览、视觉/隐私/幂等验证 | 同一 exec plan |
+| [x] `M11-0005` 三类独立验证并停在 canary 授权前 | `completed` | high | M11-0004 | serial-m11 | Code、Visual、Data/Privacy Validator 全部PASS；等待另行授权真实canary | 同一 exec plan |
+| [x] `M11-0006` 真实 Gmail 样式 canary 与收口 | `completed/technical-only` | high | M11-0005 | serial-m11-live | 历史RAW/HTML/text/CID技术闭合；内容失败证据保留并由v2/v3替代 | 同一 exec plan |
+| [x] `M11-0007` 冻结 Coaching Utility v2 治理和设计合同 | `completed` | high | M11-0006 | serial-m11-v2 | A-015、设计章程、Skills/AGENTS、Design Validator | 同一 exec plan |
+| [x] `M11-0008` v2 证据、AI、课程与安全合同 | `completed` | high | M11-0007 | serial-m11-v2 | 用户授权统一读者自由文本心率处方门 | 同一 exec plan |
+| [x] `M11-0009` v2 日报/周报 ViewModel 与渲染 | `completed` | high | M11-0008 | serial-m11-v2 | 用户授权工程字段显示白名单闭包 | 同一 exec plan |
+| [x] `M11-0010` 七日报一周报私有离线验收 | `completed` | high | M11-0009 | serial-m11-v2 | owner-only Candidate、最多9次Codex、三类Validator、用户审核 | 同一 exec plan |
+| [x] `M11-0011` 冻结 v3 设计一致性与历史分区展示边界 | `completed` | high | M11-0010 | serial-m11-v3 | A-016、交接/解析/验收只读审计 | 同一 exec plan |
+| [x] `M11-0012` 建立展示证据与共享 OpenDesign 渲染引擎 | `completed` | high | M11-0011 | serial-m11-v3 | 五项Schema、FIT/睡眠解析、日报/周报View与共享渲染 | 同一 exec plan |
+| [x] `M11-0013` 生成七日报一周报 v3 离线 Candidate | `completed` | high | M11-0012 | serial-m11-v3 | owner-only Candidate、真实图表、672/375px逐组件验收 | 同一 exec plan |
+| [x] `M11-0014` v3 三类独立验证与离线交付 | `completed` | high | M11-0013 | serial-m11-v3 | r06 Code、Design-Fidelity、Data/Privacy Validator全部PASS | 同一 exec plan |
+| [x] `M11-0015` v3七日报一周报真实Gmail投递 | `completed` | high | M11-0014 | serial-m11-v3-live-r01 | 版本化8项Live Candidate、REST串行投递、RAW/CID与最终独立验收全部PASS | [`completed`](docs/exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md) |
+| [x] `M11-0016` 冻结内容优先治理与日期/安全合同 | `completed` | high | M11-0015 | serial-m11-v4 | A-018、AGENTS/Skills、内容与技术矩阵；全新最终Contract Validator PASS | [`active`](docs/exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md) |
+| [x] `M11-0017` 建立全量观察证据、新版AI与固定课表合同 | `completed/VC-008` | high | M11-0016 | serial-m11-v4 | Contract与Closure Code Validator均PASS；869项及全部静态门独立闭合 | 同一 exec plan |
+| [ ] `M11-0018` 生成Markdown、低保真HTML与真实周报预览 | `blocked/VC-010/r19` | high | M11-0017 | serial-m11-v4 | 唯一公开canary wire通过，但两节rest的空`technique_notes`违反业务Schema非空约束；不重试，私人调用0 | 同一 exec plan |
+| [ ] `M11-0019` 内容/信息架构/数据隐私验证与OpenDesign交接 | `planned` | high | M11-0018 | serial-m11-v4 | 完整门、四类Validator、冻结交接包 | 同一 exec plan |

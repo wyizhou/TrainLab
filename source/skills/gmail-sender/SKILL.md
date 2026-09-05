@@ -33,6 +33,69 @@ tracked files, reports, or public logs.
 - The approved M10 r08 corrected-title batch reuses that parameterized host. It preserves all eight r06/r07
   successes, creates exactly eight new corrected-title actions, and blocks ordinals 2–8 until the user
   confirms receipt of the corrected ordinal-1 canary.
+- M11 readable-email v2 uses `multipart/alternative` with a nested `multipart/related` HTML part and verified
+  CID PNG attachments. `scripts/gmail_readable_delivery.py` is a provider-neutral Fake REST harness for the
+  single-send/reconcile state machine. The separately approved M11 live-canary batch binds that state machine
+  through `scripts/gmail_readable_live.py` to the existing Gmail REST host for exactly two messages: daily
+  `2026-08-12`, then only after user confirmation in Gmail web and mobile, weekly
+  `2026-08-12~2026-08-18`. It is not an ordinary runtime entrypoint.
+- The same script can package owner-only offline RAW previews from a validated render and its exact PNG files.
+  It always uses the non-deliverable synthetic recipient `preview@trainlab.invalid`; this operation has zero
+  Provider calls and cannot be interpreted as Gmail authorization.
+
+## M11 live canary
+
+Only after the M11 code gate and a fresh Code Validator PASS, create a new owner-only Candidate from the
+frozen r03 preview and send the daily canary:
+
+If `send-started.json` exists but `send-response.json` does not, the live adapter first checks the single
+owner-only sanitized `messages.send` capture for the same action and frozen MIME SHA. A unique 2xx response
+from the official endpoint may restore its Gmail ID and continue with RAW verification; a missing capture
+falls back to Message-ID lookup, while any conflicting or invalid capture remains `unknown`. This recovery
+path is local and must never call `messages.send` again.
+
+```bash
+python3 skills/gmail-sender/scripts/gmail_readable_live.py build-candidate \
+  --candidate-root /private/tmp/OWNER_ONLY_M11_LIVE_ROOT
+python3 skills/gmail-sender/scripts/gmail_readable_live.py deliver-daily \
+  --candidate-root /private/tmp/OWNER_ONLY_M11_LIVE_ROOT
+```
+
+Do not run `confirm-daily` until the user confirms the exact message in both Gmail web and mobile. Only then
+may `deliver-weekly` run. After the same two-client confirmation for the weekly message, `confirm-weekly` and
+`verify --final` close the Candidate. Each action has at most one send and sixteen Gmail API calls; the batch
+has at most two sends and thirty-two delivery calls. Any `unknown`, authentication error, duplicate match or
+RAW mismatch stops the batch and never authorizes another send.
+
+The A-014 health-correction continuation is a versioned batch, not a retry of the first daily action. It
+binds the first Candidate's one successful daily and untouched prepared weekly, then creates exactly two new
+actions from the frozen corrected preview. The cumulative ceilings are three sends and 48 Gmail API calls.
+Only the dedicated internal commands `build-health-correction`, `deliver-corrected-daily`,
+`confirm-corrected-daily`, `deliver-correction-weekly`, `confirm-correction-weekly` and
+`verify-health-correction` may operate this batch. The corrected daily must be confirmed on web and mobile
+before the weekly action can be claimed.
+
+### M11 v3 eight-message batch
+
+A-017 authorizes one fixed, strictly serial batch from the validated r06 v3 Candidate: seven daily reports
+for `2026-08-12` through `2026-08-18`, followed by the weekly report for
+`2026-08-12~2026-08-18`. The user approved all eight at once, so this batch has no per-message manual
+confirmation gate. It still requires each prior action to have a closed Gmail ID, actual RFC822 Message-ID,
+RAW, text, HTML and CID result before the next action can be claimed.
+
+```bash
+python3 skills/gmail-sender/scripts/gmail_readable_live.py build-v3-batch \
+  --candidate-root /private/tmp/OWNER_ONLY_M11_V3_LIVE_ROOT
+python3 skills/gmail-sender/scripts/gmail_readable_live.py deliver-v3-batch \
+  --candidate-root /private/tmp/OWNER_ONLY_M11_V3_LIVE_ROOT
+python3 skills/gmail-sender/scripts/gmail_readable_live.py verify-v3-batch \
+  --candidate-root /private/tmp/OWNER_ONLY_M11_V3_LIVE_ROOT --final
+```
+
+The commands accept no date, daily/weekly mode or request ID. Every item has a unique `item_key`; `kind`
+only selects the daily or weekly render contract. The batch permits at most eight sends and 128 delivery API
+calls. Any `unknown` stops the batch and leaves all later actions prepared; rerunning the command may only
+reuse succeeded or terminal evidence and must not send that unknown action again.
 
 ## M10 r06 manual sequence
 

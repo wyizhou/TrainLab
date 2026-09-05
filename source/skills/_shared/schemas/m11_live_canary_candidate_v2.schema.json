@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trainlab.local/schemas/m11_live_canary_candidate_v2.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "batch_id", "database", "parent_database_sha256", "parent_build_receipt_sha256", "runtime_sha256", "formal_state_sha256", "recipient_sha256", "auth_receipt_sha256", "auth_provider_calls", "historical_live_marker_sha256", "historical_live_database_sha256", "historical_daily_gmail_id_sha256", "historical_api_calls", "historical_send_calls", "cumulative_max_api_calls", "cumulative_max_send_calls", "items", "action_ids", "action_api_calls", "action_phase_calls", "action_send_calls", "api_calls", "send_calls", "daily_confirmed", "daily_confirmation_sha256", "weekly_confirmed", "weekly_confirmation_sha256", "created_at_utc"],
+  "properties": {
+    "schema_version": {"type": "string", "const": "m11_live_canary_candidate_v2"},
+    "batch_id": {"type": "string", "const": "m11-health-correction-canary"},
+    "database": {"type": "string", "minLength": 1},
+    "parent_database_sha256": {"$ref": "#/$defs/sha"},
+    "parent_build_receipt_sha256": {"$ref": "#/$defs/sha"},
+    "runtime_sha256": {"$ref": "#/$defs/sha"},
+    "formal_state_sha256": {"$ref": "#/$defs/sha"},
+    "recipient_sha256": {"$ref": "#/$defs/sha"},
+    "auth_receipt_sha256": {"$ref": "#/$defs/sha"},
+    "auth_provider_calls": {"type": "integer", "const": 1},
+    "historical_live_marker_sha256": {"$ref": "#/$defs/sha"},
+    "historical_live_database_sha256": {"$ref": "#/$defs/sha"},
+    "historical_daily_gmail_id_sha256": {"$ref": "#/$defs/sha"},
+    "historical_api_calls": {"type": "integer", "const": 4},
+    "historical_send_calls": {"type": "integer", "const": 1},
+    "cumulative_max_api_calls": {"type": "integer", "const": 48},
+    "cumulative_max_send_calls": {"type": "integer", "const": 3},
+    "items": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"$ref": "#/$defs/item"}},
+    "action_ids": {"type": "array", "minItems": 2, "maxItems": 2, "uniqueItems": true, "items": {"type": "integer", "minimum": 1}},
+    "action_api_calls": {"type": "object", "minProperties": 2, "maxProperties": 2, "additionalProperties": {"type": "integer", "minimum": 0, "maximum": 16}},
+    "action_phase_calls": {"type": "object", "minProperties": 2, "maxProperties": 2, "additionalProperties": {"type": "object", "additionalProperties": false, "required": ["lookup", "raw", "confirmation"], "properties": {"lookup": {"type": "integer", "minimum": 0, "maximum": 5}, "raw": {"type": "integer", "minimum": 0, "maximum": 5}, "confirmation": {"type": "integer", "minimum": 0, "maximum": 5}}}},
+    "action_send_calls": {"type": "object", "minProperties": 2, "maxProperties": 2, "additionalProperties": {"type": "integer", "minimum": 0, "maximum": 1}},
+    "api_calls": {"type": "integer", "minimum": 0, "maximum": 32},
+    "send_calls": {"type": "integer", "minimum": 0, "maximum": 2},
+    "daily_confirmed": {"type": "boolean"},
+    "daily_confirmation_sha256": {"anyOf": [{"$ref": "#/$defs/sha"}, {"type": "null"}]},
+    "weekly_confirmed": {"type": "boolean"},
+    "weekly_confirmation_sha256": {"anyOf": [{"$ref": "#/$defs/sha"}, {"type": "null"}]},
+    "created_at_utc": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"}
+  },
+  "$defs": {
+    "sha": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ordinal", "kind", "action_id", "delivery_run_id", "approval_id", "request_sha256", "requested_message_id", "mime_sha256", "render_sha256", "output_id", "output_sha256"],
+      "properties": {
+        "ordinal": {"type": "integer", "minimum": 1, "maximum": 2},
+        "kind": {"type": "string", "enum": ["daily", "weekly"]},
+        "action_id": {"type": "integer", "minimum": 1},
+        "delivery_run_id": {"type": "integer", "minimum": 1},
+        "approval_id": {"type": "integer", "minimum": 1},
+        "request_sha256": {"$ref": "#/$defs/sha"},
+        "requested_message_id": {"type": "string", "pattern": "^<trainlab\\.v2\\.[0-9a-f]{64}@trainlab\\.invalid>$"},
+        "mime_sha256": {"$ref": "#/$defs/sha"},
+        "render_sha256": {"$ref": "#/$defs/sha"},
+        "output_id": {"type": "integer", "minimum": 1},
+        "output_sha256": {"$ref": "#/$defs/sha"}
+      }
+    }
+  }
+}

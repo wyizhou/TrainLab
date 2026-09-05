@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trainlab.local/schemas/comparable_pace_reference_v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "seconds_per_km", "observed_date", "activity_output_id", "activity_sha256", "label"],
+  "properties": {
+    "schema_version": {"type": "string", "const": "comparable_pace_reference_v1"},
+    "seconds_per_km": {"type": "number", "exclusiveMinimum": 0},
+    "observed_date": {"type": "string", "format": "date"},
+    "activity_output_id": {"type": "integer", "minimum": 1},
+    "activity_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "label": {"type": "string", "const": "历史参考，不是目标配速"}
+  }
+}

@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trainlab.local/schemas/weekly_model_decision_v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "week_conclusion", "health_review", "all_activity_review", "technical_findings", "plan_comparison", "climbing_and_combined_load", "progression_decision", "training_plan", "uncertainty", "evidence_refs"],
+  "properties": {
+    "schema_version": {"type": "string", "const": "weekly_model_decision_v1"},
+    "week_conclusion": {"$ref": "#/$defs/text"},
+    "health_review": {"$ref": "#/$defs/text"},
+    "all_activity_review": {"$ref": "#/$defs/text"},
+    "technical_findings": {"type": "array", "maxItems": 5, "items": {"$ref": "#/$defs/finding"}},
+    "plan_comparison": {"$ref": "#/$defs/text"},
+    "climbing_and_combined_load": {"$ref": "#/$defs/text"},
+    "progression_decision": {"type": "string", "enum": ["advance", "hold", "deload"]},
+    "training_plan": {"$ref": "#/$defs/training_plan"},
+    "uncertainty": {"$ref": "#/$defs/text_list"},
+    "evidence_refs": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/text"}}
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1},
+    "text_list": {"type": "array", "items": {"$ref": "#/$defs/text"}},
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["activity_refs", "observation", "interpretation", "planning_implication", "confidence", "evidence_refs", "limitations"],
+      "properties": {
+        "activity_refs": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 1}},
+        "observation": {"$ref": "#/$defs/text"},
+        "interpretation": {"$ref": "#/$defs/text"},
+        "planning_implication": {"$ref": "#/$defs/text"},
+        "confidence": {"type": "string", "enum": ["high", "moderate", "low"]},
+        "evidence_refs": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/text"}},
+        "limitations": {"$ref": "#/$defs/text_list"}
+      }
+    },
+    "sos_reason": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reason_code", "explanation", "evidence_refs"],
+      "properties": {
+        "reason_code": {"type": "string", "enum": ["deload", "red_flag", "insufficient_recovery"]},
+        "explanation": {"$ref": "#/$defs/text"},
+        "evidence_refs": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 1}}
+      }
+    },
+    "running_course": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["activity_kind", "session_type", "name", "purpose", "load_level", "duration_minutes", "rpe_min", "rpe_max", "feel_guidance", "steps", "technique_notes", "stop_conditions"],
+      "properties": {
+        "activity_kind": {"type": "string", "const": "running"},
+        "session_type": {"type": "string", "enum": ["recovery_run", "easy_run", "long_easy", "sos_threshold", "sos_cruise_intervals", "sos_hills"]},
+        "name": {"$ref": "#/$defs/text"},
+        "purpose": {"$ref": "#/$defs/text"},
+        "load_level": {"type": "string", "enum": ["low", "moderate", "hard"]},
+        "duration_minutes": {"type": "number", "minimum": 1, "maximum": 300},
+        "rpe_min": {"type": "number", "minimum": 1, "maximum": 10},
+        "rpe_max": {"type": "number", "minimum": 1, "maximum": 10},
+        "feel_guidance": {"$ref": "#/$defs/text"},
+        "steps": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["warmup", "main", "recovery", "cooldown"],
+          "properties": {
+            "warmup": {"type": "object", "additionalProperties": false, "required": ["name", "instruction", "end_condition"], "properties": {"name": {"type": "string", "minLength": 1}, "instruction": {"type": "string", "minLength": 1}, "end_condition": {"type": "string", "minLength": 1}}},
+            "main": {"type": "object", "additionalProperties": false, "required": ["name", "instruction", "end_condition"], "properties": {"name": {"type": "string", "minLength": 1}, "instruction": {"type": "string", "minLength": 1}, "end_condition": {"type": "string", "minLength": 1}}},
+            "recovery": {"type": "object", "additionalProperties": false, "required": ["name", "instruction", "end_condition"], "properties": {"name": {"type": "string", "minLength": 1}, "instruction": {"type": "string", "minLength": 1}, "end_condition": {"type": "string", "minLength": 1}}},
+            "cooldown": {"type": "object", "additionalProperties": false, "required": ["name", "instruction", "end_condition"], "properties": {"name": {"type": "string", "minLength": 1}, "instruction": {"type": "string", "minLength": 1}, "end_condition": {"type": "string", "minLength": 1}}}
+          }
+        },
+        "technique_notes": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/text"}},
+        "stop_conditions": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/text"}}
+      }
+    },
+    "climbing_course": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["activity_kind", "session_type", "name", "purpose", "load_level", "duration_minutes", "rpe_min", "rpe_max", "feel_guidance", "steps", "technique_notes", "stop_conditions"],
+      "properties": {
+        "activity_kind": {"type": "string", "const": "climbing"},
+        "session_type": {"type": "string", "enum": ["climbing_technique", "climbing_hard"]},
+        "name": {"$ref": "#/$defs/text"},
+        "purpose": {"$ref": "#/$defs/text"},
+        "load_level": {"type": "string", "enum": ["low", "moderate", "hard"]},
+        "duration_minutes": {"type": "number", "minimum": 1, "maximum": 300},
+        "rpe_min": {"type": "number", "minimum": 1, "maximum": 10},
+        "rpe_max": {"type": "number", "minimum": 1, "maximum": 10},
+        "feel_guidance": {"$ref": "#/$defs/text"},
+        "steps": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["warmup", "main", "recovery", "cooldown"],
+          "properties": {
+            "warmup": {"type": "object", "additionalProperties": false, "required": ["name", "instruction", "end_condition"], "properties": {"name": {"type": "string", "minLength": 1}, "instruction": {"type": "string", "minLength": 1}, "end_condition": {"type": "string", "minLength": 1}}},
+            "main": {"type": "object", "additionalProperties": false, "required": ["name", "instruction", "end_condition"], "properties": {"name": {"type": "string", "minLength": 1}, "instruction": {"type": "string", "minLength": 1}, "end_condition": {"type": "string", "minLength": 1}}},
+            "recovery": {"type": "object", "additionalProperties": false, "required": ["name", "instruction", "end_condition"], "properties": {"name": {"type": "string", "minLength": 1}, "instruction": {"type": "string", "minLength": 1}, "end_condition": {"type": "string", "minLength": 1}}},
+            "cooldown": {"type": "object", "additionalProperties": false, "required": ["name", "instruction", "end_condition"], "properties": {"name": {"type": "string", "minLength": 1}, "instruction": {"type": "string", "minLength": 1}, "end_condition": {"type": "string", "minLength": 1}}}
+          }
+        },
+        "technique_notes": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/text"}},
+        "stop_conditions": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/text"}}
+      }
+    },
+    "rest_course": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["activity_kind", "session_type", "name", "purpose", "load_level", "duration_minutes", "rpe_min", "rpe_max", "feel_guidance", "steps", "technique_notes", "stop_conditions"],
+      "properties": {
+        "activity_kind": {"type": "string", "const": "rest"},
+        "session_type": {"type": "string", "const": "rest"},
+        "name": {"$ref": "#/$defs/text"},
+        "purpose": {"$ref": "#/$defs/text"},
+        "load_level": {"type": "string", "const": "low"},
+        "duration_minutes": {"type": "number", "const": 0},
+        "rpe_min": {"type": "number", "const": 1},
+        "rpe_max": {"type": "number", "const": 1},
+        "feel_guidance": {"$ref": "#/$defs/text"},
+        "steps": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["checklist"],
+          "properties": {"checklist": {"type": "object", "additionalProperties": false, "required": ["name", "instruction", "end_condition"], "properties": {"name": {"type": "string", "minLength": 1}, "instruction": {"type": "string", "minLength": 1}, "end_condition": {"type": "string", "minLength": 1}}}}
+        },
+        "technique_notes": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/text"}},
+        "stop_conditions": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/text"}}
+      }
+    },
+    "training_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "progression_rule", "progression_dimension", "sos_omission_reason", "sos_schedule_reason", "days"],
+      "properties": {
+        "schema_version": {"type": "string", "const": "training_plan_decision_v1"},
+        "progression_rule": {"type": "string", "enum": ["advance", "hold", "deload"]},
+        "progression_dimension": {"type": "string", "enum": ["distance", "intensity", "none"]},
+        "sos_omission_reason": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/sos_reason"}]},
+        "sos_schedule_reason": {"type": ["string", "null"]},
+        "days": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["day_1", "day_2", "day_3", "day_4", "day_5", "day_6", "day_7"],
+          "properties": {
+            "day_1": {"anyOf": [{"$ref": "#/$defs/running_course"}, {"$ref": "#/$defs/climbing_course"}, {"$ref": "#/$defs/rest_course"}]},
+            "day_2": {"anyOf": [{"$ref": "#/$defs/running_course"}, {"$ref": "#/$defs/climbing_course"}, {"$ref": "#/$defs/rest_course"}]},
+            "day_3": {"anyOf": [{"$ref": "#/$defs/running_course"}, {"$ref": "#/$defs/climbing_course"}, {"$ref": "#/$defs/rest_course"}]},
+            "day_4": {"anyOf": [{"$ref": "#/$defs/running_course"}, {"$ref": "#/$defs/climbing_course"}, {"$ref": "#/$defs/rest_course"}]},
+            "day_5": {"anyOf": [{"$ref": "#/$defs/running_course"}, {"$ref": "#/$defs/climbing_course"}, {"$ref": "#/$defs/rest_course"}]},
+            "day_6": {"anyOf": [{"$ref": "#/$defs/running_course"}, {"$ref": "#/$defs/climbing_course"}, {"$ref": "#/$defs/rest_course"}]},
+            "day_7": {"anyOf": [{"$ref": "#/$defs/running_course"}, {"$ref": "#/$defs/climbing_course"}, {"$ref": "#/$defs/rest_course"}]}
+          }
+        }
+      }
+    }
+  }
+}

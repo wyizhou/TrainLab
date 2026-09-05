@@ -1,0 +1,648 @@
+{
+  "activity_period": {
+    "activity_end_date": "2026-08-17",
+    "activity_start_date": "2026-08-11",
+    "sleep_wake_end_date": "2026-08-18",
+    "sleep_wake_start_date": "2026-08-12"
+  },
+  "allowed_technical_activity_refs": [],
+  "external_actions": 0,
+  "next_plan_dates": [
+    "2026-08-19",
+    "2026-08-20",
+    "2026-08-21",
+    "2026-08-22",
+    "2026-08-23",
+    "2026-08-24",
+    "2026-08-25"
+  ],
+  "provider_calls": 0,
+  "schema_version": "m11_v4_weekly_model_context_v2",
+  "training_goal": {
+    "constraints": {
+      "known_limitations": "无",
+      "recovery_signals": "关注恢复",
+      "red_flag_preference": "阻断自动执行"
+    },
+    "current_goal": {
+      "competition_goal_and_date": "无",
+      "long_term_load_rule": "保持稳定",
+      "training_focus": "跑步/攀岩联合训练"
+    },
+    "schema_version": "training_goal_v1",
+    "temporary_adjustment": {
+      "adjustment": "无",
+      "valid_period": "无"
+    },
+    "training_preferences": {
+      "hard_load_rule": "最多三次",
+      "intensity_preference": 3,
+      "missed_session_rule": "不补课",
+      "progression_rule": "保持稳定"
+    },
+    "weekly_availability": {
+      "friday": "休息",
+      "monday": "休息",
+      "saturday": "跑步",
+      "sunday": "攀岩",
+      "thursday": "攀岩",
+      "tuesday": "跑步",
+      "wednesday": "跑步"
+    }
+  },
+  "weekly_evidence": {
+    "all_activities": [
+      {
+        "activity_date": "2026-08-11",
+        "activity_inventory_id": 11,
+        "activity_kind": "running",
+        "average_heart_rate_bpm": 135,
+        "coverage": {
+          "sequence": 1.0,
+          "summary": 1.0
+        },
+        "distance_km": 5.0,
+        "duration_seconds": 2700,
+        "maximum_heart_rate_bpm": 151,
+        "missing_fields": [],
+        "plan_relation": "unplanned",
+        "raw_file_id": 1011,
+        "raw_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "technical_metrics": [],
+        "uncertainty": []
+      }
+    ],
+    "daily_observation_refs": [
+      {
+        "activity_date": "2026-08-11",
+        "output_id": 11,
+        "report_date": "2026-08-12",
+        "sha256": "000000000000000000000000000000000000000000000000000000000000000b"
+      },
+      {
+        "activity_date": "2026-08-12",
+        "output_id": 12,
+        "report_date": "2026-08-13",
+        "sha256": "000000000000000000000000000000000000000000000000000000000000000c"
+      },
+      {
+        "activity_date": "2026-08-13",
+        "output_id": 13,
+        "report_date": "2026-08-14",
+        "sha256": "000000000000000000000000000000000000000000000000000000000000000d"
+      },
+      {
+        "activity_date": "2026-08-14",
+        "output_id": 14,
+        "report_date": "2026-08-15",
+        "sha256": "000000000000000000000000000000000000000000000000000000000000000e"
+      },
+      {
+        "activity_date": "2026-08-15",
+        "output_id": 15,
+        "report_date": "2026-08-16",
+        "sha256": "000000000000000000000000000000000000000000000000000000000000000f"
+      },
+      {
+        "activity_date": "2026-08-16",
+        "output_id": 16,
+        "report_date": "2026-08-17",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000010"
+      },
+      {
+        "activity_date": "2026-08-17",
+        "output_id": 17,
+        "report_date": "2026-08-18",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000011"
+      }
+    ],
+    "health_days": [
+      {
+        "facts": [
+          {
+            "metric_code": "sleep:main_sleep",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "rhr:resting_heart_rate",
+            "observed_date": "2026-08-11",
+            "raw_refs": [
+              {
+                "raw_file_id": 501,
+                "raw_sha256": "5555555555555555555555555555555555555555555555555555555555555555"
+              }
+            ],
+            "reason_code": null,
+            "status": "available",
+            "uncertainty": [],
+            "unit": "bpm",
+            "value": {
+              "metric": "resting_heart_rate",
+              "resource": "rhr",
+              "resting_heart_rate_bpm": 48,
+              "uncertainty": "named_fields"
+            }
+          },
+          {
+            "metric_code": "hrv:hrv",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "heart_rates:heart_rate",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "max_metrics:vo2_max",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "weigh_ins:weight",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          }
+        ],
+        "health_analysis_ref": {
+          "output_id": 111,
+          "sha256": "000000000000000000000000000000000000000000000000000000000000006f"
+        },
+        "health_date": "2026-08-11",
+        "sleep_wake_date": "2026-08-12"
+      },
+      {
+        "facts": [
+          {
+            "metric_code": "sleep:main_sleep",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "rhr:resting_heart_rate",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "hrv:hrv",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "heart_rates:heart_rate",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "max_metrics:vo2_max",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "weigh_ins:weight",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          }
+        ],
+        "health_analysis_ref": {
+          "output_id": 112,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000070"
+        },
+        "health_date": "2026-08-12",
+        "sleep_wake_date": "2026-08-13"
+      },
+      {
+        "facts": [
+          {
+            "metric_code": "sleep:main_sleep",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "rhr:resting_heart_rate",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "hrv:hrv",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "heart_rates:heart_rate",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "max_metrics:vo2_max",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "weigh_ins:weight",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          }
+        ],
+        "health_analysis_ref": {
+          "output_id": 113,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000071"
+        },
+        "health_date": "2026-08-13",
+        "sleep_wake_date": "2026-08-14"
+      },
+      {
+        "facts": [
+          {
+            "metric_code": "sleep:main_sleep",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "rhr:resting_heart_rate",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "hrv:hrv",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "heart_rates:heart_rate",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "max_metrics:vo2_max",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "weigh_ins:weight",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          }
+        ],
+        "health_analysis_ref": {
+          "output_id": 114,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000072"
+        },
+        "health_date": "2026-08-14",
+        "sleep_wake_date": "2026-08-15"
+      },
+      {
+        "facts": [
+          {
+            "metric_code": "sleep:main_sleep",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "rhr:resting_heart_rate",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "hrv:hrv",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "heart_rates:heart_rate",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "max_metrics:vo2_max",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "weigh_ins:weight",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          }
+        ],
+        "health_analysis_ref": {
+          "output_id": 115,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000073"
+        },
+        "health_date": "2026-08-15",
+        "sleep_wake_date": "2026-08-16"
+      },
+      {
+        "facts": [
+          {
+            "metric_code": "sleep:main_sleep",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "rhr:resting_heart_rate",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "hrv:hrv",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "heart_rates:heart_rate",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "max_metrics:vo2_max",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "weigh_ins:weight",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          }
+        ],
+        "health_analysis_ref": {
+          "output_id": 116,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000074"
+        },
+        "health_date": "2026-08-16",
+        "sleep_wake_date": "2026-08-17"
+      },
+      {
+        "facts": [
+          {
+            "metric_code": "sleep:main_sleep",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "rhr:resting_heart_rate",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "hrv:hrv",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "heart_rates:heart_rate",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "max_metrics:vo2_max",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          },
+          {
+            "metric_code": "weigh_ins:weight",
+            "observed_date": null,
+            "raw_refs": [],
+            "reason_code": "not_found",
+            "status": "missing",
+            "uncertainty": [],
+            "unit": null,
+            "value": null
+          }
+        ],
+        "health_analysis_ref": {
+          "output_id": 117,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000075"
+        },
+        "health_date": "2026-08-17",
+        "sleep_wake_date": "2026-08-18"
+      }
+    ],
+    "key_run_refs": [],
+    "period": {
+      "activity_end_date": "2026-08-17",
+      "activity_start_date": "2026-08-11",
+      "sleep_wake_end_date": "2026-08-18",
+      "sleep_wake_start_date": "2026-08-12"
+    },
+    "plan_comparison": {
+      "comparison_is_secondary": true,
+      "date_only_matches": 0,
+      "unplanned_activities": 1
+    },
+    "provider_calls": 0,
+    "raw_reads": 0,
+    "schema_version": "weekly_training_evidence_v2",
+    "status": "ready",
+    "weekly_totals": {
+      "activity_count": 1,
+      "activity_days": 1,
+      "by_activity_kind": {
+        "running": 1
+      },
+      "duration_seconds": 2700,
+      "no_activity_days": 6,
+      "running_distance_km": 5.0
+    }
+  }
+}

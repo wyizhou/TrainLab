@@ -1,0 +1,19 @@
+{
+  "schema_version": "weekly_reader_content_v1",
+  "status": "ready",
+  "title": "TrainLab 周报 2030-01-01～2030-01-07（公开合成）",
+  "activity_period": "2030-01-01~2030-01-07",
+  "sleep_wake_period": "2030-01-02~2030-01-08",
+  "plan_period": "2030-01-08~2030-01-14",
+  "sections": [
+    {"section_code": "week_conclusion", "heading": "结论先行", "paragraphs": ["公开合成证据显示本周负荷稳定。"], "items": []},
+    {"section_code": "health_recovery", "heading": "全周健康与恢复", "paragraphs": ["睡眠和恢复仅作结构演示。"], "items": []},
+    {"section_code": "all_activities", "heading": "全部实际运动", "paragraphs": ["完整列出计划内外活动。"], "items": ["跑步｜5.0 km｜40 分钟", "攀岩｜距离未记录｜60 分钟"]},
+    {"section_code": "technical_review", "heading": "重点课程技术复盘", "paragraphs": [], "items": ["没有满足适用条件的技术指标时明确显示不适用。"]},
+    {"section_code": "plan_comparison", "heading": "计划与实际简短对比", "paragraphs": ["比较只作为次要背景。"], "items": []},
+    {"section_code": "combined_load", "heading": "跑步、攀岩和恢复联合判断", "paragraphs": ["攀岩强度无明确证据时保持未知。"], "items": []},
+    {"section_code": "fixed_plan", "heading": "唯一固定的七天下周计划", "paragraphs": ["计划固定；是否执行由用户依据体感自行决定。"], "items": ["2030-01-08｜SOS 课程｜RPE 6–7", "2030-01-09｜恢复日｜RPE 1–2"]}
+  ],
+  "charts": [],
+  "provider_calls": 0
+}

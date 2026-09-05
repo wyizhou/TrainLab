@@ -1,0 +1,1288 @@
+{
+  "row_count": 183,
+  "rows": [
+    {
+      "disposition": "direct",
+      "field": "schema_version",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 1,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "status",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 2,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "error_code",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 3,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "report_date",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 4,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "review_date",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 5,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "sleep_wake_date",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 6,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "safety",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 7,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "summary",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 8,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "provider_calls",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 9,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "coach.summary",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 10,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "coach.stop_conditions[]",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 11,
+      "report": "日报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "coach.today_course",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 12,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "coach.recent_trend_sha256",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 13,
+      "report": "日报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "coach.today_course.date",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 14,
+      "report": "日报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "coach.today_course.activity_kind",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 15,
+      "report": "日报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "coach.today_course.name",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 16,
+      "report": "日报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "coach.today_course.purpose",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 17,
+      "report": "日报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "coach.today_course.load_level",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 18,
+      "report": "日报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "coach.today_course.distance_km",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 19,
+      "report": "日报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "coach.today_course.duration_minutes",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 20,
+      "report": "日报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "coach.today_course.pace_min_seconds_per_km",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 21,
+      "report": "日报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "coach.today_course.pace_max_seconds_per_km",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 22,
+      "report": "日报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "coach.today_course.heart_rate_min_bpm",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 23,
+      "report": "日报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "coach.today_course.heart_rate_max_bpm",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 24,
+      "report": "日报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "coach.today_course.rpe",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 25,
+      "report": "日报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "coach.today_course.steps[]",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 26,
+      "report": "日报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "coach.today_course.steps[].name",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 27,
+      "report": "日报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "coach.today_course.steps[].end_condition",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 28,
+      "report": "日报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "coach.today_course.downgrade_rule",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 29,
+      "report": "日报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "coach.today_course.stop_conditions[]",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 30,
+      "report": "日报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "coach.today_course.garmin_mapping_status",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 31,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[]",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 32,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].name",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 33,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].value",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 34,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].unit",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 35,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].evidence_ref",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 36,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].resource",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 37,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].metric",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 38,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].count",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 39,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].minimum",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 40,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].maximum",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 41,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].average",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 42,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].median",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 43,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].aggregate",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 44,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].duration_seconds",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 45,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].sleep_start",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 46,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].sleep_end",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 47,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].sleep_wake_date",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 48,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].stage_group_count",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 49,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].completeness",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 50,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].trackpoint_count",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 51,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].time_point_count",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 52,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].sample_count",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 53,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].distance_km",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 54,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].duration_available",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 55,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].activity_kind",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 56,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].pace_seconds_per_km",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 57,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].heart_rate_average",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 58,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].heart_rate_maximum",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 59,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].resting_heart_rate_bpm",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 60,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].last_night_average",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 61,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].weekly_average",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 62,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].last_night_5_min_high",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 63,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].vo2_max",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 64,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].weight",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 65,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].temperature",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 66,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].humidity",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 67,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].wind_speed",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 68,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].units",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 69,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].lap_count",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 70,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].uncertainty",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 71,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].source_name",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 72,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].field_counts",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 73,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].raw_file_id",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 74,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].sha256",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 75,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].data_date",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 76,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "bounded_metrics[].format",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 77,
+      "report": "日报"
+    },
+    {
+      "disposition": "derived",
+      "field": "evidence_file_count",
+      "note": "仅由已验证直接字段确定性计算，并保留来源引用。",
+      "ordinal": 78,
+      "report": "日报"
+    },
+    {
+      "disposition": "derived",
+      "field": "evidence_resources[]",
+      "note": "仅由已验证直接字段确定性计算，并保留来源引用。",
+      "ordinal": 79,
+      "report": "日报"
+    },
+    {
+      "disposition": "derived",
+      "field": "history_daily_sha256[]",
+      "note": "仅由已验证直接字段确定性计算，并保留来源引用。",
+      "ordinal": 80,
+      "report": "日报"
+    },
+    {
+      "disposition": "derived",
+      "field": "history_daily_dates[]",
+      "note": "仅由已验证直接字段确定性计算，并保留来源引用。",
+      "ordinal": 81,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "evidence_refs[]",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 82,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "evidence_refs[].raw_file_id",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 83,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "evidence_refs[].sha256",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 84,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "evidence_refs[].claim",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 85,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "recent_14_days.days_available",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 86,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "recent_14_days.sleep.average_hours",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 87,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "recent_14_days.sleep.insufficient_days",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 88,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "recent_14_days.sleep.consecutive_insufficient_days",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 89,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "recent_14_days.recovery.caution_days",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 90,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "recent_14_days.recovery.rhr_average",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 91,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "recent_14_days.recovery.rhr_change",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 92,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "recent_14_days.recovery.hrv_average",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 93,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "recent_14_days.recovery.hrv_change",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 94,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "recent_14_days.running.distance_km",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 95,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "recent_14_days.running.activity_count",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 96,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "recent_14_days.running.activity_days",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 97,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "recent_14_days.data_gaps[]",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 98,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "recent_14_days.sha256",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 99,
+      "report": "日报"
+    },
+    {
+      "disposition": "direct",
+      "field": "schema_version",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 100,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "status",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 101,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "error_code",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 102,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "period",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 103,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "summary",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 104,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "provider_calls",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 105,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "goal_sha256",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 106,
+      "report": "周报"
+    },
+    {
+      "disposition": "derived",
+      "field": "daily_count",
+      "note": "仅由已验证直接字段确定性计算，并保留来源引用。",
+      "ordinal": 107,
+      "report": "周报"
+    },
+    {
+      "disposition": "derived",
+      "field": "daily_summary_count",
+      "note": "仅由已验证直接字段确定性计算，并保留来源引用。",
+      "ordinal": 108,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "daily_input_sha256[]",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 109,
+      "report": "周报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "review_output_id",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 110,
+      "report": "周报"
+    },
+    {
+      "disposition": "derived",
+      "field": "activity_days",
+      "note": "仅由已验证直接字段确定性计算，并保留来源引用。",
+      "ordinal": 111,
+      "report": "周报"
+    },
+    {
+      "disposition": "derived",
+      "field": "sleep_complete_days",
+      "note": "仅由已验证直接字段确定性计算，并保留来源引用。",
+      "ordinal": 112,
+      "report": "周报"
+    },
+    {
+      "disposition": "derived",
+      "field": "evidence_consistency",
+      "note": "仅由已验证直接字段确定性计算，并保留来源引用。",
+      "ordinal": 113,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "evidence_refs[]",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 114,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "evidence_refs[].output_id",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 115,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "evidence_refs[].sha256",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 116,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "evidence_refs[].claim",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 117,
+      "report": "周报"
+    },
+    {
+      "disposition": "derived",
+      "field": "progression_decision",
+      "note": "仅由已验证直接字段确定性计算，并保留来源引用。",
+      "ordinal": 118,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "progression_rule",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 119,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "progression_dimension",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 120,
+      "report": "周报"
+    },
+    {
+      "disposition": "derived",
+      "field": "previous_week_distance_km",
+      "note": "仅由已验证直接字段确定性计算，并保留来源引用。",
+      "ordinal": 121,
+      "report": "周报"
+    },
+    {
+      "disposition": "derived",
+      "field": "current_week_distance_km",
+      "note": "仅由已验证直接字段确定性计算，并保留来源引用。",
+      "ordinal": 122,
+      "report": "周报"
+    },
+    {
+      "disposition": "derived",
+      "field": "previous_week_intensity_score",
+      "note": "仅由已验证直接字段确定性计算，并保留来源引用。",
+      "ordinal": 123,
+      "report": "周报"
+    },
+    {
+      "disposition": "derived",
+      "field": "current_week_intensity_score",
+      "note": "仅由已验证直接字段确定性计算，并保留来源引用。",
+      "ordinal": 124,
+      "report": "周报"
+    },
+    {
+      "disposition": "derived",
+      "field": "evidence_running_distance_km",
+      "note": "仅由已验证直接字段确定性计算，并保留来源引用。",
+      "ordinal": 125,
+      "report": "周报"
+    },
+    {
+      "disposition": "derived",
+      "field": "evidence_caution_days",
+      "note": "仅由已验证直接字段确定性计算，并保留来源引用。",
+      "ordinal": 126,
+      "report": "周报"
+    },
+    {
+      "disposition": "derived",
+      "field": "evidence_daily_count",
+      "note": "仅由已验证直接字段确定性计算，并保留来源引用。",
+      "ordinal": 127,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "training_plan",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 128,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "training_plan.schema_version",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 129,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "training_plan.status",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 130,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "training_plan.progression_rule",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 131,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "training_plan.progression_dimension",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 132,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "training_plan.provider_calls",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 133,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "training_plan.items[]",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 134,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "training_plan.items[].date",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 135,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "training_plan.items[].activity_kind",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 136,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "training_plan.items[].name",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 137,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "training_plan.items[].purpose",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 138,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "training_plan.items[].load_level",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 139,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "training_plan.items[].garmin_mapping_status",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 140,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "training_plan.items[].distance_km",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 141,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "training_plan.items[].duration_minutes",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 142,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "training_plan.items[].pace_min_seconds_per_km",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 143,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "training_plan.items[].pace_max_seconds_per_km",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 144,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "training_plan.items[].heart_rate_min_bpm",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 145,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "training_plan.items[].heart_rate_max_bpm",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 146,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "training_plan.items[].rpe",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 147,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "training_plan.items[].steps[]",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 148,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "training_plan.items[].steps[].name",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 149,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "training_plan.items[].steps[].end_condition",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 150,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "training_plan.items[].downgrade_rule",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 151,
+      "report": "周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "training_plan.items[].stop_conditions[]",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 152,
+      "report": "周报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "extra_sections[]",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 153,
+      "report": "日报 / 周报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "extra_sections[].id",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 154,
+      "report": "日报 / 周报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "extra_sections[].title",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 155,
+      "report": "日报 / 周报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "extra_sections[].type",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 156,
+      "report": "日报 / 周报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "extra_sections[].priority",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 157,
+      "report": "日报 / 周报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "extra_sections[].summary",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 158,
+      "report": "日报 / 周报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "extra_sections[].data",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 159,
+      "report": "日报 / 周报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "extra_sections[].unit",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 160,
+      "report": "日报 / 周报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "extra_sections[].source_refs[]",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 161,
+      "report": "日报 / 周报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "extra_sections[].display_hint",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 162,
+      "report": "日报 / 周报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "heart_rate_zones[]",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 163,
+      "report": "日报 / 周报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "heart_rate_zones[].zone",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 164,
+      "report": "日报 / 周报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "heart_rate_zones[].label",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 165,
+      "report": "日报 / 周报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "heart_rate_zones[].min_bpm",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 166,
+      "report": "日报 / 周报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "heart_rate_zones[].max_bpm",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 167,
+      "report": "日报 / 周报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "heart_rate_zones[].duration_seconds",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 168,
+      "report": "日报 / 周报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "heart_rate_zones[].percentage",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 169,
+      "report": "日报 / 周报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "heart_rate_zones[].color",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 170,
+      "report": "日报 / 周报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "sleep_stages[]",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 171,
+      "report": "日报 / 周报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "sleep_stages[].stage",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 172,
+      "report": "日报 / 周报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "sleep_stages[].start",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 173,
+      "report": "日报 / 周报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "sleep_stages[].end",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 174,
+      "report": "日报 / 周报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "sleep_stages[].duration_seconds",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 175,
+      "report": "日报 / 周报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "sleep_stages[].percentage",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 176,
+      "report": "日报 / 周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "activity_series[]",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 177,
+      "report": "日报 / 周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "activity_series[].timestamp",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 178,
+      "report": "日报 / 周报"
+    },
+    {
+      "disposition": "direct",
+      "field": "activity_series[].heart_rate",
+      "note": "从 AI 结果、运行上下文或已验证训练计划显式读取。",
+      "ordinal": 179,
+      "report": "日报 / 周报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "activity_series[].pace",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 180,
+      "report": "日报 / 周报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "activity_series[].cadence",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 181,
+      "report": "日报 / 周报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "activity_series[].power",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 182,
+      "report": "日报 / 周报"
+    },
+    {
+      "disposition": "unsupported",
+      "field": "activity_series[].elevation",
+      "note": "当前事实源或冻结语义不足；生产邮件隐藏，不从样例或摘要反推。",
+      "ordinal": 183,
+      "report": "日报 / 周报"
+    }
+  ],
+  "schema_version": "email_design_field_classification_v1",
+  "source_mapping_sha256": "dd0bec639e6f676ae26c327c33caec417f98cb562ac8de502ebd65f5e4d3b328"
+}
