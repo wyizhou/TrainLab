@@ -13,7 +13,7 @@ TrainLab/
 ├── docs/ references/ skills/ .github/
 ├── data-backup/          # 本机忽略的旧数据归档
 └── source/
-    ├── AGENTS.md         # 无状态运行 Harness
+    ├── AGENTS.md         # M12 产品边界与迁移状态
     ├── skills/           # 本地 Skills、脚本与合同测试
     ├── templates/        # fixed/open-report 邮件外壳
     ├── config.json       # 非秘密运行参数
@@ -27,11 +27,14 @@ TrainLab/
 真实配置、数据库、raw、FIT、token、日志和 state 不会进入 Git，也不会被测试或发布
 产物展示。
 
-## 无状态运行
+## M12 迁移状态
 
-从仓库根目录执行 `codex exec -C source`。运行时先读取 `source/AGENTS.md`、`config.json`、
-私有 `goal.md`、需要的 Skill 和 `state/trainlab.db`，再运行对应脚本；结果、状态、批准和
-外部动作都追加写入 SQLite。当前只保留无状态 `auto.txt` Prompt，不安装或启用 cron。
+旧 `codex exec -C source` 自动路线已经停用，auto.txt 只返回退役通知。新 Python FIT-only
+运行层尚未交付；请勿使用旧历史批次发送邮件或修改 Garmin。目标是每日 22:00 同步运动、
+星期日 15:00 一次周分析和固定跑步计划，以简单邮件/PDF 和 Garmin 课程发布。
+
+已完成只读旧系统备份与恢复验证；[退役映射](source/docs/legacy-retirement.md) 逐项说明
+保留能力、退役业务及测试迁移。旧正式 state/私人配置保持不变，当前没有启用新调度或外部调用。
 
 ## 安装依赖与检查
 
@@ -51,17 +54,17 @@ CI 的所有产品步骤都以 `source/` 为工作目录；Ruff 和 mypy 配置�
 
 ## 运行时边界
 
-TrainLab 运行 Harness 位于 `source/AGENTS.md` 和 `source/skills/`，只接受有来源和 lineage
-的有界输入。脚本负责读取 raw 并写入 SQLite，AI 负责受约束的解释和决策；Garmin、Gmail
-和 Sites 的外部写入必须由各自明确授权的边界完成。产品不再包含历史自动 Orchestration、
-Supervisor 或后台服务入口。
+根 agentForge 继续管理开发，不承担产品调度。M12 由 Python 管理来源、SQLite、定时和
+动作状态，AI 只负责每周受约束的解释/课程决策；私有 FIT、GPS、凭据不交给模型。
+Gmail 仅官方 REST，Garmin 写入需通过既定前置门与精确授权，Sites 不在新方向内。
+不恢复旧 Orchestration、Supervisor、cron 或开机自动服务。
 
-## 数据重建说明
+## 历史数据说明
 
-旧实例已在本机归档到 `data-backup/<timestamp>/`。新 raw-first 数据库只从
+M12 之前的实例已在本机归档到 `data-backup/<timestamp>/`。当时的 raw-first 数据库只从
 Garmin raw/FIT 离线重建，不迁移旧 AI 报告、邮件、用户事实、交付或后台运行历史；
-数据库完成完整性、外键、哈希和权限验证后已切换为 `source/state/`；旧 state 仍保留在
-本机 `data-backup/` 的切换归档中。
+数据库完成完整性、外键、哈希和权限验证后切换为 `source/state/`。M12 将另外建立新库，
+目前尚未切换；本机旧数据和新的恢复归档均保留，不把归档作为新运行依赖。
 
 ## 开发规则
 

@@ -1,0 +1,311 @@
+{
+  "schema_version": "m12_legacy_test_mapping_v1",
+  "baseline_commit": "afdb8c06436949b1f1608133b03366c28e5bf55b",
+  "policy": "所有旧测试继续执行。新模块建立等价适用回归并独立验收后，才逐项归档已取消业务及其专用测试。此清单不是迁移完成声明。",
+  "files": [
+    {
+      "path": "tests/code/contract/test_ai_layout.py",
+      "sha256": "1ea0417d94be13bfb56d65243fbbf005a5fe485b4233da5f090c71c85d099dec",
+      "current_action": "keep_executing",
+      "target": "M12-0005",
+      "applicable_safety": "Schema合法性、合成案例、metadata/目录、测试与运行隔离持续执行",
+      "retired_behavior": "仅已取消业务的具体Schema字段随该业务归档；布局/隐私检查不退役"
+    },
+    {
+      "path": "tests/code/contract/test_coach_utility_v2_contract.py",
+      "sha256": "932c16ecca098680b1cfeec6bf82043c7dad5780163d32e4f499ecf696b3d2cf",
+      "current_action": "keep_executing",
+      "target": "M12-0004",
+      "applicable_safety": "证据/数值绑定、内容安全、RPE及课程硬负荷；OAuth/REST、权限、单次外部动作与崩溃重放（按该文件实际场景迁移）",
+      "retired_behavior": "每日健康/动态改课、高保真HTML/CID、固定测试批次及旧六表绑定；通用发布和安全场景不得随之删除"
+    },
+    {
+      "path": "tests/code/contract/test_coach_utility_v2_prompt.py",
+      "sha256": "42baea8d33c577a3a65ad91cd10019fbcf610de6abea0fe9469ebe09c6848f74",
+      "current_action": "keep_executing",
+      "target": "M12-0004",
+      "applicable_safety": "证据/数值绑定、内容安全、RPE及课程硬负荷；OAuth/REST、权限、单次外部动作与崩溃重放（按该文件实际场景迁移）",
+      "retired_behavior": "每日健康/动态改课、高保真HTML/CID、固定测试批次及旧六表绑定；通用发布和安全场景不得随之删除"
+    },
+    {
+      "path": "tests/code/contract/test_content_first_v4_contract.py",
+      "sha256": "d90588b93d529b1fdf8bdad1f0e81c4fa9f44d4f17036d8365f85babbe8eb728",
+      "current_action": "keep_executing",
+      "target": "M12-0003",
+      "applicable_safety": "解析时间/圈段、证据引用、输入白名单、GPS排除、预算/缓存、Schema同构、模型前检与失败重放（按该文件实际场景迁移）",
+      "retired_behavior": "健康六类/最近健康值、GPX/TCX首层输入、固定M9/M11 attempt/Candidate与七健康日报依赖"
+    },
+    {
+      "path": "tests/code/contract/test_email_delivery_v2.py",
+      "sha256": "0218e94fcf839a2ca2e1564ef9faddafacf937e439c95acac9e73038ef825515",
+      "current_action": "keep_executing",
+      "target": "M12-0004",
+      "applicable_safety": "证据/数值绑定、内容安全、RPE及课程硬负荷；OAuth/REST、权限、单次外部动作与崩溃重放（按该文件实际场景迁移）",
+      "retired_behavior": "每日健康/动态改课、高保真HTML/CID、固定测试批次及旧六表绑定；通用发布和安全场景不得随之删除"
+    },
+    {
+      "path": "tests/code/contract/test_email_design_v3.py",
+      "sha256": "2886872fd3d6e59335f857f6112442ddcb1757155ab9f32d19df32d0efe88744",
+      "current_action": "keep_executing",
+      "target": "M12-0004",
+      "applicable_safety": "证据/数值绑定、内容安全、RPE及课程硬负荷；OAuth/REST、权限、单次外部动作与崩溃重放（按该文件实际场景迁移）",
+      "retired_behavior": "每日健康/动态改课、高保真HTML/CID、固定测试批次及旧六表绑定；通用发布和安全场景不得随之删除"
+    },
+    {
+      "path": "tests/code/contract/test_email_mime_v2.py",
+      "sha256": "f6e84e08e80bbbfcfa700a6ba1895b1bb78c2d2eb15f7b70639766640db6685c",
+      "current_action": "keep_executing",
+      "target": "M12-0004",
+      "applicable_safety": "证据/数值绑定、内容安全、RPE及课程硬负荷；OAuth/REST、权限、单次外部动作与崩溃重放（按该文件实际场景迁移）",
+      "retired_behavior": "每日健康/动态改课、高保真HTML/CID、固定测试批次及旧六表绑定；通用发布和安全场景不得随之删除"
+    },
+    {
+      "path": "tests/code/contract/test_m10_gmail_rest.py",
+      "sha256": "c9b5587a77dffd7e05877490af757215d9c97fb54d59bed331b6cc6e4d0609ed",
+      "current_action": "keep_executing",
+      "target": "M12-0004",
+      "applicable_safety": "证据/数值绑定、内容安全、RPE及课程硬负荷；OAuth/REST、权限、单次外部动作与崩溃重放（按该文件实际场景迁移）",
+      "retired_behavior": "每日健康/动态改课、高保真HTML/CID、固定测试批次及旧六表绑定；通用发布和安全场景不得随之删除"
+    },
+    {
+      "path": "tests/code/contract/test_m10_gmail_rest_continuation.py",
+      "sha256": "a60684f5afda3f6230dd797744fa61b2f49ec6f3a662932cd4cf079955da1fa2",
+      "current_action": "keep_executing",
+      "target": "M12-0004",
+      "applicable_safety": "证据/数值绑定、内容安全、RPE及课程硬负荷；OAuth/REST、权限、单次外部动作与崩溃重放（按该文件实际场景迁移）",
+      "retired_behavior": "每日健康/动态改课、高保真HTML/CID、固定测试批次及旧六表绑定；通用发布和安全场景不得随之删除"
+    },
+    {
+      "path": "tests/code/contract/test_m10_live_e2e.py",
+      "sha256": "7eeb31a99a5960f6d8542a6723ea542e17f04c5d649b570d9de7a6038cd45575",
+      "current_action": "keep_executing",
+      "target": "M12-0004",
+      "applicable_safety": "证据/数值绑定、内容安全、RPE及课程硬负荷；OAuth/REST、权限、单次外部动作与崩溃重放（按该文件实际场景迁移）",
+      "retired_behavior": "每日健康/动态改课、高保真HTML/CID、固定测试批次及旧六表绑定；通用发布和安全场景不得随之删除"
+    },
+    {
+      "path": "tests/code/contract/test_m11_v4_r18_contract.py",
+      "sha256": "0c0da9ea7451ce5b3e4d68af4a9a49dc2c77254c3d1ca2752eb9b021f886ff3a",
+      "current_action": "keep_executing",
+      "target": "M12-0003",
+      "applicable_safety": "解析时间/圈段、证据引用、输入白名单、GPS排除、预算/缓存、Schema同构、模型前检与失败重放（按该文件实际场景迁移）",
+      "retired_behavior": "健康六类/最近健康值、GPX/TCX首层输入、固定M9/M11 attempt/Candidate与七健康日报依赖"
+    },
+    {
+      "path": "tests/code/contract/test_m11_v4_r19_prompt_parity.py",
+      "sha256": "8ed40fe0673cb745622de247f553fd0af462deb1f67806ee575f52f2b2513656",
+      "current_action": "keep_executing",
+      "target": "M12-0003",
+      "applicable_safety": "解析时间/圈段、证据引用、输入白名单、GPS排除、预算/缓存、Schema同构、模型前检与失败重放（按该文件实际场景迁移）",
+      "retired_behavior": "健康六类/最近健康值、GPX/TCX首层输入、固定M9/M11 attempt/Candidate与七健康日报依赖"
+    },
+    {
+      "path": "tests/code/contract/test_m8_contracts.py",
+      "sha256": "deb5071d18c3d0e46338e501068211b101696fa48a267a3bb5e2a3086fd568da",
+      "current_action": "keep_executing",
+      "target": "M12-0002",
+      "applicable_safety": "来源SHA、时间与活动身份、状态事务/锁/幂等、权限、范围预算和错误保留（按该文件实际场景迁移）",
+      "retired_behavior": "健康睡眠采集、中午槽位、旧六表输出类型/日报依赖、旧Candidate专用实现"
+    },
+    {
+      "path": "tests/code/contract/test_m8_r32_contracts.py",
+      "sha256": "587415fff47c16c012fbeb88c3c40332e62ec6fba409008c01021e295df53c75",
+      "current_action": "keep_executing",
+      "target": "M12-0002",
+      "applicable_safety": "来源SHA、时间与活动身份、状态事务/锁/幂等、权限、范围预算和错误保留（按该文件实际场景迁移）",
+      "retired_behavior": "健康睡眠采集、中午槽位、旧六表输出类型/日报依赖、旧Candidate专用实现"
+    },
+    {
+      "path": "tests/code/contract/test_m9_codex_attempt4_contract.py",
+      "sha256": "dea22a227f7e7fd244266da1113a6fb529092b9848f4bc234c78a5ecec808391",
+      "current_action": "keep_executing",
+      "target": "M12-0003",
+      "applicable_safety": "解析时间/圈段、证据引用、输入白名单、GPS排除、预算/缓存、Schema同构、模型前检与失败重放（按该文件实际场景迁移）",
+      "retired_behavior": "健康六类/最近健康值、GPX/TCX首层输入、固定M9/M11 attempt/Candidate与七健康日报依赖"
+    },
+    {
+      "path": "tests/code/contract/test_m9_codex_attempt4_runtime.py",
+      "sha256": "a9ba345363eb9754151ff81fbf39f1c38362954eec3b0051df1e0ee3a5b070e8",
+      "current_action": "keep_executing",
+      "target": "M12-0003",
+      "applicable_safety": "解析时间/圈段、证据引用、输入白名单、GPS排除、预算/缓存、Schema同构、模型前检与失败重放（按该文件实际场景迁移）",
+      "retired_behavior": "健康六类/最近健康值、GPX/TCX首层输入、固定M9/M11 attempt/Candidate与七健康日报依赖"
+    },
+    {
+      "path": "tests/code/contract/test_m9_codex_daily_runner.py",
+      "sha256": "c8d92969f21defa5bf76cc850f038f955e794eeca19b81efc699cfd0b02ddd34",
+      "current_action": "keep_executing",
+      "target": "M12-0003",
+      "applicable_safety": "解析时间/圈段、证据引用、输入白名单、GPS排除、预算/缓存、Schema同构、模型前检与失败重放（按该文件实际场景迁移）",
+      "retired_behavior": "健康六类/最近健康值、GPX/TCX首层输入、固定M9/M11 attempt/Candidate与七健康日报依赖"
+    },
+    {
+      "path": "tests/code/contract/test_m9_codex_wire_schema.py",
+      "sha256": "8969763455ac530be3236f3787a7d54ddc1454c2ed832078775337758d7fd911",
+      "current_action": "keep_executing",
+      "target": "M12-0003",
+      "applicable_safety": "解析时间/圈段、证据引用、输入白名单、GPS排除、预算/缓存、Schema同构、模型前检与失败重放（按该文件实际场景迁移）",
+      "retired_behavior": "健康六类/最近健康值、GPX/TCX首层输入、固定M9/M11 attempt/Candidate与七健康日报依赖"
+    },
+    {
+      "path": "tests/code/contract/test_m9_garmin_live.py",
+      "sha256": "9fde9795e18775dc0d0495a9080d3593e4af52137a3a6f85cabf5b0e30c42e70",
+      "current_action": "keep_executing",
+      "target": "M12-0002",
+      "applicable_safety": "来源SHA、时间与活动身份、状态事务/锁/幂等、权限、范围预算和错误保留（按该文件实际场景迁移）",
+      "retired_behavior": "健康睡眠采集、中午槽位、旧六表输出类型/日报依赖、旧Candidate专用实现"
+    },
+    {
+      "path": "tests/code/contract/test_runtime_contract.py",
+      "sha256": "aae9467c89a78d1eee7a9e29188ab3387501863ec97a4e5c9e8e1e904231e871",
+      "current_action": "keep_executing",
+      "target": "M12-0004",
+      "applicable_safety": "证据/数值绑定、内容安全、RPE及课程硬负荷；OAuth/REST、权限、单次外部动作与崩溃重放（按该文件实际场景迁移）",
+      "retired_behavior": "每日健康/动态改课、高保真HTML/CID、固定测试批次及旧六表绑定；通用发布和安全场景不得随之删除"
+    },
+    {
+      "path": "tests/code/contract/test_schema_files.py",
+      "sha256": "87214f1d2c0eff73f0956bef758e7c55f2e68aa3828a4255ddae376d61359587",
+      "current_action": "keep_executing",
+      "target": "M12-0005",
+      "applicable_safety": "Schema合法性、合成案例、metadata/目录、测试与运行隔离持续执行",
+      "retired_behavior": "仅已取消业务的具体Schema字段随该业务归档；布局/隐私检查不退役"
+    },
+    {
+      "path": "tests/code/contract/test_workflow_receipt_artifact.py",
+      "sha256": "fadba4821e712a2bf5ea1144b05a75ece3fa911cfd92311279e2f98b2942a54b",
+      "current_action": "keep_executing",
+      "target": "M12-0002",
+      "applicable_safety": "来源SHA、时间与活动身份、状态事务/锁/幂等、权限、范围预算和错误保留（按该文件实际场景迁移）",
+      "retired_behavior": "健康睡眠采集、中午槽位、旧六表输出类型/日报依赖、旧Candidate专用实现"
+    },
+    {
+      "path": "tests/code/integration/test_email_live_canary.py",
+      "sha256": "e826848ca09efc94ae027034e924588e29c2e61ed751d50ed75c53125a93a187",
+      "current_action": "keep_executing",
+      "target": "M12-0004",
+      "applicable_safety": "证据/数值绑定、内容安全、RPE及课程硬负荷；OAuth/REST、权限、单次外部动作与崩溃重放（按该文件实际场景迁移）",
+      "retired_behavior": "每日健康/动态改课、高保真HTML/CID、固定测试批次及旧六表绑定；通用发布和安全场景不得随之删除"
+    },
+    {
+      "path": "tests/code/integration/test_email_preview_v2.py",
+      "sha256": "a26e9673ba31c2fcb6f0d9b87c03a003169a82e553d7f90ccc873270d65370ab",
+      "current_action": "keep_executing",
+      "target": "M12-0004",
+      "applicable_safety": "证据/数值绑定、内容安全、RPE及课程硬负荷；OAuth/REST、权限、单次外部动作与崩溃重放（按该文件实际场景迁移）",
+      "retired_behavior": "每日健康/动态改课、高保真HTML/CID、固定测试批次及旧六表绑定；通用发布和安全场景不得随之删除"
+    },
+    {
+      "path": "tests/code/integration/test_email_v3_live_batch.py",
+      "sha256": "93aa96b56c75b008a9360515e574f49f8558f758b2340c4a334404f17bb6480f",
+      "current_action": "keep_executing",
+      "target": "M12-0004",
+      "applicable_safety": "证据/数值绑定、内容安全、RPE及课程硬负荷；OAuth/REST、权限、单次外部动作与崩溃重放（按该文件实际场景迁移）",
+      "retired_behavior": "每日健康/动态改课、高保真HTML/CID、固定测试批次及旧六表绑定；通用发布和安全场景不得随之删除"
+    },
+    {
+      "path": "tests/code/integration/test_m11_v3_candidate.py",
+      "sha256": "e3a6c1b6dee4f15c7daa302a6df7b7456ca77e9ce8e1a93b173e262628b2c9e3",
+      "current_action": "keep_executing",
+      "target": "M12-0003",
+      "applicable_safety": "解析时间/圈段、证据引用、输入白名单、GPS排除、预算/缓存、Schema同构、模型前检与失败重放（按该文件实际场景迁移）",
+      "retired_behavior": "健康六类/最近健康值、GPX/TCX首层输入、固定M9/M11 attempt/Candidate与七健康日报依赖"
+    },
+    {
+      "path": "tests/code/integration/test_m11_v4_content_candidate.py",
+      "sha256": "54604e35faa68d78c1c8887e0e1f7588b3356cc723e436950999bc280fe8e159",
+      "current_action": "keep_executing",
+      "target": "M12-0003",
+      "applicable_safety": "解析时间/圈段、证据引用、输入白名单、GPS排除、预算/缓存、Schema同构、模型前检与失败重放（按该文件实际场景迁移）",
+      "retired_behavior": "健康六类/最近健康值、GPX/TCX首层输入、固定M9/M11 attempt/Candidate与七健康日报依赖"
+    },
+    {
+      "path": "tests/code/integration/test_m11_v4_r18_candidate_v3.py",
+      "sha256": "ba58c2a349770f2e9e09955477a516ddf0e2772cd687a4d134c6696dd3f71302",
+      "current_action": "keep_executing",
+      "target": "M12-0003",
+      "applicable_safety": "解析时间/圈段、证据引用、输入白名单、GPS排除、预算/缓存、Schema同构、模型前检与失败重放（按该文件实际场景迁移）",
+      "retired_behavior": "健康六类/最近健康值、GPX/TCX首层输入、固定M9/M11 attempt/Candidate与七健康日报依赖"
+    },
+    {
+      "path": "tests/code/integration/test_offline_workflow.py",
+      "sha256": "1f0189ce49bc2aed6cda4357a3ede8676074d9c58c0e35a047dffc6970d92f7e",
+      "current_action": "keep_executing",
+      "target": "M12-0002",
+      "applicable_safety": "来源SHA、时间与活动身份、状态事务/锁/幂等、权限、范围预算和错误保留（按该文件实际场景迁移）",
+      "retired_behavior": "健康睡眠采集、中午槽位、旧六表输出类型/日报依赖、旧Candidate专用实现"
+    },
+    {
+      "path": "tests/code/unit/test_auto_and_state.py",
+      "sha256": "ebfdf9a35b1787d5ac5f112adfabf70989e3c2e2214717e178b2c3decaad5357",
+      "current_action": "keep_executing",
+      "target": "M12-0002",
+      "applicable_safety": "来源SHA、时间与活动身份、状态事务/锁/幂等、权限、范围预算和错误保留（按该文件实际场景迁移）",
+      "retired_behavior": "健康睡眠采集、中午槽位、旧六表输出类型/日报依赖、旧Candidate专用实现"
+    },
+    {
+      "path": "tests/code/unit/test_bounded_raw.py",
+      "sha256": "e84caa7da08fc525e45bf5540fe5fe9ec24050295f2d919506487c5a61cc391f",
+      "current_action": "keep_executing",
+      "target": "M12-0003",
+      "applicable_safety": "解析时间/圈段、证据引用、输入白名单、GPS排除、预算/缓存、Schema同构、模型前检与失败重放（按该文件实际场景迁移）",
+      "retired_behavior": "健康六类/最近健康值、GPX/TCX首层输入、固定M9/M11 attempt/Candidate与七健康日报依赖"
+    },
+    {
+      "path": "tests/code/unit/test_coach_utility_v2.py",
+      "sha256": "52b4772fa70df98a13730ac77e91491afd2097b62e9cb1cd7e47df550bdf9e36",
+      "current_action": "keep_executing",
+      "target": "M12-0004",
+      "applicable_safety": "证据/数值绑定、内容安全、RPE及课程硬负荷；OAuth/REST、权限、单次外部动作与崩溃重放（按该文件实际场景迁移）",
+      "retired_behavior": "每日健康/动态改课、高保真HTML/CID、固定测试批次及旧六表绑定；通用发布和安全场景不得随之删除"
+    },
+    {
+      "path": "tests/code/unit/test_content_first_v4.py",
+      "sha256": "281ecbd32ef424c06b5dca6a279b7ffe44abe1a8cc3f57d3124279800cbd98ed",
+      "current_action": "keep_executing",
+      "target": "M12-0003",
+      "applicable_safety": "解析时间/圈段、证据引用、输入白名单、GPS排除、预算/缓存、Schema同构、模型前检与失败重放（按该文件实际场景迁移）",
+      "retired_behavior": "健康六类/最近健康值、GPX/TCX首层输入、固定M9/M11 attempt/Candidate与七健康日报依赖"
+    },
+    {
+      "path": "tests/code/unit/test_email_view_v2.py",
+      "sha256": "5fe6823b94294c3caf267a1fa190a57e614ef683597b72fe56d2e41d1dcf763f",
+      "current_action": "keep_executing",
+      "target": "M12-0004",
+      "applicable_safety": "证据/数值绑定、内容安全、RPE及课程硬负荷；OAuth/REST、权限、单次外部动作与崩溃重放（按该文件实际场景迁移）",
+      "retired_behavior": "每日健康/动态改课、高保真HTML/CID、固定测试批次及旧六表绑定；通用发布和安全场景不得随之删除"
+    },
+    {
+      "path": "tests/code/unit/test_presentation_evidence_v3.py",
+      "sha256": "001a7984a17e290f4e5252cd6e5226650457b136ae89b35dbf1e47b2a4c23e85",
+      "current_action": "keep_executing",
+      "target": "M12-0003",
+      "applicable_safety": "解析时间/圈段、证据引用、输入白名单、GPS排除、预算/缓存、Schema同构、模型前检与失败重放（按该文件实际场景迁移）",
+      "retired_behavior": "健康六类/最近健康值、GPX/TCX首层输入、固定M9/M11 attempt/Candidate与七健康日报依赖"
+    },
+    {
+      "path": "tests/code/unit/test_reader_content_v4.py",
+      "sha256": "556cdb9524ca376a792855bde6e95bb3d1d662c85ddaa0b59723b243b82812b9",
+      "current_action": "keep_executing",
+      "target": "M12-0004",
+      "applicable_safety": "证据/数值绑定、内容安全、RPE及课程硬负荷；OAuth/REST、权限、单次外部动作与崩溃重放（按该文件实际场景迁移）",
+      "retired_behavior": "每日健康/动态改课、高保真HTML/CID、固定测试批次及旧六表绑定；通用发布和安全场景不得随之删除"
+    },
+    {
+      "path": "tests/code/unit/test_recent_health_metrics.py",
+      "sha256": "2c232a5682518c52384ea1e94832e81b029c3c51406c95bdde7dbdc19bddf8c8",
+      "current_action": "keep_executing",
+      "target": "M12-0003",
+      "applicable_safety": "解析时间/圈段、证据引用、输入白名单、GPS排除、预算/缓存、Schema同构、模型前检与失败重放（按该文件实际场景迁移）",
+      "retired_behavior": "健康六类/最近健康值、GPX/TCX首层输入、固定M9/M11 attempt/Candidate与七健康日报依赖"
+    },
+    {
+      "path": "tests/code/unit/test_training_goal_vc006.py",
+      "sha256": "d46c4e91aa4c8a4efc947b98c2539b4b12423b4a393dca8fc9c94c1eaeeac93e",
+      "current_action": "keep_executing",
+      "target": "M12-0003",
+      "applicable_safety": "解析时间/圈段、证据引用、输入白名单、GPS排除、预算/缓存、Schema同构、模型前检与失败重放（按该文件实际场景迁移）",
+      "retired_behavior": "健康六类/最近健康值、GPX/TCX首层输入、固定M9/M11 attempt/Candidate与七健康日报依赖"
+    }
+  ]
+}

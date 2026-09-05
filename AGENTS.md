@@ -71,8 +71,8 @@ Git 就绪后按角色读取，而不是让每个 Agent 都加载全部项目历
 
 ## TrainLab 产品与私人数据边界
 
-- 开发 Harness 和产品运行 Harness 职责分离，不能互相替代。当前运行入口是 `codex exec -C source`，以 `source/AGENTS.md`、`source/skills/README.md` 和触发 Skill 为准，不创建或要求仓库 `.venv`。
-- 不恢复已退役的 `harness/runtime/HARNESS.md`、`source/index.py`、集中式 `source/src` 产品包或统一 CLI；只有审计旧行为时才读取残留 `source/src/resources/harness/**`。
+- 开发 Harness 与产品职责分离。按 A-021，旧 `codex exec -C source` 自动路线已退役；M12 在 `source/` 建立 Python FIT-only 每周系统，目前未交付的新命令不得描述为已经可用。不创建或要求仓库 `.venv`。
+- 不恢复已退役的 `harness/runtime/HARNESS.md`、`source/index.py` 或集中式 `source/src` 产品包。A-021 仅替代旧统一 CLI 禁令：允许 M12 在 `source/skills/_shared/fit_weekly/` 实现 Python 模块入口；根目录不承载产品代码，业务路径相对 source/ 或显式实例根解析。
 - 根 `skills/` 是开发 Skill，`source/skills/` 是产品本地 Skill；按触发条件加载，不得复制、安装或链接到用户级/全局目录。不为本次开发改动全局 Skill 或配置。
 - 本仓库禁止加载或调用 `orchestrate-parallel-work`，不恢复 `.orchestration`、Graph/Dashboard 或 hash-bound 审批流程。获批并行只使用执行协议的分支/worktree隔离。
 - 私有 state、logs、test_data、FIT、raw、数据库、凭据、Token、goal 和私有配置不得进入 Git 或 `dist/`。测试只使用合成数据或获批仓库外隔离实例，不读取正式 goal/state/raw/凭据，不调用业务 Provider；AI 验收另按授权运行。

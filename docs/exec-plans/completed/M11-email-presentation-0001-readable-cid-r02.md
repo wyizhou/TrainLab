@@ -1,13 +1,19 @@
 # 执行计划：M11 v4 内容优先日报、技术周报与固定周计划
 
-- 状态：`blocked`
+- 状态：`cancelled`
 - 负责人：主协调 Agent
 - Roadmap ID：`M11-0016..M11-0019`
 - 阶段/子项目：`M11/email-presentation`
 - Batch ID：`serial-m11-v4`
 - 返工来源：`docs/exec-plans/completed/M11-email-presentation-0001-readable-cid.md`
 - 开始日期：2026-08-24
-- 最后更新：2026-08-25
+- 最后更新：2026-09-05
+
+## M12 替代记录
+
+用户批准 FIT-only 每周系统后，本计划尚未完成的 M11-0018/0019 已取消，不继续 r19 模型
+调用或 OpenDesign 交接。下方冻结合同、实现记录和失败证据原样保留；取消不等于通过。
+后续工作仅由 M12 active plan 和 A-021 管理，旧模型/邮件授权不得继承。
 
 ## 目标与验收标准
 

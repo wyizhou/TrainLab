@@ -91,7 +91,7 @@
 | --- | --- | --- |
 | M12-0001 当前检查点：计划补充、完整代码门、隐私/范围审查、提交及推送 | completed | `0decf99` 已核对 `origin/main`；143 项公开工作检查点；不重做 M11 |
 | M12-0001a 只读归档工具、备份清单与恢复演练 | completed | VC-003；独立 PASS，9612 文件恢复通过；Git 交付记录见下 |
-| M12-0001b 旧规则替代映射、旧入口及测试同步退役 | pending | M12-0001a；逐项保留/迁移/归档适用场景 |
+| M12-0001b 旧规则替代映射、旧入口及测试同步退役 | completed | 独立 PASS；旧入口退出，38 份旧测试继续执行，物理清理随替代模块验收进行 |
 | M12-0002 新库、已有 FIT 复制与分页/每日缺口同步 | pending | M12-0001 |
 | M12-0003 分段解析、统一细读、AI 输入隔离与可替换接口 | pending | M12-0002 |
 | M12-0004 周报、固定计划、Markdown/PDF、Gmail/Garmin 通用发布 | pending | M12-0003 |
@@ -102,9 +102,9 @@
 
 ## 当前检查点
 
-- 当前焦点：M12-0001a 独立验收通过，准备 Git 交付后继续 M12-0001b。
+- 当前焦点：M12-0001b 已独立 PASS，Git 交付后进入 M12-0002 新数据库模块。
 - 基准：`db8a3ab7ec31c6bebe32742e785760df4650c97f`，`main`；刚完成的开发 Harness 更新属于已有工作，不覆盖。
-- 下一动作：核对受审内容并提交/推送 M12-0001a，继续旧规则和测试退役映射。
+- 下一动作：提交/推送 M12-0001b，按 AC-001..003 建立独立 SQLite 和 FIT 复制/同步基础。
 - 阻塞项：无；`blocker_type=none`，`diagnosis_status=not_triggered`。
 - 未交付：M12 新库、解析、周报告/发布与调度均尚未实施。
 
@@ -117,7 +117,17 @@
 
 ## 验证与交付记录
 
+### M12-0001b 旧入口及迁移清单
+
+- 三项回归先失败后实现；旧 auto.txt 只返回零动作退役通知，source/AGENTS 与索引不再引导旧日报流程。A-021 记录用户已批准的新方向替代关系，M11 v4 未完成部分取消归档，未改写旧失败。
+- 38 份旧测试原字节/SHA 保留，逐文件登记继续执行、适用安全场景、取消业务和目标模块；未在新等价测试完成前删除通用 Gmail/Garmin/解析能力。物理移除在对应替代模块验收后执行，不把本阶段称为旧代码已全部清理。
+- 完整 934 passed / 155.26 秒；Ruff、format 128 文件、mypy 110 文件、109 AST/compile、97 JSON/87 Schema、83 Markdown/42 链接、6 metadata、AI/ignore/layout/diff 通过；9356 项正式/private 指纹未变。
+- 全新只读 high/high `m12_retirement_validator` 返回 VC-003 当前范围 PASS；独立完整 934 passed / 153.96 秒、专项3项及全部静态门通过。38份旧测试字节和M11原失败正文保持不变；未运行Linux/Provider/模型，不预判后续新功能完成。
+- 受审基准 `afdb8c06436949b1f1608133b03366c28e5bf55b`，15项清单 SHA `9d8faa9b0b2d5b94e9437f7631ff83bf97b21b399fd3199ea12bdc9146b39ad7`，VC-003 SHA不变。本段及Roadmap仅真实结果回写，不变更受审合同/产品语义。
+
 ### M12-0001a 归档模块
+
+- Git 交付：`afdb8c06436949b1f1608133b03366c28e5bf55b`（`feat: add verified legacy archive for FIT-only rebuild`），正常推送 origin/main 成功；`git ls-remote` 已核对完全一致。
 
 - 2026-09-05：先新增失败回归，缺少实现时实测失败；随后实现独立标准库归档器，22 项合成回归通过，全部现有用例仍保留。
 - 完整 pytest：931 passed / 151.68 秒；Ruff check、format 127 文件和 mypy 109 文件通过。新增工具只用标准库，不引入平台专用 rename swap、旧 state 模块或 Provider。
