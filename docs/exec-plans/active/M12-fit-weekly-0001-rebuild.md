@@ -102,9 +102,9 @@
 
 ## 当前检查点
 
-- 当前焦点：M12-0002c 已通过独立验收，准备模块提交/推送，随后接入MCP与FIT下载；仅使用合成Provider，不切换正式库或联网。
+- 当前焦点：M12-0002d 已独立PASS，准备提交/推送后进入M12-0002e同步编排；不切换正式库或联网。
 - 基准：`db8a3ab7ec31c6bebe32742e785760df4650c97f`，`main`；刚完成的开发 Harness 更新属于已有工作，不覆盖。
-- 下一动作：提交当前同步模块后，按 AC-002/003/013/INV-002/TM-001/GATE-001..004 测试先行接入MCP与FIT下载；不把查询完成当作FIT下载或同步邮件完成。
+- 下一动作：按 AC-002/003/008/INV-002/TM-001/GATE-001..004 测试先行接入持久预算、原始capture、分页恢复、FIT复用/下载入库与整体同步回执；同步邮件仍由后续发布模块负责。
 - 阻塞项：无；`blocker_type=none`，`diagnosis_status=not_triggered`。
 - 未交付：MCP下载适配、解析、周报告/发布与调度；同步日期及分页已通过独立验收，新库及已有FIT复制已交付。
 
@@ -117,8 +117,22 @@
 
 ## 验证与交付记录
 
+### M12-0002d FIT-only MCP协议适配
+
+- 全新只读high/high `m12_garmin_closure_validator` 返回当前范围PASS；独立1058 passed / 207.95秒，53项适配/149项M12及全部静态门通过。21种非法响应额外探针、诊断保留等级/删除私有内容/恢复工厂/其他logger不受影响通过；固定MCP源码独立核对一致。
+- 验证绑定基准6cfc315与五项清单SHA `2a4fa03025f36a5565ceda79373984828cd5571b093fd5262cecc402378f32ec`；VC-003不变。未将旧FAIL改写，未调用真实Provider；本段只回写结果，随后正常提交推送，不预判下一模块或Linux整体通过。
+- 原合同内修正后：53项适配/149项M12/完整1058 passed（188.49秒）；Ruff、format138文件、mypy120文件及118 AST/compile、97 JSON/87 Schema、87 Markdown/46链接和静态门全部通过；9356项私人指纹不变。宿主SDK记录在handler前脱敏且恢复原工厂，关闭/认证文件IO错误统一固定码；四项新回归先失败后通过。当前重新冻结，旧FAIL永久保留，尚未提交/推送。
+- 首次全新 `m12_garmin_adapter_validator` 返回FAIL：实际MCP SDK解析非JSON时宿主logger包含原文，且关闭factory异常直接向外抛出私有文本。关联AC-006/TM-001/GATE-002/003；其余49项及独立1054项通过不抵消该发现。原清单SHA `07089a04be784b942f83a7b87f9b395a5db17c1d34abebd5f075ce35a726f4ef`，未提交本模块。
+- 按原合同合并为一次错误边界修正：先用真实SDK＋内存合成流和关闭故障新增失败回归，再收敛宿主诊断与固定关闭错误。当前是该失败特征首个修正批次，未触发失败诊断门，不改变VC-003或扩大威胁模型；完成后重新完整门和全新Validator。
+- 最终完整1054 passed / 192.59秒；M12专项145项、适配49项通过，Ruff/format138文件、mypy120文件、118 AST/compile、97 JSON/87 Schema、87 Markdown/46链接、metadata/AI/ignore/layout/diff通过。五项当前文件冻结，进入全新只读high/high协议适配Validator；代码审查与后续真实采集授权分开。
+- 依据本地固定commit源码核对分页和下载原始合同；新增40项失败回归后实施，再补SDK生命周期、完整合成下载入库、错误capture、缺失响应及Token/暂存隔离后49项通过。此层仅内部协议，不提供在线命令、不自动启动MCP、不承担后续SQLite编排。
+- 先前1051项全量通过（160.89秒）；追加3项目录隔离回归后重新运行最终完整门，不能将先前快照当作最终验收。保留原通用认证保护/精确依赖，没有恢复健康工具或旧日报流程。
+- 当前只使用合成Token和Fake SDK/MCP；真实Provider、模型及external action均为0；正式/private9356项指纹未变。当前尚未独立验证、提交或推送本模块。
+
 ### M12-0002c 同步日历与分页账本
 
+- 已核对该提交Linux CI [33997751723](https://github.com/wyizhou/TrainLab/actions/runs/33997751723)：M12专项通过，后续旧完整Test为48 failed/957 passed，含既有candidate_atomic_swap_unavailable；不将整体CI声明为PASS，也未删改旧平台测试。
+- Git交付：`6cfc315de9157fa22a0f347df1d58598e848630d`（`feat: add resumable FIT inventory and sync calendar`）已正常推送origin/main，ls-remote完全一致。
 - 全新只读 high/high `m12_sync_validator` 返回当前范围PASS，无blocker；独立完整1005 passed / 172.18秒、28项专项和96项M12测试及全部静态门通过。独立额外验证了v1四表保留、升级锁、第二页崩溃预算、重放、缺口、不可变表和跨年/闰日。
 - 受审基准57e2641，七项清单SHA `4ebef046724458946791e4ac157530637cd7cd9305aed762674a66540a12a13a`，逐字VC-003摘要不变。Provider调用数为已领取预算的保守上界，未落响应用unresolved_calls披露；Linux动态与真实MCP不属于该次本机验收。以下历史“待验证”文字保持为过程记录，本段仅真实结果回写。
 - 先写25项失败回归，再实现新库v2显式事务升级与同步模块；追加真实进程退出、升级DDL回滚和末页回执恢复后28项通过。M12全部96项、完整1005 passed / 160.69秒，Ruff/format136文件、mypy118文件、116 AST/compile、97 JSON/87 Schema、86 Markdown/43链接及全部静态门通过。
