@@ -102,11 +102,11 @@
 
 ## 当前检查点
 
-- 当前焦点：M12-0002b 已登记历史 FIT 一次性导入；新库基础已交付。使用已验证归档作为一次性迁移输入，不作为新系统运行依赖，不切换正式库。
+- 当前焦点：M12-0002c 已通过独立验收，准备模块提交/推送，随后接入MCP与FIT下载；仅使用合成Provider，不切换正式库或联网。
 - 基准：`db8a3ab7ec31c6bebe32742e785760df4650c97f`，`main`；刚完成的开发 Harness 更新属于已有工作，不覆盖。
-- 下一动作：按 AC-001..003/INV-002/TM-001/GATE-001..004 先写登记/路径/SHA/身份/重放回归，再实现一次性导入；合成与独立验证通过后仅在仓库外新实例复制已登记 FIT。本子模块不运行历史在线同步、模型或发布。
+- 下一动作：提交当前同步模块后，按 AC-002/003/013/INV-002/TM-001/GATE-001..004 测试先行接入MCP与FIT下载；不把查询完成当作FIT下载或同步邮件完成。
 - 阻塞项：无；`blocker_type=none`，`diagnosis_status=not_triggered`。
-- 未交付：历史 FIT 导入、同步日期及分页、解析、周报告/发布与调度；新库文件基础已交付。
+- 未交付：MCP下载适配、解析、周报告/发布与调度；同步日期及分页已通过独立验收，新库及已有FIT复制已交付。
 
 ## Agent 派发
 
@@ -117,8 +117,17 @@
 
 ## 验证与交付记录
 
+### M12-0002c 同步日历与分页账本
+
+- 全新只读 high/high `m12_sync_validator` 返回当前范围PASS，无blocker；独立完整1005 passed / 172.18秒、28项专项和96项M12测试及全部静态门通过。独立额外验证了v1四表保留、升级锁、第二页崩溃预算、重放、缺口、不可变表和跨年/闰日。
+- 受审基准57e2641，七项清单SHA `4ebef046724458946791e4ac157530637cd7cd9305aed762674a66540a12a13a`，逐字VC-003摘要不变。Provider调用数为已领取预算的保守上界，未落响应用unresolved_calls披露；Linux动态与真实MCP不属于该次本机验收。以下历史“待验证”文字保持为过程记录，本段仅真实结果回写。
+- 先写25项失败回归，再实现新库v2显式事务升级与同步模块；追加真实进程退出、升级DDL回滚和末页回执恢复后28项通过。M12全部96项、完整1005 passed / 160.69秒，Ruff/format136文件、mypy118文件、116 AST/compile、97 JSON/87 Schema、86 Markdown/43链接及全部静态门通过。
+- 当前只实现内部查询发现接口，不调用Garmin MCP、不下载新FIT、不发送同步邮件。完整分页才写complete/provisional；缺口持久化，预算领取先落账，恢复不重置预算；非空inventory的collection_complete保持false。
+- v1实例不自动迁移；新库upgrade为事务性显式操作，失败不留下部分Schema。之前510FIT的真实v1实例及正式旧state保持不变。冻结本模块后安排全新只读high/high Validator，当前未提交。
+
 ### M12-0002b 一次性登记 FIT 导入
 
+- Git交付：`57e264114a4442391ba749a574f5072eac8bf1f6`（`feat: import registered legacy FIT files into independent store`）已正常推送origin/main，ls-remote完全一致。
 - 先写14项失败回归，再实现迁移器；补充相对路径CLI/脱敏错误后15项通过。只读取已验证归档的登记FIT白名单；不导入健康/未登记文件/旧AI/动作，不把复制成功当作完整历史覆盖。
 - 完整976 passed / 166.33秒；Ruff、format134文件、mypy116文件、114 AST/compile、97 JSON/87 Schema、85 Markdown/42链接、metadata/AI/ignore/layout/diff通过。旧38份测试未改；当前无真实复制、在线或模型调用。
 - 下一步为全新只读high/high导入Validator，VC-003当前AC-001/002/003与适用门；通过后才在仓库外新实例进行真实本地复制并复核不依赖归档。当前尚未提交本模块。

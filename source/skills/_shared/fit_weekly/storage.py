@@ -57,6 +57,51 @@ for _table in TABLES:
             "BEGIN SELECT RAISE(ABORT,'immutable_record'); END;\n"
         )
 
+SCHEMA_V1 = SCHEMA
+SYNC_SCHEMA = """
+CREATE TABLE sync_jobs (
+ job_key TEXT PRIMARY KEY,
+ input_json TEXT NOT NULL CHECK(json_valid(input_json)),
+ input_sha256 TEXT NOT NULL CHECK(length(input_sha256)=64)
+) STRICT;
+CREATE TABLE sync_calls (
+ job_key TEXT NOT NULL REFERENCES sync_jobs(job_key),
+ ordinal INTEGER NOT NULL CHECK(ordinal>=1),
+ page INTEGER NOT NULL CHECK(page>=0),
+ request_json TEXT NOT NULL CHECK(json_valid(request_json)),
+ PRIMARY KEY(job_key,ordinal)
+) STRICT;
+CREATE TABLE sync_results (
+ job_key TEXT NOT NULL,
+ ordinal INTEGER NOT NULL,
+ status TEXT NOT NULL CHECK(status IN ('page','error')),
+ content_json TEXT NOT NULL CHECK(json_valid(content_json)),
+ content_sha256 TEXT NOT NULL CHECK(length(content_sha256)=64),
+ PRIMARY KEY(job_key,ordinal),
+ FOREIGN KEY(job_key,ordinal) REFERENCES sync_calls(job_key,ordinal)
+) STRICT;
+CREATE TABLE sync_days (
+ day TEXT NOT NULL,
+ job_key TEXT NOT NULL REFERENCES sync_jobs(job_key),
+ status TEXT NOT NULL CHECK(status IN ('complete','provisional')),
+ activity_count INTEGER NOT NULL CHECK(activity_count>=0),
+ PRIMARY KEY(day,job_key)
+) STRICT;
+CREATE TABLE sync_gaps (
+ day TEXT PRIMARY KEY,
+ detected_at_utc TEXT NOT NULL
+) STRICT;
+"""
+SYNC_TABLES = ("sync_jobs", "sync_calls", "sync_results", "sync_days", "sync_gaps")
+for _table in SYNC_TABLES:
+    for _operation in ("UPDATE", "DELETE"):
+        SYNC_SCHEMA += (
+            f"CREATE TRIGGER {_table}_{_operation.lower()} BEFORE {_operation} ON {_table} "
+            "BEGIN SELECT RAISE(ABORT,'immutable_record'); END;\n"
+        )
+SYNC_SCHEMA += "PRAGMA user_version=2;\n"
+SCHEMA = SCHEMA_V1 + SYNC_SCHEMA
+
 
 def canonical(value: dict[str, Any]) -> str:
     return json.dumps(
@@ -136,12 +181,15 @@ def schema_rows(db: sqlite3.Connection) -> list[tuple[Any, ...]]:
     ]
 
 
-def require_schema(db: sqlite3.Connection) -> None:
+def require_schema(db: sqlite3.Connection, version: int = 2) -> None:
+    actual_version = db.execute("PRAGMA user_version").fetchone()[0]
+    if version == 2 and actual_version == 1:
+        raise ValueError("store_upgrade_required")
     with sqlite3.connect(":memory:") as expected:
-        expected.executescript(SCHEMA)
+        expected.executescript(SCHEMA if version == 2 else SCHEMA_V1)
         expected_rows = schema_rows(expected)
     if (
-        db.execute("PRAGMA user_version").fetchone()[0] != 1
+        actual_version != version
         or schema_rows(db) != expected_rows
         or db.execute("PRAGMA integrity_check").fetchone()[0] != "ok"
         or db.execute("PRAGMA foreign_key_check").fetchall()
@@ -183,7 +231,7 @@ def initialize(root: Path) -> None:
 
 
 @contextmanager
-def open_store(root: Path) -> Iterator[sqlite3.Connection]:
+def _locked_connection(root: Path) -> Iterator[sqlite3.Connection]:
     private_entry(root, directory=True)
     private_entry(root / "writer.lock")
     fd = os.open(root / "writer.lock", os.O_RDONLY)
@@ -207,16 +255,43 @@ def open_store(root: Path) -> Iterator[sqlite3.Connection]:
             or not db.execute("PRAGMA recursive_triggers").fetchone()[0]
         ):
             raise ValueError("store_connection_unsafe")
-        require_schema(db)
-        db.execute("BEGIN IMMEDIATE")
         yield db
-        db.commit()
     except sqlite3.DatabaseError as exc:
         raise ValueError("store_database_invalid") from exc
     finally:
         if db is not None:
             db.close()  # Uncommitted work is rolled back on every failure path.
         os.close(fd)
+
+
+@contextmanager
+def open_store(root: Path) -> Iterator[sqlite3.Connection]:
+    with _locked_connection(root) as db:
+        require_schema(db)
+        db.execute("BEGIN IMMEDIATE")
+        yield db
+        db.commit()
+
+
+def upgrade(root: Path) -> None:
+    """Explicit, atomic v1→v2 upgrade of the new store, never the legacy ledger."""
+    with _locked_connection(root) as db:
+        version = db.execute("PRAGMA user_version").fetchone()[0]
+        if version == 2:
+            require_schema(db)
+            return
+        require_schema(db, 1)
+        db.execute("BEGIN IMMEDIATE")
+        statement = ""
+        for line in SYNC_SCHEMA.splitlines(keepends=True):
+            statement += line
+            if sqlite3.complete_statement(statement):
+                db.execute(statement)
+                statement = ""
+        if statement.strip():
+            raise ValueError("store_migration_invalid")
+        require_schema(db)
+        db.commit()
 
 
 def require_sha(value: str) -> None:
