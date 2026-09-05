@@ -92,7 +92,7 @@
 | M12-0001 当前检查点：计划补充、完整代码门、隐私/范围审查、提交及推送 | completed | `0decf99` 已核对 `origin/main`；143 项公开工作检查点；不重做 M11 |
 | M12-0001a 只读归档工具、备份清单与恢复演练 | completed | VC-003；独立 PASS，9612 文件恢复通过；Git 交付记录见下 |
 | M12-0001b 旧规则替代映射、旧入口及测试同步退役 | completed | 独立 PASS；旧入口退出，38 份旧测试继续执行，物理清理随替代模块验收进行 |
-| M12-0002 新库、已有 FIT 复制与分页/每日缺口同步 | pending | M12-0001 |
+| M12-0002 新库、已有 FIT 复制与分页/每日缺口同步 | in_progress | M12-0001；当前 0002a 为独立存储/文件基础，随后接入历史索引和同步 |
 | M12-0003 分段解析、统一细读、AI 输入隔离与可替换接口 | pending | M12-0002 |
 | M12-0004 周报、固定计划、Markdown/PDF、Gmail/Garmin 通用发布 | pending | M12-0003 |
 | M12-0005 Python 定时与恢复、完整离线验收 | pending | M12-0004 |
@@ -102,9 +102,9 @@
 
 ## 当前检查点
 
-- 当前焦点：M12-0001b 已独立 PASS，Git 交付后进入 M12-0002 新数据库模块。
+- 当前焦点：M12-0002a 独立 SQLite、FIT 文件保存与不可变解析/输出存储。先使用合成数据测试，不切换正式库。
 - 基准：`db8a3ab7ec31c6bebe32742e785760df4650c97f`，`main`；刚完成的开发 Harness 更新属于已有工作，不覆盖。
-- 下一动作：提交/推送 M12-0001b，按 AC-001..003 建立独立 SQLite 和 FIT 复制/同步基础。
+- 下一动作：按 AC-001..003/INV-002/TM-001/GATE-001..004 测试先行建立新存储，验证不依赖旧库或 data-backup；本子模块不运行历史在线同步、模型或发布。
 - 阻塞项：无；`blocker_type=none`，`diagnosis_status=not_triggered`。
 - 未交付：M12 新库、解析、周报告/发布与调度均尚未实施。
 
@@ -117,7 +117,22 @@
 
 ## 验证与交付记录
 
+### M12-0002a 独立存储基础
+
+- 先写失败回归后实现独立 storage；24 项新测试通过，包含真实 CRC 合成 FIT、SHA/身份冲突、跨实例错误、不可变解析/文档、SQL 回滚孤立文件重放、锁、权限、Schema/文件漂移与有限 IO 失败。
+- 当前仅实现 fits/activity_fits/parses/documents 四张基础表；没有复制旧数据库，也未建立正式新实例或导入真实 FIT。同步日期、分页、在线采集和任务动作状态留在本任务后续子模块，不把通用存储当作这些功能已完成。
+- 实际 fitdecode 类型接口已从本地安装包核对并补齐 stub；未屏蔽 mypy。完整 958 passed / 165.34 秒，Ruff/format 132 文件、mypy 114 文件、112 AST/compile、97 JSON/87 Schema、84 Markdown/42 链接及 metadata/AI/ignore/layout/diff 通过；9356 项正式/private指纹不变。
+- CI 新增 M12 专项 Linux 测试步骤，原完整 Test 门不删除或忽略；YAML 解析通过。当前尚未推送本模块，不能预判 Linux 动态结果。全新只读存储 Validator 待执行。
+- 第一名独立存储 Validator 返回 FAIL（TM-001/GATE-003）：rename 后目录 fsync 有限失败留下目标文件，精确重放直接返回并提交索引，未补持久化确认。受审清单 SHA `14a2687657edf99df8f391fb8e9dad4062e46e6f44ee8fae67cb14b31b8688c2`；独立 958 项和额外真实进程退出/搬迁检查通过不抵消该发现。
+- 原合同内修复一次：先新增3个重放/文件fsync失败/目录fsync失败回归，旧实现全部实测失败；复用路径补文件及目录 fsync，失败不提交 SQL。未触发“两种修法/三轮不收敛/合同冲突”诊断门，VC-003 不变；等待完整复验与全新 Validator，不沿用旧 PASS。
+- 修复后：专项27项、完整961项（159.70秒）、Ruff/format132文件、mypy114文件与全部静态门通过；进入全新只读最终存储验证，当前仍未提交该模块。
+- 最终存储审查第1次未形成实现裁决：Validator定位合同时对计划全文搜索，意外读取旧结论/修复叙述，自报GATE-004输入隔离失效并返回INCONCLUSIVE；未发现新的实现阻塞。保持validating、代码和合同不变，另给全新Validator逐字合同摘录，避免再次搜索完整历史。这不计为新的实现失败修法。
+- 全新只读 high/high `m12_storage_closure_validator` 返回当前范围 PASS；专项27项，独立最终全量961 passed / 158.84秒，完整静态门及真实进程退出、带数据搬迁、四表不可变检查通过。首次全量960 passed/1 failed（旧M9 log-budget测试 ai_process_stop_unconfirmed），同快照单项和再次全量通过；保留未确定根因的时序不稳定事实，未修改旧测试。
+- 受审基准 `1ec7cbbfebf0f8c918082a7297ccc2511fac220c`，10项清单SHA `28ec6b0da1cc8b656703c8478486532696b52868670dc7afdbe40567981dc425`，VC-003摘要不变。9356项正式/private指纹零变化；本段仅真实结果回写，随后执行该模块提交/推送，不预判Linux动态结果。
+
 ### M12-0001b 旧入口及迁移清单
+
+- Git 交付：`1ec7cbbfebf0f8c918082a7297ccc2511fac220c`（`refactor: retire legacy daily route for FIT-only weekly system`）已正常推送 origin/main，并用 ls-remote 核对一致。
 
 - 三项回归先失败后实现；旧 auto.txt 只返回零动作退役通知，source/AGENTS 与索引不再引导旧日报流程。A-021 记录用户已批准的新方向替代关系，M11 v4 未完成部分取消归档，未改写旧失败。
 - 38 份旧测试原字节/SHA 保留，逐文件登记继续执行、适用安全场景、取消业务和目标模块；未在新等价测试完成前删除通用 Gmail/Garmin/解析能力。物理移除在对应替代模块验收后执行，不把本阶段称为旧代码已全部清理。

@@ -20,6 +20,8 @@ jobs:
           cache-dependency-path: source/requirements.txt
       - name: Install runtime dependencies
         run: python -m pip install -r requirements.txt
+      - name: M12 portable module tests
+        run: python -m pytest tests/code/contract/test_m12_*.py -q
       - name: Test
         run: python -m pytest tests/code -q
       - name: Ruff
