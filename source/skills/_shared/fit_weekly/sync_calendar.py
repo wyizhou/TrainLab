@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 import re
 import sqlite3
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 from dataclasses import asdict, dataclass
 from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
@@ -170,122 +170,142 @@ def valid_page(
     return json.loads(storage.canonical(value))
 
 
-def collect_inventory(
-    root: Path, request: InventoryRequest, fetch: PageFetcher
-) -> dict[str, Any]:
+def inventory_steps(
+    db: sqlite3.Connection, request: InventoryRequest
+) -> Generator[dict[str, Any], dict[str, Any], dict[str, Any]]:
     request.validate()
     text = storage.canonical(asdict(request))
     input_sha = storage.digest(text.encode())
-    with storage.open_store(root) as db:
-        old = db.execute(
-            "SELECT input_json,input_sha256 FROM sync_jobs WHERE job_key=?",
-            (request.key,),
-        ).fetchone()
-        if old is not None and tuple(old) != (text, input_sha):
-            raise ValueError("sync_job_conflict")
-        if old is None:
-            db.execute(
-                "INSERT INTO sync_jobs VALUES(?,?,?)", (request.key, text, input_sha)
-            )
-            durable(db)
-        done = db.execute(
-            "SELECT content_json,content_sha256 FROM documents WHERE kind='sync_receipt' AND logical_key=? AND input_sha256=?",
-            (f"inventory:{request.key}", input_sha),
-        ).fetchone()
-        if done is not None:
-            if storage.digest(done[0].encode()) != done[1]:
-                raise ValueError("inventory_receipt_invalid")
-            return json.loads(done[0])
-        stored = db.execute(
-            "SELECT c.page,r.content_json,r.content_sha256 FROM sync_results r JOIN sync_calls c USING(job_key,ordinal) WHERE r.job_key=? AND r.status='page' ORDER BY c.page",
-            (request.key,),
-        ).fetchall()
-        pages: list[dict[str, Any]] = []
-        seen: set[str] = set()
-        for number, row in enumerate(stored):
-            if (
-                row[0] != number
-                or storage.digest(row[1].encode()) != row[2]
-                or (pages and not pages[-1]["has_more"])
-            ):
-                raise ValueError("inventory_saved_page_invalid")
-            value = valid_page(json.loads(row[1]), request, number, seen)
-            pages.append(value)
-            seen.update(item["activity_ref"] for item in value["items"])
-        while not pages or pages[-1]["has_more"]:
-            number = len(pages)
-            spent = db.execute(
-                "SELECT COUNT(*) FROM sync_calls WHERE job_key=?", (request.key,)
-            ).fetchone()[0]
-            if spent >= request.max_calls:
-                raise ValueError("inventory_budget_exhausted")
-            arguments = {
-                "start_date": request.start_date,
-                "end_date": request.end_date,
-                "page": number,
-                "page_size": request.page_size,
-            }
-            ordinal = spent + 1
-            db.execute(
-                "INSERT INTO sync_calls VALUES(?,?,?,?)",
-                (request.key, ordinal, number, storage.canonical(arguments)),
-            )
-            # The call and its spent budget are durable before touching Provider.
-            durable(db)
-            code = "inventory_provider_failed"
-            try:
-                response = fetch(
-                    request.start_date, request.end_date, number, request.page_size
-                )
-                code = "inventory_page_invalid"
-                value = valid_page(response, request, number, seen)
-            except Exception as exc:
-                error = storage.canonical({"error_code": code})
-                db.execute(
-                    "INSERT INTO sync_results VALUES(?,?,'error',?,?)",
-                    (request.key, ordinal, error, storage.digest(error.encode())),
-                )
-                durable(db)
-                raise ValueError(code) from exc
-            content = storage.canonical(value)
-            db.execute(
-                "INSERT INTO sync_results VALUES(?,?,'page',?,?)",
-                (request.key, ordinal, content, storage.digest(content.encode())),
-            )
-            durable(db)
-            pages.append(value)
-            seen.update(item["activity_ref"] for item in value["items"])
-        items = sorted(
-            (item for page in pages for item in page["items"]),
-            key=lambda item: (item["activity_date"], item["activity_ref"]),
+    old = db.execute(
+        "SELECT input_json,input_sha256 FROM sync_jobs WHERE job_key=?",
+        (request.key,),
+    ).fetchone()
+    if old is not None and tuple(old) != (text, input_sha):
+        raise ValueError("sync_job_conflict")
+    if old is None:
+        db.execute(
+            "INSERT INTO sync_jobs VALUES(?,?,?)", (request.key, text, input_sha)
         )
-        today = utc_time(request.as_of_utc).astimezone(HONG_KONG).date()
-        for day in days_between(
-            day_value(request.start_date), day_value(request.end_date)
+        durable(db)
+    done = db.execute(
+        "SELECT content_json,content_sha256 FROM documents WHERE kind='sync_receipt' AND logical_key=? AND input_sha256=?",
+        (f"inventory:{request.key}", input_sha),
+    ).fetchone()
+    if done is not None:
+        if storage.digest(done[0].encode()) != done[1]:
+            raise ValueError("inventory_receipt_invalid")
+        return json.loads(done[0])
+    stored = db.execute(
+        "SELECT c.page,r.content_json,r.content_sha256 FROM sync_results r JOIN sync_calls c USING(job_key,ordinal) WHERE r.job_key=? AND r.status='page' ORDER BY c.page",
+        (request.key,),
+    ).fetchall()
+    pages: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for number, row in enumerate(stored):
+        if (
+            row[0] != number
+            or storage.digest(row[1].encode()) != row[2]
+            or (pages and not pages[-1]["has_more"])
         ):
-            status = "complete" if day_value(day) < today else "provisional"
-            count = sum(item["activity_date"] == day for item in items)
-            db.execute(
-                "INSERT INTO sync_days VALUES(?,?,?,?)",
-                (day, request.key, status, count),
-            )
-        result = {
-            "schema_version": "fit_inventory_receipt_v1",
-            "job_key": request.key,
-            "inventory_complete": True,
-            "collection_complete": not items,
-            "activity_count": len(items),
-            "items": items,
-            "provider_calls": db.execute(
-                "SELECT COUNT(*) FROM sync_calls WHERE job_key=?", (request.key,)
-            ).fetchone()[0],
-            "unresolved_calls": db.execute(
-                "SELECT COUNT(*) FROM sync_calls c LEFT JOIN sync_results r USING(job_key,ordinal) WHERE c.job_key=? AND r.ordinal IS NULL",
-                (request.key,),
-            ).fetchone()[0],
-            "external_actions": 0,
+            raise ValueError("inventory_saved_page_invalid")
+        value = valid_page(json.loads(row[1]), request, number, seen)
+        pages.append(value)
+        seen.update(item["activity_ref"] for item in value["items"])
+    while not pages or pages[-1]["has_more"]:
+        number = len(pages)
+        spent = db.execute(
+            "SELECT COUNT(*) FROM sync_calls WHERE job_key=?", (request.key,)
+        ).fetchone()[0]
+        if spent >= request.max_calls:
+            raise ValueError("inventory_budget_exhausted")
+        arguments = {
+            "start_date": request.start_date,
+            "end_date": request.end_date,
+            "page": number,
+            "page_size": request.page_size,
         }
-        storage.put_document(
-            db, "sync_receipt", f"inventory:{request.key}", input_sha, result
+        ordinal = spent + 1
+        db.execute(
+            "INSERT INTO sync_calls VALUES(?,?,?,?)",
+            (request.key, ordinal, number, storage.canonical(arguments)),
         )
-        return result
+        # The call and its spent budget are durable before touching Provider.
+        durable(db)
+        code = "inventory_provider_failed"
+        try:
+            response = yield arguments
+            code = "inventory_page_invalid"
+            value = valid_page(response, request, number, seen)
+        except Exception as exc:
+            error = storage.canonical({"error_code": code})
+            db.execute(
+                "INSERT INTO sync_results VALUES(?,?,'error',?,?)",
+                (request.key, ordinal, error, storage.digest(error.encode())),
+            )
+            durable(db)
+            raise ValueError(code) from exc
+        content = storage.canonical(value)
+        db.execute(
+            "INSERT INTO sync_results VALUES(?,?,'page',?,?)",
+            (request.key, ordinal, content, storage.digest(content.encode())),
+        )
+        durable(db)
+        pages.append(value)
+        seen.update(item["activity_ref"] for item in value["items"])
+    items = sorted(
+        (item for page in pages for item in page["items"]),
+        key=lambda item: (item["activity_date"], item["activity_ref"]),
+    )
+    today = utc_time(request.as_of_utc).astimezone(HONG_KONG).date()
+    for day in days_between(day_value(request.start_date), day_value(request.end_date)):
+        status = "complete" if day_value(day) < today else "provisional"
+        count = sum(item["activity_date"] == day for item in items)
+        db.execute(
+            "INSERT INTO sync_days VALUES(?,?,?,?)",
+            (day, request.key, status, count),
+        )
+    result = {
+        "schema_version": "fit_inventory_receipt_v1",
+        "job_key": request.key,
+        "inventory_complete": True,
+        "collection_complete": not items,
+        "activity_count": len(items),
+        "items": items,
+        "provider_calls": db.execute(
+            "SELECT COUNT(*) FROM sync_calls WHERE job_key=?", (request.key,)
+        ).fetchone()[0],
+        "unresolved_calls": db.execute(
+            "SELECT COUNT(*) FROM sync_calls c LEFT JOIN sync_results r USING(job_key,ordinal) WHERE c.job_key=? AND r.ordinal IS NULL",
+            (request.key,),
+        ).fetchone()[0],
+        "external_actions": 0,
+    }
+    storage.put_document(
+        db, "sync_receipt", f"inventory:{request.key}", input_sha, result
+    )
+    return result
+
+
+def collect_inventory(
+    root: Path, request: InventoryRequest, fetch: PageFetcher
+) -> dict[str, Any]:
+    with storage.open_store(root) as db:
+        steps = inventory_steps(db, request)
+        try:
+            arguments = next(steps)
+            while True:
+                try:
+                    response = fetch(
+                        arguments["start_date"],
+                        arguments["end_date"],
+                        arguments["page"],
+                        arguments["page_size"],
+                    )
+                except Exception as exc:
+                    arguments = steps.throw(exc)
+                else:
+                    arguments = steps.send(response)
+        except StopIteration as completed:
+            return completed.value
+        finally:
+            steps.close()
