@@ -102,7 +102,7 @@
 
 ## 当前检查点
 
-- 当前焦点：M12-0003f无损细读传输及模型正文完整性检查，继承VC-003 AC-006/007；先写回归再实现，不向真实模型服务发送数据，不切换正式库。
+- 当前焦点：M12-0003g一次性模型任务账本，继承VC-003 AC-003/007/016与TM-001；先写回归再实现，不向真实模型服务发送数据，不切换正式库。
 - 基准：`db8a3ab7ec31c6bebe32742e785760df4650c97f`，`main`；刚完成的开发 Harness 更新属于已有工作，不覆盖。
 - 下一动作：明确实际Codex工具清单和本地配置隔离，再测试先行实现可替换模型接口与最终目标/历史周报组合，不运行真实业务模型或在线命令。
 - 等待项：0003d/0003e各自独立验收已完成，完整Adapter尚未交付，`validator_availability=authorized`、`diagnosis_status=not_triggered`。用户本轮明确授权后续逐模块创建新的只读验收任务；不复用旧审查者或裁决。
@@ -117,8 +117,22 @@
 
 ## 验证与交付记录
 
+### M12-0003g 一次性模型任务账本
+
+- 全新项目内只读任务 `M12 一次性模型账本独立验收`（01a0750e-65c9-79c2-b94c-c5d3a3b493bc，platform-default/high）返回 `contract_version=VC-003`、`overall_verdict=PASS`，仅本内部组件；`criterion_results`：AC-003/006/007/016适用部分、INV-002、TM-001与GATE-001..004通过；`blocking_findings=[]`、`scope_change_candidates=[]`。
+- `commands_and_evidence`：独立完整1349 passed / 185.08秒、37项专项 / 1.72秒；Ruff/format155/mypy137、135 AST/compile、104 JSON/93 Schema、50公开Markdown/29链接/6metadata、AI/ignore/layout/diff通过。另14项独立故障检查通过，六进程竞争实测仅一次adapter调用，五次返回unknown；SIGTERM、实际fsync异常和恢复验证通过。
+- 六文件清单SHA `54ea010e32c07459f43fc60bf98c9b4d40fdde35eafe4034ee3f13ff91a79648`，基准6ba4971；前后文件SHA/模式、VC-003和9356项私人指纹不变。`advisories/unknowns`：尚未验证实际Codex Launcher或Linux；实际adapter须先确认子进程停止才普通返回，不能确认时保留未终态。本次不将Fake结果或内部账本通过当作完整周报完成。
+- 最终自检完整1349 passed / 195.66秒；37项专项及全部静态门通过。当前六文件进入validating，安排全新项目内只读任务，platform-default/high；风险是崩溃/并发/细读锁和不可变恢复，输入仅逐字VC-003、适用规则和当前受审结果，调查者及前模块Validator不复用。尚未独立PASS、提交或推送本模块。
+- 首批29项失败回归后实现并全部通过；追加8项边界中4项实测失败（悬空Schema引用/不可用Schema未前置拒绝、intent写入错误出口），原合同内修正后37项通过。强制业务校验接口、局部Schema引用、固定脱敏错误和不重启规则未放宽；本模块未进入独立验收或提交。
+- 当前Ruff/format155、mypy137、135 AST/104 JSON/93 Schema、95 Markdown/66链接/6 metadata及静态门通过，9356项私人指纹不变；正在完整回归。只有合成adapter/新实例和本地进程退出测试，没有真实模型或业务Provider。
+- 当前范围是内部Host状态与统一adapter调用边界：一个周身份只登记一次intent；同输入成功或明确失败重放零调用；中断且无完整capture只返回未知，不重新调用。输入/输出业务校验由必填Host接口提供，完整Codex启动隔离、目标/历史周报合同及训练结果仍待接入，不预先声明完成。
+- 复用新库documents和atomic_file，不新增业务表。短事务提交intent并释放writer.lock后才进入adapter，使同job本地细读能取得新库锁；完整capture落盘并验证后再短事务记终态。正常崩溃在capture与SQL之间时仅本地补账，未知派生状态不抢写失败终态；同周换输入不获得第二次机会。路径和PID不参与业务身份。
+- 先覆盖真实进程退出、并发领取、adapter内细读、结果/输入漂移、损坏capture、有限持久化失败与搬迁重放；Fake使用统一接口但不能冒称真实模型产出。适用完整门后交另一名全新项目内只读Validator，再提交推送。既有只读调查者不作为本模块Validator。
+
 ### M12-0003f 无损细读交接
 
+- 已核对该提交Linux CI [34011829348](https://github.com/wyizhou/TrainLab/actions/runs/34011829348)：M12 portable module tests通过，旧完整Test失败、后续lint等跳过；保持组件专项与整套CI结论分开，不冒称Linux整体PASS。
+- Git交付：`6ba4971de9baa53b796abe43249bb2c450c439ad`（`feat: preserve complete FIT detail in model tool handoff`）已正常推送origin/main，ls-remote一致；没有强推或混入未审下游改动。
 - 全新项目内只读任务 `M12 FIT细读传输独立验收`（01a074f5-e8ca-7211-b13e-61460e41b734，platform-default/high）返回 `contract_version=VC-003`、`overall_verdict=PASS`，仅当前组件。`criterion_results`：AC-006/007适用部分、INV-002、TM-001及GATE-001..004通过；`blocking_findings=[]`、`scope_change_candidates=[]`，未继承旧裁决。
 - `commands_and_evidence`：独立完整1312 passed / 183.31秒，专项151 passed / 21秒；Ruff/format153/mypy135、133 AST/103 JSON/92 Schema/21引用目标、48公开Markdown/27链接、6 metadata/14 ignore及diff通过。基准aef76d8，九文件清单SHA `279ccf8017e8d85a3c7ece5c2b2db611f10e649f65b3aa855c3dd2ef8512b503`，前后SHA/模式及VC-003不变，9356项私人指纹零差异。四份实际公开正文与重新构建合成Host逐项一致；另8类损坏拒绝、5组可逆检查通过。
 - `advisories/unknowns`：公开CLI诊断含系统Skill初始化/缓存/禁止工具错误，不作为完整Launcher就绪证明；单工具输出预算不是总上下文保证；当前Linux快照、真实模型和Provider未实测。辅助定位/非必需PyYAML检查失败后用现存文件/标准库完成，未安装依赖。没有OS强制只读保障，仅执行范围约束；本段只回写真实验收结果，随后按授权提交/推送。
