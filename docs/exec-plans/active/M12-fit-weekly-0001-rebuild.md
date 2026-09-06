@@ -102,11 +102,11 @@
 
 ## 当前检查点
 
-- 当前焦点：M12-0003a FIT解析/分段已独立PASS，执行模块Git交付；随后进入0003b受限细读。仅合成输入，不切换正式库或联网。
+- 当前焦点：M12-0003b受限细读独立PASS，准备模块Git交付；继承VC-003 AC-006及适用存储/证据/重放门。仅合成输入，不切换正式库或联网。
 - 基准：`db8a3ab7ec31c6bebe32742e785760df4650c97f`，`main`；刚完成的开发 Harness 更新属于已有工作，不覆盖。
-- 下一动作：正常提交推送解析模块，再按AC-006先测试每周活动范围、20次预算/20分钟上限、缓存与脱敏细读；同步邮件仍由后续发布模块负责。
+- 下一动作：正常提交推送细读模块，随后实施M12-0003c本周全活动、历史周报及目标快照输入；模型工具隔离仍需单独验收，当前不提供模型或在线命令。
 - 阻塞项：无；`blocker_type=none`，`diagnosis_status=not_triggered`。
-- 未交付：解析、周报告/发布、调度和在线切换；同步编排、MCP协议适配、同步日期及分页已通过独立验收，新库及已有FIT复制已交付。
+- 未交付：完整周输入、模型适配、周报告/发布、调度和在线切换；FIT解析/分段和受限细读已独立PASS，同步编排、MCP协议适配、同步日期及分页、新库和已有FIT复制已交付。
 
 ## Agent 派发
 
@@ -117,8 +117,19 @@
 
 ## 验证与交付记录
 
+### M12-0003b 预绑定周范围与受限细读
+
+- 全新只读high/high `m12_fit_detail_validator` 返回当前内部模块PASS，无blocker；独立完整1164 passed / 171.61秒、专项36项、Ruff/format145、mypy127及全部静态门通过。额外三视图隐私、Schema、暂停加权、跨活动绑定与周边界探针通过，9356项私人指纹不变。六文件结束摘要与清单SHA `d471c554a4f35966a83a444f5aaeb6d4e05208031c6867f4170b6e7efc0a5865` 一致，基准1598af1。当前PASS不代表完整周inventory、模型能力隔离、Linux实测或在线运行。
+- Validator首次使用直接pytest出现3项ModuleNotFoundError收集错误，改用冻结门禁python -m pytest后完整通过；未修改产品、测试或预期。本段仅真实验收结果回写，随后按授权提交推送。
+- 完整1164 passed / 173.06秒；专项36项/M12合计255项、全部静态门通过，9356项私人指纹不变。当前冻结六文件，安排全新只读high/high细读Validator；高风险为跨重启预算、并发及输入/输出权限边界。仅提供逐字VC-003、适用规则及当前结果，不读取历史verdict；没有实际模型、Provider或外部动作。
+- 25项失败测试先行后实现，现36项专项、255项M12通过。新接口只接受当前范围活动/视图/整数范围/1或5秒粒度；共享新库持久化scope、intent和结果，20次/每次1200秒预算不因重启或搬迁重置。成功及确定性失败缓存、真实进程退出、并发最后额度、结果SQL中断和原FIT漂移已有合成回归。
+- 细粒度输出明确是time_weighted_bins_not_raw_samples；记录实际采样数，不把插值窗口冒充设备每秒记录。复用已验证解析器和本地注册统计Schema，不接旧每日细读器或旧库；当前没有模型工具暴露或完整周输入构建。
+- Ruff/format145、mypy127、125 AST/compile、99 JSON/89 Schema、90 Markdown/54链接及静态门通过；正在完整回归，尚未独立验证/提交本模块。后续全新只读high/high Validator仅按VC-003当前AC-006、存储/隐私/恢复与适用门验收，不继承历史结论。
+
 ### M12-0003a FIT解析与分段
 
+- 已核对解析提交Linux CI [34003035898](https://github.com/wyizhou/TrainLab/actions/runs/34003035898)：M12 portable module tests通过；旧完整Test失败、后续门跳过，Linux整体尚未PASS。
+- Git交付：`1598af1f1408f1f73e77f3a83356aea404751d97`（`feat: parse FIT into private time-weighted activity summaries`）已正常推送origin/main，ls-remote完全一致。
 - 全新只读high/high `m12_fit_parse_validator` 返回当前模块PASS，无blocker；独立39项解析、完整1128 passed / 191.30秒、Ruff/format143、mypy125及全部静态门通过。额外暂停跨段/多session逆序分区、真实profile单位检查通过；9356项私人指纹不变。基准9f8fb76、八文件清单SHA `200f290547c1f2be2bb513ad3543ced12fdc0fecf9a9757e5a74ed4ec67d5cb9`，结束逐项无漂移。
 - Validator单位检查首次误用不存在的FitDataMessage.get，检查脚本退出1；改用实际frame.fields后通过，未修改产品或测试，不作为产品失败。当前PASS不涵盖细读/AI/真实运行；提交推送尚待实际核验。本段仅真实结果回写。
 - 同快照旧M9失败单项1 passed / 0.64秒；随后没有并行测试的完整复跑1128 passed / 209.54秒。未改旧测试或调用器，首次失败仍保留为根因未定的时序现象。当前冻结八文件后交全新Validator，不将自检当作独立结论。
