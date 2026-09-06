@@ -102,10 +102,10 @@
 
 ## 当前检查点
 
-- 当前焦点：M12-0003c完整周活动证据独立PASS，准备Git交付；仅合成输入，不切换正式库或联网。
+- 当前焦点：M12-0003d单工具本地MCP桥取得全新独立PASS，当前validated、待Git交付；继承VC-003 AC-006/007的当前接口部分。仅合成输入，不切换正式库或业务联网。
 - 基准：`db8a3ab7ec31c6bebe32742e785760df4650c97f`，`main`；刚完成的开发 Harness 更新属于已有工作，不覆盖。
-- 下一动作：提交推送周证据模块；继续前四份周报/目标及模型适配，实际工具隔离另行验收，当前不提供模型或在线命令。
-- 阻塞项：无；`blocker_type=none`，`diagnosis_status=not_triggered`。
+- 下一动作：核对已验收六文件及协调回写后正常提交推送；再做Codex实际能力隔离及最终目标/历史周报组合，不运行真实业务模型或在线命令。
+- 等待项：本模块独立验收已完成，`validator_availability=completed`、`diagnosis_status=not_triggered`。原子Agent线程额度问题保留为历史；经用户批准的新只读任务已形成有效独立裁决，没有将平台问题冒称代码修复。
 - 未交付：完整周输入、模型适配、周报告/发布、调度和在线切换；FIT解析/分段和受限细读已独立PASS，同步编排、MCP协议适配、同步日期及分页、新库和已有FIT复制已交付。
 
 ## Agent 派发
@@ -117,8 +117,23 @@
 
 ## 验证与交付记录
 
+### M12-0003d 单工具本地细读桥
+
+- `contract_version=VC-003`；独立任务`M12 FIT细读桥独立验收`（01a0748d-a205-7152-85e2-077d8e975b57）返回`overall_verdict=PASS`。`criterion_results`：AC-003/006/007/013当前接口部分、INV-002、TM-001、GATE-001..004通过，遵守EX-001；`blocking_findings=[]`、`scope_change_candidates=[]`。`advisories/unknowns`：仅内部MCP桥，本机macOS；未验证Linux、完整模型能力、目标/历史报告、PDF、发布或在线，不宣称OS只读隔离。
+- `commands_and_evidence`：2026-09-06独立27 passed / 11.24秒、完整1224 passed / 184.85秒；Ruff/format149/mypy131、129 AST/101 JSON/91 Schema、92 Markdown/58链接/6 metadata及全静态门通过。实际原始stdio探针10类异常输入、5条禁止路线、20次额度及重放、FIT权限/字节漂移、intent后进程退出47恢复均通过；9356项私人指纹开始/结束不变。
+- 受审基准927bca4，六文件manifest SHA `50c09a453ae8056546ec3efa163b375644d564dc24fc0c204009c453637792ea`；合同摘录与VC-003原文SHA不变。主协调读取完整八字段结论，并复核六文件与审查结束摘要全部一致。平台模型档位如实为platform-default、推理high；本段仅真实结果回写，原未派发记录保留，不修改产品或测试。尚未发生的Git操作随后核验记录。
+- 2026-09-06用户对“另建全新的只读验收任务”回复“可以，请继续，直到完成了计划”。据此只授权该独立审查任务；不扩大产品在线、私人输入或外部动作范围。新任务不复制本实施对话，仍只接逐字合同、适用规则及当前结果。平台任务接口不允许擅自指定模型，模型档位记录platform-default、推理high，以完整检查和输入隔离保持独立性，不猜测实际模型档位。
+- 独立验收派发未成功：拟派全新只读high/high `m12_detail_server_validator`，工具返回`collab spawn failed: agent thread limit reached`，未创建审查者，也没有本模块verdict。随后只读核对现有三个子Agent均已完成且已用于其他模块，当前可用工具未提供关闭/释放Agent线程入口；不在环境未变时重复派发，不绕过容量限制、不借旧PASS提交。
+- 受审快照保留于仓库外`trainlab-m12-detail-server-review`：六文件manifest SHA `bb1b478e7c1f2d9b29362707056c4d21ce377d83dce70eb9434f547192696627`，逐字合同摘录SHA `1a3d08a9d4826656b7df1c2048fa16e1baacafb47c0580f6f4a72c99ec17d4b3`，基准927bca4。恢复检查时六文件原摘要与清单完全一致；本次仅追加真实协调记录，产品、测试与VC-003不变。后续派发须核对当前协调差异，不覆盖原清单。
+- 补验M12合计315项通过；恢复时重新运行静态审计通过，9356项正式/private指纹逐项不变，并核对远端main仍为927bca4。当前模块未暂存、提交或推送；M12-0003后续模型隔离和M12-0004..0006尚未完成，不因自检通过宣称整体完成。
+- 20项失败回归先行后实施，现27项专项、完整1224 passed / 176.77秒；实际SDK stdio子进程仅发现read_fit_detail，无resources/prompts路线，跨子进程额度/缓存、输入拒绝、固定错误和结果请求绑定通过。未删除或修改既有测试，未启动Codex job。
+- Ruff/format149、mypy131、129 AST/compile、101 JSON/91 Schema、92 Markdown/58链接及静态门通过。冻结后交全新只读high/high Validator，风险为进程边界、错误信息和工具能力声明；只接逐字合同、规则、当前快照，无历史verdict。模型客户端工具隔离仍未验收。
+- 当前只实现MCP stdio服务边界：一个预绑定DetailHost、一个五参数细读工具，无路径/SQL/命令工具、资源或外部Provider。使用既有mcp依赖，不安装或修改全局配置。先以真实SDK client/server和合成新库验证发现、调用、拒绝、跨进程预算及错误脱敏；此服务PASS不能替代Codex实际工具能力验收。
+
 ### M12-0003c 本周完整活动证据
 
+- 已核对该提交Linux CI [34005136164](https://github.com/wyizhou/TrainLab/actions/runs/34005136164)：M12 portable module tests通过；旧完整Test失败，后续门跳过，Linux整体尚未PASS。
+- Git交付：`927bca4567e329cb7b86642d99b1a51e9b21713f`（`feat: freeze complete weekly FIT evidence with source closure`）已正常推送origin/main，ls-remote完全一致。
 - 全新只读high/high `m12_weekly_evidence_validator` 返回当前模块PASS，无blocker；独立完整1197 passed / 173.91秒、专项33项、全静态门通过。另测真实适配器/Fake SDK两页21活动三运动、四处嵌套隐私、锁竞争及重放；9356项私人指纹两次不变。六文件结束与清单SHA `a8438709d7ed858676cf1123172d1659c2c055597f1721c1a4f982bf6f9d4e85` 完全一致，基准91381c8。PASS不涵盖模型输入历史/目标、实际能力隔离、Linux实测或在线。
 - Validator首次快照脚本未指定Git根、首次分页探针缺next_page，均为检查方法错误；分别修正检查命令/合成探针后通过，未修改产品/测试/合同。本段仅真实验收结果回写，随后执行授权提交推送。
 - 协调者补验M12合计288项通过；9356项私人指纹不变。后续Codex能力边界只读核对使用OpenAI官方配置文档及本机CLI帮助/feature list；无真实模型job或Provider调用，不把帮助参数存在当作实际隔离证明。
@@ -268,3 +283,4 @@
 | --- | --- | --- | --- |
 | 2026-09-05 / M12-checkpoint | 恢复最新开发协议，落地原批准 M12 与唯一 Git 补充；319 文件私有备份恢复通过，脱敏后主协调与独立 Validator 全量 909 项通过，检查点 PASS；`0decf99` 已正常推送并核对远端 | 五处历史真实指标与四份疑似派生测试已安全处理；独立测试首次时序失败保留；现有远端 Linux CI 有旧平台依赖问题，不冒称已修复 | 回写真实 Git 结果后，继续 M12-0001 统一归档与新旧规则映射；不宣称新系统已实现 |
 | 2026-09-05 / M12-archive | 冻结 VC-003；归档器先测试后实现；22 项新增和完整 931 项通过；9612 文件归档及恢复演练完成，正式数据未变 | 无业务 Provider 调用；Linux 本机容器不可用，未自动启动 | 独立归档验证、提交/推送，然后进入退役映射 |
+| 2026-09-06 / M12-detail-and-evidence | 受限细读及本周完整活动证据独立PASS，91381c8、927bca4正常推送且远端核对；单工具桥27项、M12合计315项及全量1224项自检通过，当前代码快照保存 | 新独立Validator创建达到平台线程上限，无本模块独立裁决；旧Linux全量CI失败继续保留，M12专项通过不代表整体通过 | 保持0003d validating；恢复全新审查能力或取得独立新任务授权，独立PASS前不提交本模块或进入下游开发 |
