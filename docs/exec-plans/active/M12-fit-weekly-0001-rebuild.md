@@ -93,7 +93,7 @@
 | M12-0001a 只读归档工具、备份清单与恢复演练 | completed | VC-003；独立 PASS，9612 文件恢复通过；Git 交付记录见下 |
 | M12-0001b 旧规则替代映射、旧入口及测试同步退役 | completed | 独立 PASS；旧入口退出，38 份旧测试继续执行，物理清理随替代模块验收进行 |
 | M12-0002 新库、已有 FIT 复制与分页/每日缺口同步 | completed | 0002a–e 独立PASS并已推送；仅内部离线功能，真实全历史同步留0006，邮件/调度留0004/0005 |
-| M12-0003 分段解析、统一细读、AI 输入隔离与可替换接口 | in_progress | M12-0002；先完成0003a纯FIT解析/分段与不可变解析落库 |
+| M12-0003 分段解析、统一细读、AI 输入隔离与可替换接口 | in_progress | 0003h进程监督独立PASS，待Git交付；完整模型适配仍在实施 |
 | M12-0004 周报、固定计划、Markdown/PDF、Gmail/Garmin 通用发布 | pending | M12-0003 |
 | M12-0005 Python 定时与恢复、完整离线验收 | pending | M12-0004 |
 | M12-0006 历史同步、下个正常周日真实验收及切换 | pending | M12-0005；未来时点未到不得冒称完成 |
@@ -102,10 +102,10 @@
 
 ## 当前检查点
 
-- 当前焦点：M12-0003g一次性模型任务账本，继承VC-003 AC-003/007/016与TM-001；先写回归再实现，不向真实模型服务发送数据，不切换正式库。
+- 当前焦点：M12-0003h模型子进程监督，继承VC-003 AC-007/016与TM-001；先用合成进程回归，再接公开CLI假端点，不向真实模型服务发送数据，不切换正式库。
 - 基准：`db8a3ab7ec31c6bebe32742e785760df4650c97f`，`main`；刚完成的开发 Harness 更新属于已有工作，不覆盖。
 - 下一动作：明确实际Codex工具清单和本地配置隔离，再测试先行实现可替换模型接口与最终目标/历史周报组合，不运行真实业务模型或在线命令。
-- 等待项：0003d/0003e各自独立验收已完成，完整Adapter尚未交付，`validator_availability=authorized`、`diagnosis_status=not_triggered`。用户本轮明确授权后续逐模块创建新的只读验收任务；不复用旧审查者或裁决。
+- 等待项：0003h `blocker_type=none`、`diagnosis_status=completed`；原合同内一次修正后全新独立PASS，已消除该失败特征，历史失败及诊断不改写。`validator_availability=authorized`；完整Adapter尚未交付，后续仍逐模块全新验收。
 - 未交付：完整周输入、模型适配、周报告/发布、调度和在线切换；FIT解析/分段和受限细读已独立PASS，同步编排、MCP协议适配、同步日期及分页、新库和已有FIT复制已交付。
 
 ## Agent 派发
@@ -117,8 +117,32 @@
 
 ## 验证与交付记录
 
+### M12-0003h 模型子进程监督
+
+- 全新项目内只读`M12 模型进程监督独立验收`（01a07544-2226-7581-b456-509c401629df，platform-default/high）正式返回`contract_version=VC-003`、`overall_verdict=PASS`；`criterion_results`：AC-007/016组件范围、TM-001恢复隐私、INV-002、EX-001和GATE-001..004适用门全部通过；`blocking_findings=[]`、`scope_change_candidates=[]`。
+- `commands_and_evidence`：独立完整1394 passed / 189.20秒，45项专项 / 8.23秒；Ruff/format157/mypy139、137 AST/104 JSON/93 Schema、61当前公开Markdown/46链接、6metadata/Skill头及AI/ignore/layout/diff通过。三项独立合成检查覆盖多层不同进程组的正常结束/超时和1MiB输入+双路精确上限，均无残留或晚到写入；9356项私人指纹前后不变。
+- 基准cfcf6eb，五文件manifest SHA `2f12e0f75d41a8d4978b7e96f0957a86022b3d85876396b57cef907554480a19`；协调者复核完整八字段报告与五文件最终SHA/模式一致，VC-003不变。`advisories/unknowns`：仅进程层而非完整Adapter，Linux动态/真实模型/Provider未测试；历史文档不作为裁决证据。静态检查初次摘要截取及猜测文件位置错误已按实际定位修正，不修改产品/测试。此处仅真实协调回写，随后执行授权提交/推送。
+- 最终自检完整1394 passed / 190.68秒；45项专项、Ruff/format157、mypy139、137 AST/104 JSON/93 Schema、96 Markdown/68链接/6metadata及静态门通过，9356项正式/private指纹不变。公开CLI最终正常/25秒超时均已确认同session无活跃成员，无额外清理；观察SHA分别为`555d2129a18250430fb7eb1b569b21eb08a9219f4bae8941ec5a9354ca6a93f2`、`78496791077556b0b23ba57a063ad24fcb6606c303e18eefcb6c65bea0f83eb0`，生产SHA `02a65bc1b8ab52730aa57e57d2deee370c210f17531dc22eeff345818549fe7f`。仅本机合成/localhost检查，非真实模型或Linux验收。
+- 当前冻结五文件交全新项目内只读Code Validator，platform-default/high；风险为有限进程生命周期、并发管道、预算和未知结果，按VC-003 AC-007/016、TM-001及适用门验收。输入仅逐字合同、适用规则、当前基准/清单与结果；不传历史诊断/裁决，不以调查者或自检代替独立验证；本模块仍未提交。
+- 按已完成独立诊断的一次修正：先加5项信号/存活回归，旧实现3项实测失败，2项保守拒绝通过；包括不经mock的真实未回收僵尸。仅收敛三个既有发信号点的EPERM/ESRCH生命周期竞态，继续按原预算回收和观察，活跃或不可观察仍未终态；45项专项通过，正重新完整门和公开CLI复测，不改合同/接口/超时/正确断言。
+- 诊断完整私有JSON SHA `883abcb3530009260a958740e5ee27d492df2cd322a11119a00130fbfb31a78b`；三个独立标准库诊断命令均退出0，48个本次进程/组元数据核查无残留，未改仓库或私人文件；本机macOS/Python3.12，未运行Linux或以诊断替代完整门/Validator。
+- 全新项目内只读Failure Analyst `M12 模型停止确认独立诊断`（01a07533-a2ac-7e30-aba5-563b99594dc3，platform-default/high）已完成；不是Validator裁决。`failure_id=M12-0003h-VC-003-stop-confirmation-EPERM-zombie-20260906`，`failure_class=IMPLEMENTATION_DEFECT`，`criterion_ids=AC-007/AC-016/TM-001`，`failure_signature=有限正常进程已结束却因重复发信号异常跳过停止确认`。
+- `trigger/attempts_compared`：两种实质不同停止路径后全量仍出现停止未确认；比较主组、主退出即停止与session枚举。`evidence`：24次固定插桩调用5次同处EPERM；增加现场观察12次同处失败，随后已无组成员；4次独立僵尸实验与4次原stop直调均复现。共44次有界诊断，失败分支仅几十微秒，不是预算耗尽；插桩影响时序，不把比例当作发生率。
+- `minimal_conflict_set=[]`、`contract_change_required=false`、`safe_auto_fix=true`；`recommended_actions`：信号竞态后仍进行有界回收/存活复查，活跃成员、观察失败及预算耗尽继续未终态。`confidence`：当前缺陷高、历史全量底层同因中高（原日志未直接留错误）。原测试预期/合同未发现错误，五文件快照与正式数据不变；按协议恢复一次针对性修复，不把本次诊断/历史裁决交给下一名Validator。
+- 进入独立诊断：组内提前停止修正及整个session修正之后，最终全量1388 passed/1 failed（190.32秒），`test_descendant_is_stopped_before_result[True-False]` 返回ProcessInterrupted/model_process_stop_unconfirmed，而该有限正常场景预期明确终止。40项专项先前通过，不抵消全量失败。停止确认路径不再自动加补丁；按AC-007/TM-001保留失败，交全新Failure Analyst。生产SHA `2c433c4d616fbc916fbfad4762547761215d2ca30a456f961f671dceda430e2f`，测试SHA `e91b11e4eefd5f529f984c25671cf43ee655c4fe6675e81f5d35003049528669`。
+- 当前session实现的公开CLI只读复测：正常与25秒假端点超时，返回时及最终SID扫描均未见本次活跃后代，无调查者额外清理。正常观察SHA `ea5a93c1cab994c20cba2c89be9e420fafe06c4f195acdccc2cab28287abe22a`、超时观察SHA `4bc1b454ed990566abd299bc7720450de48600fa14395f859f7aeb1f0a201767`。这是诊断事实而非独立PASS；首次主组误判证据仍永久保留。
+- 首次完整回归1382 passed/2 failed：新故障夹具将单次管道异常同时注入系统ps子进程，正确触发unknown；按原预期限制为目标管道的一次有限失败后，35专项及完整1384 passed / 186.23秒通过，未修改生产预期。该次通过尚不覆盖后续实际CLI拓扑发现，不作为最终验收。
+- 只读调查复现正常MCP另建PGID但与CLI同SID，主组超时退出后MCP仍短暂存活约0.2秒；旧监督器提前返回process_stopped=true。失败观察SHA `376c93d00d8e3a9fb44483a683ebf287ec61b5932a8b64edf0f6fc60e2c56e61` 永久保留，不能将正常退出探针当作完整停止证明。
+- 同合同内增加两项独立进程组回归，旧实现实测失败；改为枚举同owner的PID/PGID/state并用os.getsid核对新session，停止所有所属组再复查。macOS ps sess列实测为0，故不据该列归属；正常MCP不归入恶意daemon排除。当前继续合成及公开超时复验；若该停止误判仍不收敛，先按执行协议诊断，不继续扩张机制。
+- 先新增26项失败测试（25项缺实现、1项新测试夹具调用错误，后者改为实际接口），实现后26项通过；补充继承管道的遗留子进程和未知终态诊断两项回归实测失败，修正后28项通过。仅正常有限故障，不扩展同UID恶意进程/永久内核威胁。
+- 当前只交付Host内部进程层，不把它当作完整Codex adapter、认证/能力隔离或AI内容验证。参数只来自Host，运行与终止预算分开，正常返回前进程组必须确认停止；未知通过AdapterInterrupted保留未终态，重启不再次调用。
+- 公开CLI实际诊断仅localhost假Responses、合成FIT，外网及正式数据/认证读取均由诊断护栏拒绝；一轮9个本地请求、4次细读（预算仅2项）完整往返，1秒1200块与5秒240块原事实SHA一致，输出未截断；禁止命令/资源/未登记Provider的请求没有产生外部动作。没有真实模型或业务Provider调用。
+- 该诊断为macOS，不宣称Linux隔离或私人Launcher已经交付；原始公开捕获及日志只保留在仓库外owner-only目录。当前继续完整回归和全新独立审查，未提交本模块。
+
 ### M12-0003g 一次性模型任务账本
 
+- 已核对该提交Linux CI [34012925525](https://github.com/wyizhou/TrainLab/actions/runs/34012925525)：M12 portable module tests通过，旧完整Test失败，后续lint等跳过；不将专项通过描述为整个CI通过。
+- Git交付：`cfcf6eb27a6b8a32c3a87373126209cadffc8fa2`（`feat: persist single-attempt weekly model jobs`）已正常推送origin/main，ls-remote完全一致；六文件提交前与受审内容逐项核对，只有真实验证结果协调回写。
 - 全新项目内只读任务 `M12 一次性模型账本独立验收`（01a0750e-65c9-79c2-b94c-c5d3a3b493bc，platform-default/high）返回 `contract_version=VC-003`、`overall_verdict=PASS`，仅本内部组件；`criterion_results`：AC-003/006/007/016适用部分、INV-002、TM-001与GATE-001..004通过；`blocking_findings=[]`、`scope_change_candidates=[]`。
 - `commands_and_evidence`：独立完整1349 passed / 185.08秒、37项专项 / 1.72秒；Ruff/format155/mypy137、135 AST/compile、104 JSON/93 Schema、50公开Markdown/29链接/6metadata、AI/ignore/layout/diff通过。另14项独立故障检查通过，六进程竞争实测仅一次adapter调用，五次返回unknown；SIGTERM、实际fsync异常和恢复验证通过。
 - 六文件清单SHA `54ea010e32c07459f43fc60bf98c9b4d40fdde35eafe4034ee3f13ff91a79648`，基准6ba4971；前后文件SHA/模式、VC-003和9356项私人指纹不变。`advisories/unknowns`：尚未验证实际Codex Launcher或Linux；实际adapter须先确认子进程停止才普通返回，不能确认时保留未终态。本次不将Fake结果或内部账本通过当作完整周报完成。
