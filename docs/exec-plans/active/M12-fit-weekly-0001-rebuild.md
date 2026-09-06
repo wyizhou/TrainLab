@@ -93,7 +93,7 @@
 | M12-0001a 只读归档工具、备份清单与恢复演练 | completed | VC-003；独立 PASS，9612 文件恢复通过；Git 交付记录见下 |
 | M12-0001b 旧规则替代映射、旧入口及测试同步退役 | completed | 独立 PASS；旧入口退出，38 份旧测试继续执行，物理清理随替代模块验收进行 |
 | M12-0002 新库、已有 FIT 复制与分页/每日缺口同步 | completed | 0002a–e 独立PASS并已推送；仅内部离线功能，真实全历史同步留0006，邮件/调度留0004/0005 |
-| M12-0003 分段解析、统一细读、AI 输入隔离与可替换接口 | in_progress | 0003a–j已独立验收并推送；继续完整Codex适配、目标/历史周报及业务输入输出 |
+| M12-0003 分段解析、统一细读、AI 输入隔离与可替换接口 | in_progress | 0003a–l已独立验收并推送；继续完整Codex适配、目标/历史周报及业务输入输出 |
 | M12-0004 周报、固定计划、Markdown/PDF、Gmail/Garmin 通用发布 | pending | M12-0003 |
 | M12-0005 Python 定时与恢复、完整离线验收 | pending | M12-0004 |
 | M12-0006 历史同步、下个正常周日真实验收及切换 | pending | M12-0005；未来时点未到不得冒称完成 |
@@ -102,9 +102,9 @@
 
 ## 当前检查点
 
-- 当前焦点：M12-0003l完整进程证据到周任务账本的恢复接线，继承VC-003 AC-003/007及TM-001；只恢复同任务已确认停止的原始capture，不重新调用模型，不改正式库。
+- 当前焦点：0003m同周并发准备缺口已按原VC-003修复，1673项及全新独立Validator PASS，当前待Git交付；0003k/l已推送，不运行真实业务模型或切换正式库。
 - 基准：`db8a3ab7ec31c6bebe32742e785760df4650c97f`，`main`；刚完成的开发 Harness 更新属于已有工作，不覆盖。
-- 下一动作：明确实际Codex工具清单和本地配置隔离，再测试先行实现可替换模型接口与最终目标/历史周报组合，不运行真实业务模型或在线命令。
+- 下一动作：精确提交推送已验证0003m九文件；随后接入目标与前四份完整周报输入。不复制账本或监督器，不运行真实业务模型或在线命令。
 - 等待项：0003h `blocker_type=none`、`diagnosis_status=completed`；原合同内一次修正后全新独立PASS，已消除该失败特征，历史失败及诊断不改写。`validator_availability=authorized`；完整Adapter尚未交付，后续仍逐模块全新验收。
 - 未交付：完整周输入、模型适配、周报告/发布、调度和在线切换；FIT解析/分段和受限细读已独立PASS，同步编排、MCP协议适配、同步日期及分页、新库和已有FIT复制已交付。
 
@@ -117,8 +117,28 @@
 
 ## 验证与交付记录
 
+### M12-0003m Codex 启动材料与薄适配器接线
+
+- 全新只读任务01a07606-3c60-7290-89ca-a9ae4cceb9b7（platform-default/high）返回完整八字段：contract_version=VC-003、overall_verdict=PASS；criterion_results为AC-003/006/007/016当前组件、INV-002、TM-001及GATE-001..004通过，EX-001保持；blocking_findings和scope_change_candidates为空。advisories/unknowns明确Linux动态、真实认证/模型与下游业务未验收；不把组件PASS当作M12完成。
+- commands_and_evidence：独立1673 passed / 376.14秒、额外6项故障检查/58.57秒，Ruff/format170/mypy152、150 AST/104 JSON/93 Schema、59公开Markdown/58链接及metadata/AI/ignore/layout/权限/隐私/diff通过。实际本机CLI假端点2次/18请求/恢复0，66项证据权限通过；9356项私人指纹和九文件前后不变。受审基准917d183，九文件manifest SHA `86017f35d0fef674d9eb3a971c0580f09ab51637ab83f3fdaa64fcb8b0e6c601`；完整独立报告SHA `fbb68b5accc84115a06dadd4715d1518c7f5a90bc8d639fd2c180ecafe67ebfa`。主协调已读取完整报告并再次核对快照；本段仅真实结果回写，随后按授权提交推送。
+- 修复后最终完整1673 passed / 357.49秒，39项专项、Ruff/format170/mypy152、150 AST/104 JSON/93 Schema/101 Markdown/83链接和metadata/AI/ignore/权限/隐私/diff全部通过。冻结新九文件快照，进入全新只读platform-default/high验收；只传原合同、规则和当前结果，不传前次裁决或主协调补充检查推理。
+- 首次独立任务01a075f1-4ce3-7922-9f34-f14e5ee50faa返回VC-003当前组件PASS、完整八字段（报告SHA `8625a79d8e82d40a8b312163d2d58f4eee56b6a6f8383259522feb179013de52`），独立1671项/333.10秒及两项顺序重新准备、全静态门、公开CLI诊断通过；九文件与9356项私人指纹不变。随后主协调仓库外合成并发检查：A准备停在原子改名前，B完成准备并在原始capture保存后中断，A继续时覆盖prepared而在Prompt冲突处失败，B恢复为unknown、调用仍为1。AC-003/007、TM-001要求的正常并发恢复缺口，非同UID恶意篡改；失败证据保留，不用旧PASS掩盖。最初诊断fixture未规范化macOS临时路径，前检安全拒绝；改为显式私有规范目录后才复现产品缺口。
+- 此为同合同内首个针对性修正：新增并发失败测试，沿用storage实例写锁覆盖全部准备材料发布；不改变接口、输入、模型预算或正确预期。尚未触发两种修法/三轮不收敛/合同冲突诊断门；修改后旧PASS不适用，必须新快照与全新验收。
+- 新增两项并发准备回归在旧实现均失败（14.43秒），共享既有写锁后39项专项通过（152.74秒）；有限IO未新增状态机，模型运行不持有该准备锁。原并发失败观察SHA `c2d9b3d19d537f3bd24cbbb9c463a88562887a7b9ab4dfb08e653ae6ae93c99d`保留。修复后公开CLI两次/localhost18次/恢复0，能力证据SHA `c8c2a395feaf658065c1f41c05fa795bb6a2ddaed385e07665c161b5fa8133fe`；真实模型与业务Provider为0，安装标记及9356项私人指纹不变。
+- 最终自检1671 passed / 324.52秒，新增37项、原1634项保留；Ruff/format170/mypy152，150 Python AST/compile、104 JSON/93 Schema、101 Markdown/83链接、6 metadata与AI/ignore/layout/权限/隐私/diff通过。9356项私人指纹再次零变化。当前九文件进入validating，基准917d183；公开CLI假端点实测不能替代真实认证、Linux动态或业务调用验收。
+- 测试先行：最初18项因缺模块失败；后续补充能力证据实际往返、错配/截断、启动配置、有限IO和子进程权限回归，当前新增37项，原1634项未删除或修改断言。首次完整1670 passed / 320.65秒；加入最后一项子进程权限回归后重新运行完整门，该旧计数不替代最终快照。
+- 公开CLI诊断最初在联网前拒绝覆盖内置openai配置，失败原始capture保留；按官方命名Provider配置修正并新增先失败后通过回归。公开假服务完整经过能力探针和薄适配器，每轮2次本机CLI、18次localhost请求、恢复增量0；不是实际模型或业务Provider调用。最终当前公开证据SHA `fe5cd74428a88bf44ce769e070dc2bd5e5f28307f1a71bb51a8174e910c9f01b`，64项私有检查产物权限通过、安装标记不变；真实认证和Linux动态能力仍未验收。
+- 子进程umask回归证明父022环境原先会生成755/644，修复为Popen仅对子进程077；父环境不变，不修改全局配置。能力证据补充检查每项Host结果与请求、scope/FIT、请求SHA和完整1200/240块绑定；不把短数组或其他活动当成有效探针。
+- 本切片沿用VC-003 AC-003/006/007/016、TM-001、EX-001及既有门，不增加真实模型或业务调用授权。先以合成测试冻结启动材料、固定命令/环境、能力证明绑定、原始capture与原账本接线；不复制进程监督、Schema投影或恢复状态机。
+- 启动材料绑定模型配置、业务输入、Prompt、instructions、业务/wire Schema与已核对的公开能力证据。Host路径仅在进程配置和私有审计中使用，不作为可搬迁业务身份；模型只有既有FIT细读接口。缺少能力证据或前检失败不得创建模型intent。
+- 新启动复用隔离、进程监督和原始流持久化；成功/失败/中断继续使用既有判定。恢复只读取该周原始冻结材料和既有capture，不重新检测认证、启动探针或模型；无完整证据保持unknown。
+- 主协调串行，测试先行；覆盖参数/环境隔离、输入与配置漂移、完整发送、结果和业务校验、有限IO故障、并发/崩溃恢复、跨目录重放及零调用。公开能力证据生产与最终业务输入仍须各自完成实际检查，不能用合成适配器测试冒称部署或真实模型可用。
+- 完整门后按用户本次再次明确授权创建全新项目内只读Validator，platform-default/high；只提供逐字VC-003、适用规则、当前受审快照。独立PASS后才提交推送。
+
 ### M12-0003l 模型结果零启动恢复接线
 
+- 已核对Linux CI [34020741468](https://github.com/wyizhou/TrainLab/actions/runs/34020741468)：M12 portable专项通过，旧完整Test失败、后续静态门跳过；不称完整Linux CI通过。
+- Git交付：`917d183dad16f54802d3e489c4bcf3a097bfd457`（`feat: recover completed Codex evidence without restarting inference`）已正常推送origin/main，ls-remote一致；提交后工作树干净。后续事实回写不另做自引用提交；该提交Linux CI的实际结果已补记于上一条。
 - 全新项目内只读任务 `01a075b5-30c0-7af3-9522-9738057dbbe2`（platform-default/high）返回完整八字段：contract_version=VC-003，overall_verdict=PASS；criterion_results为AC-003/007/016当前恢复组件、INV-002、TM-001及GATE-001..004通过；blocking_findings与scope_change_candidates为空。advisories保留完整Launcher的Prompt/诊断/profile/能力绑定责任；unknowns明确Linux、真实模型和业务发布未实测，不扩大本组件结论。
 - commands_and_evidence：独立1634 passed / 193.52秒、专项156 passed / 5.02秒、额外五项0.58秒；六个实际恢复进程只留下一个结果，原Host收尾并行及禁止Popen/DNS/网络入口探针通过。Ruff/format165/mypy147、145 AST、104 JSON/93 Schema、60公开Markdown/57链接、6 metadata/frontmatter及12 ignore探针通过。基准b1be6b4，七文件清单SHA `7e657e96f3f950005af59443a87b827e7376376b1dca625a9a62ebb421f7b72d`，完整私有报告SHA `eb334861567dd14ebccfd1318f15fb36bc93e6e358354807169e5bbb9538dcc4`；七文件与VC-003、9356项私人指纹前后不变。定位文件名的两次无匹配为探索命令结果，不是未解决门禁。本段仅事实回写，随后按授权精确提交推送。
 - 主协调最终自检1634 passed / 193.05秒；新增52项、恢复/账本/原始证据合计156项通过，Ruff/format165/mypy147、145 AST、104 JSON/93 Schema、100 Markdown/82链接及metadata/AI/ignore/权限/diff通过，9356项私人指纹不变。现冻结七文件，进入全新项目内只读验收，档位platform-default/high；尚未提交本模块。
@@ -416,3 +436,5 @@
 | 2026-09-06 / M12-detail-and-evidence | 受限细读及本周完整活动证据独立PASS，91381c8、927bca4正常推送且远端核对；单工具桥27项、M12合计315项及全量1224项自检通过，当前代码快照保存 | 新独立Validator创建达到平台线程上限，无本模块独立裁决；旧Linux全量CI失败继续保留，M12专项通过不代表整体通过 | 保持0003d validating；恢复全新审查能力或取得独立新任务授权，独立PASS前不提交本模块或进入下游开发 |
 | 2026-09-06 / M12-codex-boundary | 用户授权逐模块新只读任务；0003d独立PASS并推送fb85953；0003e首轮边界缺陷一次合并修正，56项专项/全量1280项和公开CLI假端点诊断通过 | 首轮FAIL及旧进程停止测试偶发失败原样保留；实际CLI细读文本截断属于完整Adapter待接入项，未调用真实模型 | 冻结六文件，安排全新最终只读验收；PASS后才提交并继续完整模型适配 |
 | 2026-09-06 / M12-process-and-output | 0003h独立诊断后原合同内一次修正，1394项及全新Validator PASS；58f6bc1已推送。0003i结构化结果协议1462项及另一全新Validator PASS，ca7bc86已推送；9356项私人指纹不变 | 停止确认原失败证据永久保留；JSONL Unicode/异常类型及实际CLI计数字段均有新增回归；Linux M12专项通过与旧全量失败分开记录 | 下一步完整Codex适配及输入/输出业务合同；保持VC-003，不运行真实模型/业务Provider，不把两个组件交付冒称整个M12完成 |
+| 2026-09-06 / M12-isolation-recovery | 0003k全新独立1582项PASS后推送b1be6b4；0003l测试先行、1634项及全新只读Validator PASS后推送917d183，远端逐项核对，9356项私人指纹不变 | 新恢复边界的四项测试先失败后修复；独立六进程恢复仅一个结果、零进程/网络入口通过。旧Linux全量失败与M12专项通过分开记录，无实际业务调用 | 接通完整CodexAdapter与公开能力证明、目标/历史周报输入，再完成报告/发布/调度；当前M12仍active，不把组件PASS冒称完成 |
+| 2026-09-06 / M12-codex-adapter | 薄Adapter、固定准备与公开能力接线完成；39项专项、完整1673项及全新独立Validator PASS，9356项私人指纹不变 | 首轮独立验收后补充并发检查发现准备混写，两个先失败回归后以既有实例锁修复；旧报告和失败证据保留，修改后另行全新验收；无真实模型/业务调用 | 精确提交推送本模块，再接入目标/前四份完整周报与业务输出，不宣称M12整体完成 |

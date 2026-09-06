@@ -183,6 +183,7 @@ def execute(
             stderr=subprocess.PIPE,
             start_new_session=True,
             close_fds=True,
+            umask=0o077,
             bufsize=0,
         )
     except Exception:
