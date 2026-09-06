@@ -93,7 +93,7 @@
 | M12-0001a 只读归档工具、备份清单与恢复演练 | completed | VC-003；独立 PASS，9612 文件恢复通过；Git 交付记录见下 |
 | M12-0001b 旧规则替代映射、旧入口及测试同步退役 | completed | 独立 PASS；旧入口退出，38 份旧测试继续执行，物理清理随替代模块验收进行 |
 | M12-0002 新库、已有 FIT 复制与分页/每日缺口同步 | completed | 0002a–e 独立PASS并已推送；仅内部离线功能，真实全历史同步留0006，邮件/调度留0004/0005 |
-| M12-0003 分段解析、统一细读、AI 输入隔离与可替换接口 | in_progress | 0003a–i已独立验收并推送；继续完整Codex适配、目标/历史周报及业务输入输出 |
+| M12-0003 分段解析、统一细读、AI 输入隔离与可替换接口 | in_progress | 0003a–j已独立验收并推送；继续完整Codex适配、目标/历史周报及业务输入输出 |
 | M12-0004 周报、固定计划、Markdown/PDF、Gmail/Garmin 通用发布 | pending | M12-0003 |
 | M12-0005 Python 定时与恢复、完整离线验收 | pending | M12-0004 |
 | M12-0006 历史同步、下个正常周日真实验收及切换 | pending | M12-0005；未来时点未到不得冒称完成 |
@@ -102,7 +102,7 @@
 
 ## 当前检查点
 
-- 当前焦点：M12-0003j进程原始证据持久化，继承VC-003 AC-007/003及TM-001；先把已交付监督器的有限输出同步落盘、停止未确认及零启动恢复接好，再接平台隔离。只用合成进程，不向真实模型服务发送数据，不切换正式库。
+- 当前焦点：M12-0003k子进程全局说明/Skill隔离，继承VC-003 AC-007/016及TM-001；只对子进程限制读取，不改全局配置或认证，不向真实模型服务发送数据，不切换正式库。
 - 基准：`db8a3ab7ec31c6bebe32742e785760df4650c97f`，`main`；刚完成的开发 Harness 更新属于已有工作，不覆盖。
 - 下一动作：明确实际Codex工具清单和本地配置隔离，再测试先行实现可替换模型接口与最终目标/历史周报组合，不运行真实业务模型或在线命令。
 - 等待项：0003h `blocker_type=none`、`diagnosis_status=completed`；原合同内一次修正后全新独立PASS，已消除该失败特征，历史失败及诊断不改写。`validator_availability=authorized`；完整Adapter尚未交付，后续仍逐模块全新验收。
@@ -117,8 +117,21 @@
 
 ## 验证与交付记录
 
+### M12-0003k 子进程说明与Skill隔离
+
+- 全新项目内只读任务 `01a0759b-fdf7-7e01-a7c4-27d704e1be7d`（platform-default/high）完成八字段独立验收：`contract_version=VC-003`、`overall_verdict=PASS`；`criterion_results`为AC-007/016当前组件、INV-002、TM-001及GATE-001..004通过；`blocking_findings=[]`、`scope_change_candidates=[]`。`advisories`要求后续Launcher继续连接环境核对、固定能力前检与同session监督；`unknowns`明确Linux未动态运行、真实Codex/认证/Provider及完整Adapter未验收，不将组件PASS扩大为整体交付。
+- `commands_and_evidence`：独立完整1582 passed / 192.55秒、专项53 passed / 0.30秒；Ruff/format163/mypy145、143 AST、104 JSON/93 Schema、60当前公开Markdown/53链接、6 metadata/frontmatter及13 ignore探针通过。额外macOS真实合成子进程屏蔽25个说明/Skill目标，保留公开认证占位，超时/异常退出/后代进程停止确认通过；9356项私人指纹前后不变。受审基准745cc9c、五文件清单SHA `547fea61f3be9d7fb4c7414320b8cf3c5e06d7e90f2becbbb4afabb5beb849ca`，完整私有报告SHA `998fbd74c3377cd6ce08cde9478d4f4dea8ee02ae2245238de0baf1da0f9f52d`。本段仅事实回写，VC-003和产品/测试/说明字节不变；随后按已有授权精确提交推送。
+- 最终自检1582 passed / 190.96秒；专项53项，Ruff/format163/mypy145、143 Python只读编译、104 JSON/93 Schema、99 Markdown/78链接与metadata/AI/ignore/权限/diff通过，9356项私人指纹不变。五文件冻结进入validating；后续全新只读Validator只看当前组件与VC-003，不接收旧裁决或调查者建议。
+- 测试先行29项因缺模块失败，首实现29项通过；补边界至52项时发现符号链接解析成根目录未再次校验，两项回归先失败后修复。首次完整1581项通过；核对Bubblewrap官方nodev行为后新增设备访问回归先失败，再保留原/dev挂载，完整重跑为1582项。未删除旧测试、弱化断言或跳过失败。一次mypy局部tuple推断问题以显式类型修正，未改变运行语义。
+- 仓库外实际Codex公开探针使用本模块macOS读取规则，另外限定localhost及私人读取/写入；一次启动、九次本地假Responses请求、六次工具往返，两份独特细读完整保留，重放启动/请求增量0，安装标识字节不变。私有capture SHA `9d293e77f513532e6a21f3a581065821a5303dcb16c5b215774c5f211f89ffbe`，事件SHA `989ce1fadbe792c6c4b06b30526617aae39c976b0d9f56f4a4a3707b12c1b236`；没有真实模型或业务Provider调用。该实测仅macOS，不冒称Linux或完整Adapter交付。
+- 沿用VC-003的实现切片，不增改验收合同：Host按实际home、Codex认证根和工作目录发现已知说明/Skill根，在macOS生成Seatbelt读取限制，在Linux使用已存在的Bubblewrap挂载屏蔽；缺少实际平台能力时停止，不安装软件、不回退仅靠提示词或只读标志。认证位置及原始字节不由本模块读取或复制；不改变进程session，沿用已验证的整体停止确认。
+- 先写公开合成回归，再实现；覆盖全局/父目录说明、Skill目录及符号链接目标、异常路径/平台、隔离能力缺失、作用域冲突、子进程实际拒绝和同session。Linux命令构造测试不能冒充Linux动态验收；实际Codex仍只允许仓库外合成FIT、localhost假服务和外网/私人读取护栏的公开探针。
+- 主协调串行实施，完整门后使用用户授权的全新项目内只读Validator，platform-default/high；仅传逐字合同、适用规则、当前快照，验收PASS后按AC-GIT-001提交推送。完整Adapter、周业务输入/输出及发布仍未交付。
+
 ### M12-0003j 进程原始证据持久化
 
+- 已核对Linux CI [34018191299](https://github.com/wyizhou/TrainLab/actions/runs/34018191299)：M12 portable专项通过，旧完整Test失败、后续静态门跳过；不得把专项通过称为完整Linux交付。
+- Git交付：`745cc9c09bcb6e8ce7b169c86c7da7e063f81af4`（`feat: persist bounded model process evidence and recovery`）已正常推送origin/main，ls-remote完全一致；提交后工作树干净，随后仅回写协调事实。
 - 全新项目内只读Validator `01a0757d-0397-78c0-a890-9cfbfa266ac0`（platform-default/high）正式返回PASS。固定输出：contract_version=VC-003；overall_verdict=PASS；criterion_results为AC-003/007/016当前组件、INV-002、TM-001及GATE-001..004通过，EX-001遵守；blocking_findings与scope_change_candidates为空；advisories明确仅进程证据组件，不代表完整Launcher/认证/业务发布；unknowns为Linux未动态执行、未核对远端；commands_and_evidence为独立完整1529 passed / 190.31秒、Ruff/format161/mypy143、141 Python加2stub只读编译、104 JSON/93 Schema、42当前公开Markdown/37链接/6metadata与6frontmatter及17项独立二进制/fsync/子进程探针通过，9356项私人指纹不变。
 - 受审基准ca7bc8684283970de816a7dca62f0ae5c19cda86；五文件manifest SHA `58dfb0e4cc600d424ea849378ed34cea1c7082224f232a1ab0ae82148ada6035`，完整只读报告位于仓库外，SHA `cca2aed1d1d245a999b48871e903b6369e6bac3eaf96adee34d6337d7eaf1ea8`。结束逐项源码/测试/文档SHA与权限一致；本段仅真实验收协调回写，VC-003正文SHA不变，随后按既有授权提交推送。
 - 主协调另在仓库外合成FIT＋localhost假Responses＋OS禁止外网及私人读取的环境运行一次实际Codex CLI，完整保留123632字节stdout/1716字节stderr。四次细读请求只计两项独特范围；1200与240条明细均无损，六次工具调用、九次localhost协议请求；重放启动及请求增量0。私有capture SHA `726873489a9972320a068d1b62b8cddcd7e4de19cbbc4f8c7772cf88a4f7362d`，事件SHA `d132f825efe29945adb9817a0214b584951148669e01f5c6debbe44890140f57`。这不是实际模型或Provider调用，也不替代完整平台隔离验收；9356项私人指纹再次一致。
