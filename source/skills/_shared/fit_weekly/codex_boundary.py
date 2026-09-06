@@ -16,7 +16,12 @@ from typing import Any
 from xml.etree import ElementTree
 from zoneinfo import ZoneInfo
 
-from skills._shared.fit_weekly import detail_server, storage, sync_calendar
+from skills._shared.fit_weekly import (
+    codex_output,
+    detail_server,
+    storage,
+    sync_calendar,
+)
 
 DISABLED_FEATURES = (
     "shell_tool",
@@ -243,6 +248,7 @@ def audit_initial_request(
     prompt: str,
     cwd: Path,
     model: str,
+    response_schema: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Inspect one public fake-endpoint request; never a remote PASS receipt.
 
@@ -258,7 +264,7 @@ def audit_initial_request(
         # A first request cannot reference a prior response/conversation. Only
         # these observed request options are accepted; unknown fields may carry
         # additional model input even when the three messages remain unchanged.
-        if set(body) - {
+        allowed_fields = {
             "model",
             "instructions",
             "input",
@@ -271,7 +277,13 @@ def audit_initial_request(
             "include",
             "prompt_cache_key",
             "client_metadata",
-        }:
+        }
+        if response_schema is not None:
+            allowed_fields.add("text")
+            expected_text = {"format": codex_output.response_format(response_schema)}
+            if storage.canonical(body.get("text")) != storage.canonical(expected_text):
+                raise ValueError("response_schema")
+        if set(body) - allowed_fields:
             raise ValueError("invalid")
         for key, expected in (
             ("tool_choice", "auto"),

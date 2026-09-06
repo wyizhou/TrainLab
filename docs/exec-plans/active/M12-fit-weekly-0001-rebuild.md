@@ -93,7 +93,7 @@
 | M12-0001a 只读归档工具、备份清单与恢复演练 | completed | VC-003；独立 PASS，9612 文件恢复通过；Git 交付记录见下 |
 | M12-0001b 旧规则替代映射、旧入口及测试同步退役 | completed | 独立 PASS；旧入口退出，38 份旧测试继续执行，物理清理随替代模块验收进行 |
 | M12-0002 新库、已有 FIT 复制与分页/每日缺口同步 | completed | 0002a–e 独立PASS并已推送；仅内部离线功能，真实全历史同步留0006，邮件/调度留0004/0005 |
-| M12-0003 分段解析、统一细读、AI 输入隔离与可替换接口 | in_progress | 0003h进程监督独立PASS，待Git交付；完整模型适配仍在实施 |
+| M12-0003 分段解析、统一细读、AI 输入隔离与可替换接口 | in_progress | 0003a–h已独立验收并推送；0003i接入模型结果协议，完整Adapter仍未交付 |
 | M12-0004 周报、固定计划、Markdown/PDF、Gmail/Garmin 通用发布 | pending | M12-0003 |
 | M12-0005 Python 定时与恢复、完整离线验收 | pending | M12-0004 |
 | M12-0006 历史同步、下个正常周日真实验收及切换 | pending | M12-0005；未来时点未到不得冒称完成 |
@@ -102,7 +102,7 @@
 
 ## 当前检查点
 
-- 当前焦点：M12-0003h模型子进程监督，继承VC-003 AC-007/016与TM-001；先用合成进程回归，再接公开CLI假端点，不向真实模型服务发送数据，不切换正式库。
+- 当前焦点：M12-0003i模型结果协议，继承VC-003 AC-007/003及TM-001；复用已有账本、进程监督与通用Schema检查，先固定失败测试再实现，不向真实模型服务发送数据，不切换正式库。
 - 基准：`db8a3ab7ec31c6bebe32742e785760df4650c97f`，`main`；刚完成的开发 Harness 更新属于已有工作，不覆盖。
 - 下一动作：明确实际Codex工具清单和本地配置隔离，再测试先行实现可替换模型接口与最终目标/历史周报组合，不运行真实业务模型或在线命令。
 - 等待项：0003h `blocker_type=none`、`diagnosis_status=completed`；原合同内一次修正后全新独立PASS，已消除该失败特征，历史失败及诊断不改写。`validator_availability=authorized`；完整Adapter尚未交付，后续仍逐模块全新验收。
@@ -117,8 +117,23 @@
 
 ## 验证与交付记录
 
+### M12-0003i Codex 响应与结果协议
+
+- 全新项目内只读`M12 Codex 结果协议独立验收`（01a0755e-21c6-7251-8ca1-a9887caead00，platform-default/high）返回`contract_version=VC-003`、`overall_verdict=PASS`；`criterion_results`：AC-003/007组件范围、TM-001、INV-002、GATE-001..004通过，遵守EX-001；`blocking_findings=[]`、`scope_change_candidates=[]`。
+- `commands_and_evidence`：独立1462 passed / 188.89秒，Ruff/format159/mypy141、139 AST/104 JSON/93 Schema、61公开Markdown/49链接、6metadata/AI布局及12项独立合成检查通过；9356项私人指纹前后不变，六文件/模式/VC-003摘要不变。基准58f6bc1，清单SHA `77706d3f32bcea8d0021aaad08958c83c8cfba4079f9f5f8b4b8b02519b62f10`；主协调已读取完整八字段并复核当前六文件一致。
+- `advisories/unknowns`：Linux及真实Codex/Provider未实测，公开留存样本仅作格式检查；后续完整Adapter仍需实际隔离、原始流持久化、启动诊断绑定及业务/证据校验。独立脚本首次把公开design-tokens.json误判成凭据，检查实际文件后修正临时检查方法，未改产品/测试。本段仅真实协调回写，随后执行授权提交/推送。
+- 最终完整1462 passed / 188.65秒，Ruff/format159/mypy141及全部静态门通过，9356项私人指纹再次不变。当前六文件进入validating，冻结基准58f6bc1和逐文件摘要，交全新项目内只读Code Validator，platform-default/high；输入仅VC-003、适用规则和当前结果，不传调查意见或旧裁决。尚未独立PASS、提交或推送。
+- 测试先行：新增61项，缺实现时60项失败、1项负向账本场景返回失败（不作为功能已实现证据）；初实现61通过。追加Unicode正文/有限解析深度等6项，纠正夹具的ASCII转义后4项实测失败，按JSONL仅LF分隔及专用失败类型修复；未改正确预期。公开0.147 CLI原捕获另发现cache_write_input_tokens会计字段，新增先失败后通过的回归。当前68专项+56既有边界测试共124通过。
+- 首次完整1461 passed / 189.19秒；因实际CLI字段回归随后增加一项，最终完整门重新执行，不用先前节点数替代新快照。Ruff/format159/mypy141及139 AST/104 JSON/93 Schema、97 Markdown/71链接、6metadata通过；9356项私人指纹不变。
+- 原公開Schema探针留存文件通过新检查器原样核对：首请求text.format与Host合同一致，末条结果通过，6项工具往返、2项精确启动诊断，events SHA `90b307516e1fc7f9fb724589330f258ec573d7bf01f043c1ff155def892dcda3`；只是读取既有公开样本，新进程/模型/Provider调用为0。不动态从待判的私人attempt生成诊断允许列表。
+- 当前内部交付范围：由业务Schema确定性投影wire，不改字段/required/variants；公开首请求核对实际output-schema字段与Host绑定；严格JSONL事件状态机从唯一完成轮次的末条agent_message提取结果，再交原业务校验。不裁剪围栏、不从日志反向寻找可用JSON、不把正文500当作HTTP错误。
+- 仅复用原有限正常故障范围：失败/截断/重复或跨轮事件不能覆盖成成功；MCP结果不能冒充最终回答；已确认进程停止后才解析，未知继续原AdapterInterrupted。精确且已由Host能力探针绑定的启动诊断单独记录，不一概忽略启动错误。尚不提供完整Launcher、认证、OS隔离或周报业务规则。
+- 先编写合成响应/事件/账本重放回归，再实现与完整门；全新项目内只读Validator使用VC-003和当前快照，platform-default/high。只读调查者检查已有公开样本，不承担独立验收；不重跑真实模型或业务Provider。
+
 ### M12-0003h 模型子进程监督
 
+- 提交后Linux CI [34015279217](https://github.com/wyizhou/TrainLab/actions/runs/34015279217) 的M12 portable专项通过；旧完整Test失败、后续静态门跳过。Linux专项提供本模块合成动态证据，不改变验收时未实测记录，也不把整套CI说成通过。
+- Git交付：`58f6bc1ed78bb1a460d41cdc9800da3a232bdd69`（`feat: supervise bounded model processes through session exit`）已正常推送origin/main，ls-remote完全一致，提交后工作树干净；五文件提交与受审内容一致，仅真实协调回写例外。
 - 全新项目内只读`M12 模型进程监督独立验收`（01a07544-2226-7581-b456-509c401629df，platform-default/high）正式返回`contract_version=VC-003`、`overall_verdict=PASS`；`criterion_results`：AC-007/016组件范围、TM-001恢复隐私、INV-002、EX-001和GATE-001..004适用门全部通过；`blocking_findings=[]`、`scope_change_candidates=[]`。
 - `commands_and_evidence`：独立完整1394 passed / 189.20秒，45项专项 / 8.23秒；Ruff/format157/mypy139、137 AST/104 JSON/93 Schema、61当前公开Markdown/46链接、6metadata/Skill头及AI/ignore/layout/diff通过。三项独立合成检查覆盖多层不同进程组的正常结束/超时和1MiB输入+双路精确上限，均无残留或晚到写入；9356项私人指纹前后不变。
 - 基准cfcf6eb，五文件manifest SHA `2f12e0f75d41a8d4978b7e96f0957a86022b3d85876396b57cef907554480a19`；协调者复核完整八字段报告与五文件最终SHA/模式一致，VC-003不变。`advisories/unknowns`：仅进程层而非完整Adapter，Linux动态/真实模型/Provider未测试；历史文档不作为裁决证据。静态检查初次摘要截取及猜测文件位置错误已按实际定位修正，不修改产品/测试。此处仅真实协调回写，随后执行授权提交/推送。
