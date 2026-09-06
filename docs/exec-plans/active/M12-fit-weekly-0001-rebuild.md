@@ -92,8 +92,8 @@
 | M12-0001 当前检查点：计划补充、完整代码门、隐私/范围审查、提交及推送 | completed | `0decf99` 已核对 `origin/main`；143 项公开工作检查点；不重做 M11 |
 | M12-0001a 只读归档工具、备份清单与恢复演练 | completed | VC-003；独立 PASS，9612 文件恢复通过；Git 交付记录见下 |
 | M12-0001b 旧规则替代映射、旧入口及测试同步退役 | completed | 独立 PASS；旧入口退出，38 份旧测试继续执行，物理清理随替代模块验收进行 |
-| M12-0002 新库、已有 FIT 复制与分页/每日缺口同步 | in_progress | M12-0001；当前 0002a 为独立存储/文件基础，随后接入历史索引和同步 |
-| M12-0003 分段解析、统一细读、AI 输入隔离与可替换接口 | pending | M12-0002 |
+| M12-0002 新库、已有 FIT 复制与分页/每日缺口同步 | completed | 0002a–e 独立PASS并已推送；仅内部离线功能，真实全历史同步留0006，邮件/调度留0004/0005 |
+| M12-0003 分段解析、统一细读、AI 输入隔离与可替换接口 | in_progress | M12-0002；先完成0003a纯FIT解析/分段与不可变解析落库 |
 | M12-0004 周报、固定计划、Markdown/PDF、Gmail/Garmin 通用发布 | pending | M12-0003 |
 | M12-0005 Python 定时与恢复、完整离线验收 | pending | M12-0004 |
 | M12-0006 历史同步、下个正常周日真实验收及切换 | pending | M12-0005；未来时点未到不得冒称完成 |
@@ -102,9 +102,9 @@
 
 ## 当前检查点
 
-- 当前焦点：M12-0002e内部同步编排已独立PASS，执行模块Git交付；随后进入M12-0003分段解析。仅合成输入，不切换正式库或联网。
+- 当前焦点：M12-0003a FIT解析/分段已独立PASS，执行模块Git交付；随后进入0003b受限细读。仅合成输入，不切换正式库或联网。
 - 基准：`db8a3ab7ec31c6bebe32742e785760df4650c97f`，`main`；刚完成的开发 Harness 更新属于已有工作，不覆盖。
-- 下一动作：正常提交推送已验证同步编排，然后先写FIT解析/分段失败回归；同步邮件仍由后续发布模块负责。
+- 下一动作：正常提交推送解析模块，再按AC-006先测试每周活动范围、20次预算/20分钟上限、缓存与脱敏细读；同步邮件仍由后续发布模块负责。
 - 阻塞项：无；`blocker_type=none`，`diagnosis_status=not_triggered`。
 - 未交付：解析、周报告/发布、调度和在线切换；同步编排、MCP协议适配、同步日期及分页已通过独立验收，新库及已有FIT复制已交付。
 
@@ -117,8 +117,19 @@
 
 ## 验证与交付记录
 
+### M12-0003a FIT解析与分段
+
+- 全新只读high/high `m12_fit_parse_validator` 返回当前模块PASS，无blocker；独立39项解析、完整1128 passed / 191.30秒、Ruff/format143、mypy125及全部静态门通过。额外暂停跨段/多session逆序分区、真实profile单位检查通过；9356项私人指纹不变。基准9f8fb76、八文件清单SHA `200f290547c1f2be2bb513ad3543ced12fdc0fecf9a9757e5a74ed4ec67d5cb9`，结束逐项无漂移。
+- Validator单位检查首次误用不存在的FitDataMessage.get，检查脚本退出1；改用实际frame.fields后通过，未修改产品或测试，不作为产品失败。当前PASS不涵盖细读/AI/真实运行；提交推送尚待实际核验。本段仅真实结果回写。
+- 同快照旧M9失败单项1 passed / 0.64秒；随后没有并行测试的完整复跑1128 passed / 209.54秒。未改旧测试或调用器，首次失败仍保留为根因未定的时序现象。当前冻结八文件后交全新Validator，不将自检当作独立结论。
+- 先写24项真实CRC合成FIT失败回归后实现，再补暂停跨界距离、端点计数、损坏/重复圈段、多session分区唯一绑定与存储回滚，现39项专项及219项M12通过。只持久化摘要、圈段、分段与方法，不存原始点；旧测试原字节未改，未读取私人FIT。
+- 首次完整结果为1127 passed / 1 failed（182.68秒），失败为未修改的旧M9 `test_log_budget_is_bounded_and_result_is_not_published`，`ai_process_stop_unconfirmed`；保留实测，不删除测试或调整断言。将单项确认后串行复跑同快照完整门，尚不声明全量通过。
+- Ruff/format143文件、mypy125文件、123 AST/compile、98 JSON/88 Schema、89 Markdown/52链接及静态门通过；9356项私人指纹不变。后续需全新只读high/high解析Validator，风险为时间积分、证据归属及私人字段投影；只接受VC-003、适用规则及当前结果，不继承历史裁决。
+
 ### M12-0002e FIT同步编排
 
+- 已核对同步提交Linux CI [34001692108](https://github.com/wyizhou/TrainLab/actions/runs/34001692108)：M12 portable module tests通过；旧完整Test失败、后续lint跳过，不声明Linux整体PASS。
+- Git交付：`9f8fb76cac78319dc4f9479c52b048635a919d0a`（`feat: complete resumable FIT-only sync orchestration`）已正常推送origin/main，ls-remote完全一致。
 - 全新只读high/high `m12_fit_sync_closure_validator` 返回当前模块PASS；独立59项编排/日历、180项M12、完整1089 passed / 213.29秒与全部静态门通过，9356项私人指纹不变。基准d501494、六文件清单SHA `2dd6b49d09f5626e4b8a8a387f04eb6dfcc4cc096459c856d4f7cbae0c894385`；源码和合同逐项复核不变。本段仅真实结果回写，未将旧FAIL改写。
 - 非阻断观察：合成initialize主动写Token再抛错时，初始化错误统一为session_unavailable，而退出审计失败会持久化blocked。固定实际guard禁用登录/刷新，当前没有合同内正常写入的证据；按EX-001保留观察，不据此临时扩展永久阻断要求或自动再修一轮。真实在线、Linux整套、AI/PDF/发送与M12整体仍未验收。
 - 原合同内修正完成：四项认证失败叠加中断回归先全部失败，修正后31项编排/180项M12与完整1089 passed（232.88秒）；成功页仅采用一次，较早未确认领取保留unresolved_calls。Ruff/format140/mypy122、120 AST/97 JSON/87 Schema、88 Markdown/49链接、metadata/AI/ignore/layout/diff通过；私人9356项不变。重新冻结六文件，交另一名全新只读high/high最终Validator，不提供本节历史结论作为输入。
