@@ -102,10 +102,10 @@
 
 ## 当前检查点
 
-- 当前焦点：M12-0003d单工具本地MCP桥取得全新独立PASS，当前validated、待Git交付；继承VC-003 AC-006/007的当前接口部分。仅合成输入，不切换正式库或业务联网。
+- 当前焦点：M12-0003e内部组件已独立PASS，准备模块提交；随后继续完整模型接口、细读结果交接与跨平台能力隔离，继承VC-003 AC-006/007，不向真实模型服务发送数据，不切换正式库。
 - 基准：`db8a3ab7ec31c6bebe32742e785760df4650c97f`，`main`；刚完成的开发 Harness 更新属于已有工作，不覆盖。
-- 下一动作：核对已验收六文件及协调回写后正常提交推送；再做Codex实际能力隔离及最终目标/历史周报组合，不运行真实业务模型或在线命令。
-- 等待项：本模块独立验收已完成，`validator_availability=completed`、`diagnosis_status=not_triggered`。原子Agent线程额度问题保留为历史；经用户批准的新只读任务已形成有效独立裁决，没有将平台问题冒称代码修复。
+- 下一动作：明确实际Codex工具清单和本地配置隔离，再测试先行实现可替换模型接口与最终目标/历史周报组合，不运行真实业务模型或在线命令。
+- 等待项：0003d/0003e各自独立验收已完成，完整Adapter尚未交付，`validator_availability=authorized`、`diagnosis_status=not_triggered`。用户本轮明确授权后续逐模块创建新的只读验收任务；不复用旧审查者或裁决。
 - 未交付：完整周输入、模型适配、周报告/发布、调度和在线切换；FIT解析/分段和受限细读已独立PASS，同步编排、MCP协议适配、同步日期及分页、新库和已有FIT复制已交付。
 
 ## Agent 派发
@@ -117,8 +117,32 @@
 
 ## 验证与交付记录
 
+### M12-0003e 模型入口配置与公开能力前检
+
+- 全新独立最终审查：`M12 Codex入口只读验收`，platform-default/high，`contract_version=VC-003`、`overall_verdict=PASS`，仅当前组件；当前AC-005/006/007/016、INV-002、TM-001与GATE-001..004均PASS，EX-001遵守；`blocking_findings=[]`、`scope_change_candidates=[]`。
+- `commands_and_evidence`：2026-09-06独立56 passed/0.44秒、完整1280 passed/181.14秒，Ruff/format151/mypy133、131 AST/102 JSON/91 Schema、受限54 Markdown/36链接/6 metadata及全静态门通过；额外44类合成拒绝及合法请求/3类Host路径通过。9356项私人指纹和六文件起止一致；基准fb85953，清单SHA `cea86fde01993804b03ff3aed7fdf73210cedddcc4d8317a8645f1fe603348ad`、逐字VC-003摘要不变。
+- `advisories`：细读转发截断仍是未交付完整Adapter的接入项，不作为已完成；`unknowns`：Linux Launcher、真实模型/业务Provider未验证，远端未由Validator查询。该角色临时摘要提取方法三次断言错误校正后匹配，不改代码/合同、不计产品失败；未复用首次FAIL或主协调自检作为裁决。当前仅真实协调回写，随后正常提交/推送。
+- 修正后自检：专项56项、完整1280 passed / 174.77秒；Ruff/format151、mypy133、131 AST/102 JSON/91 Schema、93 Markdown/60链接/6 metadata及全静态门通过。另建全新公开诊断目录重新经过当前实际代码和本机CLI：首请求原字节SHA `2b763ec08e985de49cecaf3747fbb44ee0c986713cce37bb102fcd253a29f528`，一次job/7次localhost请求、重复细读计1/20、命令/资源/Garmin拒绝、exit0，9356项私人指纹不变。现冻结六文件，交全新只读独立最终审查；尚未提交，不继承首轮裁决。
+- 首次独立审查（2026-09-06）：全新任务 `M12 Codex入口前检独立验收`，platform-default/high，受审基准fb85953、完整五文件清单SHA `022f22b8401b1c5e59fd4033a86ab91d999de2ec54c1c6a6907a9abd12b52d0d`、VC-003摘要不变；以下八字段为真实历史，不传给后续Validator。
+  - `contract_version`：VC-003；`overall_verdict`：FAIL，仅当前0003e。
+  - `criterion_results`：AC-005/007、TM-001、GATE-001/003当前部分FAIL；AC-006/016、INV-002、GATE-002/004适用部分PASS，EX-001边界遵守。
+  - `blocking_findings`：B-01首请求增加previous_response_id或conversation仍checked（AC-007/TM-001）；B-02辅助工具/FIT说明追加文本、环境XML处理指令仍checked（AC-005/TM-001）；B-03完整1253 passed/1 failed，旧进程停止用例抛ai_process_stop_unconfirmed（GATE-001）。
+  - `advisories`：CLI向后续请求传递细读文本时存在截断，完整Adapter需要解决；不把未交付Launcher要求扩大为本组件阻塞。完整事件中两次细读结果相同。
+  - `scope_change_candidates`：无；`unknowns`：真实模型、Linux Launcher及旧进程测试间歇失败根因未定；未将探针打印断言当作独立实测。
+  - `commands_and_evidence`：实际专项30通过、全量1253/1失败（176.18秒），同快照旧失败单项复跑1 passed/1.38秒；Ruff/format151/mypy133、131 AST/101 JSON/91 Schema、受限范围56 Markdown/36链接/6 metadata及隐私/布局/diff通过，开始结束9356项私人指纹与五文件摘要一致。未修改旧测试、代码或合同；完整门失败永久保留。
+- 原合同内合并修正一次：先新增26个回归（其中22个在旧代码确实失败，4个既有边界/合法兼容通过），目前56项专项通过。顶层请求白名单拒绝旧会话引用，完整公开工具定义绑定0.147.0能力摘要，XML处理指令不再被解析器静默丢弃；嵌套工具说明和额外选项同类入口一并覆盖。旧30项用例全部保留，夹具改为真实公开工具定义，不含请求/客户端标识；不读取测试夹具作为运行依赖，不变更VC-003或训练目标。尚未达到两种修法/三轮不收敛/合同冲突诊断门。
+- 自检完成：30项专项、完整1254 passed / 177.54秒；Ruff/format151、mypy133、131 AST/101 JSON/91 Schema、93 Markdown/60链接/6 metadata与全静态门通过，9356项私人指纹不变。当前五文件冻结，进入全新只读验收；只提供VC-003、适用规则、当前结果及公开隔离诊断，不提供历史裁决。
+- 2026-09-06用户明确回复“授权后续逐模块创建只读验收任务”。据此后续按每个模块当前冻结范围派发新任务，不继承实施历史、不修改仓库、不调用业务Provider；平台档位不支持时如实记录platform-default。
+- 实际代码端到端公开诊断：一次CLI job、7个localhost Responses请求，精确重复FIT细读只占1/20额度；未登记exec_command、任意资源URI/服务器及Garmin工具均拒绝，未产生命令标记文件。首请求通过当前检查器，CLI退出0；既有安装标记字节未变，真实模型/业务Provider/外部动作均为0。该诊断只用合成FIT，不读取正式运动数据。
+- 当前子模块只实现纯配置生成与公开假服务首请求检查，不执行Codex、不处理私人目标/历史报告、不生成周报或模型attempt。完整跨平台Launcher、Fake/Codex统一接口及结果账本仍属0003后续；不把当前组件当作AC-007整体交付。
+- 先新增29项失败回归后实施；实测CLI会trim Host instructions文件首尾空白，新增第30项失败回归后按该加载行为修正，业务Prompt仍逐字检查。此前私有诊断方法中的正则转义错误、目录级Skill禁用无效、未知user_instructions配置及首尾换行误判保留，不改写成PASS或产品业务失败。
+- 本机codex-cli 0.147.0在只连接localhost假服务、禁止真实外网及保护私人输入的条件下完成能力诊断：明确关闭其他工具后仍加载用户AGENTS/Skill目录；按完整SKILL文件禁用及子进程读取限制分别验证有效。未修改全局Skill及用户配置；CLI既有安装标记仅核对字节未变，不声称其元数据未动。正式/private9356项再次检查不变；原诊断目录保留。
+- 新配置和检查器尚在自检，未独立验证/提交。macOS诊断防护不是可部署的Linux隔离实现，不以未安装的外部依赖或仅只读沙箱声明作为能力证明。
+
 ### M12-0003d 单工具本地细读桥
 
+- 已核对该提交Linux CI [34007029047](https://github.com/wyizhou/TrainLab/actions/runs/34007029047)：M12 portable module tests通过；旧完整Test失败，后续门跳过，Linux整体尚未PASS。
+- Git交付：`fb85953985658d4ef3308fe2b826d79ac202ad82`（`feat: expose bounded FIT detail through a single local tool`）已正常推送origin/main，ls-remote完全一致。平台额度问题没有导致跳过独立验收；旧派发失败事实保留。
 - `contract_version=VC-003`；独立任务`M12 FIT细读桥独立验收`（01a0748d-a205-7152-85e2-077d8e975b57）返回`overall_verdict=PASS`。`criterion_results`：AC-003/006/007/013当前接口部分、INV-002、TM-001、GATE-001..004通过，遵守EX-001；`blocking_findings=[]`、`scope_change_candidates=[]`。`advisories/unknowns`：仅内部MCP桥，本机macOS；未验证Linux、完整模型能力、目标/历史报告、PDF、发布或在线，不宣称OS只读隔离。
 - `commands_and_evidence`：2026-09-06独立27 passed / 11.24秒、完整1224 passed / 184.85秒；Ruff/format149/mypy131、129 AST/101 JSON/91 Schema、92 Markdown/58链接/6 metadata及全静态门通过。实际原始stdio探针10类异常输入、5条禁止路线、20次额度及重放、FIT权限/字节漂移、intent后进程退出47恢复均通过；9356项私人指纹开始/结束不变。
 - 受审基准927bca4，六文件manifest SHA `50c09a453ae8056546ec3efa163b375644d564dc24fc0c204009c453637792ea`；合同摘录与VC-003原文SHA不变。主协调读取完整八字段结论，并复核六文件与审查结束摘要全部一致。平台模型档位如实为platform-default、推理high；本段仅真实结果回写，原未派发记录保留，不修改产品或测试。尚未发生的Git操作随后核验记录。
@@ -284,3 +308,4 @@
 | 2026-09-05 / M12-checkpoint | 恢复最新开发协议，落地原批准 M12 与唯一 Git 补充；319 文件私有备份恢复通过，脱敏后主协调与独立 Validator 全量 909 项通过，检查点 PASS；`0decf99` 已正常推送并核对远端 | 五处历史真实指标与四份疑似派生测试已安全处理；独立测试首次时序失败保留；现有远端 Linux CI 有旧平台依赖问题，不冒称已修复 | 回写真实 Git 结果后，继续 M12-0001 统一归档与新旧规则映射；不宣称新系统已实现 |
 | 2026-09-05 / M12-archive | 冻结 VC-003；归档器先测试后实现；22 项新增和完整 931 项通过；9612 文件归档及恢复演练完成，正式数据未变 | 无业务 Provider 调用；Linux 本机容器不可用，未自动启动 | 独立归档验证、提交/推送，然后进入退役映射 |
 | 2026-09-06 / M12-detail-and-evidence | 受限细读及本周完整活动证据独立PASS，91381c8、927bca4正常推送且远端核对；单工具桥27项、M12合计315项及全量1224项自检通过，当前代码快照保存 | 新独立Validator创建达到平台线程上限，无本模块独立裁决；旧Linux全量CI失败继续保留，M12专项通过不代表整体通过 | 保持0003d validating；恢复全新审查能力或取得独立新任务授权，独立PASS前不提交本模块或进入下游开发 |
+| 2026-09-06 / M12-codex-boundary | 用户授权逐模块新只读任务；0003d独立PASS并推送fb85953；0003e首轮边界缺陷一次合并修正，56项专项/全量1280项和公开CLI假端点诊断通过 | 首轮FAIL及旧进程停止测试偶发失败原样保留；实际CLI细读文本截断属于完整Adapter待接入项，未调用真实模型 | 冻结六文件，安排全新最终只读验收；PASS后才提交并继续完整模型适配 |
