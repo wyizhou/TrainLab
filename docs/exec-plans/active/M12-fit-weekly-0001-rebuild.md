@@ -102,7 +102,7 @@
 
 ## 当前检查点
 
-- 当前焦点：M12-0003e内部组件已独立PASS，准备模块提交；随后继续完整模型接口、细读结果交接与跨平台能力隔离，继承VC-003 AC-006/007，不向真实模型服务发送数据，不切换正式库。
+- 当前焦点：M12-0003f无损细读传输及模型正文完整性检查，继承VC-003 AC-006/007；先写回归再实现，不向真实模型服务发送数据，不切换正式库。
 - 基准：`db8a3ab7ec31c6bebe32742e785760df4650c97f`，`main`；刚完成的开发 Harness 更新属于已有工作，不覆盖。
 - 下一动作：明确实际Codex工具清单和本地配置隔离，再测试先行实现可替换模型接口与最终目标/历史周报组合，不运行真实业务模型或在线命令。
 - 等待项：0003d/0003e各自独立验收已完成，完整Adapter尚未交付，`validator_availability=authorized`、`diagnosis_status=not_triggered`。用户本轮明确授权后续逐模块创建新的只读验收任务；不复用旧审查者或裁决。
@@ -117,8 +117,23 @@
 
 ## 验证与交付记录
 
+### M12-0003f 无损细读交接
+
+- 全新项目内只读任务 `M12 FIT细读传输独立验收`（01a074f5-e8ca-7211-b13e-61460e41b734，platform-default/high）返回 `contract_version=VC-003`、`overall_verdict=PASS`，仅当前组件。`criterion_results`：AC-006/007适用部分、INV-002、TM-001及GATE-001..004通过；`blocking_findings=[]`、`scope_change_candidates=[]`，未继承旧裁决。
+- `commands_and_evidence`：独立完整1312 passed / 183.31秒，专项151 passed / 21秒；Ruff/format153/mypy135、133 AST/103 JSON/92 Schema/21引用目标、48公开Markdown/27链接、6 metadata/14 ignore及diff通过。基准aef76d8，九文件清单SHA `279ccf8017e8d85a3c7ece5c2b2db611f10e649f65b3aa855c3dd2ef8512b503`，前后SHA/模式及VC-003不变，9356项私人指纹零差异。四份实际公开正文与重新构建合成Host逐项一致；另8类损坏拒绝、5组可逆检查通过。
+- `advisories/unknowns`：公开CLI诊断含系统Skill初始化/缓存/禁止工具错误，不作为完整Launcher就绪证明；单工具输出预算不是总上下文保证；当前Linux快照、真实模型和Provider未实测。辅助定位/非必需PyYAML检查失败后用现存文件/标准库完成，未安装依赖。没有OS强制只读保障，仅执行范围约束；本段只回写真实验收结果，随后按授权提交/推送。
+- 最终自检：32项新回归、完整1312 passed / 182.44秒；Ruff/format153、mypy135、133 AST/103 JSON/92 Schema、94 Markdown/64链接/6 metadata及静态门通过。重复JSON键（含转义等价键）3项回归先失败后修正；原1280项保留，较早1309项通过不替代最终快照。本模块当前validating，准备全新项目内只读验收，尚未提交。
+- 公开合成CLI实际交接：一次job/9个localhost请求，1200秒的1秒和5秒各请求并重放；模型收到1200/240区块，逐字段可逆且Host内容SHA一致，预算仅2/20。当前解析器再次核验四份实际正文均通过，拒绝命令/资源/未知服务器/Garmin探针；真实模型及业务Provider调用为0。高重复合成样例的压缩率不是实际运动或任意20份结果的总上下文保证；完整Launcher仍待交付。
+- 新审查派发按AC-006/007、INV-002、TM-001与适用门，platform-default/high（不擅自指定平台模型）；只接逐字合同、适用规则和当前九文件快照。只读检查不建立并行开发分支，不向新审查者传旧裁决或主协调通过主张。
+- 用户2026-09-06补充：新建对话应归属TrainLab项目；经评估互不影响的任务允许并行。已在既有项目Agent中并行开展两项只读技术调查，不改受审代码、不作为Validator；实际并行开发仍须按执行协议隔离写入和集成验收，不自行改变六任务依赖。
+- 当前范围继承AC-006/007/INV-002/TM-001：保持完整FIT细读事实、20次/20分钟/1或5秒及来源绑定；新增无损列式传输、显式CLI单工具输出预算和公开请求正文交接检查。旧DetailHost与默认SDK v1结果保持不变；新模型配置启用列式输出。不得用缩短范围、降低粒度、路径链接或AI概括代替原结果。
+- 当前公开60秒/5秒例子：Host完整14966字符/12区块，CLI后续工具正文仅11986字符且不是合法JSON。调查确认并非模型消费两份重复正文；不能仅删除structuredContent或把短例子当全合同大小上限。新实现将逐字规范JSON可逆与Host内容SHA一致作为本组件交接检查；完整Launcher总上下文/实时检查仍须后续接入，不能预判所有模型都能容纳20份最大结果。
+- 本模块先新增测试：三视图/两粒度/20分钟、多session/稠密值、空或失败结果、列/默认值/来源漂移、模型文本截断与错误SHA、真实SDK可逆及重放；完成适用全量门后交全新只读Validator，不沿用前模块PASS。
+
 ### M12-0003e 模型入口配置与公开能力前检
 
+- 已核对该提交Linux CI [34010219198](https://github.com/wyizhou/TrainLab/actions/runs/34010219198)：M12 portable module tests通过，旧完整Test失败且后续门跳过；不宣称Linux整体PASS。
+- Git交付：`aef76d858ffdbca49de01ff46a865c90026361b2`（`feat: bind Codex entry configuration and offline request boundary`）已正常推送origin/main，ls-remote核对一致。
 - 全新独立最终审查：`M12 Codex入口只读验收`，platform-default/high，`contract_version=VC-003`、`overall_verdict=PASS`，仅当前组件；当前AC-005/006/007/016、INV-002、TM-001与GATE-001..004均PASS，EX-001遵守；`blocking_findings=[]`、`scope_change_candidates=[]`。
 - `commands_and_evidence`：2026-09-06独立56 passed/0.44秒、完整1280 passed/181.14秒，Ruff/format151/mypy133、131 AST/102 JSON/91 Schema、受限54 Markdown/36链接/6 metadata及全静态门通过；额外44类合成拒绝及合法请求/3类Host路径通过。9356项私人指纹和六文件起止一致；基准fb85953，清单SHA `cea86fde01993804b03ff3aed7fdf73210cedddcc4d8317a8645f1fe603348ad`、逐字VC-003摘要不变。
 - `advisories`：细读转发截断仍是未交付完整Adapter的接入项，不作为已完成；`unknowns`：Linux Launcher、真实模型/业务Provider未验证，远端未由Validator查询。该角色临时摘要提取方法三次断言错误校正后匹配，不改代码/合同、不计产品失败；未复用首次FAIL或主协调自检作为裁决。当前仅真实协调回写，随后正常提交/推送。

@@ -12,6 +12,8 @@
 配置关闭 shell、命令执行、浏览器、其他应用、子 Agent、记忆、插件和工具搜索，
 关闭网页搜索、项目说明加载和会话保存。MCP 只登记预绑定的
 [read_fit_detail](fit-detail-server.md)，沿用现有新库的范围、预算和缓存。
+新模型配置启用[无损列式传输](fit-detail-transport.md)和显式工具输出预算；不把默认截断后的
+文本视为完整证据。实际模型总上下文管理仍属于完整 Launcher。
 
 实际 Launcher 仍须使用 `--ephemeral`、`--ignore-user-config`、`--ignore-rules`、
 `--strict-config`、`--sandbox read-only`、`--json`，并采用独立的任务目录。
