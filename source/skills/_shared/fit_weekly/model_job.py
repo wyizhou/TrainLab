@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import re
 from collections.abc import Callable
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -29,6 +30,17 @@ SCHEMA_PATH = (
 
 class AdapterInterrupted(BaseException):
     """No confirmed terminal model state; never turn this into a failed receipt."""
+
+
+@dataclass(frozen=True)
+class RecoveredOutput:
+    """Host-only proof reader result; not a model-provided recovery instruction."""
+
+    output: Any = field(default=None, repr=False)
+    error_code: str | None = None
+
+
+RecoveryReader = Callable[[dict[str, Any]], RecoveredOutput | None]
 
 
 class Adapter(Protocol):
@@ -174,21 +186,20 @@ def outcome(capture: dict[str, Any] | None, calls: int) -> dict[str, Any]:
     }
 
 
-def run(
-    root: Path,
+def prepare_request(
     period_end: str,
     scope_sha256: str,
     payload: dict[str, Any],
     response_schema: dict[str, Any],
-    adapter: Adapter,
+    profile: dict[str, Any],
     *,
     validate_input: InputValidator,
     validate_result: ResultValidator,
-) -> dict[str, Any]:
+) -> tuple[dict[str, Any], jsonschema.Draft202012Validator]:
     try:
         fit_detail.period_key(period_end)
         storage.require_sha(scope_sha256)
-        profile = clone(adapter.profile)
+        profile = clone(profile)
         if (
             set(profile) != {"kind", "name", "configuration_sha256"}
             or profile["kind"] not in ("fake", "model")
@@ -209,9 +220,118 @@ def run(
             raise ValueError("input")
         validate_input(clone(request["payload"]))
         validator = schema_validator(request["response_schema"])
-        binding = sha(request)
+        return request, validator
     except Exception:
         raise ValueError("model_job_input_invalid") from None
+
+
+def checked_result(
+    request: dict[str, Any],
+    output: Any,
+    error: str | None,
+    validator: jsonschema.Draft202012Validator,
+    validate_result: ResultValidator,
+) -> dict[str, Any]:
+    if error is None:
+        try:
+            output = clone(output)
+            validator.validate(output)
+            validate_result(clone(output), clone(request["payload"]))
+        except Exception:
+            error = "model_result_invalid"
+            try:
+                output = clone(output)
+            except Exception:
+                output = None
+    return {
+        "schema_version": "fit_model_capture_v1",
+        "receipt": receipt(request, output, error),
+        "output": output,
+    }
+
+
+def run(
+    root: Path,
+    period_end: str,
+    scope_sha256: str,
+    payload: dict[str, Any],
+    response_schema: dict[str, Any],
+    adapter: Adapter,
+    *,
+    validate_input: InputValidator,
+    validate_result: ResultValidator,
+) -> dict[str, Any]:
+    return _execute(
+        root,
+        period_end,
+        scope_sha256,
+        payload,
+        response_schema,
+        adapter,
+        validate_input=validate_input,
+        validate_result=validate_result,
+        recovery=None,
+    )
+
+
+def recover(
+    root: Path,
+    period_end: str,
+    scope_sha256: str,
+    payload: dict[str, Any],
+    response_schema: dict[str, Any],
+    adapter: Adapter,
+    *,
+    validate_input: InputValidator,
+    validate_result: ResultValidator,
+    read_completed: RecoveryReader,
+) -> dict[str, Any]:
+    """No new intent or adapter invocation; only Host-local evidence recovery.
+
+    read_completed must read an already durable, confirmed-stop capture. None
+    means there is no recoverable terminal. It must not launch or contact a model.
+    This is a Host interface, never an AI tool or arbitrary result-file CLI.
+    """
+    if not callable(read_completed):
+        raise ValueError("model_recovery_reader_invalid")
+    return _execute(
+        root,
+        period_end,
+        scope_sha256,
+        payload,
+        response_schema,
+        adapter,
+        validate_input=validate_input,
+        validate_result=validate_result,
+        recovery=read_completed,
+    )
+
+
+def _execute(
+    root: Path,
+    period_end: str,
+    scope_sha256: str,
+    payload: dict[str, Any],
+    response_schema: dict[str, Any],
+    adapter: Adapter,
+    *,
+    validate_input: InputValidator,
+    validate_result: ResultValidator,
+    recovery: RecoveryReader | None,
+) -> dict[str, Any]:
+    try:
+        request, validator = prepare_request(
+            period_end,
+            scope_sha256,
+            payload,
+            response_schema,
+            adapter.profile,
+            validate_input=validate_input,
+            validate_result=validate_result,
+        )
+    except Exception:
+        raise ValueError("model_job_input_invalid") from None
+    binding = sha(request)
     host = fit_detail.DetailHost(root, period_end, scope_sha256)
     path = capture_path(root, period_end)
     key = "model-job:" + period_end
@@ -228,6 +348,8 @@ def run(
                 saved is not None or path.exists() or path.is_symlink()
             ):
                 raise ValueError("model_job_orphan_capture")
+            if previous is None and recovery is not None:
+                return outcome(None, 0)
             fit_sync.private_directory(path.parent.parent)
             fit_sync.private_directory(path.parent)
             if previous is None:
@@ -242,6 +364,26 @@ def run(
             code = "model_job_preflight_unavailable"
         raise ValueError(code) from None
     calls = 0
+    recovered: RecoveredOutput | None = None
+    if (
+        recovery is not None
+        and saved is None
+        and not path.exists()
+        and not path.is_symlink()
+    ):
+        try:
+            recovered = recovery(clone(request))
+            if recovered is not None and (
+                type(recovered) is not RecoveredOutput
+                or recovered.error_code not in (None, "model_adapter_failed")
+                or recovered.error_code is not None
+                and recovered.output is not None
+            ):
+                raise ValueError("recovery_shape")
+        except Exception:
+            return outcome(None, 0)
+        if recovered is None:
+            return outcome(None, 0)
     if previous is None:
         calls = 1
         error = None
@@ -252,22 +394,10 @@ def run(
             )
         except Exception:
             error = "model_adapter_failed"
-        else:
-            try:
-                output = clone(output)
-                validator.validate(output)
-                validate_result(clone(output), clone(request["payload"]))
-            except Exception:
-                error = "model_result_invalid"
-                try:
-                    output = clone(output)
-                except Exception:
-                    output = None
-        captured = {
-            "schema_version": "fit_model_capture_v1",
-            "receipt": receipt(request, output, error),
-            "output": output,
-        }
+    elif recovered is not None:
+        output, error = recovered.output, recovered.error_code
+    if previous is None or recovered is not None:
+        captured = checked_result(request, output, error, validator, validate_result)
         try:
             storage.atomic_file(path, storage.canonical(captured).encode())
         except Exception:
