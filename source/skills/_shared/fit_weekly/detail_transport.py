@@ -18,6 +18,7 @@ from referencing import Registry, Resource
 from skills._shared.fit_weekly import fit_detail, fit_parse, storage
 
 VERSION = "fit_detail_table_v1"
+SCHEMAS = {"fit-summary-1": VERSION, "fit-summary-2": "fit_detail_table_v2"}
 TABLE_FIELDS = {"block_defaults", "block_columns", "block_rows", "detail_sha256"}
 SCHEMA_PATH = (
     Path(__file__).resolve().parents[1] / "schemas/fit_detail_table_v1.schema.json"
@@ -52,7 +53,7 @@ def pack(body: dict[str, Any]) -> dict[str, Any]:
     columns = [key for key in columns if key not in defaults]
     return {
         **{k: v for k, v in body.items() if k != "blocks"},
-        "schema_version": VERSION,
+        "schema_version": SCHEMAS[body["parser_version"]],
         "detail_sha256": storage.digest(storage.canonical(body).encode()),
         "block_defaults": defaults,
         "block_columns": columns,
@@ -62,16 +63,26 @@ def pack(body: dict[str, Any]) -> dict[str, Any]:
 
 def unpack(table: Any) -> dict[str, Any]:
     try:
+        version = fit_parse.require_parser_version(table.get("parser_version", ""))
         registry: Registry = Registry()
         for uri, path in (
-            ("urn:trainlab:fit_detail_v1", fit_detail.SCHEMA_PATH),
-            ("urn:trainlab:fit_activity_v1", fit_parse.SCHEMA_PATH),
+            (
+                "urn:trainlab:" + fit_detail.SCHEMAS[version],
+                fit_detail.schema_path(version),
+            ),
+            (
+                "urn:trainlab:" + fit_parse.SCHEMAS[version],
+                fit_parse.schema_path(version),
+            ),
         ):
             registry = registry.with_resource(
                 uri, Resource.from_contents(json.loads(path.read_text()))
             )
         jsonschema.Draft202012Validator(
-            json.loads(SCHEMA_PATH.read_text()), registry=registry
+            json.loads(
+                SCHEMA_PATH.with_name(f"{SCHEMAS[version]}.schema.json").read_text()
+            ),
+            registry=registry,
         ).validate(table)
         columns, defaults = table["block_columns"], table["block_defaults"]
         if set(columns) & set(defaults):
@@ -95,7 +106,7 @@ def unpack(table: Any) -> dict[str, Any]:
             blocks.append(block)
         body = {
             **{k: v for k, v in table.items() if k not in TABLE_FIELDS},
-            "schema_version": "fit_detail_v1",
+            "schema_version": fit_detail.SCHEMAS[version],
             "blocks": blocks,
         }
         # Full original Schema, then canonical repacking: this rejects unknown

@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Rows overlay block_defaults according to block_columns. Dot-separated column names reconstruct nested keys. All original facts are retained; decoder checks original detail Schema and canonical SHA.",
+  "type": "object",
+  "properties": {
+    "parser_version": {
+      "$ref": "urn:trainlab:fit_detail_v2#/properties/parser_version"
+    },
+    "representation": {
+      "$ref": "urn:trainlab:fit_detail_v2#/properties/representation"
+    },
+    "scope_sha256": {
+      "$ref": "urn:trainlab:fit_detail_v2#/properties/scope_sha256"
+    },
+    "request_sha256": {
+      "$ref": "urn:trainlab:fit_detail_v2#/properties/request_sha256"
+    },
+    "fit_sha256": {
+      "$ref": "urn:trainlab:fit_detail_v2#/properties/fit_sha256"
+    },
+    "activity_ref": {
+      "$ref": "urn:trainlab:fit_detail_v2#/properties/activity_ref"
+    },
+    "view": {
+      "$ref": "urn:trainlab:fit_detail_v2#/properties/view"
+    },
+    "start_offset_seconds": {
+      "$ref": "urn:trainlab:fit_detail_v2#/properties/start_offset_seconds"
+    },
+    "end_offset_seconds": {
+      "$ref": "urn:trainlab:fit_detail_v2#/properties/end_offset_seconds"
+    },
+    "resolution_seconds": {
+      "$ref": "urn:trainlab:fit_detail_v2#/properties/resolution_seconds"
+    },
+    "status": {
+      "$ref": "urn:trainlab:fit_detail_v2#/properties/status"
+    },
+    "error_code": {
+      "$ref": "urn:trainlab:fit_detail_v2#/properties/error_code"
+    },
+    "provider_calls": {
+      "$ref": "urn:trainlab:fit_detail_v2#/properties/provider_calls"
+    },
+    "schema_version": {
+      "type": "string",
+      "const": "fit_detail_table_v2"
+    },
+    "detail_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "block_defaults": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/scalar"
+      },
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*$"
+      }
+    },
+    "block_columns": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*$"
+      },
+      "uniqueItems": true
+    },
+    "block_rows": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/scalar"
+        }
+      }
+    }
+  },
+  "required": [
+    "parser_version",
+    "representation",
+    "scope_sha256",
+    "request_sha256",
+    "fit_sha256",
+    "activity_ref",
+    "view",
+    "start_offset_seconds",
+    "end_offset_seconds",
+    "resolution_seconds",
+    "status",
+    "error_code",
+    "provider_calls",
+    "schema_version",
+    "detail_sha256",
+    "block_defaults",
+    "block_columns",
+    "block_rows"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "scalar": {
+      "type": [
+        "number",
+        "string",
+        "boolean",
+        "null"
+      ]
+    }
+  }
+}

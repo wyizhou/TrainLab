@@ -61,7 +61,10 @@ NEUTRAL_TOOLS = frozenset({"update_plan", "request_user_input"})
 # Public codex-cli 0.147.0 offline probe, sorted by tool name. This binds every
 # description and nested parameter, not merely the names. CLI drift requires a
 # new public capability review; runtime never loads a test fixture.
-TOOL_SURFACE_SHA256 = "3c89c7c9bb62202af88d4966ce3869b33ccf28824c77f9c8d5f35ee957eb1608"
+LEGACY_TOOL_SURFACE_SHA256 = (
+    "3c89c7c9bb62202af88d4966ce3869b33ccf28824c77f9c8d5f35ee957eb1608"
+)
+TOOL_SURFACE_SHA256 = "5ebf0a3762ea0f7710cdeaefcd7476f8b30a7f4a9ebbda04cdbac093f16c5011"
 PERMISSIONS_TEXT = (
     "<permissions instructions>\n"
     "Filesystem sandboxing defines which files can be read or written. "
@@ -138,7 +141,12 @@ def configuration_arguments(
     ]
 
 
-def require_tool_surface(tools: Any) -> None:
+def require_tool_surface(tools: Any, *, expected_sha256: str | None = None) -> None:
+    expected_sha256 = (
+        TOOL_SURFACE_SHA256 if expected_sha256 is None else expected_sha256
+    )
+    if expected_sha256 not in {LEGACY_TOOL_SURFACE_SHA256, TOOL_SURFACE_SHA256}:
+        raise ValueError("codex_capabilities_invalid")
     if not isinstance(tools, list) or len(tools) != 6:
         raise ValueError("codex_capabilities_invalid")
     found = set()
@@ -195,7 +203,7 @@ def require_tool_surface(tools: Any) -> None:
     if found != DISCOVERY_TOOLS | NEUTRAL_TOOLS | {"mcp__fit"}:
         raise ValueError("codex_capabilities_invalid")
     canonical = storage.canonical(sorted(tools, key=lambda t: t["name"]))
-    if storage.digest(canonical.encode()) != TOOL_SURFACE_SHA256:
+    if storage.digest(canonical.encode()) != expected_sha256:
         raise ValueError("codex_capabilities_invalid")
 
 
@@ -249,6 +257,7 @@ def audit_initial_request(
     cwd: Path,
     model: str,
     response_schema: dict[str, Any] | None = None,
+    tool_surface_sha256: str | None = None,
 ) -> dict[str, Any]:
     """Inspect one public fake-endpoint request; never a remote PASS receipt.
 
@@ -257,7 +266,7 @@ def audit_initial_request(
     that refusal and reject unknown built-ins, not infer it from names alone.
     """
     try:
-        require_tool_surface(body["tools"])
+        require_tool_surface(body["tools"], expected_sha256=tool_surface_sha256)
     except Exception:
         raise ValueError("codex_capabilities_invalid") from None
     try:

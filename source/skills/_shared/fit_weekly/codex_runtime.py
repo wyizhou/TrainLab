@@ -15,6 +15,7 @@ from skills._shared.fit_weekly import (
     codex_boundary,
     codex_isolation,
     model_job,
+    runtime_resources,
     storage,
 )
 
@@ -45,18 +46,11 @@ class Runtime:
                 or len(self.prompt_prefix.encode()) > 131072
             ):
                 raise ValueError("settings")
-            # Product code only; neither runtime tests nor private source/state
-            # are dependencies of a model capability identity.
+            # Bind only actual current code/contract dependencies. Archives,
+            # tests and retired daily resources never influence this identity.
             folder = self.source / "skills/_shared/fit_weekly"
-            paths = sorted(folder.glob("*.py"))
-            paths.extend((self.source / "requirements.txt",))
-            paths.extend(
-                sorted((self.source / "skills/_shared/schemas").glob("*.json"))
-            )
-            paths.append(
-                self.source / "skills/_shared/scripts/structured_outputs_validation.py"
-            )
-            if len(paths) < 5 or folder.resolve() != Path(__file__).resolve().parent:
+            paths = runtime_resources.files(self.source)
+            if folder.resolve() != Path(__file__).resolve().parent:
                 raise ValueError("source")
             source_hash = model_job.sha(
                 {
@@ -65,7 +59,7 @@ class Runtime:
                 }
             )
             return {
-                "version": "fit-codex-runtime-1",
+                "version": "fit-codex-runtime-2",
                 "platform": platform.system(),
                 "isolation": codex_isolation.VERSION,
                 "executable_sha256": storage.digest(self.executable.read_bytes()),

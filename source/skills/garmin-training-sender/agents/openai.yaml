@@ -1,4 +1,4 @@
 interface:
   display_name: "Garmin Training Sender"
   short_description: "Prepare owned Garmin GTS workout actions"
-  default_prompt: "Use $garmin-training-sender to validate a TrainLab GTS workout action plan without sending it."
+  default_prompt: "Use $garmin-training-sender to inspect the current owned-workout publication contract without Garmin calls."

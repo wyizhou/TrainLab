@@ -1,50 +1,18 @@
 ---
 name: weekly-fitness-summary
-description: Summarize a completed running and climbing week from SQLite daily outputs and bounded raw evidence, including recovery, load, pacing and next-week considerations. Use inside weekly coaching when trend evidence is needed.
+description: Inspect all-sport weekly FIT evidence, full successful M12 report history and bounded technical details for a running-focused weekly review. Never depend on daily health reports.
 ---
 
-# Weekly Fitness Summary
+# 每周运动证据与技术总结
 
-Read only the seven current daily outputs and up to four previous weekly outputs by default. Use raw-file
-parsing only for a missing summary, a conflict or a specifically requested FIT detail. Do not call Garmin,
-read Gmail or create a second activity-summary dependency.
+使用[周证据](../../docs/fit-weekly-evidence.md)、[周输入](../../docs/weekly-context.md)和[受限细读](../../docs/fit-detail.md)。本Skill不建立第二个模型任务或重新调用Provider。
 
-For Coaching Utility v2 this fallback is disabled: read exactly seven v2 daily outputs and at most four v2
-weekly outputs, and never read raw. Missing or conflicting evidence must remain blocked or explicitly uncertain.
+- 本周全部实际运动都要保留，包括计划外运动；最多四份新库中可验证的完整成功M12周报，不从旧M11报告充数。
+- 周期按香港前后两次周日15:00半开窗口、活动结束时间归属；活动清单、统计和下周日期由Host提供。
+- 跑步Easy/未知2分钟摘要，明确SOS保留work/recovery圈段、连续主训练1分钟，其他运动5分钟。暂停、缺口、覆盖率不能藏在均值里。
+- 需要细节时，仅请求已冻结活动及允许视图；每周20次、单次20分钟，相同请求缓存，不获得原FIT字节、任意路径或SQL。
+- 最多三项重点跑步技术复盘必须说明证据、方法及局限；无法证明间歇结构、因果关系或攀岩强度时明确未知。
+- GPS、路线、地点和活动名称允许在真实来源闭合时进入选定AI，仍为私人资料；不从GPS推断天气或把两端点当完整路线。
+- 周报告保留全部运动、其他运动影响、简短计划实际对比及固定下周跑步计划。无健康API、每日AI、日报前置或原始目录回退。
 
-Produce a compact Chinese JSON/text review with completed running, climbing and rest counts, load and recovery
-observations, uncertainty disclosures, and source output IDs/SHA-256 for the coaching Skill.
-
-For Coaching Utility v2, the compact review must still contain a decision-useful health summary, an activity
-and load summary, and three to five explicit observation→meaning→action insights. It must not derive heart-rate
-zones, target BPM, maximum heart rate, threshold or Z1–Z5. Observed heart-rate facts may be cited with lineage.
-The next-week plan uses RPE as its primary intensity contract and follows A-015 SOS and hard-load spacing rules.
-
-For A-018 content-first v4, consume exactly seven complete daily observations rather than the compressed v2
-load totals. Include every planned and unplanned activity, then keep plan comparison secondary. At most three
-eligible running activities receive detailed FIT analysis; all others remain in the complete activity inventory.
-Every derived metric carries its frozen method, exclusions, coverage, confidence, evidence and limitations.
-Each metric reference must bind the same activity ID, raw ID, raw SHA and metric code as its activity; evidence
-from one activity cannot support a finding about another. The seven health days each contain exactly six unique
-three-state facts (`available`, `missing`, `insufficient_data`) and the weekly Skill must preserve those states.
-Provider session heart-rate-zone durations may be described as historical distribution under A-016, but may not
-define future training zones. Climbing intensity remains unknown unless a Provider field or user RPE supports it.
-The weekly model receives the user goal only as the Host-parsed `training_goal_v1` business object; it never
-receives goal Markdown, a project-relative path, an absolute path, or a filename.
-VC-006 also binds the public goal template and weekly prompt template to repository-owned SHA-256 values;
-input drift or a frozen privacy-matrix violation must stop before pending intent creation with zero model calls.
-The next-week plan is fixed and contains no downgrade or alternative course; daily runs cannot rewrite it. This
-v4 section overrides the introductory raw fallback: v4 weekly execution must not open or parse any raw file,
-even when an observation is missing, conflicting or lacks a requested FIT detail. It must block or disclose the
-bounded uncertainty instead.
-
-Under VC-010 the model decision contains seven named day slots but no dates or periods. Host mapping is the only
-source of the final activity/sleep/plan periods and course dates. Model prose does not repeat numeric BPM; the
-Reader may display historical RHR and completed-activity average/maximum heart rate only from validated evidence
-with date and raw lineage. Course and planning text remains free of BPM and heart-rate-zone prescriptions.
-The weekly Prompt's only machine-format description is its canonical Schema-derived semantics block. Builder and
-Runner both reject Prompt/business/wire/Host semantic drift before creating an attempt.
-
-Run `scripts/select_history.py --database PATH --week-ending YYYY-MM-DD` to select the bounded history.
-The selected evidence is also appended as a `bounded_evidence` output in SQLite; it never changes raw
-files, facts, external systems or prior output revisions.
+输入/解析基础已实现；完整教练结果合同仍按当前M12计划交付，不能把证据冻结成功宣称为周报已完成。

@@ -20,7 +20,7 @@ def module():
 
 def packet():
     tools = json.loads(
-        (SOURCE / "tests/code/fixtures/m12_codex_cli_tools.json").read_text()
+        (SOURCE / "tests/code/fixtures/m12_codex_cli_tools_v2.json").read_text()
     )
     tools.sort(key=lambda t: (t["name"] == "mcp__fit", t["name"]))
     text = (

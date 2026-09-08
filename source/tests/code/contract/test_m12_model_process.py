@@ -10,6 +10,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -49,6 +50,44 @@ def test_pipes_are_drained_while_stdin_is_sent(tmp_path: Path) -> None:
     assert result.stdout == b"x" * 200_000 + b"p" * 200_000
     assert result.stderr == b"y" * 200_000
     assert result.input_bytes == 200_000 and result.process_stopped
+
+
+def test_process_launch_time_is_included_in_deadline(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    supervisor = module()
+    real_popen = subprocess.Popen
+    monotonic = time.monotonic
+    offset = 0.0
+    children = []
+
+    def launch(argv, **kwargs):
+        nonlocal offset
+        child = real_popen(argv, **kwargs)
+        if argv[0] == sys.executable:
+            children.append(child)
+            # The real child exists. Advance only the supervisor's private
+            # clock to represent a finite slow launch, not a hung OS.
+            offset += 31.0
+        return child
+
+    monkeypatch.setattr(subprocess, "Popen", launch)
+    monkeypatch.setattr(
+        supervisor,
+        "time",
+        SimpleNamespace(monotonic=lambda: monotonic() + offset, sleep=time.sleep),
+    )
+    result = execute(
+        tmp_path,
+        "import sys; sys.stdin.buffer.read(); print('finished')",
+        timeout=30,
+        stop_timeout=5,
+    )
+    assert len(children) == 1
+    assert children[0].poll() is not None
+    assert result.error_code == "process_timeout"
+    assert result.process_stopped and result.input_bytes == 0
+    assert result.stdout == b""
 
 
 @pytest.mark.parametrize(

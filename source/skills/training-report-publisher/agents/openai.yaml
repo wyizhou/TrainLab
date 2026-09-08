@@ -1,4 +1,4 @@
 interface:
   display_name: "TrainLab Training Report Publisher"
-  short_description: "Render validated training reports for email or Sites"
-  default_prompt: "Use $training-report-publisher to render a validated TrainLab daily or weekly report."
+  short_description: "Prepare consistent weekly Markdown and PDF outputs"
+  default_prompt: "Use $training-report-publisher to inspect the M12 Markdown and PDF contract and current implementation status."

@@ -43,7 +43,7 @@ def test_twenty_minute_lossless_round_trip_and_cache(tmp_path, view, resolution)
     assert module().unpack(packed) == original == before
     assert packed == module().pack(host.read(request))
     assert host.usage()["requests"] == 1
-    assert packed["schema_version"] == "fit_detail_table_v1"
+    assert packed["schema_version"] == "fit_detail_table_v2"
     assert len(packed["block_rows"]) == len(original["blocks"])
     if view == "series":
         assert len(original["blocks"]) == 1200 // resolution

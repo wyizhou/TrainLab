@@ -87,6 +87,9 @@ def answer(
         return failure(code if code in SAFE_ERRORS else "fit_detail_unavailable")
 
 
+TOOL_DESCRIPTION = "Read a pre-bound weekly activity summary, laps or time-weighted series. Only supplied activity references are accepted. Offsets are seconds from activity start; start < end, range <= 1200 seconds, resolution 1 or 5. At most 20 distinct requests per week; identical requests reuse results. Authorized sport location is available when recorded. GPS endpoints are actual timestamped fixes, not averaged or interpolated, and are not the whole route. No raw FIT bytes, credentials, arbitrary files, SQL or commands. Sport bins are aggregates, not invented device samples."
+
+
 def create_server(host: fit_detail.DetailHost, *, compact: bool = False) -> Server:
     server: Server = Server("TrainLab FIT Detail", version="1")
 
@@ -95,14 +98,7 @@ def create_server(host: fit_detail.DetailHost, *, compact: bool = False) -> Serv
         return [
             types.Tool(
                 name=TOOL,
-                description=(
-                    "Read a pre-bound weekly activity summary, laps or time-weighted series. "
-                    "Only supplied activity references are accepted. Offsets are seconds from "
-                    "activity start; start < end, range <= 1200 seconds, resolution 1 or 5. "
-                    "At most 20 distinct requests per week; identical requests reuse results. "
-                    "No raw FIT bytes, GPS, activity names, files, SQL or commands. "
-                    "Fine bins are aggregates, not invented device samples."
-                ),
+                description=TOOL_DESCRIPTION,
                 inputSchema=json.loads(SCHEMA_PATH.read_text()),
                 annotations=types.ToolAnnotations(
                     readOnlyHint=False,

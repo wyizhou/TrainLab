@@ -57,7 +57,9 @@ def test_scope_and_request_replay_are_identical_and_zero_increment(tmp_path) -> 
     host = module().DetailHost(root, end, scope["scope_sha256"])
     result = host.read(request())
     assert result["status"] == "available" and result["provider_calls"] == 0
-    assert result["representation"] == "time_weighted_bins_not_raw_samples"
+    assert (
+        result["representation"] == "time_weighted_bins_with_actual_location_endpoints"
+    )
     assert len(result["blocks"]) == 12
     assert result["fit_sha256"] == members[0]["fit_sha256"]
     before = (root / "trainlab-fit.db").read_bytes()
@@ -77,9 +79,6 @@ def test_all_views_use_same_scope_and_sanitized_projection(tmp_path, view) -> No
     text = json.dumps(result)
     for fragment in [
         str(root),
-        "position_lat",
-        "latitude",
-        "longitude",
         "serial_number",
         "input.fit",
     ]:
@@ -259,7 +258,9 @@ def test_one_second_view_discloses_real_sample_count(tmp_path) -> None:
     statistics = result["blocks"][0]["statistics"]
     assert statistics["sample_count"] == 0
     assert statistics["metrics"]["heart_rate_bpm"]["covered_seconds"] == 1
-    assert result["representation"] == "time_weighted_bins_not_raw_samples"
+    assert (
+        result["representation"] == "time_weighted_bins_with_actual_location_endpoints"
+    )
 
 
 def test_single_week_scope_member_order_is_irrelevant(tmp_path) -> None:

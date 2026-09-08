@@ -69,6 +69,7 @@ def validate(
             cwd=Path(proof["cwd"]),
             model=identity["model"],
             response_schema=SCHEMA,
+            tool_surface_sha256=identity["tool_surface_sha256"],
         )
         messages = tuple(proof["startup_messages"])
         if not isinstance(proof["startup_messages"], list):

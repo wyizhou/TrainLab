@@ -407,14 +407,29 @@ def _candidate_sidecar_fingerprint(candidate_db: Path) -> dict[str, object]:
 
 
 def _atomic_swap(first: Path, second: Path) -> None:
-    """Atomically exchange two files on Darwin; fail closed if unavailable."""
+    """Use one native atomic exchange; never fall back to staged renames."""
 
-    renamex = getattr(ctypes.CDLL(None, use_errno=True), "renamex_np", None)
-    if renamex is None:
-        raise ValueError("candidate_atomic_swap_unavailable")
-    renamex.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_uint]
-    renamex.restype = ctypes.c_int
-    if renamex(os.fsencode(first), os.fsencode(second), RENAME_SWAP) != 0:
+    library = ctypes.CDLL(None, use_errno=True)
+    renamex = getattr(library, "renamex_np", None)
+    if renamex is not None:
+        renamex.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_uint]
+        renamex.restype = ctypes.c_int
+        result = renamex(os.fsencode(first), os.fsencode(second), RENAME_SWAP)
+    else:
+        renameat2 = getattr(library, "renameat2", None)
+        if renameat2 is None:
+            raise ValueError("candidate_atomic_swap_unavailable")
+        renameat2.argtypes = [
+            ctypes.c_int,
+            ctypes.c_char_p,
+            ctypes.c_int,
+            ctypes.c_char_p,
+            ctypes.c_uint,
+        ]
+        renameat2.restype = ctypes.c_int
+        # Linux AT_FDCWD and RENAME_EXCHANGE; both endpoints must exist.
+        result = renameat2(-100, os.fsencode(first), -100, os.fsencode(second), 2)
+    if result != 0:
         raise ValueError("candidate_atomic_swap_failed")
 
 

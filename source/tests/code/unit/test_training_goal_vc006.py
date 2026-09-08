@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import pytest
 
+from skills._shared.fit_weekly.storage import canonical as canonical_json
 from skills._shared.scripts.training_goal_v1 import (
     TrainingGoalContractError,
     parse_training_goal_v1,
 )
-from skills._shared.state import canonical_json
 
 
 def _goal(intensity: str = "3/5，平衡推进") -> str:

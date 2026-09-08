@@ -1,4 +1,4 @@
 interface:
   display_name: "Garmin Sync"
-  short_description: "Plan bounded Garmin raw synchronization"
-  default_prompt: "Use $garmin-sync to plan a bounded TrainLab daily raw sync without provider calls."
+  short_description: "Inspect bounded FIT-only activity synchronization"
+  default_prompt: "Use $garmin-sync to inspect the current FIT-only sync scope and budget without provider calls."

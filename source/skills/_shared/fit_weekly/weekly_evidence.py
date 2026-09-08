@@ -20,6 +20,7 @@ from skills._shared.fit_weekly import (
     fit_detail,
     fit_parse,
     fit_sync,
+    garmin_fit,
     storage,
     sync_calendar,
 )
@@ -27,6 +28,10 @@ from skills._shared.fit_weekly import (
 SCHEMA_PATH = (
     Path(__file__).resolve().parents[1] / "schemas/fit_weekly_evidence_v1.schema.json"
 )
+SCHEMAS = {
+    "fit-summary-1": "fit_weekly_evidence_v1",
+    "fit-summary-2": "fit_weekly_evidence_v2",
+}
 
 
 def content_sha(value: dict[str, Any]) -> str:
@@ -143,13 +148,18 @@ def completed_sync(
 
 
 def validate(body: dict[str, Any]) -> None:
-    resource = Resource.from_contents(json.loads(fit_parse.SCHEMA_PATH.read_text()))
+    version = fit_parse.require_parser_version(body.get("parser_version", ""))
+    resource = Resource.from_contents(
+        json.loads(fit_parse.schema_path(version).read_text())
+    )
     registry: Registry = Registry().with_resource(
-        "urn:trainlab:fit_activity_v1", resource
+        "urn:trainlab:" + fit_parse.SCHEMAS[version], resource
     )
     try:
         jsonschema.Draft202012Validator(
-            json.loads(SCHEMA_PATH.read_text()),
+            json.loads(
+                SCHEMA_PATH.with_name(f"{SCHEMAS[version]}.schema.json").read_text()
+            ),
             registry=registry,
             format_checker=jsonschema.FormatChecker(),
         ).validate(body)
@@ -182,6 +192,96 @@ def validate(body: dict[str, Any]) -> None:
         raise ValueError("weekly_evidence_invalid") from None
 
 
+def missing_name() -> dict[str, Any]:
+    return {"status": "missing", "value": None, "source": None}
+
+
+def activity_names(db: sqlite3.Connection, root: Path, job: str) -> dict[str, Any]:
+    """Project only names from captures matching the accepted inventory pages."""
+    request = fit_sync.document(
+        db, "fit-sync:" + storage.digest(job.encode()) + ":request"
+    )
+    if request is None:
+        raise ValueError("weekly_name_source_invalid")
+    data = request["request"]
+    spec = fit_sync.SyncSpec(
+        inventory=sync_calendar.InventoryRequest(**data["inventory"]),
+        **{k: v for k, v in data.items() if k != "inventory"},
+    )
+    spec.validate()
+    journal = fit_sync.Journal(db, root, spec)
+    rows = db.execute(
+        "SELECT c.request_json,r.content_json,r.content_sha256 FROM sync_calls c JOIN sync_results r USING(job_key,ordinal) WHERE c.job_key=? AND r.status='page' ORDER BY c.page",
+        (job,),
+    ).fetchall()
+    names: dict[str, Any] = {}
+    for row in rows:
+        args = json.loads(row[0])
+        accepted = json.loads(row[1])
+        cached = journal.cached("inventory", args)
+        if (
+            cached is None
+            or storage.digest(row[1].encode()) != row[2]
+            or cached["value"] != accepted
+        ):
+            raise ValueError("weekly_name_source_invalid")
+        intent = cached["intent"]
+        if intent["tool"] != "get_activities_by_date" or intent["job_key"] != job:
+            raise ValueError("weekly_name_source_invalid")
+        raw_path = journal.directory(intent) / "response.mcp"
+        storage.private_entry(raw_path, nonempty=True)
+        raw = raw_path.read_bytes()
+        projected = garmin_fit.inventory_page(
+            raw, args["start_date"], args["end_date"], args["page"], args["page_size"]
+        )
+        if projected != accepted:
+            raise ValueError("weekly_name_source_invalid")
+        for index, item in enumerate(garmin_fit.strict_object(raw)["activities"]):
+            ref = str(item["id"])
+            if ref in names:
+                raise ValueError("weekly_name_source_invalid")
+            value = item.get("name")
+            status = (
+                "available"
+                if isinstance(value, str) and value.strip()
+                else "missing"
+                if value is None or isinstance(value, str)
+                else "insufficient_data"
+            )
+            names[ref] = {
+                "status": status,
+                "value": value if status == "available" else None,
+                "source": {
+                    "kind": "garmin_mcp_inventory",
+                    "field": "activities[].name",
+                    "capture_sha256": storage.digest(raw),
+                    "intent_sha256": content_sha(intent),
+                    "page": args["page"],
+                    "item_index": index,
+                },
+            }
+    return names
+
+
+def verify_name_sources(
+    db: sqlite3.Connection, root: Path, body: dict[str, Any]
+) -> None:
+    if body["parser_version"] != "fit-summary-2":
+        return
+    _, sources = completed_sync(
+        db,
+        root,
+        body["sources"]["sync_job_key"],
+        sync_calendar.weekly_slot(body["period_end_utc"]),
+    )
+    if body["sources"] != sources:
+        raise ValueError("weekly_name_source_invalid")
+    names = activity_names(db, root, sources["sync_job_key"])
+    for source in [*body["activity_sources"], *body["unplaced_no_fit"]]:
+        if source["activity_name"] != names.get(source["activity_ref"], missing_name()):
+            raise ValueError("weekly_name_source_invalid")
+
+
 def freeze(root: Path, period_end: str, sync_job_key: str) -> dict[str, Any]:
     _, slot = fit_detail.period_key(period_end)
     if not isinstance(sync_job_key, str):
@@ -195,16 +295,26 @@ def freeze(root: Path, period_end: str, sync_job_key: str) -> dict[str, Any]:
             validate(body)
             if old[0] != content_sha(body) or body["sources"] != sources:
                 raise ValueError("weekly_evidence_frozen_conflict")
+            verify_name_sources(db, root, body)
             # Only the original chosen FITs are adopted on replay. New arrivals
             # cannot rewrite this freeze, but source drift must still stop it.
             for activity in body["activities"]:
                 parsed = fit_parse.parse_registered(
-                    db, root, activity["activity_ref"], activity["fit_sha256"]
+                    db,
+                    root,
+                    activity["activity_ref"],
+                    activity["fit_sha256"],
+                    parser_version=body["parser_version"],
                 )
                 if parsed != activity:
                     raise ValueError("weekly_evidence_source_drift")
             return body
         storage.verify_fit_closure(db, root)
+        names = (
+            activity_names(db, root, sync_job_key)
+            if fit_parse.VERSION == "fit-summary-2"
+            else None
+        )
         members = {m["activity_ref"]: m for m in done["members"]}
         rows = db.execute(
             "SELECT activity_ref,fit_sha256 FROM activity_fits ORDER BY activity_ref,fit_sha256"
@@ -232,6 +342,11 @@ def freeze(root: Path, period_end: str, sync_job_key: str) -> dict[str, Any]:
                     "inventory_membership": "current_sync"
                     if member is not None
                     else "registered_fit_only",
+                    **(
+                        {"activity_name": names.get(ref, missing_name())}
+                        if names is not None
+                        else {}
+                    ),
                 }
             )
         ordered = sorted(
@@ -247,12 +362,17 @@ def freeze(root: Path, period_end: str, sync_job_key: str) -> dict[str, Any]:
                 "activity_ref": m["activity_ref"],
                 "inventory_date": m["activity_date"],
                 "reason": "provider_no_fit_end_unknown",
+                **(
+                    {"activity_name": names.get(m["activity_ref"], missing_name())}
+                    if names is not None
+                    else {}
+                ),
             }
             for m in done["members"]
             if m["status"] == "no_fit"
         ]
         body = {
-            "schema_version": "fit_weekly_evidence_v1",
+            "schema_version": SCHEMAS[fit_parse.VERSION],
             "parser_version": fit_parse.VERSION,
             "period_start_utc": slot["start_utc"],
             "period_end_utc": period_end,

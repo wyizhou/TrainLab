@@ -21,6 +21,13 @@ from skills._shared.fit_weekly import fit_parse, storage, sync_calendar
 MAX_REQUESTS = 20
 MAX_SECONDS = 1200
 SCHEMA_PATH = Path(__file__).resolve().parents[1] / "schemas/fit_detail_v1.schema.json"
+SCHEMAS = {"fit-summary-1": "fit_detail_v1", "fit-summary-2": "fit_detail_v2"}
+
+
+def schema_path(version: str) -> Path:
+    return SCHEMA_PATH.with_name(
+        f"{SCHEMAS[fit_parse.require_parser_version(version)]}.schema.json"
+    )
 
 
 def period_key(end: str) -> tuple[str, dict[str, Any]]:
@@ -70,7 +77,11 @@ def fit_bytes(db: sqlite3.Connection, root: Path, ref: str, sha: str) -> bytes:
 
 
 def freeze_scope(
-    root: Path, period_end: str, members: list[dict[str, str]]
+    root: Path,
+    period_end: str,
+    members: list[dict[str, str]],
+    *,
+    parser_version: str | None = None,
 ) -> dict[str, Any]:
     key, slot = period_key(period_end)
     if not isinstance(members, list) or any(
@@ -86,10 +97,16 @@ def freeze_scope(
     if len({m["activity_ref"] for m in members}) != len(members):
         raise ValueError("detail_scope_invalid")
     with storage.open_store(root) as db:
+        old = get(db, key + ":scope")
+        version = fit_parse.require_parser_version(
+            old[1]["parser_version"] if old else parser_version
+        )
+        if old and parser_version is not None and parser_version != version:
+            raise ValueError("detail_scope_conflict")
         items = []
         for m in sorted(members, key=lambda m: m["activity_ref"]):
             parsed = fit_parse.parse_registered(
-                db, root, m["activity_ref"], m["fit_sha256"]
+                db, root, m["activity_ref"], m["fit_sha256"], parser_version=version
             )
             if not sync_calendar.in_week(parsed["end_utc"], slot):
                 raise ValueError("detail_activity_outside_week")
@@ -108,14 +125,13 @@ def freeze_scope(
             "schema_version": "fit_detail_scope_v1",
             "period_start_utc": slot["start_utc"],
             "period_end_utc": period_end,
-            "parser_version": fit_parse.VERSION,
+            "parser_version": version,
             "max_requests": MAX_REQUESTS,
             "max_seconds": MAX_SECONDS,
             "members": items,
             "provider_calls": 0,
         }
         sha = storage.digest(storage.canonical(body).encode())
-        old = get(db, key + ":scope")
         if old is not None and old != (sha, body):
             raise ValueError("detail_scope_conflict")
         put(db, key + ":scope", sha, body)
@@ -148,8 +164,11 @@ def request_value(value: dict[str, Any]) -> dict[str, Any]:
     return dict(value)
 
 
-def extract(data: bytes, req: dict[str, Any]) -> list[dict[str, Any]]:
-    decoded = fit_parse.decode(data)
+def extract(
+    data: bytes, req: dict[str, Any], parser_version: str | None = None
+) -> list[dict[str, Any]]:
+    version = fit_parse.require_parser_version(parser_version)
+    decoded = fit_parse.decode(data, parser_version=version)
     origin = decoded.sessions[0]["start"]
     requested_start, requested_end = (
         origin + req["start_offset_seconds"],
@@ -165,6 +184,11 @@ def extract(data: bytes, req: dict[str, Any]) -> list[dict[str, Any]]:
             [p for p in decoded.points if s["start"] <= p.time <= s["end"]],
             intervals,
             kind != "unavailable",
+        )
+        location_points = (
+            fit_parse.session_location_points(decoded, ordinal - 1)
+            if version == fit_parse.LOCATION_VERSION
+            else []
         )
         ranges: list[tuple[float, float, str, bool]] = []
         if req["view"] == "laps":
@@ -184,6 +208,11 @@ def extract(data: bytes, req: dict[str, Any]) -> list[dict[str, Any]]:
                 ranges.append((cursor, stop, "unknown", False))
                 cursor = stop
         for a, b, role, clipped in ranges:
+            statistics = series.aggregate(a, b)
+            if version == fit_parse.LOCATION_VERSION:
+                statistics["location"] = fit_parse.location_summary(
+                    location_points, a, b, include_end=b == s["end"]
+                )
             blocks.append(
                 {
                     "session_ordinal": ordinal,
@@ -192,19 +221,22 @@ def extract(data: bytes, req: dict[str, Any]) -> list[dict[str, Any]]:
                     "role": role,
                     "clipped_lap": clipped,
                     "timer_source": kind,
-                    "statistics": series.aggregate(a, b),
+                    "statistics": statistics,
                 }
             )
     return blocks
 
 
 def validate_result(body: dict[str, Any]) -> None:
-    resource = Resource.from_contents(json.loads(fit_parse.SCHEMA_PATH.read_text()))
+    version = fit_parse.require_parser_version(body.get("parser_version", ""))
+    resource = Resource.from_contents(
+        json.loads(fit_parse.schema_path(version).read_text())
+    )
     registry: Registry = Registry().with_resource(
-        "urn:trainlab:fit_activity_v1", resource
+        "urn:trainlab:" + fit_parse.SCHEMAS[version], resource
     )
     jsonschema.Draft202012Validator(
-        json.loads(SCHEMA_PATH.read_text()), registry=registry
+        json.loads(schema_path(version).read_text()), registry=registry
     ).validate(body)
 
 
@@ -224,7 +256,7 @@ class DetailHost:
             raise ValueError("detail_scope_binding_invalid")
         body = old[1]
         if (
-            body["parser_version"] != fit_parse.VERSION
+            body["parser_version"] not in fit_parse.SCHEMAS
             or body["max_requests"] != MAX_REQUESTS
             or body["max_seconds"] != MAX_SECONDS
         ):
@@ -259,7 +291,7 @@ class DetailHost:
             )
             parse = db.execute(
                 "SELECT content_json,content_sha256 FROM parses WHERE fit_sha256=? AND parser_version=?",
-                (member["fit_sha256"], fit_parse.VERSION),
+                (member["fit_sha256"], scope["parser_version"]),
             ).fetchone()
             if (
                 parse is None
@@ -290,6 +322,8 @@ class DetailHost:
                 if old is None or cached[0] != request_sha:
                     raise ValueError("detail_result_drift")
                 validate_result(cached[1])
+                if cached[1]["parser_version"] != scope["parser_version"]:
+                    raise ValueError("detail_result_drift")
                 return cached[1]
             if old is None:
                 if self.count(db) >= MAX_REQUESTS:
@@ -297,9 +331,11 @@ class DetailHost:
                 put(db, intent_key, self.scope_sha, intent)
                 sync_calendar.durable(db)
             body = {
-                "schema_version": "fit_detail_v1",
-                "parser_version": fit_parse.VERSION,
-                "representation": "time_weighted_bins_not_raw_samples",
+                "schema_version": SCHEMAS[scope["parser_version"]],
+                "parser_version": scope["parser_version"],
+                "representation": "time_weighted_bins_not_raw_samples"
+                if scope["parser_version"] == "fit-summary-1"
+                else "time_weighted_bins_with_actual_location_endpoints",
                 "scope_sha256": self.scope_sha,
                 "request_sha256": request_sha,
                 "fit_sha256": member["fit_sha256"],
@@ -310,7 +346,7 @@ class DetailHost:
                 "provider_calls": 0,
             }
             try:
-                body["blocks"] = extract(data, req)
+                body["blocks"] = extract(data, req, scope["parser_version"])
             except Exception:
                 body.update(status="unavailable", error_code="detail_read_failed")
             validate_result(body)
