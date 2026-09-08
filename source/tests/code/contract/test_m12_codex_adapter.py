@@ -648,3 +648,66 @@ def test_concurrent_prepare_cannot_mix_frozen_materials(
     )
     assert result["status"] == "succeeded" and len(calls) == 1
     assert (args[0] / "trainlab-fit.db").read_bytes() == before
+
+
+def test_legacy_tool_capability_recovers_stopped_capture_but_cannot_start_new_runtime(
+    tmp_path, monkeypatch
+):
+    from skills._shared.fit_weekly import (
+        codex_boundary,
+        codex_output,
+        fit_parse,
+        model_job,
+    )
+
+    packet = boundary_fixture.packet
+    current_sha = codex_boundary.TOOL_SURFACE_SHA256
+    legacy_tools = json.loads(
+        (SOURCE / "tests/code/fixtures/m12_codex_cli_tools.json").read_text()
+    )
+
+    def old_packet():
+        return {**packet(), "tools": legacy_tools}
+
+    monkeypatch.setattr(
+        codex_boundary, "TOOL_SURFACE_SHA256", codex_boundary.LEGACY_TOOL_SURFACE_SHA256
+    )
+    monkeypatch.setattr(boundary_fixture, "packet", old_packet)
+    monkeypatch.setattr(fit_parse, "VERSION", "fit-summary-1")
+    args, runtime, proof, calls = setup(tmp_path, monkeypatch)
+    adapter = prepare(args, runtime, proof)
+    parse = codex_output.parse_result
+
+    def stopped_before_receipt(*a, **kw):
+        from skills._shared.fit_weekly import codex_capability
+
+        if kw["prompt_bytes"] == len(codex_capability.PROMPT.encode()):
+            return parse(*a, **kw)
+        raise model_job.AdapterInterrupted("synthetic stopped before receipt")
+
+    monkeypatch.setattr(codex_output, "parse_result", stopped_before_receipt)
+    with pytest.raises(model_job.AdapterInterrupted):
+        execute(args, adapter)
+    assert len(calls) == 1
+    monkeypatch.setattr(codex_output, "parse_result", parse)
+    monkeypatch.setattr(codex_boundary, "TOOL_SURFACE_SHA256", current_sha)
+    monkeypatch.setattr(boundary_fixture, "packet", packet)
+    monkeypatch.setattr(fit_parse, "VERSION", "fit-summary-2")
+    with pytest.raises(ValueError):
+        prepare(args, runtime, proof)
+    result = module().recover(
+        *args[:5],
+        validate_input=ledger.valid_input,
+        validate_result=ledger.valid_result,
+    )
+    assert result["status"] == "succeeded" and len(calls) == 1
+    before = (args[0] / "trainlab-fit.db").read_bytes()
+    assert (
+        module().recover(
+            *args[:5],
+            validate_input=ledger.valid_input,
+            validate_result=ledger.valid_result,
+        )
+        == result
+    )
+    assert (args[0] / "trainlab-fit.db").read_bytes() == before and len(calls) == 1

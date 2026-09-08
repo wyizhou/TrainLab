@@ -171,15 +171,16 @@ def test_full_real_fake_sdk_to_weekly_evidence_all_sports_and_zero_calls(
     assert body["sources"]["inventory_as_of_utc"] == "2026-08-09T07:00:10Z"
     assert body["sources"]["inventory_complete"] is True
     assert len(body["activity_sources"]) == 2
+    assert all(
+        s["activity_name"]["value"] == "excluded private activity title"
+        for s in body["activity_sources"]
+    )
     text = json.dumps(body)
     for secret in (
         str(root),
         "relative_path",
         "file_path",
-        "activity_name",
-        "excluded private",
         "87654321",
-        "position_lat",
         "tokens",
     ):
         assert secret not in text
@@ -213,13 +214,20 @@ def test_no_fit_remains_explicit_unknown_end_not_invented_zero_activity(
     root, key, _, _ = setup(tmp_path, monkeypatch, [("201", 3600, None)])
     body = freeze(root, key)
     assert body["activities"] == []
-    assert body["unplaced_no_fit"] == [
+    assert [
+        {k: v for k, v in row.items() if k != "activity_name"}
+        for row in body["unplaced_no_fit"]
+    ] == [
         {
             "activity_ref": "201",
             "inventory_date": "2026-08-02",
             "reason": "provider_no_fit_end_unknown",
         }
     ]
+    assert (
+        body["unplaced_no_fit"][0]["activity_name"]["value"]
+        == "excluded private activity title"
+    )
     assert body["counts"] == {
         "activities_with_fit": 0,
         "unplaced_no_fit": 1,
@@ -257,6 +265,10 @@ def test_half_open_end_and_long_cross_start_registered_fit_included(
     assert [a["activity_ref"] for a in body["activities"]] == ["1", "2", "4"]
     assert all(
         s["inventory_membership"] == "registered_fit_only"
+        for s in body["activity_sources"]
+    )
+    assert all(
+        s["activity_name"] == {"status": "missing", "value": None, "source": None}
         for s in body["activity_sources"]
     )
 

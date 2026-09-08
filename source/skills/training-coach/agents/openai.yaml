@@ -1,4 +1,4 @@
 interface:
   display_name: "Training Coach"
-  short_description: "Create safe running and climbing course plans"
-  default_prompt: "Use $training-coach to produce a validated TrainLab daily review or weekly course table."
+  short_description: "Review FIT-only fixed weekly running-plan contracts"
+  default_prompt: "Use $training-coach to inspect the current weekly running-plan contract without starting a model or publishing."

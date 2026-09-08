@@ -1,25 +1,15 @@
 from __future__ import annotations
 
-import json
-from pathlib import Path
-
 from jsonschema import Draft202012Validator
 
-SOURCE = Path(__file__).resolve().parents[3]
+from skills._shared.fit_weekly import runtime_resources
+from skills._shared.scripts.schema_validation import schema_documents
 
 
-def test_all_runtime_schemas_are_valid_and_auto_template_matches() -> None:
-    schemas = sorted((SOURCE / "skills").rglob("*.schema.json"))
+def test_current_declared_schemas_and_references_are_valid() -> None:
+    schemas = schema_documents(
+        runtime_resources.SCHEMAS + ("gmail_rest_auth_receipt_v1",)
+    )
     assert schemas
-    for path in schemas:
-        schema = json.loads(path.read_text(encoding="utf-8"))
+    for schema in schemas.values():
         Draft202012Validator.check_schema(schema)
-    schema = json.loads(
-        (SOURCE / "skills/_shared/schemas/auto_result_v1.schema.json").read_text(
-            encoding="utf-8"
-        )
-    )
-    example = json.loads(
-        (SOURCE / "tests/ai/templates/result.json").read_text(encoding="utf-8")
-    )
-    assert not list(Draft202012Validator(schema).iter_errors(example))

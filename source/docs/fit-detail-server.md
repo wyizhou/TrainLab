@@ -19,7 +19,8 @@ Host 启动子进程时设置实例根、周截止时间和冻结 scope SHA。�
 | end_offset_seconds | 大于开始时间；单次最多 1200 秒，不超出活动 |
 | resolution_seconds | 1 或 5；细粒度输出仍是时间加权统计 |
 
-没有原 FIT、GPS、任意文件、SQL、命令、资源、提示词或远端 Provider 工具。
+可返回已授权运动 GPS，但没有原 FIT 字节、任意文件、SQL、命令、资源、提示词或远端 Provider 工具。
+新版工具说明明确定位只是真实窗口端点，不是完整路线；工具摘要随说明更新，旧证明不授权新启动。
 工具元数据的 `openWorldHint=false`、`destructiveHint=false`、`idempotentHint=true`；
 `readOnlyHint=false` 如实反映内部会追加预算/结果日志，不表示允许修改训练或外部数据。
 

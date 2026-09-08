@@ -191,9 +191,6 @@ def test_no_zones_without_provider_arrays_and_raw_private_fields_are_removed() -
     )
     text = json.dumps(parse(data))
     for forbidden in [
-        "position",
-        "latitude",
-        "longitude",
         "Private Route",
         "owner@example.com",
         "87654321",
@@ -201,6 +198,9 @@ def test_no_zones_without_provider_arrays_and_raw_private_fields_are_removed() -
     ]:
         assert forbidden not in text
     assert parse(data)["sessions"][0]["hr_zones"] is None
+    location = parse(data)["location"]
+    assert location["valid_point_count"] == 1
+    assert location["first_latitude"] == pytest.approx(1234567 * 180 / 2**31)
 
 
 def test_running_dynamics_units_follow_decoded_fit_profile() -> None:

@@ -12,6 +12,8 @@
   离线验收后才进入精确在线范围，首个真实周任务等待下个正常周日15:00。
 - 每个独立模块测试及全新只读验证通过后正常提交并推送 origin/main；不包含私人数据或强推。
 - 原正式 source/state 和私人配置保留，M12 尚未切换新库；旧归档不能成为新运行依赖。
+- 用户已确认 A-022，现完整合同VC-005：运动位置/路线/名称可供 AI 分析，凭据/任意文件边界保留；必要旧M12快照只读恢复不重置预算。不是允许私人资料进入 Git 或自动新增地图/天气服务。
+- A-023要求批准的新方案同批替换受影响的规则、实现、Schema、Prompt、入口、配置、测试、CI与文档；必要安全场景迁移验证，已取消业务归档，不维持第二套执行器或永久旧测试总数。
 - 归档工具已独立验证，9612 文件备份及恢复闭合。提交 afdb8c0 已推送核对；
   备份位置、清单与恢复命令见当前计划及 source/docs/legacy-archive.md。
 - M11 未完成 v4 方向已取消，由 M12 替代；原 canary 失败和私人调用0的记录永久保留。
@@ -40,13 +42,15 @@
 - ruff --config skills/_shared/ruff.toml check skills tests/code
 - ruff format --check skills tests/code
 - mypy --config-file skills/_shared/mypy.ini skills tests/code
-- 只读 AST/compile、全部 JSON Schema、Skill metadata、AI 布局、Markdown、隐私和 Git ignore。
+- 只读 AST/compile、全部当前声明 Schema 及递归引用、Skill metadata、AI 布局、Markdown、隐私和 Git ignore。
 - 根目录执行 git diff --check；完整检查包含 tracked 与 untracked 文件。
 - 旧 macOS 专用 Candidate 的 Linux CI 失败记录仍保留；不得把 macOS 通过称为 Linux 已验证。
 
 ## 唯一活动计划
 
 [ M12 FIT-only 周系统重建 ](docs/exec-plans/active/M12-fit-weekly-0001-rebuild.md)。
+
+当前0003n按VC-005进行依赖与验收收敛；首批公共资源、周输入与安全接替已获全新独立PASS，macOS/Linux完整回归均3049项通过。提交推送/CI和其余旧CLI退出仍待完成，不等于M12交付。修改前保护/恢复副本及正式state不变。旧M9停止确认失败原因仍未确定，不声称已修复。0004–0006未进入真实调用。
 
 ## 历史交付定位
 

@@ -1,0 +1,179 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "parser_version": {
+      "type": "string",
+      "const": "fit-summary-2"
+    },
+    "representation": {
+      "type": "string",
+      "const": "time_weighted_bins_with_actual_location_endpoints"
+    },
+    "schema_version": {
+      "type": "string",
+      "const": "fit_detail_v2"
+    },
+    "scope_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "request_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "fit_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "activity_ref": {
+      "type": "string",
+      "pattern": "^[0-9]{1,32}$"
+    },
+    "view": {
+      "type": "string",
+      "enum": [
+        "summary",
+        "laps",
+        "series"
+      ]
+    },
+    "start_offset_seconds": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "end_offset_seconds": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "resolution_seconds": {
+      "type": "integer",
+      "enum": [
+        1,
+        5
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "available",
+        "unavailable"
+      ]
+    },
+    "error_code": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        null,
+        "detail_read_failed"
+      ]
+    },
+    "blocks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "session_ordinal": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "start_offset_seconds": {
+            "type": "number",
+            "minimum": 0
+          },
+          "end_offset_seconds": {
+            "type": "number",
+            "minimum": 0
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "work",
+              "recovery",
+              "warmup",
+              "cooldown",
+              "active"
+            ]
+          },
+          "clipped_lap": {
+            "type": "boolean"
+          },
+          "timer_source": {
+            "type": "string",
+            "enum": [
+              "unavailable",
+              "timer_events",
+              "session_no_pause"
+            ]
+          },
+          "statistics": {
+            "$ref": "urn:trainlab:fit_activity_v2#/$defs/aggregate"
+          }
+        },
+        "required": [
+          "session_ordinal",
+          "start_offset_seconds",
+          "end_offset_seconds",
+          "role",
+          "clipped_lap",
+          "timer_source",
+          "statistics"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "provider_calls": {
+      "type": "integer",
+      "const": 0
+    }
+  },
+  "required": [
+    "parser_version",
+    "representation",
+    "schema_version",
+    "scope_sha256",
+    "request_sha256",
+    "fit_sha256",
+    "activity_ref",
+    "view",
+    "start_offset_seconds",
+    "end_offset_seconds",
+    "resolution_seconds",
+    "status",
+    "error_code",
+    "blocks",
+    "provider_calls"
+  ],
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "available"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "error_code": {
+            "type": "null"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "error_code": {
+            "const": "detail_read_failed"
+          },
+          "blocks": {
+            "maxItems": 0
+          }
+        }
+      }
+    }
+  ]
+}

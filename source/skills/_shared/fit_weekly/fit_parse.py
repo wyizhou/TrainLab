@@ -13,7 +13,7 @@ import json
 import math
 import re
 import sqlite3
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -23,7 +23,9 @@ import jsonschema
 
 from skills._shared.fit_weekly import storage
 
-VERSION = "fit-summary-1"
+VERSION = "fit-summary-2"
+LOCATION_VERSION = "fit-summary-2"
+SCHEMAS = {"fit-summary-1": "fit_activity_v1", LOCATION_VERSION: "fit_activity_v2"}
 MAX_GAP = 30.0
 SCHEMA_PATH = (
     Path(__file__).resolve().parents[1] / "schemas/fit_activity_v1.schema.json"
@@ -124,6 +126,8 @@ class Point:
     time: float
     distance: float | None
     metrics: dict[str, float | None]
+    location: tuple[float, float] | None = None
+    location_invalid: bool = False
 
 
 @dataclass
@@ -135,7 +139,100 @@ class Decoded:
     zones: list[dict[str, Any]]
 
 
-def decode(data: bytes) -> Decoded:
+def require_parser_version(value: str | None = None) -> str:
+    value = VERSION if value is None else value
+    if value not in SCHEMAS:
+        raise ValueError("fit_parser_version_invalid")
+    return value
+
+
+def schema_path(version: str) -> Path:
+    return SCHEMA_PATH.with_name(
+        f"{SCHEMAS[require_parser_version(version)]}.schema.json"
+    )
+
+
+def position(
+    frame: fitdecode.FitDataMessage,
+) -> tuple[tuple[float, float] | None, bool]:
+    names = ("position_lat", "position_long")
+    raw = [field(frame, name) for name in names]
+    if all(v is None for v in raw):
+        return None, False
+    coordinates = []
+    for name, value, limit in zip(names, raw, (90, 180)):
+        numeric = number(value, signed=True)
+        if numeric is None:
+            return None, True
+        units = frame.get_field(name).units
+        if units == "semicircles":
+            numeric *= 180 / 2**31
+        elif units not in {"degrees", "deg"}:
+            return None, True
+        if not -limit <= numeric <= limit:
+            return None, True
+        coordinates.append(numeric)
+    return (coordinates[0], coordinates[1]), False
+
+
+def location_summary(
+    points: list[Point], start: float, end: float, *, include_end: bool = False
+) -> dict[str, Any]:
+    selected = [
+        p
+        for p in points
+        if start <= p.time and (p.time < end or include_end and p.time == end)
+    ]
+    valid = [p for p in selected if p.location is not None]
+    invalid = sum(p.location_invalid for p in selected)
+    result: dict[str, Any] = {
+        "source": "record.position_lat/position_long",
+        "coordinate_unit": "degrees",
+        "selection": "first_last_actual_samples",
+        "status": "available"
+        if valid
+        else "insufficient_data"
+        if invalid
+        else "missing",
+        "sample_count": len(selected),
+        "valid_point_count": len(valid),
+        "invalid_point_count": invalid,
+        "missing_point_count": len(selected) - len(valid) - invalid,
+    }
+    for prefix, point in (
+        ("first", valid[0] if valid else None),
+        ("last", valid[-1] if valid else None),
+    ):
+        result[prefix + "_time_utc"] = utc(point.time) if point else None
+        result[prefix + "_latitude"] = (
+            point.location[0] if point and point.location else None
+        )
+        result[prefix + "_longitude"] = (
+            point.location[1] if point and point.location else None
+        )
+        result[prefix + "_altitude_m"] = point.metrics["altitude_m"] if point else None
+        result[prefix + "_distance_m"] = point.distance if point else None
+    return result
+
+
+def session_location_points(decoded: Decoded, index: int) -> list[Point]:
+    session = decoded.sessions[index]
+    following = decoded.sessions[index + 1 : index + 2]
+    # A shared boundary belongs to the next session. A gap or final endpoint
+    # remains owned here; continuous sport metrics retain their original samples.
+    include_end = not following or following[0]["start"] != session["end"]
+    return [
+        point
+        for point in decoded.points
+        if session["start"] <= point.time
+        and (
+            point.time < session["end"] or include_end and point.time == session["end"]
+        )
+    ]
+
+
+def decode(data: bytes, *, parser_version: str | None = None) -> Decoded:
+    version = require_parser_version(parser_version)
     storage.require_fit(data)
     result = Decoded([], [], [], [], [])
     with fitdecode.FitReader(
@@ -170,8 +267,13 @@ def decode(data: bytes) -> Decoded:
                         number(field(frame, name), signed=signed) for name in sources
                     ]
                     metrics[key] = next((v for v in candidates if v is not None), None)
+                location, invalid = (
+                    position(frame) if version == LOCATION_VERSION else (None, False)
+                )
                 result.points.append(
-                    Point(t, number(field(frame, "distance")), metrics)
+                    Point(
+                        t, number(field(frame, "distance")), metrics, location, invalid
+                    )
                 )
             elif frame.name == "event" and field(frame, "event") == "timer":
                 kind = field(frame, "event_type")
@@ -209,8 +311,17 @@ def decode(data: bytes) -> Decoded:
     unique: list[Point] = []
     for point in result.points:
         if unique and point.time == unique[-1].time:
-            if point != unique[-1]:
+            if (
+                point.distance != unique[-1].distance
+                or point.metrics != unique[-1].metrics
+            ):
                 raise ValueError("fit_record_time_conflict")
+            if (
+                point.location != unique[-1].location
+                or point.location_invalid != unique[-1].location_invalid
+            ):
+                # Conflicting geography must not discard valid sport statistics.
+                unique[-1] = replace(unique[-1], location=None, location_invalid=True)
         else:
             unique.append(point)
     result.points = unique
@@ -410,19 +521,29 @@ def session_zones(
     }
 
 
-def summarize(data: bytes, activity_ref: str, fit_sha: str) -> dict[str, Any]:
+def summarize(
+    data: bytes, activity_ref: str, fit_sha: str, *, parser_version: str | None = None
+) -> dict[str, Any]:
+    version = require_parser_version(parser_version)
     storage.require_sha(fit_sha)
     if storage.digest(data) != fit_sha:
         raise ValueError("fit_sha_mismatch")
     if not re.fullmatch(r"[0-9]{1,32}", activity_ref):
         raise ValueError("fit_parse_binding_invalid")
-    decoded = decode(data)
+    decoded = decode(data, parser_version=version)
     sessions = []
     for idx, s in enumerate(decoded.sessions):
         intervals, timer_source = active_intervals(s, decoded.events)
         points = [p for p in decoded.points if s["start"] <= p.time <= s["end"]]
+        location_points = (
+            session_location_points(decoded, idx) if version == LOCATION_VERSION else []
+        )
         series = Series(points, intervals, timer_source != "unavailable")
         summary = series.aggregate(s["start"], s["end"])
+        if version == LOCATION_VERSION:
+            summary["location"] = location_summary(
+                location_points, s["start"], s["end"], include_end=True
+            )
         laps, conflict = session_laps(s, decoded.laps)
         kind, ranges = windows(s, laps)
         limitations = []
@@ -443,6 +564,15 @@ def summarize(data: bytes, activity_ref: str, fit_sha: str) -> dict[str, Any]:
                 "end_offset_seconds": end - s["start"],
                 "role": role,
                 **series.aggregate(start, end),
+                **(
+                    {
+                        "location": location_summary(
+                            location_points, start, end, include_end=end == s["end"]
+                        )
+                    }
+                    if version == LOCATION_VERSION
+                    else {}
+                ),
             }
 
         sessions.append(
@@ -470,8 +600,8 @@ def summarize(data: bytes, activity_ref: str, fit_sha: str) -> dict[str, Any]:
             }
         )
     payload = {
-        "schema_version": "fit_activity_v1",
-        "parser_version": VERSION,
+        "schema_version": SCHEMAS[version],
+        "parser_version": version,
         "activity_ref": activity_ref,
         "fit_sha256": fit_sha,
         "start_utc": sessions[0]["start_utc"],
@@ -485,19 +615,39 @@ def summarize(data: bytes, activity_ref: str, fit_sha: str) -> dict[str, Any]:
         "sessions": sessions,
         "provider_calls": 0,
     }
+    if version == LOCATION_VERSION:
+        points = [
+            p
+            for p in decoded.points
+            if any(s["start"] <= p.time <= s["end"] for s in decoded.sessions)
+        ]
+        payload["location"] = location_summary(
+            points,
+            decoded.sessions[0]["start"],
+            decoded.sessions[-1]["end"],
+            include_end=True,
+        )
     validate(payload)
     return payload
 
 
 def validate(payload: dict[str, Any]) -> None:
+    version = require_parser_version(payload.get("parser_version", ""))
     jsonschema.Draft202012Validator(
-        json.loads(SCHEMA_PATH.read_text()), format_checker=jsonschema.FormatChecker()
+        json.loads(schema_path(version).read_text()),
+        format_checker=jsonschema.FormatChecker(),
     ).validate(payload)
 
 
 def parse_registered(
-    db: sqlite3.Connection, root: Path, activity_ref: str, fit_sha: str
+    db: sqlite3.Connection,
+    root: Path,
+    activity_ref: str,
+    fit_sha: str,
+    *,
+    parser_version: str | None = None,
 ) -> dict[str, Any]:
+    version = require_parser_version(parser_version)
     storage.require_instance(db, root)
     storage.require_sha(fit_sha)
     row = db.execute(
@@ -511,6 +661,6 @@ def parse_registered(
     data = path.read_bytes()
     if len(data) != row[1] or storage.digest(data) != fit_sha:
         raise ValueError("fit_sha_mismatch")
-    payload = summarize(data, activity_ref, fit_sha)
-    storage.put_parse(db, fit_sha, VERSION, payload)
+    payload = summarize(data, activity_ref, fit_sha, parser_version=version)
+    storage.put_parse(db, fit_sha, version, payload)
     return payload

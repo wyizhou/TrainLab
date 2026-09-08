@@ -44,9 +44,14 @@ Host 调用 `weekly_evidence.freeze(instance_root, period_end, sync_job_key)`。
 
 ## 保存与恢复
 
-结果使用 `fit_weekly_evidence_v1`，在新库既有 `weekly_input` 文档中不可变保存，
+新结果使用 `fit_weekly_evidence_v2`，在新库既有 `weekly_input` 文档中不可变保存，
 同时绑定同步请求/回执、inventory、活动、FIT SHA 和解析 SHA。只有规范化 JSON
 通过 Schema、日期、逐活动来源和计数校验后才在同一事务内落库。
+
+v2 允许解析器提供实际定位，并在 activity_sources/unplaced_no_fit 附加活动名称及 capture 血缘。
+只从本次已接受分页对应的唯一成功 MCP capture 提取 name；缺失、空白或错误类型明确标记，
+不回退 Workout 名称，不为名字新增调用。registered_fit_only 没有该来源时保持缺失。
+旧 v1 周保持原解析版本和字段；改版不能补写旧内容、重置周预算或触发模型重跑。
 
 同一期只接受第一次冻结的输入：同一同步来源重放返回相同内容、SQL 行和数据库字节不增加；
 另一同步来源不能改写已有冻结。后续新增 FIT 不加入旧周，但原先使用的 FIT 若漂移仍然阻断。

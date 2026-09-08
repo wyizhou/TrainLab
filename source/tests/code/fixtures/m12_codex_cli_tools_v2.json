@@ -1,0 +1,227 @@
+[
+  {
+    "type": "function",
+    "name": "list_mcp_resources",
+    "description": "Lists resources provided by MCP servers. Resources allow servers to share data that provides context to language models, such as files, database schemas, or application-specific information. Prefer resources over web search when possible.",
+    "strict": false,
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "cursor": {
+          "type": "string",
+          "description": "Opaque cursor from a previous list_mcp_resources call; omit for the first page."
+        },
+        "server": {
+          "type": "string",
+          "description": "MCP server name. Omit to list resources from every configured server."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "type": "function",
+    "name": "list_mcp_resource_templates",
+    "description": "Lists resource templates provided by MCP servers. Parameterized resource templates allow servers to share data that takes parameters and provides context to language models, such as files, database schemas, or application-specific information. Prefer resource templates over web search when possible.",
+    "strict": false,
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "cursor": {
+          "type": "string",
+          "description": "Opaque cursor from a previous list_mcp_resource_templates call; omit for the first page."
+        },
+        "server": {
+          "type": "string",
+          "description": "MCP server name. Omit to list resource templates from every configured server."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "type": "function",
+    "name": "read_mcp_resource",
+    "description": "Read a specific resource from an MCP server given the server name and resource URI.",
+    "strict": false,
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "server": {
+          "type": "string",
+          "description": "MCP server name exactly as configured. Must match the 'server' field returned by list_mcp_resources."
+        },
+        "uri": {
+          "type": "string",
+          "description": "Resource URI to read. Must be one of the URIs returned by list_mcp_resources."
+        }
+      },
+      "required": [
+        "server",
+        "uri"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "type": "function",
+    "name": "update_plan",
+    "description": "Updates the task plan.\nProvide an optional explanation and a list of plan items, each with a step and status.\nAt most one step can be in_progress at a time.\n",
+    "strict": false,
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "explanation": {
+          "type": "string",
+          "description": "Optional explanation for this plan update."
+        },
+        "plan": {
+          "type": "array",
+          "description": "The list of steps",
+          "items": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "description": "Step status.",
+                "enum": [
+                  "pending",
+                  "in_progress",
+                  "completed"
+                ]
+              },
+              "step": {
+                "type": "string",
+                "description": "Task step text."
+              }
+            },
+            "required": [
+              "step",
+              "status"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "plan"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "type": "function",
+    "name": "request_user_input",
+    "description": "Request user input for one to three short questions and wait for the response. This tool is only available in Plan mode.",
+    "strict": false,
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "questions": {
+          "type": "array",
+          "description": "Questions to show the user. Prefer 1 and do not exceed 3",
+          "items": {
+            "type": "object",
+            "properties": {
+              "header": {
+                "type": "string",
+                "description": "Short header label shown in the UI (12 or fewer chars)."
+              },
+              "id": {
+                "type": "string",
+                "description": "Stable identifier for mapping answers (snake_case)."
+              },
+              "options": {
+                "type": "array",
+                "description": "Provide 2-3 mutually exclusive choices. Put the recommended option first and suffix its label with \"(Recommended)\". Do not include an \"Other\" option in this list; the client will add a free-form \"Other\" option automatically.",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "description": {
+                      "type": "string",
+                      "description": "One short sentence explaining impact/tradeoff if selected."
+                    },
+                    "label": {
+                      "type": "string",
+                      "description": "User-facing label (1-5 words)."
+                    }
+                  },
+                  "required": [
+                    "label",
+                    "description"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "question": {
+                "type": "string",
+                "description": "Single-sentence prompt shown to the user."
+              }
+            },
+            "required": [
+              "id",
+              "header",
+              "question",
+              "options"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "questions"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "type": "namespace",
+    "name": "mcp__fit",
+    "description": "Tools in the mcp__fit namespace.",
+    "tools": [
+      {
+        "type": "function",
+        "name": "read_fit_detail",
+        "description": "Read a pre-bound weekly activity summary, laps or time-weighted series. Only supplied activity references are accepted. Offsets are seconds from activity start; start < end, range <= 1200 seconds, resolution 1 or 5. At most 20 distinct requests per week; identical requests reuse results. Authorized sport location is available when recorded. GPS endpoints are actual timestamped fixes, not averaged or interpolated, and are not the whole route. No raw FIT bytes, credentials, arbitrary files, SQL or commands. Sport bins are aggregates, not invented device samples.",
+        "strict": false,
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "activity_ref": {
+              "type": "string"
+            },
+            "end_offset_seconds": {
+              "type": "integer"
+            },
+            "resolution_seconds": {
+              "type": "integer",
+              "enum": [
+                1,
+                5
+              ]
+            },
+            "start_offset_seconds": {
+              "type": "integer"
+            },
+            "view": {
+              "type": "string",
+              "enum": [
+                "summary",
+                "laps",
+                "series"
+              ]
+            }
+          },
+          "required": [
+            "activity_ref",
+            "view",
+            "start_offset_seconds",
+            "end_offset_seconds",
+            "resolution_seconds"
+          ],
+          "additionalProperties": false
+        }
+      }
+    ]
+  }
+]

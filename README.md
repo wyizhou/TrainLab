@@ -11,19 +11,19 @@ TrainLab 根开发 Harness 适配 [agentForge main](https://github.com/wyizhou/a
 TrainLab/
 ├── AGENTS.md rules.md memory.md PLANS.md
 ├── docs/ references/ skills/ .github/
-├── data-backup/          # 本机忽略的旧数据归档
+├── data-backup/          # 忽略的旧代码、数据和失败证据归档
 └── source/
     ├── AGENTS.md         # M12 产品边界与迁移状态
-    ├── skills/           # 本地 Skills、脚本与合同测试
-    ├── templates/        # fixed/open-report 邮件外壳
-    ├── config.json       # 非秘密运行参数
+    ├── skills/           # 当前 FIT-only 模块及独立维护工具
+    ├── tests/            # 当前活动产品的代码/AI 验收
     ├── goal.module.md    # 可跟踪的脱敏目标模板
     ├── goal.md           # 私有用户目标，忽略
-    ├── state/            # 私有 SQLite、raw 与运行状态，忽略
+    ├── state/            # 旧正式实例，最终切换前保持不变
+    ├── private/          # 可选的新独立实例根，忽略
     └── requirements.txt
 ```
 
-`data-backup/` 仅保存旧实例的可回滚归档，不是当前运行目录；它完全被 Git 忽略。
+`data-backup/` 保存可回滚历史，不是当前运行、模型输入或 CI 的依赖；它完全被 Git 忽略。
 真实配置、数据库、raw、FIT、token、日志和 state 不会进入 Git，也不会被测试或发布
 产物展示。
 
@@ -33,8 +33,9 @@ TrainLab/
 运行层尚未交付；请勿使用旧历史批次发送邮件或修改 Garmin。目标是每日 22:00 同步运动、
 星期日 15:00 一次周分析和固定跑步计划，以简单邮件/PDF 和 Garmin 课程发布。
 
-已完成只读旧系统备份与恢复验证；[退役映射](source/docs/legacy-retirement.md) 逐项说明
-保留能力、退役业务及测试迁移。旧正式 state/私人配置保持不变，当前没有启用新调度或外部调用。
+已完成新库、FIT 导入/同步、解析、受限细读和模型适配基础。当前按 VC-005 收敛依赖、周输入
+与测试边界；[退役映射](source/docs/legacy-retirement.md) 记录保留能力、取消业务和安全接替。
+周报业务、PDF、发布与完整调度仍未交付，旧正式 state/私人配置保持不变，没有启用真实调用。
 
 ## 安装依赖与检查
 
@@ -55,9 +56,13 @@ CI 的所有产品步骤都以 `source/` 为工作目录；Ruff 和 mypy 配置�
 ## 运行时边界
 
 根 agentForge 继续管理开发，不承担产品调度。M12 由 Python 管理来源、SQLite、定时和
-动作状态，AI 只负责每周受约束的解释/课程决策；私有 FIT、GPS、凭据不交给模型。
+动作状态，AI 只负责每周受约束的解释/课程决策。有来源的运动 GPS、路线、地点与活动名称
+可交给选定 AI，但不公开或进入 Git；原始 FIT 字节、凭据及任意文件/SQL能力不交给模型。
 Gmail 仅官方 REST，Garmin 写入需通过既定前置门与精确授权，Sites 不在新方向内。
 不恢复旧 Orchestration、Supervisor、cron 或开机自动服务。
+
+按 A-023，批准的新方案必须在同批次退出被替代的实现、入口和验收，更新配置/Schema/Prompt/CI
+与文档。旧失败保留原文；必要安全测试按能力迁移，不以保留全部旧业务作为新系统完成条件。
 
 ## 历史数据说明
 

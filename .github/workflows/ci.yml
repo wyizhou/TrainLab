@@ -10,7 +10,13 @@ defaults:
 
 jobs:
   quality:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -20,10 +26,8 @@ jobs:
           cache-dependency-path: source/requirements.txt
       - name: Install runtime dependencies
         run: python -m pip install -r requirements.txt
-      - name: M12 portable module tests
-        run: python -m pytest tests/code/contract/test_m12_*.py -q
       - name: Test
-        run: python -m pytest tests/code -q
+        run: python -m pytest tests/code -q -p no:cacheprovider
       - name: Ruff
         run: ruff --config skills/_shared/ruff.toml check skills tests/code
       - name: Ruff format
@@ -31,13 +35,22 @@ jobs:
       - name: Mypy
         run: mypy --config-file skills/_shared/mypy.ini skills tests/code
       - name: Compile
-        run: python -m compileall -q skills tests/code
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          for root in (Path("skills"), Path("tests/code")):
+              for path in root.rglob("*.py"):
+                  compile(path.read_bytes(), str(path), "exec")
+          PY
       - name: JSON and agent metadata
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
+          from skills._shared.fit_weekly import runtime_resources
+          from skills._shared.scripts.schema_validation import schema_documents
 
+          schema_documents(runtime_resources.SCHEMAS + ("gmail_rest_auth_receipt_v1",))
           for path in Path("skills").rglob("*.json"):
               json.loads(path.read_text(encoding="utf-8"))
           for path in Path("tests/ai").rglob("*.json"):
@@ -73,7 +86,7 @@ jobs:
           git check-ignore -q gmail-api-token.json
           git check-ignore -q gmail-api-auth-receipt.json
           git check-ignore -q state/trainlab.db
-          git check-ignore -q ../data-backup
+          git check-ignore -q ../data-backup/
           git check-ignore -q tests/ai/results/example.json
       - name: Diff check
         working-directory: .

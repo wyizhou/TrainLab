@@ -10,6 +10,7 @@ import json
 import os
 import re
 import stat
+import sys
 import tempfile
 from email import policy
 from email.message import EmailMessage
@@ -19,6 +20,8 @@ from pathlib import Path
 from typing import Any, cast
 
 SOURCE_ROOT = Path(__file__).resolve().parents[3]
+if str(SOURCE_ROOT) not in sys.path:
+    sys.path.insert(0, str(SOURCE_ROOT))
 SCOPES = (
     "https://www.googleapis.com/auth/gmail.send",
     "https://www.googleapis.com/auth/gmail.readonly",
@@ -141,27 +144,14 @@ def read_owner_json(path: Path) -> dict[str, Any]:
 
 def validate_schema(payload: dict[str, Any], schema_name: str) -> None:
     try:
-        from jsonschema import Draft202012Validator, FormatChecker
-        from referencing import Registry, Resource
+        from skills._shared.scripts.schema_validation import validate_payload
 
-        schema_root = SOURCE_ROOT / "skills/_shared/schemas"
-        schema_path = schema_root / f"{schema_name}.schema.json"
-        schema = json.loads(schema_path.read_text(encoding="utf-8"))
-        resources: list[tuple[str, Resource[object]]] = []
-        for candidate in schema_root.glob("*.schema.json"):
-            candidate_schema = json.loads(candidate.read_text(encoding="utf-8"))
-            identifier = candidate_schema.get("$id")
-            if isinstance(identifier, str):
-                resources.append((identifier, Resource.from_contents(candidate_schema)))
-        registry = Registry().with_resources(resources)
-        errors = list(
-            Draft202012Validator(
-                schema,
-                format_checker=FormatChecker(),
-                registry=registry,
-            ).iter_errors(payload)
+        errors = validate_payload(
+            payload, schema_name, root=SOURCE_ROOT / "skills/_shared/schemas"
         )
-    except (OSError, json.JSONDecodeError) as exc:
+        if errors == ["schema_not_found"]:
+            raise ValueError("schema_not_found")
+    except (OSError, ValueError) as exc:
         raise GmailRestError("gmail_rest_schema_unavailable") from exc
     if errors:
         raise GmailRestError(f"gmail_rest_schema_invalid:{schema_name}")

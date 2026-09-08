@@ -2,7 +2,7 @@ from collections.abc import Iterator
 from enum import Enum
 from io import BytesIO
 from pathlib import Path
-from typing import Any, BinaryIO
+from typing import Any, BinaryIO, Protocol
 
 class CrcCheck(Enum):
     DISABLED = 0
@@ -16,9 +16,13 @@ class ErrorHandling(Enum):
     WARN = 1
     RAISE = 2
 
+class _FieldData(Protocol):
+    units: str | None
+
 class FitDataMessage:
     name: str
     fields: list[Any]
+    def get_field(self, field_name_or_num: str | int, idx: int = ...) -> _FieldData: ...
     def get_value(
         self,
         field_name_or_num: str | int,

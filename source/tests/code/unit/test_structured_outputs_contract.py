@@ -1,18 +1,14 @@
+"""Supported wire grammar, independent of retired daily response schemas."""
+
 from __future__ import annotations
 
-import importlib.util
 import json
-from pathlib import Path
 from typing import Any
 
 import pytest
 
-from skills._shared.scripts.schema_validation import validate_payload
+from skills._shared.scripts import structured_outputs_validation
 
-ROOT = Path(__file__).resolve().parents[3]
-V1_SCHEMA = ROOT / "skills/_shared/schemas/daily_ai_result_codex_v1.schema.json"
-V2_SCHEMA = ROOT / "skills/_shared/schemas/daily_ai_result_codex_v2.schema.json"
-V1_SHA256 = "b223f5b590e89e840b2581a69dcf942fe91d00cd8b4f42819d3dab352ba6c3f7"
 UNSUPPORTED_KEYWORDS = {
     "allOf",
     "not",
@@ -24,26 +20,32 @@ UNSUPPORTED_KEYWORDS = {
 }
 
 
-def _succeeded_payload() -> dict[str, Any]:
+def _validator():
+    return structured_outputs_validation
+
+
+def _schema():
+    props = {
+        "schema_version": {"type": "string", "const": "public"},
+        "status": {"type": "string", "const": "public"},
+        "safety": {"type": "string", "enum": ["public"]},
+        "provider_calls": {"type": "integer", "const": 0},
+        "summary": {"type": "string"},
+        "bounded_metrics": {"type": "array", "items": {"$ref": "#/$defs/metric"}},
+    }
     return {
-        "schema_version": "daily_ai_result_v1",
-        "status": "succeeded",
-        "error_code": None,
-        "report_date": "2026-08-17",
-        "review_date": "2026-08-16",
-        "sleep_wake_date": "2026-08-17",
-        "safety": "ready",
-        "summary": "合成日报。",
-        "bounded_metrics": [
-            {"name": "rhr", "value": 52, "unit": "bpm", "evidence_ref": 1}
-        ],
-        "stop_conditions": ["出现危险信号时停止。"],
-        "evidence_refs": [
-            {"raw_file_id": 1, "sha256": "a" * 64, "claim": "合成证据。"}
-        ],
-        "recent_trend_sha256": "b" * 64,
-        "today_course": {},
-        "provider_calls": 0,
+        "type": "object",
+        "additionalProperties": False,
+        "required": list(props),
+        "properties": props,
+        "$defs": {
+            "metric": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["value"],
+                "properties": {"value": {"type": "number"}},
+            }
+        },
     }
 
 
@@ -57,33 +59,8 @@ def _walk(value: object):
             yield from _walk(child)
 
 
-def _validator():
-    path = ROOT / "skills/_shared/scripts/structured_outputs_validation.py"
-    spec = importlib.util.spec_from_file_location(
-        "trainlab_structured_outputs_validation", path
-    )
-    assert spec is not None and spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
-def test_codex_wire_v1_is_preserved_as_failed_attempt_evidence() -> None:
-    import hashlib
-
-    assert hashlib.sha256(V1_SCHEMA.read_bytes()).hexdigest() == V1_SHA256
-
-
-def test_wire_v2_diff_is_only_the_four_explicit_types() -> None:
-    v1 = json.loads(V1_SCHEMA.read_text(encoding="utf-8"))
-    v2 = json.loads(V2_SCHEMA.read_text(encoding="utf-8"))
-    for field in ("schema_version", "status", "safety", "provider_calls"):
-        del v2["properties"][field]["type"]
-    assert v2 == v1
-
-
 def test_codex_wire_schema_uses_supported_strict_subset() -> None:
-    schema = json.loads(V2_SCHEMA.read_text(encoding="utf-8"))
+    schema = _schema()
     _validator().require_supported_schema(schema)
     assert schema["type"] == "object"
     for node in _walk(schema):
@@ -108,7 +85,7 @@ def test_codex_wire_schema_uses_supported_strict_subset() -> None:
 def test_const_and_enum_fields_require_explicit_type(
     field: str, expected_type: str
 ) -> None:
-    schema = json.loads(V2_SCHEMA.read_text(encoding="utf-8"))
+    schema = _schema()
     assert schema["properties"][field]["type"] == expected_type
     del schema["properties"][field]["type"]
     with pytest.raises(ValueError, match="structured_output_schema_unsupported"):
@@ -128,7 +105,7 @@ def test_const_and_enum_fields_require_explicit_type(
     ],
 )
 def test_wire_linter_rejects_unsupported_shapes(mutation: Any) -> None:
-    schema = json.loads(V2_SCHEMA.read_text(encoding="utf-8"))
+    schema = _schema()
     mutation(schema)
     with pytest.raises(ValueError, match="structured_output_schema_unsupported"):
         _validator().require_supported_schema(schema)
@@ -145,7 +122,7 @@ def test_wire_linter_rejects_missing_reference_and_non_strict_object() -> None:
     with pytest.raises(ValueError, match="reference_missing"):
         _validator().require_supported_schema(missing_ref)
 
-    non_strict = json.loads(V2_SCHEMA.read_text(encoding="utf-8"))
+    non_strict = _schema()
     non_strict["$defs"]["metric"]["additionalProperties"] = True
     with pytest.raises(ValueError, match="strict_object_required"):
         _validator().require_supported_schema(non_strict)
@@ -254,21 +231,3 @@ def test_wire_linter_rejects_depth_property_string_and_enum_limits() -> None:
     }
     with pytest.raises(ValueError, match="enum_limit_exceeded"):
         validator.require_supported_schema(too_many_enum_values)
-
-
-def test_codex_wire_payload_must_also_pass_original_business_schema() -> None:
-    payload = _succeeded_payload()
-    assert validate_payload(payload, "daily_ai_result_codex_v2") == []
-    assert validate_payload(payload, "daily_ai_result_v1") == []
-
-
-def test_original_business_schema_is_not_weakened_by_wire_schema() -> None:
-    missing_success_fields = _succeeded_payload()
-    del missing_success_fields["bounded_metrics"]
-    del missing_success_fields["stop_conditions"]
-    assert validate_payload(missing_success_fields, "daily_ai_result_v1")
-
-    blocked_without_error = _succeeded_payload()
-    blocked_without_error["status"] = "blocked"
-    del blocked_without_error["error_code"]
-    assert validate_payload(blocked_without_error, "daily_ai_result_v1")

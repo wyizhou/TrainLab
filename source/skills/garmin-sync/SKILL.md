@@ -1,43 +1,17 @@
 ---
 name: garmin-sync
-description: Run the bounded Garmin raw synchronization workflow. Use for the daily 12:00 Asia/Hong_Kong sync, an explicitly approved date backfill, or raw-file completeness checks; never use it for unbounded history or Garmin writes.
+description: Inspect or run the current FIT-only activity synchronization module within an explicitly approved date and call budget. Do not collect health data or manage Workouts.
 ---
 
-# Garmin Sync
+# Garmin FIT 同步
 
-Read `source/AGENTS.md`, `config.json`, SQLite state and this file before acting.
+当前实现与接口见[运动同步](../../docs/fit-sync.md)和[协议适配](../../docs/garmin-fit-adapter.md)。遵守[产品边界](../../AGENTS.md)，旧 M9/M10 固定测试窗口不是当前授权。
 
-## Contract
+- 只查询运动库存和下载 FIT；优先复用登记文件。完整分页才能证明无活动，查询完成和下载完成分别记账。
+- Python 管理日期、缺口、预算、SHA、原子落盘和新 SQLite。不要让 AI 转抄 MCP 原始结果。
+- 日常目标是香港22:00检查当日、昨日及已登记缺口，周日15:00额外同步；完整调度尚未交付，本文件不会启动后台任务。
+- 真实读取前核对当前批次的日期、工具、调用/下载上限及墙钟授权。固定缓存版本和认证防护保持，不静默安装、登录、刷新 Garmin Token 或重试。
+- GPS/名称可随有来源的运动事实进入选定 AI；不得公开、进入 Git 或输出凭据。位置不是天气或坡度的证明，不新增地图/天气服务。
+- 成功范围直接复用，失败或未知按当前同步账本对账，不通过旧脚本或改请求重跑。
 
-- Normal date is D-1: RHR, HRV, all-day heart rate, VO2 Max and weigh-ins.
-- Fetch only the completed main sleep whose wake date is D.
-- Query yesterday's activity inventory once. Do not request `activity_summary` or read back 14 days.
-- Fetch activity originals only within the active approved scope. M9 permits FIT only for at most two new
-  or incomplete activities; GPX/TCX/CSV and `activity_summary` remain forbidden. Fetch weather once only
-  after the FIT parser proves that the activity is outdoor.
-- A backfill requires an explicit date, resource allowlist and A-001 approval.
-- Store only raw bytes under `state/raw/garmin/health` or `state/raw/garmin/activities`; index every file in
-  SQLite and never create health/activity fact tables.
-- A live MCP call is allowed only when the active exec plan contains the exact date, tool list, budgets,
-  pinned MCP revision and one-time authorization. Otherwise this Skill remains preparation-only.
-
-## Script-first workflow
-
-1. Run `scripts/plan_window.py --run-date YYYY-MM-DD` for ordinary offline planning. For the frozen M9
-   window, `scripts/live_sync.py` constructs and validates the exact request internally; callers cannot
-   change its date, resources or budgets.
-   The M10 one-off acceptance uses `scripts/rolling_week_sync.py`; its 2026-08-11 through 2026-08-18
-   window and budgets are also fixed internally and it is not a general backfill interface.
-2. Run `scripts/index_raw.py --source-root PATH --database PATH` before analysis to index existing raw
-   bytes and verify their path, mode and SHA without contacting Garmin.
-3. Verify the plan has no 14-day readback, no summary resource, and zero external calls in this stage.
-4. Under an independently approved online run, `live_sync.py` starts the pinned MCP through
-   `uvx --offline`, exposes only the approved tools, uses only the cached token directory and persists
-   every call digest, duration, error, raw hash, `activity_inventory` row and final receipt in Candidate
-   SQLite. Never transcribe MCP responses through the AI.
-5. Any uncertain identity, path collision, missing date, budget overflow or unknown provider outcome is
-   `blocked` and must be reconciled before another attempt.
-
-Outputs are bounded JSON summaries only; never print tokens, raw payloads, routes or health samples.
-MCP JSON files use provider `garmin_mcp` and `mcp_capture` filenames; they must never be described as
-Garmin HTTP raw. A repeated successful request reuses its receipt without starting MCP.
+健康 API、旧 raw 六表写入及旧日/周批次执行器已退出目标；只按当前模块和迁移状态工作。

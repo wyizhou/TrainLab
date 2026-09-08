@@ -1,6 +1,6 @@
 # M12 周任务受限 FIT 细读
 
-这是内部 Python 数据接口。尚未连接模型或暴露 CLI/MCP，不表示 AI 隔离和完整周输入已验收。
+这是内部 Python 数据接口，已连接本地单工具 MCP；完整真实周流程尚未交付。
 沿用[新解析器](fit-parsing.md)，不导入旧每日细读器、旧库或归档。
 
 ## Host 与 AI 的边界
@@ -38,12 +38,13 @@ Host 在模型启动前使用 `freeze_scope(instance_root, period_end, members)`
 scope、intent、result 是现有 documents 表中的版本化 weekly_input 文档，使用独立 detail 前缀；
 不新增原始逐秒记录表，不改变现有存储 Schema。每项结果绑定 scope、request、活动和 FIT SHA。
 
-`fit_detail_v1` 使用本地注册的 `fit_activity_v1` 统计 Schema，不联网解析 Schema引用。
-输出是 `time_weighted_bins_not_raw_samples`：每个窗口包含真实点数、有效秒数、各指标覆盖率、
+新版 `fit_detail_v2` 使用本地 `fit_activity_v2` Schema；旧 scope 继续生成 v1，均不联网解析引用。
+v2 表示为 `time_weighted_bins_with_actual_location_endpoints`：每个窗口包含真实点数、有效秒数、各指标覆盖率、
 距离和配速。若设备每10秒记录一次，1秒统计窗口可能没有实际点；不会声称生成了新的实测值。
 圈段视图保留 work/recovery 等设备角色，截取了部分圈段会明确标记 clipped_lap。
-多个 session 分开输出，不把中间空档补成运动。所有字段继续经过同一白名单投影，无原FIT字节、
-GPS、路线、活动名称、个人/设备标识或凭据。
+多个 session 分开输出，不把中间空档补成运动。v2 另给窗口内首尾实际定位点、时间及缺失信息，
+不平均、插值或把定位端点说成完整路线。无原 FIT 字节、无关个人/设备标识或凭据。
+GPS 是返回事实，不是允许模型指定任意地理资源的第六个参数；五参数与预算保持不变。
 
 [细读测试](../tests/code/contract/test_m12_fit_detail.py)覆盖范围/类型、预算、同请求缓存、
 真实进程退出、并发最后一次额度、结果事务失败、SHA漂移、跨目录重放、圈段截取和多运动空档。
