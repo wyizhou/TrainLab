@@ -127,6 +127,34 @@ def test_legacy_raw_path_is_resolved_from_raw_root(tmp_path: Path) -> None:
     assert rows[0]["source_member"] == "legacy-state/raw/activities/synthetic.fit"
 
 
+def test_import_then_full_inventory_reuses_original_without_download(
+    tmp_path, monkeypatch
+):
+    sync = importlib.import_module("test_m12_fit_sync")
+    root, token, spec = sync.setup(tmp_path, monkeypatch)
+    archive = archive_fixture(tmp_path)
+    result = importer().import_registered(archive, root)
+    assert result["history_coverage"] == "not_established"
+    with storage_module().open_store(root) as db:
+        assert sync.modules()[1].day_status(db, "2026-08-01") != "complete"
+        sha, relative = db.execute("SELECT sha256,relative_path FROM fits").fetchone()
+        assert (root / relative).read_bytes() == synthetic_fit()
+        assert sha == storage_module().digest(synthetic_fit())
+    fake = sync.FakeMCP(root, ("101", "102"))
+    fake.no_fit.add("102")
+    done = sync.run(root, token, spec, fake)
+    assert done["activity_count"] == 2 and done["no_fit_count"] == 1
+    assert [
+        args["activity_id"]
+        for name, args in fake.calls
+        if name == "download_activity_file"
+    ] == [102]
+    with storage_module().open_store(root) as db:
+        assert sync.modules()[1].day_status(db, "2026-08-01") == "complete"
+        assert sync.modules()[1].day_status(db, "2026-08-02") == "provisional"
+        assert (root / relative).read_bytes() == synthetic_fit()
+
+
 @pytest.mark.parametrize(
     "case",
     [

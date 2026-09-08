@@ -1,6 +1,6 @@
 # M12：跑步独立规划分支与三角色协作
 
-- 状态：active；当前步骤：R0 协作约定与继承基线。
+- 状态：validated；当前步骤：R1 数据底座接线已验收，准备分支提交、推送和CI。
 - 分支：work/m12-running-only-planning；基准 b307e90efca7e1f1f65d0a22842aa1f685447e42。
 - 批准来源：2026-09-08 用户逐字批准《TrainLab 跑步独立规划分支：三角色协作实施计划》。
 - 当前完整合同：RUN-VC-001，frozen；本分支实施前冻结。仅替代本分支受影响规则，另一条开发路线不变。
@@ -51,8 +51,8 @@
 
 | 步骤 | 状态 | 内容/依赖 | 本步主要条款 |
 | --- | --- | --- | --- |
-| R0 | in_progress | 现场保护、三角色协作、当前分支目标/模板、继承基线核对 | COL全部、RET、GATE、INV |
-| R1 | pending | 现有底座接线/同步预算/无归档独立运行；依赖R0 | AC001–006、RET |
+| R0 | done | 现场保护、三角色协作、当前分支目标/模板、继承基线核对；已提交/推送/双平台CI | COL全部、RET、GATE、INV |
+| R1 | in_progress | 现有底座接线/同步预算/无归档独立运行；独立与Main验收通过，待分支交付/CI | AC001–006、RET |
 | R2 | pending | 两阶段输入、共享细读及一次调用恢复；依赖R1 | AC004–010 |
 | R3 | pending | 周报/固定课程业务校验；依赖R2 | AC011–013 |
 | R4 | pending | Markdown/PDF/本地修订；依赖R3 | AC014 |
@@ -65,9 +65,9 @@
 - 2026-09-08 Git门通过，56项tracked改动/删除、23项untracked均保留。
 - 仓库外保护目录：/private/tmp/trainlab-running-branch-prechange.dI6pvD；410份公共文件/5项删除记录，tree和restore逐字节核对、0700/0600；manifest SHA 57b3df394c3da96f110253a01d3ceb920c7dee0ee9d714b5e0287ee7ca667991。未读取正式数据/凭据。
 - 既有VC-005受审树410文件当前仅活动计划协调记录不同，产品源与测试未变；既有PASS仅覆盖原底座，不能代替本分支新要求验收。
-- 阻塞：none；诊断状态not_triggered。本分支修复计数0；原失败原样留存，不靠分支/改名清零未解决问题。
-- 下一动作：R0独立验收及Main本机全量门已完成，精确提交/推送本分支并核对远端CI；CI通过前不进入R1。后续产品写入仍串行。
-- 实际业务Provider/周模型/邮件/课程调用0；本轮未提交/推送。开发子Agent不是产品周模型调用。
+- 阻塞：none；诊断状态not_triggered。R1集中修正批次1（清单登记遗漏），独立Validator失败轮次0；原失败原样留存，不靠分支/改名清零未解决问题。
+- 下一动作：R1独立与Main实际验收已通过；精确提交/推送当前分支，并核对该提交双平台CI后才进入R2。产品写入仍串行。
+- 实际业务Provider/周模型/邮件/课程调用0；本轮R0已提交并推送当前分支d525a39561dde62e286b988cf3978f67daf95841，远端SHA已读回一致。开发子Agent不是产品周模型调用。
 
 ## 派发、验证与迭代
 
@@ -131,6 +131,73 @@ Main实际验收：已通读角色模板、有效指引和流程，核对用户�
 - 精确暂存前检查另发现一项开工前的公开源码权限差异：`gmail_rest_common.py`原私有受审副本为0700，当前worktree及本轮开工快照均为0755，内容SHA和Git可执行位相同。保留当前已有权限；其余非R0文件权限一致，不将公开源码的worktree检出权限误记为私人Token权限或本轮内容漂移。首次暂存检查因此拒绝，尚无暂存写入；核对原件/开工证据后仅纠正该检查的公开文件权限比较方式。
 - 提交/推送尚未执行；下一步仅推`origin/work/m12-running-only-planning`，再核对该提交的双平台全量CI。M12及R1–R7仍未完成。
 - 暂存后的完整diff检查补获此前untracked历史副本EOF多余空行；按执行协议纯排版边界，仅删除Main建立副本时追加的一行，原14818字节历史现为完整后缀、出现一次。最终历史副本SHA为a0e62a03880b50b135d72e201c7269d5d826387eeeb5fe783f72fe174792ab0c；原Validator受审清单不覆盖/重写，其余16项摘要仍一致。该格式勘误不改变合同或产品结论。Git将一组已批准迁移测试显示为重命名，所以88个路径对应87项默认diff，不是遗漏删除源路径；精确范围使用`--no-renames`核对。
+- R0提交已发生：d525a39561dde62e286b988cf3978f67daf95841，`feat: establish running-only branch baseline and three-role workflow`。正常推送`origin/work/m12-running-only-planning`退出0；`ls-remote`精确分支SHA一致，未合并/推送main。提交后工作树原为clean，当前仅协调结果回写。
+- 对应远端全量工作流[trainlab-source 34186552115](https://github.com/wyizhou/TrainLab/actions/runs/34186552115)绑定同一提交。macOS job 101935947580已成功：3049 passed in 1460.07s；Ruff通过、format180文件、mypy162文件，后续全部步骤success。Main通过单job日志读回实际输出。Linux job 101935947703仍在Test，尚无完整结论，不预写双平台PASS，不进入R1。macOS仅有平台将旧action的Node20切到Node24的非阻塞弃用提示，未据此增加实现范围。
+- 远端最终结论已返回success：Linux job 101935947703为3049 passed in 2192.78s，Ruff/format180/mypy162及后续全部步骤成功；两job均completed/success，工作流headSha=d525a39561dde62e286b988cf3978f67daf95841。Main分别读取单job日志及最终工作流JSON核对。没有重跑CI、绕过失败或推main；R0至此completed。
+
+## R1 派发与实施记录
+
+- Planner：planner_r1_data_foundation，全新fork_turns=none，high/high（跨模块接口/预算/恢复，平台映射gpt-6-astra与high）。只接收RUN-VC-001逐字合同、AC001–006/RET及适用治理安全规则和当前底座源码/测试；不接收旧裁决，不读取协调历史。依赖基准为已完成双平台CI的d525a39。
+- 本步只补现有数据底座接线和对应测试，不提前实现两阶段模型、周报/PDF、发布或调度。Main同时仅记录真实协调事实，未修改产品文件。沿用项目garmin-sync的FIT-only/缓存认证/预算边界，不启动真实MCP。
+- Planner完成只读拆解；Main四项审核通过其最小接线方向：保留导入/分页/下载/解析/细读，补整任务耐久时间预算、旧同步记录只读解码、当前同步资源闭包及空实例合成串联测试。没有新业务或新外部服务。
+- 未采纳方法建议中的独立活动总量参数作为新增标准：现有page_size×max_calls及下载/会话上限已提供可验证数量上界，只要求沿用并证明实际生效，不再额外维护一份预算答案。整任务时间限制约束采集工作及后续Provider发起/等待，超过期限不得继续新采集或宣称越限采集成功；正常关闭与同步证据收尾必须完成，不把每个磁盘系统调用都必须准点返回提升为合同要求，也不得取消审计来取得时间绿灯。
+
+| R1子预期 | 对应合同 | 正确结果/错误边界 | 实现与检查定位 |
+| --- | --- | --- | --- |
+| 复用与状态区分 | AC001–003 | 导入不证明查完整；登记FIT不下载；完整分页、provisional、gap、no_fit、下载完成不同；预算耗尽不初始化 | 既有storage/legacy_import/sync_calendar/fit_sync；合成串联回归 |
+| 整任务预算 | AC002/TM/EX | 明确总时间、首次耐久冻结、进程内剩余时间；慢调用累计超限停止；重启/搬迁不补发完整额度；成功重放零调用 | fit_sync/garmin_fit及小型必要内部辅助；真实等待/中断与可控时间回归 |
+| 旧记录读取 | AC002/RET | 旧已完成请求及来源继续只读核对且SHA不变；缺少总时间凭证的旧未完成请求不静默联网或补额度 | 统一请求解码、weekly_evidence两处重建、对应版本回归 |
+| 当前独立同步 | AC001–006/RET | 明确保留guard/overrides；不带旧代码/库/归档/测试的副本从空实例完成合成同步、解析、全运动证据及细读；搬迁零重复 | 当前资源清单与独立子进程集成，不从原仓库补缺 |
+| 说明与迁移 | RET/GATE | 只回写已接替能力和当前接口；适用安全断言不降低，不前置R2–R6 | 对应docs、旧场景映射、完整门和全新Validator |
+
+- Developer：developer_r1_data_foundation，全新fork_turns=none，high/high（异步预算/恢复/跨模块兼容），仅产品白名单与对应测试/文档；Main独占协调文件，当前本模块实施修复次数0。
+- Developer已记录首轮6项新增失败回归，再补耐久总预算、进程内单调剩余时间、统一v1/v2请求读取和采集资源闭包；其定向70项自测通过，正在补真实进程中断、慢收尾、旧成功只读和空实例独立串联。该结果仅是实施自检，不是独立PASS或本模块完成。采集资源由显式collection范围收集，不把无关Garmin资源加入模型默认身份。
+- 当前R1交付已停止功能/测试改动：115项定向自检、Ruff/format181/mypy163及只读QA通过。Main冻结19项实际改动，r1-review/manifest.json SHA de22559b9578792b935a837709f8fc518a8847d9ff270a7d4328de01c86927de；RUN-VC-001原文SHA未变，当前下级预期另存r1-expectations.md供中性派发。再次逐项核对19项一致，尚未独立验收。
+- 自检命令曾直接使用pytest导致3个既有导入收集错误；按CI改为python -m pytest，无代码/预期绕过。第二轮收集后另补4项边界，为绑定最终清单，Main要求正常中断Developer自建进程；936 passed/238.30s、退出2仅作为中断片段。其uv/pytest已确认停止，再按不变清单运行全量；不将不同收集批次拼成一次全量PASS。详细自检摘录位于/private/tmp/trainlab-r1-developer.Dmo0cu/check-evidence.md，不是独立验收报告。
+- 冻结全量实际退出1：3069 passed、1 failed，712.36s。唯一失败为test_m12_retirement_boundary.py第85行的active_test_files一致性断言：新增test_m12_sync_wall_budget.py未登记清单。Main单节点独立复现退出1/0.02s，确认是本次登记遗漏，不是同步实现失败，也不把全量改写为PASS。完整stdout保留在/private/tmp/trainlab-r1-developer.Dmo0cu/full-pytest.stdout.txt；原r1-review清单原样留存。
+- 范围内修复派发developer_r1_inventory_fix，全新fork_turns=none，low/low（单项机械清单登记，平台gpt-5.6-luna/low）；只允许补active_test_files唯一缺项，不改测试/功能/其他映射，完成后由全新Validator验收。失败特征R1/RUN-VC-001/RET-002+GATE-001/test_inventory_missing；当前集中修复批次1，独立Validator失败轮次0，诊断门未触发；换Agent未清零。
+- Main对冻结源码已实际运行Ruff、format181、mypy163、只读编译161/100JSON、活动Schema/metadata/布局/权限/ignore/Markdown及映射检查并通过；这些静态结果不覆盖上述清单失败，也不代表独立验收。
+- 新Developer只补一行active_test_files；实际清单67/67一致，完整retirement_boundary为5 passed；JSON与diff通过，未声称全量。Main核对相对原r1-review的唯一产品差异就是该清单行；新r1-review2保存19项当前快照，manifest SHA776b38580ad7ca10dab5288c0ad1f89a503d34488dc1cbcc7e24f03daac09754，原失败快照不覆盖。
+- 独立派发validator_r1_data_foundation，全新fork_turns=none，high/high（与主实现同档，采集预算/恢复/隔离）；仅当前RUN-VC-001、R1中性下级预期、适用规则、基准d525a39和当前19项快照。未提供旧裁决或Developer通过声明。当前validating，等待其完整本机回归及独立功能证据，尚未PASS/提交/推送。
+
+## R1 独立验证与Main验收
+
+contract_version: RUN-VC-001；R1，合同SHA06b78e945db2e730f6eafd4b4f525ae26b05c168b5107f6eba65fcea7ba180b8。
+
+overall_verdict: PASS。仅当前R1本机独立验证，不代表Linux CI、真实业务或整体M12已完成。
+
+criterion_results:
+
+| 标准 | 独立结果 |
+| --- | --- |
+| AC-001 | PASS：登记FIT原字节/身份/SHA/CRC复用、导入后分页不重复下载、新库独立，空实例副本实际解析FIT。 |
+| AC-002 | PASS：分页/provisional/缺口/no_fit/下载分开；数量和总时间持续，慢启动/连续调用/同步写入/关闭/实际中断/搬迁通过，旧未完成不获新额度。 |
+| AC-003 | PASS：跑步120秒、其他300秒、明确SOS圈段/work60秒，暂停/缺口/覆盖与来源，不猜间歇。 |
+| AC-004 | PASS当前底座：全运动、最多四完整成功历史、目标/原周冻结及搬迁；未前置两阶段业务。 |
+| AC-005/006 | PASS：来源位置/名称允许、坏定位/跨活动/SHA和片段边界；实际上下文/历史/细读非法输入在模型intent前阻断，真实模型0。 |
+| RET-001/002 | PASS当前范围：67项活动测试清单一致，未删弱或skip/xfail；无旧库/归档的独立副本通过，缺资源失败，历史SHA直接复算。 |
+| COL/GATE-002/INV | 本Validator全新只读，无交付修改、业务调用、正式私人数据读取或另一分支操作。 |
+| GATE-001/TM/EX | PASS本机完整质量与适用故障边界；未增加同UID/root/永久硬件要求。Linux尚待Main远端验收。 |
+| GATE-003/LIVE-001 | 后续交付和真实授权门，未预写完成。 |
+
+blocking_findings: 无。
+
+advisories: 协调状态需同步PLANS中R1进展，步骤枚举R0使用done；本机PASS不代替Main实际验收、分支SHA和双平台CI。Main按真实状态同步，不改要求。
+
+scope_change_candidates: 无。
+
+unknowns: 当前Linux CI和真实Garmin/历史完整性/真实模型邮件课程未验证；只读是实际操作边界，不声称平台提供了OS级只读沙箱。
+
+commands_and_evidence:
+
+- validator_r1_data_foundation，全新high/high；Darwin25.5.0 arm64，Python3.12.13/pytest8.4.2，现有离线环境，无安装或.venv。
+- 基准d525a39561dde62e286b988cf3978f67daf95841；manifest SHA776b38580ad7ca10dab5288c0ad1f89a503d34488dc1cbcc7e24f03daac09754。开始和结束19项路径/摘要/模式一致；唯一patch差异是允许的计划协调追加，合同不变。
+- 完整`python -m pytest tests/code -q -p no:cacheprovider`退出0：3070 passed in 773.77s。未拼接或中断。
+- 11相关模块专项1208 passed/121.05s；自建5项边界加闭合/墙钟回归22 passed/2.97s。自建检查位于/private/tmp/trainlab-r1-validator.uMhgBq/test_independent_boundaries.py。
+- Ruff、format181、mypy163、只读compile161、100JSON、12活动Schema、metadata/AI布局/source/ignore/隐私/权限、11项变动Markdown链接和diff通过。
+- 附加隐私检查曾误把跟踪的空.gitkeep当作私人文件，Validator只纠正检查方法，未据此改交付或正确测试。
+
+Main实际验收：独立PASS后，在同一快照重新运行清单、总预算全文件、空实例合成同步/全部运动解析/细读/搬迁、缺资源拒绝和旧FIT复用组合，23 passed in 3.07s。结合前述Main实际Ruff/format/mypy/只读QA及受审摘要复核，确认底座完整接线。只剩本模块授权分支交付/CI；未执行真实业务。
 
 ## 完成条件
 

@@ -48,11 +48,7 @@ def completed_sync(
     if request is None or done is None or inventory is None:
         raise ValueError("weekly_sync_incomplete")
     spec_data = request["request"]
-    spec = fit_sync.SyncSpec(
-        inventory=sync_calendar.InventoryRequest(**spec_data["inventory"]),
-        **{k: v for k, v in spec_data.items() if k != "inventory"},
-    )
-    spec.validate()
+    spec = fit_sync.read_request(request)
     req = spec.inventory
     start_day, end_day = (
         sync_calendar.utc_time(slot[x])
@@ -70,8 +66,7 @@ def completed_sync(
     ):
         raise ValueError("weekly_sync_coverage_invalid")
     if (
-        request["schema_version"] != "fit_sync_request_v1"
-        or done["schema_version"] != "fit_sync_receipt_v1"
+        done["schema_version"] != "fit_sync_receipt_v1"
         or done["status"] != "complete"
         or done["job_key"] != job
         or inventory["schema_version"] != "fit_inventory_receipt_v1"
@@ -203,12 +198,7 @@ def activity_names(db: sqlite3.Connection, root: Path, job: str) -> dict[str, An
     )
     if request is None:
         raise ValueError("weekly_name_source_invalid")
-    data = request["request"]
-    spec = fit_sync.SyncSpec(
-        inventory=sync_calendar.InventoryRequest(**data["inventory"]),
-        **{k: v for k, v in data.items() if k != "inventory"},
-    )
-    spec.validate()
+    spec = fit_sync.read_request(request)
     journal = fit_sync.Journal(db, root, spec)
     rows = db.execute(
         "SELECT c.request_json,r.content_json,r.content_sha256 FROM sync_calls c JOIN sync_results r USING(job_key,ordinal) WHERE c.job_key=? AND r.status='page' ORDER BY c.page",

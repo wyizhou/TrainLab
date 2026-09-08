@@ -55,10 +55,18 @@ COMMON = (
 )
 
 
-def files(source: Path) -> tuple[Path, ...]:
+COLLECTION = (
+    "skills/garmin-sync/scripts/mcp_server_guard.py",
+    "skills/garmin-sync/references/live-overrides.txt",
+)
+
+
+def files(source: Path, *, collection: bool = False) -> tuple[Path, ...]:
     """Keep v1 only for frozen M12 data, never for old daily execution."""
     schemas = schema_documents(SCHEMAS, source / "skills/_shared/schemas")
     paths = [source / relative for relative in COMMON]
+    if collection:
+        paths.extend(source / relative for relative in COLLECTION)
     paths.extend(source / f"skills/_shared/fit_weekly/{name}.py" for name in MODULES)
     paths.extend(
         source / f"skills/_shared/schemas/{name}.schema.json" for name in schemas

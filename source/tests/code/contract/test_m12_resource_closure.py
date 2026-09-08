@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib
 import importlib.util
+import inspect
 import json
 import os
 import shutil
@@ -238,3 +239,146 @@ print(json.dumps({"activities": len(context["current_week"]["activities"]),
     )
     assert result.returncode == 0, result.stderr
     assert json.loads(result.stdout) == {"activities": 2, "calls": 1, "replay_calls": 0}
+
+
+def test_empty_closed_collection_copy_syncs_all_sports_and_replays_after_move(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from datetime import datetime, timezone
+
+    fixture = importlib.import_module("test_m12_weekly_evidence")
+    epoch = datetime(1989, 12, 31, tzinfo=timezone.utc)
+    monkeypatch.setattr(
+        fixture.factory, "BASE", int((fixture.stamp(0) - epoch).total_seconds())
+    )
+    source = tmp_path / "closed-source"
+    for path in runtime_resources.files(SOURCE, collection=True):
+        target = source / path.relative_to(SOURCE)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(path, target)
+    root = tmp_path / "empty-instance"
+    assert not root.exists()
+    assert not (source / "tests").exists()
+    assert not (source / "data-backup").exists()
+    assert not (source / "skills/_shared/state.py").exists()
+    assert not (source / "skills/_shared/fit_weekly/legacy_import.py").exists()
+    # The parent supplies only public synthetic bytes and an in-memory Fake MCP.
+    # No prepared database, fixtures directory, archive, or original source path
+    # is available to the isolated child.
+    prefix = """
+import asyncio, json, sys
+from contextlib import asynccontextmanager
+from datetime import datetime, timedelta
+from pathlib import Path
+from types import SimpleNamespace
+from skills._shared.fit_weekly import fit_sync, garmin_fit, storage, sync_calendar, weekly_evidence, fit_detail
+def stamp(offset):
+    return datetime.fromisoformat('2026-08-02T07:00:00Z') + timedelta(seconds=offset)
+"""
+    program = (
+        prefix
+        + inspect.getsource(fixture.FakeSDK)
+        + """
+root = Path(sys.argv[1])
+storage.initialize(root)
+tokens = root.with_name('synthetic-tokens')
+tokens.mkdir(mode=0o700)
+(tokens / 'synthetic.json').write_text('{"synthetic":true}')
+(tokens / 'synthetic.json').chmod(0o600)
+garmin_fit.shutil.which = lambda _: '/synthetic/uvx'
+sdk = FakeSDK([('101', 3600, bytes.fromhex(sys.argv[2])),
+               ('102', 7200, bytes.fromhex(sys.argv[3]))])
+spec = fit_sync.SyncSpec(sync_calendar.InventoryRequest('closed:week', '2026-08-02',
+    '2026-08-09', '2026-08-09T07:00:10Z', 20, 2), 2, 1, 2, True, 30)
+def sync(root):
+    return asyncio.run(fit_sync.synchronize(root, spec, token_root=tokens, session_factory=sdk.session))
+receipt = sync(root)
+assert receipt['fit_count'] == 2 and receipt['provider_calls']['total'] == 4
+end = '2026-08-09T07:00:00Z'
+evidence = weekly_evidence.freeze(root, end, spec.inventory.key)
+assert {s['sport'] for a in evidence['activities'] for s in a['sessions']} == {'running', 'rock_climbing'}
+members = [{'activity_ref': a['activity_ref'], 'fit_sha256': a['fit_sha256']} for a in evidence['activities']]
+scope = fit_detail.freeze_scope(root, end, members)
+request = {'activity_ref':'101', 'view':'series', 'start_offset_seconds':0,
+           'end_offset_seconds':60, 'resolution_seconds':5}
+detail = fit_detail.DetailHost(root, end, scope['scope_sha256']).read(request)
+assert detail['status'] == 'available'
+calls = list(sdk.calls)
+moved = root.with_name('moved-instance')
+root.rename(moved)
+before = (moved / 'trainlab-fit.db').read_bytes()
+assert sync(moved) == receipt
+assert weekly_evidence.freeze(moved, end, spec.inventory.key) == evidence
+assert fit_detail.DetailHost(moved, end, scope['scope_sha256']).read(request) == detail
+assert sdk.calls == calls and (moved / 'trainlab-fit.db').read_bytes() == before
+for name, module in tuple(sys.modules.items()):
+    if name.startswith('skills.') and getattr(module, '__file__', None):
+        assert Path(module.__file__).is_relative_to(Path.cwd())
+print(json.dumps({'activities': 2, 'replay_calls': 0, 'detail': 'available'}))
+"""
+    )
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            program,
+            str(root),
+            fixture.data().hex(),
+            fixture.data(7200, sport=31).hex(),
+        ],
+        cwd=source,
+        env={"PATH": os.defpath, "PYTHONDONTWRITEBYTECODE": "1"},
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout) == {
+        "activities": 2,
+        "replay_calls": 0,
+        "detail": "available",
+    }
+
+
+@pytest.mark.parametrize("relative", runtime_resources.COLLECTION)
+def test_missing_collection_resource_fails_without_original_source_fallback(
+    tmp_path: Path, relative: str
+) -> None:
+    source = tmp_path / "closed-source"
+    for path in runtime_resources.files(SOURCE, collection=True):
+        target = source / path.relative_to(SOURCE)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(path, target)
+    (source / relative).unlink()
+    with pytest.raises(ValueError, match="runtime_dependency_missing"):
+        runtime_resources.files(source, collection=True)
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            """
+from pathlib import Path
+from skills._shared.fit_weekly import garmin_fit
+garmin_fit.shutil.which = lambda _: '/synthetic/uvx'
+root = Path('private')
+root.mkdir(mode=0o700)
+tokens, work = root / 'tokens', root / 'work'
+tokens.mkdir(mode=0o700)
+work.mkdir(mode=0o700)
+(tokens / 'synthetic.json').write_text('{"synthetic":true}')
+(tokens / 'synthetic.json').chmod(0o600)
+try:
+    garmin_fit.launch_spec(tokens, work, is_cn=True)
+except (ValueError, OSError):
+    pass
+else:
+    raise AssertionError('missing runtime resource accepted')
+""",
+        ],
+        cwd=source,
+        env={"PATH": os.defpath, "PYTHONDONTWRITEBYTECODE": "1"},
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    assert result.returncode == 0, result.stderr

@@ -55,6 +55,7 @@ def setup(tmp_path, monkeypatch):
         max_session_starts=3,
         timeout_seconds=1,
         is_cn=True,
+        total_timeout_seconds=120,
     )
     return root, token, spec
 
@@ -466,6 +467,9 @@ def test_initialize_failure_spends_persistent_session_budget(tmp_path, monkeypat
         ("max_download_calls", -1),
         ("max_session_starts", 0),
         ("timeout_seconds", float("nan")),
+        ("total_timeout_seconds", float("inf")),
+        ("total_timeout_seconds", 0),
+        ("total_timeout_seconds", True),
         ("is_cn", "true"),
     ],
 )

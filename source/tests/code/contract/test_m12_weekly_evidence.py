@@ -135,7 +135,9 @@ def setup(tmp_path, monkeypatch, activities=None, **request_changes):
         "max_calls": 2,
         **request_changes,
     }
-    spec = fit_sync.SyncSpec(sync_calendar.InventoryRequest(**args), 20, 2, 2, True)
+    spec = fit_sync.SyncSpec(
+        sync_calendar.InventoryRequest(**args), 20, 2, 2, True, 120
+    )
     sdk = FakeSDK(activities)
     receipt = asyncio.run(
         fit_sync.synchronize(root, spec, token_root=tokens, session_factory=sdk.session)
@@ -473,7 +475,7 @@ def test_new_sync_job_cannot_replace_frozen_week(tmp_path, monkeypatch):
     asyncio.run(
         fit_sync.synchronize(
             root,
-            fit_sync.SyncSpec(request, 20, 2, 2, True),
+            fit_sync.SyncSpec(request, 20, 2, 2, True, 120),
             token_root=tmp_path / "tokens",
             session_factory=sdk.session,
         )

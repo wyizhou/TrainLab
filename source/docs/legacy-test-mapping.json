@@ -6636,19 +6636,20 @@
         {
           "function": "test_total_wall_budget_starts_before_candidate_and_token_preflight",
           "line": 2124,
-          "disposition": "pending",
+          "disposition": "migrate",
           "criterion_ids": [
             "AC-002",
-            "RET-005"
+            "RET-001",
+            "RET-002"
           ],
           "existing_nodes": [
-            "tests/code/contract/test_m12_garmin_fit_adapter.py::test_session_failure_is_closed_and_never_retries"
+            "tests/code/contract/test_m12_sync_wall_budget.py::test_total_deadline_cancels_wait_and_keeps_session_audit",
+            "tests/code/contract/test_m12_sync_wall_budget.py::test_slow_durable_write_cannot_launch_next_provider",
+            "tests/code/contract/test_m12_sync_wall_budget.py::test_budget_freezes_request_even_if_request_write_interrupted"
           ],
-          "proposed_nodes": [
-            "tests/code/contract/test_m12_fit_sync.py::test_approved_wall_budget_covers_actual_sync_lifecycle"
-          ],
-          "exit_task": "M12-0005",
-          "reason": "旧Candidate预检阶段取消，但实际同步墙钟预算须覆盖当前获批会话/调用范围；现有通用会话失败测试未静态证明慢当前预检/关闭/耐久化的边界。不能照搬旧receipt超时字符串或制造新固定预算。 当前单次传输超时不等于整次同步墙钟上限；该能力由统一同步调度入口接替，真实调用前必须补齐，旧场景保留。",
+          "proposed_nodes": [],
+          "exit_task": "M12-R1",
+          "reason": "RUN-VC-001 AC-002：同步入口在本地前检前开始总计时，首次耐久冻结请求与截止时刻；实际FitClient慢启动/调用受同一余额限制。旧Candidate不恢复，旧原文不改写。",
           "parameterization": {
             "decorators": [],
             "named_bindings": {},
@@ -6659,19 +6660,19 @@
         {
           "function": "test_total_wall_budget_includes_cleanup_before_receipt",
           "line": 2164,
-          "disposition": "pending",
+          "disposition": "migrate",
           "criterion_ids": [
             "AC-002",
-            "RET-005"
+            "RET-001",
+            "RET-002"
           ],
           "existing_nodes": [
-            "tests/code/contract/test_m12_garmin_fit_adapter.py::test_session_failure_is_closed_and_never_retries"
+            "tests/code/contract/test_m12_sync_wall_budget.py::test_slow_close_is_audited_but_cannot_refresh_retry_budget",
+            "tests/code/contract/test_m12_sync_wall_budget.py::test_real_process_interruption_and_relocation_preserve_deadline"
           ],
-          "proposed_nodes": [
-            "tests/code/contract/test_m12_fit_sync.py::test_approved_wall_budget_covers_actual_sync_lifecycle"
-          ],
-          "exit_task": "M12-0005",
-          "reason": "旧Candidate预检阶段取消，但实际同步墙钟预算须覆盖当前获批会话/调用范围；现有通用会话失败测试未静态证明慢当前预检/关闭/耐久化的边界。不能照搬旧receipt超时字符串或制造新固定预算。 当前单次传输超时不等于整次同步墙钟上限；该能力由统一同步调度入口接替，真实调用前必须补齐，旧场景保留。",
+          "proposed_nodes": [],
+          "exit_task": "M12-R1",
+          "reason": "RUN-VC-001 AC-002：慢关闭仍保留Token审计和原截止时间，不返还后续采集预算；真实中断与搬迁不重获时间。正常同步收尾不被取消，不承诺永久内核硬件故障准点退出。",
           "parameterization": {
             "decorators": [],
             "named_bindings": {},
@@ -6682,19 +6683,20 @@
         {
           "function": "test_total_wall_budget_downgrades_success_during_receipt_write",
           "line": 2202,
-          "disposition": "pending",
+          "disposition": "migrate",
           "criterion_ids": [
             "AC-002",
-            "RET-005"
+            "RET-001",
+            "RET-002"
           ],
           "existing_nodes": [
-            "tests/code/contract/test_m12_garmin_fit_adapter.py::test_session_failure_is_closed_and_never_retries"
+            "tests/code/contract/test_m12_sync_wall_budget.py::test_slow_durable_write_cannot_launch_next_provider",
+            "tests/code/contract/test_m12_sync_wall_budget.py::test_continuous_short_calls_share_one_deadline",
+            "tests/code/contract/test_m12_fit_sync.py::test_final_receipt_failure_replays_locally_and_unfinished_jobs_are_visible"
           ],
-          "proposed_nodes": [
-            "tests/code/contract/test_m12_fit_sync.py::test_approved_wall_budget_covers_actual_sync_lifecycle"
-          ],
-          "exit_task": "M12-0005",
-          "reason": "旧Candidate预检阶段取消，但实际同步墙钟预算须覆盖当前获批会话/调用范围；现有通用会话失败测试未静态证明慢当前预检/关闭/耐久化的边界。不能照搬旧receipt超时字符串或制造新固定预算。 当前单次传输超时不等于整次同步墙钟上限；该能力由统一同步调度入口接替，真实调用前必须补齐，旧场景保留。",
+          "proposed_nodes": [],
+          "exit_task": "M12-R1",
+          "reason": "RUN-VC-001 AC-002：慢落盘不能让下一次采集越期；越限采集不记成功，已有闭合证据允许本地零调用收尾。保留同步耐久化，不恢复每个磁盘调用必须准点返回或后台写线程路线；旧receipt字符串不是当前预期。",
           "parameterization": {
             "decorators": [],
             "named_bindings": {},
@@ -11644,7 +11646,7 @@
     },
     {
       "path": "tests/code/unit/test_training_goal_vc006.py",
-      "baseline_sha256": "2dc827a48e38836950e4b5effefb8990151d34804cb47f562dcc1032c5a81bde",
+      "baseline_sha256": "d46c4e91aa4c8a4efc947b98c2539b4b12423b4a393dca8fc9c94c1eaeeac93e",
       "baseline_function_count": 5,
       "file_status": "current",
       "current_sha256": "2dc827a48e38836950e4b5effefb8990151d34804cb47f562dcc1032c5a81bde",
@@ -11965,6 +11967,7 @@
     "tests/code/contract/test_m12_sports_input.py",
     "tests/code/contract/test_m12_storage.py",
     "tests/code/contract/test_m12_sync_calendar.py",
+    "tests/code/contract/test_m12_sync_wall_budget.py",
     "tests/code/contract/test_m12_weekly_context.py",
     "tests/code/contract/test_m12_weekly_evidence.py",
     "tests/code/contract/test_m8_contracts.py",
