@@ -11,6 +11,8 @@ from pathlib import Path
 from typing import Any
 
 from skills._shared.fit_weekly import (
+    coaching_contract,
+    coaching_facts,
     codex_capability,
     codex_isolation,
     codex_output,
@@ -28,11 +30,34 @@ from skills._shared.fit_weekly.codex_runtime import Runtime
 
 
 def files(spec: dict[str, Any]) -> dict[str, bytes]:
+    prefix = spec["prompt_prefix"]
+    request = spec["request"]
+    version = (
+        request["response_schema"]
+        .get("properties", {})
+        .get("schema_version", {})
+        .get("const")
+    )
+    if version in coaching_contract.VERSIONS.values():
+        stage = request.get("stage")
+        if (
+            stage not in coaching_contract.VERSIONS
+            or version != coaching_contract.VERSIONS[stage]
+        ):
+            raise ValueError("coaching_stage_invalid")
+        coaching_contract.check(stage)
+        if prefix != coaching_contract.prompt(stage) or request[
+            "response_schema"
+        ] != coaching_contract.schema(stage):
+            raise ValueError("coaching_runtime_prompt_invalid")
+        prefix += (
+            "\nHOST_FACTS\n"
+            + storage.canonical(coaching_facts.build(request["payload"]))
+            + "\nSTAGE_PAYLOAD\n"
+        )
     return {
         "prepared.json": storage.canonical(spec).encode(),
-        "prompt.txt": (
-            spec["prompt_prefix"] + storage.canonical(spec["request"]["payload"])
-        ).encode(),
+        "prompt.txt": (prefix + storage.canonical(spec["request"]["payload"])).encode(),
         "instructions.txt": spec["instructions"].encode(),
         "response.schema.json": storage.canonical(
             codex_output.wire_schema(spec["request"]["response_schema"])

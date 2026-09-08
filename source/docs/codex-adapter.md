@@ -57,3 +57,5 @@ Linux 的实际能力证据生产与部署前检查仍须在目标环境完成�
 
 测试映射：`tests/code/contract/test_m12_codex_adapter.py`；复用既有 model_job、
 process_capture、codex_output、codex_recovery 和 codex_isolation 的测试，不删除旧场景。
+
+R3 的同源业务 Schema/Prompt、Host 统计、逐证据课程校验和只读完整报告见[周报业务合同](weekly-coaching.md)。原冻结格式、执行器和预算保持原接口，发布由后续模块实现。

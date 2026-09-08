@@ -1,0 +1,410 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "fit_running_plan_v1"
+    },
+    "rationale": {
+      "$ref": "#/$defs/claim"
+    },
+    "days": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "run",
+              "rest"
+            ]
+          },
+          "workout": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/$defs/workout"
+              }
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "workout"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 7,
+      "maxItems": 7
+    },
+    "progression_limitations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "maxItems": 20
+    },
+    "policy": {
+      "type": "object",
+      "properties": {
+        "fixed_seven_days": {
+          "type": "boolean",
+          "const": true
+        },
+        "make_up_sessions": {
+          "type": "boolean",
+          "const": false
+        },
+        "daily_adjustments": {
+          "type": "boolean",
+          "const": false
+        }
+      },
+      "required": [
+        "fixed_seven_days",
+        "make_up_sessions",
+        "daily_adjustments"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "rationale",
+    "days",
+    "progression_limitations",
+    "policy"
+  ],
+  "additionalProperties": false,
+  "description": "Seven ordered Monday-Sunday slots. Host assigns the dates. Rest has no workout. Running and goal evidence only, never other-sport load. Hard load <=3, spacing >=3 days. No simultaneous distance and intensity increases; disclose incomparable or missing baselines. No unsupported SOS, make-up or dynamic alternatives. No BPM/heart-rate-zone/threshold prescription.",
+  "$defs": {
+    "evidence": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": "string",
+          "enum": [
+            "current",
+            "detail",
+            "history",
+            "goal"
+          ]
+        },
+        "activity_ref": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "minLength": 1
+            }
+          ]
+        },
+        "fit_sha256": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          ]
+        },
+        "session_ordinal": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "integer",
+              "minimum": 1
+            }
+          ]
+        },
+        "period_end_utc": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "minLength": 1
+            }
+          ]
+        },
+        "request_sha256": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          ]
+        },
+        "path": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "integer",
+                "minimum": 0
+              }
+            ]
+          },
+          "minItems": 1,
+          "maxItems": 12
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": [
+                "string",
+                "number",
+                "boolean"
+              ]
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 1,
+              "maxItems": 16
+            }
+          ]
+        }
+      },
+      "required": [
+        "source",
+        "activity_ref",
+        "fit_sha256",
+        "session_ordinal",
+        "period_end_utc",
+        "request_sha256",
+        "path",
+        "value"
+      ],
+      "additionalProperties": false,
+      "description": "Exact frozen source value. Current evidence paths start inside the named session; detail paths name one saved block. No fabricated or missing values."
+    },
+    "claim": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "supported",
+            "unknown",
+            "not_applicable"
+          ]
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          },
+          "minItems": 0,
+          "maxItems": 20
+        },
+        "conditions": {
+          "type": "string",
+          "minLength": 1
+        },
+        "method": {
+          "type": "string",
+          "enum": [
+            "source_observation"
+          ]
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "maxItems": 20
+        }
+      },
+      "required": [
+        "status",
+        "text",
+        "evidence",
+        "conditions",
+        "method",
+        "limitations"
+      ],
+      "additionalProperties": false,
+      "description": "Technical explanations must give source observations, applicability and limits; do not invent calculated values or causal proof. Unknown has no invented evidence."
+    },
+    "dose": {
+      "type": "object",
+      "properties": {
+        "unit": {
+          "type": "string",
+          "enum": [
+            "seconds",
+            "meters"
+          ]
+        },
+        "value": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": [
+        "unit",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "step": {
+      "type": "object",
+      "properties": {
+        "phase": {
+          "type": "string",
+          "enum": [
+            "warmup",
+            "run",
+            "work",
+            "recovery",
+            "cooldown"
+          ]
+        },
+        "unit": {
+          "type": "string",
+          "enum": [
+            "seconds",
+            "meters"
+          ]
+        },
+        "value": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "effort": {
+          "type": "string",
+          "enum": [
+            "easy",
+            "moderate",
+            "hard"
+          ]
+        },
+        "rpe": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10
+        },
+        "instructions": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "phase",
+        "unit",
+        "value",
+        "effort",
+        "rpe",
+        "instructions"
+      ],
+      "additionalProperties": false
+    },
+    "group": {
+      "type": "object",
+      "properties": {
+        "repeat": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/step"
+          },
+          "minItems": 1,
+          "maxItems": 20
+        }
+      },
+      "required": [
+        "repeat",
+        "steps"
+      ],
+      "additionalProperties": false
+    },
+    "workout": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "easy",
+            "long",
+            "tempo",
+            "intervals"
+          ]
+        },
+        "hard_load": {
+          "type": "boolean"
+        },
+        "purpose": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dose": {
+          "$ref": "#/$defs/dose"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/group"
+          },
+          "minItems": 1,
+          "maxItems": 20
+        },
+        "technical_notes": {
+          "type": "string",
+          "minLength": 1
+        },
+        "stop_conditions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "maxItems": 10
+        }
+      },
+      "required": [
+        "kind",
+        "hard_load",
+        "purpose",
+        "dose",
+        "steps",
+        "technical_notes",
+        "stop_conditions"
+      ],
+      "additionalProperties": false,
+      "description": "Complete running workout. Long/tempo/intervals and steps declared hard count as hard load. Dose is the exact repeated step sum with one unit per workout, not an estimated distance from time. RPE is a subjective cue, never a physiological threshold."
+    }
+  }
+}

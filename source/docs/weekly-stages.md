@@ -1,7 +1,6 @@
 # R2 两阶段周任务接线
 
-这是已实现的内部 Host 接线，不是可直接上线的完整教练命令。真实训练结果 Schema、
-跑步分析语义、课程安全及发布由 R3 和后续模块交付；这里没有生产空校验器或 Fake 回退。
+这是已实现的内部 Host 接线，不是可直接上线的完整教练命令。业务 Schema、课程和证据校验见 [R3 周报](weekly-coaching.md)；发布仍由后续模块实现。这里没有生产空校验器或 Fake 回退。
 
 ## 调用与恢复
 
@@ -38,13 +37,13 @@
 
 ## R3 共享接口与历史
 
-总结业务 Schema 必须声明顶层独立 `running_analysis` 必填字段；其内部训练内容由 R3 定义。
+总结业务 Schema 必须声明顶层独立 `running_analysis` 必填字段；其内部训练结构及逐项来源由 R3 业务校验。
 合并结果 `running` 固定为 `{analysis: summary.running_analysis, plan: 原plan结果}`。
 完整历史 `fit_weekly_history_v2` 从原两阶段 request/capture/result 重新验证这两个字段和 SHA；
 Host 的历史 ResultValidator 按保存阶段/格式分派，不猜字段，不从混合自由正文提取。
 旧 `fit_weekly_history_v1` 无这一独立来源结构，只进入总结，不整篇传给规划。
 R2 只验证结构、来源、顺序与不可替换；`publishable` 是已通过所提供业务合同的合并状态，
-不是邮件/PDF/Garmin 已发送，也不是 R3 真实训练验收已完成。
+不是邮件/PDF/Garmin 已发送，也不证明自由文字语义或真实训练已验收。
 
 回归：[两阶段](../tests/code/contract/test_m12_weekly_stages.py)、
 [阶段细读/真实 stdio](../tests/code/contract/test_m12_stage_detail.py)、

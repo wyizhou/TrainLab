@@ -1,6 +1,6 @@
 # M12：跑步独立规划分支与三角色协作
 
-- 状态：active；当前步骤：R1已完成双平台交付，R2独立/Main实际验收通过，分支交付与双平台CI待完成。
+- 状态：validated；当前步骤：R2已完成验收/分支交付/双平台CI；R3当前3158项完整独立回归及Main实际验收18项、静态门通过，待精确分支交付与同提交双平台CI；原FAIL保留，R4–R7尚待。
 - 分支：work/m12-running-only-planning；基准 b307e90efca7e1f1f65d0a22842aa1f685447e42。
 - 批准来源：2026-09-08 用户逐字批准《TrainLab 跑步独立规划分支：三角色协作实施计划》。
 - 当前完整合同：RUN-VC-001，frozen；本分支实施前冻结。仅替代本分支受影响规则，另一条开发路线不变。
@@ -53,8 +53,8 @@
 | --- | --- | --- | --- |
 | R0 | done | 现场保护、三角色协作、当前分支目标/模板、继承基线核对；已提交/推送/双平台CI | COL全部、RET、GATE、INV |
 | R1 | done | 现有底座接线/同步预算/无归档独立运行；5c67ead已推送且双平台CI通过 | AC001–006、RET |
-| R2 | in_progress | 两阶段输入、共享细读及一次调用恢复；独立/Main验收通过，分支CI待完成 | AC004–010 |
-| R3 | pending | 周报/固定课程业务校验；依赖R2 | AC011–013 |
+| R2 | done | 两阶段输入、共享细读及一次调用恢复；671f7b2已推送，双平台CI通过 | AC004–010 |
+| R3 | in_progress | 周报/固定课程业务校验已获独立PASS及Main实际验收；待分支交付与同提交双平台CI | AC011–013 |
 | R4 | pending | Markdown/PDF/本地修订；依赖R3 | AC014 |
 | R5 | pending | Gmail/Garmin新库动作与读回；依赖R4 | AC015–016 |
 | R6 | pending | 统一入口/调度/彻底退役/全链离线；依赖R5 | AC017–019、RET、全部集成门 |
@@ -65,8 +65,8 @@
 - 2026-09-08 Git门通过，56项tracked改动/删除、23项untracked均保留。
 - 仓库外保护目录：/private/tmp/trainlab-running-branch-prechange.dI6pvD；410份公共文件/5项删除记录，tree和restore逐字节核对、0700/0600；manifest SHA 57b3df394c3da96f110253a01d3ceb920c7dee0ee9d714b5e0287ee7ca667991。未读取正式数据/凭据。
 - 既有VC-005受审树410文件当前仅活动计划协调记录不同，产品源与测试未变；既有PASS仅覆盖原底座，不能代替本分支新要求验收。
-- 阻塞：R2无已证实合同不符合，独立本机PASS；诊断状态not_triggered。R1及R2各自集中修正批次1已消除，R2独立Validator失败轮次0。额外真实CLI本机探针能力未确认，保留限制，不作为真实可运行证明。
-- 下一动作：精确分支提交/推送并核对同SHA的macOS/Linux全量CI；依赖门完成前不启动R3。CLI能力未知须在后续完整运行及真实阶段前明确核实，不以R2内部接线PASS代替。
+- 阻塞状态：当前R3离线结果无有效阻塞，第二轮全新独立Validator PASS及Main实际验收完成。原三次Agent创建失败、集中修复4批及独立FAIL1轮完整保留，各失败特征消除，诊断门未触发；未声称旧Agent已关闭或释放。R1/R2已完成。额外真实CLI本机探针能力仍未确认，须在完整运行及真实阶段前核实，合成进程不替代真实运行证明。
+- 下一动作：审计当前26项产品与独立快照一致，另6项Main记录仅回写已验证事实，然后精确提交/正常推送现有分支并核对同SHA macOS/Linux完整CI；双平台完成后再派全新R4 Planner。不重做R0–R2、不重启R3 Planner、不复用旧Agent；当前Main独占协调记录。
 - 实际业务Provider/周模型/邮件/课程调用0；本轮R0已提交并推送当前分支d525a39561dde62e286b988cf3978f67daf95841，远端SHA已读回一致。开发子Agent不是产品周模型调用。
 
 ## 派发、验证与迭代
@@ -276,7 +276,100 @@ R2首次独立验收派发：validator_r2_independent_stages，fork_turns=none�
 
 本上下文检查点：集中修正仅7个获批测试/映射文件变化；原产品与旧历史fixture不变。Developer最终9文件定向1383 passed/245.24s，完整3089 passed/867.09s，Ruff/format186/mypy168及静态门通过；结束后369个source文件SHA/mode与冻结清单相同。Main复核分支/未暂存范围，并只读compile166/103JSON/15Schema根/69链接及布局门通过。50项中性快照/private/tmp/trainlab-r2-review.8w3odmhj，manifest SHA6e9c3b994383b67b6ed928ec0c37f97ccf48cfc15cf8c4869e7e121eb8cd7f30，当前逐项SHA/mode再次一致；原失败快照不覆盖。派发全新high/high Validator，尚无独立结论，不预先提交/推送。
 
+## R3 派发与实施记录
+
+- 当前第二轮独立验收及Main实际验收已结束。独立八字段原文、全部命令/退出与日志见/var/folders/dh/4th4rwbd7xlg8qslxz62hbjc0000gn/T/trainlab-r3-validator-current-1osnis8e/verdict.json和commands.json；原第一轮FAIL保持原文。
+  - contract_version：RUN-VC-001，正文SHA06b78e945db2e730f6eafd4b4f525ae26b05c168b5107f6eba65fcea7ba180b8。
+  - overall_verdict：PASS，仅当前R3本机离线快照；不代表Linux CI或真实模型/Provider。
+  - criterion_results：AC004–010来源、阶段隔离/唯一计划/共享预算/恢复通过；AC011–013七部分周报、128种七日硬负荷组合、重复剂量、历史心率、业务Schema/wire/Prompt通过；RET/INV/TM/EX及本轮COL/GATE适用离线门通过；AC014–019及GATE003/LIVE001留后续模块/实际交付。
+  - blocking_findings：无。
+  - advisories：确定性结构/来源及有界文字检查不能证明任意文字解释、目标理解和训练合理性；Main验收及当前提交双平台CI分别留证。
+  - scope_change_candidates：无。
+  - unknowns：当前Linux CI、真实Codex CLI/模型及Garmin/Gmail未执行；R4–R6未交付。
+  - commands_and_evidence：3158 passed/910.63s/退出0；独立4项23.87s/退出0，含128组合、来源、重复剂量及合成进程实际适配接线；Ruff/format197/mypy179/compile177/18Schema/JSON/metadata/AI布局/58资源/135Markdown链接/权限隐私ignore/diff均退出0。26产品SHA/mode和30路径范围、合同、基准671f7b2及空暂存区前后不变，manifest SHAba2777f5eeb69298f000a2e952604deaee9a0e098b706e4a72da94fc4eb9eba2，所有检查进程已结束。
+- Main在独立PASS后对同一8nwnkias快照实际执行run_final_acceptance.py，证据/private/tmp/trainlab-r3-main-acceptance.vvxyfwhg/results.json及before.json/after.json。18 passed/23.97s/退出0：公开合成两阶段接线、精确Prompt/Host事实、来源/历史心率、失败停止、说明字段拒绝及合法语句、搬迁重放零调用/数据库不变；对应AC004–013及RET/INV。Ruff、format、mypy、compile177/106JSON/18Schema/布局隐私ignore/diff及50链接实际退出0，30路径SHA/mode和合同前后一致。完整3158项由本轮独立Validator执行，不把Main18项冒称全量；真实CLI/Provider仍未运行。
+- 独立及Main实际验收后，仅同步CHANGELOG、PLANS、memory、活动计划，以及README和source/AGENTS两处已验证模块状态。后两份是新增Main事实文件，最终范围32路径=26产品+6Main事实；独立快照仍为原30路径，不声称32项全部独立受审。按执行协议“仅追加真实检查结果、同步状态/活动指针、记录已验证的稳定事实”适用协调回写免重验；不改变规则、合同、命令或后续交付要求，提交前仍核对产品摘要、事实差异及链接。当前尚未提交/推送或完成同提交双平台CI。
+
+- R3当前开发完整门已结束：唯一完整pytest3158 passed/885.25s，退出0，会话38846及shell/uv/pytest进程均已停止；full-pytest.log SHA8e5f40eb34083b1e7b424ca475ad3d2f3ed388b5a205a18dcc8e5ef4b1932650。精确命令/环境及最终摘要见/private/tmp/trainlab-r3-plan-text-dev-acko0sxq/commands.json和end-summary.json。首次红灯命令曾在指定工作树根目录找不到requirements.txt、退出2，实际回归已在source执行，原错误日志保留；未改另一开发路线。Main重核30路径范围、全部SHA/mode、合同、分支/基准及空暂存区一致；当前仅计划真实协调追加。Main原7项边界在此新快照预检7 passed/2.08s、退出0，原红灯仍保留，不作为最终Main验收或独立PASS。
+- 下一派发validator_r3_current_business：全新fork_turns=none、high/high，不低于Developer；平台gpt-6-astra/high。中性包/private/tmp/trainlab-r3-validator-packet.r44h2ok3，当前快照/private/tmp/trainlab-r3-review.8nwnkias，manifest SHAba2777f5eeb69298f000a2e952604deaee9a0e098b706e4a72da94fc4eb9eba2。只传当前逐字RUN-VC-001/规则/接口/目标/结果与基准，不传任何旧裁决、缺陷方向、实施自检或失败计数；只读当前结果、自建检查并独立完整质量门、八字段返回，Main仍需之后实际验收及Git/双平台CI。工具已实际创建validator_r3_current_business；其独立证据/var/folders/dh/4th4rwbd7xlg8qslxz62hbjc0000gn/T/trainlab-r3-validator-current-1osnis8e，完整pytest会话94901仍在运行。该角色已自行核对当前26产品/30路径/合同，并报告当前静态门和4项自建检查通过，尚无最终独立裁决；Main未改产品或测试。集中修复4批、独立FAIL1轮保留，诊断门未触发。
+
+- R3计划说明字段覆盖修正已实际派发全新developer_r3_plan_text_coverage（fork_turns=none、high/high）并停止产品写入，唯一白名单3项变化：coaching_plan.py增加progression_limitations对现有guard_text(future=True)调用；课程/两阶段测试补直接拒绝、首次失败不启动总结、旧保存结果复验及合法语句/历史心率回归。新增红9 failed/4 passed→绿13 passed，课程与资源专项86 passed；Ruff/format/mypy/compile/CI声明Schema/JSON/metadata/AI布局/source/privacy/ignore/diff及87产品链接通过。新增恢复用例初始异常名预期与既有封装不符，改为当前公开model_capture_invalid，拒绝行为预期不变，原日志保留；没有弱化原正确用例。
+- 当前冻结SHA：coaching_plan.py ad55355008b4c7acb785d36b8e23e009ea990496dbd4562183eef8aca78884b9；test_m12_coaching_plan.py 60b762da364f00b573e2d53fe4173c216029e6d936057204e191d43e2ab6343d；test_m12_coaching_stages.py 777811e055589aa16b26195c58ecbb3f7f4994b08d7eed3603b1ddbef1ad04d7。Main新30路径快照/private/tmp/trainlab-r3-review.8nwnkias，manifest SHAba2777f5eeb69298f000a2e952604deaee9a0e098b706e4a72da94fc4eb9eba2，合同逐字不变，旧快照和FAIL保留。Developer证据/private/tmp/trainlab-r3-plan-text-dev-acko0sxq，唯一完整pytest会话38846正在自然运行，尚无最终退出；不以86项专项冒充全量。
+- 当前集中修复已实施批次4，plan_limitations_guard_missing仅一项修法，独立Validator失败轮次仍1；诊断门未触发，旧问题记录不清零。中性下一Validator包/private/tmp/trainlab-r3-validator-packet.r44h2ok3（task SHA8229f06225d9f099f0a2b7e7a0f64dc5b51b2fb15eed9764beeacbf87d24cd66）只绑定当前合同/规则/目标/接口及新快照，不含旧裁决或缺陷提示，待当前开发完整门结束后再派。Main最终验收脚本已绑定新快照并加入独立复现的7项边界，仍须先获得新独立PASS才能执行最终验收和交付。
+
+- R3第一次独立验收已完成，受审快照30路径manifest SHA4ce9813277e9d63573354d6a662e7c0fe7c699a9c054265786a786c8567bba22，基准671f7b2。完整八字段原文、命令和原日志/private/tmp/trainlab-r3-validator-evidence-r03wwd1j/verdict.json；结束后产品/测试26路径、合同、模式和链接均无漂移，仅Main协调追加，无暂存或遗留检查进程。
+  - contract_version：RUN-VC-001；overall_verdict：FAIL。
+  - criterion_results：AC012/013 FAIL；本模块适用AC004–011/RET001–002通过。当前macOS完整pytest3145 passed/892.91s、退出0；Ruff/format/mypy/compile/活动Schema/metadata/布局/87产品链接/权限/隐私/ignore/diff均通过；独立8项补充通过，含128种硬课组合。现有完整测试通过不覆盖本轮新反例。
+  - blocking_findings：R3-BF-001，coaching_plan.py仅对workout/rationale调用现有文字检查，progression_limitations直接投影；将合法计划该字段改为“保持140 bpm”或“明天补跑”仍接受，两阶段publishable=true、各1次合成适配器调用，report保留处方文字。直接现有guard_text能拒绝原句，故为字段覆盖遗漏，无需新增语义识别要求；独立3项反例失败/退出1，plan-limitations-boundary.log及同名测试原文保留。
+  - advisories：独立临时检查初版把业务结果不得读FIT扩大到原输入来源验证，保留原失败，仅修正仓库外检查作用域后通过，未改交付；确定性检查不证明任意自由文字或训练解释合理性。
+  - scope_change_candidates：无。
+  - unknowns：真实模型/CLI/业务/私人实例及实际训练合理性未验；Linux、Main最终验收、Git交付与后续模块待，未执行。
+  - commands_and_evidence：上述verdict.json及同目录原始命令/日志，当前Git和30路径首尾摘要一致，完整/独立检查自然结束。此FAIL不改判为专项或静态PASS，不进入Main最终验收/提交。
+- Main按同一当前合同另以公开合成输入复现：新增相同字段“排除健康风险”，三个明显违规预期和一个两阶段不可发布预期失败，三项合法禁止/停止语句通过；4 failed/3 passed、退出1，证据/private/tmp/trainlab-r3-main.v57uffay/test_main_plan_limits.py和plan-limitations-red-v2.log。初版脚本在未执行的后续断言中使用数据库表名，已保留初版并改用现有fit_detail.get读取接口；两版当前反例结果一致，未改产品/正确预期。该补充仅定位既有检查覆盖，不传递裁决给后续角色。
+- 本次失败特征plan_limitations_guard_missing，关联AC012/013，当前修法0；独立Validator失败轮次累计1。先前三个已修复的不同特征及失败证据不清零；集中修复已实施批次3。本轮无两种修法同特征仍失败、三轮不收敛或合同冲突，诊断门not_triggered。Main四项审核：该修正属于原字段/检查/回归范围，无遗漏、矛盾、新业务或模块接口变化。
+- 下一派发developer_r3_plan_text_coverage：全新fork_turns=none、high/high（计划安全与阶段失败/恢复），平台gpt-6-astra/high。中性包/private/tmp/trainlab-r3-limits-packet.9tfvi42v，task SHA8e44db0e667d6a90390e3665c1fab042705a095ce4de97e362a1b3f2e97ffc9d，仅逐字合同、现行标准/接口和当前原始复现，不含旧裁决/辩护/失败计数。写界限coaching_plan.py及原coaching plan/integration两测试文件，不改Schema/Prompt/guard规则/旧断言；合法禁止与历史事实保持。先回归再最小修正，冻结后完整质量门、全新Validator及Main验收，才进入获批分支交付/双平台CI。创建结果待实际工具确认。
+
+- R3全新独立Validator已由工具实际创建：validator_r3_independent_coaching，fork_turns=none、high/high。其独立证据目录/private/tmp/trainlab-r3-validator-evidence-r03wwd1j，完整pytest会话29409、额外静态门会话71705；已自行核对初始快照，产品与测试保持冻结。当前尚无独立裁决或Main最终验收，不提前提交/推送。Main仅完成当前交付差异审查：30路径、测试登记只新增4项，历史映射及原用例未删减；受审文件无正式数据/凭据/构建产物路径，常见密钥标记扫描无命中。该范围检查只是Main自查，不能替代独立PASS，证据/private/tmp/trainlab-r3-main.v57uffay/pre-delivery-scope-review.json。
+
+- R3当前完整开发门：资源测试准备修正后的唯一完整pytest自然退出0，3145 passed/870.27s，实际启动/退出UTC12:34:22→12:48:53，PID51092/51093均结束。原完整命令/日志/private/tmp/trainlab-r3-resource-developer.hufizpc1/full.json及full.log，原3142 passed/3 failed失败保留。Main独立核对30路径实际范围、26产品SHA/mode、基准/分支、逐字合同及空暂存区均与新快照一致；仅Main计划事实追加。专项和开发全量是开发门证据，不替代独立验证。
+- 下一独立派发validator_r3_independent_coaching：全新fork_turns=none，high/high（跨阶段业务、来源、安全/资源与恢复，不低于Developer），平台gpt-6-astra/high。中性包/private/tmp/trainlab-r3-validator-packet.p3r5wrrg和快照/private/tmp/trainlab-r3-review.6_kqdtn5，manifest SHA4ce9813277e9d63573354d6a662e7c0fe7c699a9c054265786a786c8567bba22；仅逐字合同、现行规则/接口/预期、客观基准/当前结果，不传实施自检、旧裁决或缺陷提示。角色只读并独立全量/功能检查，八字段返回；Main之后仍需实际验收与获批分支交付/双平台CI。派发结果待工具实证，不预记PASS。
+
+- R3资源测试准备修正冻结：全新developer_r3_resource_fixture实际创建成功，仅test_m12_resource_closure.py增加5行，复制两份当前Prompt并验证删除Schema前的合法基线；原断言/产品/Schema/Prompt不变。文件SHA b25beadae783a4d160b53e2d34451e9c1e43cb7dd18c730c10a54ea04cc73230。原三项同命令红3 failed/绿3 passed；资源与coaching专项73 passed/20.62s，Ruff、format197、mypy179、compile/18活动Schema/JSON/metadata/AI布局/87产品链接/权限隐私/ignore/diff均退出0。临时静态检查器首次误把合法.gitkeep视作私有目录条目，原失败保留，仅纠正仓库外检查方法后通过，未改交付或正确预期。
+- Main核对原25产品SHA无变，完整30路径新快照/private/tmp/trainlab-r3-review.6_kqdtn5，manifest SHA4ce9813277e9d63573354d6a662e7c0fe7c699a9c054265786a786c8567bba22；基准671f7b2、RUN-VC-001逐字SHA不变、无暂存。Developer停止写入后442路径清单SHA e42f29bce307377e34a8d3bea3f45261b86c10b0b1afe6c8409aec6fa14e09e0，证据/private/tmp/trainlab-r3-resource-developer.hufizpc1。唯一完整pytest session34114已启动，最终退出尚待，不用专项替代全量。当前集中修复已实施批次3，三个不同失败特征各一项修法，Validator失败0；诊断门未触发，旧失败/进度纠错记录保留。中性Validator材料/private/tmp/trainlab-r3-validator-packet.p3r5wrrg仅当前合同/标准/接口及新快照，不含既往结果；待当前完整检查结束后再派发，未预记独立PASS或Git交付。
+
+- R3当前完整回归与资源副本问题：developer_r3_local_type的唯一完整pytest自然退出1，3 failed、3142 passed/863.26s；原证据/private/tmp/trainlab-r3-type-evidence.l8ogj1s2/pytest-full.json及.log。三项均为test_m12_resource_closure.py初始runtime.identity失败。Main读取实际测试和资源声明，并在仓库外合成副本复现：runtime_copy漏带当前声明的两份业务Prompt；只补齐临时副本后，退休资源不影响身份、两项实际goal校验依赖变更影响身份的原判断均通过。定位脚本与原输出/private/tmp/trainlab-r3-main.v57uffay/reproduce_resource_fixture.py及resource-fixture-diagnostic.json，未改交付测试或产品。该缺陷是交付测试准备遗漏，不降运行依赖要求、不更改正确预期。此前只看pytest尾部的“尚未出现失败”进度遗漏中段FFF，最终结论按完整日志FAIL保留。
+- 当前25产品摘要均与29路径快照/private/tmp/trainlab-r3-review.0w952941一致，manifest SHA42f52210fd1189f983233e121d400e7766c2b43c29ca405a45b2bfc0f63ce8b8；逐字合同不变，旧快照/失败不覆盖。局部类型修正已消除原mypy特征；本次新失败特征test_fixture_missing_active_prompts，实际修法0，集中修复已实施批次2、Validator失败0；不同特征不清零旧记录，诊断门未触发。Main四项审核确认本次只修原白名单内资源测试准备，无遗漏、矛盾、新业务或接口变化。
+- 下一派发developer_r3_resource_fixture：全新fork_turns=none、high/high（当前资源与安全测试迁移），平台gpt-6-astra/high；中性包/private/tmp/trainlab-r3-closure-packet.xxbfnplq（task SHA4522a623947e91a67ef0f40f6a96e5580febf0dc6cb67f520546bb6921389f80），仅当前逐字合同/审核预期/原始失败与合成复现。写入只限source/tests/code/contract/test_m12_resource_closure.py，不改业务/Schema/Prompt或原断言含义；完整本机门、全新Validator及Main验收后才分支交付/双平台CI。此处仅记录派发配置，创建结果待实际工具确认；未派Validator、提交或推送。
+
+- R3局部类型修正冻结：全新developer_r3_local_type复现原mypy退出1后，仅将coaching_contract.py的局部result标注为dict[str, Any]；去除该标注后的AST与前快照相同，其余产品/测试/Schema/Prompt不变。该文件SHA aaf0b6a23a6d1dae8330a9a279fedaad3b9aee4e9688d42355ff9fa7328c796f，证据/private/tmp/trainlab-r3-type-evidence.l8ogj1s2。冻结前完整mypy179、Ruff、format197、compile177/Schema/metadata/Markdown/布局/权限/隐私/ignore/diff均退出0，coaching专项56 passed/16.59s。已停止产品写入并启动完整pytest session18722，当前尚无全量结论，未派Validator或提交推送。原两个失败和被中断的全量记录保持不变；集中修复批次2、Validator失败0。
+
+- R3第二次冻结与类型门：引用修复后29项快照/private/tmp/trainlab-r3-review.he09q79w，manifest SHA386ed91b389bcac3a2e968a27961ae9f496fa20e33cd5627cb4eab1505724520；仅两份获批文件变化。Main原引用反例现退出0，声明变化实际改变投影；Main静态门通过，原10项业务预检通过。本机假程序经真实子进程和coaching.codex_contracts完成两阶段、Host事实与捕获落盘，1 passed/18.83s；首次检查失败是合成同步夹具影响共享shutil.which，限定恢复检查方法后通过，未改产品/隔离，不能扩大为真实CLI能力证明。新Developer引用专项20 passed；mypy在coaching_contract.py:81报局部result赋值类型不兼容，退出1；其他静态门通过。Main读取原日志/代码确认新失败特征schema_expander_local_type，引用漂移已消除。完整pytest按要求中断，358 passed、退出2，无全量PASS；原证据/private/tmp/trainlab-r3-ref-repair.un7ntCvu保留。Developer结束后创建全新developer_r3_local_type，fork_turns=none、high/high，平台gpt-6-astra/high；包/private/tmp/trainlab-r3-type-packet.1dfdlakz仅当前合同/审核预期/实际mypy输出及单文件局部标注白名单，不改运行语义/测试/Schema/Prompt。当前集中修复批次2、各失败特征一项修法、Validator失败0，诊断门未触发；未声称已关闭或释放完成Agent。
+
+- R3首次冻结与单点修复：29项清单位于/private/tmp/trainlab-r3-review.ez5oisx6，manifest SHA9799e98274829259b504a54b3582a8d5200d7b8dfbf9ebf99dc13599020ffd99；25项产品摘要无漂移。Developer专项41 passed、Ruff/format/mypy及静态门退出0；Main静态compile177/106JSON/18Schema根/50链接通过，自建10项业务/搬迁/文本预检通过，均不作为Validator结论。冻结后发现summary.$defs.claim.$ref改为plan evidence时，声明SHA变化但展开SHA不变，旧Prompt检查仍接受。Main另以只读内存副本复现退出1；对应AC013/RET002/GATE001，失败特征schema_declared_ref_ignored。完整pytest正常中断：329 passed/108.65s、退出2，驱动退出1，进程均已停止；不是全量PASS。原证据保留/private/tmp/trainlab-r3-dev-evidence。原Developer已结束；无可调用关闭接口，未声称释放。全新developer_r3_schema_refs已创建，fork_turns=none、high/high，平台gpt-6-astra/high；中性包/private/tmp/trainlab-r3-repair-packet.39ehd4g0仅当前合同、审核预期、原始复现和两文件白名单。只修coaching_contract.py及test_m12_coaching_contract.py，不改训练标准；当前集中修复批次1、Validator失败0，诊断门未触发。
+
+- 新Main接管（2026-09-08）：所有操作显式限定/Users/lucas/.codex/worktrees/76b6/TrainLab，核验Git根/分支/HEAD671f7b2及四份协调改动与交接完全一致，产品/测试无新增差异；完整合同正文与三份任务包SHA匹配。实际创建developer_r3_coaching成功，fork_turns=none，high/high，平台gpt-6-astra/high（跨阶段Schema、课程与来源/恢复）。输入仅Developer模板、逐字合同、已审核预期、当前接口及检查要求；Main并行仅协调/只读验收准备，无并行产品开发。原创建失败3次不清零，当前实施修复0、独立失败0，未调用真实业务。工具清单没有可调用关闭接口，不能声称已释放线程。 Main另只读核实远端同SHA及R2工作流34203417693两平台success；检查材料保存/private/tmp/trainlab-r3-main.v57uffay。Developer先行20用例在业务模块缺失时全部红；当前仍初次实现，Main指出初版关键词误拒绝合法否定/停止语句、SOS仅承认旧标签会引入额外门槛，Developer在原合同内补正反例，尚无冻结修复轮或独立裁决。已确定coaching.stage_contract/validator/report与既有weekly_stages衔接，Main据此准备公开合成全链/失败/搬迁验收，尚未运行。CLI旧capture与官方配置文档仍不足以确定本机请求失败原因，本次没有启动CLI、读取真实认证或扩大隔离。
+- 依赖基准671f7b23aa3f2e82076d720015ee14acd385106c已完成双平台CI。当前R3只读任务包/private/tmp/trainlab-r3-packet.zUhe9G/含逐字RUN-VC-001与当前接口/业务预期，不含旧裁决。产品尚未修改，当前修复批次0、Validator失败轮次0。
+- 派发planner_r3_coaching_contract，全新fork_turns=none，high/high（跨阶段业务Schema、证据和课程约束）；平台映射gpt-6-astra/high。只读当前规则、接口和必要测试，主Agent独占协调状态；不前置PDF/发布/调度或真实服务。
+- Planner完成只读拆解；Main四项审核通过：R3-A唯一业务Schema/Host事实/Prompt、R3-B固定课程、R3-C逐证据周总结、R3-D原StageContract接线及历史/R4接口。没有新执行器、健康算法、增长百分比、强制SOS门槛或外部授权；缺基准须披露而非伪造已比较。现有v1冻结记录不原位收紧，新业务如需Host报告另明确版本。审核后白名单和回归矩阵在同包approved-expectations.md，产品尚未开始改动。
+- 尝试派发developer_r3_coaching_contract，全新fork_turns=none、high/high（跨阶段业务/Schema/恢复与课程安全）、平台gpt-6-astra/high，未创建成功：agent thread limit reached。Main确认仅有三个已完成子Agent登记；对已完成planner_r2_two_stage_weekly调用interrupt后，完全同一新Developer请求仍被容量门拒绝。工具发现未提供关闭/释放子Agent接口，未修改全局配置或归档用户对话，未复用旧Agent或改由Main实施。此为平台容量阻塞，不是业务测试FAIL或新的合同冲突。
+
+### R3 可恢复任务材料（已审核，不需重新Planner）
+
+- 中性当前合同：本计划上方RUN-VC-001，正文SHA06b78e945db2e730f6eafd4b4f525ae26b05c168b5107f6eba65fcea7ba180b8。私有任务包contract.md带标题SHA bad6c0410925590d34c8718966f2ac7790d917bbb5fe2ca7e819b0d670129f1a；task.md SHA2238061084002dbd6621e1853526c42104f39040d8799e804160fc3aecc47506；approved-expectations.md SHAfe73e979a2717f372ccf2cccec90ee487e04e0d2237536a5149cea0d3975e11f。目录0700、文件0600，无私人运动数据。
+- 依赖接口：weekly_stages.StageContract(response_schema,validate_result,prepare_adapter,recover=None)，复用model_job。summary.running_analysis只用可验证跑步证据，合并running={analysis:原字段,plan:原计划}；原capture/历史按版本和stage复验，不能默认空校验、猜正文或重置预算。
+- R3-A：自包含业务Schema为唯一结构，wire复用codex_output.wire_schema，Prompt同源自动检查；Host给周期/日期/统计，plan仅跑步。R3-B：固定七日跑步/休息、课程目的/剂量/步骤/重复组/RPE/技术备注/停止条件，硬负荷最多3且间隔3天，双进阶/补课/替代/动态改课拒绝。
+- R3-C：全运动七部分周报，重点跑技最多3；引用绑定活动/session/FIT SHA/有效指标和数值，细读只读已成功记录、不补读；独立running_analysis只用跑步视图。合法历史心率可展示，不作未来BPM/分区/阈值处方。R3-D：装配同一StageContract，首次/恢复/历史相同业务校验，保留旧冻结只读；必要新Host报告另版本，为R4提供同源验证结果，不前置渲染或发布。
+- 不能为满足业务校验擅自加医学阈值、增长百分比、强制SOS门槛；已知双进阶拒绝、缺比较基准明确未知，不伪造已比较。自然语言解释合理性与确定性来源/结构/安全证明分开，不新增第三次生产模型审查。
+- Developer新增白名单：source/skills/_shared/fit_weekly/coaching_contract.py、coaching_facts.py、coaching_plan.py、coaching_summary.py、coaching_evidence.py、coaching.py（可少建，额外拆分先说明）；schemas/fit_running_plan_v1、fit_sports_summary_v1及必要明确版本Host报告；prompts/fit-running-plan-v1.txt、fit-sports-summary-v1.txt。
+- 必要最小接线白名单：fit_weekly/fit_detail.py、weekly_stages.py、weekly_history.py、runtime_resources.py，以及codex_adapter.py/codex_runtime.py同源Prompt薄接口。不复制launcher，不放宽监督/认证/前检，不改旧Schema含义。
+- 测试新增contract/test_m12_coaching_contract.py、test_m12_coaching_plan.py、test_m12_coaching_evidence.py、integration/test_m12_coaching_stages.py及公开fixtures；必要修改test_m12_weekly_stages.py、实际历史测试、test_m12_resource_closure.py、test_m12_retirement_boundary.py，其他迁移须说明定位。现有适用断言不删弱/skip/xfail。
+- 文档白名单：source/docs/weekly-stages.md、weekly-coaching.md、weekly-context.md、codex-adapter.md、legacy-test-mapping.json、legacy-retirement.md，以及training-coach/weekly-fitness-summary的SKILL.md。只替换本模块已交付事实，不清理无关历史；runtime明确依赖不扫描归档/历史Schema/测试。
+- Main独占根AGENTS/rules/memory/PLANS/CHANGELOG/执行计划及source/AGENTS，禁止Developer写；不读正式state/FIT/goal/凭据、另一分支或旧裁决，不业务/真实模型/全局安装/Git写入。
+- 正确回归：两阶段业务成功；plan失败无summary intent，summary失败保留plan不可发布；成功搬迁重放零新增；七日/日期/剂量/步骤/重复组/休息/硬负荷3与4、间隔2与3、双进阶/缺基准、心率边界；全运动无遗漏、逐活动/session/指标/细读/SHA、历史跑步隔离；Schema/Prompt漂移前检、无归档独立运行及原预算不清零。先红后绿，完整原pytest/Ruff/format/mypy/compile/活动Schema/文档/布局/隐私/ignore/diff，停止写入后冻结给全新Validator，再Main实际验收、当前分支提交/推送/双平台CI。
+
+前一上下文最终检查点：R2双平台完整CI通过并已推送671f7b2；R3只有Planner和Main审核材料，没有Developer、产品改动或模型调用。当时创建子Agent容量失败2次，实施修复/Validator失败均0；待平台容量恢复或用户批准新对话继续，不能用旧Agent/主Agent自我认证绕过COL-001/002。
+
+### 用户批准关闭已完成子Agent后的恢复检查（2026-09-08）
+
+- 用户明确允许在保存任务结果后关闭已完成旧子Agent，继续原计划；未改变RUN-VC-001、分支或真实业务授权。
+- Main复核Git根/分支及四份原有协调改动；R3合同、接口任务和已审核预期三个文件SHA与上述记录完全一致。无需重新Planner或重做R0–R2。
+- 当前可用协作接口不含close_agent或释放线程操作；interrupt明确保留Agent，前次已证明其不能释放当前容量，本次没有再次中断或复用旧Agent。OpenAI官方文档将归档日志与关闭/卸载线程区分，未据此假设归档能释放本工具的容量；没有归档用户对话、修改全局配置或删除线程数据。
+- 本次按用户恢复授权实际派发同一全新Developer请求一次，平台仍返回`collab spawn failed: agent thread limit reached`，未创建Agent。累计创建失败3次，R3实施修复0、Validator失败0；不清零，也不把环境错误记为代码失败。
+- 保持ENVIRONMENT_FAILURE，等待可用关闭接口/已释放容量，或用户明确批准全新主任务承接同一worktree。当前仅追加真实协调记录，未修改产品或测试、未提交/推送、未调用真实业务；不得声称已关闭旧Agent或R3已开始实现。
+
 ## 完成条件
+
+2026-09-08新主任务交接批准：用户同意建立全新主任务，继续原计划至获批边界内完成。创建前Git根仍为现有76b6/TrainLab worktree、分支work/m12-running-only-planning、HEAD671f7b2，四份协调改动保留，R3任务包三份SHA一致。新任务只接收当前有效目标、接口材料及恢复定位，不复制旧聊天；新Main是后续唯一协调写入者。仍不得改另一开发路线/正式数据、推main或未经精确授权执行真实业务。旧Main在派发后停止仓库写入；任务创建和Agent容量是否恢复须以实际工具结果为准，此记录不预写成功。
+
+R2分支交付已发生：Main核对完整50项与受审范围一致，44项产品/测试/文档摘要及模式不变，另6项仅已验证结果和真实状态回写，合同不变；精确暂存和cached diff门通过。提交671f7b23aa3f2e82076d720015ee14acd385106c，`feat: isolate weekly running plans from all-sport summaries`；正常推送origin/work/m12-running-only-planning退出0，ls-remote同SHA。工作树提交后clean，未推main；当前仅协调回写。[CI 34203417693](https://github.com/wyizhou/TrainLab/actions/runs/34203417693)绑定同SHA，初始queued，未预写双平台PASS。
+
+等待CI期间Main仅只读复核CLI探针原capture、当前运行/探针源码及官方配置说明：stdout仅能确认合成本机URL请求失败；stderr的PATH/system-skills受限警告和合成模型metadata缺失不能直接证明因果。没有进一步启动CLI、改权限/环境/源码、读取真实认证或将疑点改判为产品错误；当前CLI能力仍unknown，原证据保持不变。
+
+R2 CI观察连接一次EOF退出1，Main只读重新查询同一run成功：headSha仍671f7b2，Ubuntu job101987259173与macOS job101987259458均in_progress/Test。观察失败不等于CI失败，没有重新触发工作流或重置业务预算。
+
+R2 macOS job101987259458已completed/success，所有步骤成功。Main从单job日志读回3089 passed in 1778.44s，Ruff通过、format186、mypy168通过；工作流整体仍在等待Linux。`gh run view --job --log`在工作流未结束时拒绝，改用同job日志只读API成功取得原日志，未重新执行CI。双平台门仍未完成，不提前进入R3。
+
+R2最终工作流34203417693已completed/success，headSha仍671f7b23aa3f2e82076d720015ee14acd385106c。Linux job101987259173原日志为3089 passed in 3275.81s，Ruff通过、format186、mypy168及其余步骤全部success；macOS结果如上。Main复核远端分支同SHA。R2至此done；等待期间未改源码、重触发CI或业务调用，未将CLI额外未知项当作真实运行证明。
 
 R2 Main实际验收：独立PASS后，同一冻结产品运行自建3项合成链路加完整两阶段、阶段细读、旧监督安全迁移文件，54 passed/24.00s。重新实际运行Ruff通过、format186通过、mypy168通过，只读compile166/103JSON/15Schema根/69链接及布局/隐私/diff通过。全过程公开合成、真实业务0；CLI额外探针未知保持记录，不被这些结果覆盖。仅按已发生事实同步6项协调/入口说明，合同与产品/测试不变，下一步精确当前分支交付。
 

@@ -67,3 +67,5 @@
 目标、完整历史的结论/课程/嵌套字段、首次冻结、旧快照及真实模拟模型入口；不读取私人实例。
 片段及单位对照见[路线片段回归](../tests/code/contract/test_m12_route_fragments.py)。
 这些旧拒绝矩阵继续检验 v1；新版对应测试及变更理由见[运动数据开放映射](m12-location-admission.md)。
+
+R3 的同源业务 Schema/Prompt、Host 统计、逐证据课程校验和只读完整报告见[周报业务合同](weekly-coaching.md)。原冻结格式、执行器和预算保持原接口，发布由后续模块实现。

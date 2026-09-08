@@ -34,6 +34,12 @@ MODULES = (
     "stage_policy",
     "stage_context",
     "weekly_stages",
+    "coaching_contract",
+    "coaching_evidence",
+    "coaching_facts",
+    "coaching_plan",
+    "coaching_summary",
+    "coaching",
 )
 SCHEMAS = (
     "fit_activity_v1",
@@ -50,9 +56,14 @@ SCHEMAS = (
     "fit_weekly_stage_input_v1",
     "fit_weekly_stages_result_v1",
     "training_goal_v1",
+    "fit_running_plan_v1",
+    "fit_sports_summary_v1",
+    "fit_coaching_report_v1",
 )
 COMMON = (
     "requirements.txt",
+    "skills/_shared/prompts/fit-running-plan-v1.txt",
+    "skills/_shared/prompts/fit-sports-summary-v1.txt",
     "skills/__init__.py",
     "skills/_shared/__init__.py",
     "skills/_shared/scripts/schema_validation.py",

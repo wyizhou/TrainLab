@@ -120,6 +120,10 @@ def runtime_copy(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     shutil.copytree(
         SOURCE / "skills/_shared/schemas", source / "skills/_shared/schemas"
     )
+    prompts = source / "skills/_shared/prompts"
+    prompts.mkdir()
+    for name in ("fit-running-plan-v1.txt", "fit-sports-summary-v1.txt"):
+        shutil.copyfile(SOURCE / "skills/_shared/prompts" / name, prompts / name)
     shutil.copyfile(SOURCE / "requirements.txt", source / "requirements.txt")
     for name in ("skills/__init__.py", "skills/_shared/__init__.py"):
         shutil.copyfile(SOURCE / name, source / name)
@@ -167,6 +171,7 @@ def test_missing_actual_schema_prevents_runtime_identity(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     runtime = runtime_copy(tmp_path, monkeypatch)
+    assert runtime.identity()
     (runtime.source / "skills/_shared/schemas/training_goal_v1.schema.json").unlink()
     with pytest.raises(ValueError, match="codex_runtime_unavailable"):
         runtime.identity()
