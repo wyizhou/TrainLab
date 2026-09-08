@@ -25,6 +25,7 @@ from skills._shared.fit_weekly import (
     model_job,
     model_process,
     process_capture,
+    stage_policy,
     storage,
 )
 
@@ -96,9 +97,12 @@ class LocalProcessAdapter:
     def run(self, payload: Any, host: Any, schema: dict[str, Any]) -> Any:
         self.calls += 1
         with storage.open_store(self.root) as db:
-            intent = fit_detail.get(db, "model-job:" + self.end + ":intent")
+            intent = fit_detail.get(
+                db, stage_policy.job_key(self.end, host.stage) + ":intent"
+            )
         assert intent is not None
         identity, request = intent
+        assert request["stage"] == host.stage == "plan"
         assert request["payload"] == payload and host.root == self.root
         self.binding = process_capture.binding(
             PROMPT,
@@ -143,7 +147,7 @@ def _run(args: tuple[Any, ...]) -> dict[str, Any]:
 
 def _snapshot(args: tuple[Any, ...]) -> dict[str, bytes]:
     adapter = args[-1]
-    paths = [*adapter.work.iterdir(), model_job.capture_path(*args[:2])]
+    paths = [*adapter.work.iterdir(), model_job.capture_path(*args[:2], stage="plan")]
     return {str(p.relative_to(args[0])): p.read_bytes() for p in paths}
 
 
@@ -289,7 +293,7 @@ def test_slow_post_stop_persistence_is_synchronous_and_not_model_timeout(
 ):
     args = _setup(tmp_path, _program(_events(), exit_code=int(status == "failed")))
     adapter = args[-1]
-    outer = model_job.capture_path(*args[:2])
+    outer = model_job.capture_path(*args[:2], stage="plan")
     raw_path = adapter.work / "capture.json"
     atomic, fsync = storage.atomic_file, storage.os.fsync
     delay = 0.1
@@ -427,7 +431,7 @@ def test_real_unconfirmed_stop_remains_unknown_and_never_relaunches(
     assert not (adapter.work / "capture.json").exists()
     interrupted = json.loads((adapter.work / "interrupted.json").read_text())
     assert interrupted["process"]["process_stopped"] is False
-    assert not model_job.capture_path(*args[:2]).exists()
+    assert not model_job.capture_path(*args[:2], stage="plan").exists()
     result = _run(args)
     assert result["status"] == "unknown" and result["result"] is None
     assert result["invocation_adapter_calls"] == 0
@@ -457,4 +461,4 @@ def test_launch_preparation_failure_has_no_model_intent_or_process(
         assert not db.execute(
             "SELECT 1 FROM documents WHERE logical_key LIKE 'model-job:%'"
         ).fetchall()
-    assert not model_job.capture_path(*args[:2]).exists()
+    assert not model_job.capture_path(*args[:2], stage="plan").exists()

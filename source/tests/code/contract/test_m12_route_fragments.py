@@ -116,19 +116,25 @@ def test_legal_goal_fragment_preservation_and_model_replay(
     assert body["goal_snapshot"]["goal"] == context.parse_training_goal_v1(text)
     before_body = model_job.sha(body)
     adapter = model_job.FakeAdapter({"ok": "synthetic"}, [])
+    summary, validate_summary, replay_plan = helpers.summary_setup(
+        root, body, helpers.valid_report
+    )
+
+    def check_result(result, payload):
+        assert result == {"ok": "synthetic"} and payload == summary
 
     def run():
+        replay_plan()
         return model_job.run(
             root,
             helpers.fixture.END,
             body["scope_sha256"],
-            body,
+            summary,
             matrix.closed_schema({"ok": "synthetic"}),
             adapter,
-            validate_input=context.validator(
-                root, helpers.fixture.END, validate_report=helpers.valid_report
-            ),
-            validate_result=lambda result, payload: result == {"ok": "synthetic"},
+            stage="summary",
+            validate_input=validate_summary,
+            validate_result=check_result,
         )
 
     assert run()["status"] == "succeeded"

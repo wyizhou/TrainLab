@@ -8,10 +8,11 @@
 
 恢复与正常调用共用 `model_job.prepare_request`，绑定原周身份、本周细读范围、完整输入、
 业务 Schema 和 adapter profile；没有原 intent 时不创建 intent 或结果目录。
-同一周改输入不能获得新的机会，也不能挪用另一周的结果。
+同一周/阶段改输入不能获得新的机会，也不能挪用另一周或另一阶段的结果。
+新阶段显式传stage；旧无stage仅在原intent存在时只读恢复，不产生两阶段授权。
 
 `codex_recovery.resume` 只读取实例内固定位置：
-`model-results/<周标识摘要>/codex/process/`。它不接受外部结果文件路径、命令或凭据。
+`model-results/<周和阶段标识摘要>/codex/process/`（旧无stage路径原样保留）。它不接受外部结果文件路径、命令或凭据。
 目录及文件必须 owner-only、普通对象且非链接；继承
 [进程原始证据](process-capture.md)的完整字节、SHA、Prompt 绑定及停止确认。
 

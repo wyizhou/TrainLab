@@ -1,8 +1,9 @@
-"""Freeze one self-contained weekly input: all FIT facts, goal and full reports.
+"""Freeze Host-only weekly materials: all FIT facts, goal and full reports.
 
-Only Host code reads the instance. The model receives this projection, never
-the goal file, SQLite, sync captures or a pathname. Replays use the original
-snapshot even after the user edits the goal or another report is archived.
+Only Host code reads the instance. New model execution uses stage_context's
+separate projections, never this whole snapshot for planning, the goal file,
+SQLite, sync captures or a pathname. Replays use the original snapshot even
+after the user edits the goal or another report is archived.
 """
 
 from __future__ import annotations

@@ -1,6 +1,6 @@
 # M12：跑步独立规划分支与三角色协作
 
-- 状态：validated；当前步骤：R1 数据底座接线已验收，准备分支提交、推送和CI。
+- 状态：active；当前步骤：R1已完成双平台交付，R2独立/Main实际验收通过，分支交付与双平台CI待完成。
 - 分支：work/m12-running-only-planning；基准 b307e90efca7e1f1f65d0a22842aa1f685447e42。
 - 批准来源：2026-09-08 用户逐字批准《TrainLab 跑步独立规划分支：三角色协作实施计划》。
 - 当前完整合同：RUN-VC-001，frozen；本分支实施前冻结。仅替代本分支受影响规则，另一条开发路线不变。
@@ -52,8 +52,8 @@
 | 步骤 | 状态 | 内容/依赖 | 本步主要条款 |
 | --- | --- | --- | --- |
 | R0 | done | 现场保护、三角色协作、当前分支目标/模板、继承基线核对；已提交/推送/双平台CI | COL全部、RET、GATE、INV |
-| R1 | in_progress | 现有底座接线/同步预算/无归档独立运行；独立与Main验收通过，待分支交付/CI | AC001–006、RET |
-| R2 | pending | 两阶段输入、共享细读及一次调用恢复；依赖R1 | AC004–010 |
+| R1 | done | 现有底座接线/同步预算/无归档独立运行；5c67ead已推送且双平台CI通过 | AC001–006、RET |
+| R2 | in_progress | 两阶段输入、共享细读及一次调用恢复；独立/Main验收通过，分支CI待完成 | AC004–010 |
 | R3 | pending | 周报/固定课程业务校验；依赖R2 | AC011–013 |
 | R4 | pending | Markdown/PDF/本地修订；依赖R3 | AC014 |
 | R5 | pending | Gmail/Garmin新库动作与读回；依赖R4 | AC015–016 |
@@ -65,8 +65,8 @@
 - 2026-09-08 Git门通过，56项tracked改动/删除、23项untracked均保留。
 - 仓库外保护目录：/private/tmp/trainlab-running-branch-prechange.dI6pvD；410份公共文件/5项删除记录，tree和restore逐字节核对、0700/0600；manifest SHA 57b3df394c3da96f110253a01d3ceb920c7dee0ee9d714b5e0287ee7ca667991。未读取正式数据/凭据。
 - 既有VC-005受审树410文件当前仅活动计划协调记录不同，产品源与测试未变；既有PASS仅覆盖原底座，不能代替本分支新要求验收。
-- 阻塞：none；诊断状态not_triggered。R1集中修正批次1（清单登记遗漏），独立Validator失败轮次0；原失败原样留存，不靠分支/改名清零未解决问题。
-- 下一动作：R1独立与Main实际验收已通过；精确提交/推送当前分支，并核对该提交双平台CI后才进入R2。产品写入仍串行。
+- 阻塞：R2无已证实合同不符合，独立本机PASS；诊断状态not_triggered。R1及R2各自集中修正批次1已消除，R2独立Validator失败轮次0。额外真实CLI本机探针能力未确认，保留限制，不作为真实可运行证明。
+- 下一动作：精确分支提交/推送并核对同SHA的macOS/Linux全量CI；依赖门完成前不启动R3。CLI能力未知须在后续完整运行及真实阶段前明确核实，不以R2内部接线PASS代替。
 - 实际业务Provider/周模型/邮件/课程调用0；本轮R0已提交并推送当前分支d525a39561dde62e286b988cf3978f67daf95841，远端SHA已读回一致。开发子Agent不是产品周模型调用。
 
 ## 派发、验证与迭代
@@ -199,6 +199,85 @@ commands_and_evidence:
 
 Main实际验收：独立PASS后，在同一快照重新运行清单、总预算全文件、空实例合成同步/全部运动解析/细读/搬迁、缺资源拒绝和旧FIT复用组合，23 passed in 3.07s。结合前述Main实际Ruff/format/mypy/只读QA及受审摘要复核，确认底座完整接线。只剩本模块授权分支交付/CI；未执行真实业务。
 
+R1分支交付已发生：Main再次核对19路径完整范围、15产品摘要/模式及合同不变，仅另有获准的真实协调回写；无暂存遗留/私人或无关文件。提交5c67ead6144b6b5c20df69a60cb73139d80ae91c，`fix: enforce durable FIT sync limits and isolated replay`，正常推送origin/work/m12-running-only-planning退出0，ls-remote精确SHA一致。提交后工作树clean；当前仅结果回写。对应[CI 34192371917](https://github.com/wyizhou/TrainLab/actions/runs/34192371917)绑定同一SHA，状态in_progress；未预写双平台PASS或进入R2。
+
+CI观察进程曾因GitHub状态请求EOF退出1；Main只读重新查询同一run成功，确认两个job仍in_progress/Test，headSha未变。这是观察连接中断，不是CI失败；仅恢复只读观察，未重触发工作流、改代码或重置任何业务预算。
+
+macOS job 101952870032已completed/success，Main读取原job日志：3070 passed in 1341.82s，Ruff通过、format181、mypy163及后续步骤全部success。观察连接另一次EOF后再次成功读取同一run；Linux job 101952869874仍in_progress，完整结论尚未返回，故R1仍待双平台交付门，不提前进入R2。
+
+最终同一工作流34192371917已completed/success。Linux job 101952869874：3070 passed in 2070.10s，Ruff通过、format181、mypy163及其余步骤全部success。Main复核workflow headSha及ls-remote都为5c67ead6144b6b5c20df69a60cb73139d80ae91c；未重触发CI或修改测试。R1至此done，原登记遗漏失败及观察连接EOF历史保留。
+
+## R2 派发与实施记录
+
+- Planner任务planner_r2_two_stage_weekly：全新fork_turns=none，high/high（跨模块输入权限、共享预算、耐久恢复），平台映射gpt-6-astra/high。合同RUN-VC-001原文不变，主要AC004–010，适用COL/RET/GATE/INV/TM/EX；只读当前接口和必要测试，不读协调历史或旧裁决。基准5c67ead，R1提交/双平台依赖已满足。
+- 本步先拆解两阶段接线和R3接口，不要求提前完成R3训练业务、R4渲染、R5发布或R6调度。Main独占计划/规则/状态；R2当前实施修复次数0、Validator失败轮次0。尚未修改R2产品代码或启动真实模型。
+
+- Planner已完成只读拆解，Main四项审核通过：复用单执行器；按session投影跑步；权限与周预算分离；两阶段串行、原计划不可替换；旧单阶段只读及当前资源/Skill同批退出旧说明。没有新增需求或模型调用授权。共享历史提取/结果Schema及强制业务验证接口与R3衔接，不把合成回调当真实课程安全已实现。
+
+| R2下级预期 | 对应标准 | 当前验收证据要求 |
+| --- | --- | --- |
+| 原周材料与阶段投影 | AC004–009 | 原目标/历史不漂移，plan仅running session及可验证历史字段，summary保留全部运动；无跑步不补造 |
+| 混合FIT与共享细读 | AC006/008/010 | 跑步区间/来源授权先于缓存；两阶段20次/1200秒及同请求一次计数；非跑步不能借混合FIT越界 |
+| 单一执行与阶段恢复 | AC007/010/RET | plan/summary独立intent/capture/结果，失败无重试、成功不重跑、跨阶段材料拒绝、搬迁预算不返还 |
+| 顺序与不可变计划 | AC007/009/010 | plan失败无summary intent，summary失败保留计划不发布；合并唯一原计划，R3强制业务校验接口不可省略 |
+| 真实适配与旧路径退出 | AC006–010/RET | Codex prepare/实际参数/stdio/恢复均绑定阶段，旧单阶段只读，适用安全测试迁移、Skill/docs/资源/清单同步 |
+
+- 当前中性任务包在/private/tmp/trainlab-r2-packet.xFp6SK/，0700/0600：contract.md带当前标题的SHA bad6c0410925590d34c8718966f2ac7790d917bbb5fe2ca7e819b0d670129f1a，与既有逐字合同仅多标题，正文SHA仍06b78e94…ba180b8；expectations.md SHA58c061f92af939664c04bacf90fcd26a3fc289d30588cc2c74973362e96698b4。该包仅当前合同、正确预期、接口/写界/检查，不包含旧裁决。
+- Developer任务developer_r2_two_stage_weekly，全新fork_turns=none，high/high（跨模块阶段权限、崩溃恢复、缓存及兼容）；白名单见当前任务包，Main独占协调/治理文件，先新增失败回归再实施，保留旧安全场景迁移证据。本步不提交推送或业务调用；完成后新Validator和Main实际验收，再分支交付/双平台CI。
+- Developer提出在已允许的小型stage_policy.py/weekly_stages.py之外使用stage_context.py承载两种投影与来源复验，避免修改旧weekly_context保存格式含义。Main确认该拆分属于原白名单的必要接口申报，不新增执行器或业务；同意实施并保留R3强制结果校验/旧记录本地恢复边界。API精确签名和实际测试结果待交付，不预记完成。
+- 首批测试先行证据：Developer以现有离线环境运行test_m12_stage_detail.py及test_m12_weekly_stages.py，原实现退出1/5 failed（stage参数、无stage新建及阶段账本未接入）；补对应实现后同命令退出0/5 passed。此为开发红绿自检，不是Validator结论或全量通过。接口已开始实现StageContract(response_schema,validate_result,prepare_adapter,recover)和weekly_stages.run(...,plan,summary,validate_history)；本地重放先查原intent，unknown才走原证据恢复，不直接信任回调结果。其余R2预期仍在实施。
+- 历史接口的范围内选择：总结结果顶层使用独立running_analysis，合并running={analysis:原总结该字段,plan:原已验证计划}，从双阶段捕获重新验证来源；不增加project_running/HistoryContract可选机制。R3保留字段内容/逐证据语义和按版本阶段的必填业务校验职责。Main已将当前接口确认保存到中性任务包interface.md；这是原AC008/009的接口衔接，不增加训练要求、不修改RUN-VC-001。
+- Developer已接入上述历史字段，继续贯通实际Codex阶段参数。Main同意仅更新已列明的`tests/ai/templates/m12_codex_probe.py`阶段与runtime identity接口；只用公开合成材料/本地假端点，不读取真实认证或执行真实模型。开发定向首轮279项中4项失败：3项嵌入子进程迁移重复stage关键字、1项测试与源码写入并发导致identity漂移；停止写入后4项重跑通过。完整门尚未执行，不拼接为全量PASS；独立Validator轮次仍0。
+- Main独立验收脚本已保存于中性任务包同目录`test_main_acceptance.py`，只用公开合成FIT：检查计划仅跑步、总结全运动、共享细读缓存、搬迁零重跑及任一阶段失败不发布。当前未运行，待交付冻结与独立验收后实际检查；不是既有PASS证明。
+- Developer完成主体接线及文档迁移，最新定向128项通过后停止产品写入，开始完整门；日志目录/private/tmp/trainlab-r2-dev-gates.KbFdtX（0700/0600）。开发过程曾从错误cwd运行mypy得到导入诊断，按原命令从source重跑168文件通过，未改变配置或屏蔽检查；残留测试变量亦按两阶段接口修正，不改变正确预期。
+- Main冻结R2当前49项受审清单于/private/tmp/trainlab-r2-review.sqqbes79，基准5c67ead，manifest SHA ae560ed5a1bae03f6554ccdd961a1e9c5d828225b0d8f271031031b9a08123b3，合同正文SHA不变。此为初次完整受审冻结，不含旧裁决；后续协调追加依协议单独检查。
+- Main在同一冻结产品上实际运行Ruff退出0、format186文件退出0、mypy168文件退出0、只读compile166/103JSON/15活动Schema根及必要闭包/69本地链接/metadata/AI布局/权限/ignore/diff通过。完整pytest尚在执行，不能据静态结果称R2已通过。
+- Main另跑三项自建合成集成预检，3 passed/2.39s；这些不是独立验收，完成最终独立验证后仍复验同一快照。
+- R2首次完整冻结pytest最终退出1：227 failed、2862 passed、712.97s；全部失败仅两个文件：retired_runner_safety的6函数共30项读取旧无stage intent，sports_input的2函数共197项仍无stage新建。Main读取当前源码与最小复现trace核对；实际子进程因此未启动或被model_stage_required拒绝，未发现需要放宽产品门的证据。对应AC007/010及RET/GATE，运动输入另涉及AC005/006/008/009。原日志、最小复现6 failed和初次49项清单不改写。
+- 为完整保留未跟踪新文件，Main另存49项原字节tree于/private/tmp/trainlab-r2-review.g44yavc4，manifest SHA632d13307f237cec095558b480998805aef2b0b9cda023f0d10e22e14d6dff71；与初次冻结逐项合同/内容摘要/模式49/49相同，仅允许的计划协调追加。原产品无漂移，两个失败文件尚未尝试修法。
+- 原Developer已结束且停止写入。Main批准原范围内集中修正：仅两个测试文件、legacy-test-mapping.json和必要迁移说明；完整运动场景迁入summary并通过真实当前接线创建合成已验证plan前置，不能直接标plan绕过隔离。当前repair-expectations.md仅包含有效合同/接口、原始复现和正确预期；不改变业务、不恢复旧入口。下一派发使用全新Developer，high/high（安全场景迁移与双阶段输入衔接），保留当前累计，不启动第四角色。
+- 已派发developer_r2_stage_test_migration，fork_turns=none，平台gpt-6-astra/high，high/high档位不低于本步原实现；只读当前任务包与原始复现，不读取旧裁决。当前为R2集中修正批次1，尚未交付；不把测试迁移错误解释为业务隐私/训练目标需变更，也不将第一次全量失败改写为PASS。
+- 当前集中修正的分类核对补充发现：input_privacy、route_fragments及weekly_context的四个合法完整输入正向用例虽未失败，仍将全周body配plan标签直接交Fake。Main已直接核实对应调用，批准同一批次仅迁移这些正向用例及必要共享合成helper/映射到summary＋已验证plan；不改产品、不改旧历史格式、不扩大低层单元测试的验收范围。此为原RET测试接线补齐，修正计数仍1，不把原失败改名重置。
+
+## R2 独立验收
+
+contract_version: RUN-VC-001；正文SHA06b78e945db2e730f6eafd4b4f525ae26b05c168b5107f6eba65fcea7ba180b8。
+
+overall_verdict: PASS，限定R2内部两阶段接线与本机离线质量门，不代表真实CLI当前能力、双平台交付或R3–R6完整业务通过。
+
+criterion_results:
+
+| 标准 | 本次独立结果 |
+| --- | --- |
+| AC004–006 | PASS：全运动总结、四份历史上限与原快照；位置来源允许，禁止字段在intent前拒绝。 |
+| AC007–008 | PASS：单一阶段账本、各一次与恢复；规划仅running/可验证历史，混合FIT边界与缓存前权限，plan/summary实际假程序Adapter链路。 |
+| AC009–010 | PASS本步：原计划SHA/来源复验与不可变合并；20次/1200秒共享、失败占额、搬迁不返还、阶段失败不发布、旧单阶段零新授权。完整训练语义留R3。 |
+| RET001/002 | PASS：13份阶段迁移摘要及函数一致，11份旧测试修改未删函数或加skip/xfail，安全场景迁移、无归档与旧格式回归。 |
+| COL/GATE002/INV/TM/EX | 适用部分PASS：全新只读、合成检查，未扩同UID/root边界、未改受审文件或调用真实业务。Main验收仍待。 |
+| GATE001 | macOS完整门PASS；Linux待提交后同SHA CI。 |
+| GATE003/LIVE001 | 未执行分支交付或真实业务，不预记通过。 |
+
+blocking_findings: 无已证实的R2合同不符合。
+
+advisories: 额外真实Codex CLI plan/summary各一次合成本机探针在HTTP请求交付前退出，returncode=1、process_stopped=true、accepted_http=0，localhost发送错误。相同限制下curl可连接；不足以归因R2代码，不能宣称CLI当前能力验证成功。未扩大权限或继续重试。
+
+scope_change_candidates: 无。
+
+unknowns: Main实际验收、Linux同SHA CI、当前实际CLI能力及R3–R6尚未完成；真实模型/业务服务/正式私人资料访问0。CLI限制保留至完整运行前核实，不自动接受为部署债务。
+
+commands_and_evidence:
+
+- validator_r2_independent_stages，全新high/high，Darwin25.5.0 arm64。基准5c67ead，受审50项manifest SHA6e9c3b994383b67b6ed928ec0c37f97ccf48cfc15cf8c4869e7e121eb8cd7f30；开始/结束41 tracked与9 untracked范围、SHA/mode一致，无暂存；计划仅真实协调追加、逐字合同一致。
+- 指定离线环境完整pytest：3089 passed/874.41s，退出0；Ruff通过、format186、mypy168通过；只读compile166、103JSON、15Schema根闭包、6metadata、AI/隐私/ignore/布局、46本地文档链接、tracked/untracked diff通过。
+- 自建test_independent.py：7 passed/19.50s；test_summary_raw_recovery.py：1 passed/24.09s，实际假程序总结完成后外层落盘中断，搬迁并移走原二进制后从原capture恢复、零prepare/模型新调用。证据/private/tmp/trainlab-r2-validator.l3OKG0。
+- CLI限制证据同目录cli-plan-0lv01y3a与cli-summary-vjgb5qmg。初次辅助diff脚本误读no-index正常差异退出码1，修正检查方法后通过，未修改交付。合同标题/正文摘要采用明确提取规则独立复算一致，未改合同。
+
+R2首次独立验收派发：validator_r2_independent_stages，fork_turns=none，high/high，平台gpt-6-astra/high，不低于Developer。仅当前50项中性快照、逐字RUN-VC-001、接口/预期与适用规则；未提供旧裁决、修复包或开发通过声明。允许仓库外只读自建合成检查，禁止受审改动、业务调用及自行修复；Linux留获批分支提交后的同SHA远端CI，当前不预判。
+
+本上下文检查点：集中修正仅7个获批测试/映射文件变化；原产品与旧历史fixture不变。Developer最终9文件定向1383 passed/245.24s，完整3089 passed/867.09s，Ruff/format186/mypy168及静态门通过；结束后369个source文件SHA/mode与冻结清单相同。Main复核分支/未暂存范围，并只读compile166/103JSON/15Schema根/69链接及布局门通过。50项中性快照/private/tmp/trainlab-r2-review.8w3odmhj，manifest SHA6e9c3b994383b67b6ed928ec0c37f97ccf48cfc15cf8c4869e7e121eb8cd7f30，当前逐项SHA/mode再次一致；原失败快照不覆盖。派发全新high/high Validator，尚无独立结论，不预先提交/推送。
+
 ## 完成条件
+
+R2 Main实际验收：独立PASS后，同一冻结产品运行自建3项合成链路加完整两阶段、阶段细读、旧监督安全迁移文件，54 passed/24.00s。重新实际运行Ruff通过、format186通过、mypy168通过，只读compile166/103JSON/15Schema根/69链接及布局/隐私/diff通过。全过程公开合成、真实业务0；CLI额外探针未知保持记录，不被这些结果覆盖。仅按已发生事实同步6项协调/入口说明，合同与产品/测试不变，下一步精确当前分支交付。
 
 全部离线模块及独立/主Agent验收、分支提交/推送/CI完成后才进入真实预算授权。真实邮件/课程读回及用户PDF可读/课程可执行确认之前，M12不归档、不称正式可用；不预写后台运行或完整交付。

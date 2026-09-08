@@ -31,6 +31,9 @@ MODULES = (
     "codex_recovery",
     "codex_runtime",
     "runtime_resources",
+    "stage_policy",
+    "stage_context",
+    "weekly_stages",
 )
 SCHEMAS = (
     "fit_activity_v1",
@@ -43,6 +46,9 @@ SCHEMAS = (
     "fit_weekly_evidence_v1",
     "fit_weekly_evidence_v2",
     "fit_model_receipt_v1",
+    "fit_model_receipt_v2",
+    "fit_weekly_stage_input_v1",
+    "fit_weekly_stages_result_v1",
     "training_goal_v1",
 )
 COMMON = (

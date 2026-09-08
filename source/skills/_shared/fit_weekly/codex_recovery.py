@@ -26,6 +26,7 @@ def resume(
     validate_input: model_job.InputValidator,
     validate_result: model_job.ResultValidator,
     startup_messages: tuple[str, ...] = (),
+    stage: str | None = None,
 ) -> dict[str, Any]:
     # Invalid caller configuration is rejected before reading any job evidence.
     codex_output.wire_schema(response_schema)
@@ -43,7 +44,11 @@ def resume(
             or request["profile"]["name"] != "codex"
         ):
             return None
-        work = model_job.capture_path(root, period_end).parent / "codex" / "process"
+        work = (
+            model_job.capture_path(root, period_end, stage=stage).parent
+            / "codex"
+            / "process"
+        )
         expected = process_capture.binding(prompt, model_job.sha(request))
         try:
             storage.private_entry(work.parent, directory=True)
@@ -73,4 +78,5 @@ def resume(
         validate_input=validate_input,
         validate_result=validate_result,
         read_completed=read_completed,
+        stage=stage,
     )

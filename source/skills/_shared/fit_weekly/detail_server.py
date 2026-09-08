@@ -34,6 +34,7 @@ SAFE_ERRORS = frozenset(
         "detail_scope_binding_invalid",
         "detail_parse_drift",
         "fit_sha_mismatch",
+        "detail_stage_forbidden",
     }
 )
 
@@ -134,11 +135,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--period-end", required=True)
     parser.add_argument("--scope-sha256", required=True)
     parser.add_argument("--compact", action="store_true")
+    parser.add_argument("--stage", choices=("plan", "summary"), required=True)
     args = parser.parse_args(argv)
     try:
         # Do not resolve away symlinks before the private-instance entry check.
         root = args.instance_root
-        host = fit_detail.DetailHost(root, args.period_end, args.scope_sha256)
+        host = fit_detail.DetailHost(
+            root, args.period_end, args.scope_sha256, stage=args.stage
+        )
         with storage.open_store(root) as db:
             host.scope(db)
         asyncio.run(serve(host, compact=args.compact))

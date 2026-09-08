@@ -11,7 +11,86 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
-from skills._shared.fit_weekly import fit_detail, model_job, storage
+from skills._shared.fit_weekly import fit_detail, model_job, stage_policy, storage
+from skills._shared.scripts.schema_validation import validate_payload
+
+
+def completed_stages(
+    db: sqlite3.Connection,
+    root: Path,
+    end: str,
+    validate_report: model_job.ResultValidator,
+) -> dict[str, Any]:
+    captures = {}
+    requests = {}
+    for stage in ("plan", "summary"):
+        key = stage_policy.job_key(end, stage)
+        intent, saved = (
+            fit_detail.get(db, key + ":intent"),
+            fit_detail.get(db, key + ":result"),
+        )
+        if intent is None or saved is None:
+            raise ValueError("weekly_history_invalid")
+        binding, request = intent
+        if (
+            binding != model_job.sha(request)
+            or saved[0] != binding
+            or request.get("stage") != stage
+            or request["period_end_utc"] != end
+        ):
+            raise ValueError("weekly_history_invalid")
+        path = model_job.capture_path(root, end, stage=stage)
+        storage.private_entry(path.parent.parent, directory=True)
+        storage.private_entry(path.parent, directory=True)
+        storage.private_entry(path, nonempty=True)
+        raw = path.read_bytes()
+        if raw != storage.canonical(saved[1]).encode():
+            raise ValueError("weekly_history_invalid")
+        fit_detail.DetailHost(root, end, request["scope_sha256"], stage=stage).scope(db)
+        model_job.check_capture(
+            saved[1],
+            request,
+            model_job.schema_validator(request["response_schema"]),
+            validate_report,
+        )
+        if saved[1]["receipt"]["status"] != "succeeded":
+            raise ValueError("weekly_history_invalid")
+        captures[stage], requests[stage] = saved[1], request
+    plan = captures["plan"]
+    fixed = {
+        "period_end_utc": end,
+        "request_sha256": model_job.sha(requests["plan"]),
+        "capture_sha256": model_job.sha(plan),
+        "result_sha256": model_job.sha(plan["output"]),
+        "plan": plan["output"],
+    }
+    if requests["summary"]["payload"].get("fixed_plan") != fixed:
+        raise ValueError("weekly_history_invalid")
+    expected = {
+        "schema_version": "fit_weekly_stages_result_v1",
+        "period_end_utc": end,
+        "summary": captures["summary"]["output"],
+        "running": {
+            "analysis": captures["summary"]["output"]["running_analysis"],
+            "plan": plan["output"],
+        },
+        "plan_binding": fixed,
+        "summary_receipt": captures["summary"]["receipt"],
+    }
+    merged = fit_detail.get(db, "weekly-stages-result:" + end)
+    if validate_payload(expected, "fit_weekly_stages_result_v1"):
+        raise ValueError("weekly_history_invalid")
+    if merged != (model_job.sha(expected), expected):
+        raise ValueError("weekly_history_invalid")
+    return {
+        "schema_version": "fit_weekly_history_v2",
+        "period_start_utc": fit_detail.period_key(end)[1]["start_utc"],
+        "period_end_utc": end,
+        "request_sha256": model_job.sha(requests["summary"]),
+        "receipt_sha256": model_job.sha(captures["summary"]["receipt"]),
+        "report_sha256": model_job.sha(expected),
+        "report": model_job.clone(expected),
+    }
 
 
 def completed(
@@ -26,6 +105,8 @@ def completed(
             raise ValueError("validator")
         intent = fit_detail.get(db, "model-job:" + end + ":intent")
         saved = fit_detail.get(db, "model-job:" + end + ":result")
+        if intent is None:
+            return completed_stages(db, root, end, validate_report)
         if intent is None or saved is None:
             raise ValueError("unfinished")
         binding, request = intent
@@ -152,11 +233,18 @@ def recent(
 
 def project(body: dict[str, Any]) -> dict[str, Any]:
     return {
-        k: model_job.clone(body[k])
-        for k in (
-            "period_start_utc",
-            "period_end_utc",
-            "report_sha256",
-            "report",
-        )
+        **(
+            {"schema_version": body["schema_version"]}
+            if body["schema_version"] == "fit_weekly_history_v2"
+            else {}
+        ),
+        **{
+            k: model_job.clone(body[k])
+            for k in (
+                "period_start_utc",
+                "period_end_utc",
+                "report_sha256",
+                "report",
+            )
+        },
     }

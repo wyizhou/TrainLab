@@ -11965,11 +11965,13 @@
     "tests/code/contract/test_m12_retirement_boundary.py",
     "tests/code/contract/test_m12_route_fragments.py",
     "tests/code/contract/test_m12_sports_input.py",
+    "tests/code/contract/test_m12_stage_detail.py",
     "tests/code/contract/test_m12_storage.py",
     "tests/code/contract/test_m12_sync_calendar.py",
     "tests/code/contract/test_m12_sync_wall_budget.py",
     "tests/code/contract/test_m12_weekly_context.py",
     "tests/code/contract/test_m12_weekly_evidence.py",
+    "tests/code/contract/test_m12_weekly_stages.py",
     "tests/code/contract/test_m8_contracts.py",
     "tests/code/contract/test_m8_r32_contracts.py",
     "tests/code/contract/test_m9_garmin_live.py",
@@ -11995,5 +11997,358 @@
     "tests/code/unit/test_recent_health_metrics.py",
     "tests/code/unit/test_structured_outputs_contract.py",
     "tests/code/unit/test_training_goal_vc006.py"
-  ]
+  ],
+  "running_stage_migration": {
+    "contract_version": "RUN-VC-001",
+    "baseline_commit": "5c67ead6144b6b5c20df69a60cb73139d80ae91c",
+    "retired_behavior": "New no-stage joint planning calls; no production legacy-write switch is retained. Existing old requests/captures keep their saved shape and SHA.",
+    "verification_status": "implementation_snapshot_not_independent_verdict",
+    "files": [
+      {
+        "path": "tests/code/contract/test_m12_activity_names.py",
+        "current_sha256": "0de3753a8cd39db99d7f7ab9a3e68e088f4de7c927b3cf1b0ecb2dd63205cbd2",
+        "criterion_ids": [
+          "AC-007",
+          "AC-008",
+          "AC-009",
+          "AC-010",
+          "RET-001",
+          "RET-002"
+        ],
+        "reason": "Current plan stage executes the same safety scenarios; source identity, once-only, interruption, persistence, permissions, privacy and relocation expectations retained.",
+        "functions": [
+          "test_existing_capture_name_reaches_input_with_correct_source_and_no_calls",
+          "test_unavailable_name_does_not_drop_activity_or_use_workout_name",
+          "test_name_containing_credential_is_stopped_before_model_intent",
+          "test_name_capture_drift_stops_frozen_context_replay"
+        ]
+      },
+      {
+        "path": "tests/code/contract/test_m12_codex_adapter.py",
+        "current_sha256": "3cacf574427dfd683b0ed53c49a90752bfdb96ed74835f52ed1a99f567b1fd85",
+        "criterion_ids": [
+          "AC-007",
+          "AC-008",
+          "AC-009",
+          "AC-010",
+          "RET-001",
+          "RET-002"
+        ],
+        "reason": "Current plan stage executes the same safety scenarios; source identity, once-only, interruption, persistence, permissions, privacy and relocation expectations retained.",
+        "functions": [
+          "test_prepare_launch_capture_and_replay_one_interface",
+          "test_environment_does_not_inherit_provider_or_python_injection",
+          "test_bad_preflight_no_intent_or_process",
+          "test_launch_refuses_prepared_drift",
+          "test_interrupted_after_process_recovers_from_original_materials",
+          "test_relocation_recovery_and_schema_drift",
+          "test_incomplete_prepared_never_restarts",
+          "test_capability_without_observed_tool_lifecycle_is_not_proof",
+          "test_command_uses_supported_named_openai_provider_without_auth_copy",
+          "test_capability_checks_retained_evidence_not_flags",
+          "test_finite_write_failure_never_repeats_child",
+          "test_supervised_child_uses_private_umask_without_changing_parent",
+          "test_concurrent_prepare_cannot_mix_frozen_materials",
+          "test_legacy_tool_capability_recovers_stopped_capture_but_cannot_start_new_runtime",
+          "test_stage_identity_prepare_and_recovery_cannot_cross_stage"
+        ]
+      },
+      {
+        "path": "tests/code/contract/test_m12_codex_recovery.py",
+        "current_sha256": "ac1a5771613b08da183541917db0b56e69ce6d90e797a0f8ae2b3781ad14b7d6",
+        "criterion_ids": [
+          "AC-007",
+          "AC-008",
+          "AC-009",
+          "AC-010",
+          "RET-001",
+          "RET-002"
+        ],
+        "reason": "Current plan stage executes the same safety scenarios; source identity, once-only, interruption, persistence, permissions, privacy and relocation expectations retained.",
+        "functions": [
+          "test_complete_raw_result_recovers_without_starting_adapter",
+          "test_no_original_intent_cannot_be_created_by_recovery",
+          "test_confirmed_failure_is_closed_and_never_retried",
+          "test_incomplete_or_invalid_capture_remains_unknown",
+          "test_input_drift_never_recovers_wrong_task",
+          "test_finite_persistence_failure_can_recover_without_second_model",
+          "test_relocated_instance_uses_same_business_binding",
+          "test_existing_outer_failure_is_not_replaced_by_success_raw",
+          "test_real_process_exit_during_recovery_then_local_resume",
+          "test_concurrent_recovery_does_not_duplicate_result",
+          "test_invalid_configuration_never_reads_recovery_or_creates_intent",
+          "test_invalid_outer_capture_never_falls_back_to_raw",
+          "test_invalid_generic_reader_result_does_not_publish",
+          "test_shared_request_constructor_is_exact_old_ledger_binding",
+          "test_profile_property_error_is_redacted_before_io",
+          "test_codex_parent_directory_is_private_and_not_a_redirect"
+        ]
+      },
+      {
+        "path": "tests/code/contract/test_m12_detail_server.py",
+        "current_sha256": "541e68aba23cbba05ab8b78b0407aff353b0974e646f9e6bec0c43c5b35da99b",
+        "criterion_ids": [
+          "AC-007",
+          "AC-008",
+          "AC-009",
+          "AC-010",
+          "RET-001",
+          "RET-002"
+        ],
+        "reason": "Current plan stage executes the same safety scenarios; source identity, once-only, interruption, persistence, permissions, privacy and relocation expectations retained.",
+        "functions": [
+          "test_real_stdio_discovery_has_one_prebound_tool_no_resources_or_prompts",
+          "test_wire_views_equal_direct_host_and_replay_across_server_process",
+          "test_invalid_wire_input_cannot_reserve_or_echo_private_values",
+          "test_unknown_tool_is_rejected_without_using_fit_host",
+          "test_server_restarts_do_not_reset_twenty_request_budget",
+          "test_invalid_binding_exits_before_stdio_and_logs_no_paths",
+          "test_unexpected_host_error_never_leaks_exception_or_path",
+          "test_output_validation_rejects_host_regression_without_echo",
+          "test_output_from_another_request_is_not_returned",
+          "test_real_stdio_preserves_cached_extraction_failure",
+          "test_actual_server_does_not_expose_resource_or_prompt_routes",
+          "test_request_schema_and_host_share_valid_shape_and_rejections"
+        ]
+      },
+      {
+        "path": "tests/code/contract/test_m12_input_privacy.py",
+        "current_sha256": "e5b01041556f3558a8a294721a07e79a41b5c48bb3fc038b25d183706f152132",
+        "criterion_ids": [
+          "AC-007",
+          "AC-008",
+          "AC-009",
+          "AC-010",
+          "RET-001",
+          "RET-002"
+        ],
+        "reason": "Positive complete-context and full-history admission use summary after the shared Host-validated synthetic plan. Running-only projection, original content/SHA and zero-replay assertions remain; negative preflight and saved-format read-only scenarios retain their original role.",
+        "functions": [
+          "test_all_declared_private_categories_are_rejected",
+          "test_normal_sports_and_route_descriptions_are_not_geolocation",
+          "test_all_ingresses_stop_before_new_model_intent",
+          "test_legal_full_history_is_byte_preserved_and_replayed_without_model",
+          "test_evidence_projection_preserves_all_allowed_facts_but_not_host_sources"
+        ]
+      },
+      {
+        "path": "tests/code/contract/test_m12_model_job.py",
+        "current_sha256": "e92589bb40e7087b88310d39a6c347425cf5b1c3568985c9c961c85c7db429ce",
+        "criterion_ids": [
+          "AC-007",
+          "AC-008",
+          "AC-009",
+          "AC-010",
+          "RET-001",
+          "RET-002"
+        ],
+        "reason": "Current plan stage executes the same safety scenarios; source identity, once-only, interruption, persistence, permissions, privacy and relocation expectations retained.",
+        "functions": [
+          "test_success_same_interface_detail_no_long_store_lock_and_replay",
+          "test_same_week_changed_inputs_never_grant_second_attempt",
+          "test_preflight_failure_has_no_intent_or_adapter_call",
+          "test_intent_visible_before_adapter_and_concurrent_caller_does_not_restart",
+          "test_real_process_exit_then_recovery_never_runs_adapter_twice",
+          "test_failure_is_durable_redacted_and_not_retried",
+          "test_finite_persistence_failure_retains_intent_and_only_local_recovery",
+          "test_capture_damage_never_restarts_or_returns_success",
+          "test_moved_instance_has_identical_receipt_and_no_database_increment",
+          "test_unconfirmed_adapter_interruption_keeps_unknown_not_false_failure",
+          "test_adapter_cannot_mutate_frozen_request_and_receipt_payload",
+          "test_invalid_schema_references_are_rejected_before_reservation",
+          "test_intent_write_failure_does_not_start_adapter_or_leak_error",
+          "test_recovered_capture_barrier_failure_does_not_publish_terminal",
+          "test_missing_capture_after_terminal_never_uses_database_only_success",
+          "test_mandatory_validators_cannot_be_omitted"
+        ]
+      },
+      {
+        "path": "tests/code/contract/test_m12_resource_closure.py",
+        "current_sha256": "00cb40e14eea25b3187e42631d3e1f7cf7d6d3d1a0f3fffce81ee4e65504990a",
+        "criterion_ids": [
+          "AC-007",
+          "AC-008",
+          "AC-009",
+          "AC-010",
+          "RET-001",
+          "RET-002"
+        ],
+        "reason": "Closed runtime copy now runs plan and summary, archives full history and replays after relocation; two calls replace retired single-stage expectation.",
+        "functions": [
+          "test_unused_broken_schema_cannot_break_current_goal",
+          "test_wire_schema_without_dialect_uses_declared_draft202012",
+          "test_shared_gmail_schema_uses_same_declared_reference_closure",
+          "test_transitive_schema_references_are_loaded_without_unrelated_files",
+          "test_schema_dependency_never_loads_arbitrary_location",
+          "test_unrelated_legacy_resources_do_not_change_runtime_identity",
+          "test_actual_goal_validation_dependency_changes_runtime_identity",
+          "test_missing_actual_schema_prevents_runtime_identity",
+          "test_closed_copy_finishes_context_model_history_and_relocation",
+          "test_empty_closed_collection_copy_syncs_all_sports_and_replays_after_move",
+          "test_missing_collection_resource_fails_without_original_source_fallback"
+        ]
+      },
+      {
+        "path": "tests/code/contract/test_m12_retired_runner_safety.py",
+        "current_sha256": "c4f829205c961df0d969ecf3f3e0a55e088aea52d226fdb2ef4deecae17e0eca",
+        "criterion_ids": [
+          "AC-007",
+          "AC-008",
+          "AC-009",
+          "AC-010",
+          "RET-001",
+          "RET-002"
+        ],
+        "reason": "Current plan stage executes the same safety scenarios; source identity, once-only, interruption, persistence, permissions, privacy and relocation expectations retained.",
+        "functions": [
+          "test_legacy_failure_inputs_are_durable_single_attempts",
+          "test_error_event_cannot_be_hidden_by_valid_answer_and_zero_exit",
+          "test_real_log_overflow_never_publishes_valid_answer",
+          "test_slow_post_stop_persistence_is_synchronous_and_not_model_timeout",
+          "test_late_writer_positive_control_writes_when_not_stopped",
+          "test_stopped_descendant_cannot_change_final_capture",
+          "test_real_unconfirmed_stop_remains_unknown_and_never_relaunches",
+          "test_launch_preparation_failure_has_no_model_intent_or_process"
+        ]
+      },
+      {
+        "path": "tests/code/contract/test_m12_sports_input.py",
+        "current_sha256": "0f461ac4782126a80682c0ae31c152013427d00afc4ddf9305ecff9e9d5cb2d5",
+        "criterion_ids": [
+          "AC-005",
+          "AC-006",
+          "AC-007",
+          "AC-008",
+          "AC-009",
+          "AC-010",
+          "RET-001",
+          "RET-002"
+        ],
+        "reason": "All-sport and complete legacy history admission use the current summary input validator after a Host-validated synthetic plan. Exact running-only projection, original sports/privacy cases, source SHA, immutable content and once-per-stage zero-replay assertions are retained; saved-format read-only cases remain unchanged.",
+        "functions": [
+          "test_authorized_sports_admission_does_not_modify_content",
+          "test_open_geography_does_not_open_credentials_paths_or_unrelated_identity",
+          "test_new_context_allows_sports_goal_through_actual_fake_call_and_replay",
+          "test_legacy_frozen_context_is_unchanged_after_current_parser_upgrade",
+          "test_current_tool_contract_changes_but_only_known_old_surface_can_recover",
+          "test_complete_history_preserves_authorized_location",
+          "test_v2_protected_categories_at_all_ingresses",
+          "test_geography_expectation_migration_reaches_model_and_replays",
+          "test_active_defaults_create_v2_without_parser_override",
+          "test_old_evidence_without_context_finishes_in_saved_version",
+          "test_explicit_authentication_header_text_is_not_sports_data",
+          "test_nested_authentication_headers_are_rejected_without_mutating_sports",
+          "test_authentication_header_cannot_cross_any_v2_model_ingress",
+          "test_sports_location_and_header_discussion_are_not_rewritten_or_overblocked"
+        ]
+      },
+      {
+        "path": "tests/code/contract/test_m12_route_fragments.py",
+        "current_sha256": "033d4870b658fd9cd306278d003a5674fc56e241940950e5e21807a0a9edbe7e",
+        "criterion_ids": [
+          "AC-007",
+          "AC-008",
+          "AC-009",
+          "AC-010",
+          "RET-001",
+          "RET-002"
+        ],
+        "reason": "Positive complete-context and full-history admission use summary after the shared Host-validated synthetic plan. Running-only projection, original content/SHA and zero-replay assertions remain; negative preflight and saved-format read-only scenarios retain their original role.",
+        "functions": [
+          "test_prefixed_coordinates_require_no_place_word_dictionary",
+          "test_unit_bearing_route_prose_keeps_whole_numbers_and_units",
+          "test_fragment_privacy_at_every_existing_lifecycle",
+          "test_legal_history_fragment_preservation_and_model_replay",
+          "test_legal_goal_fragment_preservation_and_model_replay"
+        ]
+      },
+      {
+        "path": "tests/code/contract/test_m12_stage_detail.py",
+        "current_sha256": "971793e68db12cf06f7e67bc9b6bbfda5ce6a4bb137d51eabb172dd3595ab919",
+        "criterion_ids": [
+          "AC-007",
+          "AC-008",
+          "AC-009",
+          "AC-010",
+          "RET-001",
+          "RET-002"
+        ],
+        "reason": "New two-stage projection, shared budget, source binding, read-only history, failures and recovery coverage.",
+        "functions": [
+          "test_stage_cache_permission_precedes_cached_result",
+          "test_two_stages_share_twenty_reservations",
+          "test_plan_rejects_nonrunning_without_charge",
+          "test_real_stdio_stage_permission_and_shared_cache"
+        ]
+      },
+      {
+        "path": "tests/code/contract/test_m12_weekly_context.py",
+        "current_sha256": "bd4afe213ced7702bdd2be19f73f18a4bd7916fffb5b77a845c251189fb7261b",
+        "criterion_ids": [
+          "AC-007",
+          "AC-008",
+          "AC-009",
+          "AC-010",
+          "RET-001",
+          "RET-002"
+        ],
+        "reason": "Positive complete-context and full-history admission use summary after the shared Host-validated synthetic plan. Running-only projection, original content/SHA and zero-replay assertions remain; negative preflight and saved-format read-only scenarios retain their original role.",
+        "functions": [
+          "test_full_activities_goal_and_no_invented_history",
+          "test_history_newest_four_full_reports_not_row_order_or_current_future",
+          "test_frozen_goal_history_replay_and_move_without_new_documents",
+          "test_archive_requires_successful_bound_capture_and_business_check",
+          "test_archiving_and_model_replay_do_not_repeat_adapter",
+          "test_invalid_goal_stops_before_context_or_model_intent",
+          "test_sensitive_goal_never_enters_model_context",
+          "test_normal_goal_slashes_and_units_remain_business_text",
+          "test_model_preflight_rejects_changed_context_without_attempt",
+          "test_frozen_context_sql_failure_retries_locally_without_model",
+          "test_zero_activity_and_no_fit_limitations_are_not_rewritten",
+          "test_frozen_history_missing_receipt_is_not_trusted",
+          "test_valid_context_enters_fake_once_and_replays_without_database_increment",
+          "test_revalidation_preserves_json_types_and_source_binding",
+          "test_history_duplicate_revision_or_untrusted_document_rejected",
+          "test_history_sensitive_content_not_transferred_even_if_shape_valid",
+          "test_archive_sql_failure_keeps_model_success_for_local_recovery",
+          "test_context_requires_business_validator_even_with_no_history",
+          "test_explicit_identity_and_file_uri_rejected_in_all_free_text",
+          "test_identity_topics_without_identifiers_are_not_private_values",
+          "test_private_assignment_grammar_uses_one_rule",
+          "test_private_keys_keep_their_value_association",
+          "test_common_private_forms_stop_every_entry_before_model",
+          "test_structured_private_history_stops_before_current_intent",
+          "test_old_frozen_private_text_must_be_rechecked",
+          "test_normal_full_history_preserved_and_model_replay_has_no_increment",
+          "test_private_text_scan_does_not_rewrite_valid_structures"
+        ]
+      },
+      {
+        "path": "tests/code/contract/test_m12_weekly_stages.py",
+        "current_sha256": "4875720817d3130194a3faf62a307f7a2f935cb690426aff2cbf880c1abc487c",
+        "criterion_ids": [
+          "AC-007",
+          "AC-008",
+          "AC-009",
+          "AC-010",
+          "RET-001",
+          "RET-002"
+        ],
+        "reason": "New two-stage projection, shared budget, source binding, read-only history, failures and recovery coverage.",
+        "functions": [
+          "test_two_stage_projection_fixed_plan_replay_and_move",
+          "test_stage_failure_never_publishes_or_retries",
+          "test_old_history_not_forwarded_to_plan_and_occupied_week_not_reauthorized",
+          "test_missing_stage_never_creates_old_job",
+          "test_parameterized_model_stage_once_and_separate_capture",
+          "test_next_week_history_has_only_bound_running_analysis_and_plan",
+          "test_unknown_stage_stops_and_local_callback_cannot_claim_success",
+          "test_nonrunning_evidence_changes_do_not_change_plan_projection",
+          "test_mixed_fit_projection_has_only_running_sessions",
+          "test_history_running_field_cannot_be_replaced",
+          "test_summary_requires_current_plan_binding_and_schema_callback"
+        ]
+      }
+    ]
+  }
 }

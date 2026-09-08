@@ -72,6 +72,9 @@ def test_new_context_allows_sports_goal_through_actual_fake_call_and_replay(
     assert evidence["schema_version"] == "fit_weekly_evidence_v2"
     assert body["schema_version"] == "fit_weekly_context_v2"
     assert all("location" in a for a in body["current_week"]["activities"])
+    summary, validate_summary, replay_plan = helpers.summary_setup(
+        root, body, helpers.valid_report
+    )
     adapter = models.FakeAdapter({"ok": "synthetic"}, [])
     schema = {
         "type": "object",
@@ -81,19 +84,19 @@ def test_new_context_allows_sports_goal_through_actual_fake_call_and_replay(
     }
 
     def result_check(result, payload):
-        assert result == {"ok": "synthetic"} and payload == body
+        assert result == {"ok": "synthetic"} and payload == summary
 
     def run():
+        replay_plan()
         return models.run(
             root,
             helpers.fixture.END,
             body["scope_sha256"],
-            body,
+            summary,
             schema,
             adapter,
-            validate_input=context.validator(
-                root, helpers.fixture.END, validate_report=helpers.valid_report
-            ),
+            stage="summary",
+            validate_input=validate_summary,
             validate_result=result_check,
         )
 
@@ -211,21 +214,22 @@ def test_geography_expectation_migration_reaches_model_and_replays(
         actual = body["history_reports"][0]["report"][entry.removeprefix("history_")]
         assert (actual[0] if entry == "history_plan" else actual) == value
     adapter = models.FakeAdapter({"ok": "synthetic"}, [])
+    summary, validate_summary, replay_plan = helpers.summary_setup(root, body, business)
 
     def result_check(output, payload):
-        assert output == {"ok": "synthetic"} and payload == body
+        assert output == {"ok": "synthetic"} and payload == summary
 
     def run():
+        replay_plan()
         return models.run(
             root,
             helpers.fixture.END,
             body["scope_sha256"],
-            body,
+            summary,
             matrix.closed_schema({"ok": "synthetic"}),
             adapter,
-            validate_input=context.validator(
-                root, helpers.fixture.END, validate_report=business
-            ),
+            stage="summary",
+            validate_input=validate_summary,
             validate_result=result_check,
         )
 

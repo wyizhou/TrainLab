@@ -48,6 +48,7 @@ def valid_result(body, context):
 def run(args, **kwargs):
     return module().run(
         *args,
+        stage=kwargs.pop("stage", "plan"),
         validate_input=kwargs.pop("validate_input", valid_input),
         validate_result=kwargs.pop("validate_result", valid_result),
         **kwargs,
@@ -55,7 +56,43 @@ def run(args, **kwargs):
 
 
 def capture_path(args):
-    return module().capture_path(args[0], args[1])
+    return module().capture_path(args[0], args[1], stage="plan")
+
+
+def legacy_saved(
+    root, end, scope, payload, schema, adapter, *, validate_input, validate_result
+):
+    """Manufacture public saved v1 evidence; not an executable legacy entrypoint.
+
+    Only history-reading tests use this fixture. Execution/crash/concurrency
+    regressions use the current parameterized ledger above.
+    """
+    from skills._shared.fit_weekly import fit_detail, fit_sync, storage
+
+    assert isinstance(adapter, module().FakeAdapter)
+    request, validator = module().prepare_request(
+        end,
+        scope,
+        payload,
+        schema,
+        adapter.profile,
+        validate_input=validate_input,
+        validate_result=validate_result,
+    )
+    output = adapter.run(payload, fit_detail.DetailHost(root, end, scope), schema)
+    capture = module().checked_result(request, output, None, validator, validate_result)
+    path = module().capture_path(root, end)
+    fit_sync.private_directory(path.parent.parent)
+    fit_sync.private_directory(path.parent)
+    storage.atomic_file(path, storage.canonical(capture).encode())
+    with storage.open_store(root) as db:
+        fit_detail.put(
+            db, "model-job:" + end + ":intent", module().sha(request), request
+        )
+        fit_detail.put(
+            db, "model-job:" + end + ":result", module().sha(request), capture
+        )
+    return module().outcome(capture, 1)
 
 
 def test_success_same_interface_detail_no_long_store_lock_and_replay(tmp_path):
@@ -183,7 +220,7 @@ else:
     storage.atomic_file=crash
 model_job.run(Path(root),end,scope,{'public':True},
  {'type':'object','properties':{'ok':{'type':'boolean','const':True}},'required':['ok'],'additionalProperties':False},
- adapter,validate_input=lambda _:None,validate_result=lambda *_:None)
+ adapter,stage="plan",validate_input=lambda _:None,validate_result=lambda *_:None)
 """
     # Use the same adapter profile in both processes.
     args[-1].requests = []
@@ -423,7 +460,7 @@ def test_recovered_capture_barrier_failure_does_not_publish_terminal(
         with pytest.raises(ValueError, match="model_job_persistence_unavailable"):
             run(args)
     with storage.open_store(args[0]) as db:
-        assert fit_detail.get(db, "model-job:" + args[1] + ":result") is None
+        assert fit_detail.get(db, "model-job:" + args[1] + ":plan:result") is None
     assert args[-1].calls == 1
     assert run(args)["status"] == "succeeded"
 

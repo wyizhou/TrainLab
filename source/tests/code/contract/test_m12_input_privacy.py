@@ -166,7 +166,7 @@ def archive_value(root, field, value):
     def business(body, context):
         assert body == output and context == payload
 
-    result = model_job.run(
+    result = helpers.legacy_saved(
         root,
         end,
         scope["scope_sha256"],
@@ -252,6 +252,7 @@ def test_all_ingresses_stop_before_new_model_intent(
                 body,
                 helpers.report_schema(),
                 adapter,
+                stage="plan",
                 validate_input=context.validator(
                     root, helpers.fixture.END, validate_report=business
                 ),
@@ -260,7 +261,9 @@ def test_all_ingresses_stop_before_new_model_intent(
     assert adapter.calls == 0
     assert helpers.counts(root) == before
     assert (root / "goal.md").read_bytes() == original_goal
-    assert not model_job.capture_path(root, helpers.fixture.END).parent.exists()
+    assert not model_job.capture_path(
+        root, helpers.fixture.END, stage="plan"
+    ).parent.exists()
 
 
 @pytest.mark.parametrize("value", LEGAL)
@@ -276,19 +279,23 @@ def test_legal_full_history_is_byte_preserved_and_replayed_without_model(
     assert body["history_reports"][0]["report"]["goal"] == value
     original = model_job.sha(body)
     adapter = model_job.FakeAdapter({"ok": "synthetic"}, [])
+    summary, validate_summary, replay_plan = helpers.summary_setup(root, body, business)
+
+    def check_result(result, payload):
+        assert result == {"ok": "synthetic"} and payload == summary
 
     def run():
+        replay_plan()
         return model_job.run(
             root,
             helpers.fixture.END,
             body["scope_sha256"],
-            body,
+            summary,
             closed_schema({"ok": "synthetic"}),
             adapter,
-            validate_input=context.validator(
-                root, helpers.fixture.END, validate_report=business
-            ),
-            validate_result=lambda result, payload: result == {"ok": "synthetic"},
+            stage="summary",
+            validate_input=validate_summary,
+            validate_result=check_result,
         )
 
     assert run()["status"] == "succeeded"

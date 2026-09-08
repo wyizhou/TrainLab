@@ -193,32 +193,33 @@ def test_closed_copy_finishes_context_model_history_and_relocation(
     program = """
 import json, sys
 from pathlib import Path
-from skills._shared.fit_weekly import weekly_context, weekly_history, model_job, storage
+from skills._shared.fit_weekly import weekly_context, weekly_stages, weekly_history, model_job, storage
 root, end = Path(sys.argv[1]), sys.argv[2]
 def valid_result(body, payload):
-    assert body == {"ok": True}
-    assert payload["schema_version"] == "fit_weekly_context_v2"
-context = weekly_context.freeze(root, end, validate_report=valid_result)
+    assert body == ({"ok": True} if payload["stage"] == "plan" else {"running_analysis": "synthetic running"})
+    assert payload["schema_version"] == "fit_weekly_stage_input_v1"
 schema = {"type": "object", "required": ["ok"], "additionalProperties": False,
           "properties": {"ok": {"type": "boolean", "const": True}}}
-adapter = model_job.FakeAdapter({"ok": True}, [])
+summary_schema = {"type": "object", "required": ["running_analysis"], "additionalProperties": False,
+                  "properties": {"running_analysis": {"type": "string"}}}
+adapters = [model_job.FakeAdapter({"ok": True}, []), model_job.FakeAdapter({"running_analysis": "synthetic running"}, [])]
+plan = weekly_stages.StageContract(schema, valid_result, lambda *_: adapters[0])
+summary = weekly_stages.StageContract(summary_schema, valid_result, lambda *_: adapters[1])
 def run(root):
-    return model_job.run(root, end, context["scope_sha256"], context, schema, adapter,
-        validate_input=weekly_context.validator(root, end, validate_report=valid_result),
-        validate_result=valid_result)
+    return weekly_stages.run(root, end, plan=plan, summary=summary, validate_history=valid_result)
 first = run(root)
-assert first["status"] == "succeeded"
+assert first["status"] == "succeeded" and first["publishable"]
 history = weekly_history.archive(root, end, validate_report=valid_result)
 before = (root / "trainlab-fit.db").read_bytes()
-assert run(root)["invocation_adapter_calls"] == 0
+assert run(root)["plan"]["invocation_adapter_calls"] == run(root)["summary"]["invocation_adapter_calls"] == 0
 assert (root / "trainlab-fit.db").read_bytes() == before
 moved = root.with_name("moved-instance")
 root.rename(moved)
-assert run(moved)["invocation_adapter_calls"] == 0
+assert run(moved)["plan"]["invocation_adapter_calls"] == run(moved)["summary"]["invocation_adapter_calls"] == 0
 assert weekly_history.archive(moved, end, validate_report=valid_result) == history
 assert (moved / "trainlab-fit.db").read_bytes() == before
-assert adapter.calls == 1
-assert first["receipt"]["provider_calls"] == first["receipt"]["external_actions"] == 0
+assert [adapter.calls for adapter in adapters] == [1, 1]
+assert first["plan"]["receipt"]["provider_calls"] == first["summary"]["receipt"]["external_actions"] == 0
 with storage.open_store(moved) as db:
     assert db.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
     assert db.execute("PRAGMA foreign_key_check").fetchall() == []
@@ -226,8 +227,9 @@ with storage.open_store(moved) as db:
 for name, module in tuple(sys.modules.items()):
     if name.startswith("skills.") and getattr(module, "__file__", None):
         assert Path(module.__file__).is_relative_to(Path.cwd())
+context = weekly_context.freeze(moved, end, validate_report=valid_result)
 print(json.dumps({"activities": len(context["current_week"]["activities"]),
-                  "calls": adapter.calls, "replay_calls": 0}))
+                  "calls": sum(adapter.calls for adapter in adapters), "replay_calls": 0}))
 """
     result = subprocess.run(
         [sys.executable, "-c", program, str(instance), fixture.fixture.END],
@@ -238,7 +240,7 @@ print(json.dumps({"activities": len(context["current_week"]["activities"]),
         timeout=60,
     )
     assert result.returncode == 0, result.stderr
-    assert json.loads(result.stdout) == {"activities": 2, "calls": 1, "replay_calls": 0}
+    assert json.loads(result.stdout) == {"activities": 2, "calls": 2, "replay_calls": 0}
 
 
 def test_empty_closed_collection_copy_syncs_all_sports_and_replays_after_move(

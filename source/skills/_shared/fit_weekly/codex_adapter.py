@@ -21,6 +21,7 @@ from skills._shared.fit_weekly import (
     model_job,
     model_process,
     process_capture,
+    stage_policy,
     storage,
 )
 from skills._shared.fit_weekly.codex_runtime import Runtime
@@ -61,6 +62,8 @@ def check_spec(spec: Any) -> None:
         or spec["request"]["profile"] != profile(identity, spec["capability"])
     ):
         raise ValueError("binding")
+    if "stage" in spec["request"] and identity.get("stage") != spec["request"]["stage"]:
+        raise ValueError("binding")
     codex_capability.validate(spec["capability"], identity, spec["instructions"])
     process_capture.binding(files(spec)["prompt.txt"], model_job.sha(spec["request"]))
 
@@ -91,7 +94,11 @@ class CodexAdapter:
     def __init__(self, root: Path, spec: dict[str, Any], runtime: Runtime | None):
         self.root, self._spec, self.runtime = root, model_job.clone(spec), runtime
         self.work = (
-            model_job.capture_path(root, spec["request"]["period_end_utc"]).parent
+            model_job.capture_path(
+                root,
+                spec["request"]["period_end_utc"],
+                stage=spec["request"].get("stage"),
+            ).parent
             / "codex"
         )
 
@@ -117,11 +124,16 @@ class CodexAdapter:
                 or detail.root != self.root
                 or detail.scope_sha != request["scope_sha256"]
                 or detail.key != fit_detail.period_key(request["period_end_utc"])[0]
+                or detail.stage != request.get("stage")
             ):
                 raise ValueError("binding")
             with storage.open_store(self.root) as db:
                 if fit_detail.get(
-                    db, "model-job:" + request["period_end_utc"] + ":intent"
+                    db,
+                    stage_policy.job_key(
+                        request["period_end_utc"], request.get("stage")
+                    )
+                    + ":intent",
                 ) != (model_job.sha(request), request):
                     raise ValueError("intent")
             env = codex_runtime.environment(self.work)
@@ -169,8 +181,12 @@ def prepare(
     capability_path: Path,
     validate_input: model_job.InputValidator,
     validate_result: model_job.ResultValidator,
+    stage: str | None = None,
 ) -> CodexAdapter:
     try:
+        stage_policy.require(stage)
+        if runtime.stage != stage:
+            raise ValueError("stage")
         root = codex_isolation.host_path(root).resolve()
         identity = runtime.identity()
         capability = codex_capability.read(
@@ -184,6 +200,7 @@ def prepare(
             profile(identity, capability),
             validate_input=validate_input,
             validate_result=validate_result,
+            stage=stage,
         )
         spec = {
             "schema_version": "fit_codex_prepared_v1",
@@ -198,7 +215,12 @@ def prepare(
         # One instance writer publishes all preparation files. A concurrent
         # prepare must not replace a sibling file after another job starts.
         with storage.open_store(root) as db:
-            fit_detail.DetailHost(root, period_end, scope_sha256).scope(db)
+            fit_detail.DetailHost(root, period_end, scope_sha256, stage=stage).scope(db)
+            existing = fit_detail.get(
+                db, stage_policy.job_key(period_end, stage) + ":intent"
+            )
+            if existing is not None and existing != (model_job.sha(request), request):
+                raise ValueError("intent")
             for folder in (
                 adapter.work.parent.parent,
                 adapter.work.parent,
@@ -232,12 +254,18 @@ def recover(
     *,
     validate_input: model_job.InputValidator,
     validate_result: model_job.ResultValidator,
+    stage: str | None = None,
 ) -> dict[str, Any]:
-    work = model_job.capture_path(root, period_end).parent / "codex"
+    work = model_job.capture_path(root, period_end, stage=stage).parent / "codex"
     try:
         spec = process_capture.read_json(work / "prepared.json", 64 * 1024 * 1024)
         check_spec(spec)
         verify_files(work, spec)
+        if (
+            spec["request"].get("stage") != stage
+            or spec["request"]["period_end_utc"] != period_end
+        ):
+            raise ValueError("stage")
     except Exception:
         return model_job.outcome(None, 0)
     return codex_recovery.resume(
@@ -251,4 +279,5 @@ def recover(
         validate_input=validate_input,
         validate_result=validate_result,
         startup_messages=tuple(spec["capability"]["startup_messages"]),
+        stage=stage,
     )

@@ -41,6 +41,8 @@ def arguments(root, end, sha):
         end,
         "--scope-sha256",
         sha,
+        "--stage",
+        "summary",
     ]
 
 

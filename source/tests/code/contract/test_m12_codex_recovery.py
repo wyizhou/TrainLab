@@ -38,8 +38,10 @@ def setup(tmp_path, *, value=None, process_error=None):
 
     def stopped(*_):
         with storage.open_store(args[0]) as db:
-            identity, request = fit_detail.get(db, "model-job:" + args[1] + ":intent")
-        work = model_job.capture_path(*args[:2]).parent / "codex"
+            identity, request = fit_detail.get(
+                db, "model-job:" + args[1] + ":plan:intent"
+            )
+        work = model_job.capture_path(*args[:2], stage="plan").parent / "codex"
         fit_sync.private_directory(work)
         paths["work"] = work / "process"
         paths["request"] = request
@@ -71,6 +73,7 @@ def resume(args, **kwargs):
     return module().resume(
         *args,
         prompt=kwargs.pop("prompt", PROMPT),
+        stage="plan",
         validate_input=kwargs.pop("validate_input", ledger.valid_input),
         validate_result=kwargs.pop("validate_result", ledger.valid_result),
         **kwargs,
@@ -290,7 +293,7 @@ adapter=model_job.FakeAdapter({'ok':True},[])
 adapter.profile=json.loads(profile)
 adapter.run=lambda *args: os._exit(99)
 original=storage.atomic_file
-outer=model_job.capture_path(root,end)
+outer=model_job.capture_path(root,end,stage="plan")
 def atomic(path,data):
     original(path,data)
     if stage=='raw' and path.name=='capture.json' and path.parent.name=='process':
@@ -307,7 +310,7 @@ fit_detail.put=save
 codex_recovery.resume(root,end,scope,{'public':True},
  {'type':'object','properties':{'ok':{'type':'boolean','const':True}},
   'required':['ok'],'additionalProperties':False},adapter,
- prompt=b'Public synthetic request.',validate_input=lambda _:None,
+ stage="plan",prompt=b'Public synthetic request.', validate_input=lambda _:None,
  validate_result=lambda *_:None)
 """
     done = subprocess.run(
@@ -441,6 +444,7 @@ def test_invalid_generic_reader_result_does_not_publish(tmp_path, value):
     args, _ = setup(tmp_path)
     result = model_job.recover(
         *args,
+        stage="plan",
         validate_input=ledger.valid_input,
         validate_result=ledger.valid_result,
         read_completed=lambda _: value,
@@ -456,6 +460,7 @@ def test_shared_request_constructor_is_exact_old_ledger_binding(tmp_path):
     request, _ = model_job.prepare_request(
         *args[1:5],
         args[-1].profile,
+        stage="plan",
         validate_input=ledger.valid_input,
         validate_result=ledger.valid_result,
     )
@@ -484,6 +489,7 @@ def test_profile_property_error_is_redacted_before_io(tmp_path, recovering):
         if recovering:
             model_job.recover(
                 *args,
+                stage="plan",
                 validate_input=ledger.valid_input,
                 validate_result=ledger.valid_result,
                 read_completed=lambda _: None,

@@ -19,6 +19,7 @@ from zoneinfo import ZoneInfo
 from skills._shared.fit_weekly import (
     codex_output,
     detail_server,
+    stage_policy,
     storage,
     sync_calendar,
 )
@@ -84,6 +85,7 @@ def configuration_arguments(
     python: Path,
     period_end: str,
     scope_sha256: str,
+    stage: str = "plan",
 ) -> list[str]:
     """Host-only argv values; no shell interpolation, writes or model launch.
 
@@ -91,6 +93,7 @@ def configuration_arguments(
     configure the child process, never the five-argument model tool interface.
     Global-doc isolation is deliberately not claimed by these settings.
     """
+    stage_policy.require(stage)
     if not isinstance(scope_sha256, str) or not re.fullmatch(
         r"[0-9a-f]{64}", scope_sha256
     ):
@@ -124,6 +127,8 @@ def configuration_arguments(
                 period_end,
                 "--scope-sha256",
                 scope_sha256,
+                "--stage",
+                stage,
                 "--compact",
             ],
             "mcp_servers.fit.env.PYTHONPATH": str(source),

@@ -182,6 +182,7 @@ def prepare(args, runtime, proof):
         *args[:5],
         runtime=runtime,
         capability_path=proof,
+        stage="plan",
         validate_input=ledger.valid_input,
         validate_result=ledger.valid_result,
     )
@@ -207,7 +208,7 @@ def test_prepare_launch_capture_and_replay_one_interface(tmp_path, monkeypatch):
     assert len(calls) == 1
     assert result["receipt"]["model_attempts"] == 1
     assert result["receipt"]["provider_calls"] == 0
-    work = model_job.capture_path(*args[:2]).parent / "codex"
+    work = model_job.capture_path(*args[:2], stage="plan").parent / "codex"
     assert (work / "prepared.json").stat().st_mode & 0o777 == 0o600
     assert (work / "process/capture.json").is_file()
     argv, options = calls[0]
@@ -349,6 +350,7 @@ def test_interrupted_after_process_recovers_from_original_materials(
     monkeypatch.setenv("HOME", "/public/now-unavailable")
     result = module().recover(
         *args[:5],
+        stage="plan",
         validate_input=ledger.valid_input,
         validate_result=ledger.valid_result,
     )
@@ -357,6 +359,7 @@ def test_interrupted_after_process_recovers_from_original_materials(
     assert (
         module().recover(
             *args[:5],
+            stage="plan",
             validate_input=ledger.valid_input,
             validate_result=ledger.valid_result,
         )
@@ -373,6 +376,7 @@ def test_relocation_recovery_and_schema_drift(tmp_path, monkeypatch):
     result = module().recover(
         moved,
         *args[1:5],
+        stage="plan",
         validate_input=ledger.valid_input,
         validate_result=ledger.valid_result,
     )
@@ -384,6 +388,7 @@ def test_relocation_recovery_and_schema_drift(tmp_path, monkeypatch):
             moved,
             *args[1:4],
             wrong,
+            stage="plan",
             validate_input=ledger.valid_input,
             validate_result=ledger.valid_result,
         )
@@ -397,6 +402,7 @@ def test_incomplete_prepared_never_restarts(tmp_path, monkeypatch):
     (adapter.work / "prepared.json").unlink()
     result = module().recover(
         *args[:5],
+        stage="plan",
         validate_input=ledger.valid_input,
         validate_result=ledger.valid_result,
     )
@@ -550,6 +556,7 @@ def test_finite_write_failure_never_repeats_child(tmp_path, monkeypatch, point):
     monkeypatch.setattr(storage, "atomic_file", original)
     result = module().recover(
         *args[:5],
+        stage="plan",
         validate_input=ledger.valid_input,
         validate_result=ledger.valid_result,
     )
@@ -643,6 +650,7 @@ def test_concurrent_prepare_cannot_mix_frozen_materials(
     before = (args[0] / "trainlab-fit.db").read_bytes()
     result = module().recover(
         *args[:5],
+        stage="plan",
         validate_input=ledger.valid_input,
         validate_result=ledger.valid_result,
     )
@@ -697,6 +705,7 @@ def test_legacy_tool_capability_recovers_stopped_capture_but_cannot_start_new_ru
         prepare(args, runtime, proof)
     result = module().recover(
         *args[:5],
+        stage="plan",
         validate_input=ledger.valid_input,
         validate_result=ledger.valid_result,
     )
@@ -705,9 +714,43 @@ def test_legacy_tool_capability_recovers_stopped_capture_but_cannot_start_new_ru
     assert (
         module().recover(
             *args[:5],
+            stage="plan",
             validate_input=ledger.valid_input,
             validate_result=ledger.valid_result,
         )
         == result
     )
     assert (args[0] / "trainlab-fit.db").read_bytes() == before and len(calls) == 1
+
+
+def test_stage_identity_prepare_and_recovery_cannot_cross_stage(tmp_path, monkeypatch):
+    args, runtime, proof, calls = setup(tmp_path, monkeypatch)
+    adapter = prepare(args, runtime, proof)
+    assert execute(args, adapter)["status"] == "succeeded"
+    summary_runtime = replace(runtime, stage="summary")
+    assert summary_runtime.identity() != runtime.identity()
+    with pytest.raises(ValueError, match="codex_preparation_invalid"):
+        module().prepare(
+            *args[:5],
+            runtime=summary_runtime,
+            capability_path=proof,
+            stage="summary",
+            validate_input=ledger.valid_input,
+            validate_result=ledger.valid_result,
+        )
+    from skills._shared.fit_weekly import model_job
+
+    wrong = model_job.capture_path(*args[:2], stage="summary").parent / "codex"
+    wrong.parent.mkdir(mode=0o700)
+    shutil.copytree(adapter.work, wrong)
+    assert (
+        module().recover(
+            *args[:5],
+            stage="summary",
+            validate_input=ledger.valid_input,
+            validate_result=ledger.valid_result,
+        )["status"]
+        == "unknown"
+    )
+    assert len(calls) == 1
+    assert execute(args, adapter)["status"] == "succeeded" and len(calls) == 1

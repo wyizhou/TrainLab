@@ -16,6 +16,7 @@ from skills._shared.fit_weekly import (
     codex_isolation,
     model_job,
     runtime_resources,
+    stage_policy,
     storage,
 )
 
@@ -28,9 +29,11 @@ class Runtime:
     credential_store: str
     instructions: str = field(repr=False)
     prompt_prefix: str = field(repr=False)
+    stage: str = "plan"
 
     def identity(self) -> dict[str, Any]:
         try:
+            stage_policy.require(self.stage)
             for path in (self.executable, self.source):
                 codex_isolation.host_path(path)
             if (
@@ -59,7 +62,8 @@ class Runtime:
                 }
             )
             return {
-                "version": "fit-codex-runtime-2",
+                "version": "fit-codex-runtime-3",
+                "stage": self.stage,
                 "platform": platform.system(),
                 "isolation": codex_isolation.VERSION,
                 "executable_sha256": storage.digest(self.executable.read_bytes()),
@@ -104,6 +108,7 @@ class Runtime:
             python=Path(sys.executable),
             period_end=end,
             scope_sha256=scope,
+            stage=self.stage,
         )
         for key, value in {
             "model_provider": "trainlab_openai",

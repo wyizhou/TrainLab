@@ -16,7 +16,7 @@ from typing import Any
 import jsonschema
 from referencing import Registry, Resource
 
-from skills._shared.fit_weekly import fit_parse, storage, sync_calendar
+from skills._shared.fit_weekly import fit_parse, stage_policy, storage, sync_calendar
 
 MAX_REQUESTS = 20
 MAX_SECONDS = 1200
@@ -241,8 +241,16 @@ def validate_result(body: dict[str, Any]) -> None:
 
 
 class DetailHost:
-    def __init__(self, root: Path, period_end: str, scope_sha256: str):
+    def __init__(
+        self,
+        root: Path,
+        period_end: str,
+        scope_sha256: str,
+        *,
+        stage: str | None = None,
+    ):
         self.root, self.key = root, period_key(period_end)[0]
+        self.stage = stage_policy.require(stage, legacy=True)
         storage.require_sha(scope_sha256)
         self.scope_sha = scope_sha256
 
@@ -299,6 +307,9 @@ class DetailHost:
                 or storage.digest(parse[0].encode()) != parse[1]
             ):
                 raise ValueError("detail_parse_drift")
+            # This must precede BOTH cache lookup and reservation. A summary
+            # cache entry never grants planning permission to non-running FIT.
+            stage_policy.authorize(self.stage, json.loads(parse[0]), req)
             request_sha = storage.digest(
                 storage.canonical(
                     {"scope_sha256": self.scope_sha, "request": req}

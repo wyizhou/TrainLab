@@ -1,4 +1,4 @@
-"""One durable adapter attempt per week; recovery never restarts inference.
+"""One durable adapter attempt per weekly stage; recovery never restarts inference.
 
 This internal Host component has no model launcher or CLI. Mandatory business
 validators belong to the eventual weekly input/result modules. An adapter must
@@ -19,7 +19,7 @@ import jsonschema
 from referencing import Registry, Resource
 from referencing.jsonschema import DRAFT202012
 
-from skills._shared.fit_weekly import fit_detail, fit_sync, storage
+from skills._shared.fit_weekly import fit_detail, fit_sync, stage_policy, storage
 
 InputValidator = Callable[[dict[str, Any]], None]
 ResultValidator = Callable[[Any, dict[str, Any]], None]
@@ -94,9 +94,11 @@ class FakeAdapter:
         return clone(self.output)
 
 
-def capture_path(root: Path, end: str) -> Path:
+def capture_path(root: Path, end: str, *, stage: str | None = None) -> Path:
     fit_detail.period_key(end)
-    return root / "model-results" / storage.digest(end.encode()) / "capture.json"
+    stage_policy.require(stage, legacy=True)
+    identity = end + (":" + stage if stage else "")
+    return root / "model-results" / storage.digest(identity.encode()) / "capture.json"
 
 
 def schema_validator(schema: dict[str, Any]) -> jsonschema.Draft202012Validator:
@@ -132,7 +134,10 @@ def schema_validator(schema: dict[str, Any]) -> jsonschema.Draft202012Validator:
 
 def receipt(request: dict[str, Any], output: Any, error: str | None) -> dict[str, Any]:
     return {
-        "schema_version": "fit_model_receipt_v1",
+        "schema_version": "fit_model_receipt_v2"
+        if "stage" in request
+        else "fit_model_receipt_v1",
+        **({"stage": request["stage"]} if "stage" in request else {}),
         "period_end_utc": request["period_end_utc"],
         "request_sha256": sha(request),
         "scope_sha256": request["scope_sha256"],
@@ -161,9 +166,12 @@ def check_capture(
         ):
             raise ValueError("shape")
         observed = value["receipt"]
-        jsonschema.Draft202012Validator(json.loads(SCHEMA_PATH.read_text())).validate(
-            observed
+        path = (
+            SCHEMA_PATH.with_name("fit_model_receipt_v2.schema.json")
+            if "stage" in request
+            else SCHEMA_PATH
         )
+        jsonschema.Draft202012Validator(json.loads(path.read_text())).validate(observed)
         if observed != receipt(request, value["output"], observed["error_code"]):
             raise ValueError("binding")
         if observed["status"] == "succeeded":
@@ -195,10 +203,12 @@ def prepare_request(
     *,
     validate_input: InputValidator,
     validate_result: ResultValidator,
+    stage: str | None = None,
 ) -> tuple[dict[str, Any], jsonschema.Draft202012Validator]:
     try:
         fit_detail.period_key(period_end)
         storage.require_sha(scope_sha256)
+        stage_policy.require(stage, legacy=True)
         profile = clone(profile)
         if (
             set(profile) != {"kind", "name", "configuration_sha256"}
@@ -209,7 +219,10 @@ def prepare_request(
             raise ValueError("profile")
         storage.require_sha(profile["configuration_sha256"])
         request = {
-            "schema_version": "fit_model_request_v1",
+            "schema_version": "fit_model_request_v2"
+            if stage
+            else "fit_model_request_v1",
+            **({"stage": stage} if stage else {}),
             "period_end_utc": period_end,
             "scope_sha256": scope_sha256,
             "payload": clone(payload),
@@ -260,6 +273,7 @@ def run(
     *,
     validate_input: InputValidator,
     validate_result: ResultValidator,
+    stage: str | None = None,
 ) -> dict[str, Any]:
     return _execute(
         root,
@@ -271,6 +285,7 @@ def run(
         validate_input=validate_input,
         validate_result=validate_result,
         recovery=None,
+        stage=stage,
     )
 
 
@@ -285,6 +300,7 @@ def recover(
     validate_input: InputValidator,
     validate_result: ResultValidator,
     read_completed: RecoveryReader,
+    stage: str | None = None,
 ) -> dict[str, Any]:
     """No new intent or adapter invocation; only Host-local evidence recovery.
 
@@ -304,6 +320,7 @@ def recover(
         validate_input=validate_input,
         validate_result=validate_result,
         recovery=read_completed,
+        stage=stage,
     )
 
 
@@ -318,7 +335,9 @@ def _execute(
     validate_input: InputValidator,
     validate_result: ResultValidator,
     recovery: RecoveryReader | None,
+    stage: str | None,
 ) -> dict[str, Any]:
+    stage_policy.require(stage, legacy=True)
     try:
         request, validator = prepare_request(
             period_end,
@@ -328,13 +347,14 @@ def _execute(
             adapter.profile,
             validate_input=validate_input,
             validate_result=validate_result,
+            stage=stage,
         )
     except Exception:
         raise ValueError("model_job_input_invalid") from None
     binding = sha(request)
-    host = fit_detail.DetailHost(root, period_end, scope_sha256)
-    path = capture_path(root, period_end)
-    key = "model-job:" + period_end
+    host = fit_detail.DetailHost(root, period_end, scope_sha256, stage=stage)
+    path = capture_path(root, period_end, stage=stage)
+    key = stage_policy.job_key(period_end, stage)
     # The only winner is the invocation that commits a previously absent intent.
     # Merely seeing an old intent can never authorize another adapter invocation.
     try:
@@ -342,6 +362,22 @@ def _execute(
             host.scope(db)
             previous = fit_detail.get(db, key + ":intent")
             saved = fit_detail.get(db, key + ":result")
+            if previous is None and stage is None:
+                if recovery is not None:
+                    return outcome(None, 0)
+                raise ValueError("model_stage_required")
+            if (
+                stage is not None
+                and fit_detail.get(db, stage_policy.job_key(period_end) + ":intent")
+                is not None
+            ):
+                raise ValueError("model_legacy_week_occupied")
+            if previous is None and stage == "summary" and recovery is None:
+                plan = fit_detail.get(
+                    db, stage_policy.job_key(period_end, "plan") + ":result"
+                )
+                if plan is None or plan[1]["receipt"]["status"] != "succeeded":
+                    raise ValueError("model_plan_not_succeeded")
             if previous is not None and previous != (binding, request):
                 raise ValueError("model_job_input_conflict")
             if previous is None and (
@@ -360,6 +396,9 @@ def _execute(
             "model_job_input_conflict",
             "model_job_orphan_capture",
             "detail_scope_binding_invalid",
+            "model_stage_required",
+            "model_legacy_week_occupied",
+            "model_plan_not_succeeded",
         }:
             code = "model_job_preflight_unavailable"
         raise ValueError(code) from None
