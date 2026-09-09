@@ -1,4 +1,4 @@
 interface:
   display_name: "TrainLab Training Report Publisher"
   short_description: "Prepare consistent weekly Markdown and PDF outputs"
-  default_prompt: "Use $training-report-publisher to inspect the M12 Markdown and PDF contract and current implementation status."
+  default_prompt: "Use $training-report-publisher to prepare the M12 Markdown/PDF from an explicit verified revision, or explicitly edit a pre-publication summary or plan and revalidate/render it. Use one sealed revision for later delivery; do not invoke providers."

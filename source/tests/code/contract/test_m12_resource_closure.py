@@ -120,6 +120,10 @@ def runtime_copy(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     shutil.copytree(
         SOURCE / "skills/_shared/schemas", source / "skills/_shared/schemas"
     )
+    shutil.copytree(
+        SOURCE / "skills/_shared/assets/report-fonts",
+        source / "skills/_shared/assets/report-fonts",
+    )
     prompts = source / "skills/_shared/prompts"
     prompts.mkdir()
     for name in ("fit-running-plan-v1.txt", "fit-sports-summary-v1.txt"):

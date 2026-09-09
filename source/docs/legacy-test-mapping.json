@@ -11963,6 +11963,9 @@
     "tests/code/contract/test_m12_model_job.py",
     "tests/code/contract/test_m12_model_process.py",
     "tests/code/contract/test_m12_process_capture.py",
+    "tests/code/contract/test_m12_report_artifacts.py",
+    "tests/code/contract/test_m12_report_pdf.py",
+    "tests/code/contract/test_m12_report_revisions.py",
     "tests/code/contract/test_m12_resource_closure.py",
     "tests/code/contract/test_m12_retired_runner_safety.py",
     "tests/code/contract/test_m12_retirement_boundary.py",
@@ -11988,6 +11991,7 @@
     "tests/code/integration/test_m11_v4_content_candidate.py",
     "tests/code/integration/test_m11_v4_r18_candidate_v3.py",
     "tests/code/integration/test_m12_coaching_stages.py",
+    "tests/code/integration/test_m12_report_pipeline.py",
     "tests/code/integration/test_offline_workflow.py",
     "tests/code/unit/test_auto_and_state.py",
     "tests/code/unit/test_bounded_raw.py",
@@ -12354,5 +12358,20 @@
         ]
       }
     ]
+  },
+  "r4_report_tests": {
+    "contract_version": "RUN-VC-001",
+    "criterion_ids": [
+      "AC-014",
+      "RET-002",
+      "GATE-001"
+    ],
+    "files": [
+      "tests/code/contract/test_m12_report_artifacts.py",
+      "tests/code/contract/test_m12_report_pdf.py",
+      "tests/code/contract/test_m12_report_revisions.py",
+      "tests/code/integration/test_m12_report_pipeline.py"
+    ],
+    "scope": "本地修订、七部分Markdown/PDF、完整课程、来源隔离、耐久产物、固定版本封存与无归档搬迁；不代表真实发布或调度完成。"
   }
 }

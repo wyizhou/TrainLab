@@ -40,6 +40,11 @@ MODULES = (
     "coaching_plan",
     "coaching_summary",
     "coaching",
+    "report_revisions",
+    "report_artifacts",
+    "report_view",
+    "report_markdown",
+    "report_pdf",
 )
 SCHEMAS = (
     "fit_activity_v1",
@@ -59,9 +64,13 @@ SCHEMAS = (
     "fit_running_plan_v1",
     "fit_sports_summary_v1",
     "fit_coaching_report_v1",
+    "fit_report_revision_v1",
+    "fit_report_artifacts_v1",
+    "fit_report_publication_v1",
 )
 COMMON = (
     "requirements.txt",
+    "skills/_shared/assets/report-fonts/TrainLabReportSans-Regular.ttf",
     "skills/_shared/prompts/fit-running-plan-v1.txt",
     "skills/_shared/prompts/fit-sports-summary-v1.txt",
     "skills/__init__.py",

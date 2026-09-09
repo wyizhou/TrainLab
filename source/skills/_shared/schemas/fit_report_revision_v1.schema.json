@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "fit_report_revision_v1",
+      "type": "string"
+    },
+    "period_end_utc": {
+      "type": "string",
+      "minLength": 1
+    },
+    "revision_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$"
+    },
+    "base_revision_id": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$"
+        }
+      ]
+    },
+    "base_revision_sha256": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      ]
+    },
+    "edit_target": {
+      "enum": [
+        "original",
+        "summary",
+        "plan"
+      ],
+      "type": "string"
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "report_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "host_report_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "raw_plan_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "raw_summary_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "plan_request_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "summary_request_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "required": [
+        "report_sha256",
+        "host_report_sha256",
+        "raw_plan_sha256",
+        "raw_summary_sha256",
+        "plan_request_sha256",
+        "summary_request_sha256"
+      ],
+      "additionalProperties": false
+    },
+    "plan_content": {
+      "$ref": "urn:trainlab:fit_running_plan_v1"
+    },
+    "summary_content": {
+      "$ref": "urn:trainlab:fit_sports_summary_v1"
+    },
+    "effective_plan_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "effective_summary_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  },
+  "required": [
+    "schema_version",
+    "period_end_utc",
+    "revision_id",
+    "base_revision_id",
+    "base_revision_sha256",
+    "edit_target",
+    "source",
+    "plan_content",
+    "summary_content",
+    "effective_plan_sha256",
+    "effective_summary_sha256"
+  ],
+  "additionalProperties": false
+}

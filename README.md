@@ -37,7 +37,7 @@ TrainLab/
 已完成新库、FIT 导入/同步、解析、受限细读和模型适配基础。当前有效目标见
 [RUN-VC-001 冻结合同](docs/exec-plans/active/M12-fit-weekly-0001-rebuild.md#当前完整冻结合同-run-vc-001)；
 [退役映射](source/docs/legacy-retirement.md) 记录保留能力、取消业务和安全接替。
-R2两阶段输入、调用和恢复已以671f7b2推送当前分支，macOS/Linux完整CI通过。R3七部分周报、固定课程与来源校验已通过本机独立验收及Main实际验收，当前分支交付与双平台CI尚待；PDF、发布与完整调度仍未交付。
+R2两阶段输入、调用和恢复已以671f7b2推送当前分支，macOS/Linux完整CI通过。R3七部分周报、固定课程与来源校验已通过独立及Main验收，7bc2175已推送当前分支，macOS/Linux各3158项完整CI通过。R4[本地周报与修订](source/docs/weekly-reports.md)已通过3189项独立回归、PDF全页检查及Main实际验收；当前分支提交和双平台CI尚待，发布与完整调度仍未交付。
 完整运行命令尚不可用，不能用内部合成测试代替真实交付。旧正式 state/私人配置保持不变，没有启用真实调用。
 
 | 周任务阶段 | 当前分支阶段边界，按模块独立验收 |
