@@ -4,12 +4,11 @@
 它只读取已验证备份中旧数据库登记的 2022-01-01 起运动 FIT，将独立副本写入新 SQLite。
 不导入健康数据、GPX/TCX、旧 AI 报告、邮件、课程动作或凭据；未登记的 FIT 不自动采用。
 
-从 `source/` 运行，参数可用相对路径：
+从 `source/` 运行，使用明确绝对实例路径与显式归档：
 
 ```bash
-python -m skills._shared.fit_weekly.legacy_import \
-  --archive ../data-backup/m12-legacy-你的备份目录 \
-  --destination private/fit-instance
+python -m skills._shared.fit_weekly --instance /absolute/private-fit-instance \
+  import-history --archive /absolute/explicit-legacy-archive
 ```
 
 Python 环境沿用 `requirements.txt`；目标父目录需要预先存在，不能指向备份内部。
@@ -27,7 +26,7 @@ Python 环境沿用 `requirements.txt`；目标父目录需要预先存在，不
 若目录含未完成 `.pending-*` 文件，闭包检查会停止，不自动删除失败产物。
 
 新实例保存自己的 FIT 字节和相对路径；回执不含备份的绝对位置。迁移完成后，备份可以离线，
-新系统仍可核验和使用文件。只有这项一次性迁移工具依赖备份读取器，日常模块不导入它。
+新系统仍可核验和使用文件。只有显式import-history延迟加载legacy_import/history_archive；读取器只有核验和immutable数据库读取，没有create/restore/main。普通运行不导入它。
 
 导入回执 `history_coverage=not_established`：这是“复制了已有文件”，不是“自 2022 年起每天
 都已完整查询”。日历覆盖、明确无活动和缺口仍需后续同步表及完整分页来证明。

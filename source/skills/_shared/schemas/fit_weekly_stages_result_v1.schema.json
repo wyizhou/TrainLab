@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "period_end_utc", "summary", "running", "plan_binding", "summary_receipt"],
+  "properties": {
+    "schema_version": {"const": "fit_weekly_stages_result_v1"},
+    "period_end_utc": {"type": "string", "format": "date-time"},
+    "summary": {"type": "object", "required": ["running_analysis"], "properties": {"running_analysis": true}},
+    "running": {"type": "object", "required": ["analysis", "plan"], "additionalProperties": false, "properties": {"analysis": true, "plan": true}},
+    "plan_binding": {"$ref": "urn:trainlab:fit_weekly_stage_input_v1#/properties/fixed_plan"},
+    "summary_receipt": {"allOf": [{"$ref": "urn:trainlab:fit_model_receipt_v2"}, {"properties": {"stage": {"const": "summary"}, "status": {"const": "succeeded"}}}]}
+  }
+}

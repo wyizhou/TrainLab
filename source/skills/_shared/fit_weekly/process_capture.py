@@ -21,6 +21,7 @@ from skills._shared.fit_weekly.model_process import ProcessInterrupted, ProcessR
 ERRORS = frozenset(
     {
         "process_start_failed",
+        "process_authorization_expired",
         "process_input_incomplete",
         "process_timeout",
         "process_exit_nonzero",

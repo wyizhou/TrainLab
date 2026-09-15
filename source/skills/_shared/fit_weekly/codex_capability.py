@@ -94,7 +94,7 @@ def validate(
                 item, {"request", "host_result", "model_output", "charged_requests"}
             )
             request = item["request"]
-            fit_detail.request_value(request)
+            fit_detail.request_value(request, item["host_result"]["parser_version"])
             codex_output.keys(
                 request,
                 {

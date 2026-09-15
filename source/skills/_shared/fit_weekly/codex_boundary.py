@@ -19,6 +19,7 @@ from zoneinfo import ZoneInfo
 from skills._shared.fit_weekly import (
     codex_output,
     detail_server,
+    stage_policy,
     storage,
     sync_calendar,
 )
@@ -64,7 +65,13 @@ NEUTRAL_TOOLS = frozenset({"update_plan", "request_user_input"})
 LEGACY_TOOL_SURFACE_SHA256 = (
     "3c89c7c9bb62202af88d4966ce3869b33ccf28824c77f9c8d5f35ee957eb1608"
 )
-TOOL_SURFACE_SHA256 = "5ebf0a3762ea0f7710cdeaefcd7476f8b30a7f4a9ebbda04cdbac093f16c5011"
+LOCATION_TOOL_SURFACE_SHA256 = (
+    "5ebf0a3762ea0f7710cdeaefcd7476f8b30a7f4a9ebbda04cdbac093f16c5011"
+)
+TIME_TOOL_SURFACE_SHA256 = (
+    "7ed6cc527ca5f06d26627083da899e5c3ff1f58f0745e5e365f78e7978494f41"
+)
+TOOL_SURFACE_SHA256 = TIME_TOOL_SURFACE_SHA256
 PERMISSIONS_TEXT = (
     "<permissions instructions>\n"
     "Filesystem sandboxing defines which files can be read or written. "
@@ -84,6 +91,7 @@ def configuration_arguments(
     python: Path,
     period_end: str,
     scope_sha256: str,
+    stage: str = "plan",
 ) -> list[str]:
     """Host-only argv values; no shell interpolation, writes or model launch.
 
@@ -91,6 +99,7 @@ def configuration_arguments(
     configure the child process, never the five-argument model tool interface.
     Global-doc isolation is deliberately not claimed by these settings.
     """
+    stage_policy.require(stage)
     if not isinstance(scope_sha256, str) or not re.fullmatch(
         r"[0-9a-f]{64}", scope_sha256
     ):
@@ -124,12 +133,15 @@ def configuration_arguments(
                 period_end,
                 "--scope-sha256",
                 scope_sha256,
+                "--stage",
+                stage,
                 "--compact",
             ],
             "mcp_servers.fit.env.PYTHONPATH": str(source),
             "mcp_servers.fit.env.PYTHONDONTWRITEBYTECODE": "1",
             "mcp_servers.fit.enabled_tools": [detail_server.TOOL],
             "mcp_servers.fit.default_tools_approval_mode": "auto",
+            "mcp_servers.fit.required": True,
             "mcp_servers.fit.startup_timeout_sec": 10,
             "mcp_servers.fit.tool_timeout_sec": 20,
         }
@@ -145,7 +157,11 @@ def require_tool_surface(tools: Any, *, expected_sha256: str | None = None) -> N
     expected_sha256 = (
         TOOL_SURFACE_SHA256 if expected_sha256 is None else expected_sha256
     )
-    if expected_sha256 not in {LEGACY_TOOL_SURFACE_SHA256, TOOL_SURFACE_SHA256}:
+    if expected_sha256 not in {
+        LEGACY_TOOL_SURFACE_SHA256,
+        LOCATION_TOOL_SURFACE_SHA256,
+        TIME_TOOL_SURFACE_SHA256,
+    }:
         raise ValueError("codex_capabilities_invalid")
     if not isinstance(tools, list) or len(tools) != 6:
         raise ValueError("codex_capabilities_invalid")
@@ -172,7 +188,13 @@ def require_tool_surface(tools: Any, *, expected_sha256: str | None = None) -> N
             ):
                 raise ValueError("codex_capabilities_invalid")
             detail = tool["tools"][0]
-            schema = json.loads(detail_server.SCHEMA_PATH.read_text())
+            schema = json.loads(
+                detail_server.schema_path(
+                    "fit-summary-3"
+                    if expected_sha256 == TIME_TOOL_SURFACE_SHA256
+                    else "fit-summary-2"
+                ).read_text()
+            )
             # Current CLI preserves structure while removing unsupported scalar
             # constraints. The actual DetailHost still enforces every limit.
             properties = schema["properties"]

@@ -1,4 +1,0 @@
-interface:
-  display_name: "Training Coach"
-  short_description: "Review FIT-only fixed weekly running-plan contracts"
-  default_prompt: "Use $training-coach to inspect the current weekly running-plan contract without starting a model or publishing."

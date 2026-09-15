@@ -20,7 +20,7 @@ def module():
 
 def packet():
     tools = json.loads(
-        (SOURCE / "tests/code/fixtures/m12_codex_cli_tools_v2.json").read_text()
+        (SOURCE / "tests/code/fixtures/m12_codex_cli_tools_v3.json").read_text()
     )
     tools.sort(key=lambda t: (t["name"] == "mcp__fit", t["name"]))
     text = (
@@ -305,3 +305,22 @@ def test_known_cli_transport_options_and_tool_order_are_accepted():
     )
     body["tools"].reverse()
     assert audit(body)["status"] == "checked"
+
+
+@pytest.mark.parametrize("stage", ["plan", "summary"])
+def test_fit_startup_is_required_before_initial_model_tool_catalog(tmp_path, stage):
+    args = module().configuration_arguments(
+        source=SOURCE,
+        instance=tmp_path / "instance",
+        work=tmp_path / "job",
+        python=Path(sys.executable),
+        period_end="2026-09-06T07:00:00Z",
+        scope_sha256="a" * 64,
+        stage=stage,
+    )
+    settings = dict(value.split("=", 1) for value in args[1::2])
+    assert json.loads(settings.get("mcp_servers.fit.required", "false")) is True
+    assert json.loads(settings["mcp_servers.fit.startup_timeout_sec"]) == 10
+    assert json.loads(settings["mcp_servers.fit.enabled_tools"]) == ["read_fit_detail"]
+    assert json.loads(settings["mcp_servers.fit.args"])[-2:] == [stage, "--compact"]
+    assert list(tmp_path.iterdir()) == []

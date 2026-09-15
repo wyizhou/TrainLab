@@ -1,4 +1,0 @@
-旧 TrainLab AI + Skills 自动入口已退役，M12 正在迁移为 Python 管理的 FIT-only 每周系统。
-不读取 goal、配置、state、raw、测试或其他 Skills，不调用任何工具、模型或 Provider，
-不执行旧日报/周报脚本，不修改文件。仅返回以下退役通知，不假称新系统已经运行：
-{"status":"blocked","error_code":"legacy_runtime_retired","provider_calls":0,"external_actions":0}

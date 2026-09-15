@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "activity_ref",
+    "view",
+    "start_offset_seconds",
+    "end_offset_seconds",
+    "resolution_seconds"
+  ],
+  "properties": {
+    "activity_ref": {
+      "type": "string",
+      "pattern": "^[0-9]{1,32}$"
+    },
+    "view": {
+      "type": "string",
+      "enum": [
+        "summary",
+        "laps",
+        "series"
+      ]
+    },
+    "start_offset_seconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "end_offset_seconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "resolution_seconds": {
+      "type": "integer",
+      "enum": [
+        1,
+        5
+      ]
+    }
+  }
+}

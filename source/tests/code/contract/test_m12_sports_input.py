@@ -62,7 +62,7 @@ def test_new_context_allows_sports_goal_through_actual_fake_call_and_replay(
     root, evidence, _ = helpers.setup(
         tmp_path, monkeypatch, parser_version="fit-summary-2"
     )
-    (root / "goal.md").write_text(
+    (root / "Goal.md").write_text(
         helpers.goal_text().replace("按运动表现安排跑步，保留攀岩时间", value, 1)
     )
     context, _ = helpers.modules()
@@ -70,8 +70,11 @@ def test_new_context_allows_sports_goal_through_actual_fake_call_and_replay(
         root, helpers.fixture.END, validate_report=helpers.valid_report
     )
     assert evidence["schema_version"] == "fit_weekly_evidence_v2"
-    assert body["schema_version"] == "fit_weekly_context_v2"
+    assert body["schema_version"] == "fit_weekly_context_v4"
     assert all("location" in a for a in body["current_week"]["activities"])
+    summary, validate_summary, replay_plan = helpers.summary_setup(
+        root, body, helpers.valid_report
+    )
     adapter = models.FakeAdapter({"ok": "synthetic"}, [])
     schema = {
         "type": "object",
@@ -81,19 +84,19 @@ def test_new_context_allows_sports_goal_through_actual_fake_call_and_replay(
     }
 
     def result_check(result, payload):
-        assert result == {"ok": "synthetic"} and payload == body
+        assert result == {"ok": "synthetic"} and payload == summary
 
     def run():
+        replay_plan()
         return models.run(
             root,
             helpers.fixture.END,
             body["scope_sha256"],
-            body,
+            summary,
             schema,
             adapter,
-            validate_input=context.validator(
-                root, helpers.fixture.END, validate_report=helpers.valid_report
-            ),
+            stage="summary",
+            validate_input=validate_summary,
             validate_result=result_check,
         )
 
@@ -116,7 +119,7 @@ def test_legacy_frozen_context_is_unchanged_after_current_parser_upgrade(
     )
     before = (root / "trainlab-fit.db").read_bytes()
     monkeypatch.setattr(parser, "VERSION", "fit-summary-2")
-    (root / "goal.md").unlink()
+    (root / "Goal.md").unlink()
     assert (
         context.freeze(root, helpers.fixture.END, validate_report=helpers.valid_report)
         == old
@@ -134,6 +137,10 @@ def test_current_tool_contract_changes_but_only_known_old_surface_can_recover() 
     next(t for t in new if t["name"] == "mcp__fit")["tools"][0]["description"] = (
         server.TOOL_DESCRIPTION
     )
+    for key in ("start_offset_seconds", "end_offset_seconds"):
+        next(t for t in new if t["name"] == "mcp__fit")["tools"][0]["parameters"][
+            "properties"
+        ][key]["type"] = "number"
     boundary.require_tool_surface(new)
     with pytest.raises(ValueError, match="codex_capabilities_invalid"):
         boundary.require_tool_surface(old)
@@ -187,45 +194,43 @@ def test_geography_expectation_migration_reaches_model_and_replays(
     root, _, sdk = helpers.setup(tmp_path, monkeypatch, parser_version="fit-summary-2")
     business = helpers.valid_report
     if entry == "goal":
-        # The existing goal contract is one Markdown field per line. Represent
-        # multiline text as JSON text there; history still preserves raw newlines.
         text = (
-            value
-            if isinstance(value, str) and "\n" not in value
-            else json.dumps(value, ensure_ascii=False)
+            value if isinstance(value, str) else json.dumps(value, ensure_ascii=False)
         )
-        (root / "goal.md").write_text(
+        (root / "Goal.md").write_text(
             helpers.goal_text().replace("按运动表现安排跑步，保留攀岩时间", text, 1)
         )
     else:
         business = matrix.archive_value(root, entry.removeprefix("history_"), value)
-    source_goal = (root / "goal.md").read_bytes()
+    source_goal = (root / "Goal.md").read_bytes()
     calls_before = list(sdk.calls)
     context, _ = helpers.modules()
     body = context.freeze(root, helpers.fixture.END, validate_report=business)
     if entry == "goal":
-        assert body["goal_snapshot"]["goal"] == context.parse_training_goal_v1(
-            source_goal.decode()
-        )
+        assert body["goal_snapshot"]["goal"] == {
+            "schema_version": "training_goal_text_v1",
+            "text": source_goal.decode(),
+        }
     else:
         actual = body["history_reports"][0]["report"][entry.removeprefix("history_")]
         assert (actual[0] if entry == "history_plan" else actual) == value
     adapter = models.FakeAdapter({"ok": "synthetic"}, [])
+    summary, validate_summary, replay_plan = helpers.summary_setup(root, body, business)
 
     def result_check(output, payload):
-        assert output == {"ok": "synthetic"} and payload == body
+        assert output == {"ok": "synthetic"} and payload == summary
 
     def run():
+        replay_plan()
         return models.run(
             root,
             helpers.fixture.END,
             body["scope_sha256"],
-            body,
+            summary,
             matrix.closed_schema({"ok": "synthetic"}),
             adapter,
-            validate_input=context.validator(
-                root, helpers.fixture.END, validate_report=business
-            ),
+            stage="summary",
+            validate_input=validate_summary,
             validate_result=result_check,
         )
 
@@ -234,23 +239,23 @@ def test_geography_expectation_migration_reaches_model_and_replays(
     assert run()["invocation_adapter_calls"] == 0 and adapter.calls == 1
     assert context.freeze(root, helpers.fixture.END, validate_report=business) == body
     assert (root / "trainlab-fit.db").read_bytes() == before
-    assert (root / "goal.md").read_bytes() == source_goal
+    assert (root / "Goal.md").read_bytes() == source_goal
     assert sdk.calls == calls_before
 
 
-def test_active_defaults_create_v2_without_parser_override(tmp_path, monkeypatch):
+def test_active_defaults_keep_fit_v3_with_text_goal(tmp_path, monkeypatch):
     root, key, _, _ = helpers.fixture.setup(tmp_path, monkeypatch)
     evidence = helpers.fixture.freeze(root, key)
-    path = root / "goal.md"
+    path = root / "Goal.md"
     path.write_text(helpers.goal_text())
     path.chmod(0o600)
     context, _ = helpers.modules()
     body = context.freeze(
         root, helpers.fixture.END, validate_report=helpers.valid_report
     )
-    assert parser.VERSION == "fit-summary-2"
-    assert evidence["schema_version"] == "fit_weekly_evidence_v2"
-    assert body["schema_version"] == "fit_weekly_context_v2"
+    assert parser.VERSION == "fit-summary-3"
+    assert evidence["schema_version"] == "fit_weekly_evidence_v3"
+    assert body["schema_version"] == "fit_weekly_context_v4"
     context.validator(root, helpers.fixture.END, validate_report=helpers.valid_report)(
         body
     )
@@ -263,7 +268,7 @@ def test_old_evidence_without_context_finishes_in_saved_version(tmp_path, monkey
     body = context.freeze(
         root, helpers.fixture.END, validate_report=helpers.valid_report
     )
-    assert body["schema_version"] == "fit_weekly_context_v1"
+    assert body["schema_version"] == "fit_weekly_context_v4"
     assert body["current_week"]["activities"] == old["activities"]
     assert "location" not in json.dumps(old["activities"])
     storage = importlib.import_module("skills._shared.fit_weekly.storage")

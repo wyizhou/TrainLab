@@ -11,10 +11,11 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "fixtures"))
 
 
 def fixture(root: Path):
-    return importlib.import_module("test_m12_legacy_archive").fixture(root)
+    return importlib.import_module("m12_history_factory").fixture(root)
 
 
 def storage_module():
@@ -30,7 +31,7 @@ def importer():
 
 
 def archive_fixture(tmp_path: Path, case: str = "valid") -> Path:
-    archive = importlib.import_module("skills._shared.scripts.archive_legacy")
+    archive = importlib.import_module("m12_history_factory")
     source, names = fixture(tmp_path)
     unregistered = source / "state/raw/activities/unregistered.fit"
     unregistered.write_bytes(synthetic_fit())
@@ -90,7 +91,7 @@ def archive_fixture(tmp_path: Path, case: str = "valid") -> Path:
         if case == "before_2022":
             db.execute("UPDATE raw_files SET data_date='2021-12-31' WHERE id=1")
             db.execute("UPDATE activity_inventory SET activity_date='2021-12-31'")
-    return archive.create_archive(source, tmp_path / "backup", names)
+    return archive.pack(source, tmp_path / "backup", names)
 
 
 def test_import_is_registered_fit_only_and_independent_after_archive_removed(
@@ -125,6 +126,34 @@ def test_legacy_raw_path_is_resolved_from_raw_root(tmp_path: Path) -> None:
     archive = archive_fixture(tmp_path)
     rows = importer().registered_fits(archive)
     assert rows[0]["source_member"] == "legacy-state/raw/activities/synthetic.fit"
+
+
+def test_import_then_full_inventory_reuses_original_without_download(
+    tmp_path, monkeypatch
+):
+    sync = importlib.import_module("test_m12_fit_sync")
+    root, token, spec = sync.setup(tmp_path, monkeypatch)
+    archive = archive_fixture(tmp_path)
+    result = importer().import_registered(archive, root)
+    assert result["history_coverage"] == "not_established"
+    with storage_module().open_store(root) as db:
+        assert sync.modules()[1].day_status(db, "2026-08-01") != "complete"
+        sha, relative = db.execute("SELECT sha256,relative_path FROM fits").fetchone()
+        assert (root / relative).read_bytes() == synthetic_fit()
+        assert sha == storage_module().digest(synthetic_fit())
+    fake = sync.FakeMCP(root, ("101", "102"))
+    fake.no_fit.add("102")
+    done = sync.run(root, token, spec, fake)
+    assert done["activity_count"] == 2 and done["no_fit_count"] == 1
+    assert [
+        args["activity_id"]
+        for name, args in fake.calls
+        if name == "download_activity_file"
+    ] == [102]
+    with storage_module().open_store(root) as db:
+        assert sync.modules()[1].day_status(db, "2026-08-01") == "complete"
+        assert sync.modules()[1].day_status(db, "2026-08-02") == "provisional"
+        assert (root / relative).read_bytes() == synthetic_fit()
 
 
 @pytest.mark.parametrize(
@@ -162,7 +191,7 @@ def test_import_rejects_destination_inside_archive_and_preserves_source(
     tmp_path: Path,
 ) -> None:
     archive = archive_fixture(tmp_path)
-    helper = importlib.import_module("skills._shared.scripts.archive_legacy")
+    helper = importlib.import_module("skills._shared.fit_weekly.history_archive")
     before = helper.fingerprint(archive)
     with pytest.raises(ValueError, match="legacy_import_destination_invalid"):
         importer().import_registered(archive, archive / "child")
@@ -212,6 +241,23 @@ def test_archive_drift_during_copy_prevents_success(
         assert db.execute("SELECT COUNT(*) FROM fits").fetchone()[0] == 0
 
 
+@pytest.mark.parametrize("suffix", ["-wal", "-shm"])
+def test_import_refuses_unexpected_database_sidecars_without_touching_archive(
+    tmp_path: Path, suffix: str
+) -> None:
+    archive = archive_fixture(tmp_path)
+    migration = importer()
+    sidecar = archive / ("recovery/trainlab.db" + suffix)
+    sidecar.write_bytes(b"synthetic unfinished database sidecar")
+    sidecar.chmod(0o600)
+    before = migration.history_archive.fingerprint(archive)
+    destination = tmp_path / "new-instance"
+    with pytest.raises(ValueError, match="archive_content_mismatch"):
+        migration.import_registered(archive, destination)
+    assert not destination.exists()
+    assert migration.history_archive.fingerprint(archive) == before
+
+
 def test_cli_relative_paths_and_redacted_failure(tmp_path: Path) -> None:
     archive = archive_fixture(tmp_path)
     source = Path(__file__).resolve().parents[3]
@@ -219,11 +265,12 @@ def test_cli_relative_paths_and_redacted_failure(tmp_path: Path) -> None:
     command = [
         sys.executable,
         "-m",
-        "skills._shared.fit_weekly.legacy_import",
+        "skills._shared.fit_weekly",
+        "--instance",
+        str(tmp_path / "new-instance"),
+        "import-history",
         "--archive",
-        str(archive.relative_to(tmp_path)),
-        "--destination",
-        "new-instance",
+        str(archive),
     ]
     result = subprocess.run(
         command, cwd=tmp_path, env=env, capture_output=True, text=True
@@ -232,8 +279,9 @@ def test_cli_relative_paths_and_redacted_failure(tmp_path: Path) -> None:
     receipt = json.loads(result.stdout)
     assert receipt["fit_count"] == 1 and "members" not in receipt
     assert str(tmp_path) not in result.stdout + result.stderr
-    command[-1] = str(archive.relative_to(tmp_path) / "child")
+    command[4] = str(archive / "child")
     bad = subprocess.run(command, cwd=tmp_path, env=env, capture_output=True, text=True)
     assert bad.returncode == 2
-    assert json.loads(bad.stdout)["error_code"] == "legacy_import_destination_invalid"
+    assert bad.stdout == ""
+    assert bad.stderr.strip() == "command_arguments_or_instance_invalid"
     assert str(tmp_path) not in bad.stdout + bad.stderr

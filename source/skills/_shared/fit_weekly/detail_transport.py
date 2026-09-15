@@ -18,7 +18,11 @@ from referencing import Registry, Resource
 from skills._shared.fit_weekly import fit_detail, fit_parse, storage
 
 VERSION = "fit_detail_table_v1"
-SCHEMAS = {"fit-summary-1": VERSION, "fit-summary-2": "fit_detail_table_v2"}
+SCHEMAS = {
+    "fit-summary-1": VERSION,
+    "fit-summary-2": "fit_detail_table_v2",
+    "fit-summary-3": "fit_detail_table_v3",
+}
 TABLE_FIELDS = {"block_defaults", "block_columns", "block_rows", "detail_sha256"}
 SCHEMA_PATH = (
     Path(__file__).resolve().parents[1] / "schemas/fit_detail_table_v1.schema.json"

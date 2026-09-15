@@ -1,0 +1,746 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "fit_coaching_report_v1"
+    },
+    "facts": {
+      "type": "object",
+      "properties": {
+        "period_start_utc": {
+          "type": "string",
+          "minLength": 1
+        },
+        "period_end_utc": {
+          "type": "string",
+          "minLength": 1
+        },
+        "plan_dates": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 7,
+          "maxItems": 7
+        },
+        "inventory": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "activity_ref": {
+                "type": "string",
+                "minLength": 1
+              },
+              "fit_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "session_ordinal": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "sport": {
+                "type": "string",
+                "minLength": 1
+              },
+              "start_utc": {
+                "type": "string",
+                "minLength": 1
+              },
+              "end_utc": {
+                "type": "string",
+                "minLength": 1
+              },
+              "activity_name": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "urn:trainlab:fit_weekly_evidence_v2#/$defs/activity_name"
+                  }
+                ]
+              },
+              "distance_m": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "timer_seconds": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "elapsed_seconds": {
+                "type": "number"
+              },
+              "valid_seconds": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "sample_covered_seconds": {
+                "type": "number"
+              },
+              "gap_seconds": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "historical_heart_rate": {
+                "type": "object",
+                "properties": {
+                  "avg_heart_rate_bpm": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "max_heart_rate_bpm": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "avg_heart_rate_bpm",
+                  "max_heart_rate_bpm"
+                ],
+                "additionalProperties": false
+              },
+              "recorded_session_hr_zones": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "urn:trainlab:fit_activity_v2#/$defs/zones"
+                  }
+                ]
+              },
+              "methods": {
+                "$ref": "urn:trainlab:fit_activity_v2#/properties/methods"
+              },
+              "limitations": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "minItems": 0,
+                "maxItems": 100
+              }
+            },
+            "required": [
+              "activity_ref",
+              "fit_sha256",
+              "session_ordinal",
+              "sport",
+              "start_utc",
+              "end_utc",
+              "activity_name",
+              "distance_m",
+              "timer_seconds",
+              "elapsed_seconds",
+              "valid_seconds",
+              "sample_covered_seconds",
+              "gap_seconds",
+              "historical_heart_rate",
+              "recorded_session_hr_zones",
+              "methods",
+              "limitations"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 0,
+          "maxItems": 1000
+        },
+        "statistics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "sport": {
+                "type": "string",
+                "minLength": 1
+              },
+              "session_count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "activity_count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "distance_m": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "available_count": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "missing_count": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "complete",
+                      "partial",
+                      "unknown"
+                    ]
+                  }
+                },
+                "required": [
+                  "value",
+                  "available_count",
+                  "missing_count",
+                  "status"
+                ],
+                "additionalProperties": false
+              },
+              "timer_seconds": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "available_count": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "missing_count": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "complete",
+                      "partial",
+                      "unknown"
+                    ]
+                  }
+                },
+                "required": [
+                  "value",
+                  "available_count",
+                  "missing_count",
+                  "status"
+                ],
+                "additionalProperties": false
+              },
+              "method": {
+                "type": "string",
+                "const": "sum_available_provider_session_values"
+              }
+            },
+            "required": [
+              "sport",
+              "session_count",
+              "activity_count",
+              "distance_m",
+              "timer_seconds",
+              "method"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 0,
+          "maxItems": 20
+        },
+        "activity_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "session_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unplaced_no_fit": {
+          "$ref": "urn:trainlab:fit_weekly_evidence_v2#/properties/unplaced_no_fit"
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0,
+          "maxItems": 100
+        }
+      },
+      "required": [
+        "period_start_utc",
+        "period_end_utc",
+        "plan_dates",
+        "inventory",
+        "statistics",
+        "activity_count",
+        "session_count",
+        "unplaced_no_fit",
+        "limitations"
+      ],
+      "additionalProperties": false
+    },
+    "core_conclusions": {
+      "$ref": "urn:trainlab:fit_sports_summary_v1#/properties/core_conclusions"
+    },
+    "running_analysis": {
+      "$ref": "urn:trainlab:fit_sports_summary_v1#/properties/running_analysis"
+    },
+    "other_sports": {
+      "$ref": "urn:trainlab:fit_sports_summary_v1#/properties/other_sports"
+    },
+    "data_limitations": {
+      "$ref": "urn:trainlab:fit_sports_summary_v1#/properties/data_limitations"
+    },
+    "safety": {
+      "$ref": "urn:trainlab:fit_sports_summary_v1#/properties/safety"
+    },
+    "plan": {
+      "type": "object",
+      "properties": {
+        "days": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "date": {
+                "type": "string",
+                "minLength": 1
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "run",
+                  "rest"
+                ]
+              },
+              "workout": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "urn:trainlab:fit_running_plan_v1#/$defs/workout"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "date",
+              "kind",
+              "workout"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 7,
+          "maxItems": 7
+        },
+        "rationale": {
+          "$ref": "urn:trainlab:fit_running_plan_v1#/$defs/claim"
+        },
+        "hard_load_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "progression": {
+          "type": "object",
+          "properties": {
+            "baseline": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "period_end_utc": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "running_sha256": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}$"
+                    },
+                    "method": {
+                      "type": "string",
+                      "const": "previous_fixed_plan_not_actual_completion"
+                    }
+                  },
+                  "required": [
+                    "period_end_utc",
+                    "running_sha256",
+                    "method"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "dimensions": {
+              "type": "object",
+              "properties": {
+                "distance_m": {
+                  "type": "object",
+                  "properties": {
+                    "before": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "after": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "change": {
+                      "type": "string",
+                      "enum": [
+                        "unknown",
+                        "increased",
+                        "decreased",
+                        "unchanged"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "before",
+                    "after",
+                    "change"
+                  ],
+                  "additionalProperties": false
+                },
+                "hard_count": {
+                  "type": "object",
+                  "properties": {
+                    "before": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "after": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "change": {
+                      "type": "string",
+                      "enum": [
+                        "unknown",
+                        "increased",
+                        "decreased",
+                        "unchanged"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "before",
+                    "after",
+                    "change"
+                  ],
+                  "additionalProperties": false
+                },
+                "peak_rpe": {
+                  "type": "object",
+                  "properties": {
+                    "before": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "after": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "change": {
+                      "type": "string",
+                      "enum": [
+                        "unknown",
+                        "increased",
+                        "decreased",
+                        "unchanged"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "before",
+                    "after",
+                    "change"
+                  ],
+                  "additionalProperties": false
+                },
+                "hard_seconds": {
+                  "type": "object",
+                  "properties": {
+                    "before": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "after": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "change": {
+                      "type": "string",
+                      "enum": [
+                        "unknown",
+                        "increased",
+                        "decreased",
+                        "unchanged"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "before",
+                    "after",
+                    "change"
+                  ],
+                  "additionalProperties": false
+                },
+                "hard_meters": {
+                  "type": "object",
+                  "properties": {
+                    "before": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "after": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "change": {
+                      "type": "string",
+                      "enum": [
+                        "unknown",
+                        "increased",
+                        "decreased",
+                        "unchanged"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "before",
+                    "after",
+                    "change"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "distance_m",
+                "hard_count",
+                "peak_rpe",
+                "hard_seconds",
+                "hard_meters"
+              ],
+              "additionalProperties": false
+            },
+            "distance_change": {
+              "type": "string",
+              "enum": [
+                "unknown",
+                "increased",
+                "decreased",
+                "unchanged"
+              ]
+            },
+            "intensity_change": {
+              "type": "string",
+              "enum": [
+                "increased",
+                "unknown",
+                "no_observed_increase"
+              ]
+            },
+            "limitations": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1,
+              "maxItems": 100
+            }
+          },
+          "required": [
+            "baseline",
+            "dimensions",
+            "distance_change",
+            "intensity_change",
+            "limitations"
+          ],
+          "additionalProperties": false
+        },
+        "progression_limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "maxItems": 100
+        },
+        "policy": {
+          "$ref": "urn:trainlab:fit_running_plan_v1#/properties/policy"
+        },
+        "original_plan_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "required": [
+        "days",
+        "rationale",
+        "hard_load_count",
+        "progression",
+        "progression_limitations",
+        "policy",
+        "original_plan_sha256"
+      ],
+      "additionalProperties": false
+    },
+    "source_report_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "raw_plan_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "raw_summary_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "validation_limits": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "maxItems": 100
+    }
+  },
+  "required": [
+    "schema_version",
+    "facts",
+    "core_conclusions",
+    "running_analysis",
+    "other_sports",
+    "data_limitations",
+    "safety",
+    "plan",
+    "source_report_sha256",
+    "raw_plan_sha256",
+    "raw_summary_sha256",
+    "validation_limits"
+  ],
+  "additionalProperties": false
+}

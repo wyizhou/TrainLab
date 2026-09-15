@@ -5,7 +5,6 @@ import importlib
 import json
 import shutil
 import sys
-import unicodedata
 from datetime import timedelta
 from pathlib import Path
 from typing import Any
@@ -15,6 +14,7 @@ import pytest
 SOURCE = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(SOURCE))
 fixture = importlib.import_module("test_m12_weekly_evidence")
+legacy_saved = importlib.import_module("test_m12_model_job").legacy_saved
 
 
 def modules():
@@ -24,18 +24,94 @@ def modules():
     )
 
 
-def goal_text():
-    from skills._shared.scripts.training_goal_v1 import SECTION_FIELDS
+def summary_setup(root, body, business):
+    """Reach all-sport input through a real, Host-validated synthetic plan."""
+    from skills._shared.fit_weekly import model_job, stage_context, weekly_stages
 
-    lines = ["# 我的训练目标"]
-    for heading, labels in SECTION_FIELDS:
-        lines.append(heading)
-        for label in labels:
-            value = (
-                "3" if label == "训练强度偏好" else "按运动表现安排跑步，保留攀岩时间"
-            )
-            lines.append(f"- {label}：{value}")
-    return "\n".join(lines)
+    end = fixture.END
+    planning = stage_context.freeze(root, end, "plan", validate_history=business)
+    assert "current_week" not in planning and "history_reports" not in planning
+    assert "counts" not in planning and planning["running_history"] == []
+    assert planning["goal_snapshot"] == body["goal_snapshot"]
+    assert planning["running_activities"] == [
+        {
+            **{
+                key: activity[key]
+                for key in (
+                    "activity_ref",
+                    "fit_sha256",
+                    "parser_version",
+                    "start_utc",
+                    "methods",
+                )
+            },
+            "sessions": [s for s in activity["sessions"] if s["sport"] == "running"],
+        }
+        for activity in body["current_week"]["activities"]
+        if any(s["sport"] == "running" for s in activity["sessions"])
+    ]
+    plan_output = {"schedule": ["synthetic running day"] * 7}
+    plan_adapter = model_job.FakeAdapter(plan_output, [])
+
+    def check_plan(output, payload):
+        assert output == plan_output and payload == planning
+
+    def run_plan():
+        return model_job.run(
+            root,
+            end,
+            body["scope_sha256"],
+            planning,
+            {
+                "type": "object",
+                "required": ["schedule"],
+                "additionalProperties": False,
+                "properties": {
+                    "schedule": {"type": "array", "items": {"type": "string"}}
+                },
+            },
+            plan_adapter,
+            stage="plan",
+            validate_input=stage_context.validator(
+                root, end, "plan", validate_history=business
+            ),
+            validate_result=check_plan,
+        )
+
+    first = run_plan()
+    assert first["status"] == "succeeded" and plan_adapter.calls == 1
+    assert first["invocation_adapter_calls"] == 1
+    binding = weekly_stages.plan_binding(root, end, first)
+    summary = stage_context.freeze(
+        root,
+        end,
+        "summary",
+        validate_history=business,
+        plan=binding,
+        validate_plan=check_plan,
+    )
+    assert summary["current_week"] == body["current_week"]
+    assert summary["history_reports"] == body["history_reports"]
+    assert summary["goal_snapshot"] == body["goal_snapshot"]
+    assert summary["fixed_plan"]["plan"] == plan_output
+    validate_summary = stage_context.validator(
+        root,
+        end,
+        "summary",
+        validate_history=business,
+        plan=binding,
+        validate_plan=check_plan,
+    )
+
+    def replay_plan():
+        assert run_plan() == {**first, "invocation_adapter_calls": 0}
+        assert plan_adapter.calls == 1
+
+    return summary, validate_summary, replay_plan
+
+
+def goal_text():
+    return "按运动表现安排跑步，保留攀岩时间"
 
 
 def setup(tmp_path, monkeypatch, activities=None, *, parser_version="fit-summary-1"):
@@ -46,7 +122,7 @@ def setup(tmp_path, monkeypatch, activities=None, *, parser_version="fit-summary
     monkeypatch.setattr(fit_parse, "VERSION", parser_version)
     root, key, sdk, _ = fixture.setup(tmp_path, monkeypatch, activities)
     evidence = fixture.freeze(root, key)
-    path = root / "goal.md"
+    path = root / "Goal.md"
     path.write_text(goal_text())
     path.chmod(0o600)
     return root, evidence, sdk
@@ -98,7 +174,7 @@ def record(root, end, *, archive=True, failed=False, goal_value="公开合成训
         "goal": goal_value,
     }
     adapter = model_job.FakeAdapter({} if failed else output, [])
-    result = model_job.run(
+    result = legacy_saved(
         root,
         end,
         scope["scope_sha256"],
@@ -131,10 +207,7 @@ def test_full_activities_goal_and_no_invented_history(tmp_path, monkeypatch):
     assert body["current_week"]["activities"] == evidence["activities"]
     assert body["current_week"]["activity_sources"] == evidence["activity_sources"]
     assert body["history_reports"] == []
-    assert (
-        body["goal_snapshot"]["goal"]["training_preferences"]["intensity_preference"]
-        == 3
-    )
+    assert body["goal_snapshot"]["goal"]["text"] == goal_text()
     assert body["provider_calls"] == body["external_actions"] == 0
     assert sdk.calls == before
     text = json.dumps(body)
@@ -174,12 +247,12 @@ def test_frozen_goal_history_replay_and_move_without_new_documents(
     root, _, _ = setup(tmp_path, monkeypatch)
     record(root, end_before(2))
     first = frozen(root)
-    (root / "goal.md").write_text(goal_text().replace("运动表现", "近期跑量"))
+    (root / "Goal.md").write_text(goal_text().replace("运动表现", "近期跑量"))
     record(root, end_before(1))
     before = (root / "trainlab-fit.db").read_bytes()
     assert frozen(root) == first
     assert (root / "trainlab-fit.db").read_bytes() == before
-    (root / "goal.md").unlink()
+    (root / "Goal.md").unlink()
     moved = tmp_path / "moved"
     shutil.move(str(root), moved)
     assert frozen(moved) == first
@@ -239,15 +312,15 @@ def test_archiving_and_model_replay_do_not_repeat_adapter(tmp_path, monkeypatch)
 
 
 @pytest.mark.parametrize(
-    "mode", ["missing", "empty", "wide", "symlink", "hardlink", "malformed"]
+    "mode", ["missing", "empty", "wide", "symlink", "hardlink", "invalid_utf8"]
 )
 def test_invalid_goal_stops_before_context_or_model_intent(tmp_path, monkeypatch, mode):
     root, _, _ = setup(tmp_path, monkeypatch)
-    p = root / "goal.md"
+    p = root / "Goal.md"
     if mode == "missing":
         p.unlink()
-    elif mode in ("empty", "malformed"):
-        p.write_text("" if mode == "empty" else "not a training goal")
+    elif mode in ("empty", "invalid_utf8"):
+        p.write_bytes(b"" if mode == "empty" else b"\xff")
     elif mode == "wide":
         p.chmod(0o644)
     else:
@@ -278,7 +351,7 @@ def test_invalid_goal_stops_before_context_or_model_intent(tmp_path, monkeypatch
 )
 def test_sensitive_goal_never_enters_model_context(tmp_path, monkeypatch, text):
     root, _, _ = setup(tmp_path, monkeypatch)
-    (root / "goal.md").write_text(
+    (root / "Goal.md").write_text(
         goal_text().replace("按运动表现安排跑步，保留攀岩时间", text, 1)
     )
     before = counts(root)
@@ -289,17 +362,12 @@ def test_sensitive_goal_never_enters_model_context(tmp_path, monkeypatch, text):
 
 def test_normal_goal_slashes_and_units_remain_business_text(tmp_path, monkeypatch):
     root, _, _ = setup(tmp_path, monkeypatch)
-    (root / "goal.md").write_text(
+    (root / "Goal.md").write_text(
         goal_text().replace(
             "按运动表现安排跑步，保留攀岩时间", "跑步/攀岩，以 min/km 回顾历史配速", 1
         )
     )
-    assert (
-        "跑步/攀岩"
-        in frozen(root)["goal_snapshot"]["goal"]["current_goal"][
-            "competition_goal_and_date"
-        ]
-    )
+    assert "跑步/攀岩" in frozen(root)["goal_snapshot"]["goal"]["text"]
 
 
 @pytest.mark.parametrize(
@@ -314,7 +382,7 @@ def test_model_preflight_rejects_changed_context_without_attempt(
     record(root, end_before(1))
     body = copy.deepcopy(frozen(root))
     if change == "goal":
-        body["goal_snapshot"]["goal"]["current_goal"]["training_focus"] = "changed"
+        body["goal_snapshot"]["goal"]["text"] = "changed"
     elif change == "history":
         body["history_reports"][0]["report"]["goal"] = "changed"
     elif change == "activity":
@@ -336,13 +404,14 @@ def test_model_preflight_rejects_changed_context_without_attempt(
             body,
             report_schema(),
             adapter,
+            stage="plan",
             validate_input=modules()[0].validator(
                 root, fixture.END, validate_report=valid_report
             ),
             validate_result=valid_report,
         )
     assert adapter.calls == 0
-    assert not model_job.capture_path(root, fixture.END).parent.exists()
+    assert not model_job.capture_path(root, fixture.END, stage="plan").parent.exists()
 
 
 def test_frozen_context_sql_failure_retries_locally_without_model(
@@ -398,26 +467,34 @@ def test_valid_context_enters_fake_once_and_replays_without_database_increment(
     body = frozen(root)
     output = {
         "conclusion": "本周全部运动的合成结论",
-        "plan": ["固定课程"] * 7,
+        "running_analysis": "本周跑步的合成分析",
         "goal": "目标快照",
+    }
+    summary, validate_summary, replay_plan = summary_setup(root, body, valid_report)
+    schema = {
+        "type": "object",
+        "required": ["conclusion", "running_analysis", "goal"],
+        "additionalProperties": False,
+        "properties": {key: {"type": "string"} for key in output},
     }
     adapter = model_job.FakeAdapter(output, [])
 
     def result_validator(value, payload):
         assert value == output
-        assert payload == body
+        assert payload == summary
 
-    args = (root, fixture.END, body["scope_sha256"], body, report_schema(), adapter)
+    args = (root, fixture.END, body["scope_sha256"], summary, schema, adapter)
     kwargs = {
-        "validate_input": modules()[0].validator(
-            root, fixture.END, validate_report=valid_report
-        ),
+        "validate_input": validate_summary,
         "validate_result": result_validator,
     }
-    first = model_job.run(*args, **kwargs)
+    first = model_job.run(*args, stage="summary", **kwargs)
     before = (root / "trainlab-fit.db").read_bytes()
     assert first["status"] == "succeeded"
-    assert model_job.run(*args, **kwargs)["invocation_adapter_calls"] == 0
+    replay_plan()
+    assert (
+        model_job.run(*args, stage="summary", **kwargs)["invocation_adapter_calls"] == 0
+    )
     assert adapter.calls == 1
     assert (root / "trainlab-fit.db").read_bytes() == before
 
@@ -457,13 +534,14 @@ def test_revalidation_preserves_json_types_and_source_binding(
             body,
             report_schema(),
             adapter,
+            stage="plan",
             validate_input=modules()[0].validator(
                 root, fixture.END, validate_report=valid_report
             ),
             validate_result=valid_report,
         )
     assert adapter.calls == 0
-    assert not model_job.capture_path(root, fixture.END).parent.exists()
+    assert not model_job.capture_path(root, fixture.END, stage="plan").parent.exists()
 
 
 def test_history_duplicate_revision_or_untrusted_document_rejected(
@@ -501,7 +579,7 @@ def test_history_sensitive_content_not_transferred_even_if_shape_valid(
         "goal": "owner@example.com",
     }
     adapter = model_job.FakeAdapter(output, [])
-    model_job.run(
+    legacy_saved(
         root,
         end,
         scope["scope_sha256"],
@@ -584,7 +662,7 @@ def test_explicit_identity_and_file_uri_rejected_in_all_free_text(
 
     root, _, _ = setup(tmp_path, monkeypatch)
     if entry == "goal":
-        (root / "goal.md").write_text(
+        (root / "Goal.md").write_text(
             goal_text().replace("按运动表现安排跑步，保留攀岩时间", text, 1)
         )
     else:
@@ -600,6 +678,7 @@ def test_explicit_identity_and_file_uri_rejected_in_all_free_text(
             body,
             report_schema(),
             adapter,
+            stage="plan",
             validate_input=modules()[0].validator(
                 root, fixture.END, validate_report=valid_report
             ),
@@ -607,7 +686,7 @@ def test_explicit_identity_and_file_uri_rejected_in_all_free_text(
         )
     assert adapter.calls == 0
     assert counts(root) == before
-    assert not model_job.capture_path(root, fixture.END).parent.exists()
+    assert not model_job.capture_path(root, fixture.END, stage="plan").parent.exists()
 
 
 @pytest.mark.parametrize(
@@ -623,15 +702,10 @@ def test_identity_topics_without_identifiers_are_not_private_values(
     tmp_path, monkeypatch, text
 ):
     root, _, _ = setup(tmp_path, monkeypatch)
-    (root / "goal.md").write_text(
+    (root / "Goal.md").write_text(
         goal_text().replace("按运动表现安排跑步，保留攀岩时间", text, 1)
     )
-    assert (
-        unicodedata.normalize("NFKC", text)
-        == frozen(root)["goal_snapshot"]["goal"]["current_goal"][
-            "competition_goal_and_date"
-        ]
-    )
+    assert text == frozen(root)["goal_snapshot"]["goal"]["text"]
 
 
 @pytest.mark.parametrize(
@@ -735,7 +809,7 @@ def flexible_synthetic_history(root, field, value):
         assert model_job.sha(body) == model_job.sha(output)
 
     adapter = model_job.FakeAdapter(output, [])
-    result = model_job.run(
+    result = legacy_saved(
         root,
         end,
         scope["scope_sha256"],
@@ -774,7 +848,7 @@ def test_common_private_forms_stop_every_entry_before_model(
     root, _, _ = setup(tmp_path, monkeypatch)
     business = valid_report
     if entry == "goal":
-        (root / "goal.md").write_text(
+        (root / "Goal.md").write_text(
             goal_text().replace("按运动表现安排跑步，保留攀岩时间", text, 1)
         )
     else:
@@ -793,6 +867,7 @@ def test_common_private_forms_stop_every_entry_before_model(
             body,
             report_schema(),
             adapter,
+            stage="plan",
             validate_input=context.validator(
                 root, fixture.END, validate_report=business
             ),
@@ -800,7 +875,7 @@ def test_common_private_forms_stop_every_entry_before_model(
         )
     assert adapter.calls == 0
     assert counts(root) == before
-    assert not model_job.capture_path(root, fixture.END).parent.exists()
+    assert not model_job.capture_path(root, fixture.END, stage="plan").parent.exists()
 
 
 def test_structured_private_history_stops_before_current_intent(tmp_path, monkeypatch):
@@ -812,7 +887,7 @@ def test_structured_private_history_stops_before_current_intent(tmp_path, monkey
     with pytest.raises(ValueError, match="weekly_private_text"):
         modules()[0].freeze(root, fixture.END, validate_report=business)
     assert counts(root) == before
-    assert not model_job.capture_path(root, fixture.END).parent.exists()
+    assert not model_job.capture_path(root, fixture.END, stage="plan").parent.exists()
 
 
 @pytest.mark.parametrize("entry", ["goal", "history"])
@@ -823,7 +898,7 @@ def test_old_frozen_private_text_must_be_rechecked(tmp_path, monkeypatch, entry,
     root, _, _ = setup(tmp_path, monkeypatch)
     context = modules()[0]
     if entry == "goal":
-        (root / "goal.md").write_text(
+        (root / "Goal.md").write_text(
             goal_text().replace(
                 "按运动表现安排跑步，保留攀岩时间", "refresh_token：synthetic-value", 1
             )
@@ -852,12 +927,13 @@ def test_old_frozen_private_text_must_be_rechecked(tmp_path, monkeypatch, entry,
                 body,
                 report_schema(),
                 adapter,
+                stage="plan",
                 validate_input=validator,
                 validate_result=valid_report,
             )
     assert adapter.calls == 0
     assert counts(root) == before
-    assert not model_job.capture_path(root, fixture.END).parent.exists()
+    assert not model_job.capture_path(root, fixture.END, stage="plan").parent.exists()
 
 
 @pytest.mark.parametrize(
@@ -878,6 +954,7 @@ def test_normal_full_history_preserved_and_model_replay_has_no_increment(
     body = frozen(root)
     original = copy.deepcopy(body)
     assert body["history_reports"][0]["report"]["goal"] == text
+    summary, validate_summary, replay_plan = summary_setup(root, body, valid_report)
     output = {"ok": True}
     schema = {
         "type": "object",
@@ -889,19 +966,19 @@ def test_normal_full_history_preserved_and_model_replay_has_no_increment(
 
     def business(result, context):
         assert result == output
-        assert context == original
+        assert context == summary
 
     def run():
+        replay_plan()
         return model_job.run(
             root,
             fixture.END,
             body["scope_sha256"],
-            body,
+            summary,
             schema,
             adapter,
-            validate_input=modules()[0].validator(
-                root, fixture.END, validate_report=valid_report
-            ),
+            stage="summary",
+            validate_input=validate_summary,
             validate_result=business,
         )
 

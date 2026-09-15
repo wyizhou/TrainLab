@@ -71,6 +71,7 @@ def lap(start: int, end: int, intensity: int) -> bytes:
         [
             (2, 0x86, BASE + start),
             (253, 0x86, BASE + end),
+            (7, 0x86, (end - start) * 1000),
             (23, 0, intensity),
         ],
     )

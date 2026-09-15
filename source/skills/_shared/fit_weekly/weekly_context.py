@@ -1,13 +1,15 @@
-"""Freeze one self-contained weekly input: all FIT facts, goal and full reports.
+"""Freeze Host-only weekly materials: all FIT facts, goal and full reports.
 
-Only Host code reads the instance. The model receives this projection, never
-the goal file, SQLite, sync captures or a pathname. Replays use the original
-snapshot even after the user edits the goal or another report is archived.
+Only Host code reads the instance. New model execution uses stage_context's
+separate projections, never this whole snapshot for planning, the goal file,
+SQLite, sync captures or a pathname. Replays use the original snapshot even
+after the user edits the goal or another report is archived.
 """
 
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 from pathlib import Path
 from typing import Any
@@ -23,15 +25,12 @@ from skills._shared.fit_weekly import (
     weekly_evidence,
     weekly_history,
 )
-from skills._shared.scripts.training_goal_v1 import parse_training_goal_v1
 
-GOAL_SCHEMA = (
-    Path(__file__).resolve().parents[1] / "schemas/training_goal_v1.schema.json"
-)
+SCHEMAS = Path(__file__).resolve().parents[1] / "schemas"
 
 
 def context_suffix(parser_version: str) -> str:
-    return {"fit-summary-1": "v1", "fit-summary-2": "v2"}[
+    return {"fit-summary-1": "v1", "fit-summary-2": "v2", "fit-summary-3": "v3"}[
         fit_parse.require_parser_version(parser_version)
     ]
 
@@ -41,15 +40,21 @@ def check_text(value: Any, *, allow_sports_location: bool = False) -> None:
 
 
 def goal(
-    root: Path, *, allow_sports_location: bool = False
+    root: Path, *, allow_sports_location: bool = False, path: Path | None = None
 ) -> tuple[str, dict[str, Any]]:
     try:
-        p = root / "goal.md"
+        from skills._shared.fit_weekly import run_config
+
+        p = run_config.private_path(root, str(path or root / "Goal.md"))
         storage.private_entry(p, nonempty=True)
-        raw = p.read_bytes()
+        fd = os.open(p, os.O_RDONLY | os.O_NOFOLLOW)
+        with os.fdopen(fd, "rb") as stream:
+            raw = stream.read()
         text = raw.decode("utf-8")
         check_text(text, allow_sports_location=allow_sports_location)
-        parsed = parse_training_goal_v1(text)
+        if not text.strip():
+            raise ValueError("empty")
+        parsed = {"schema_version": "training_goal_text_v1", "text": text}
         check_text(parsed, allow_sports_location=allow_sports_location)
         return storage.digest(raw), {"sha256": model_job.sha(parsed), "goal": parsed}
     except Exception:
@@ -101,7 +106,11 @@ def checked(
     try:
         binding, record = saved
         original_sha, original = evidence(db, end)
-        suffix = context_suffix(original["parser_version"])
+        suffix = (
+            "v4"
+            if record.get("schema_version") == "fit_weekly_context_record_v4"
+            else context_suffix(original["parser_version"])
+        )
         if (
             set(record)
             != {"schema_version", "evidence_sha256", "goal_source_sha256", "context"}
@@ -154,9 +163,16 @@ def checked(
             snapshot["goal"]
         ):
             raise ValueError("goal")
-        jsonschema.Draft202012Validator(json.loads(GOAL_SCHEMA.read_text())).validate(
-            snapshot["goal"]
-        )
+        goal_schema = "training_goal_text_v1" if suffix == "v4" else "training_goal_v1"
+        jsonschema.Draft202012Validator(
+            json.loads((SCHEMAS / (goal_schema + ".schema.json")).read_text())
+        ).validate(snapshot["goal"])
+        if suffix == "v4" and (
+            not snapshot["goal"]["text"].strip()
+            or record["goal_source_sha256"]
+            != storage.digest(snapshot["goal"]["text"].encode("utf-8"))
+        ):
+            raise ValueError("goal_source")
         scope = fit_detail.DetailHost(root, end, body["scope_sha256"]).scope(db)
         if scope["parser_version"] != original["parser_version"]:
             raise ValueError("scope")
@@ -185,7 +201,11 @@ def checked(
                 weekly_history.read(db, root, h["period_end_utc"], validate_report)
             ):
                 raise ValueError("history")
-        check_text(body, allow_sports_location=suffix == "v2")
+        check_text(
+            body,
+            allow_sports_location=original["parser_version"]
+            in fit_parse.LOCATION_VERSIONS,
+        )
         return model_job.clone(body)
     except Exception:
         raise ValueError("weekly_context_invalid") from None
@@ -196,6 +216,7 @@ def freeze(
     period_end: str,
     *,
     validate_report: model_job.ResultValidator,
+    goal_path: Path | None = None,
 ) -> dict[str, Any]:
     fit_detail.period_key(period_end)
     if not callable(validate_report):
@@ -206,15 +227,18 @@ def freeze(
         if previous is not None:
             return checked(db, root, period_end, previous, validate_report)
         evidence_sha, current = evidence(db, period_end)
-        suffix = context_suffix(current["parser_version"])
-        source_sha, snapshot = goal(root, allow_sports_location=suffix == "v2")
+        suffix = "v4"
+        allow_location = current["parser_version"] in fit_parse.LOCATION_VERSIONS
+        source_sha, snapshot = goal(
+            root, allow_sports_location=allow_location, path=goal_path
+        )
         history = weekly_history.recent(
             db, root, current["period_start_utc"], validate_report
         )
-        check_text(project_evidence(current), allow_sports_location=suffix == "v2")
+        check_text(project_evidence(current), allow_sports_location=allow_location)
         check_text(
             [weekly_history.project(h) for h in history],
-            allow_sports_location=suffix == "v2",
+            allow_sports_location=allow_location,
         )
     scope = fit_detail.freeze_scope(
         root,

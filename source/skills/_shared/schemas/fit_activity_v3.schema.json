@@ -1,0 +1,1452 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "fit_activity_v3"
+    },
+    "parser_version": {
+      "type": "string",
+      "const": "fit-summary-3"
+    },
+    "activity_ref": {
+      "type": "string",
+      "pattern": "^[0-9]{1,32}$"
+    },
+    "fit_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "start_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "end_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "methods": {
+      "type": "object",
+      "properties": {
+        "continuous_metrics": {
+          "type": "string",
+          "const": "left_sample_valid_time_weighted"
+        },
+        "distance": {
+          "type": "string",
+          "const": "linear_between_valid_distance_samples"
+        },
+        "pace": {
+          "type": "string",
+          "const": "distance_covered_seconds_per_km"
+        },
+        "max_sample_gap_seconds": {
+          "type": "number",
+          "const": 30
+        },
+        "summary_time_bounds": {
+          "const": "start_time_plus_total_elapsed_time"
+        }
+      },
+      "required": [
+        "continuous_metrics",
+        "distance",
+        "pace",
+        "max_sample_gap_seconds",
+        "summary_time_bounds"
+      ],
+      "additionalProperties": false
+    },
+    "sessions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/session"
+      },
+      "minItems": 1
+    },
+    "provider_calls": {
+      "type": "integer",
+      "const": 0
+    },
+    "location": {
+      "$ref": "#/$defs/location"
+    }
+  },
+  "required": [
+    "schema_version",
+    "parser_version",
+    "activity_ref",
+    "fit_sha256",
+    "start_utc",
+    "end_utc",
+    "methods",
+    "sessions",
+    "provider_calls",
+    "location"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "aggregate": {
+      "type": "object",
+      "properties": {
+        "elapsed_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "valid_seconds": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "sample_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sample_covered_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "distance_m": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "distance_covered_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "pace_seconds_per_km": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "metrics": {
+          "type": "object",
+          "properties": {
+            "heart_rate_bpm": {
+              "type": "object",
+              "properties": {
+                "unit": {
+                  "type": "string",
+                  "const": "bpm"
+                },
+                "mean": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "min": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "max": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "covered_seconds": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "unit",
+                "mean",
+                "min",
+                "max",
+                "covered_seconds"
+              ],
+              "additionalProperties": false
+            },
+            "cadence_rpm": {
+              "type": "object",
+              "properties": {
+                "unit": {
+                  "type": "string",
+                  "const": "rpm"
+                },
+                "mean": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "min": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "max": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "covered_seconds": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "unit",
+                "mean",
+                "min",
+                "max",
+                "covered_seconds"
+              ],
+              "additionalProperties": false
+            },
+            "power_w": {
+              "type": "object",
+              "properties": {
+                "unit": {
+                  "type": "string",
+                  "const": "W"
+                },
+                "mean": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "min": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "max": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "covered_seconds": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "unit",
+                "mean",
+                "min",
+                "max",
+                "covered_seconds"
+              ],
+              "additionalProperties": false
+            },
+            "altitude_m": {
+              "type": "object",
+              "properties": {
+                "unit": {
+                  "type": "string",
+                  "const": "m"
+                },
+                "mean": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "min": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "max": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "covered_seconds": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "unit",
+                "mean",
+                "min",
+                "max",
+                "covered_seconds"
+              ],
+              "additionalProperties": false
+            },
+            "temperature_c": {
+              "type": "object",
+              "properties": {
+                "unit": {
+                  "type": "string",
+                  "const": "C"
+                },
+                "mean": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "min": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "max": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "covered_seconds": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "unit",
+                "mean",
+                "min",
+                "max",
+                "covered_seconds"
+              ],
+              "additionalProperties": false
+            },
+            "speed_m_s": {
+              "type": "object",
+              "properties": {
+                "unit": {
+                  "type": "string",
+                  "const": "m/s"
+                },
+                "mean": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "min": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "max": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "covered_seconds": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "unit",
+                "mean",
+                "min",
+                "max",
+                "covered_seconds"
+              ],
+              "additionalProperties": false
+            },
+            "step_length_mm": {
+              "type": "object",
+              "properties": {
+                "unit": {
+                  "type": "string",
+                  "const": "mm"
+                },
+                "mean": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "min": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "max": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "covered_seconds": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "unit",
+                "mean",
+                "min",
+                "max",
+                "covered_seconds"
+              ],
+              "additionalProperties": false
+            },
+            "vertical_oscillation_mm": {
+              "type": "object",
+              "properties": {
+                "unit": {
+                  "type": "string",
+                  "const": "mm"
+                },
+                "mean": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "min": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "max": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "covered_seconds": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "unit",
+                "mean",
+                "min",
+                "max",
+                "covered_seconds"
+              ],
+              "additionalProperties": false
+            },
+            "stance_time_ms": {
+              "type": "object",
+              "properties": {
+                "unit": {
+                  "type": "string",
+                  "const": "ms"
+                },
+                "mean": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "min": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "max": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "covered_seconds": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "unit",
+                "mean",
+                "min",
+                "max",
+                "covered_seconds"
+              ],
+              "additionalProperties": false
+            },
+            "vertical_ratio_percent": {
+              "type": "object",
+              "properties": {
+                "unit": {
+                  "type": "string",
+                  "const": "%"
+                },
+                "mean": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "min": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "max": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "covered_seconds": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "unit",
+                "mean",
+                "min",
+                "max",
+                "covered_seconds"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "heart_rate_bpm",
+            "cadence_rpm",
+            "power_w",
+            "altitude_m",
+            "temperature_c",
+            "speed_m_s",
+            "step_length_mm",
+            "vertical_oscillation_mm",
+            "stance_time_ms",
+            "vertical_ratio_percent"
+          ],
+          "additionalProperties": false
+        },
+        "location": {
+          "$ref": "#/$defs/location"
+        }
+      },
+      "required": [
+        "elapsed_seconds",
+        "valid_seconds",
+        "sample_count",
+        "sample_covered_seconds",
+        "distance_m",
+        "distance_covered_seconds",
+        "pace_seconds_per_km",
+        "metrics",
+        "location"
+      ],
+      "additionalProperties": false
+    },
+    "block": {
+      "type": "object",
+      "properties": {
+        "start_offset_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "end_offset_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "warmup",
+            "work",
+            "recovery",
+            "cooldown",
+            "active",
+            "unknown"
+          ]
+        },
+        "elapsed_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "valid_seconds": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "sample_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sample_covered_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "distance_m": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "distance_covered_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "pace_seconds_per_km": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "metrics": {
+          "type": "object",
+          "properties": {
+            "heart_rate_bpm": {
+              "type": "object",
+              "properties": {
+                "unit": {
+                  "type": "string",
+                  "const": "bpm"
+                },
+                "mean": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "min": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "max": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "covered_seconds": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "unit",
+                "mean",
+                "min",
+                "max",
+                "covered_seconds"
+              ],
+              "additionalProperties": false
+            },
+            "cadence_rpm": {
+              "type": "object",
+              "properties": {
+                "unit": {
+                  "type": "string",
+                  "const": "rpm"
+                },
+                "mean": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "min": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "max": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "covered_seconds": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "unit",
+                "mean",
+                "min",
+                "max",
+                "covered_seconds"
+              ],
+              "additionalProperties": false
+            },
+            "power_w": {
+              "type": "object",
+              "properties": {
+                "unit": {
+                  "type": "string",
+                  "const": "W"
+                },
+                "mean": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "min": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "max": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "covered_seconds": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "unit",
+                "mean",
+                "min",
+                "max",
+                "covered_seconds"
+              ],
+              "additionalProperties": false
+            },
+            "altitude_m": {
+              "type": "object",
+              "properties": {
+                "unit": {
+                  "type": "string",
+                  "const": "m"
+                },
+                "mean": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "min": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "max": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "covered_seconds": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "unit",
+                "mean",
+                "min",
+                "max",
+                "covered_seconds"
+              ],
+              "additionalProperties": false
+            },
+            "temperature_c": {
+              "type": "object",
+              "properties": {
+                "unit": {
+                  "type": "string",
+                  "const": "C"
+                },
+                "mean": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "min": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "max": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "covered_seconds": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "unit",
+                "mean",
+                "min",
+                "max",
+                "covered_seconds"
+              ],
+              "additionalProperties": false
+            },
+            "speed_m_s": {
+              "type": "object",
+              "properties": {
+                "unit": {
+                  "type": "string",
+                  "const": "m/s"
+                },
+                "mean": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "min": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "max": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "covered_seconds": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "unit",
+                "mean",
+                "min",
+                "max",
+                "covered_seconds"
+              ],
+              "additionalProperties": false
+            },
+            "step_length_mm": {
+              "type": "object",
+              "properties": {
+                "unit": {
+                  "type": "string",
+                  "const": "mm"
+                },
+                "mean": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "min": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "max": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "covered_seconds": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "unit",
+                "mean",
+                "min",
+                "max",
+                "covered_seconds"
+              ],
+              "additionalProperties": false
+            },
+            "vertical_oscillation_mm": {
+              "type": "object",
+              "properties": {
+                "unit": {
+                  "type": "string",
+                  "const": "mm"
+                },
+                "mean": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "min": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "max": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "covered_seconds": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "unit",
+                "mean",
+                "min",
+                "max",
+                "covered_seconds"
+              ],
+              "additionalProperties": false
+            },
+            "stance_time_ms": {
+              "type": "object",
+              "properties": {
+                "unit": {
+                  "type": "string",
+                  "const": "ms"
+                },
+                "mean": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "min": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "max": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "covered_seconds": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "unit",
+                "mean",
+                "min",
+                "max",
+                "covered_seconds"
+              ],
+              "additionalProperties": false
+            },
+            "vertical_ratio_percent": {
+              "type": "object",
+              "properties": {
+                "unit": {
+                  "type": "string",
+                  "const": "%"
+                },
+                "mean": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "min": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "max": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "covered_seconds": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "unit",
+                "mean",
+                "min",
+                "max",
+                "covered_seconds"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "heart_rate_bpm",
+            "cadence_rpm",
+            "power_w",
+            "altitude_m",
+            "temperature_c",
+            "speed_m_s",
+            "step_length_mm",
+            "vertical_oscillation_mm",
+            "stance_time_ms",
+            "vertical_ratio_percent"
+          ],
+          "additionalProperties": false
+        },
+        "location": {
+          "$ref": "#/$defs/location"
+        }
+      },
+      "required": [
+        "start_offset_seconds",
+        "end_offset_seconds",
+        "role",
+        "elapsed_seconds",
+        "valid_seconds",
+        "sample_count",
+        "sample_covered_seconds",
+        "distance_m",
+        "distance_covered_seconds",
+        "pace_seconds_per_km",
+        "metrics",
+        "location"
+      ],
+      "additionalProperties": false
+    },
+    "zones": {
+      "type": "object",
+      "properties": {
+        "activity_ref": {
+          "type": "string",
+          "pattern": "^[0-9]{1,32}$"
+        },
+        "fit_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "reference_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "source": {
+          "type": "string",
+          "const": "time_in_zone.session.time_in_hr_zone"
+        },
+        "durations_seconds": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0
+          },
+          "minItems": 1,
+          "maxItems": 16
+        },
+        "percentages": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "minItems": 1,
+          "maxItems": 16
+        },
+        "derivation": {
+          "type": "string",
+          "const": "derived_from_provider_duration"
+        }
+      },
+      "required": [
+        "activity_ref",
+        "fit_sha256",
+        "reference_index",
+        "source",
+        "durations_seconds",
+        "percentages",
+        "derivation"
+      ],
+      "additionalProperties": false
+    },
+    "session": {
+      "type": "object",
+      "properties": {
+        "session_ordinal": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "sport": {
+          "type": "string",
+          "enum": [
+            "running",
+            "cycling",
+            "swimming",
+            "hiking",
+            "walking",
+            "training",
+            "rock_climbing",
+            "mountaineering",
+            "rowing",
+            "fitness_equipment",
+            "other"
+          ]
+        },
+        "sub_sport": {
+          "type": "string",
+          "enum": [
+            "generic",
+            "treadmill",
+            "trail",
+            "indoor_running",
+            "road",
+            "indoor_cycling",
+            "strength_training",
+            "cardio_training",
+            "indoor_climbing",
+            "bouldering",
+            "hiit",
+            "other"
+          ]
+        },
+        "start_utc": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "end_utc": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "elapsed_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "valid_seconds": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "pause_seconds": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "sample_covered_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "gap_seconds": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "timer_source": {
+          "type": "string",
+          "enum": [
+            "timer_events",
+            "session_no_pause",
+            "unavailable"
+          ]
+        },
+        "running_kind": {
+          "type": "string",
+          "enum": [
+            "unknown",
+            "sos_intervals",
+            "sos_continuous"
+          ]
+        },
+        "provider_summary": {
+          "type": "object",
+          "properties": {
+            "distance_m": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "timer_seconds": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "elapsed_seconds": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "avg_heart_rate_bpm": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "max_heart_rate_bpm": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "avg_cadence_rpm": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "avg_power_w": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            }
+          },
+          "required": [
+            "distance_m",
+            "timer_seconds",
+            "elapsed_seconds",
+            "avg_heart_rate_bpm",
+            "max_heart_rate_bpm",
+            "avg_cadence_rpm",
+            "avg_power_w"
+          ],
+          "additionalProperties": false
+        },
+        "summary": {
+          "$ref": "#/$defs/aggregate"
+        },
+        "segments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/block"
+          },
+          "minItems": 1
+        },
+        "laps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/block"
+          }
+        },
+        "hr_zones": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/zones"
+            }
+          ]
+        },
+        "limitations": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "timer_boundaries_unavailable",
+              "laps_conflicting",
+              "distance_reset_or_missing",
+              "sample_gaps",
+              "lap_time_precision_compatible",
+              "timer_total_precision_difference"
+            ]
+          }
+        }
+      },
+      "required": [
+        "session_ordinal",
+        "sport",
+        "sub_sport",
+        "start_utc",
+        "end_utc",
+        "elapsed_seconds",
+        "valid_seconds",
+        "pause_seconds",
+        "sample_covered_seconds",
+        "gap_seconds",
+        "timer_source",
+        "running_kind",
+        "provider_summary",
+        "summary",
+        "segments",
+        "laps",
+        "hr_zones",
+        "limitations"
+      ],
+      "additionalProperties": false
+    },
+    "location": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": "string",
+          "const": "record.position_lat/position_long"
+        },
+        "coordinate_unit": {
+          "type": "string",
+          "const": "degrees"
+        },
+        "selection": {
+          "type": "string",
+          "const": "first_last_actual_samples"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "available",
+            "missing",
+            "insufficient_data"
+          ]
+        },
+        "sample_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "valid_point_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "invalid_point_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "missing_point_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "first_time_utc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "first_latitude": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": -90,
+          "maximum": 90
+        },
+        "first_longitude": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": -180,
+          "maximum": 180
+        },
+        "first_altitude_m": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "first_distance_m": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "last_time_utc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "last_latitude": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": -90,
+          "maximum": 90
+        },
+        "last_longitude": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": -180,
+          "maximum": 180
+        },
+        "last_altitude_m": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "last_distance_m": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        }
+      },
+      "required": [
+        "source",
+        "coordinate_unit",
+        "selection",
+        "status",
+        "sample_count",
+        "valid_point_count",
+        "invalid_point_count",
+        "missing_point_count",
+        "first_time_utc",
+        "first_latitude",
+        "first_longitude",
+        "first_altitude_m",
+        "first_distance_m",
+        "last_time_utc",
+        "last_latitude",
+        "last_longitude",
+        "last_altitude_m",
+        "last_distance_m"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

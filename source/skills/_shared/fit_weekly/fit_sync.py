@@ -10,12 +10,17 @@ from __future__ import annotations
 import json
 import math
 import sqlite3
+import time
+from collections.abc import Callable
 from contextlib import AsyncExitStack
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from skills._shared.fit_weekly import garmin_fit, storage, sync_calendar
+
+if TYPE_CHECKING:
+    from skills._shared.fit_weekly.sync_budget import Bound
 
 
 @dataclass(frozen=True)
@@ -25,6 +30,7 @@ class SyncSpec:
     max_session_starts: int
     timeout_seconds: float
     is_cn: bool
+    total_timeout_seconds: float | None = None
 
     def validate(self) -> None:
         self.inventory.validate()
@@ -40,6 +46,49 @@ class SyncSpec:
             or self.timeout_seconds <= 0
         ):
             raise ValueError("fit_sync_spec_invalid")
+        if self.total_timeout_seconds is not None and (
+            isinstance(self.total_timeout_seconds, bool)
+            or not isinstance(self.total_timeout_seconds, (int, float))
+            or not math.isfinite(self.total_timeout_seconds)
+            or self.total_timeout_seconds <= 0
+        ):
+            raise ValueError("fit_sync_total_budget_invalid")
+
+
+def read_request(value: dict[str, Any]) -> SyncSpec:
+    """Read frozen v1 evidence without inventing a collection authorization."""
+    try:
+        version, data = value["schema_version"], value["request"]
+        if version not in ("fit_sync_request_v1", "fit_sync_request_v2"):
+            raise ValueError("version")
+        if (version == "fit_sync_request_v1") != ("total_timeout_seconds" not in data):
+            raise ValueError("version_fields")
+        spec = SyncSpec(
+            inventory=sync_calendar.InventoryRequest(**data["inventory"]),
+            **{k: v for k, v in data.items() if k != "inventory"},
+        )
+        spec.validate()
+        if version == "fit_sync_request_v2" and spec.total_timeout_seconds is None:
+            raise ValueError("budget")
+        return spec
+    except (KeyError, TypeError, ValueError):
+        raise ValueError("fit_sync_request_invalid") from None
+
+
+class CollectionBudget:
+    """Absolute durable deadline plus monotonic remaining time within a run."""
+
+    def __init__(self, saved: dict[str, Any], wall: float, monotonic: float):
+        self.deadline = saved["deadline_epoch"]
+        self.started = saved["started_epoch"]
+        self.monotonic_end = monotonic + max(0, self.deadline - wall)
+
+    def remaining(self) -> float:
+        now = time.time()
+        remaining = min(self.deadline - now, self.monotonic_end - time.monotonic())
+        if now < self.started or remaining <= 0:
+            raise ValueError("fit_sync_total_budget_exhausted")
+        return remaining
 
 
 def document(db: sqlite3.Connection, key: str) -> dict[str, Any] | None:
@@ -90,8 +139,15 @@ def file_manifest(root: Path) -> dict[str, Any]:
 
 
 class Journal:
-    def __init__(self, db: sqlite3.Connection, root: Path, spec: SyncSpec):
+    def __init__(
+        self,
+        db: sqlite3.Connection,
+        root: Path,
+        spec: SyncSpec,
+        shared: Bound | None = None,
+    ):
         self.db, self.root, self.spec = db, root, spec
+        self.shared = shared
         self.key = "fit-sync:" + storage.digest(spec.inventory.key.encode())
         self.work = root / "sync" / self.key.removeprefix("fit-sync:")
         self.intents: list[dict[str, Any]] = []
@@ -128,6 +184,8 @@ class Journal:
             }[kind],
             "arguments": arguments,
         }
+        if self.shared:
+            self.shared.reserve(value)
         put(self.db, f"{self.key}:intent:{n}", value)
         self.intents.append(value)
         return value
@@ -229,6 +287,8 @@ class Journal:
             if intent["call_kind"] == kind and intent["arguments"] == args:
                 result = self.recovered(intent)
                 if result and result["status"] == "success":
+                    if self.shared:
+                        self.shared.settle(intent, result["value"])
                     successes.append({"intent": intent, "value": result["value"]})
         if len(successes) > 1:
             raise ValueError("fit_sync_capture_conflict")
@@ -287,13 +347,17 @@ def unfinished_jobs(db: sqlite3.Connection) -> list[dict[str, Any]]:
         "SELECT logical_key,content_json FROM documents WHERE kind='sync_receipt'"
     ):
         value = json.loads(row[1])
-        if value.get("schema_version") == "fit_sync_request_v1":
+        if value.get("schema_version") in (
+            "fit_sync_request_v1",
+            "fit_sync_request_v2",
+        ):
             key = row[0].removesuffix(":request")
             if document(db, key + ":complete") is None:
                 result.append(
                     {
                         "request": value["request"],
-                        "blocked": document(db, key + ":blocked") is not None,
+                        "blocked": document(db, key + ":blocked") is not None
+                        or value["schema_version"] == "fit_sync_request_v1",
                     }
                 )
     return result
@@ -305,13 +369,15 @@ async def synchronize(
     *,
     token_root: Path,
     session_factory: garmin_fit.SessionFactory = garmin_fit.sdk_session,
+    shared_budget: Callable[[sqlite3.Connection, SyncSpec], Bound] | None = None,
 ) -> dict[str, Any]:
+    wall, monotonic = time.time(), time.monotonic()
     spec.validate()
     with storage.open_store(root) as db:
         journal = Journal(db, root, spec)
-        request = {"schema_version": "fit_sync_request_v1", "request": asdict(spec)}
+        request = {"schema_version": "fit_sync_request_v2", "request": asdict(spec)}
         old = document(db, journal.key + ":request")
-        if old is not None and old != request:
+        if old is not None and read_request(old) != spec:
             raise ValueError("fit_sync_request_conflict")
         done = document(db, journal.key + ":complete")
         if done is not None:
@@ -319,8 +385,38 @@ async def synchronize(
             if journal.artifacts() != done["files"]:
                 raise ValueError("fit_sync_capture_conflict")
             return done
+        if spec.total_timeout_seconds is None or (
+            old is not None and old["schema_version"] == "fit_sync_request_v1"
+        ):
+            raise ValueError("fit_sync_total_budget_required")
         if document(db, journal.key + ":blocked") is not None:
             raise ValueError("fit_sync_audit_blocked")
+        shared = shared_budget(db, spec) if shared_budget else None
+        journal.shared = shared
+        saved_budget = document(db, journal.key + ":budget")
+        if old is not None and saved_budget is None:
+            raise ValueError("fit_sync_total_budget_missing")
+        if saved_budget is None:
+            saved_budget = {
+                "schema_version": "fit_sync_budget_v1",
+                "request_sha256": storage.digest(storage.canonical(request).encode()),
+                "started_epoch": wall,
+                "deadline_epoch": wall + spec.total_timeout_seconds,
+            }
+            put(db, journal.key + ":budget", saved_budget)
+        if saved_budget.get("request_sha256") != storage.digest(
+            storage.canonical(request).encode()
+        ):
+            raise ValueError("fit_sync_request_conflict")
+        budget = CollectionBudget(saved_budget, wall, monotonic)
+
+        def remaining() -> float:
+            return (
+                min(budget.remaining(), shared.remaining())
+                if shared
+                else budget.remaining()
+            )
+
         put(db, journal.key + ":request", request)
         private_directory(root / "sync")
         private_directory(journal.work)
@@ -332,6 +428,7 @@ async def synchronize(
         async def connected() -> garmin_fit.FitClient:
             nonlocal client, session_intent
             if client is None:
+                remaining()
                 session_intent = journal.reserve("initialize", {})
                 try:
                     client = await stack.enter_async_context(
@@ -340,6 +437,7 @@ async def synchronize(
                             journal.work,
                             is_cn=spec.is_cn,
                             timeout=spec.timeout_seconds,
+                            remaining=remaining,
                             factory=session_factory,
                         )
                     )
@@ -364,7 +462,11 @@ async def synchronize(
             )
             if journal.counts()[kind] >= maximum:
                 raise ValueError("fit_sync_budget_exhausted")
+            if shared:
+                shared.check(kind, args, include_session=client is None)
+            remaining()
             active = await connected()
+            remaining()
             intent = journal.reserve(kind, args)
             directory = journal.directory(intent)
             private_directory(directory)
@@ -385,6 +487,8 @@ async def synchronize(
                 journal.capture(intent, exc.payload, None, str(exc))
                 raise
             journal.capture(intent, captured.payload, captured.value, None)
+            if shared:
+                shared.settle(intent, captured.value)
             return {"intent": intent, "value": captured.value}
 
         members = []
@@ -461,6 +565,8 @@ async def synchronize(
                     journal.outcome_key(session_intent),
                     {"status": "closed", "token_unchanged": True},
                 )
+        if shared:
+            shared.remaining()
         storage.verify_fit_closure(db, root)
         result = {
             "schema_version": "fit_sync_receipt_v1",

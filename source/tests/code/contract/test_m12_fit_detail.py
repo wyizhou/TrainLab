@@ -124,7 +124,7 @@ def test_budget_persists_across_host_restart_and_exact_cache_does_not_spend(
         {"start_offset_seconds": 1799, "end_offset_seconds": 1801},
         {"resolution_seconds": 2},
         {"resolution_seconds": True},
-        {"start_offset_seconds": 0.5},
+        {"start_offset_seconds": 0.0001},
         {"view": "raw"},
         {"activity_ref": "999"},
         {"path": "/private/secret.fit"},

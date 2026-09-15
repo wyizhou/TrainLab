@@ -1,6 +1,6 @@
 # Codex 响应与结果协议
 
-这是 M12 的内部纯解析组件，不启动模型、写文件或提供完整权限隔离。
+当前新命令使用[命令运行器](command-runner.md)的终态JSON通道。本文JSONL轮次解析只用于已保存的旧Codex任务恢复；通用strict JSON与Schema投影继续复用，不启动模型、写文件或提供完整权限隔离。
 它连接[进程监督](model-process.md)、[任务账本](model-job-ledger.md)及 Host 的业务校验。
 业务输入、运动证据和课表安全门仍必须由周任务调用，不由解析器补造内容。
 

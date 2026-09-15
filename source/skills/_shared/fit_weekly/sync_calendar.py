@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from skills._shared.fit_weekly import storage
+from skills._shared.fit_weekly import fit_time, storage
 
 HONG_KONG = ZoneInfo("Asia/Hong_Kong")
 PageFetcher = Callable[[str, str, int, int], dict[str, Any]]
@@ -69,7 +69,7 @@ def weekly_slot(now_utc: str) -> dict[str, Any]:
 def in_week(activity_end_utc: str, slot: dict[str, Any]) -> bool:
     return (
         utc_time(slot["start_utc"])
-        <= utc_time(activity_end_utc)
+        <= fit_time.utc_time(activity_end_utc)
         < utc_time(slot["end_utc"])
     )
 

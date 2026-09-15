@@ -2,24 +2,21 @@
 
 from __future__ import annotations
 
-import argparse
 import json
-import os
 import re
 import sqlite3
 from datetime import date
 from pathlib import Path
 from typing import Any
 
-from skills._shared.fit_weekly import storage
-from skills._shared.scripts import archive_legacy
+from skills._shared.fit_weekly import history_archive, storage
 
 
 def registered_fits(archive: Path) -> list[dict[str, Any]]:
     """Select registered post-2021 activity FITs; a broken binding is not skipped."""
     manifest = json.loads((archive / "manifest.json").read_text())
     files = {item["path"]: item for item in manifest["files"]}
-    db = archive_legacy.immutable_database(archive / "recovery/trainlab.db")
+    db = history_archive.immutable_database(archive / "recovery/trainlab.db")
     db.row_factory = sqlite3.Row
     try:
         rows = db.execute("""
@@ -103,8 +100,8 @@ def import_registered(archive: Path, destination: Path) -> dict[str, Any]:
         or destination in archive.parents
     ):
         raise ValueError("legacy_import_destination_invalid")
-    archive_legacy.verify_archive(archive)
-    before = archive_legacy.fingerprint(archive)
+    history_archive.verify_archive(archive)
+    before = history_archive.fingerprint(archive)
     rows = registered_fits(archive)
     members = [
         {key: row[key] for key in ("activity_ref", "sha256", "byte_size")}
@@ -134,47 +131,9 @@ def import_registered(archive: Path, destination: Path) -> dict[str, Any]:
             )
         storage.verify_fit_closure(db, destination)
         # The archive is a one-time input. Never persist its absolute location.
-        if archive_legacy.fingerprint(archive) != before:
+        if history_archive.fingerprint(archive) != before:
             raise ValueError("legacy_import_source_changed")
         storage.put_document(
             db, "sync_receipt", "legacy-fit-import", input_sha, receipt
         )
     return receipt
-
-
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--archive", required=True, type=Path)
-    parser.add_argument("--destination", required=True, type=Path)
-    args = parser.parse_args()
-    os.umask(0o077)
-    try:
-        result = import_registered(args.archive, args.destination)
-        print(
-            json.dumps(
-                {key: value for key, value in result.items() if key != "members"}
-            )
-        )
-        return 0
-    except (OSError, ValueError, KeyError, TypeError, sqlite3.Error) as exc:
-        code = (
-            str(exc)
-            if isinstance(exc, ValueError)
-            and str(exc).startswith(("legacy_", "fit_", "store_", "archive_"))
-            else "legacy_import_failed"
-        )
-        print(
-            json.dumps(
-                {
-                    "status": "blocked",
-                    "error_code": code,
-                    "provider_calls": 0,
-                    "external_actions": 0,
-                }
-            )
-        )
-        return 2
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

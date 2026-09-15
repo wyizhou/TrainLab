@@ -1,4 +1,0 @@
-interface:
-  display_name: "Garmin Sync"
-  short_description: "Inspect bounded FIT-only activity synchronization"
-  default_prompt: "Use $garmin-sync to inspect the current FIT-only sync scope and budget without provider calls."

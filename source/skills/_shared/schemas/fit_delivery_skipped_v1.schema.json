@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:trainlab:fit_delivery_skipped_v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "action_key", "status", "request_sha256", "reason", "observed_date"],
+  "properties": {
+    "schema_version": {"const": "fit_delivery_skipped_v1"},
+    "action_key": {"type": "string", "pattern": "^[A-Za-z0-9:_.-]{1,180}$"},
+    "status": {"const": "skipped"},
+    "request_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "reason": {"const": "past_date"},
+    "observed_date": {"type": "string", "format": "date"}
+  }
+}

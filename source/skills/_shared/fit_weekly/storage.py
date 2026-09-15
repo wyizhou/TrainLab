@@ -197,13 +197,14 @@ def require_schema(db: sqlite3.Connection, version: int = 2) -> None:
         raise ValueError("store_schema_or_integrity_invalid")
 
 
-def initialize(root: Path) -> None:
+def initialize(root: Path, *, lifecycle_locked: bool = False) -> None:
     if (root / "trainlab-fit.db").exists():
         with open_store(root):
             return
     if root.exists():
         private_entry(root, directory=True)
-        if list(root.iterdir()):
+        existing = {p.name for p in root.iterdir()}
+        if existing and not (lifecycle_locked and existing == {"lifecycle.lock"}):
             raise ValueError("store_destination_not_empty")
     else:
         root.mkdir(mode=0o700)

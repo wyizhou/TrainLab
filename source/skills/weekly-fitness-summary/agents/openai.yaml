@@ -1,4 +1,0 @@
-interface:
-  display_name: "Weekly Fitness Summary"
-  short_description: "Review weekly running and climbing load"
-  default_prompt: "Use $weekly-fitness-summary to select bounded weekly evidence for coaching."

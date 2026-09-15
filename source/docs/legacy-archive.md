@@ -1,19 +1,10 @@
-# M12 旧实例归档
+# 公开退役归档与恢复
 
-这是开发迁移工具，不是正常同步或 AI 的运行依赖。从 `source/` 执行：
+R6-5仅归档明确公开源码、测试、资源和需要替换的公开说明。目录为根忽略的`data-backup/m12-retired-*`，不包含正式state/raw/FIT、私人目标、邮箱配置、Token或认证材料；不使用旧自动state归档程序。
 
-```sh
-python skills/_shared/scripts/archive_legacy.py create
-python skills/_shared/scripts/archive_legacy.py verify --archive ../data-backup/m12-legacy-时间
-python skills/_shared/scripts/archive_legacy.py restore --archive ../data-backup/m12-legacy-时间 --destination ../data-backup/独立恢复副本
-```
+每份`manifest.json`逐项记录原相对路径、SHA-256、字节数、公开权限及tracked/untracked状态，`public-files.tar`保存精确字节和原权限。归档目录0700，tar/索引0600。
+恢复在全新隔离目录进行：先核对成员集合和类型、拒绝越界/链接，再逐项恢复原字节与公开权限、比较SHA及权限；完成检查后保留的证据副本重新设为0700/0600。原235项归档保持不变；222项追加保护和选择修正独立记录，不能说原235已经覆盖全部454产品基线。两套合计核对454个起始source文件。字体LICENSE和SOURCE.md虽进入原候选归档，仍在活动工程原样保留。
 
-- 创建时只复制 Git 登记的非私人源码，以及锁内冻结的旧 `state`；目标、邮箱、Token、凭据和私人配置不复制，仍留在原位置。
-- `legacy-source` 保存旧源码原字节；`legacy-state` 保存原始数据库、sidecar、lock 和 raw 原字节；`recovery/trainlab.db` 是 SQLite Online Backup 得到的自包含恢复数据库。
-- 源锁必须已经存在且可只读取得；WAL 必须为空。工具不创建源锁、不 checkpoint、不删除正式 sidecar。锁或 WAL 条件不满足时停止。
-- 每项源文件的 SHA 和原元数据保存在私有 `manifest.json`；归档和恢复副本目录为 0700、文件为 0600。恢复旧可执行位时使用清单中的源 mode，不能将归档权限宽泛放开。
-- 完整性、外键、逻辑数据摘要、逐文件 SHA 和独立复制恢复演练通过后，才将 pending 目录原子改名为成功归档。成功演练的临时副本会清理；失败 pending 保留，不自动删除或覆盖。
-- `restore` 只创建一个不存在的独立恢复副本，不覆盖当前 source，不修改远端邮件/课程，不自动启动旧程序。验证成功不等于正式切换已经执行。
-- 旧失败记录继续由 Git 和既有私有产物保留；本工具不复制其他任务的临时 Candidate，不把旧报告导入新库。
+归档只供人工恢复/审计，不能进入产品导入、Schema、运行identity、模型输入、测试或CI依赖。源码恢复不自动启动任何旧程序，不恢复旧发布资格。用户确认独立运行后才由用户手动删除归档，本任务不自动删除。
 
-确定性回归入口：`pytest tests/code/contract/test_m12_legacy_archive.py`。测试只创建合成源码/SQLite/FIT 字节，不读取正式资料或调用 Provider。
+已有旧数据归档是另一种兼容格式。仅显式[import-history](legacy-fit-import.md)可只读核验它并选取已登记运动FIT；不提供旧create/restore业务执行器。普通运行不读取该格式或任何归档目录。

@@ -11,7 +11,9 @@ Host 在模型启动前使用 `freeze_scope(instance_root, period_end, members)`
 周任务 Builder 负责选择本期全部活动，本模块负责绑定并限制可细读范围，不能把“范围已冻结”
 说成“完整周 inventory 已核验”。同周范围不能通过重新打开 Host 改写或获得新预算。
 
-后续模型工具只可映射预绑定的 `DetailHost.read(request)`：
+模型工具只可映射预绑定的 `DetailHost(..., stage="plan"|"summary").read(request)`：
+两阶段共享本周scope、20次/1200秒及原缓存；plan仅允许完全属于跑步session的窗口。
+混合FIT中的非跑步或跨运动窗口即使已有summary缓存也拒绝；授权检查先于缓存返回。
 
 | 请求字段 | 接受的内容 |
 | --- | --- |

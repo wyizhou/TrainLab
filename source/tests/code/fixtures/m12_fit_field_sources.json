@@ -1,0 +1,2525 @@
+{
+  "provenance": {
+    "sdk_version": "21.214.0",
+    "git_commit": "f0d86b18195dbdf9c5b2f135aad5d6ae541f5fbb",
+    "wheel_sha256": "9fa66c8bc6983808e784ba5058c550831c2621862097f41998a3ba129b7b7c6d",
+    "profile_sha256": "bde1a44db3f32d35fba6997edc552dd3238d218ffc2e718381194fd9921ed6fb",
+    "source": "https://github.com/garmin/fit-python-sdk/tree/21.214.0",
+    "profile_source": "https://github.com/garmin/fit-python-sdk/blob/21.214.0/garmin_fit_sdk/profile.py"
+  },
+  "decoder_options": {
+    "apply_scale_and_offset": true,
+    "convert_datetimes_to_dates": true,
+    "convert_types_to_strings": true,
+    "enable_crc_check": true,
+    "expand_sub_fields": true,
+    "expand_components": false,
+    "merge_heart_rates": false
+  },
+  "generation": "Anonymous official Encoder inputs; no personal sample or runtime SDK dependency. Expected original fields use unexpanded Decoder; compressed 12-bit speed/distance use Profile scale 100/16, bit offsets 0/12, distance accumulation. Legacy hashes frozen before FIT-FIELD-SOURCE-001 repair.",
+  "request": {
+    "activity_ref": "101",
+    "view": "summary",
+    "start_offset_seconds": 0,
+    "end_offset_seconds": 20,
+    "resolution_seconds": 5
+  },
+  "cases": [
+    {
+      "name": "ordinary-first",
+      "fit_sha256": "4c894ac1f60bc19f9592fe61fe8b9c429a00e1a6f99f475656013e313ea5b120",
+      "fit_base64": "DiDeUswAAAAuRklUEL9AAAAAAAEAAQAABEEAABIABgIEhv0EhgcEhggEhgUBAAYBAAEL2PhEH9j4RCBOAAAgTgAAAQBCAAAUAA79BIYDAQIEAQIHAoQNAQFVAoQnAoQpAoRTAoQGAoQCAoRJBIZOBIYFBIYCC9j4RHhQ0gD7NSPIAgAJyQJLCIYJ+QwAAL4LAAAAAAAAAhXY+ESCUd8A/GgjyQIBCcoCrwiHCV0NAAC/CwAAoA8AAAIf2PhEjFLsAP2bI8oCAgnLAhMJiAnBDQAAwAsAACgjAABR2w==",
+      "expected_points": [
+        {
+          "distance": 0.0,
+          "metrics": {
+            "heart_rate_bpm": 120,
+            "cadence_rpm": 80,
+            "power_w": 210,
+            "temperature_c": -5,
+            "step_length_mm": 901.3,
+            "vertical_oscillation_mm": 71.2,
+            "stance_time_ms": 230.4,
+            "vertical_ratio_percent": 7.13,
+            "speed_m_s": 3.321,
+            "altitude_m": 101.20000000000005
+          }
+        },
+        {
+          "distance": 40.0,
+          "metrics": {
+            "heart_rate_bpm": 130,
+            "cadence_rpm": 81,
+            "power_w": 223,
+            "temperature_c": -4,
+            "step_length_mm": 906.4,
+            "vertical_oscillation_mm": 71.3,
+            "stance_time_ms": 230.5,
+            "vertical_ratio_percent": 7.14,
+            "speed_m_s": 3.421,
+            "altitude_m": 101.39999999999998
+          }
+        },
+        {
+          "distance": 90.0,
+          "metrics": {
+            "heart_rate_bpm": 140,
+            "cadence_rpm": 82,
+            "power_w": 236,
+            "temperature_c": -3,
+            "step_length_mm": 911.5,
+            "vertical_oscillation_mm": 71.4,
+            "stance_time_ms": 230.6,
+            "vertical_ratio_percent": 7.15,
+            "speed_m_s": 3.521,
+            "altitude_m": 101.60000000000002
+          }
+        }
+      ],
+      "legacy": {
+        "fit-summary-1": {
+          "summary_sha256": "f05af35eb110fbf4a0de88d708cd4d42209a92f0671ac5448bfd29a4c58b3ef6",
+          "uncached_detail_sha256": "f5c972eecd423e317f13e2fddec13fe9b57e4314e3117ca0b0676c124c400cd4",
+          "points": [
+            {
+              "distance": 0.0,
+              "metrics": {
+                "heart_rate_bpm": 120.0,
+                "cadence_rpm": 80.0,
+                "power_w": 210.0,
+                "altitude_m": -12.399999999999977,
+                "temperature_c": -5.0,
+                "speed_m_s": 2.123,
+                "step_length_mm": 901.3,
+                "vertical_oscillation_mm": 71.2,
+                "stance_time_ms": 230.4,
+                "vertical_ratio_percent": 7.13
+              }
+            },
+            {
+              "distance": 40.0,
+              "metrics": {
+                "heart_rate_bpm": 130.0,
+                "cadence_rpm": 81.0,
+                "power_w": 223.0,
+                "altitude_m": -12.199999999999989,
+                "temperature_c": -4.0,
+                "speed_m_s": 2.223,
+                "step_length_mm": 906.4,
+                "vertical_oscillation_mm": 71.3,
+                "stance_time_ms": 230.5,
+                "vertical_ratio_percent": 7.14
+              }
+            },
+            {
+              "distance": 90.0,
+              "metrics": {
+                "heart_rate_bpm": 140.0,
+                "cadence_rpm": 82.0,
+                "power_w": 236.0,
+                "altitude_m": -12.0,
+                "temperature_c": -3.0,
+                "speed_m_s": 2.323,
+                "step_length_mm": 911.5,
+                "vertical_oscillation_mm": 71.4,
+                "stance_time_ms": 230.6,
+                "vertical_ratio_percent": 7.15
+              }
+            }
+          ]
+        },
+        "fit-summary-2": {
+          "summary_sha256": "2257402a3d6e20787919e2492cf076f2c424ece414e7ff2e1ad48bbdc6819f87",
+          "uncached_detail_sha256": "a3bf0bc53054e5a3147e640ffa51e12e98d89f10ca6beefd7173c24bb2992d95",
+          "points": [
+            {
+              "distance": 0.0,
+              "metrics": {
+                "heart_rate_bpm": 120.0,
+                "cadence_rpm": 80.0,
+                "power_w": 210.0,
+                "altitude_m": -12.399999999999977,
+                "temperature_c": -5.0,
+                "speed_m_s": 2.123,
+                "step_length_mm": 901.3,
+                "vertical_oscillation_mm": 71.2,
+                "stance_time_ms": 230.4,
+                "vertical_ratio_percent": 7.13
+              }
+            },
+            {
+              "distance": 40.0,
+              "metrics": {
+                "heart_rate_bpm": 130.0,
+                "cadence_rpm": 81.0,
+                "power_w": 223.0,
+                "altitude_m": -12.199999999999989,
+                "temperature_c": -4.0,
+                "speed_m_s": 2.223,
+                "step_length_mm": 906.4,
+                "vertical_oscillation_mm": 71.3,
+                "stance_time_ms": 230.5,
+                "vertical_ratio_percent": 7.14
+              }
+            },
+            {
+              "distance": 90.0,
+              "metrics": {
+                "heart_rate_bpm": 140.0,
+                "cadence_rpm": 82.0,
+                "power_w": 236.0,
+                "altitude_m": -12.0,
+                "temperature_c": -3.0,
+                "speed_m_s": 2.323,
+                "step_length_mm": 911.5,
+                "vertical_oscillation_mm": 71.4,
+                "stance_time_ms": 230.6,
+                "vertical_ratio_percent": 7.15
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "enhanced-first",
+      "fit_sha256": "051294f4e0b5c66b5f09d6a17461bcd3ede0e6b6645c71b25fa21f78b424f25d",
+      "fit_base64": "DiDeUswAAAAuRklUEL9AAAAAAAEAAQAABEEAABIABgIEhv0EhgcEhggEhgUBAAYBAAEL2PhEH9j4RCBOAAAgTgAAAQBCAAAUAA79BIYDAQIEAQIHAoQNAQFVAoQnAoQpAoRTAoRJBIZOBIYGAoQCAoQFBIYCC9j4RHhQ0gD7NSPIAgAJyQL5DAAAvgsAAEsIhgkAAAAAAhXY+ESCUd8A/GgjyQIBCcoCXQ0AAL8LAACvCIcJoA8AAAIf2PhEjFLsAP2bI8oCAgnLAsENAADACwAAEwmICSgjAAD+YA==",
+      "expected_points": [
+        {
+          "distance": 0.0,
+          "metrics": {
+            "heart_rate_bpm": 120,
+            "cadence_rpm": 80,
+            "power_w": 210,
+            "temperature_c": -5,
+            "step_length_mm": 901.3,
+            "vertical_oscillation_mm": 71.2,
+            "stance_time_ms": 230.4,
+            "vertical_ratio_percent": 7.13,
+            "speed_m_s": 3.321,
+            "altitude_m": 101.20000000000005
+          }
+        },
+        {
+          "distance": 40.0,
+          "metrics": {
+            "heart_rate_bpm": 130,
+            "cadence_rpm": 81,
+            "power_w": 223,
+            "temperature_c": -4,
+            "step_length_mm": 906.4,
+            "vertical_oscillation_mm": 71.3,
+            "stance_time_ms": 230.5,
+            "vertical_ratio_percent": 7.14,
+            "speed_m_s": 3.421,
+            "altitude_m": 101.39999999999998
+          }
+        },
+        {
+          "distance": 90.0,
+          "metrics": {
+            "heart_rate_bpm": 140,
+            "cadence_rpm": 82,
+            "power_w": 236,
+            "temperature_c": -3,
+            "step_length_mm": 911.5,
+            "vertical_oscillation_mm": 71.4,
+            "stance_time_ms": 230.6,
+            "vertical_ratio_percent": 7.15,
+            "speed_m_s": 3.521,
+            "altitude_m": 101.60000000000002
+          }
+        }
+      ],
+      "legacy": {
+        "fit-summary-1": {
+          "summary_sha256": "a1ddba31b83fb2a7967429d05596471377b9fcf02bf75bfb156661871dbd2838",
+          "uncached_detail_sha256": "9910064ef3ea4d3a241eef37f709bbea92c19fdb900954589b2c2b871efad665",
+          "points": [
+            {
+              "distance": 0.0,
+              "metrics": {
+                "heart_rate_bpm": 120.0,
+                "cadence_rpm": 80.0,
+                "power_w": 210.0,
+                "altitude_m": 101.20000000000005,
+                "temperature_c": -5.0,
+                "speed_m_s": 3.321,
+                "step_length_mm": 901.3,
+                "vertical_oscillation_mm": 71.2,
+                "stance_time_ms": 230.4,
+                "vertical_ratio_percent": 7.13
+              }
+            },
+            {
+              "distance": 40.0,
+              "metrics": {
+                "heart_rate_bpm": 130.0,
+                "cadence_rpm": 81.0,
+                "power_w": 223.0,
+                "altitude_m": 101.39999999999998,
+                "temperature_c": -4.0,
+                "speed_m_s": 3.421,
+                "step_length_mm": 906.4,
+                "vertical_oscillation_mm": 71.3,
+                "stance_time_ms": 230.5,
+                "vertical_ratio_percent": 7.14
+              }
+            },
+            {
+              "distance": 90.0,
+              "metrics": {
+                "heart_rate_bpm": 140.0,
+                "cadence_rpm": 82.0,
+                "power_w": 236.0,
+                "altitude_m": 101.60000000000002,
+                "temperature_c": -3.0,
+                "speed_m_s": 3.521,
+                "step_length_mm": 911.5,
+                "vertical_oscillation_mm": 71.4,
+                "stance_time_ms": 230.6,
+                "vertical_ratio_percent": 7.15
+              }
+            }
+          ]
+        },
+        "fit-summary-2": {
+          "summary_sha256": "6cba22dfeed3266c22377e6d735a4bed72d91da7d2cf8cfceda0dcd2e99a7ec6",
+          "uncached_detail_sha256": "a196f8c0adaeac870618643d7c63a2e884f05586221f8d8662f8045f88274f53",
+          "points": [
+            {
+              "distance": 0.0,
+              "metrics": {
+                "heart_rate_bpm": 120.0,
+                "cadence_rpm": 80.0,
+                "power_w": 210.0,
+                "altitude_m": 101.20000000000005,
+                "temperature_c": -5.0,
+                "speed_m_s": 3.321,
+                "step_length_mm": 901.3,
+                "vertical_oscillation_mm": 71.2,
+                "stance_time_ms": 230.4,
+                "vertical_ratio_percent": 7.13
+              }
+            },
+            {
+              "distance": 40.0,
+              "metrics": {
+                "heart_rate_bpm": 130.0,
+                "cadence_rpm": 81.0,
+                "power_w": 223.0,
+                "altitude_m": 101.39999999999998,
+                "temperature_c": -4.0,
+                "speed_m_s": 3.421,
+                "step_length_mm": 906.4,
+                "vertical_oscillation_mm": 71.3,
+                "stance_time_ms": 230.5,
+                "vertical_ratio_percent": 7.14
+              }
+            },
+            {
+              "distance": 90.0,
+              "metrics": {
+                "heart_rate_bpm": 140.0,
+                "cadence_rpm": 82.0,
+                "power_w": 236.0,
+                "altitude_m": 101.60000000000002,
+                "temperature_c": -3.0,
+                "speed_m_s": 3.521,
+                "step_length_mm": 911.5,
+                "vertical_oscillation_mm": 71.4,
+                "stance_time_ms": 230.6,
+                "vertical_ratio_percent": 7.15
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "ordinary-invalid",
+      "fit_sha256": "d27ebb09d194469b18c6fcf6945c3bed14dbbc193825f18331f9458d55fce3d8",
+      "fit_base64": "DiDeUswAAAAuRklUEL9AAAAAAAEAAQAABEEAABIABgIEhv0EhgcEhggEhgUBAAYBAAEL2PhEH9j4RCBOAAAgTgAAAQBCAAAUAA79BIYDAQIEAQIHAoQNAQFVAoQnAoQpAoRTAoQGAoQCAoRJBIZOBIYFBIYCC9j4RHhQ0gD7NSPIAgAJyQL/////+QwAAL4LAAAAAAAAAhXY+ESCUd8A/GgjyQIBCcoC/////10NAAC/CwAAoA8AAAIf2PhEjFLsAP2bI8oCAgnLAv/////BDQAAwAsAACgjAACvTw==",
+      "expected_points": [
+        {
+          "distance": 0.0,
+          "metrics": {
+            "heart_rate_bpm": 120,
+            "cadence_rpm": 80,
+            "power_w": 210,
+            "temperature_c": -5,
+            "step_length_mm": 901.3,
+            "vertical_oscillation_mm": 71.2,
+            "stance_time_ms": 230.4,
+            "vertical_ratio_percent": 7.13,
+            "speed_m_s": 3.321,
+            "altitude_m": 101.20000000000005
+          }
+        },
+        {
+          "distance": 40.0,
+          "metrics": {
+            "heart_rate_bpm": 130,
+            "cadence_rpm": 81,
+            "power_w": 223,
+            "temperature_c": -4,
+            "step_length_mm": 906.4,
+            "vertical_oscillation_mm": 71.3,
+            "stance_time_ms": 230.5,
+            "vertical_ratio_percent": 7.14,
+            "speed_m_s": 3.421,
+            "altitude_m": 101.39999999999998
+          }
+        },
+        {
+          "distance": 90.0,
+          "metrics": {
+            "heart_rate_bpm": 140,
+            "cadence_rpm": 82,
+            "power_w": 236,
+            "temperature_c": -3,
+            "step_length_mm": 911.5,
+            "vertical_oscillation_mm": 71.4,
+            "stance_time_ms": 230.6,
+            "vertical_ratio_percent": 7.15,
+            "speed_m_s": 3.521,
+            "altitude_m": 101.60000000000002
+          }
+        }
+      ],
+      "legacy": {
+        "fit-summary-1": {
+          "summary_sha256": "e47ad3c534f8b635775883544a0617b66162f1187819ce3c6b411fe5618c080b",
+          "uncached_detail_sha256": "20e3ed59181499d77b027d09b4e41d45cd7b7c7e952f34da87d9e4831f684c86",
+          "points": [
+            {
+              "distance": 0.0,
+              "metrics": {
+                "heart_rate_bpm": 120.0,
+                "cadence_rpm": 80.0,
+                "power_w": 210.0,
+                "altitude_m": null,
+                "temperature_c": -5.0,
+                "speed_m_s": null,
+                "step_length_mm": 901.3,
+                "vertical_oscillation_mm": 71.2,
+                "stance_time_ms": 230.4,
+                "vertical_ratio_percent": 7.13
+              }
+            },
+            {
+              "distance": 40.0,
+              "metrics": {
+                "heart_rate_bpm": 130.0,
+                "cadence_rpm": 81.0,
+                "power_w": 223.0,
+                "altitude_m": null,
+                "temperature_c": -4.0,
+                "speed_m_s": null,
+                "step_length_mm": 906.4,
+                "vertical_oscillation_mm": 71.3,
+                "stance_time_ms": 230.5,
+                "vertical_ratio_percent": 7.14
+              }
+            },
+            {
+              "distance": 90.0,
+              "metrics": {
+                "heart_rate_bpm": 140.0,
+                "cadence_rpm": 82.0,
+                "power_w": 236.0,
+                "altitude_m": null,
+                "temperature_c": -3.0,
+                "speed_m_s": null,
+                "step_length_mm": 911.5,
+                "vertical_oscillation_mm": 71.4,
+                "stance_time_ms": 230.6,
+                "vertical_ratio_percent": 7.15
+              }
+            }
+          ]
+        },
+        "fit-summary-2": {
+          "summary_sha256": "d4df83696d99aa8dfccaaece0e23510dd6290de08fba9060cf3f2f3eb990a493",
+          "uncached_detail_sha256": "88d044d00a14501ffa3257d5159c4ab64381b59a48b4c4fa587b7d68b76e5697",
+          "points": [
+            {
+              "distance": 0.0,
+              "metrics": {
+                "heart_rate_bpm": 120.0,
+                "cadence_rpm": 80.0,
+                "power_w": 210.0,
+                "altitude_m": null,
+                "temperature_c": -5.0,
+                "speed_m_s": null,
+                "step_length_mm": 901.3,
+                "vertical_oscillation_mm": 71.2,
+                "stance_time_ms": 230.4,
+                "vertical_ratio_percent": 7.13
+              }
+            },
+            {
+              "distance": 40.0,
+              "metrics": {
+                "heart_rate_bpm": 130.0,
+                "cadence_rpm": 81.0,
+                "power_w": 223.0,
+                "altitude_m": null,
+                "temperature_c": -4.0,
+                "speed_m_s": null,
+                "step_length_mm": 906.4,
+                "vertical_oscillation_mm": 71.3,
+                "stance_time_ms": 230.5,
+                "vertical_ratio_percent": 7.14
+              }
+            },
+            {
+              "distance": 90.0,
+              "metrics": {
+                "heart_rate_bpm": 140.0,
+                "cadence_rpm": 82.0,
+                "power_w": 236.0,
+                "altitude_m": null,
+                "temperature_c": -3.0,
+                "speed_m_s": null,
+                "step_length_mm": 911.5,
+                "vertical_oscillation_mm": 71.4,
+                "stance_time_ms": 230.6,
+                "vertical_ratio_percent": 7.15
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "ordinary-invalid-enhanced-first",
+      "fit_sha256": "c6b4f2d1650a5860ff4f657101643789e1734a4434a707af74fcc8a921705876",
+      "fit_base64": "DiDeUswAAAAuRklUEL9AAAAAAAEAAQAABEEAABIABgIEhv0EhgcEhggEhgUBAAYBAAEL2PhEH9j4RCBOAAAgTgAAAQBCAAAUAA79BIYDAQIEAQIHAoQNAQFVAoQnAoQpAoRTAoRJBIZOBIYGAoQCAoQFBIYCC9j4RHhQ0gD7NSPIAgAJyQL5DAAAvgsAAP////8AAAAAAhXY+ESCUd8A/GgjyQIBCcoCXQ0AAL8LAAD/////oA8AAAIf2PhEjFLsAP2bI8oCAgnLAsENAADACwAA/////ygjAACEmA==",
+      "expected_points": [
+        {
+          "distance": 0.0,
+          "metrics": {
+            "heart_rate_bpm": 120,
+            "cadence_rpm": 80,
+            "power_w": 210,
+            "temperature_c": -5,
+            "step_length_mm": 901.3,
+            "vertical_oscillation_mm": 71.2,
+            "stance_time_ms": 230.4,
+            "vertical_ratio_percent": 7.13,
+            "speed_m_s": 3.321,
+            "altitude_m": 101.20000000000005
+          }
+        },
+        {
+          "distance": 40.0,
+          "metrics": {
+            "heart_rate_bpm": 130,
+            "cadence_rpm": 81,
+            "power_w": 223,
+            "temperature_c": -4,
+            "step_length_mm": 906.4,
+            "vertical_oscillation_mm": 71.3,
+            "stance_time_ms": 230.5,
+            "vertical_ratio_percent": 7.14,
+            "speed_m_s": 3.421,
+            "altitude_m": 101.39999999999998
+          }
+        },
+        {
+          "distance": 90.0,
+          "metrics": {
+            "heart_rate_bpm": 140,
+            "cadence_rpm": 82,
+            "power_w": 236,
+            "temperature_c": -3,
+            "step_length_mm": 911.5,
+            "vertical_oscillation_mm": 71.4,
+            "stance_time_ms": 230.6,
+            "vertical_ratio_percent": 7.15,
+            "speed_m_s": 3.521,
+            "altitude_m": 101.60000000000002
+          }
+        }
+      ],
+      "legacy": {
+        "fit-summary-1": {
+          "summary_sha256": "a3636ffbb3f242b15df589508790d7188dc81b95b6f857857b4e62e26f9fd332",
+          "uncached_detail_sha256": "9910064ef3ea4d3a241eef37f709bbea92c19fdb900954589b2c2b871efad665",
+          "points": [
+            {
+              "distance": 0.0,
+              "metrics": {
+                "heart_rate_bpm": 120.0,
+                "cadence_rpm": 80.0,
+                "power_w": 210.0,
+                "altitude_m": 101.20000000000005,
+                "temperature_c": -5.0,
+                "speed_m_s": 3.321,
+                "step_length_mm": 901.3,
+                "vertical_oscillation_mm": 71.2,
+                "stance_time_ms": 230.4,
+                "vertical_ratio_percent": 7.13
+              }
+            },
+            {
+              "distance": 40.0,
+              "metrics": {
+                "heart_rate_bpm": 130.0,
+                "cadence_rpm": 81.0,
+                "power_w": 223.0,
+                "altitude_m": 101.39999999999998,
+                "temperature_c": -4.0,
+                "speed_m_s": 3.421,
+                "step_length_mm": 906.4,
+                "vertical_oscillation_mm": 71.3,
+                "stance_time_ms": 230.5,
+                "vertical_ratio_percent": 7.14
+              }
+            },
+            {
+              "distance": 90.0,
+              "metrics": {
+                "heart_rate_bpm": 140.0,
+                "cadence_rpm": 82.0,
+                "power_w": 236.0,
+                "altitude_m": 101.60000000000002,
+                "temperature_c": -3.0,
+                "speed_m_s": 3.521,
+                "step_length_mm": 911.5,
+                "vertical_oscillation_mm": 71.4,
+                "stance_time_ms": 230.6,
+                "vertical_ratio_percent": 7.15
+              }
+            }
+          ]
+        },
+        "fit-summary-2": {
+          "summary_sha256": "d349a4736c8adb63479bab5dbc259429f2b2fa160d5e2eb994b8e78ec2a82421",
+          "uncached_detail_sha256": "a196f8c0adaeac870618643d7c63a2e884f05586221f8d8662f8045f88274f53",
+          "points": [
+            {
+              "distance": 0.0,
+              "metrics": {
+                "heart_rate_bpm": 120.0,
+                "cadence_rpm": 80.0,
+                "power_w": 210.0,
+                "altitude_m": 101.20000000000005,
+                "temperature_c": -5.0,
+                "speed_m_s": 3.321,
+                "step_length_mm": 901.3,
+                "vertical_oscillation_mm": 71.2,
+                "stance_time_ms": 230.4,
+                "vertical_ratio_percent": 7.13
+              }
+            },
+            {
+              "distance": 40.0,
+              "metrics": {
+                "heart_rate_bpm": 130.0,
+                "cadence_rpm": 81.0,
+                "power_w": 223.0,
+                "altitude_m": 101.39999999999998,
+                "temperature_c": -4.0,
+                "speed_m_s": 3.421,
+                "step_length_mm": 906.4,
+                "vertical_oscillation_mm": 71.3,
+                "stance_time_ms": 230.5,
+                "vertical_ratio_percent": 7.14
+              }
+            },
+            {
+              "distance": 90.0,
+              "metrics": {
+                "heart_rate_bpm": 140.0,
+                "cadence_rpm": 82.0,
+                "power_w": 236.0,
+                "altitude_m": 101.60000000000002,
+                "temperature_c": -3.0,
+                "speed_m_s": 3.521,
+                "step_length_mm": 911.5,
+                "vertical_oscillation_mm": 71.4,
+                "stance_time_ms": 230.6,
+                "vertical_ratio_percent": 7.15
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "enhanced-invalid",
+      "fit_sha256": "a1bb57acac25f568daa2df7c9706a6fe24a6631dd266714a397daf1b880443f4",
+      "fit_base64": "DiDeUswAAAAuRklUEL9AAAAAAAEAAQAABEEAABIABgIEhv0EhgcEhggEhgUBAAYBAAEL2PhEH9j4RCBOAAAgTgAAAQBCAAAUAA79BIYDAQIEAQIHAoQNAQFVAoQnAoQpAoRTAoQGAoQCAoRJBIZOBIYFBIYCC9j4RHhQ0gD7NSPIAgAJyQJLCIYJ//////////8AAAAAAhXY+ESCUd8A/GgjyQIBCcoCrwiHCf//////////oA8AAAIf2PhEjFLsAP2bI8oCAgnLAhMJiAn//////////ygjAADtEw==",
+      "expected_points": [
+        {
+          "distance": 0.0,
+          "metrics": {
+            "heart_rate_bpm": 120,
+            "cadence_rpm": 80,
+            "power_w": 210,
+            "temperature_c": -5,
+            "step_length_mm": 901.3,
+            "vertical_oscillation_mm": 71.2,
+            "stance_time_ms": 230.4,
+            "vertical_ratio_percent": 7.13,
+            "speed_m_s": 2.123,
+            "altitude_m": -12.399999999999977
+          }
+        },
+        {
+          "distance": 40.0,
+          "metrics": {
+            "heart_rate_bpm": 130,
+            "cadence_rpm": 81,
+            "power_w": 223,
+            "temperature_c": -4,
+            "step_length_mm": 906.4,
+            "vertical_oscillation_mm": 71.3,
+            "stance_time_ms": 230.5,
+            "vertical_ratio_percent": 7.14,
+            "speed_m_s": 2.223,
+            "altitude_m": -12.199999999999989
+          }
+        },
+        {
+          "distance": 90.0,
+          "metrics": {
+            "heart_rate_bpm": 140,
+            "cadence_rpm": 82,
+            "power_w": 236,
+            "temperature_c": -3,
+            "step_length_mm": 911.5,
+            "vertical_oscillation_mm": 71.4,
+            "stance_time_ms": 230.6,
+            "vertical_ratio_percent": 7.15,
+            "speed_m_s": 2.323,
+            "altitude_m": -12.0
+          }
+        }
+      ],
+      "legacy": {
+        "fit-summary-1": {
+          "summary_sha256": "aeb6b11d5e2b320fcf5e7c2719fdc077e212347990bc74775084e728fa30c22e",
+          "uncached_detail_sha256": "f5c972eecd423e317f13e2fddec13fe9b57e4314e3117ca0b0676c124c400cd4",
+          "points": [
+            {
+              "distance": 0.0,
+              "metrics": {
+                "heart_rate_bpm": 120.0,
+                "cadence_rpm": 80.0,
+                "power_w": 210.0,
+                "altitude_m": -12.399999999999977,
+                "temperature_c": -5.0,
+                "speed_m_s": 2.123,
+                "step_length_mm": 901.3,
+                "vertical_oscillation_mm": 71.2,
+                "stance_time_ms": 230.4,
+                "vertical_ratio_percent": 7.13
+              }
+            },
+            {
+              "distance": 40.0,
+              "metrics": {
+                "heart_rate_bpm": 130.0,
+                "cadence_rpm": 81.0,
+                "power_w": 223.0,
+                "altitude_m": -12.199999999999989,
+                "temperature_c": -4.0,
+                "speed_m_s": 2.223,
+                "step_length_mm": 906.4,
+                "vertical_oscillation_mm": 71.3,
+                "stance_time_ms": 230.5,
+                "vertical_ratio_percent": 7.14
+              }
+            },
+            {
+              "distance": 90.0,
+              "metrics": {
+                "heart_rate_bpm": 140.0,
+                "cadence_rpm": 82.0,
+                "power_w": 236.0,
+                "altitude_m": -12.0,
+                "temperature_c": -3.0,
+                "speed_m_s": 2.323,
+                "step_length_mm": 911.5,
+                "vertical_oscillation_mm": 71.4,
+                "stance_time_ms": 230.6,
+                "vertical_ratio_percent": 7.15
+              }
+            }
+          ]
+        },
+        "fit-summary-2": {
+          "summary_sha256": "27a8dc8dea150cf2ed4222f1d5f6c7c7e62dd2ff25aefc9eb995f7285f9ccc9b",
+          "uncached_detail_sha256": "a3bf0bc53054e5a3147e640ffa51e12e98d89f10ca6beefd7173c24bb2992d95",
+          "points": [
+            {
+              "distance": 0.0,
+              "metrics": {
+                "heart_rate_bpm": 120.0,
+                "cadence_rpm": 80.0,
+                "power_w": 210.0,
+                "altitude_m": -12.399999999999977,
+                "temperature_c": -5.0,
+                "speed_m_s": 2.123,
+                "step_length_mm": 901.3,
+                "vertical_oscillation_mm": 71.2,
+                "stance_time_ms": 230.4,
+                "vertical_ratio_percent": 7.13
+              }
+            },
+            {
+              "distance": 40.0,
+              "metrics": {
+                "heart_rate_bpm": 130.0,
+                "cadence_rpm": 81.0,
+                "power_w": 223.0,
+                "altitude_m": -12.199999999999989,
+                "temperature_c": -4.0,
+                "speed_m_s": 2.223,
+                "step_length_mm": 906.4,
+                "vertical_oscillation_mm": 71.3,
+                "stance_time_ms": 230.5,
+                "vertical_ratio_percent": 7.14
+              }
+            },
+            {
+              "distance": 90.0,
+              "metrics": {
+                "heart_rate_bpm": 140.0,
+                "cadence_rpm": 82.0,
+                "power_w": 236.0,
+                "altitude_m": -12.0,
+                "temperature_c": -3.0,
+                "speed_m_s": 2.323,
+                "step_length_mm": 911.5,
+                "vertical_oscillation_mm": 71.4,
+                "stance_time_ms": 230.6,
+                "vertical_ratio_percent": 7.15
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "enhanced-invalid-first",
+      "fit_sha256": "207a5daab12d72819ffe47492e2e9faa2aaab14553da22048402a02193c1c269",
+      "fit_base64": "DiDeUswAAAAuRklUEL9AAAAAAAEAAQAABEEAABIABgIEhv0EhgcEhggEhgUBAAYBAAEL2PhEH9j4RCBOAAAgTgAAAQBCAAAUAA79BIYDAQIEAQIHAoQNAQFVAoQnAoQpAoRTAoRJBIZOBIYGAoQCAoQFBIYCC9j4RHhQ0gD7NSPIAgAJyQL//////////0sIhgkAAAAAAhXY+ESCUd8A/GgjyQIBCcoC//////////+vCIcJoA8AAAIf2PhEjFLsAP2bI8oCAgnLAv//////////EwmICSgjAABaDg==",
+      "expected_points": [
+        {
+          "distance": 0.0,
+          "metrics": {
+            "heart_rate_bpm": 120,
+            "cadence_rpm": 80,
+            "power_w": 210,
+            "temperature_c": -5,
+            "step_length_mm": 901.3,
+            "vertical_oscillation_mm": 71.2,
+            "stance_time_ms": 230.4,
+            "vertical_ratio_percent": 7.13,
+            "speed_m_s": 2.123,
+            "altitude_m": -12.399999999999977
+          }
+        },
+        {
+          "distance": 40.0,
+          "metrics": {
+            "heart_rate_bpm": 130,
+            "cadence_rpm": 81,
+            "power_w": 223,
+            "temperature_c": -4,
+            "step_length_mm": 906.4,
+            "vertical_oscillation_mm": 71.3,
+            "stance_time_ms": 230.5,
+            "vertical_ratio_percent": 7.14,
+            "speed_m_s": 2.223,
+            "altitude_m": -12.199999999999989
+          }
+        },
+        {
+          "distance": 90.0,
+          "metrics": {
+            "heart_rate_bpm": 140,
+            "cadence_rpm": 82,
+            "power_w": 236,
+            "temperature_c": -3,
+            "step_length_mm": 911.5,
+            "vertical_oscillation_mm": 71.4,
+            "stance_time_ms": 230.6,
+            "vertical_ratio_percent": 7.15,
+            "speed_m_s": 2.323,
+            "altitude_m": -12.0
+          }
+        }
+      ],
+      "legacy": {
+        "fit-summary-1": {
+          "summary_sha256": "0cd3bf78b87534014491349e8d5b9393efe54bbff06ed0761593e71af7adbfa2",
+          "uncached_detail_sha256": "f5c972eecd423e317f13e2fddec13fe9b57e4314e3117ca0b0676c124c400cd4",
+          "points": [
+            {
+              "distance": 0.0,
+              "metrics": {
+                "heart_rate_bpm": 120.0,
+                "cadence_rpm": 80.0,
+                "power_w": 210.0,
+                "altitude_m": -12.399999999999977,
+                "temperature_c": -5.0,
+                "speed_m_s": 2.123,
+                "step_length_mm": 901.3,
+                "vertical_oscillation_mm": 71.2,
+                "stance_time_ms": 230.4,
+                "vertical_ratio_percent": 7.13
+              }
+            },
+            {
+              "distance": 40.0,
+              "metrics": {
+                "heart_rate_bpm": 130.0,
+                "cadence_rpm": 81.0,
+                "power_w": 223.0,
+                "altitude_m": -12.199999999999989,
+                "temperature_c": -4.0,
+                "speed_m_s": 2.223,
+                "step_length_mm": 906.4,
+                "vertical_oscillation_mm": 71.3,
+                "stance_time_ms": 230.5,
+                "vertical_ratio_percent": 7.14
+              }
+            },
+            {
+              "distance": 90.0,
+              "metrics": {
+                "heart_rate_bpm": 140.0,
+                "cadence_rpm": 82.0,
+                "power_w": 236.0,
+                "altitude_m": -12.0,
+                "temperature_c": -3.0,
+                "speed_m_s": 2.323,
+                "step_length_mm": 911.5,
+                "vertical_oscillation_mm": 71.4,
+                "stance_time_ms": 230.6,
+                "vertical_ratio_percent": 7.15
+              }
+            }
+          ]
+        },
+        "fit-summary-2": {
+          "summary_sha256": "83c143952e07934a49d57e10e193c52afc605fff0707f10d9797f0f71aa8ee88",
+          "uncached_detail_sha256": "a3bf0bc53054e5a3147e640ffa51e12e98d89f10ca6beefd7173c24bb2992d95",
+          "points": [
+            {
+              "distance": 0.0,
+              "metrics": {
+                "heart_rate_bpm": 120.0,
+                "cadence_rpm": 80.0,
+                "power_w": 210.0,
+                "altitude_m": -12.399999999999977,
+                "temperature_c": -5.0,
+                "speed_m_s": 2.123,
+                "step_length_mm": 901.3,
+                "vertical_oscillation_mm": 71.2,
+                "stance_time_ms": 230.4,
+                "vertical_ratio_percent": 7.13
+              }
+            },
+            {
+              "distance": 40.0,
+              "metrics": {
+                "heart_rate_bpm": 130.0,
+                "cadence_rpm": 81.0,
+                "power_w": 223.0,
+                "altitude_m": -12.199999999999989,
+                "temperature_c": -4.0,
+                "speed_m_s": 2.223,
+                "step_length_mm": 906.4,
+                "vertical_oscillation_mm": 71.3,
+                "stance_time_ms": 230.5,
+                "vertical_ratio_percent": 7.14
+              }
+            },
+            {
+              "distance": 90.0,
+              "metrics": {
+                "heart_rate_bpm": 140.0,
+                "cadence_rpm": 82.0,
+                "power_w": 236.0,
+                "altitude_m": -12.0,
+                "temperature_c": -3.0,
+                "speed_m_s": 2.323,
+                "step_length_mm": 911.5,
+                "vertical_oscillation_mm": 71.4,
+                "stance_time_ms": 230.6,
+                "vertical_ratio_percent": 7.15
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "enhanced-absent",
+      "fit_sha256": "3856a31d2a4cfaaba3bd3ace4d0a2b02020404a33c8df1bf98d2caf2fbb6b8b1",
+      "fit_base64": "DiDeUq4AAAAuRklUl05AAAAAAAEAAQAABEEAABIABgIEhv0EhgcEhggEhgUBAAYBAAEL2PhEH9j4RCBOAAAgTgAAAQBCAAAUAAz9BIYDAQIEAQIHAoQNAQFVAoQnAoQpAoRTAoQGAoQCAoQFBIYCC9j4RHhQ0gD7NSPIAgAJyQJLCIYJAAAAAAIV2PhEglHfAPxoI8kCAQnKAq8IhwmgDwAAAh/Y+ESMUuwA/ZsjygICCcsCEwmICSgjAADTsg==",
+      "expected_points": [
+        {
+          "distance": 0.0,
+          "metrics": {
+            "heart_rate_bpm": 120,
+            "cadence_rpm": 80,
+            "power_w": 210,
+            "temperature_c": -5,
+            "step_length_mm": 901.3,
+            "vertical_oscillation_mm": 71.2,
+            "stance_time_ms": 230.4,
+            "vertical_ratio_percent": 7.13,
+            "speed_m_s": 2.123,
+            "altitude_m": -12.399999999999977
+          }
+        },
+        {
+          "distance": 40.0,
+          "metrics": {
+            "heart_rate_bpm": 130,
+            "cadence_rpm": 81,
+            "power_w": 223,
+            "temperature_c": -4,
+            "step_length_mm": 906.4,
+            "vertical_oscillation_mm": 71.3,
+            "stance_time_ms": 230.5,
+            "vertical_ratio_percent": 7.14,
+            "speed_m_s": 2.223,
+            "altitude_m": -12.199999999999989
+          }
+        },
+        {
+          "distance": 90.0,
+          "metrics": {
+            "heart_rate_bpm": 140,
+            "cadence_rpm": 82,
+            "power_w": 236,
+            "temperature_c": -3,
+            "step_length_mm": 911.5,
+            "vertical_oscillation_mm": 71.4,
+            "stance_time_ms": 230.6,
+            "vertical_ratio_percent": 7.15,
+            "speed_m_s": 2.323,
+            "altitude_m": -12.0
+          }
+        }
+      ],
+      "legacy": {
+        "fit-summary-1": {
+          "summary_sha256": "5a41537d17f268f40bc16cce9aff2963a7c2484a96514603061f792e4d5835d0",
+          "uncached_detail_sha256": "f5c972eecd423e317f13e2fddec13fe9b57e4314e3117ca0b0676c124c400cd4",
+          "points": [
+            {
+              "distance": 0.0,
+              "metrics": {
+                "heart_rate_bpm": 120.0,
+                "cadence_rpm": 80.0,
+                "power_w": 210.0,
+                "altitude_m": -12.399999999999977,
+                "temperature_c": -5.0,
+                "speed_m_s": 2.123,
+                "step_length_mm": 901.3,
+                "vertical_oscillation_mm": 71.2,
+                "stance_time_ms": 230.4,
+                "vertical_ratio_percent": 7.13
+              }
+            },
+            {
+              "distance": 40.0,
+              "metrics": {
+                "heart_rate_bpm": 130.0,
+                "cadence_rpm": 81.0,
+                "power_w": 223.0,
+                "altitude_m": -12.199999999999989,
+                "temperature_c": -4.0,
+                "speed_m_s": 2.223,
+                "step_length_mm": 906.4,
+                "vertical_oscillation_mm": 71.3,
+                "stance_time_ms": 230.5,
+                "vertical_ratio_percent": 7.14
+              }
+            },
+            {
+              "distance": 90.0,
+              "metrics": {
+                "heart_rate_bpm": 140.0,
+                "cadence_rpm": 82.0,
+                "power_w": 236.0,
+                "altitude_m": -12.0,
+                "temperature_c": -3.0,
+                "speed_m_s": 2.323,
+                "step_length_mm": 911.5,
+                "vertical_oscillation_mm": 71.4,
+                "stance_time_ms": 230.6,
+                "vertical_ratio_percent": 7.15
+              }
+            }
+          ]
+        },
+        "fit-summary-2": {
+          "summary_sha256": "718fafdc8397f5b5a54384b085f099cb315f4f63f0abe723dff00134c009ecd7",
+          "uncached_detail_sha256": "a3bf0bc53054e5a3147e640ffa51e12e98d89f10ca6beefd7173c24bb2992d95",
+          "points": [
+            {
+              "distance": 0.0,
+              "metrics": {
+                "heart_rate_bpm": 120.0,
+                "cadence_rpm": 80.0,
+                "power_w": 210.0,
+                "altitude_m": -12.399999999999977,
+                "temperature_c": -5.0,
+                "speed_m_s": 2.123,
+                "step_length_mm": 901.3,
+                "vertical_oscillation_mm": 71.2,
+                "stance_time_ms": 230.4,
+                "vertical_ratio_percent": 7.13
+              }
+            },
+            {
+              "distance": 40.0,
+              "metrics": {
+                "heart_rate_bpm": 130.0,
+                "cadence_rpm": 81.0,
+                "power_w": 223.0,
+                "altitude_m": -12.199999999999989,
+                "temperature_c": -4.0,
+                "speed_m_s": 2.223,
+                "step_length_mm": 906.4,
+                "vertical_oscillation_mm": 71.3,
+                "stance_time_ms": 230.5,
+                "vertical_ratio_percent": 7.14
+              }
+            },
+            {
+              "distance": 90.0,
+              "metrics": {
+                "heart_rate_bpm": 140.0,
+                "cadence_rpm": 82.0,
+                "power_w": 236.0,
+                "altitude_m": -12.0,
+                "temperature_c": -3.0,
+                "speed_m_s": 2.323,
+                "step_length_mm": 911.5,
+                "vertical_oscillation_mm": 71.4,
+                "stance_time_ms": 230.6,
+                "vertical_ratio_percent": 7.15
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "ordinary-absent",
+      "fit_sha256": "71ac81b7c9207e6acc21f38e1b4833b58da6e361bab30fc1a1f61abe04840ab1",
+      "fit_base64": "DiDeUroAAAAuRklUl7FAAAAAAAEAAQAABEEAABIABgIEhv0EhgcEhggEhgUBAAYBAAEL2PhEH9j4RCBOAAAgTgAAAQBCAAAUAAz9BIYDAQIEAQIHAoQNAQFVAoQnAoQpAoRTAoRJBIZOBIYFBIYCC9j4RHhQ0gD7NSPIAgAJyQL5DAAAvgsAAAAAAAACFdj4RIJR3wD8aCPJAgEJygJdDQAAvwsAAKAPAAACH9j4RIxS7AD9myPKAgIJywLBDQAAwAsAACgjAADmvQ==",
+      "expected_points": [
+        {
+          "distance": 0.0,
+          "metrics": {
+            "heart_rate_bpm": 120,
+            "cadence_rpm": 80,
+            "power_w": 210,
+            "temperature_c": -5,
+            "step_length_mm": 901.3,
+            "vertical_oscillation_mm": 71.2,
+            "stance_time_ms": 230.4,
+            "vertical_ratio_percent": 7.13,
+            "speed_m_s": 3.321,
+            "altitude_m": 101.20000000000005
+          }
+        },
+        {
+          "distance": 40.0,
+          "metrics": {
+            "heart_rate_bpm": 130,
+            "cadence_rpm": 81,
+            "power_w": 223,
+            "temperature_c": -4,
+            "step_length_mm": 906.4,
+            "vertical_oscillation_mm": 71.3,
+            "stance_time_ms": 230.5,
+            "vertical_ratio_percent": 7.14,
+            "speed_m_s": 3.421,
+            "altitude_m": 101.39999999999998
+          }
+        },
+        {
+          "distance": 90.0,
+          "metrics": {
+            "heart_rate_bpm": 140,
+            "cadence_rpm": 82,
+            "power_w": 236,
+            "temperature_c": -3,
+            "step_length_mm": 911.5,
+            "vertical_oscillation_mm": 71.4,
+            "stance_time_ms": 230.6,
+            "vertical_ratio_percent": 7.15,
+            "speed_m_s": 3.521,
+            "altitude_m": 101.60000000000002
+          }
+        }
+      ],
+      "legacy": {
+        "fit-summary-1": {
+          "summary_sha256": "f927f1635177de4659a80b5286d9cbeb1198ad90d8d7840bcf78b53c285ccca7",
+          "uncached_detail_sha256": "9910064ef3ea4d3a241eef37f709bbea92c19fdb900954589b2c2b871efad665",
+          "points": [
+            {
+              "distance": 0.0,
+              "metrics": {
+                "heart_rate_bpm": 120.0,
+                "cadence_rpm": 80.0,
+                "power_w": 210.0,
+                "altitude_m": 101.20000000000005,
+                "temperature_c": -5.0,
+                "speed_m_s": 3.321,
+                "step_length_mm": 901.3,
+                "vertical_oscillation_mm": 71.2,
+                "stance_time_ms": 230.4,
+                "vertical_ratio_percent": 7.13
+              }
+            },
+            {
+              "distance": 40.0,
+              "metrics": {
+                "heart_rate_bpm": 130.0,
+                "cadence_rpm": 81.0,
+                "power_w": 223.0,
+                "altitude_m": 101.39999999999998,
+                "temperature_c": -4.0,
+                "speed_m_s": 3.421,
+                "step_length_mm": 906.4,
+                "vertical_oscillation_mm": 71.3,
+                "stance_time_ms": 230.5,
+                "vertical_ratio_percent": 7.14
+              }
+            },
+            {
+              "distance": 90.0,
+              "metrics": {
+                "heart_rate_bpm": 140.0,
+                "cadence_rpm": 82.0,
+                "power_w": 236.0,
+                "altitude_m": 101.60000000000002,
+                "temperature_c": -3.0,
+                "speed_m_s": 3.521,
+                "step_length_mm": 911.5,
+                "vertical_oscillation_mm": 71.4,
+                "stance_time_ms": 230.6,
+                "vertical_ratio_percent": 7.15
+              }
+            }
+          ]
+        },
+        "fit-summary-2": {
+          "summary_sha256": "b57c3ce72c77ee1382a50643fa78323ce1239323418580a513b1639cdd7e5c63",
+          "uncached_detail_sha256": "a196f8c0adaeac870618643d7c63a2e884f05586221f8d8662f8045f88274f53",
+          "points": [
+            {
+              "distance": 0.0,
+              "metrics": {
+                "heart_rate_bpm": 120.0,
+                "cadence_rpm": 80.0,
+                "power_w": 210.0,
+                "altitude_m": 101.20000000000005,
+                "temperature_c": -5.0,
+                "speed_m_s": 3.321,
+                "step_length_mm": 901.3,
+                "vertical_oscillation_mm": 71.2,
+                "stance_time_ms": 230.4,
+                "vertical_ratio_percent": 7.13
+              }
+            },
+            {
+              "distance": 40.0,
+              "metrics": {
+                "heart_rate_bpm": 130.0,
+                "cadence_rpm": 81.0,
+                "power_w": 223.0,
+                "altitude_m": 101.39999999999998,
+                "temperature_c": -4.0,
+                "speed_m_s": 3.421,
+                "step_length_mm": 906.4,
+                "vertical_oscillation_mm": 71.3,
+                "stance_time_ms": 230.5,
+                "vertical_ratio_percent": 7.14
+              }
+            },
+            {
+              "distance": 90.0,
+              "metrics": {
+                "heart_rate_bpm": 140.0,
+                "cadence_rpm": 82.0,
+                "power_w": 236.0,
+                "altitude_m": 101.60000000000002,
+                "temperature_c": -3.0,
+                "speed_m_s": 3.521,
+                "step_length_mm": 911.5,
+                "vertical_oscillation_mm": 71.4,
+                "stance_time_ms": 230.6,
+                "vertical_ratio_percent": 7.15
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "all-invalid",
+      "fit_sha256": "c37318de1c22d282c059b206dcd0c66b063bdac7afc49772900714dd869b8a01",
+      "fit_base64": "DiDeUswAAAAuRklUEL9AAAAAAAEAAQAABEEAABIABgIEhv0EhgcEhggEhgUBAAYBAAEL2PhEH9j4RCBOAAAgTgAAAQBCAAAUAA79BIYDAQIEAQIHAoQNAQFVAoQnAoQpAoRTAoQGAoQCAoRJBIZOBIYFBIYCC9j4RHhQ0gD7NSPIAgAJyQL/////////////////////AhXY+ESCUd8A/GgjyQIBCcoC/////////////////////wIf2PhEjFLsAP2bI8oCAgnLAv////////////////////8pmw==",
+      "expected_points": [
+        {
+          "distance": null,
+          "metrics": {
+            "heart_rate_bpm": 120,
+            "cadence_rpm": 80,
+            "power_w": 210,
+            "temperature_c": -5,
+            "step_length_mm": 901.3,
+            "vertical_oscillation_mm": 71.2,
+            "stance_time_ms": 230.4,
+            "vertical_ratio_percent": 7.13,
+            "speed_m_s": null,
+            "altitude_m": null
+          }
+        },
+        {
+          "distance": null,
+          "metrics": {
+            "heart_rate_bpm": 130,
+            "cadence_rpm": 81,
+            "power_w": 223,
+            "temperature_c": -4,
+            "step_length_mm": 906.4,
+            "vertical_oscillation_mm": 71.3,
+            "stance_time_ms": 230.5,
+            "vertical_ratio_percent": 7.14,
+            "speed_m_s": null,
+            "altitude_m": null
+          }
+        },
+        {
+          "distance": null,
+          "metrics": {
+            "heart_rate_bpm": 140,
+            "cadence_rpm": 82,
+            "power_w": 236,
+            "temperature_c": -3,
+            "step_length_mm": 911.5,
+            "vertical_oscillation_mm": 71.4,
+            "stance_time_ms": 230.6,
+            "vertical_ratio_percent": 7.15,
+            "speed_m_s": null,
+            "altitude_m": null
+          }
+        }
+      ],
+      "legacy": {
+        "fit-summary-1": {
+          "summary_sha256": "0bdfb3e2f19de76dc47e060cee822427762439dbb76de1982b862648396bd862",
+          "uncached_detail_sha256": "df256cb93a9628c653da384425e1ce40befec794c089bae2f03ee7ba288c4180",
+          "points": [
+            {
+              "distance": null,
+              "metrics": {
+                "heart_rate_bpm": 120.0,
+                "cadence_rpm": 80.0,
+                "power_w": 210.0,
+                "altitude_m": null,
+                "temperature_c": -5.0,
+                "speed_m_s": null,
+                "step_length_mm": 901.3,
+                "vertical_oscillation_mm": 71.2,
+                "stance_time_ms": 230.4,
+                "vertical_ratio_percent": 7.13
+              }
+            },
+            {
+              "distance": null,
+              "metrics": {
+                "heart_rate_bpm": 130.0,
+                "cadence_rpm": 81.0,
+                "power_w": 223.0,
+                "altitude_m": null,
+                "temperature_c": -4.0,
+                "speed_m_s": null,
+                "step_length_mm": 906.4,
+                "vertical_oscillation_mm": 71.3,
+                "stance_time_ms": 230.5,
+                "vertical_ratio_percent": 7.14
+              }
+            },
+            {
+              "distance": null,
+              "metrics": {
+                "heart_rate_bpm": 140.0,
+                "cadence_rpm": 82.0,
+                "power_w": 236.0,
+                "altitude_m": null,
+                "temperature_c": -3.0,
+                "speed_m_s": null,
+                "step_length_mm": 911.5,
+                "vertical_oscillation_mm": 71.4,
+                "stance_time_ms": 230.6,
+                "vertical_ratio_percent": 7.15
+              }
+            }
+          ]
+        },
+        "fit-summary-2": {
+          "summary_sha256": "41d28630c3930122d66f8410828446016f87a9636dbec00452e1874519a126c4",
+          "uncached_detail_sha256": "9e7cb0a379dad0759a8a5d3724457fd82e44ede0fa68fc48ebc273c11f039878",
+          "points": [
+            {
+              "distance": null,
+              "metrics": {
+                "heart_rate_bpm": 120.0,
+                "cadence_rpm": 80.0,
+                "power_w": 210.0,
+                "altitude_m": null,
+                "temperature_c": -5.0,
+                "speed_m_s": null,
+                "step_length_mm": 901.3,
+                "vertical_oscillation_mm": 71.2,
+                "stance_time_ms": 230.4,
+                "vertical_ratio_percent": 7.13
+              }
+            },
+            {
+              "distance": null,
+              "metrics": {
+                "heart_rate_bpm": 130.0,
+                "cadence_rpm": 81.0,
+                "power_w": 223.0,
+                "altitude_m": null,
+                "temperature_c": -4.0,
+                "speed_m_s": null,
+                "step_length_mm": 906.4,
+                "vertical_oscillation_mm": 71.3,
+                "stance_time_ms": 230.5,
+                "vertical_ratio_percent": 7.14
+              }
+            },
+            {
+              "distance": null,
+              "metrics": {
+                "heart_rate_bpm": 140.0,
+                "cadence_rpm": 82.0,
+                "power_w": 236.0,
+                "altitude_m": null,
+                "temperature_c": -3.0,
+                "speed_m_s": null,
+                "step_length_mm": 911.5,
+                "vertical_oscillation_mm": 71.4,
+                "stance_time_ms": 230.6,
+                "vertical_ratio_percent": 7.15
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "compressed-only",
+      "fit_sha256": "2634486e84719ed8d224f018dbde570b1ed86e5e79a522a865430338bb67eca9",
+      "fit_base64": "DiDeUpkAAAAuRklU1bxAAAAAAAEAAQAABEEAABIABgIEhv0EhgcEhggEhgUBAAYBAAEL2PhEH9j4RCBOAAAgTgAAAQBCAAAUAAr9BIYDAQIEAQIHAoQNAQFVAoQnAoQpAoRTAoQIAw0CC9j4RHhQ0gD7NSPIAgAJyQKQAQACFdj4RIJR3wD8aCPJAgEJygLCAR4CH9j4RIxS7AD9myPKAgIJywL0ATynrg==",
+      "expected_points": [
+        {
+          "distance": 0,
+          "metrics": {
+            "heart_rate_bpm": 120,
+            "cadence_rpm": 80,
+            "power_w": 210,
+            "temperature_c": -5,
+            "step_length_mm": 901.3,
+            "vertical_oscillation_mm": 71.2,
+            "stance_time_ms": 230.4,
+            "vertical_ratio_percent": 7.13,
+            "speed_m_s": 4.0,
+            "altitude_m": null
+          }
+        },
+        {
+          "distance": 30,
+          "metrics": {
+            "heart_rate_bpm": 130,
+            "cadence_rpm": 81,
+            "power_w": 223,
+            "temperature_c": -4,
+            "step_length_mm": 906.4,
+            "vertical_oscillation_mm": 71.3,
+            "stance_time_ms": 230.5,
+            "vertical_ratio_percent": 7.14,
+            "speed_m_s": 4.5,
+            "altitude_m": null
+          }
+        },
+        {
+          "distance": 60,
+          "metrics": {
+            "heart_rate_bpm": 140,
+            "cadence_rpm": 82,
+            "power_w": 236,
+            "temperature_c": -3,
+            "step_length_mm": 911.5,
+            "vertical_oscillation_mm": 71.4,
+            "stance_time_ms": 230.6,
+            "vertical_ratio_percent": 7.15,
+            "speed_m_s": 5.0,
+            "altitude_m": null
+          }
+        }
+      ],
+      "legacy": {
+        "fit-summary-1": {
+          "summary_sha256": "d70667e51f6db1058eae173aecc3e3a09e2883256e12fcc17921a32339a0a977",
+          "uncached_detail_sha256": "f537bf3dae3076ec365e1ce73669c38abb61795bdc246bb914bcc0aa9218bcde",
+          "points": [
+            {
+              "distance": 0.0,
+              "metrics": {
+                "heart_rate_bpm": 120.0,
+                "cadence_rpm": 80.0,
+                "power_w": 210.0,
+                "altitude_m": null,
+                "temperature_c": -5.0,
+                "speed_m_s": 4.0,
+                "step_length_mm": 901.3,
+                "vertical_oscillation_mm": 71.2,
+                "stance_time_ms": 230.4,
+                "vertical_ratio_percent": 7.13
+              }
+            },
+            {
+              "distance": 30.0,
+              "metrics": {
+                "heart_rate_bpm": 130.0,
+                "cadence_rpm": 81.0,
+                "power_w": 223.0,
+                "altitude_m": null,
+                "temperature_c": -4.0,
+                "speed_m_s": 4.5,
+                "step_length_mm": 906.4,
+                "vertical_oscillation_mm": 71.3,
+                "stance_time_ms": 230.5,
+                "vertical_ratio_percent": 7.14
+              }
+            },
+            {
+              "distance": 60.0,
+              "metrics": {
+                "heart_rate_bpm": 140.0,
+                "cadence_rpm": 82.0,
+                "power_w": 236.0,
+                "altitude_m": null,
+                "temperature_c": -3.0,
+                "speed_m_s": 5.0,
+                "step_length_mm": 911.5,
+                "vertical_oscillation_mm": 71.4,
+                "stance_time_ms": 230.6,
+                "vertical_ratio_percent": 7.15
+              }
+            }
+          ]
+        },
+        "fit-summary-2": {
+          "summary_sha256": "fc56016ca1889571017cb6cfd539de941f240f940b9727f82e350d31bcc99c50",
+          "uncached_detail_sha256": "4532e22aa52eb7ad3cde278eb8de91b824793821ac22ded82abb67fcb828a764",
+          "points": [
+            {
+              "distance": 0.0,
+              "metrics": {
+                "heart_rate_bpm": 120.0,
+                "cadence_rpm": 80.0,
+                "power_w": 210.0,
+                "altitude_m": null,
+                "temperature_c": -5.0,
+                "speed_m_s": 4.0,
+                "step_length_mm": 901.3,
+                "vertical_oscillation_mm": 71.2,
+                "stance_time_ms": 230.4,
+                "vertical_ratio_percent": 7.13
+              }
+            },
+            {
+              "distance": 30.0,
+              "metrics": {
+                "heart_rate_bpm": 130.0,
+                "cadence_rpm": 81.0,
+                "power_w": 223.0,
+                "altitude_m": null,
+                "temperature_c": -4.0,
+                "speed_m_s": 4.5,
+                "step_length_mm": 906.4,
+                "vertical_oscillation_mm": 71.3,
+                "stance_time_ms": 230.5,
+                "vertical_ratio_percent": 7.14
+              }
+            },
+            {
+              "distance": 60.0,
+              "metrics": {
+                "heart_rate_bpm": 140.0,
+                "cadence_rpm": 82.0,
+                "power_w": 236.0,
+                "altitude_m": null,
+                "temperature_c": -3.0,
+                "speed_m_s": 5.0,
+                "step_length_mm": 911.5,
+                "vertical_oscillation_mm": 71.4,
+                "stance_time_ms": 230.6,
+                "vertical_ratio_percent": 7.15
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "compressed-rollover",
+      "fit_sha256": "343954f59753007087cd145a5f3231aa8c21bde6e2cdfdbb27adea8d27475f10",
+      "fit_base64": "DiDeUpkAAAAuRklU1bxAAAAAAAEAAQAABEEAABIABgIEhv0EhgcEhggEhgUBAAYBAAEL2PhEH9j4RCBOAAAgTgAAAQBCAAAUAAr9BIYDAQIEAQIHAoQNAQFVAoQnAoQpAoRTAoQIAw0CC9j4RHhQ0gD7NSPIAgAJyQKQAfoCFdj4RIJR3wD8aCPJAgEJygLCAQQCH9j4RIxS7AD9myPKAgIJywL0AQ4/sQ==",
+      "expected_points": [
+        {
+          "distance": 250,
+          "metrics": {
+            "heart_rate_bpm": 120,
+            "cadence_rpm": 80,
+            "power_w": 210,
+            "temperature_c": -5,
+            "step_length_mm": 901.3,
+            "vertical_oscillation_mm": 71.2,
+            "stance_time_ms": 230.4,
+            "vertical_ratio_percent": 7.13,
+            "speed_m_s": 4.0,
+            "altitude_m": null
+          }
+        },
+        {
+          "distance": 260,
+          "metrics": {
+            "heart_rate_bpm": 130,
+            "cadence_rpm": 81,
+            "power_w": 223,
+            "temperature_c": -4,
+            "step_length_mm": 906.4,
+            "vertical_oscillation_mm": 71.3,
+            "stance_time_ms": 230.5,
+            "vertical_ratio_percent": 7.14,
+            "speed_m_s": 4.5,
+            "altitude_m": null
+          }
+        },
+        {
+          "distance": 270,
+          "metrics": {
+            "heart_rate_bpm": 140,
+            "cadence_rpm": 82,
+            "power_w": 236,
+            "temperature_c": -3,
+            "step_length_mm": 911.5,
+            "vertical_oscillation_mm": 71.4,
+            "stance_time_ms": 230.6,
+            "vertical_ratio_percent": 7.15,
+            "speed_m_s": 5.0,
+            "altitude_m": null
+          }
+        }
+      ],
+      "legacy": {
+        "fit-summary-1": {
+          "summary_sha256": "7e6c9d99ab26283849ce8056bf03033cfa82effdc05d1699a98179e4837ab4a2",
+          "uncached_detail_sha256": "509a28a4518092f389c67d18cc59e1cbb290b93bd53b344162a68d2874dbe3f0",
+          "points": [
+            {
+              "distance": 250.0,
+              "metrics": {
+                "heart_rate_bpm": 120.0,
+                "cadence_rpm": 80.0,
+                "power_w": 210.0,
+                "altitude_m": null,
+                "temperature_c": -5.0,
+                "speed_m_s": 4.0,
+                "step_length_mm": 901.3,
+                "vertical_oscillation_mm": 71.2,
+                "stance_time_ms": 230.4,
+                "vertical_ratio_percent": 7.13
+              }
+            },
+            {
+              "distance": 260.0,
+              "metrics": {
+                "heart_rate_bpm": 130.0,
+                "cadence_rpm": 81.0,
+                "power_w": 223.0,
+                "altitude_m": null,
+                "temperature_c": -4.0,
+                "speed_m_s": 4.5,
+                "step_length_mm": 906.4,
+                "vertical_oscillation_mm": 71.3,
+                "stance_time_ms": 230.5,
+                "vertical_ratio_percent": 7.14
+              }
+            },
+            {
+              "distance": 270.0,
+              "metrics": {
+                "heart_rate_bpm": 140.0,
+                "cadence_rpm": 82.0,
+                "power_w": 236.0,
+                "altitude_m": null,
+                "temperature_c": -3.0,
+                "speed_m_s": 5.0,
+                "step_length_mm": 911.5,
+                "vertical_oscillation_mm": 71.4,
+                "stance_time_ms": 230.6,
+                "vertical_ratio_percent": 7.15
+              }
+            }
+          ]
+        },
+        "fit-summary-2": {
+          "summary_sha256": "cb9873170e930fbe673920929dde38aa880a198e3a676a7728dc8a4a8b44219e",
+          "uncached_detail_sha256": "a30fada2ce0a03b90da4ecd9cf7816b490104fecb411a041fb5a7eaa55b0c4fa",
+          "points": [
+            {
+              "distance": 250.0,
+              "metrics": {
+                "heart_rate_bpm": 120.0,
+                "cadence_rpm": 80.0,
+                "power_w": 210.0,
+                "altitude_m": null,
+                "temperature_c": -5.0,
+                "speed_m_s": 4.0,
+                "step_length_mm": 901.3,
+                "vertical_oscillation_mm": 71.2,
+                "stance_time_ms": 230.4,
+                "vertical_ratio_percent": 7.13
+              }
+            },
+            {
+              "distance": 260.0,
+              "metrics": {
+                "heart_rate_bpm": 130.0,
+                "cadence_rpm": 81.0,
+                "power_w": 223.0,
+                "altitude_m": null,
+                "temperature_c": -4.0,
+                "speed_m_s": 4.5,
+                "step_length_mm": 906.4,
+                "vertical_oscillation_mm": 71.3,
+                "stance_time_ms": 230.5,
+                "vertical_ratio_percent": 7.14
+              }
+            },
+            {
+              "distance": 270.0,
+              "metrics": {
+                "heart_rate_bpm": 140.0,
+                "cadence_rpm": 82.0,
+                "power_w": 236.0,
+                "altitude_m": null,
+                "temperature_c": -3.0,
+                "speed_m_s": 5.0,
+                "step_length_mm": 911.5,
+                "vertical_oscillation_mm": 71.4,
+                "stance_time_ms": 230.6,
+                "vertical_ratio_percent": 7.15
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "compressed-first-explicit",
+      "fit_sha256": "dfbb72ad284e5e5d1b5c24ff05ec0ed0d699aa4bdd92c5fae7124f5019e66cdb",
+      "fit_base64": "DiDeUtgAAAAuRklUEEBAAAAAAAEAAQAABEEAABIABgIEhv0EhgcEhggEhgUBAAYBAAEL2PhEH9j4RCBOAAAgTgAAAQBCAAAUAA/9BIYDAQIEAQIHAoQNAQFVAoQnAoQpAoRTAoQIAw0GAoQCAoRJBIZOBIYFBIYCC9j4RHhQ0gD7NSPIAgAJyQKQAQBLCIYJ+QwAAL4LAAAAAAAAAhXY+ESCUd8A/GgjyQIBCcoCwgEerwiHCV0NAAC/CwAAoA8AAAIf2PhEjFLsAP2bI8oCAgnLAvQBPBMJiAnBDQAAwAsAACgjAADWLQ==",
+      "expected_points": [
+        {
+          "distance": 0.0,
+          "metrics": {
+            "heart_rate_bpm": 120,
+            "cadence_rpm": 80,
+            "power_w": 210,
+            "temperature_c": -5,
+            "step_length_mm": 901.3,
+            "vertical_oscillation_mm": 71.2,
+            "stance_time_ms": 230.4,
+            "vertical_ratio_percent": 7.13,
+            "speed_m_s": 3.321,
+            "altitude_m": 101.20000000000005
+          }
+        },
+        {
+          "distance": 40.0,
+          "metrics": {
+            "heart_rate_bpm": 130,
+            "cadence_rpm": 81,
+            "power_w": 223,
+            "temperature_c": -4,
+            "step_length_mm": 906.4,
+            "vertical_oscillation_mm": 71.3,
+            "stance_time_ms": 230.5,
+            "vertical_ratio_percent": 7.14,
+            "speed_m_s": 3.421,
+            "altitude_m": 101.39999999999998
+          }
+        },
+        {
+          "distance": 90.0,
+          "metrics": {
+            "heart_rate_bpm": 140,
+            "cadence_rpm": 82,
+            "power_w": 236,
+            "temperature_c": -3,
+            "step_length_mm": 911.5,
+            "vertical_oscillation_mm": 71.4,
+            "stance_time_ms": 230.6,
+            "vertical_ratio_percent": 7.15,
+            "speed_m_s": 3.521,
+            "altitude_m": 101.60000000000002
+          }
+        }
+      ],
+      "legacy": {
+        "fit-summary-1": {
+          "summary_sha256": "712ee5db9e3092e3b1a085792e527b700ab50a22e6090c77330981016f99782c",
+          "uncached_detail_sha256": "acab32caffd48eb0c9b5c80f1d479dab25cd22d2b0f835819ba5f4f8ab5a43a8",
+          "points": [
+            {
+              "distance": 0.0,
+              "metrics": {
+                "heart_rate_bpm": 120.0,
+                "cadence_rpm": 80.0,
+                "power_w": 210.0,
+                "altitude_m": -12.399999999999977,
+                "temperature_c": -5.0,
+                "speed_m_s": 2.123,
+                "step_length_mm": 901.3,
+                "vertical_oscillation_mm": 71.2,
+                "stance_time_ms": 230.4,
+                "vertical_ratio_percent": 7.13
+              }
+            },
+            {
+              "distance": 30.0,
+              "metrics": {
+                "heart_rate_bpm": 130.0,
+                "cadence_rpm": 81.0,
+                "power_w": 223.0,
+                "altitude_m": -12.199999999999989,
+                "temperature_c": -4.0,
+                "speed_m_s": 2.223,
+                "step_length_mm": 906.4,
+                "vertical_oscillation_mm": 71.3,
+                "stance_time_ms": 230.5,
+                "vertical_ratio_percent": 7.14
+              }
+            },
+            {
+              "distance": 60.0,
+              "metrics": {
+                "heart_rate_bpm": 140.0,
+                "cadence_rpm": 82.0,
+                "power_w": 236.0,
+                "altitude_m": -12.0,
+                "temperature_c": -3.0,
+                "speed_m_s": 2.323,
+                "step_length_mm": 911.5,
+                "vertical_oscillation_mm": 71.4,
+                "stance_time_ms": 230.6,
+                "vertical_ratio_percent": 7.15
+              }
+            }
+          ]
+        },
+        "fit-summary-2": {
+          "summary_sha256": "11cca157a23b28d59702d9a99f396fb81f495d75eb3c8f879786683071c8481a",
+          "uncached_detail_sha256": "99c92441e242d0fa6aa729f48e28304a6c43299f7ec4a12d42d9965067784723",
+          "points": [
+            {
+              "distance": 0.0,
+              "metrics": {
+                "heart_rate_bpm": 120.0,
+                "cadence_rpm": 80.0,
+                "power_w": 210.0,
+                "altitude_m": -12.399999999999977,
+                "temperature_c": -5.0,
+                "speed_m_s": 2.123,
+                "step_length_mm": 901.3,
+                "vertical_oscillation_mm": 71.2,
+                "stance_time_ms": 230.4,
+                "vertical_ratio_percent": 7.13
+              }
+            },
+            {
+              "distance": 30.0,
+              "metrics": {
+                "heart_rate_bpm": 130.0,
+                "cadence_rpm": 81.0,
+                "power_w": 223.0,
+                "altitude_m": -12.199999999999989,
+                "temperature_c": -4.0,
+                "speed_m_s": 2.223,
+                "step_length_mm": 906.4,
+                "vertical_oscillation_mm": 71.3,
+                "stance_time_ms": 230.5,
+                "vertical_ratio_percent": 7.14
+              }
+            },
+            {
+              "distance": 60.0,
+              "metrics": {
+                "heart_rate_bpm": 140.0,
+                "cadence_rpm": 82.0,
+                "power_w": 236.0,
+                "altitude_m": -12.0,
+                "temperature_c": -3.0,
+                "speed_m_s": 2.323,
+                "step_length_mm": 911.5,
+                "vertical_oscillation_mm": 71.4,
+                "stance_time_ms": 230.6,
+                "vertical_ratio_percent": 7.15
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "explicit-first-compressed",
+      "fit_sha256": "5460530b565ec04de3370b748da65aab255d93024e9a8f5d5910d0721781e325",
+      "fit_base64": "DiDeUtgAAAAuRklUEEBAAAAAAAEAAQAABEEAABIABgIEhv0EhgcEhggEhgUBAAYBAAEL2PhEH9j4RCBOAAAgTgAAAQBCAAAUAA/9BIYDAQIEAQIHAoQNAQFVAoQnAoQpAoRTAoRJBIZOBIYGAoQCAoQFBIYIAw0CC9j4RHhQ0gD7NSPIAgAJyQL5DAAAvgsAAEsIhgkAAAAAkAEAAhXY+ESCUd8A/GgjyQIBCcoCXQ0AAL8LAACvCIcJoA8AAMIBHgIf2PhEjFLsAP2bI8oCAgnLAsENAADACwAAEwmICSgjAAD0ATzh8Q==",
+      "expected_points": [
+        {
+          "distance": 0.0,
+          "metrics": {
+            "heart_rate_bpm": 120,
+            "cadence_rpm": 80,
+            "power_w": 210,
+            "temperature_c": -5,
+            "step_length_mm": 901.3,
+            "vertical_oscillation_mm": 71.2,
+            "stance_time_ms": 230.4,
+            "vertical_ratio_percent": 7.13,
+            "speed_m_s": 3.321,
+            "altitude_m": 101.20000000000005
+          }
+        },
+        {
+          "distance": 40.0,
+          "metrics": {
+            "heart_rate_bpm": 130,
+            "cadence_rpm": 81,
+            "power_w": 223,
+            "temperature_c": -4,
+            "step_length_mm": 906.4,
+            "vertical_oscillation_mm": 71.3,
+            "stance_time_ms": 230.5,
+            "vertical_ratio_percent": 7.14,
+            "speed_m_s": 3.421,
+            "altitude_m": 101.39999999999998
+          }
+        },
+        {
+          "distance": 90.0,
+          "metrics": {
+            "heart_rate_bpm": 140,
+            "cadence_rpm": 82,
+            "power_w": 236,
+            "temperature_c": -3,
+            "step_length_mm": 911.5,
+            "vertical_oscillation_mm": 71.4,
+            "stance_time_ms": 230.6,
+            "vertical_ratio_percent": 7.15,
+            "speed_m_s": 3.521,
+            "altitude_m": 101.60000000000002
+          }
+        }
+      ],
+      "legacy": {
+        "fit-summary-1": {
+          "summary_sha256": "c97e37e6b33d5afb08bbe24491903fbc05c608b36fd2ba3464cbe4487eb84997",
+          "uncached_detail_sha256": "9910064ef3ea4d3a241eef37f709bbea92c19fdb900954589b2c2b871efad665",
+          "points": [
+            {
+              "distance": 0.0,
+              "metrics": {
+                "heart_rate_bpm": 120.0,
+                "cadence_rpm": 80.0,
+                "power_w": 210.0,
+                "altitude_m": 101.20000000000005,
+                "temperature_c": -5.0,
+                "speed_m_s": 3.321,
+                "step_length_mm": 901.3,
+                "vertical_oscillation_mm": 71.2,
+                "stance_time_ms": 230.4,
+                "vertical_ratio_percent": 7.13
+              }
+            },
+            {
+              "distance": 40.0,
+              "metrics": {
+                "heart_rate_bpm": 130.0,
+                "cadence_rpm": 81.0,
+                "power_w": 223.0,
+                "altitude_m": 101.39999999999998,
+                "temperature_c": -4.0,
+                "speed_m_s": 3.421,
+                "step_length_mm": 906.4,
+                "vertical_oscillation_mm": 71.3,
+                "stance_time_ms": 230.5,
+                "vertical_ratio_percent": 7.14
+              }
+            },
+            {
+              "distance": 90.0,
+              "metrics": {
+                "heart_rate_bpm": 140.0,
+                "cadence_rpm": 82.0,
+                "power_w": 236.0,
+                "altitude_m": 101.60000000000002,
+                "temperature_c": -3.0,
+                "speed_m_s": 3.521,
+                "step_length_mm": 911.5,
+                "vertical_oscillation_mm": 71.4,
+                "stance_time_ms": 230.6,
+                "vertical_ratio_percent": 7.15
+              }
+            }
+          ]
+        },
+        "fit-summary-2": {
+          "summary_sha256": "dd683b19f53172a01f3774ae67f0b2dbea702195e4de6f78aff276d313748d56",
+          "uncached_detail_sha256": "a196f8c0adaeac870618643d7c63a2e884f05586221f8d8662f8045f88274f53",
+          "points": [
+            {
+              "distance": 0.0,
+              "metrics": {
+                "heart_rate_bpm": 120.0,
+                "cadence_rpm": 80.0,
+                "power_w": 210.0,
+                "altitude_m": 101.20000000000005,
+                "temperature_c": -5.0,
+                "speed_m_s": 3.321,
+                "step_length_mm": 901.3,
+                "vertical_oscillation_mm": 71.2,
+                "stance_time_ms": 230.4,
+                "vertical_ratio_percent": 7.13
+              }
+            },
+            {
+              "distance": 40.0,
+              "metrics": {
+                "heart_rate_bpm": 130.0,
+                "cadence_rpm": 81.0,
+                "power_w": 223.0,
+                "altitude_m": 101.39999999999998,
+                "temperature_c": -4.0,
+                "speed_m_s": 3.421,
+                "step_length_mm": 906.4,
+                "vertical_oscillation_mm": 71.3,
+                "stance_time_ms": 230.5,
+                "vertical_ratio_percent": 7.14
+              }
+            },
+            {
+              "distance": 90.0,
+              "metrics": {
+                "heart_rate_bpm": 140.0,
+                "cadence_rpm": 82.0,
+                "power_w": 236.0,
+                "altitude_m": 101.60000000000002,
+                "temperature_c": -3.0,
+                "speed_m_s": 3.521,
+                "step_length_mm": 911.5,
+                "vertical_oscillation_mm": 71.4,
+                "stance_time_ms": 230.6,
+                "vertical_ratio_percent": 7.15
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "compressed-first-ordinary",
+      "fit_sha256": "bcabf18d4f6f4b61624528d136b504bb54e55ccf03939590ede91a3262c8f77b",
+      "fit_base64": "DiDeUroAAAAuRklUl7FAAAAAAAEAAQAABEEAABIABgIEhv0EhgcEhggEhgUBAAYBAAEL2PhEH9j4RCBOAAAgTgAAAQBCAAAUAA39BIYDAQIEAQIHAoQNAQFVAoQnAoQpAoRTAoQIAw0GAoQCAoQFBIYCC9j4RHhQ0gD7NSPIAgAJyQKQAQBLCIYJAAAAAAIV2PhEglHfAPxoI8kCAQnKAsIBHq8IhwmgDwAAAh/Y+ESMUuwA/ZsjygICCcsC9AE8EwmICSgjAACkMw==",
+      "expected_points": [
+        {
+          "distance": 0.0,
+          "metrics": {
+            "heart_rate_bpm": 120,
+            "cadence_rpm": 80,
+            "power_w": 210,
+            "temperature_c": -5,
+            "step_length_mm": 901.3,
+            "vertical_oscillation_mm": 71.2,
+            "stance_time_ms": 230.4,
+            "vertical_ratio_percent": 7.13,
+            "speed_m_s": 2.123,
+            "altitude_m": -12.399999999999977
+          }
+        },
+        {
+          "distance": 40.0,
+          "metrics": {
+            "heart_rate_bpm": 130,
+            "cadence_rpm": 81,
+            "power_w": 223,
+            "temperature_c": -4,
+            "step_length_mm": 906.4,
+            "vertical_oscillation_mm": 71.3,
+            "stance_time_ms": 230.5,
+            "vertical_ratio_percent": 7.14,
+            "speed_m_s": 2.223,
+            "altitude_m": -12.199999999999989
+          }
+        },
+        {
+          "distance": 90.0,
+          "metrics": {
+            "heart_rate_bpm": 140,
+            "cadence_rpm": 82,
+            "power_w": 236,
+            "temperature_c": -3,
+            "step_length_mm": 911.5,
+            "vertical_oscillation_mm": 71.4,
+            "stance_time_ms": 230.6,
+            "vertical_ratio_percent": 7.15,
+            "speed_m_s": 2.323,
+            "altitude_m": -12.0
+          }
+        }
+      ],
+      "legacy": {
+        "fit-summary-1": {
+          "summary_sha256": "204e8bdbb89ad243008c9d841b435a9184f8e1ba96dbce3346d87274043465c5",
+          "uncached_detail_sha256": "acab32caffd48eb0c9b5c80f1d479dab25cd22d2b0f835819ba5f4f8ab5a43a8",
+          "points": [
+            {
+              "distance": 0.0,
+              "metrics": {
+                "heart_rate_bpm": 120.0,
+                "cadence_rpm": 80.0,
+                "power_w": 210.0,
+                "altitude_m": -12.399999999999977,
+                "temperature_c": -5.0,
+                "speed_m_s": 2.123,
+                "step_length_mm": 901.3,
+                "vertical_oscillation_mm": 71.2,
+                "stance_time_ms": 230.4,
+                "vertical_ratio_percent": 7.13
+              }
+            },
+            {
+              "distance": 30.0,
+              "metrics": {
+                "heart_rate_bpm": 130.0,
+                "cadence_rpm": 81.0,
+                "power_w": 223.0,
+                "altitude_m": -12.199999999999989,
+                "temperature_c": -4.0,
+                "speed_m_s": 2.223,
+                "step_length_mm": 906.4,
+                "vertical_oscillation_mm": 71.3,
+                "stance_time_ms": 230.5,
+                "vertical_ratio_percent": 7.14
+              }
+            },
+            {
+              "distance": 60.0,
+              "metrics": {
+                "heart_rate_bpm": 140.0,
+                "cadence_rpm": 82.0,
+                "power_w": 236.0,
+                "altitude_m": -12.0,
+                "temperature_c": -3.0,
+                "speed_m_s": 2.323,
+                "step_length_mm": 911.5,
+                "vertical_oscillation_mm": 71.4,
+                "stance_time_ms": 230.6,
+                "vertical_ratio_percent": 7.15
+              }
+            }
+          ]
+        },
+        "fit-summary-2": {
+          "summary_sha256": "4d6369945dffbf47f750b56bfc537f19f0a8fb8e9bc39f8c936231c5c1b99074",
+          "uncached_detail_sha256": "99c92441e242d0fa6aa729f48e28304a6c43299f7ec4a12d42d9965067784723",
+          "points": [
+            {
+              "distance": 0.0,
+              "metrics": {
+                "heart_rate_bpm": 120.0,
+                "cadence_rpm": 80.0,
+                "power_w": 210.0,
+                "altitude_m": -12.399999999999977,
+                "temperature_c": -5.0,
+                "speed_m_s": 2.123,
+                "step_length_mm": 901.3,
+                "vertical_oscillation_mm": 71.2,
+                "stance_time_ms": 230.4,
+                "vertical_ratio_percent": 7.13
+              }
+            },
+            {
+              "distance": 30.0,
+              "metrics": {
+                "heart_rate_bpm": 130.0,
+                "cadence_rpm": 81.0,
+                "power_w": 223.0,
+                "altitude_m": -12.199999999999989,
+                "temperature_c": -4.0,
+                "speed_m_s": 2.223,
+                "step_length_mm": 906.4,
+                "vertical_oscillation_mm": 71.3,
+                "stance_time_ms": 230.5,
+                "vertical_ratio_percent": 7.14
+              }
+            },
+            {
+              "distance": 60.0,
+              "metrics": {
+                "heart_rate_bpm": 140.0,
+                "cadence_rpm": 82.0,
+                "power_w": 236.0,
+                "altitude_m": -12.0,
+                "temperature_c": -3.0,
+                "speed_m_s": 2.323,
+                "step_length_mm": 911.5,
+                "vertical_oscillation_mm": 71.4,
+                "stance_time_ms": 230.6,
+                "vertical_ratio_percent": 7.15
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "compressed-invalid-originals",
+      "fit_sha256": "847fba270162a0d267b640b091fe55c3101a9f9a1556e6f6235b032790459afc",
+      "fit_base64": "DiDeUtgAAAAuRklUEEBAAAAAAAEAAQAABEEAABIABgIEhv0EhgcEhggEhgUBAAYBAAEL2PhEH9j4RCBOAAAgTgAAAQBCAAAUAA/9BIYDAQIEAQIHAoQNAQFVAoQnAoQpAoRTAoQIAw0GAoQCAoRJBIZOBIYFBIYCC9j4RHhQ0gD7NSPIAgAJyQKQAQD/////////////////////AhXY+ESCUd8A/GgjyQIBCcoCwgEe/////////////////////wIf2PhEjFLsAP2bI8oCAgnLAvQBPP////////////////////865A==",
+      "expected_points": [
+        {
+          "distance": 0,
+          "metrics": {
+            "heart_rate_bpm": 120,
+            "cadence_rpm": 80,
+            "power_w": 210,
+            "temperature_c": -5,
+            "step_length_mm": 901.3,
+            "vertical_oscillation_mm": 71.2,
+            "stance_time_ms": 230.4,
+            "vertical_ratio_percent": 7.13,
+            "speed_m_s": 4.0,
+            "altitude_m": null
+          }
+        },
+        {
+          "distance": 30,
+          "metrics": {
+            "heart_rate_bpm": 130,
+            "cadence_rpm": 81,
+            "power_w": 223,
+            "temperature_c": -4,
+            "step_length_mm": 906.4,
+            "vertical_oscillation_mm": 71.3,
+            "stance_time_ms": 230.5,
+            "vertical_ratio_percent": 7.14,
+            "speed_m_s": 4.5,
+            "altitude_m": null
+          }
+        },
+        {
+          "distance": 60,
+          "metrics": {
+            "heart_rate_bpm": 140,
+            "cadence_rpm": 82,
+            "power_w": 236,
+            "temperature_c": -3,
+            "step_length_mm": 911.5,
+            "vertical_oscillation_mm": 71.4,
+            "stance_time_ms": 230.6,
+            "vertical_ratio_percent": 7.15,
+            "speed_m_s": 5.0,
+            "altitude_m": null
+          }
+        }
+      ],
+      "legacy": {
+        "fit-summary-1": {
+          "summary_sha256": "13500e12009474648485add3570b0eb60c195e77287876574e7ab9545b1716a0",
+          "uncached_detail_sha256": "f537bf3dae3076ec365e1ce73669c38abb61795bdc246bb914bcc0aa9218bcde",
+          "points": [
+            {
+              "distance": 0.0,
+              "metrics": {
+                "heart_rate_bpm": 120.0,
+                "cadence_rpm": 80.0,
+                "power_w": 210.0,
+                "altitude_m": null,
+                "temperature_c": -5.0,
+                "speed_m_s": 4.0,
+                "step_length_mm": 901.3,
+                "vertical_oscillation_mm": 71.2,
+                "stance_time_ms": 230.4,
+                "vertical_ratio_percent": 7.13
+              }
+            },
+            {
+              "distance": 30.0,
+              "metrics": {
+                "heart_rate_bpm": 130.0,
+                "cadence_rpm": 81.0,
+                "power_w": 223.0,
+                "altitude_m": null,
+                "temperature_c": -4.0,
+                "speed_m_s": 4.5,
+                "step_length_mm": 906.4,
+                "vertical_oscillation_mm": 71.3,
+                "stance_time_ms": 230.5,
+                "vertical_ratio_percent": 7.14
+              }
+            },
+            {
+              "distance": 60.0,
+              "metrics": {
+                "heart_rate_bpm": 140.0,
+                "cadence_rpm": 82.0,
+                "power_w": 236.0,
+                "altitude_m": null,
+                "temperature_c": -3.0,
+                "speed_m_s": 5.0,
+                "step_length_mm": 911.5,
+                "vertical_oscillation_mm": 71.4,
+                "stance_time_ms": 230.6,
+                "vertical_ratio_percent": 7.15
+              }
+            }
+          ]
+        },
+        "fit-summary-2": {
+          "summary_sha256": "2bee956c371822cea46470acc774849b6b6d666d0e8c279b8c9317f60cb9dc8b",
+          "uncached_detail_sha256": "4532e22aa52eb7ad3cde278eb8de91b824793821ac22ded82abb67fcb828a764",
+          "points": [
+            {
+              "distance": 0.0,
+              "metrics": {
+                "heart_rate_bpm": 120.0,
+                "cadence_rpm": 80.0,
+                "power_w": 210.0,
+                "altitude_m": null,
+                "temperature_c": -5.0,
+                "speed_m_s": 4.0,
+                "step_length_mm": 901.3,
+                "vertical_oscillation_mm": 71.2,
+                "stance_time_ms": 230.4,
+                "vertical_ratio_percent": 7.13
+              }
+            },
+            {
+              "distance": 30.0,
+              "metrics": {
+                "heart_rate_bpm": 130.0,
+                "cadence_rpm": 81.0,
+                "power_w": 223.0,
+                "altitude_m": null,
+                "temperature_c": -4.0,
+                "speed_m_s": 4.5,
+                "step_length_mm": 906.4,
+                "vertical_oscillation_mm": 71.3,
+                "stance_time_ms": 230.5,
+                "vertical_ratio_percent": 7.14
+              }
+            },
+            {
+              "distance": 60.0,
+              "metrics": {
+                "heart_rate_bpm": 140.0,
+                "cadence_rpm": 82.0,
+                "power_w": 236.0,
+                "altitude_m": null,
+                "temperature_c": -3.0,
+                "speed_m_s": 5.0,
+                "step_length_mm": 911.5,
+                "vertical_oscillation_mm": 71.4,
+                "stance_time_ms": 230.6,
+                "vertical_ratio_percent": 7.15
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "invalid-originals-compressed-last",
+      "fit_sha256": "1107a6caf695cc4fcc85bedb24a53f4cd167d977f9938db39df648b822740777",
+      "fit_base64": "DiDeUtgAAAAuRklUEEBAAAAAAAEAAQAABEEAABIABgIEhv0EhgcEhggEhgUBAAYBAAEL2PhEH9j4RCBOAAAgTgAAAQBCAAAUAA/9BIYDAQIEAQIHAoQNAQFVAoQnAoQpAoRTAoRJBIZOBIYGAoQCAoQFBIYIAw0CC9j4RHhQ0gD7NSPIAgAJyQL/////////////////////kAEAAhXY+ESCUd8A/GgjyQIBCcoC/////////////////////8IBHgIf2PhEjFLsAP2bI8oCAgnLAv/////////////////////0ATxJUg==",
+      "expected_points": [
+        {
+          "distance": 0,
+          "metrics": {
+            "heart_rate_bpm": 120,
+            "cadence_rpm": 80,
+            "power_w": 210,
+            "temperature_c": -5,
+            "step_length_mm": 901.3,
+            "vertical_oscillation_mm": 71.2,
+            "stance_time_ms": 230.4,
+            "vertical_ratio_percent": 7.13,
+            "speed_m_s": 4.0,
+            "altitude_m": null
+          }
+        },
+        {
+          "distance": 30,
+          "metrics": {
+            "heart_rate_bpm": 130,
+            "cadence_rpm": 81,
+            "power_w": 223,
+            "temperature_c": -4,
+            "step_length_mm": 906.4,
+            "vertical_oscillation_mm": 71.3,
+            "stance_time_ms": 230.5,
+            "vertical_ratio_percent": 7.14,
+            "speed_m_s": 4.5,
+            "altitude_m": null
+          }
+        },
+        {
+          "distance": 60,
+          "metrics": {
+            "heart_rate_bpm": 140,
+            "cadence_rpm": 82,
+            "power_w": 236,
+            "temperature_c": -3,
+            "step_length_mm": 911.5,
+            "vertical_oscillation_mm": 71.4,
+            "stance_time_ms": 230.6,
+            "vertical_ratio_percent": 7.15,
+            "speed_m_s": 5.0,
+            "altitude_m": null
+          }
+        }
+      ],
+      "legacy": {
+        "fit-summary-1": {
+          "summary_sha256": "581040245a3093c64f80fa8308d3cef4fd1610f3f029ea2133c359d9f3b4419f",
+          "uncached_detail_sha256": "df256cb93a9628c653da384425e1ce40befec794c089bae2f03ee7ba288c4180",
+          "points": [
+            {
+              "distance": null,
+              "metrics": {
+                "heart_rate_bpm": 120.0,
+                "cadence_rpm": 80.0,
+                "power_w": 210.0,
+                "altitude_m": null,
+                "temperature_c": -5.0,
+                "speed_m_s": null,
+                "step_length_mm": 901.3,
+                "vertical_oscillation_mm": 71.2,
+                "stance_time_ms": 230.4,
+                "vertical_ratio_percent": 7.13
+              }
+            },
+            {
+              "distance": null,
+              "metrics": {
+                "heart_rate_bpm": 130.0,
+                "cadence_rpm": 81.0,
+                "power_w": 223.0,
+                "altitude_m": null,
+                "temperature_c": -4.0,
+                "speed_m_s": null,
+                "step_length_mm": 906.4,
+                "vertical_oscillation_mm": 71.3,
+                "stance_time_ms": 230.5,
+                "vertical_ratio_percent": 7.14
+              }
+            },
+            {
+              "distance": null,
+              "metrics": {
+                "heart_rate_bpm": 140.0,
+                "cadence_rpm": 82.0,
+                "power_w": 236.0,
+                "altitude_m": null,
+                "temperature_c": -3.0,
+                "speed_m_s": null,
+                "step_length_mm": 911.5,
+                "vertical_oscillation_mm": 71.4,
+                "stance_time_ms": 230.6,
+                "vertical_ratio_percent": 7.15
+              }
+            }
+          ]
+        },
+        "fit-summary-2": {
+          "summary_sha256": "89321ecb9e5a074407c9c1a44bb68864623852c9ca55bb63490d216f0d170ca1",
+          "uncached_detail_sha256": "9e7cb0a379dad0759a8a5d3724457fd82e44ede0fa68fc48ebc273c11f039878",
+          "points": [
+            {
+              "distance": null,
+              "metrics": {
+                "heart_rate_bpm": 120.0,
+                "cadence_rpm": 80.0,
+                "power_w": 210.0,
+                "altitude_m": null,
+                "temperature_c": -5.0,
+                "speed_m_s": null,
+                "step_length_mm": 901.3,
+                "vertical_oscillation_mm": 71.2,
+                "stance_time_ms": 230.4,
+                "vertical_ratio_percent": 7.13
+              }
+            },
+            {
+              "distance": null,
+              "metrics": {
+                "heart_rate_bpm": 130.0,
+                "cadence_rpm": 81.0,
+                "power_w": 223.0,
+                "altitude_m": null,
+                "temperature_c": -4.0,
+                "speed_m_s": null,
+                "step_length_mm": 906.4,
+                "vertical_oscillation_mm": 71.3,
+                "stance_time_ms": 230.5,
+                "vertical_ratio_percent": 7.14
+              }
+            },
+            {
+              "distance": null,
+              "metrics": {
+                "heart_rate_bpm": 140.0,
+                "cadence_rpm": 82.0,
+                "power_w": 236.0,
+                "altitude_m": null,
+                "temperature_c": -3.0,
+                "speed_m_s": null,
+                "step_length_mm": 911.5,
+                "vertical_oscillation_mm": 71.4,
+                "stance_time_ms": 230.6,
+                "vertical_ratio_percent": 7.15
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

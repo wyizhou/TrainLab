@@ -6,6 +6,9 @@ mcp==1.29.0
 mypy==2.3.0
 pillow==12.3.0
 pytest==8.4.2
+pypdf==6.10.0
+reportlab==4.4.9
 requests==2.34.2
 ruff==0.16.1
 types-jsonschema==4.25.1.20250822
+types-reportlab==4.5.1.20260827

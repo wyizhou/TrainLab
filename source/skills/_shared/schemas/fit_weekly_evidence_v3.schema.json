@@ -1,0 +1,394 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "parser_version",
+    "period_start_utc",
+    "period_end_utc",
+    "next_plan_dates",
+    "sources",
+    "activities",
+    "activity_sources",
+    "unplaced_no_fit",
+    "counts",
+    "limitations",
+    "provider_calls",
+    "external_actions"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "fit_weekly_evidence_v3"
+    },
+    "parser_version": {
+      "type": "string",
+      "const": "fit-summary-3"
+    },
+    "period_start_utc": {
+      "$ref": "#/$defs/time"
+    },
+    "period_end_utc": {
+      "$ref": "#/$defs/time"
+    },
+    "next_plan_dates": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "format": "date"
+      }
+    },
+    "sources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sync_job_key",
+        "sync_request_sha256",
+        "sync_receipt_sha256",
+        "inventory_receipt_sha256",
+        "inventory_as_of_utc",
+        "inventory_start_date",
+        "inventory_end_date",
+        "inventory_complete"
+      ],
+      "properties": {
+        "sync_job_key": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9:_.-]{1,160}$"
+        },
+        "sync_request_sha256": {
+          "$ref": "#/$defs/sha"
+        },
+        "sync_receipt_sha256": {
+          "$ref": "#/$defs/sha"
+        },
+        "inventory_receipt_sha256": {
+          "$ref": "#/$defs/sha"
+        },
+        "inventory_as_of_utc": {
+          "$ref": "#/$defs/time"
+        },
+        "inventory_start_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "inventory_end_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "inventory_complete": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    },
+    "activities": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:trainlab:fit_activity_v3"
+      }
+    },
+    "activity_sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "activity_ref",
+          "fit_sha256",
+          "parse_sha256",
+          "inventory_membership",
+          "activity_name"
+        ],
+        "properties": {
+          "activity_ref": {
+            "$ref": "#/$defs/ref"
+          },
+          "fit_sha256": {
+            "$ref": "#/$defs/sha"
+          },
+          "parse_sha256": {
+            "$ref": "#/$defs/sha"
+          },
+          "inventory_membership": {
+            "type": "string",
+            "enum": [
+              "current_sync",
+              "registered_fit_only"
+            ]
+          },
+          "activity_name": {
+            "$ref": "#/$defs/activity_name"
+          }
+        }
+      }
+    },
+    "unplaced_no_fit": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "activity_ref",
+          "inventory_date",
+          "reason",
+          "activity_name"
+        ],
+        "properties": {
+          "activity_ref": {
+            "$ref": "#/$defs/ref"
+          },
+          "inventory_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "reason": {
+            "type": "string",
+            "const": "provider_no_fit_end_unknown"
+          },
+          "activity_name": {
+            "$ref": "#/$defs/activity_name"
+          }
+        }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "activities_with_fit",
+        "unplaced_no_fit",
+        "sync_inventory"
+      ],
+      "properties": {
+        "activities_with_fit": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unplaced_no_fit": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sync_inventory": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "const": [
+        "inventory_is_as_of_snapshot",
+        "registered_fit_end_time_membership",
+        "no_fit_end_time_unknown",
+        "late_data_does_not_rewrite_frozen_week"
+      ]
+    },
+    "provider_calls": {
+      "type": "integer",
+      "const": 0
+    },
+    "external_actions": {
+      "type": "integer",
+      "const": 0
+    }
+  },
+  "$defs": {
+    "sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "ref": {
+      "type": "string",
+      "pattern": "^[0-9]{1,32}$"
+    },
+    "time": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "activity_name": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "value",
+        "source"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "available",
+            "missing",
+            "insufficient_data"
+          ]
+        },
+        "value": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind",
+                "field",
+                "capture_sha256",
+                "intent_sha256",
+                "page",
+                "item_index"
+              ],
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "garmin_mcp_inventory"
+                },
+                "field": {
+                  "type": "string",
+                  "const": "activities[].name"
+                },
+                "capture_sha256": {
+                  "$ref": "#/$defs/sha"
+                },
+                "intent_sha256": {
+                  "$ref": "#/$defs/sha"
+                },
+                "page": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "item_index": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "available"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "string",
+                "minLength": 1
+              },
+              "source": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "field",
+                  "capture_sha256",
+                  "intent_sha256",
+                  "page",
+                  "item_index"
+                ],
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "garmin_mcp_inventory"
+                  },
+                  "field": {
+                    "type": "string",
+                    "const": "activities[].name"
+                  },
+                  "capture_sha256": {
+                    "$ref": "#/$defs/sha"
+                  },
+                  "intent_sha256": {
+                    "$ref": "#/$defs/sha"
+                  },
+                  "page": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "item_index": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "value": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "insufficient_data"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "source": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "field",
+                  "capture_sha256",
+                  "intent_sha256",
+                  "page",
+                  "item_index"
+                ],
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "garmin_mcp_inventory"
+                  },
+                  "field": {
+                    "type": "string",
+                    "const": "activities[].name"
+                  },
+                  "capture_sha256": {
+                    "$ref": "#/$defs/sha"
+                  },
+                  "intent_sha256": {
+                    "$ref": "#/$defs/sha"
+                  },
+                  "page": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "item_index": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

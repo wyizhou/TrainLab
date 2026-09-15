@@ -19,12 +19,23 @@ from mcp import types
 from mcp.server.lowlevel import Server
 from mcp.server.stdio import stdio_server
 
-from skills._shared.fit_weekly import detail_transport, fit_detail, storage
+from skills._shared.fit_weekly import detail_transport, fit_detail, fit_parse, storage
 
 SCHEMA_PATH = (
     Path(__file__).resolve().parents[1] / "schemas/fit_detail_request_v1.schema.json"
 )
 TOOL = "read_fit_detail"
+
+
+def schema_path(parser_version: str) -> Path:
+    version = fit_parse.require_parser_version(parser_version)
+    return (
+        SCHEMA_PATH.with_name("fit_detail_request_v2.schema.json")
+        if version == fit_parse.TIME_VERSION
+        else SCHEMA_PATH
+    )
+
+
 SAFE_ERRORS = frozenset(
     {
         "detail_request_invalid",
@@ -34,6 +45,7 @@ SAFE_ERRORS = frozenset(
         "detail_scope_binding_invalid",
         "detail_parse_drift",
         "fit_sha_mismatch",
+        "detail_stage_forbidden",
     }
 )
 
@@ -62,8 +74,8 @@ def answer(
     if name != TOOL:
         return failure("fit_detail_tool_unknown")
     try:
-        request = fit_detail.request_value(arguments)
-        body = host.read(request)
+        body = host.read(arguments)
+        request = fit_detail.request_value(arguments, body["parser_version"])
         # Validate before serializing so an accidental Host regression cannot
         # turn private exception strings or undeclared data into model input.
         fit_detail.validate_result(body)
@@ -90,7 +102,9 @@ def answer(
 TOOL_DESCRIPTION = "Read a pre-bound weekly activity summary, laps or time-weighted series. Only supplied activity references are accepted. Offsets are seconds from activity start; start < end, range <= 1200 seconds, resolution 1 or 5. At most 20 distinct requests per week; identical requests reuse results. Authorized sport location is available when recorded. GPS endpoints are actual timestamped fixes, not averaged or interpolated, and are not the whole route. No raw FIT bytes, credentials, arbitrary files, SQL or commands. Sport bins are aggregates, not invented device samples."
 
 
-def create_server(host: fit_detail.DetailHost, *, compact: bool = False) -> Server:
+def create_server(
+    host: fit_detail.DetailHost, *, compact: bool = False, text_only: bool = False
+) -> Server:
     server: Server = Server("TrainLab FIT Detail", version="1")
 
     @server.list_tools()
@@ -99,7 +113,7 @@ def create_server(host: fit_detail.DetailHost, *, compact: bool = False) -> Serv
             types.Tool(
                 name=TOOL,
                 description=TOOL_DESCRIPTION,
-                inputSchema=json.loads(SCHEMA_PATH.read_text()),
+                inputSchema=json.loads(schema_path(host.parser_version()).read_text()),
                 annotations=types.ToolAnnotations(
                     readOnlyHint=False,
                     destructiveHint=False,
@@ -113,13 +127,18 @@ def create_server(host: fit_detail.DetailHost, *, compact: bool = False) -> Serv
     # same deterministic Host validator and the fixed redacted error envelope.
     @server.call_tool(validate_input=False)
     async def call_tool(name: str, arguments: dict[str, Any]) -> types.CallToolResult:
-        return answer(host, name, arguments, compact=compact)
+        result = answer(host, name, arguments, compact=compact)
+        if text_only:
+            result.structuredContent = None
+        return result
 
     return server
 
 
-async def serve(host: fit_detail.DetailHost, *, compact: bool = False) -> None:
-    server = create_server(host, compact=compact)
+async def serve(
+    host: fit_detail.DetailHost, *, compact: bool = False, text_only: bool = False
+) -> None:
+    server = create_server(host, compact=compact, text_only=text_only)
     async with stdio_server() as (reader, writer):
         await server.run(reader, writer, server.create_initialization_options())
 
@@ -134,14 +153,18 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--period-end", required=True)
     parser.add_argument("--scope-sha256", required=True)
     parser.add_argument("--compact", action="store_true")
+    parser.add_argument("--text-only", action="store_true")
+    parser.add_argument("--stage", choices=("plan", "summary"), required=True)
     args = parser.parse_args(argv)
     try:
         # Do not resolve away symlinks before the private-instance entry check.
         root = args.instance_root
-        host = fit_detail.DetailHost(root, args.period_end, args.scope_sha256)
+        host = fit_detail.DetailHost(
+            root, args.period_end, args.scope_sha256, stage=args.stage
+        )
         with storage.open_store(root) as db:
             host.scope(db)
-        asyncio.run(serve(host, compact=args.compact))
+        asyncio.run(serve(host, compact=args.compact, text_only=args.text_only))
         return 0
     except Exception:
         print("fit_detail_server_unavailable", file=sys.stderr)

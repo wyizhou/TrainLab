@@ -20,6 +20,7 @@ from skills._shared.fit_weekly import (
     fit_detail,
     fit_parse,
     fit_sync,
+    fit_time,
     garmin_fit,
     storage,
     sync_calendar,
@@ -31,6 +32,7 @@ SCHEMA_PATH = (
 SCHEMAS = {
     "fit-summary-1": "fit_weekly_evidence_v1",
     "fit-summary-2": "fit_weekly_evidence_v2",
+    "fit-summary-3": "fit_weekly_evidence_v3",
 }
 
 
@@ -48,11 +50,7 @@ def completed_sync(
     if request is None or done is None or inventory is None:
         raise ValueError("weekly_sync_incomplete")
     spec_data = request["request"]
-    spec = fit_sync.SyncSpec(
-        inventory=sync_calendar.InventoryRequest(**spec_data["inventory"]),
-        **{k: v for k, v in spec_data.items() if k != "inventory"},
-    )
-    spec.validate()
+    spec = fit_sync.read_request(request)
     req = spec.inventory
     start_day, end_day = (
         sync_calendar.utc_time(slot[x])
@@ -70,8 +68,7 @@ def completed_sync(
     ):
         raise ValueError("weekly_sync_coverage_invalid")
     if (
-        request["schema_version"] != "fit_sync_request_v1"
-        or done["schema_version"] != "fit_sync_receipt_v1"
+        done["schema_version"] != "fit_sync_receipt_v1"
         or done["status"] != "complete"
         or done["job_key"] != job
         or inventory["schema_version"] != "fit_inventory_receipt_v1"
@@ -203,12 +200,7 @@ def activity_names(db: sqlite3.Connection, root: Path, job: str) -> dict[str, An
     )
     if request is None:
         raise ValueError("weekly_name_source_invalid")
-    data = request["request"]
-    spec = fit_sync.SyncSpec(
-        inventory=sync_calendar.InventoryRequest(**data["inventory"]),
-        **{k: v for k, v in data.items() if k != "inventory"},
-    )
-    spec.validate()
+    spec = fit_sync.read_request(request)
     journal = fit_sync.Journal(db, root, spec)
     rows = db.execute(
         "SELECT c.request_json,r.content_json,r.content_sha256 FROM sync_calls c JOIN sync_results r USING(job_key,ordinal) WHERE c.job_key=? AND r.status='page' ORDER BY c.page",
@@ -266,7 +258,7 @@ def activity_names(db: sqlite3.Connection, root: Path, job: str) -> dict[str, An
 def verify_name_sources(
     db: sqlite3.Connection, root: Path, body: dict[str, Any]
 ) -> None:
-    if body["parser_version"] != "fit-summary-2":
+    if body["parser_version"] not in fit_parse.LOCATION_VERSIONS:
         return
     _, sources = completed_sync(
         db,
@@ -312,7 +304,7 @@ def freeze(root: Path, period_end: str, sync_job_key: str) -> dict[str, Any]:
         storage.verify_fit_closure(db, root)
         names = (
             activity_names(db, root, sync_job_key)
-            if fit_parse.VERSION == "fit-summary-2"
+            if fit_parse.VERSION in fit_parse.LOCATION_VERSIONS
             else None
         )
         members = {m["activity_ref"]: m for m in done["members"]}
@@ -351,7 +343,10 @@ def freeze(root: Path, period_end: str, sync_job_key: str) -> dict[str, Any]:
             )
         ordered = sorted(
             zip(activities, activity_sources),
-            key=lambda pair: (pair[0]["end_utc"], pair[0]["activity_ref"]),
+            key=lambda pair: (
+                fit_time.utc_time(pair[0]["end_utc"]),
+                pair[0]["activity_ref"],
+            ),
         )
         activities = [pair[0] for pair in ordered]
         activity_sources = [pair[1] for pair in ordered]

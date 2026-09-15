@@ -4,10 +4,12 @@
 
 ## 当前方向
 
+- 2026-09-15用户明确不需要旧代码验证，后续将转为直接API并大量重构。本次只保存next公开源码快照及正常Git提交，不把快照视为可运行交付；未来API实现另行开展，现存Agent runner尚未替换。
+- 以下为既有M12目标与历史事实，不自动恢复其旧执行计划或真实调用。
 - 用户已批准 M12：FIT-only 运动数据、新 SQLite、每周一次跑步技术总结与固定七日计划、
   简单邮件/PDF、Garmin 课程发布。每日健康/日报 AI 和高保真邮件不再是活动目标。
 - source/ 是唯一产品工程；A-021 允许新的 Python 模块入口、相对实例路径和手动 daemon。
-  旧 auto.txt 已改为退役通知，新运行层尚未交付，不表示后台已运行。
+  接回的next快照已不含旧auto.txt；本次未做运行验收，不表示后台已运行。
 - 每日香港时间22:00同步当日、昨日及已知缺口；周日15:00同步并冻结周报告。
   离线验收后才进入精确在线范围，首个真实周任务等待下个正常周日15:00。
 - 每个独立模块测试及全新只读验证通过后正常提交并推送 origin/main；不包含私人数据或强推。
@@ -49,7 +51,9 @@
 
 ## 当前活动指针
 
-2026-09-14 用户明确后续转向直接API接入、不再依赖其他产品Agent；当前[ADHOC-0019](docs/exec-plans/active/ADHOC-0019-adopt-next-before-api.md)按新授权将既有Goal保留到`data/Goal.md`，先做主目录本地检查点，再以next现行代码接回主工程，验证后本地提交及正常推送。不含API实现或真实服务调用，外部原目录不删除。此前[ADHOC-0017保全阶段](docs/exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md)结束后，用户另行批准[data目录精简及FIT年份命名](docs/exec-plans/active/ADHOC-0018-data-fit-year-cleanup.md)，清理任务的独立验收仍为INCONCLUSIVE；后续只读补证确认，所查旧recovery对应现存来源的565种FIT字节均已包含在当前566份中，没有新增补充候选，但已删副本本身无法重哈希。未宣告整个任务完成。data的资料目录为fit及verification：566份FIT按香港运动开始日期/英文类型命名，重名加序号，11份解码或运动信息不明文件保留到unknown；认证入口为`data/verification/garmin.json`及`gmail.json`。旧data/README、config、recovery和多余认证副本已按新授权删除，旧证据路径仅作历史定位，不作为当前入口；界外原件保留。不包含令牌在线有效性或SQLite一致性验收，API实现尚未启动，真实R7和旧失败修复不自动续跑；新的代码接回仅按ADHOC-0019边界执行。
+2026-09-15：[ADHOC-0019](docs/exec-plans/active/ADHOC-0019-adopt-next-before-api.md)已按用户明确取消旧代码验证改为VC-002快照保存。主main检查点fb6fe6d已存在；next源码已接回，不再追补历史证据、运行旧功能检查或使用测试环境，当前只做公开提交隐私核对及正常Git保存。旧保护基准缺失和此前联网安装越界如实保留，用户新方向不把旧失败改判PASS。API未实施，原件不删除，当前推送尚待执行。
+
+2026-09-14原授权（验证前置已由上述VC-002替代）：用户明确后续转向直接API接入、不再依赖其他产品Agent；[ADHOC-0019](docs/exec-plans/active/ADHOC-0019-adopt-next-before-api.md)按新授权将既有Goal保留到`data/Goal.md`，先做主目录本地检查点，再以next现行代码接回主工程，验证后本地提交及正常推送。不含API实现或真实服务调用，外部原目录不删除。此前[ADHOC-0017保全阶段](docs/exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md)结束后，用户另行批准[data目录精简及FIT年份命名](docs/exec-plans/active/ADHOC-0018-data-fit-year-cleanup.md)，清理任务的独立验收仍为INCONCLUSIVE；后续只读补证确认，所查旧recovery对应现存来源的565种FIT字节均已包含在当前566份中，没有新增补充候选，但已删副本本身无法重哈希。未宣告整个任务完成。data的资料目录为fit及verification：566份FIT按香港运动开始日期/英文类型命名，重名加序号，11份解码或运动信息不明文件保留到unknown；认证入口为`data/verification/garmin.json`及`gmail.json`。旧data/README、config、recovery和多余认证副本已按新授权删除，旧证据路径仅作历史定位，不作为当前入口；界外原件保留。不包含令牌在线有效性或SQLite一致性验收，API实现尚未启动，真实R7和旧失败修复不自动续跑；新的代码接回仅按ADHOC-0019边界执行。
 
 原 [M12 FIT-only 周系统重建](docs/exec-plans/active/M12-fit-weekly-0001-rebuild.md)暂停续跑，以下为其历史检查点，不是本轮执行指令。
 

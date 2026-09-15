@@ -1,0 +1,15 @@
+{
+  "command": {
+    "adapter": "",
+    "executable": ""
+  },
+  "instructions": "",
+  "stages": {
+    "plan": {
+      "capability": ""
+    },
+    "summary": {
+      "capability": ""
+    }
+  }
+}

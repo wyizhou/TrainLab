@@ -28,7 +28,7 @@ from importlib import import_module
 from pathlib import Path
 from typing import Any
 
-from skills._shared.fit_weekly import storage
+from skills._shared.fit_weekly import parent_watch, storage
 from skills._shared.fit_weekly.sync_calendar import (
     InventoryRequest,
     day_value,
@@ -271,10 +271,17 @@ class CallFailure(ValueError):
 
 
 class FitClient:
-    def __init__(self, session: Any, timeout: float, work_root: Path):
+    def __init__(
+        self,
+        session: Any,
+        timeout: float,
+        work_root: Path,
+        remaining: Callable[[], float] | None = None,
+    ):
         self._session = session
         self._timeout = timeout
         self._work_root = work_root
+        self._remaining = remaining
 
     async def _call(
         self,
@@ -283,8 +290,15 @@ class FitClient:
         decode: Callable[[bytes], dict[str, Any]],
     ) -> Captured:
         try:
-            async with asyncio.timeout(self._timeout):
+            limit = (
+                min(self._timeout, self._remaining())
+                if self._remaining
+                else self._timeout
+            )
+            async with asyncio.timeout(limit):
                 result = await self._session.call_tool(name, arguments=arguments)
+            if self._remaining:
+                self._remaining()
         except Exception:
             raise CallFailure("garmin_call_failed") from None
         content = getattr(result, "content", None)
@@ -305,7 +319,10 @@ class FitClient:
         if result.isError:
             raise CallFailure("garmin_mcp_error", payload, is_error=True)
         try:
-            return Captured(payload, decode(payload))
+            value = decode(payload)
+            if self._remaining:
+                self._remaining()
+            return Captured(payload, value)
         except Exception:
             raise CallFailure("garmin_response_invalid", payload) from None
 
@@ -365,9 +382,10 @@ def sdk_diagnostics() -> Iterator[None]:
 async def sdk_session(spec: dict[str, Any]) -> AsyncIterator[Any]:
     mcp = import_module("mcp")
     stdio = import_module("mcp.client.stdio")
+    guarded = parent_watch.command([spec["command"], *spec["args"]])
     parameters = mcp.StdioServerParameters(
-        command=spec["command"],
-        args=spec["args"],
+        command=guarded[0],
+        args=guarded[1:],
         env=spec["environment"],
         cwd=spec["cwd"],
     )
@@ -387,6 +405,7 @@ async def open_session(
     is_cn: bool,
     timeout: float,
     factory: SessionFactory = sdk_session,
+    remaining: Callable[[], float] | None = None,
 ) -> AsyncIterator[FitClient]:
     if (
         not isinstance(timeout, (int, float))
@@ -403,10 +422,17 @@ async def open_session(
     stack = AsyncExitStack()
     try:
         try:
-            async with asyncio.timeout(timeout):
+            limit = min(timeout, remaining()) if remaining else timeout
+            async with asyncio.timeout(limit):
                 session = await stack.enter_async_context(factory(spec))
+                if remaining:
+                    remaining()
                 await session.initialize()
+                if remaining:
+                    remaining()
                 tools = await session.list_tools()
+                if remaining:
+                    remaining()
                 names = [str(t.name) for t in tools.tools]
                 if (
                     len(names) != len(TOOLS)
@@ -416,12 +442,13 @@ async def open_session(
                     raise ValueError("garmin_tool_contract_invalid")
         except Exception:
             raise ValueError("garmin_session_unavailable") from None
-        yield FitClient(session, timeout, work_root)
+        yield FitClient(session, timeout, work_root, remaining)
     finally:
         try:
             # Enter, initialize, calls and exit remain in one asyncio task.
             try:
-                await stack.aclose()
+                async with asyncio.timeout(timeout):
+                    await stack.aclose()
             except Exception:
                 raise ValueError("garmin_session_close_failed") from None
         finally:

@@ -119,7 +119,7 @@ def auth_fixture(
 ) -> tuple[Path, Path, Path, Path]:
     monkeypatch.setattr(AUTH, "SOURCE_ROOT", tmp_path)
     client = tmp_path / "gcp-oauth.keys.json"
-    recipient = tmp_path / "email.json"
+    recipient = tmp_path / "Email.md"
     token = tmp_path / "gmail-api-token.json"
     receipt = tmp_path / AUTH.AUTH_RECEIPT_NAME
     owner_write(
@@ -138,7 +138,7 @@ def auth_fixture(
     )
     owner_write(
         recipient,
-        b'{"schema_version":"trainlab_email_recipient_v1","email":"owner@example.com"}',
+        b"owner@example.com",
     )
     return client, recipient, token, receipt
 
@@ -156,8 +156,9 @@ def test_auth_success_publishes_owner_only_token(
         return flow
 
     receipt = AUTH.authorize(
+        instance_root=tmp_path,
         client_file=client,
-        recipient_file=recipient,
+        email_file=recipient,
         token_file=token,
         receipt_file=receipt_file,
         flow_factory=flow_factory,
@@ -178,7 +179,12 @@ def test_auth_success_publishes_owner_only_token(
     ("profile", "scopes", "lifetime", "expected"),
     [
         ("other@example.com", list(COMMON.SCOPES), None, "account_matches"),
-        ("owner@example.com", [COMMON.SCOPES[0]], None, "scopes_match"),
+        (
+            "owner@example.com",
+            ["https://www.googleapis.com/auth/gmail.send"],
+            None,
+            "scopes_match",
+        ),
         ("owner@example.com", list(COMMON.SCOPES), 604799, "short_lived_testing_token"),
     ],
 )
@@ -193,8 +199,9 @@ def test_auth_blocks_account_scope_or_testing_token(
     client, recipient, token, receipt_file = auth_fixture(tmp_path, monkeypatch)
     flow = FakeFlow(FakeCredentials(scopes), lifetime)
     receipt = AUTH.authorize(
+        instance_root=tmp_path,
         client_file=client,
-        recipient_file=recipient,
+        email_file=recipient,
         token_file=token,
         receipt_file=receipt_file,
         flow_factory=lambda *_args, **_kwargs: flow,
@@ -221,8 +228,9 @@ def test_auth_cancel_or_timeout_never_publishes_token(
 
     with pytest.raises(RuntimeError, match="gmail_rest_authorization_failed"):
         AUTH.authorize(
+            instance_root=tmp_path,
             client_file=client,
-            recipient_file=recipient,
+            email_file=recipient,
             token_file=token,
             receipt_file=receipt_file,
             flow_factory=lambda *_args, **_kwargs: FailedFlow(),
@@ -245,8 +253,9 @@ def test_auth_rejects_web_client_before_browser_or_profile(
 
     with pytest.raises(RuntimeError, match="gmail_rest_oauth_client_not_desktop"):
         AUTH.authorize(
+            instance_root=tmp_path,
             client_file=client,
-            recipient_file=recipient,
+            email_file=recipient,
             token_file=token,
             receipt_file=receipt,
             flow_factory=flow_factory,
@@ -279,8 +288,9 @@ def test_auth_rejects_non_google_oauth_endpoints_before_browser(
 
     with pytest.raises(RuntimeError, match="gmail_rest_oauth_endpoint_invalid"):
         AUTH.authorize(
+            instance_root=tmp_path,
             client_file=client,
-            recipient_file=recipient,
+            email_file=recipient,
             token_file=token,
             receipt_file=receipt,
             flow_factory=flow_factory,
@@ -307,8 +317,9 @@ def test_profile_failures_persist_owner_only_blocked_receipt(
 ) -> None:
     client, recipient, token, receipt_file = auth_fixture(tmp_path, monkeypatch)
     receipt = AUTH.authorize(
+        instance_root=tmp_path,
         client_file=client,
-        recipient_file=recipient,
+        email_file=recipient,
         token_file=token,
         receipt_file=receipt_file,
         flow_factory=lambda *_args, **_kwargs: FakeFlow(
@@ -338,8 +349,9 @@ def test_profile_session_failure_records_zero_provider_calls(
         raise RuntimeError("session")
 
     receipt = AUTH.authorize(
+        instance_root=tmp_path,
         client_file=client,
-        recipient_file=recipient,
+        email_file=recipient,
         token_file=token,
         receipt_file=receipt_file,
         flow_factory=lambda *_args, **_kwargs: FakeFlow(
@@ -358,8 +370,9 @@ def test_auth_receipt_path_is_unique_across_process_restarts(
 ) -> None:
     client, recipient, token, receipt_file = auth_fixture(tmp_path, monkeypatch)
     first = AUTH.authorize(
+        instance_root=tmp_path,
         client_file=client,
-        recipient_file=recipient,
+        email_file=recipient,
         token_file=token,
         receipt_file=receipt_file,
         flow_factory=lambda *_args, **_kwargs: FakeFlow(
@@ -378,8 +391,9 @@ def test_auth_receipt_path_is_unique_across_process_restarts(
 
     with pytest.raises(RuntimeError, match="gmail_rest_auth_receipt_path_invalid"):
         AUTH.authorize(
+            instance_root=tmp_path,
             client_file=client,
-            recipient_file=recipient,
+            email_file=recipient,
             token_file=token,
             receipt_file=tmp_path / "alternate-auth-receipt.json",
             flow_factory=second_flow,
@@ -390,18 +404,18 @@ def test_auth_receipt_path_is_unique_across_process_restarts(
     assert not token.exists()
 
 
-@pytest.mark.parametrize("field", ["client_file", "recipient_file", "token_file"])
+@pytest.mark.parametrize("field", ["client_file", "email_file", "token_file"])
 def test_auth_rejects_alternate_private_contract_paths_before_browser(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, field: str
 ) -> None:
     client, recipient, token, receipt_file = auth_fixture(tmp_path, monkeypatch)
     paths = {
         "client_file": client,
-        "recipient_file": recipient,
+        "email_file": recipient,
         "token_file": token,
         "receipt_file": receipt_file,
     }
-    paths[field] = tmp_path / f"alternate-{field}.json"
+    paths[field] = tmp_path / "missing-parent" / f"alternate-{field}.json"
     flow_calls = 0
 
     def flow_factory(*_args: Any, **_kwargs: Any) -> FakeFlow:
@@ -411,8 +425,9 @@ def test_auth_rejects_alternate_private_contract_paths_before_browser(
 
     with pytest.raises(RuntimeError, match="gmail_rest_auth_path_invalid"):
         AUTH.authorize(
+            instance_root=tmp_path,
             client_file=paths["client_file"],
-            recipient_file=paths["recipient_file"],
+            email_file=paths["email_file"],
             token_file=paths["token_file"],
             receipt_file=paths["receipt_file"],
             flow_factory=flow_factory,
@@ -429,8 +444,9 @@ def test_auth_rejects_nonrefreshable_token_before_profile(
     client, recipient, token, receipt_file = auth_fixture(tmp_path, monkeypatch)
     session = FakeSession([])
     receipt = AUTH.authorize(
+        instance_root=tmp_path,
         client_file=client,
-        recipient_file=recipient,
+        email_file=recipient,
         token_file=token,
         receipt_file=receipt_file,
         flow_factory=lambda *_args, **_kwargs: FakeFlow(
@@ -477,3 +493,119 @@ def test_git_ignores_private_token_and_tracks_no_private_values() -> None:
     assert importlib.metadata.version("google-auth") == "2.56.2"
     assert importlib.metadata.version("google-auth-oauthlib") == "1.4.0"
     assert importlib.metadata.version("requests") == "2.34.2"
+
+
+def test_explicit_private_paths_produce_runtime_refreshable_token(
+    tmp_path, monkeypatch
+):
+    from skills._shared.fit_weekly import gmail_auth
+
+    client, email, token, receipt = auth_fixture(tmp_path, monkeypatch)
+    client = client.rename(tmp_path / "desktop-project.json")
+    email = email.rename(tmp_path / "Email.md")
+    token = tmp_path / "independent-token.json"
+    checked = []
+
+    class Flow(FakeFlow):
+        def run_local_server(self, **kwargs):
+            checked.append(kwargs)
+            return super().run_local_server(**kwargs)
+
+    result = AUTH.authorize(
+        instance_root=tmp_path,
+        client_file=client,
+        email_file=email,
+        token_file=token,
+        receipt_file=receipt,
+        flow_factory=lambda *a, **k: Flow(FakeCredentials(list(COMMON.SCOPES))),
+        session_factory=lambda c: FakeSession(
+            [FakeResponse(200, {"emailAddress": "owner@example.com"})]
+        ),
+    )
+    assert result["status"] == "succeeded"
+    assert checked[0]["login_hint"] == "owner@example.com"
+    calls = []
+
+    class Refresh:
+        def request(self, method, url, **kwargs):
+            calls.append((method, url, kwargs))
+            return FakeResponse(
+                200,
+                {
+                    "access_token": "synthetic-renewed",
+                    "expires_in": 3600,
+                    "scope": " ".join(COMMON.SCOPES),
+                    "refresh_token": "synthetic-rotated",
+                },
+            )
+
+    auth = gmail_auth.Auth(token, "owner@example.com", session=Refresh())
+    auth.require_labels()
+    reserved = []
+    assert auth.headers(before_refresh=lambda: reserved.append("refresh")) == {
+        "Authorization": "Bearer synthetic-renewed"
+    }
+    assert reserved == ["refresh"] and len(calls) == 1
+    assert calls[0][2]["allow_redirects"] is False
+    assert json.loads(token.read_text())["refresh_token"] == "synthetic-rotated"
+    assert token.stat().st_mode & 0o777 == 0o600
+
+
+@pytest.mark.parametrize("interrupt", [False, True])
+def test_initial_receipt_failure_rolls_back_token(tmp_path, monkeypatch, interrupt):
+    client, email, token, receipt = auth_fixture(tmp_path, monkeypatch)
+
+    def fail(path, value):
+        raise (
+            KeyboardInterrupt()
+            if interrupt
+            else OSError("synthetic receipt persist failure")
+        )
+
+    monkeypatch.setattr(AUTH, "_persist_receipt", fail)
+    with pytest.raises(KeyboardInterrupt if interrupt else OSError):
+        AUTH.authorize(
+            instance_root=tmp_path,
+            client_file=client,
+            email_file=email,
+            token_file=token,
+            receipt_file=receipt,
+            flow_factory=lambda *a, **k: FakeFlow(FakeCredentials(list(COMMON.SCOPES))),
+            session_factory=lambda c: FakeSession(
+                [FakeResponse(200, {"emailAddress": "owner@example.com"})]
+            ),
+        )
+    assert not token.exists()
+
+
+def test_refresh_cannot_upgrade_legacy_scope(tmp_path):
+    from skills._shared.fit_weekly import gmail_auth, gmail_scopes
+
+    path = tmp_path / "private" / "token.json"
+    value = {
+        "token": "old",
+        "expiry": "2000-01-01T00:00:00Z",
+        "client_id": "synthetic",
+        "client_secret": "synthetic",
+        "refresh_token": "synthetic",
+        "scopes": sorted(gmail_scopes.LEGACY_SCOPES),
+    }
+    owner_write(path, json.dumps(value).encode())
+    before = path.read_bytes()
+
+    class Session:
+        def request(self, *args, **kwargs):
+            return FakeResponse(
+                200,
+                {
+                    "access_token": "upgraded",
+                    "expires_in": 3600,
+                    "scope": " ".join(COMMON.SCOPES),
+                },
+            )
+
+    auth = gmail_auth.Auth(path, "owner@example.com", session=Session())
+    with pytest.raises(ValueError, match="refresh_failed"):
+        auth.headers(before_refresh=lambda: None)
+    assert path.read_bytes() == before
+    assert path.stat().st_mode & 0o777 == 0o600

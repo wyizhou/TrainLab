@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import math
 import os
+import select
 import selectors
 import signal
 import subprocess
@@ -18,6 +19,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from skills._shared.fit_weekly import parent_watch
 from skills._shared.fit_weekly.model_job import AdapterInterrupted
 
 
@@ -122,7 +124,8 @@ def options(
             os.name != "posix"
             or not isinstance(argv, list)
             or not argv
-            or any(not isinstance(a, str) or not a or "\x00" in a for a in argv)
+            or not argv[0]
+            or any(not isinstance(a, str) or "\x00" in a for a in argv)
             or not Path(argv[0]).is_absolute()
             or not isinstance(cwd, Path)
             or not cwd.is_absolute()
@@ -173,9 +176,10 @@ def execute(
     """
     options(argv, cwd, env, prompt, timeout, stop_timeout, stdout_limit, stderr_limit)
     deadline = time.monotonic() + timeout
+    launch_read, launch_write = os.pipe()
     try:
         proc = subprocess.Popen(
-            argv,
+            parent_watch.command(argv, error_fd=launch_write),
             cwd=cwd,
             env=env.copy(),
             stdin=subprocess.PIPE,
@@ -183,11 +187,15 @@ def execute(
             stderr=subprocess.PIPE,
             start_new_session=True,
             close_fds=True,
+            pass_fds=(launch_write,),
             umask=0o077,
             bufsize=0,
         )
     except Exception:
+        os.close(launch_read)
+        os.close(launch_write)
         return ProcessResult(None, 0, b"", b"", "process_start_failed")
+    os.close(launch_write)
     sent = 0
     buffers = {"stdout": bytearray(), "stderr": bytearray()}
     limits = {"stdout": stdout_limit, "stderr": stderr_limit}
@@ -197,6 +205,13 @@ def execute(
     selector = None
     streams: list[Any] = [proc.stdin, proc.stdout, proc.stderr]
     try:
+        launch_ready, _, _ = select.select(
+            [launch_read], [], [], max(0, deadline - time.monotonic())
+        )
+        if not launch_ready:
+            error = "process_timeout"
+        elif os.read(launch_read, 32):
+            error = "process_start_failed"
         selector = selectors.DefaultSelector()
         for stream, name in zip(streams, ("stdin", "stdout", "stderr"), strict=True):
             os.set_blocking(stream.fileno(), False)
@@ -262,6 +277,7 @@ def execute(
     finally:
         # No daemon writer/reaper; adapter cannot publish while children remain.
         confirmed = stop(proc, stop_timeout)
+        os.close(launch_read)
         for resource in [selector, *streams]:
             try:
                 if resource is not None:
@@ -284,5 +300,9 @@ def execute(
     if error is None and proc.returncode != 0:
         error = "process_exit_nonzero"
     return ProcessResult(
-        proc.returncode, sent, bytes(buffers["stdout"]), bytes(buffers["stderr"]), error
+        None if error == "process_start_failed" else proc.returncode,
+        sent,
+        bytes(buffers["stdout"]),
+        bytes(buffers["stderr"]),
+        error,
     )

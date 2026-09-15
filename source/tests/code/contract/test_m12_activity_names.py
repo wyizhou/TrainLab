@@ -29,7 +29,7 @@ def setup(tmp_path, monkeypatch, value="公园晚间跑步", *, absent=False):
 
     monkeypatch.setattr(fixture.FakeSDK, "call_tool", named)
     root, key, sdk, receipt = fixture.setup(tmp_path, monkeypatch)
-    goal = root / "goal.md"
+    goal = root / "Goal.md"
     goal.write_text(helpers.goal_text())
     goal.chmod(0o600)
     return root, key, sdk, receipt
@@ -108,7 +108,7 @@ def test_name_containing_credential_is_stopped_before_model_intent(
             root, fixture.END, validate_report=helpers.valid_report
         )
     assert helpers.counts(root) == before and sdk.calls == calls
-    assert not model_job.capture_path(root, fixture.END).parent.exists()
+    assert not model_job.capture_path(root, fixture.END, stage="plan").parent.exists()
 
 
 def test_name_capture_drift_stops_frozen_context_replay(tmp_path, monkeypatch):

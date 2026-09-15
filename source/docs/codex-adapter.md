@@ -9,12 +9,12 @@
 1. Host 提供确定性业务输入、业务 Schema、输入/结果校验函数，以及明确的模型和认证存储方式。
 2. `Runtime.identity()` 绑定实际可执行文件、Python、依赖版本、产品源码、配置和说明文本；
    普通运行不读取测试目录，路径不写成固定本机位置。
-3. `codex_adapter.prepare()` 核验 owner-only 的公开能力证据。必须包含实际首请求、
+3. `codex_adapter.prepare(..., stage="plan"|"summary")` 核验 owner-only 的公开能力证据；阶段必须与Runtime.stage一致并纳入运行identity。必须包含实际首请求、
    完整进程证据、四次无损 FIT 细读/缓存往返和四类工具拒绝结果，不能只提交 `PASS` 标记。
-4. 在实例相对 `model-results/<周标识摘要>/codex/` 保存规范 `prepared.json`、Prompt、
+4. 在实例相对 `model-results/<周和阶段标识摘要>/codex/` 保存规范 `prepared.json`、Prompt、
    instructions 和派生 wire Schema，文件 `0600`、目录 `0700`。现有实例写锁覆盖全部准备
    文件发布，防止同时准备造成混写；模型运行前释放锁。准备不创建模型 intent。
-5. `model_job.run(..., adapter)` 先提交唯一 intent，再由薄适配器调用既有隔离、进程监督、
+5. `model_job.run(..., adapter, stage=...)` 先提交该阶段唯一 intent，再由薄适配器调用既有隔离、进程监督、
    原始流保存和结果检查器；通过业务检查后才进入原账本。没有另一套重试或回执状态机。
 
 进程固定为 `exec`、`--ephemeral`、`--ignore-user-config`、`--ignore-rules`、
@@ -30,13 +30,14 @@
 
 ## 恢复
 
-`codex_adapter.recover()` 只读取当前实例该周的原始准备材料，再调用
+`codex_adapter.recover(..., stage=...)` 只读取当前实例该周该阶段的原始准备材料，再调用
 [既有本地恢复接口](codex-recovery.md)。即使原可执行文件、能力证据源文件或登录位置不可用，
 已保存且闭合的结果仍能恢复；不会启动探针或模型，也不使用 Codex resume。
 
 原准备材料缺失/损坏、进程停止不明或原始 capture 未完成时保持 `unknown`；不能通过重新
 prepare 或换模型来获得第二次调用。输入、Schema、来源范围变化继续由同周输入冲突门拒绝。
 已成功或失败的旧结果不可覆盖。业务验证函数是必要的应用代码，不允许用空验证器完成周报。
+阶段不匹配的prepared/capture不能恢复或覆盖另一阶段；旧无stage材料只读，不创建新任务。
 
 ## 公开 CLI 检查与限制
 
@@ -56,3 +57,5 @@ Linux 的实际能力证据生产与部署前检查仍须在目标环境完成�
 
 测试映射：`tests/code/contract/test_m12_codex_adapter.py`；复用既有 model_job、
 process_capture、codex_output、codex_recovery 和 codex_isolation 的测试，不删除旧场景。
+
+R3 的同源业务 Schema/Prompt、Host 统计、逐证据课程校验和只读完整报告见[周报业务合同](weekly-coaching.md)。原冻结格式、执行器和预算保持原接口，发布由后续模块实现。

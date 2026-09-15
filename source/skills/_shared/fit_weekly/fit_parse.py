@@ -21,11 +21,17 @@ from typing import Any
 import fitdecode
 import jsonschema
 
-from skills._shared.fit_weekly import storage
+from skills._shared.fit_weekly import fit_time, storage
 
-VERSION = "fit-summary-2"
+VERSION = "fit-summary-3"
+TIME_VERSION = "fit-summary-3"
 LOCATION_VERSION = "fit-summary-2"
-SCHEMAS = {"fit-summary-1": "fit_activity_v1", LOCATION_VERSION: "fit_activity_v2"}
+LOCATION_VERSIONS = {LOCATION_VERSION, TIME_VERSION}
+SCHEMAS = {
+    "fit-summary-1": "fit_activity_v1",
+    LOCATION_VERSION: "fit_activity_v2",
+    TIME_VERSION: "fit_activity_v3",
+}
 MAX_GAP = 30.0
 SCHEMA_PATH = (
     Path(__file__).resolve().parents[1] / "schemas/fit_activity_v1.schema.json"
@@ -111,12 +117,39 @@ def field(frame: fitdecode.FitDataMessage, name: str) -> Any:
     return frame.get_value(name, fallback=None)
 
 
-def boundaries(frame: fitdecode.FitDataMessage) -> tuple[float, float]:
-    start, end = (
-        timestamp(field(frame, "start_time")),
-        timestamp(field(frame, "timestamp")),
-    )
-    if end <= start:
+def record_number(
+    frame: fitdecode.FitDataMessage,
+    sources: tuple[str, ...],
+    parser_version: str,
+    *,
+    signed: bool = False,
+) -> float | None:
+    if parser_version != TIME_VERSION:
+        candidates = [number(field(frame, name), signed=signed) for name in sources]
+        return next((value for value in candidates if value is not None), None)
+    for expanded in (False, True):
+        for name in sources:
+            for item in frame.fields:
+                if item.name == name and item.is_expanded == expanded:
+                    value = number(item.value, signed=signed)
+                    if value is not None:
+                        return value
+    return None
+
+
+def boundaries(
+    frame: fitdecode.FitDataMessage, *, parser_version: str | None = None
+) -> tuple[float, float]:
+    version = require_parser_version(parser_version)
+    start = timestamp(field(frame, "start_time"))
+    if version == TIME_VERSION:
+        elapsed = number(field(frame, "total_elapsed_time"))
+        if elapsed is None or elapsed <= 0:
+            raise ValueError("fit_time_bounds_invalid")
+        end = start + elapsed
+    else:
+        end = timestamp(field(frame, "timestamp"))
+    if not math.isfinite(end) or end <= start:
         raise ValueError("fit_time_bounds_invalid")
     return start, end
 
@@ -244,7 +277,7 @@ def decode(data: bytes, *, parser_version: str | None = None) -> Decoded:
             if not isinstance(frame, fitdecode.FitDataMessage):
                 continue
             if frame.name == "session":
-                start, end = boundaries(frame)
+                start, end = boundaries(frame, parser_version=version)
                 sport, sub = field(frame, "sport"), field(frame, "sub_sport")
                 result.sessions.append(
                     {
@@ -263,16 +296,17 @@ def decode(data: bytes, *, parser_version: str | None = None) -> Decoded:
                 t = timestamp(field(frame, "timestamp"))
                 metrics = {}
                 for key, (sources, _, signed) in METRICS.items():
-                    candidates = [
-                        number(field(frame, name), signed=signed) for name in sources
-                    ]
-                    metrics[key] = next((v for v in candidates if v is not None), None)
+                    metrics[key] = record_number(frame, sources, version, signed=signed)
                 location, invalid = (
-                    position(frame) if version == LOCATION_VERSION else (None, False)
+                    position(frame) if version in LOCATION_VERSIONS else (None, False)
                 )
                 result.points.append(
                     Point(
-                        t, number(field(frame, "distance")), metrics, location, invalid
+                        t,
+                        record_number(frame, ("distance",), version),
+                        metrics,
+                        location,
+                        invalid,
                     )
                 )
             elif frame.name == "event" and field(frame, "event") == "timer":
@@ -288,7 +322,7 @@ def decode(data: bytes, *, parser_version: str | None = None) -> Decoded:
                         (timestamp(field(frame, "timestamp")), kind == "start")
                     )
             elif frame.name == "lap":
-                start, end = boundaries(frame)
+                start, end = boundaries(frame, parser_version=version)
                 result.laps.append(
                     {
                         "start": start,
@@ -426,8 +460,14 @@ class Series:
 
 
 def session_laps(
-    s: dict[str, Any], laps: list[dict[str, Any]]
+    s: dict[str, Any],
+    laps: list[dict[str, Any]],
+    *,
+    parser_version: str | None = None,
+    sessions: list[dict[str, Any]] | None = None,
 ) -> tuple[list[dict[str, Any]], bool]:
+    if require_parser_version(parser_version) == TIME_VERSION:
+        return fit_time.session_laps(s, laps, sessions if sessions is not None else [s])
     crossing = any(
         x["start"] < s["end"]
         and x["end"] > s["start"]
@@ -536,21 +576,41 @@ def summarize(
         intervals, timer_source = active_intervals(s, decoded.events)
         points = [p for p in decoded.points if s["start"] <= p.time <= s["end"]]
         location_points = (
-            session_location_points(decoded, idx) if version == LOCATION_VERSION else []
+            session_location_points(decoded, idx)
+            if version in LOCATION_VERSIONS
+            else []
         )
         series = Series(points, intervals, timer_source != "unavailable")
+        lap_series = (
+            Series(location_points, intervals, timer_source != "unavailable")
+            if version == TIME_VERSION
+            else series
+        )
         summary = series.aggregate(s["start"], s["end"])
-        if version == LOCATION_VERSION:
+        if version in LOCATION_VERSIONS:
             summary["location"] = location_summary(
                 location_points, s["start"], s["end"], include_end=True
             )
-        laps, conflict = session_laps(s, decoded.laps)
+        laps, conflict = session_laps(
+            s, decoded.laps, parser_version=version, sessions=decoded.sessions
+        )
         kind, ranges = windows(s, laps)
         limitations = []
         if timer_source == "unavailable":
             limitations.append("timer_boundaries_unavailable")
         if conflict:
             limitations.append("laps_conflicting")
+        if any(lap.get("precision_compatible") for lap in laps):
+            limitations.append("lap_time_precision_compatible")
+        if version == TIME_VERSION and timer_source == "timer_events":
+            timer = s["provider_summary"]["timer_seconds"]
+            active = summary["valid_seconds"]
+            if (
+                timer is not None
+                and active is not None
+                and 0 < abs(round(timer * 1000) - round(active * 1000)) < 1000
+            ):
+                limitations.append("timer_total_precision_difference")
         if summary["distance_covered_seconds"] < summary["sample_covered_seconds"]:
             limitations.append("distance_reset_or_missing")
         valid = summary["valid_seconds"]
@@ -558,19 +618,21 @@ def summarize(
         if gap:
             limitations.append("sample_gaps")
 
-        def block(start: float, end: float, role: str) -> dict[str, Any]:
+        def block(
+            start: float, end: float, role: str, *, lap: bool = False
+        ) -> dict[str, Any]:
             return {
                 "start_offset_seconds": start - s["start"],
                 "end_offset_seconds": end - s["start"],
                 "role": role,
-                **series.aggregate(start, end),
+                **(lap_series if lap else series).aggregate(start, end),
                 **(
                     {
                         "location": location_summary(
                             location_points, start, end, include_end=end == s["end"]
                         )
                     }
-                    if version == LOCATION_VERSION
+                    if version in LOCATION_VERSIONS
                     else {}
                 ),
             }
@@ -594,7 +656,9 @@ def summarize(
                 "provider_summary": s["provider_summary"],
                 "summary": summary,
                 "segments": [block(a, b, r) for a, b, r in ranges],
-                "laps": [block(x["start"], x["end"], x["role"]) for x in laps],
+                "laps": [
+                    block(x["start"], x["end"], x["role"], lap=True) for x in laps
+                ],
                 "hr_zones": session_zones(s, decoded, activity_ref, fit_sha),
                 "limitations": limitations,
             }
@@ -607,6 +671,11 @@ def summarize(
         "start_utc": sessions[0]["start_utc"],
         "end_utc": sessions[-1]["end_utc"],
         "methods": {
+            **(
+                {"summary_time_bounds": "start_time_plus_total_elapsed_time"}
+                if version == TIME_VERSION
+                else {}
+            ),
             "continuous_metrics": "left_sample_valid_time_weighted",
             "distance": "linear_between_valid_distance_samples",
             "pace": "distance_covered_seconds_per_km",
@@ -615,7 +684,7 @@ def summarize(
         "sessions": sessions,
         "provider_calls": 0,
     }
-    if version == LOCATION_VERSION:
+    if version in LOCATION_VERSIONS:
         points = [
             p
             for p in decoded.points

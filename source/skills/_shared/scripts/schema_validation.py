@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -107,41 +106,7 @@ def validate_payload(
         f"{'.'.join(str(part) for part in error.path) or '$'}:{error.validator}"
         for error in errors
     ]
-    result.extend(_semantic_date_errors(payload, schema_name))
     return sorted(set(result))
-
-
-def _semantic_date_errors(payload: object, schema_name: str) -> list[str]:
-    """Validate dates embedded in identifiers that JSON Schema sees as strings."""
-    if not isinstance(payload, dict):
-        return []
-    values: list[tuple[str, object]] = []
-    if schema_name in {"weekly_summary_v1", "weekly_fitness_review_v1"}:
-        values.append(("period", payload.get("period")))
-    if schema_name == "workflow_receipt_v1":
-        values.append(("workflow_key", payload.get("workflow_key")))
-    if schema_name == "auto_result_v1":
-        values.extend(
-            (f"workflow_refs.{index}", value)
-            for index, value in enumerate(payload.get("workflow_refs", []))
-        )
-    problems: list[str] = []
-    for path, value in values:
-        if not isinstance(value, str):
-            continue
-        candidates = (
-            value.split("/") if path == "period" else [value.rsplit(":", 1)[-1]]
-        )
-        if path == "period":
-            dates = candidates
-        else:
-            dates = candidates
-        for candidate in dates:
-            try:
-                date.fromisoformat(candidate)
-            except ValueError:
-                problems.append(f"{path}:date")
-    return problems
 
 
 def require_valid_payload(payload: Any, schema_name: str) -> None:

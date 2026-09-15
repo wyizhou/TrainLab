@@ -139,6 +139,7 @@ def prepare(
     platform_name: str | None = None,
     executable: Path | None = None,
     system_roots: Sequence[Path] = SYSTEM_ROOTS,
+    extra_masks: Sequence[Path] = (),
 ) -> Isolation:
     """Prepare only; caller validates unchanged child env before executing.
 
@@ -163,7 +164,13 @@ def prepare(
         program = host_path(Path(installed)).resolve()
         if not program.is_file() or not os.access(program, os.X_OK):
             raise ValueError("codex_isolation_unavailable")
-        blocked = locations(home, auth, work, system_roots)
+        blocked = tuple(
+            sorted(
+                set(locations(home, auth, work, system_roots))
+                | {host_path(p).resolve() for p in extra_masks},
+                key=str,
+            )
+        )
         if any(program.is_relative_to(path) for path in blocked):
             raise ValueError("codex_isolation_conflict")
         prefix: tuple[str, ...]

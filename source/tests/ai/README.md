@@ -6,3 +6,5 @@
 
 结果统一为 `case | expected | actual | verdict | evidence` 表格；`PASS`、`FAIL`、`REVIEW` 三态
 中，`REVIEW` 不算通过。`results/` 默认忽略，只有脱敏模板和纯合成 golden 可以跟踪。
+
+当前语义材料只面向FIT-only双阶段计划/全运动总结、修订/发布与恢复；旧日报、健康合同、强制SOS和高保真邮件材料退出。AI语义验收未在R6-5调用真实模型；REVIEW始终不算通过。

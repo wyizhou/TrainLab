@@ -1,8 +1,17 @@
-# Codex 周任务入口：能力前检
+# Codex 适配与历史能力前检
+
+当前新执行入口为[命令运行器](command-runner.md)，不再要求配置model或固定OpenAI。本文`codex_capability`旧格式仅验证已保存材料；当前`command_capability`复用受限工具定义核验，独立绑定原环境选型、终态JSON和完整实际工具往返。
 
 这是 M12 的内部配置和公开离线请求检查器，不是 `weekly` 命令或私人模型调用许可。
 模型适配、跨平台启动隔离和任务账本已有独立模块；目标/历史周报组合正在当前收敛批次验收。
-周报业务、发布和调度尚未交付，不应把能力探针当作真实任务运行证明。
+统一入口已接线；整体独立验收与真实服务仍待完成，能力探针不等于真实任务运行证明。
+两阶段接线见[weekly-stages](weekly-stages.md)。Runtime identity明确绑定plan/summary，
+实际stdio启动传入不可由模型修改的阶段参数，plan工具权限由Host检查，不仅依靠Prompt说明。
+旧能力材料只供原任务本地恢复，不能把另一阶段的prepared/capture当作当前任务结果。
+
+FIT v3 的毫秒偏移请求使用独立工具定义指纹，见 [FIT 时间边界](fit-time-bounds.md)。
+新增的 `m12_codex_cli_tools_v3.json` 是根据已批准接口生成的合成定义；真实新启动仍要求
+匹配当前源码和工具定义的能力证据，不能将历史 CLI 探针的结论视为本次接口已实测。
 
 ## 已解决的边界
 

@@ -1,7 +1,9 @@
 # M12 运动数据开放与测试迁移
 
+当前默认版本为 [fit-summary-3](fit-time-bounds.md)，沿用下述 v2 位置、名称及隐私边界；v1/v2 仍按冻结版本读取。
+
 2026-09-07，A-022/VC-004 只改变运动位置和名称的模型准入要求，不改变 FIT-only、周频率、
-前四份完整历史、训练安全、模型/细读预算、发布和真实切换目标。本模块尚待独立验收。
+前四份完整历史、训练安全、模型/细读预算、发布和真实切换目标。大功能总览见根 [PLAN.md](../../PLAN.md)，当前验收证据和恢复位置见 [M12 执行计划](../../exec-plans/active/M12-fit-weekly.md)。
 
 ## 旧场景如何保留
 
@@ -24,9 +26,9 @@
 - [真实格式合成 FIT 定位](../tests/code/contract/test_m12_fit_location.py)：编码、零/负坐标、边界、缺失、冲突、统计不变、版本追加、细读往返，以及旧周20次用尽后升级/搬迁仍不重置预算。
 - 同一定位回归补充多 session 交界计数：相接/有间隔、有效/缺失/异常定位、summary/laps/series及1/5秒粒度；全部视图计数对应真实样本，旧运动统计不变且重放零新增。
 - [活动名称来源](../tests/code/contract/test_m12_activity_names.py)：已保存 MCP capture、活动身份、SHA、缺失、错误名称及凭据/来源漂移拒绝。
-- [周输入新授权](../tests/code/contract/test_m12_sports_input.py)：当前默认 v2、全入口、完整历史、原快照及半程恢复。
+- [周输入新授权](../tests/code/contract/test_m12_sports_input.py)：当前默认 v3、v2 全入口、完整历史、原快照及半程恢复。
 - 同一[输入回归](../tests/code/contract/test_m12_sports_input.py)保留明确认证头漏检：补齐中英文认证头标签，覆盖正文、嵌套键及四入口/四阶段，拒绝时不建立模型意图、不改变原文；正常位置和不带认证值的讨论仍允许。
 - [模型适配器恢复](../tests/code/contract/test_m12_codex_adapter.py)：旧工具证明、停止 capture、零启动恢复和新启动拒绝。
 
 测试使用合成数据；本模块不调用真实模型、Garmin、Gmail 或其他业务服务。当前测试 PASS 不等于
-后续周内容、PDF、邮件、课程或调度已交付；这些仍按总体计划独立验收和逐模块提交。
+后续周内容、PDF、邮件、课程或调度已交付；这些的实际验收状态见 [M12 执行计划](../../exec-plans/active/M12-fit-weekly.md)，功能分支与交付遵循根 [AGENTS.md](../../AGENTS.md)。

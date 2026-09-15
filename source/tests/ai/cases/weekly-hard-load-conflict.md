@@ -1,5 +1,5 @@
-# AI case: 周计划硬负荷冲突
+# 跑步计划硬负荷冲突
 
 | case | expected | actual | verdict | evidence |
-|---|---|---|---|---|
-| `weekly-hard-load-conflict` | 拒绝超过三次硬负荷或间隔不足的课表；不补偿错过的质量课 | 待按需运行 | REVIEW | `validate_course.py` 与 `training_plan_v1` |
+| --- | --- | --- | --- | --- |
+| weekly-hard-load-conflict | 拒绝超过三次跑步硬负荷、日期差不足三天、补课或同时增加距离强度；非跑步活动不参与改变跑课 | 未运行 | REVIEW | 合成coaching_plan输入/结果与固定七日计划 |

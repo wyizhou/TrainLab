@@ -374,6 +374,7 @@ def test_provider_totals_preserved_separately_when_series_unavailable() -> None:
                 [
                     (2, 0x86, fixture.BASE),
                     (253, 0x86, fixture.BASE + 600),
+                    (7, 0x86, 600000),
                     (5, 0, 1),
                     (9, 0x86, 432100),
                     (8, 0x86, 500000),
@@ -476,6 +477,7 @@ def test_duplicate_session_index_cannot_reuse_one_zone_vector() -> None:
                 (254, 0x84, 0),
                 (2, 0x86, fixture.BASE + start),
                 (253, 0x86, fixture.BASE + end),
+                (7, 0x86, (end - start) * 1000),
                 (5, 0, 1),
                 (8, 0x86, (end - start) * 1000),
             ],

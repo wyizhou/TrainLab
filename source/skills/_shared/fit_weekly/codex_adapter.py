@@ -11,15 +11,12 @@ from pathlib import Path
 from typing import Any
 
 from skills._shared.fit_weekly import (
+    coaching_contract,
+    coaching_facts,
     codex_capability,
-    codex_isolation,
     codex_output,
     codex_recovery,
-    codex_runtime,
-    fit_detail,
-    fit_sync,
     model_job,
-    model_process,
     process_capture,
     storage,
 )
@@ -27,11 +24,34 @@ from skills._shared.fit_weekly.codex_runtime import Runtime
 
 
 def files(spec: dict[str, Any]) -> dict[str, bytes]:
+    prefix = spec["prompt_prefix"]
+    request = spec["request"]
+    version = (
+        request["response_schema"]
+        .get("properties", {})
+        .get("schema_version", {})
+        .get("const")
+    )
+    if version in coaching_contract.VERSIONS.values():
+        stage = request.get("stage")
+        if (
+            stage not in coaching_contract.VERSIONS
+            or version != coaching_contract.VERSIONS[stage]
+        ):
+            raise ValueError("coaching_stage_invalid")
+        coaching_contract.check(stage)
+        if prefix != coaching_contract.prompt(stage) or request[
+            "response_schema"
+        ] != coaching_contract.schema(stage):
+            raise ValueError("coaching_runtime_prompt_invalid")
+        prefix += (
+            "\nHOST_FACTS\n"
+            + storage.canonical(coaching_facts.build(request["payload"]))
+            + "\nSTAGE_PAYLOAD\n"
+        )
     return {
         "prepared.json": storage.canonical(spec).encode(),
-        "prompt.txt": (
-            spec["prompt_prefix"] + storage.canonical(spec["request"]["payload"])
-        ).encode(),
+        "prompt.txt": (prefix + storage.canonical(spec["request"]["payload"])).encode(),
         "instructions.txt": spec["instructions"].encode(),
         "response.schema.json": storage.canonical(
             codex_output.wire_schema(spec["request"]["response_schema"])
@@ -60,6 +80,8 @@ def check_spec(spec: Any) -> None:
         != identity["prompt_prefix_sha256"]
         or spec["request"]["profile"] != profile(identity, spec["capability"])
     ):
+        raise ValueError("binding")
+    if "stage" in spec["request"] and identity.get("stage") != spec["request"]["stage"]:
         raise ValueError("binding")
     codex_capability.validate(spec["capability"], identity, spec["instructions"])
     process_capture.binding(files(spec)["prompt.txt"], model_job.sha(spec["request"]))
@@ -91,7 +113,11 @@ class CodexAdapter:
     def __init__(self, root: Path, spec: dict[str, Any], runtime: Runtime | None):
         self.root, self._spec, self.runtime = root, model_job.clone(spec), runtime
         self.work = (
-            model_job.capture_path(root, spec["request"]["period_end_utc"]).parent
+            model_job.capture_path(
+                root,
+                spec["request"]["period_end_utc"],
+                stage=spec["request"].get("stage"),
+            ).parent
             / "codex"
         )
 
@@ -99,128 +125,12 @@ class CodexAdapter:
     def profile(self) -> dict[str, Any]:
         return model_job.clone(self._spec["request"]["profile"])
 
-    def run(
-        self,
-        payload: dict[str, Any],
-        detail: fit_detail.DetailHost,
-        response_schema: dict[str, Any],
-    ) -> Any:
-        try:
-            spec, request = self._spec, self._spec["request"]
-            check_spec(spec)
-            verify_files(self.work, spec)
-            if (
-                self.runtime is None
-                or self.runtime.identity() != spec["runtime"]
-                or payload != request["payload"]
-                or response_schema != request["response_schema"]
-                or detail.root != self.root
-                or detail.scope_sha != request["scope_sha256"]
-                or detail.key != fit_detail.period_key(request["period_end_utc"])[0]
-            ):
-                raise ValueError("binding")
-            with storage.open_store(self.root) as db:
-                if fit_detail.get(
-                    db, "model-job:" + request["period_end_utc"] + ":intent"
-                ) != (model_job.sha(request), request):
-                    raise ValueError("intent")
-            env = codex_runtime.environment(self.work)
-            home = Path(env["HOME"])
-            isolation = codex_isolation.prepare(
-                work=self.work / "job",
-                home=home,
-                codex_home=Path(env.get("CODEX_HOME", str(home / ".codex"))),
-            )
-            isolation.validate_environment(env)
-            argv = isolation.command(
-                self.runtime.command(
-                    self.root,
-                    request["period_end_utc"],
-                    request["scope_sha256"],
-                    self.work,
-                )
-            )
-        except Exception:
-            raise ValueError("codex_launch_preflight_invalid") from None
-        prompt = files(spec)["prompt.txt"]
-        result = process_capture.run(
-            self.work / "process",
-            process_capture.binding(prompt, model_job.sha(request)),
-            lambda: model_process.execute(
-                argv, prompt=prompt, env=env, cwd=self.work / "job"
-            ),
-        )
-        return codex_output.parse_result(
-            result,
-            response_schema,
-            prompt_bytes=len(prompt),
-            startup_messages=tuple(spec["capability"]["startup_messages"]),
-        ).value
+    def run(self, *args: Any, **kwargs: Any) -> Any:
+        raise ValueError("legacy_command_readonly")
 
 
-def prepare(
-    root: Path,
-    period_end: str,
-    scope_sha256: str,
-    payload: dict[str, Any],
-    response_schema: dict[str, Any],
-    *,
-    runtime: Runtime,
-    capability_path: Path,
-    validate_input: model_job.InputValidator,
-    validate_result: model_job.ResultValidator,
-) -> CodexAdapter:
-    try:
-        root = codex_isolation.host_path(root).resolve()
-        identity = runtime.identity()
-        capability = codex_capability.read(
-            capability_path, identity, runtime.instructions
-        )
-        request, _ = model_job.prepare_request(
-            period_end,
-            scope_sha256,
-            payload,
-            response_schema,
-            profile(identity, capability),
-            validate_input=validate_input,
-            validate_result=validate_result,
-        )
-        spec = {
-            "schema_version": "fit_codex_prepared_v1",
-            "request": request,
-            "runtime": identity,
-            "capability": capability,
-            "instructions": runtime.instructions,
-            "prompt_prefix": runtime.prompt_prefix,
-        }
-        check_spec(spec)
-        adapter = CodexAdapter(root, spec, runtime)
-        # One instance writer publishes all preparation files. A concurrent
-        # prepare must not replace a sibling file after another job starts.
-        with storage.open_store(root) as db:
-            fit_detail.DetailHost(root, period_end, scope_sha256).scope(db)
-            for folder in (
-                adapter.work.parent.parent,
-                adapter.work.parent,
-                adapter.work,
-            ):
-                fit_sync.private_directory(folder)
-            for folder in ("job", "logs", "sqlite", "tmp"):
-                fit_sync.private_directory(adapter.work / folder)
-            env = codex_runtime.environment(adapter.work)
-            home = Path(env["HOME"])
-            isolation = codex_isolation.prepare(
-                work=adapter.work / "job",
-                home=home,
-                codex_home=Path(env.get("CODEX_HOME", str(home / ".codex"))),
-            )
-            isolation.validate_environment(env)
-            for name, raw in files(spec).items():
-                storage.atomic_file(adapter.work / name, raw)
-            verify_files(adapter.work, spec)
-        return adapter
-    except Exception:
-        raise ValueError("codex_preparation_invalid") from None
+def prepare(*args: Any, **kwargs: Any) -> Any:
+    raise ValueError("legacy_command_readonly")
 
 
 def recover(
@@ -232,12 +142,18 @@ def recover(
     *,
     validate_input: model_job.InputValidator,
     validate_result: model_job.ResultValidator,
+    stage: str | None = None,
 ) -> dict[str, Any]:
-    work = model_job.capture_path(root, period_end).parent / "codex"
+    work = model_job.capture_path(root, period_end, stage=stage).parent / "codex"
     try:
         spec = process_capture.read_json(work / "prepared.json", 64 * 1024 * 1024)
         check_spec(spec)
         verify_files(work, spec)
+        if (
+            spec["request"].get("stage") != stage
+            or spec["request"]["period_end_utc"] != period_end
+        ):
+            raise ValueError("stage")
     except Exception:
         return model_job.outcome(None, 0)
     return codex_recovery.resume(
@@ -251,4 +167,5 @@ def recover(
         validate_input=validate_input,
         validate_result=validate_result,
         startup_messages=tuple(spec["capability"]["startup_messages"]),
+        stage=stage,
     )

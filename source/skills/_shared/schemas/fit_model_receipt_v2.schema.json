@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "stage", "period_end_utc", "request_sha256", "scope_sha256", "adapter_kind", "adapter_attempts", "model_attempts", "status", "error_code", "output_sha256", "provider_calls", "external_actions"],
+  "properties": {
+    "schema_version": {"type": "string", "const": "fit_model_receipt_v2"},
+    "stage": {"type": "string", "enum": ["plan", "summary"]},
+    "period_end_utc": {"type": "string", "format": "date-time", "pattern": "Z$"},
+    "request_sha256": {"$ref": "#/$defs/sha"},
+    "scope_sha256": {"$ref": "#/$defs/sha"},
+    "adapter_kind": {"type": "string", "enum": ["fake", "model"]},
+    "adapter_attempts": {"type": "integer", "const": 1},
+    "model_attempts": {"type": "integer", "enum": [0, 1]},
+    "status": {"type": "string", "enum": ["succeeded", "failed"]},
+    "error_code": {"type": ["null", "string"], "enum": [null, "model_adapter_failed", "model_result_invalid"]},
+    "output_sha256": {"$ref": "#/$defs/sha"},
+    "provider_calls": {"type": "integer", "const": 0},
+    "external_actions": {"type": "integer", "const": 0}
+  },
+  "$defs": {"sha": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+}

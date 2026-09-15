@@ -90,7 +90,9 @@ def _refreshable_token_payload(credentials: Any) -> dict[str, Any] | None:
         if not isinstance(value.get(key), str) or not value[key].strip():
             return None
     scopes = value.get("scopes")
-    if not isinstance(scopes, list) or not set(SCOPES).issubset(set(scopes)):
+    from skills._shared.fit_weekly.gmail_scopes import valid
+
+    if value.get("token_uri") != GOOGLE_TOKEN_URI or not valid(scopes, labels=True):
         return None
     try:
         from google.oauth2.credentials import Credentials
@@ -138,8 +140,9 @@ def _profile_failure_receipt(
 
 def authorize(
     *,
+    instance_root: Path,
     client_file: Path,
-    recipient_file: Path,
+    email_file: Path,
     token_file: Path,
     receipt_file: Path,
     flow_factory: Callable[..., Any] | None = None,
@@ -147,25 +150,34 @@ def authorize(
 ) -> dict[str, Any]:
     """Authorize, verify the account/scopes, then atomically publish the token."""
 
-    source_root = Path(os.path.abspath(SOURCE_ROOT))
-    client_file = Path(os.path.abspath(client_file))
-    recipient_file = Path(os.path.abspath(recipient_file))
-    token_file = Path(os.path.abspath(token_file))
-    receipt_file = Path(os.path.abspath(receipt_file))
-    if (
-        client_file != source_root / "gcp-oauth.keys.json"
-        or recipient_file != source_root / "email.json"
-        or token_file != source_root / "gmail-api-token.json"
-    ):
-        raise GmailRestError("gmail_rest_auth_path_invalid")
+    from skills._shared.fit_weekly import email_config, run_config, storage
+
+    try:
+        instance_root = run_config.instance_path(instance_root)
+        storage.private_entry(instance_root, directory=True)
+        client_file = run_config.private_path(instance_root, str(client_file))
+        email_file = run_config.private_path(instance_root, str(email_file))
+        token_file = run_config.instance_path(
+            token_file if token_file.is_absolute() else instance_root / token_file
+        )
+        receipt_file = run_config.instance_path(
+            receipt_file if receipt_file.is_absolute() else instance_root / receipt_file
+        )
+        for path in (token_file, client_file, receipt_file):
+            email_config.outside_repository(path)
+            storage.private_entry(path.parent, directory=True)
+        if len({client_file, email_file, token_file, receipt_file}) != 4:
+            raise ValueError("overlap")
+    except (ValueError, OSError):
+        raise GmailRestError("gmail_rest_auth_path_invalid") from None
     if receipt_file != token_file.with_name(AUTH_RECEIPT_NAME):
         raise GmailRestError("gmail_rest_auth_receipt_path_invalid")
     client = _desktop_client_file(client_file)
-    recipient, _recipient_sha = read_recipient(recipient_file)
-    if token_file.exists():
+    recipient, _recipient_sha = read_recipient(email_file)
+    if token_file.exists() or token_file.is_symlink():
         require_owner_file(token_file)
         raise GmailRestError("gmail_rest_token_already_exists")
-    if receipt_file.exists():
+    if receipt_file.exists() or receipt_file.is_symlink():
         require_owner_file(receipt_file)
         raise GmailRestError("gmail_rest_auth_receipt_already_exists")
     if flow_factory is None:
@@ -185,6 +197,7 @@ def authorize(
             port=0,
             open_browser=True,
             timeout_seconds=300,
+            login_hint=recipient,
             authorization_prompt_message="请在系统浏览器完成 TrainLab Gmail 授权。",
             success_message="TrainLab Gmail 授权完成，可以关闭此页面。",
         )
@@ -203,7 +216,9 @@ def authorize(
         or getattr(credentials, "scopes", ())
         or ()
     )
-    scopes_match = set(SCOPES).issubset(granted)
+    from skills._shared.fit_weekly.gmail_scopes import valid
+
+    scopes_match = valid(granted, labels=True)
     serialized_token = _refreshable_token_payload(credentials)
     if serialized_token is None:
         return _persist_receipt(
@@ -231,7 +246,7 @@ def authorize(
             error_code="gmail_rest_profile_session_failed",
         )
     try:
-        response = session.get(f"{API_ROOT}/profile", timeout=30)
+        response = session.get(f"{API_ROOT}/profile", timeout=30, allow_redirects=False)
     except Exception:
         return _profile_failure_receipt(
             receipt_file=receipt_file,
@@ -281,8 +296,6 @@ def authorize(
         }
         return _persist_receipt(receipt_file, receipt)
     token_bytes = (json.dumps(serialized_token, sort_keys=True) + "\n").encode("utf-8")
-    atomic_write(token_file, token_bytes)
-    os.chmod(token_file, 0o600)
     receipt = {
         "schema_version": "gmail_rest_auth_receipt_v1",
         "status": "succeeded",
@@ -295,25 +308,23 @@ def authorize(
         "completed_at_utc": utc_now(),
     }
     try:
+        atomic_write(token_file, token_bytes)
+        os.chmod(token_file, 0o600)
         return _persist_receipt(receipt_file, receipt)
-    except Exception:
+    except BaseException:
         token_file.unlink(missing_ok=True)
+        receipt_file.unlink(missing_ok=True)
         fsync_directory(token_file.parent)
         raise
 
 
 def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(description=__doc__)
-    result.add_argument(
-        "--client-file", type=Path, default=SOURCE_ROOT / "gcp-oauth.keys.json"
-    )
-    result.add_argument(
-        "--recipient-file", type=Path, default=SOURCE_ROOT / "email.json"
-    )
-    result.add_argument(
-        "--token-file", type=Path, default=SOURCE_ROOT / "gmail-api-token.json"
-    )
-    result.add_argument("--receipt", type=Path, default=SOURCE_ROOT / AUTH_RECEIPT_NAME)
+    result.add_argument("--instance", type=Path, required=True)
+    result.add_argument("--client-file", type=Path, required=True)
+    result.add_argument("--email-file", type=Path, required=True)
+    result.add_argument("--token-file", type=Path, required=True)
+    result.add_argument("--receipt", type=Path, required=True)
     return result
 
 
@@ -321,8 +332,9 @@ def main() -> int:
     args = parser().parse_args()
     try:
         receipt = authorize(
+            instance_root=args.instance,
             client_file=args.client_file,
-            recipient_file=args.recipient_file,
+            email_file=args.email_file,
             token_file=args.token_file,
             receipt_file=args.receipt,
         )
@@ -336,8 +348,12 @@ def main() -> int:
             )
         )
         return 0 if receipt["status"] == "succeeded" else 2
-    except (GmailRestError, OSError) as exc:
-        print(json.dumps({"status": "blocked", "error_code": str(exc)}))
+    except (GmailRestError, OSError):
+        print(
+            json.dumps(
+                {"status": "blocked", "error_code": "gmail_rest_authorization_blocked"}
+            )
+        )
         return 2
 
 

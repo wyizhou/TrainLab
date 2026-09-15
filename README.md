@@ -11,6 +11,7 @@ TrainLab 根开发 Harness 适配 [agentForge main](https://github.com/wyizhou/a
 TrainLab/
 ├── AGENTS.md rules.md memory.md PLANS.md
 ├── docs/ references/ skills/ .github/
+├── data/                 # 私有Goal、FIT及认证，全部忽略
 ├── data-backup/          # 忽略的旧代码、数据和失败证据归档
 └── source/
     ├── AGENTS.md         # M12 产品边界与迁移状态
@@ -27,21 +28,26 @@ TrainLab/
 真实配置、数据库、raw、FIT、token、日志和 state 不会进入 Git，也不会被测试或发布
 产物展示。
 
-## M12 迁移状态
+## 当前：API 重构前的未验证源码快照
 
-旧 `codex exec -C source` 自动路线已经停用，auto.txt 只返回退役通知。新 Python FIT-only
-运行层尚未交付；请勿使用旧历史批次发送邮件或修改 Garmin。目标是每日 22:00 同步运动、
-星期日 15:00 一次周分析和固定跑步计划，以简单邮件/PDF 和 Garmin 课程发布。
+本次按用户要求将 `TrainLab-next` 的实际公开产品树（含未提交成果和删除状态）保存到
+`source/`，仅作为后续重构的代码基线，**不是已验证的可运行版本**。用户明确不需要旧代码
+验证，因此本次不运行功能测试、静态质量门或独立功能验收，也不追补缺失的历史校验记录。
+提交前仅检查公开文件范围与私人资料排除；已有失败和证据缺口不改写为通过。
 
-已完成新库、FIT 导入/同步、解析、受限细读和模型适配基础。当前按 VC-005 收敛依赖、周输入
-与测试边界；[退役映射](source/docs/legacy-retirement.md) 记录保留能力、取消业务和安全接替。
-旧业务脚本的直接命令入口已统一关闭；[入口清单](source/docs/entrypoint-inventory.json)
-区分当前采集/细读、显式认证/维护与退役命令。暂留旧函数只供迁移回归，不是兼容运行路线。
-周报业务、PDF、发布与完整调度仍未交付，旧正式 state/私人配置保持不变，没有启用真实调用。
+**后续转向直接 API 接入，不再依赖其他产品的 Agent 运行。** API 改造尚未实施；快照内
+仍有现存 Agent/命令 runner，不能描述为已经替换。后续 API 方案与实现另行开展，旧 R7、
+业务调用及正式实例切换不自动续跑。本次不改动主根开发 Harness 或现有 CI。
+
+[来源产品说明](docs/product-contract.md)、[来源迁移记录](docs/migration.md)及 `source/docs/`
+保存 next 的上下文；其中旧验收、阶段状态及外部计划链接仅供来源追溯，不代表当前主树通过。
+本次范围和实际 Git 结果见 [ADHOC-0019](docs/exec-plans/active/ADHOC-0019-adopt-next-before-api.md)。
+私人 `data/Goal.md`、`data/fit/`、`data/verification/` 和旧 `source/state/` 不进入 Git。
 
 ## 安装依赖与检查
 
-项目不要求仓库内 `.venv`，可使用用户选择的 Python 3.12 环境：
+以下为后续开发的既有检查入口，本次快照保存未执行，不代表检查通过。项目不要求仓库内
+`.venv`，需要安装时另按实际授权使用用户选择的 Python 3.12 环境：
 
 ```sh
 python3.12 -m pip install -r source/requirements.txt

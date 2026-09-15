@@ -108,27 +108,36 @@ def test_legal_goal_fragment_preservation_and_model_replay(
 
     root, _, _ = helpers.setup(tmp_path, monkeypatch)
     text = helpers.goal_text().replace("按运动表现安排跑步，保留攀岩时间", value, 1)
-    (root / "goal.md").write_text(text)
+    (root / "Goal.md").write_text(text)
     context = helpers.modules()[0]
     body = context.freeze(
         root, helpers.fixture.END, validate_report=helpers.valid_report
     )
-    assert body["goal_snapshot"]["goal"] == context.parse_training_goal_v1(text)
+    assert body["goal_snapshot"]["goal"] == {
+        "schema_version": "training_goal_text_v1",
+        "text": text,
+    }
     before_body = model_job.sha(body)
     adapter = model_job.FakeAdapter({"ok": "synthetic"}, [])
+    summary, validate_summary, replay_plan = helpers.summary_setup(
+        root, body, helpers.valid_report
+    )
+
+    def check_result(result, payload):
+        assert result == {"ok": "synthetic"} and payload == summary
 
     def run():
+        replay_plan()
         return model_job.run(
             root,
             helpers.fixture.END,
             body["scope_sha256"],
-            body,
+            summary,
             matrix.closed_schema({"ok": "synthetic"}),
             adapter,
-            validate_input=context.validator(
-                root, helpers.fixture.END, validate_report=helpers.valid_report
-            ),
-            validate_result=lambda result, payload: result == {"ok": "synthetic"},
+            stage="summary",
+            validate_input=validate_summary,
+            validate_result=check_result,
         )
 
     assert run()["status"] == "succeeded"
@@ -140,4 +149,4 @@ def test_legal_goal_fragment_preservation_and_model_replay(
         context.freeze(root, helpers.fixture.END, validate_report=helpers.valid_report)
         == body
     )
-    assert (root / "goal.md").read_text() == text
+    assert (root / "Goal.md").read_text() == text

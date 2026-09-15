@@ -25,7 +25,7 @@ SOURCE = Path(__file__).resolve().parents[3]
 sys.path[:0] = [str(SOURCE), str(SOURCE / "tests/code/contract")]
 
 
-def run(root: Path, model: str) -> dict[str, Any]:
+def run(root: Path, model: str, model_stage: str = "plan") -> dict[str, Any]:
     from skills._shared.fit_weekly import (
         codex_adapter,
         codex_boundary,
@@ -58,6 +58,7 @@ def run(root: Path, model: str) -> dict[str, Any]:
         "file",
         "Public Host instructions.",
         "Public weekly input:\n",
+        stage=model_stage,
     )
     identity = runtime.identity()
     home = Path(os.environ["HOME"])
@@ -319,10 +320,14 @@ def run(root: Path, model: str) -> dict[str, Any]:
                 raise ValueError("public_result_invalid")
 
         args = (instance, end, scope, {"public": True}, codex_capability.SCHEMA)
+        if model_stage == "summary":
+            # Public synthetic prerequisite, never a production fallback.
+            model_job.run(*args, model_job.FakeAdapter({"ok": True}, []), stage="plan", validate_input=valid_input, validate_result=valid_result)
         adapter = codex_adapter.prepare(
             *args,
             runtime=runtime,
             capability_path=path,
+            stage=model_stage,
             validate_input=valid_input,
             validate_result=valid_result,
         )
@@ -330,13 +335,13 @@ def run(root: Path, model: str) -> dict[str, Any]:
             prompt='Public weekly input:\n{"public":true}', cwd=adapter.work / "job"
         )
         result = model_job.run(
-            *args, adapter, validate_input=valid_input, validate_result=valid_result
+            *args, adapter, stage=model_stage, validate_input=valid_input, validate_result=valid_result
         )
         if errors or result["status"] != "succeeded" or len(observed) != 18:
             raise ValueError("public_adapter_incomplete")
         before = (instance / "trainlab-fit.db").read_bytes()
         recovered = codex_adapter.recover(
-            *args, validate_input=valid_input, validate_result=valid_result
+            *args, stage=model_stage, validate_input=valid_input, validate_result=valid_result
         )
         if (
             recovered["status"] != "succeeded"
@@ -375,11 +380,12 @@ def run(root: Path, model: str) -> dict[str, Any]:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", required=True)
+    parser.add_argument("--stage", choices=("plan", "summary"), default="plan")
     options = parser.parse_args()
     os.umask(0o077)
     directory = Path(tempfile.mkdtemp(prefix="trainlab-m12-public-adapter-")).resolve()
     try:
-        result = run(directory, options.model)
+        result = run(directory, options.model, options.stage)
         print(json.dumps({"private_evidence_root": str(directory), **result}))
     except Exception:
         print(
