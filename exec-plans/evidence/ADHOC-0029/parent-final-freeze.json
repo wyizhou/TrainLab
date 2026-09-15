@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "snapshot": "review-snapshot-v3.json",
+  "files": 96,
+  "tracked_absent": 326,
+  "head": "ec36ce7bbdf9d70a509238dd771b155eb6f84261",
+  "branch": "work/adhoc-0029-agentsmd-upgrade",
+  "index_sha256": "ca081c39357d158a043573e2a2d8bcf0e4a8ed6249cd4b56d9cadfb06343068c",
+  "observed_at_utc": "2026-09-15T11:06:40.057151+00:00"
+}

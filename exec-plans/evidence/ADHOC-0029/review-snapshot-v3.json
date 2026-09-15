@@ -1,0 +1,823 @@
+{
+  "snapshot": "ADHOC-0029-review-v3",
+  "captured_at_utc": "2026-09-15T10:52:09.340556+00:00",
+  "root": ".",
+  "branch": "work/adhoc-0029-agentsmd-upgrade",
+  "head": "ec36ce7bbdf9d70a509238dd771b155eb6f84261",
+  "files": {
+    ".github/workflows/ci.yml": {
+      "sha256": "0d99ab915ed210db264e4eb9758048d6c3e488b41af4cd72982e62048966f94c",
+      "bytes": 3435,
+      "mode": "0o100644"
+    },
+    ".gitignore": {
+      "sha256": "6412e9d643f9ff840b65fcae184aeafdf9f4e290548c69ddfd1bebcba551efba",
+      "bytes": 2143,
+      "mode": "0o100644"
+    },
+    "AGENTS.md": {
+      "sha256": "d5dadbb4720aa5357af5f043a0fe327b29f09c3c383de8733c8c2a674c12ad60",
+      "bytes": 10419,
+      "mode": "0o100644"
+    },
+    "MEMORY.md": {
+      "sha256": "c2066fc087fc2ae6cc8d7e0d48deb3536b7cb12a439ab2b0cef0b2069dca1615",
+      "bytes": 7537,
+      "mode": "0o100644"
+    },
+    "PLAN.md": {
+      "sha256": "7f3b67fab721932cf5e7441f4b4c346fddb0565b7a5be1d2867a3c846f3c99e6",
+      "bytes": 43066,
+      "mode": "0o100600"
+    },
+    "README.md": {
+      "sha256": "b6e07bd00be8815d527699400742ec07dc5c11f0db899855b88237fe918d4a19",
+      "bytes": 5384,
+      "mode": "0o100600"
+    },
+    "exec-plans/active/ADHOC-0007-production-backfill-and-monitor.md": {
+      "sha256": "8c3745b34fbcf32c83bf1c214069b2de59c596c33ee92b86ad0bc45ceee567f7",
+      "bytes": 31917,
+      "mode": "0o100600"
+    },
+    "exec-plans/active/ADHOC-0016-agentforge-governance-update.md": {
+      "sha256": "1cbdc76a7d156b0318ba98232ae2dd6e253bf67429bd346013af58498cdf6229",
+      "bytes": 27959,
+      "mode": "0o100600"
+    },
+    "exec-plans/active/ADHOC-0018-data-fit-year-cleanup.md": {
+      "sha256": "12a024f4b37201c05a0e5c91aaa3911b81cf1ffcfb83d9f963105ba2931ec79b",
+      "bytes": 24815,
+      "mode": "0o100600"
+    },
+    "exec-plans/active/ADHOC-0023-fit-data-classification-discussion.md": {
+      "sha256": "84e45a58c98ff02fbe2cae5b2a71542f4e97ad6d8d65b616f174e2799b8e1c37",
+      "bytes": 13081,
+      "mode": "0o100600"
+    },
+    "exec-plans/active/ADHOC-0024-fit-sqlite-parser.md": {
+      "sha256": "f45ae205d6de14521c042c2f56b0ef74d6538713c31caa677c3118287340a419",
+      "bytes": 13966,
+      "mode": "0o100600"
+    },
+    "exec-plans/active/ADHOC-0025-fit-running-query-tool.md": {
+      "sha256": "65551b12609241c465226035d74cb6994ed231aa6eacf581d112280c9c9618a5",
+      "bytes": 12204,
+      "mode": "0o100600"
+    },
+    "exec-plans/active/ADHOC-0026-tools-ai-index.md": {
+      "sha256": "434a085272c16f663f64b77f6ced268941519822f45f8f47150d6c6387b0294d",
+      "bytes": 8249,
+      "mode": "0o100600"
+    },
+    "exec-plans/active/ADHOC-0027-activity-ai-report.md": {
+      "sha256": "86b8277f771bb6458d7d44ed2fcffb7d63307a04031efb977b7bb323b57c6c2b",
+      "bytes": 8246,
+      "mode": "0o100600"
+    },
+    "exec-plans/active/ADHOC-0028-weekly-ai-report.md": {
+      "sha256": "cbc8787de1cc962071cb50b8417f199195ae44ca368fcd23904c8249c808acb0",
+      "bytes": 9793,
+      "mode": "0o100600"
+    },
+    "exec-plans/active/ADHOC-0029-agentsmd-upgrade.md": {
+      "sha256": "674a046e1b2e9296eb8ded71585e8bbef3f870d94bac0f47258513a0bc23e7d4",
+      "bytes": 10618,
+      "mode": "0o100644"
+    },
+    "exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md": {
+      "sha256": "c4f8b0461f56f53ed0321c36060df1951d3748041d82fdb8cf696b039dbef478",
+      "bytes": 132160,
+      "mode": "0o100600"
+    },
+    "exec-plans/active/M12-fit-weekly-0001-rebuild.md": {
+      "sha256": "d6bc614eda83a5b5df77bc540205719b636b1e0facfae0bc1533ba96a36d4de3",
+      "bytes": 36617,
+      "mode": "0o100600"
+    },
+    "exec-plans/active/M6-activity-evidence-0001-lifecycle-and-preview.md": {
+      "sha256": "57c305d27a3afebcc76c7675ef99a00d0179c043ab87872af6df5663624a386f",
+      "bytes": 23946,
+      "mode": "0o100600"
+    },
+    "exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md": {
+      "sha256": "93549c39b058f0e8a131aa6a4406b1067b787d84ea55269a572d240d6ed9b11a",
+      "bytes": 20963,
+      "mode": "0o100600"
+    },
+    "exec-plans/completed/ADHOC-0002-repository-root-cleanup.md": {
+      "sha256": "6c13518857285f6eb90686f30122f75c768bfb65fb1c4f0729e615cd6298a8b4",
+      "bytes": 18142,
+      "mode": "0o100600"
+    },
+    "exec-plans/completed/ADHOC-0003-generated-and-crash-artifact-cleanup.md": {
+      "sha256": "3474cd631cfe1331b0b60201daa4d5e3c3527190244296a2067564d0eed8c070",
+      "bytes": 14846,
+      "mode": "0o100600"
+    },
+    "exec-plans/completed/ADHOC-0004-support-directory-classification.md": {
+      "sha256": "04ac49d1b52a1f241f473f8cfdafe0417c628eb56da2e5a458503cd6244ad291",
+      "bytes": 16927,
+      "mode": "0o100600"
+    },
+    "exec-plans/completed/ADHOC-0005-authentication-health-check.md": {
+      "sha256": "5d9c37fd4c7a1942cc6cd148ccb5527b6f8bb143f4004ca9a57b5c89923e6a3e",
+      "bytes": 14304,
+      "mode": "0o100600"
+    },
+    "exec-plans/completed/ADHOC-0006-garmin-token-sync.md": {
+      "sha256": "38b2cdc05e3c43fc158e4340d16832626c1589f02977f89d867baed7e2ac9232",
+      "bytes": 13539,
+      "mode": "0o100600"
+    },
+    "exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md": {
+      "sha256": "e99bdd4a8ac3655a9d4579cb3dc9e758ce043b90ea24158122a9b1ae842e3b51",
+      "bytes": 33626,
+      "mode": "0o100600"
+    },
+    "exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md": {
+      "sha256": "4b9926c06d289a5c59a86bc9e3df499d5be1fa0a9282389d780d4d7ff8071f9f",
+      "bytes": 20317,
+      "mode": "0o100600"
+    },
+    "exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md": {
+      "sha256": "0cd75e77f3945c3acfbd4e5673466f5b794468b5ce5e362cdeae9a0313e23232",
+      "bytes": 15775,
+      "mode": "0o100600"
+    },
+    "exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md": {
+      "sha256": "5d6e08f6406b5a0de5e3e8756b0f54501b7177edb68c2d78e078b98363e46912",
+      "bytes": 107299,
+      "mode": "0o100600"
+    },
+    "exec-plans/completed/ADHOC-0012-current-runtime-tech-debt-audit.md": {
+      "sha256": "a2d57d0342a542c2aa45f717794de9762ca6cfc35d7aa36b29a04bae28cf7fae",
+      "bytes": 20044,
+      "mode": "0o100600"
+    },
+    "exec-plans/completed/ADHOC-0013-mcp-and-runtime-adapter-audit.md": {
+      "sha256": "2f0eed492f16ad46209e205c5efec33a8f587c67eccce41810ca59439d13443c",
+      "bytes": 15288,
+      "mode": "0o100600"
+    },
+    "exec-plans/completed/ADHOC-0014-m9-local-delivery.md": {
+      "sha256": "f8093adc4762b7c8f5b3dae570593db311f69342abd337bf0c219d1e1809866f",
+      "bytes": 20008,
+      "mode": "0o100600"
+    },
+    "exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md": {
+      "sha256": "200c3caca094f3fbd3217a34045dc5f6d43206ebc57bc6feee7dcc3e5f7974f4",
+      "bytes": 27605,
+      "mode": "0o100600"
+    },
+    "exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md": {
+      "sha256": "981c44a32fc16d7d1deb1bef3221c89bc7d909dad0129ece39b9257dfaf3f16e",
+      "bytes": 70041,
+      "mode": "0o100600"
+    },
+    "exec-plans/completed/ADHOC-0019-adopt-next-before-api.md": {
+      "sha256": "a9d9303d5d82d05e523c6867127f0e234c9efd01699bfba8c1a234f9adeba6bd",
+      "bytes": 40149,
+      "mode": "0o100600"
+    },
+    "exec-plans/completed/ADHOC-0020-states-activities-decisions.md": {
+      "sha256": "fe39b23b82334a56e5026c96150455a313d31166d7ca3a23ad3110eaef9574fa",
+      "bytes": 23789,
+      "mode": "0o100600"
+    },
+    "exec-plans/completed/ADHOC-0021-garmin-fit-reference.md": {
+      "sha256": "08b4dad3949677fb2ad2bcbd31ee256db6e18db20725ddc557da64d2887641f1",
+      "bytes": 18535,
+      "mode": "0o100600"
+    },
+    "exec-plans/completed/ADHOC-0022-longdou-real-fit-reference.md": {
+      "sha256": "2ea6e64be67a8e7f932d8c71f65ebc06e07c4d3ce8b0d6a478451cf9745aea63",
+      "bytes": 23597,
+      "mode": "0o100600"
+    },
+    "exec-plans/completed/M1-agentforge-migration-0001-development-harness.md": {
+      "sha256": "aa4db7300ef0323769eebc95879a6a139c70badd770364df1b2de477e459b391",
+      "bytes": 13183,
+      "mode": "0o100600"
+    },
+    "exec-plans/completed/M1-product-root-0002-source-migration.md": {
+      "sha256": "2396d5c36c0f4bc7acbed03f83b03e7fcb8bb419401f283a292ed82e370f8728",
+      "bytes": 12927,
+      "mode": "0o100600"
+    },
+    "exec-plans/completed/M1-runtime-root-0003-data-switch.md": {
+      "sha256": "2e6b49423168c3a769ff8396df7f437dde608754c36219ee3d7d6fda78edf1b3",
+      "bytes": 12966,
+      "mode": "0o100600"
+    },
+    "exec-plans/completed/M10-live-e2e-0001-rolling-week.md": {
+      "sha256": "3a0b235c3088a5ea8d8497ed31377392ccaa6ca46a4aae664534ba3737067eba",
+      "bytes": 78730,
+      "mode": "0o100600"
+    },
+    "exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md": {
+      "sha256": "006023764daeb70d552cadc7c212341e93592beac82ef757809070d57aca6f9a",
+      "bytes": 20926,
+      "mode": "0o100600"
+    },
+    "exec-plans/completed/M11-email-presentation-0001-readable-cid.md": {
+      "sha256": "3bba65f49b58cab9a9d6aeccac6bae144daac6a425049d4e300ca4f9f56aae43",
+      "bytes": 135286,
+      "mode": "0o100600"
+    },
+    "exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md": {
+      "sha256": "44afb11c115a79faf27a6ec374c593e96bd6f664e80d0e05e7cf1de56b171e45",
+      "bytes": 24177,
+      "mode": "0o100600"
+    },
+    "exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md": {
+      "sha256": "f74570876ee625fa8fc1066a5ed23e5f185d6260ca2b05f5148c22e79cac16fa",
+      "bytes": 21722,
+      "mode": "0o100600"
+    },
+    "exec-plans/completed/M4-source-root-0001-product-consolidation.md": {
+      "sha256": "537eec2c77b0b7752c40949ef65941e111262b28585b4df144788c3d9dc8d909",
+      "bytes": 19587,
+      "mode": "0o100600"
+    },
+    "exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md": {
+      "sha256": "d5200978576308ca63a190dac991437c75bae2804c6967d5a6099e0563fb371a",
+      "bytes": 23031,
+      "mode": "0o100600"
+    },
+    "exec-plans/completed/M7-ai-skills-0001-runtime-closure.md": {
+      "sha256": "dbaa50cdcf7e92dc5a9bfa5db44806a8133560f65872fb5846870544fd1ab36a",
+      "bytes": 22576,
+      "mode": "0o100600"
+    },
+    "exec-plans/completed/M8-real-data-0001-ai-coach-closure.md": {
+      "sha256": "8f6a40aca9f709db031bb90953897f8b3ead8e7ce6c5e042320201ba49131e51",
+      "bytes": 47263,
+      "mode": "0o100600"
+    },
+    "exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md": {
+      "sha256": "ff2c31a85b794214f06e65c4b326cc3ea9a7d26d792ad1bf843c499c7d8591c4",
+      "bytes": 118628,
+      "mode": "0o100600"
+    },
+    "exec-plans/evidence/ADHOC-0029/README.md": {
+      "sha256": "d94c7aa5e4a630885a0ea1b468ee8e23f9b8cbd65c5481508ee2d117b887f345",
+      "bytes": 6378,
+      "mode": "0o100644"
+    },
+    "exec-plans/evidence/ADHOC-0029/checks-after-decompositions.json": {
+      "sha256": "8d53f3aecbf44ddd2c69089e5f19453927498b8dc53d18681048283c8d7bfb3f",
+      "bytes": 180249,
+      "mode": "0o100600"
+    },
+    "exec-plans/evidence/ADHOC-0029/checks-after-definitions.json": {
+      "sha256": "12b8fc176965ed8adb5e59893405646758f0a4380a8b3d1b6858615670196f04",
+      "bytes": 180250,
+      "mode": "0o100600"
+    },
+    "exec-plans/evidence/ADHOC-0029/checks-before-validator.json": {
+      "sha256": "53e7a8eb18932ba06ccca354b76dce8d782418f45aa28d2a896e62e0d701f1ec",
+      "bytes": 128709,
+      "mode": "0o100600"
+    },
+    "exec-plans/evidence/ADHOC-0029/checks-initial.json": {
+      "sha256": "f6ef8f7194130e5bf5e75101316b554fd322d4e84de62f1fe15c179dacfe18f5",
+      "bytes": 128493,
+      "mode": "0o100600"
+    },
+    "exec-plans/evidence/ADHOC-0029/decomposition-mapping.json": {
+      "sha256": "15fa974ab4371ba567e5db224446563f3f160bb760b7a4fe815c4d76f126361e",
+      "bytes": 358943,
+      "mode": "0o100600"
+    },
+    "exec-plans/evidence/ADHOC-0029/decomposition-regression-v3.json": {
+      "sha256": "3e510d2b22340cf7937c35d47570d4b6bdad3b67bc11c43a9660ec9a7796ec55",
+      "bytes": 342610,
+      "mode": "0o100600"
+    },
+    "exec-plans/evidence/ADHOC-0029/decomposition-regression.json": {
+      "sha256": "3e510d2b22340cf7937c35d47570d4b6bdad3b67bc11c43a9660ec9a7796ec55",
+      "bytes": 342610,
+      "mode": "0o100600"
+    },
+    "exec-plans/evidence/ADHOC-0029/definition-mapping.json": {
+      "sha256": "9b29f3f68aff39d4b35fa6c9a78ff83038080d9eb258a31bfe98f6eece263caf",
+      "bytes": 135384,
+      "mode": "0o100600"
+    },
+    "exec-plans/evidence/ADHOC-0029/definition-regression-first.json": {
+      "sha256": "c55f119e2433141bc272f8d10c06ec14e64e7ef19f19c20f78f365c2ae9d6d4b",
+      "bytes": 324882,
+      "mode": "0o100600"
+    },
+    "exec-plans/evidence/ADHOC-0029/definition-regression.json": {
+      "sha256": "7f3a687fae49f255c7f8120d1bff812fe137c00ceb6496acc943eafff365fe41",
+      "bytes": 324926,
+      "mode": "0o100600"
+    },
+    "exec-plans/evidence/ADHOC-0029/failure-index.json": {
+      "sha256": "e9fa715fda7c8688ce42b39f2a02a9a6b9960d0bdf7aa7d82eba0c6e28e97ff5",
+      "bytes": 60998,
+      "mode": "0o100600"
+    },
+    "exec-plans/evidence/ADHOC-0029/history-manifest.json": {
+      "sha256": "307258579feb08ed8faf23537bb782af3946d07741ef1b0b2910e412592ddd1e",
+      "bytes": 9814,
+      "mode": "0o100600"
+    },
+    "exec-plans/evidence/ADHOC-0029/history.zip": {
+      "sha256": "bdd6272300e9ebd8f225606b0c365f39cc509ac61e8c576073d1a01c4b0e932c",
+      "bytes": 415501,
+      "mode": "0o100600"
+    },
+    "exec-plans/evidence/ADHOC-0029/migration-manifest.json": {
+      "sha256": "6d4b37f0c846163e026f707d743e145829134a4a56c6985f2d0b16e04b807549",
+      "bytes": 70401,
+      "mode": "0o100600"
+    },
+    "exec-plans/evidence/ADHOC-0029/parent-check-evidence.json": {
+      "sha256": "de1151a58e2c0e08c6527e7313723f394fb5696667721d897ad1bf0012589731",
+      "bytes": 1042,
+      "mode": "0o100600"
+    },
+    "exec-plans/evidence/ADHOC-0029/parent-definition-evidence.json": {
+      "sha256": "7aa3832624a48a00eeaadf29479b00dcdb279092654c397dca923c974ce27d18",
+      "bytes": 1163,
+      "mode": "0o100600"
+    },
+    "exec-plans/evidence/ADHOC-0029/parent-repair-evidence.json": {
+      "sha256": "82e8433da3136d6ac317915baca90c030cb19a97ad299bc6bfa787b4b8bb4ca0",
+      "bytes": 944,
+      "mode": "0o100600"
+    },
+    "exec-plans/evidence/ADHOC-0029/reference-link-migration.json": {
+      "sha256": "2cec290fa1847dc321f619fb675a3ab2da5b2e2dc0b4e53691c1e3f79e17d601",
+      "bytes": 506,
+      "mode": "0o100600"
+    },
+    "exec-plans/evidence/ADHOC-0029/review-snapshot-v2.json": {
+      "sha256": "8fc8b677bb1c95193ccd5b70c0195f638dcc57ad892923cb36db03de2124e9fa",
+      "bytes": 36295,
+      "mode": "0o100600"
+    },
+    "exec-plans/evidence/ADHOC-0029/review-snapshot.json": {
+      "sha256": "b49d7f667c4e9cf92039dbb22a701083e534091e00d7881f886b5077292545a4",
+      "bytes": 34397,
+      "mode": "0o100600"
+    },
+    "exec-plans/evidence/ADHOC-0029/roadmap-mapping.json": {
+      "sha256": "63bd9ac89d653088747d13c8dc6ebfe5fade6067b5988031182abe145f16a21a",
+      "bytes": 25868,
+      "mode": "0o100600"
+    },
+    "exec-plans/evidence/ADHOC-0029/upstream-files.json": {
+      "sha256": "2d7ce575751462b232504ab17de394654c4728c2b66ec1c762f4fc43dbbd29b0",
+      "bytes": 3165,
+      "mode": "0o100600"
+    },
+    "exec-plans/evidence/ADHOC-0029/upstream.json": {
+      "sha256": "148111fff08baada2ab96ccd7004bf2e6ee2a843a299213e7ec18d9900bb3eca",
+      "bytes": 201,
+      "mode": "0o100600"
+    },
+    "exec-plans/evidence/ADHOC-0029/validation-v1-evidence.zip": {
+      "sha256": "c64d5cd74c5b1b447ec35eafa9d770c91cc4acd5fc8e6a5b9142018c8554fc11",
+      "bytes": 95230,
+      "mode": "0o100600"
+    },
+    "exec-plans/evidence/ADHOC-0029/validation-v1-plan-structure.json": {
+      "sha256": "67e39925f35d497773633cb96242adfb3247b69d41cfe5821793c5b6c86f1375",
+      "bytes": 224710,
+      "mode": "0o100600"
+    },
+    "exec-plans/evidence/ADHOC-0029/validation-v1-semantic-results.json": {
+      "sha256": "2eccde85ac385193763d1a9fe5806b678b90124a159e2972af82760f53342722",
+      "bytes": 12302,
+      "mode": "0o100600"
+    },
+    "exec-plans/evidence/ADHOC-0029/validation-v1.md": {
+      "sha256": "682d88779b1b5ca0510057f97ed95cc7704c86f30e9909f40e72e064ed6145d9",
+      "bytes": 11346,
+      "mode": "0o100600"
+    },
+    "exec-plans/evidence/ADHOC-0029/validation-v2-evidence.zip": {
+      "sha256": "ad4ccad77a9fa46fa95e18f4216304b38023e6a520c4c34094c2a7272760cacf",
+      "bytes": 200042,
+      "mode": "0o100600"
+    },
+    "exec-plans/evidence/ADHOC-0029/validation-v2-non-table-review.json": {
+      "sha256": "cbe26e993cf9009819a2b21e15b96cb108fb8a50646826a6788f6acbc176cabd",
+      "bytes": 9302,
+      "mode": "0o100600"
+    },
+    "exec-plans/evidence/ADHOC-0029/validation-v2.md": {
+      "sha256": "727431a5159322a220bbd55f62acbb7960f9c2571ab72cc77437c70f5b983805",
+      "bytes": 13154,
+      "mode": "0o100600"
+    },
+    "exec-plans/tech-debt-tracker.md": {
+      "sha256": "0ea5e12a93a9194ba67915a6723bfc320dee9e968ae6c636fc1975e7607230e8",
+      "bytes": 1053,
+      "mode": "0o100600"
+    },
+    "exec-plans/template.md": {
+      "sha256": "17d0d93e3f79e2174bf751a5c8e80acf70aa35807ed8db73050e8faafe842f05",
+      "bytes": 826,
+      "mode": "0o100600"
+    },
+    "references/.gitkeep": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "mode": "0o100644"
+    },
+    "references/README.md": {
+      "sha256": "725db81ce033ea8d1aaac81ffe8c3a044e2b397d61429de8ad296e90d603a1db",
+      "bytes": 618,
+      "mode": "0o100600"
+    },
+    "references/garmin-fit-parsing.md": {
+      "sha256": "de228e02ce2ab637f55b947a88e95e62794458056ae2ce5b08fde22e31ccae11",
+      "bytes": 24464,
+      "mode": "0o100644"
+    },
+    "references/longdou.md": {
+      "sha256": "8278d5d8a89b3b34b6c5d96084068b39c1b9a775806b503045ada04962efa8ce",
+      "bytes": 19321,
+      "mode": "0o100644"
+    },
+    "skills/README.md": {
+      "sha256": "a88fdc43fe794844ced1ab7e1911f0d87298c44f1ba0098e97e43898aa5f7b0d",
+      "bytes": 476,
+      "mode": "0o100644"
+    },
+    "states/Goal-example.md": {
+      "sha256": "5114513cc0118be3e0c4de77619dc951dcfe12d8981c6a5a52c7cacddff580e4",
+      "bytes": 1509,
+      "mode": "0o100644"
+    },
+    "states/activities/.gitkeep": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "mode": "0o100600"
+    },
+    "states/health/.gitkeep": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "mode": "0o100600"
+    },
+    "states/verification/.gitkeep": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "mode": "0o100644"
+    },
+    "subagent-templates/developer.md": {
+      "sha256": "4bd1ad1fedc44e95ff9eb36aa71ad18c48db3d6861e127f333d760f9daf25c00",
+      "bytes": 3127,
+      "mode": "0o100600"
+    },
+    "subagent-templates/planner.md": {
+      "sha256": "e6ae5034b21d6422c2d6c116360f57c645acba9e71b7efb9b9f1c55b4a00999e",
+      "bytes": 2735,
+      "mode": "0o100600"
+    },
+    "subagent-templates/validator.md": {
+      "sha256": "4f5aa20b33b513b9889336ae2d80841b18f6c6ee5f892becfd5c2697fd6d22b5",
+      "bytes": 3545,
+      "mode": "0o100600"
+    }
+  },
+  "tracked_absent": [
+    "CHANGELOG.md",
+    "CLAUDE.md",
+    "PLANS.md",
+    "docs/exec-plans/README.md",
+    "docs/exec-plans/active/.gitkeep",
+    "docs/exec-plans/active/ADHOC-0018-data-fit-year-cleanup.md",
+    "docs/exec-plans/active/M12-fit-weekly-0001-rebuild.md",
+    "docs/exec-plans/active/README.md",
+    "docs/exec-plans/completed/.gitkeep",
+    "docs/exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md",
+    "docs/exec-plans/completed/ADHOC-0002-repository-root-cleanup.md",
+    "docs/exec-plans/completed/ADHOC-0003-generated-and-crash-artifact-cleanup.md",
+    "docs/exec-plans/completed/ADHOC-0004-support-directory-classification.md",
+    "docs/exec-plans/completed/ADHOC-0005-authentication-health-check.md",
+    "docs/exec-plans/completed/ADHOC-0006-garmin-token-sync.md",
+    "docs/exec-plans/completed/ADHOC-0007-production-backfill-and-monitor.md",
+    "docs/exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md",
+    "docs/exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md",
+    "docs/exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md",
+    "docs/exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md",
+    "docs/exec-plans/completed/ADHOC-0012-current-runtime-tech-debt-audit.md",
+    "docs/exec-plans/completed/ADHOC-0013-mcp-and-runtime-adapter-audit.md",
+    "docs/exec-plans/completed/ADHOC-0014-m9-local-delivery.md",
+    "docs/exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md",
+    "docs/exec-plans/completed/ADHOC-0016-agentforge-governance-update.md",
+    "docs/exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md",
+    "docs/exec-plans/completed/ADHOC-0019-adopt-next-before-api.md",
+    "docs/exec-plans/completed/M1-agentforge-migration-0001-development-harness.md",
+    "docs/exec-plans/completed/M1-product-root-0002-source-migration.md",
+    "docs/exec-plans/completed/M1-runtime-root-0003-data-switch.md",
+    "docs/exec-plans/completed/M10-live-e2e-0001-rolling-week.md",
+    "docs/exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md",
+    "docs/exec-plans/completed/M11-email-presentation-0001-readable-cid-r02.md",
+    "docs/exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+    "docs/exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md",
+    "docs/exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md",
+    "docs/exec-plans/completed/M4-source-root-0001-product-consolidation.md",
+    "docs/exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md",
+    "docs/exec-plans/completed/M6-activity-evidence-0001-lifecycle-and-preview.md",
+    "docs/exec-plans/completed/M7-ai-skills-0001-runtime-closure.md",
+    "docs/exec-plans/completed/M8-real-data-0001-ai-coach-closure.md",
+    "docs/exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md",
+    "docs/exec-plans/completed/README.md",
+    "docs/exec-plans/tech-debt-tracker.md",
+    "docs/exec-plans/template.md",
+    "docs/legal/third-party-notices.md",
+    "docs/migration.md",
+    "docs/product-contract.md",
+    "rules.md",
+    "source/AGENTS.md",
+    "source/config/examples/Email.template.md",
+    "source/config/examples/fit-weekly.authorization.template.json",
+    "source/config/examples/fit-weekly.config.template.json",
+    "source/config/examples/fit-weekly.garmin.template.json",
+    "source/config/examples/fit-weekly.gmail.template.json",
+    "source/config/examples/fit-weekly.model.template.json",
+    "source/config/examples/fit-weekly.schedule.template.json",
+    "source/docs/codex-adapter.md",
+    "source/docs/codex-input-boundary.md",
+    "source/docs/codex-isolation.md",
+    "source/docs/codex-output.md",
+    "source/docs/codex-recovery.md",
+    "source/docs/command-runner.md",
+    "source/docs/email-configuration.md",
+    "source/docs/fit-detail-server.md",
+    "source/docs/fit-detail-transport.md",
+    "source/docs/fit-detail.md",
+    "source/docs/fit-parsing.md",
+    "source/docs/fit-sync.md",
+    "source/docs/fit-time-bounds.md",
+    "source/docs/fit-weekly-entrypoint.md",
+    "source/docs/fit-weekly-evidence.md",
+    "source/docs/fit-weekly-storage.md",
+    "source/docs/garmin-fit-adapter.md",
+    "source/docs/legacy-archive.md",
+    "source/docs/legacy-fit-import.md",
+    "source/docs/legacy-retirement.md",
+    "source/docs/legacy-test-mapping.json",
+    "source/docs/m12-location-admission.md",
+    "source/docs/model-job-ledger.md",
+    "source/docs/model-process.md",
+    "source/docs/process-capture.md",
+    "source/docs/publication.md",
+    "source/docs/sync-calendar.md",
+    "source/docs/weekly-coaching.md",
+    "source/docs/weekly-context.md",
+    "source/docs/weekly-reports.md",
+    "source/docs/weekly-stages.md",
+    "source/email.module.json",
+    "source/goal.module.md",
+    "source/requirements.txt",
+    "source/skills/README.md",
+    "source/skills/__init__.py",
+    "source/skills/_shared/__init__.py",
+    "source/skills/_shared/assets/report-fonts/LICENSE",
+    "source/skills/_shared/assets/report-fonts/SOURCE.md",
+    "source/skills/_shared/assets/report-fonts/TrainLabReportSans-Regular.ttf",
+    "source/skills/_shared/fit_weekly/__init__.py",
+    "source/skills/_shared/fit_weekly/__main__.py",
+    "source/skills/_shared/fit_weekly/cli.py",
+    "source/skills/_shared/fit_weekly/coaching.py",
+    "source/skills/_shared/fit_weekly/coaching_contract.py",
+    "source/skills/_shared/fit_weekly/coaching_evidence.py",
+    "source/skills/_shared/fit_weekly/coaching_facts.py",
+    "source/skills/_shared/fit_weekly/coaching_plan.py",
+    "source/skills/_shared/fit_weekly/coaching_summary.py",
+    "source/skills/_shared/fit_weekly/codex_adapter.py",
+    "source/skills/_shared/fit_weekly/codex_boundary.py",
+    "source/skills/_shared/fit_weekly/codex_capability.py",
+    "source/skills/_shared/fit_weekly/codex_isolation.py",
+    "source/skills/_shared/fit_weekly/codex_native.py",
+    "source/skills/_shared/fit_weekly/codex_output.py",
+    "source/skills/_shared/fit_weekly/codex_recovery.py",
+    "source/skills/_shared/fit_weekly/codex_runtime.py",
+    "source/skills/_shared/fit_weekly/command_adapter.py",
+    "source/skills/_shared/fit_weekly/command_capability.py",
+    "source/skills/_shared/fit_weekly/command_catalog.py",
+    "source/skills/_shared/fit_weekly/command_environment.py",
+    "source/skills/_shared/fit_weekly/command_output.py",
+    "source/skills/_shared/fit_weekly/command_runtime.py",
+    "source/skills/_shared/fit_weekly/detail_server.py",
+    "source/skills/_shared/fit_weekly/detail_transport.py",
+    "source/skills/_shared/fit_weekly/email_config.py",
+    "source/skills/_shared/fit_weekly/fit_detail.py",
+    "source/skills/_shared/fit_weekly/fit_parse.py",
+    "source/skills/_shared/fit_weekly/fit_sync.py",
+    "source/skills/_shared/fit_weekly/fit_time.py",
+    "source/skills/_shared/fit_weekly/garmin_fit.py",
+    "source/skills/_shared/fit_weekly/garmin_publication.py",
+    "source/skills/_shared/fit_weekly/garmin_workouts.py",
+    "source/skills/_shared/fit_weekly/gmail_auth.py",
+    "source/skills/_shared/fit_weekly/gmail_labels.py",
+    "source/skills/_shared/fit_weekly/gmail_message.py",
+    "source/skills/_shared/fit_weekly/gmail_rest.py",
+    "source/skills/_shared/fit_weekly/gmail_scopes.py",
+    "source/skills/_shared/fit_weekly/history_archive.py",
+    "source/skills/_shared/fit_weekly/input_privacy.py",
+    "source/skills/_shared/fit_weekly/legacy_import.py",
+    "source/skills/_shared/fit_weekly/lifecycle.py",
+    "source/skills/_shared/fit_weekly/model_job.py",
+    "source/skills/_shared/fit_weekly/model_process.py",
+    "source/skills/_shared/fit_weekly/parent_watch.py",
+    "source/skills/_shared/fit_weekly/process_capture.py",
+    "source/skills/_shared/fit_weekly/publication.py",
+    "source/skills/_shared/fit_weekly/publication_ledger.py",
+    "source/skills/_shared/fit_weekly/report_artifacts.py",
+    "source/skills/_shared/fit_weekly/report_markdown.py",
+    "source/skills/_shared/fit_weekly/report_pdf.py",
+    "source/skills/_shared/fit_weekly/report_revisions.py",
+    "source/skills/_shared/fit_weekly/report_view.py",
+    "source/skills/_shared/fit_weekly/run_authorization.py",
+    "source/skills/_shared/fit_weekly/run_config.py",
+    "source/skills/_shared/fit_weekly/run_daemon.py",
+    "source/skills/_shared/fit_weekly/run_models.py",
+    "source/skills/_shared/fit_weekly/run_publication.py",
+    "source/skills/_shared/fit_weekly/run_reconcile.py",
+    "source/skills/_shared/fit_weekly/run_services.py",
+    "source/skills/_shared/fit_weekly/run_state.py",
+    "source/skills/_shared/fit_weekly/run_sync.py",
+    "source/skills/_shared/fit_weekly/run_weekly.py",
+    "source/skills/_shared/fit_weekly/runtime_resources.py",
+    "source/skills/_shared/fit_weekly/schedule_state.py",
+    "source/skills/_shared/fit_weekly/stage_context.py",
+    "source/skills/_shared/fit_weekly/stage_policy.py",
+    "source/skills/_shared/fit_weekly/storage.py",
+    "source/skills/_shared/fit_weekly/sync_batch.py",
+    "source/skills/_shared/fit_weekly/sync_budget.py",
+    "source/skills/_shared/fit_weekly/sync_calendar.py",
+    "source/skills/_shared/fit_weekly/weekly_context.py",
+    "source/skills/_shared/fit_weekly/weekly_evidence.py",
+    "source/skills/_shared/fit_weekly/weekly_history.py",
+    "source/skills/_shared/fit_weekly/weekly_stages.py",
+    "source/skills/_shared/mypy.ini",
+    "source/skills/_shared/prompts/fit-running-plan-v1.txt",
+    "source/skills/_shared/prompts/fit-sports-summary-v1.txt",
+    "source/skills/_shared/ruff.toml",
+    "source/skills/_shared/schemas/fit_activity_v1.schema.json",
+    "source/skills/_shared/schemas/fit_activity_v2.schema.json",
+    "source/skills/_shared/schemas/fit_activity_v3.schema.json",
+    "source/skills/_shared/schemas/fit_coaching_report_v1.schema.json",
+    "source/skills/_shared/schemas/fit_delivery_call_v1.schema.json",
+    "source/skills/_shared/schemas/fit_delivery_intent_v1.schema.json",
+    "source/skills/_shared/schemas/fit_delivery_request_v1.schema.json",
+    "source/skills/_shared/schemas/fit_delivery_request_v2.schema.json",
+    "source/skills/_shared/schemas/fit_delivery_result_v1.schema.json",
+    "source/skills/_shared/schemas/fit_delivery_skipped_v1.schema.json",
+    "source/skills/_shared/schemas/fit_detail_request_v1.schema.json",
+    "source/skills/_shared/schemas/fit_detail_request_v2.schema.json",
+    "source/skills/_shared/schemas/fit_detail_table_v1.schema.json",
+    "source/skills/_shared/schemas/fit_detail_table_v2.schema.json",
+    "source/skills/_shared/schemas/fit_detail_table_v3.schema.json",
+    "source/skills/_shared/schemas/fit_detail_v1.schema.json",
+    "source/skills/_shared/schemas/fit_detail_v2.schema.json",
+    "source/skills/_shared/schemas/fit_detail_v3.schema.json",
+    "source/skills/_shared/schemas/fit_model_receipt_v1.schema.json",
+    "source/skills/_shared/schemas/fit_model_receipt_v2.schema.json",
+    "source/skills/_shared/schemas/fit_report_artifacts_v1.schema.json",
+    "source/skills/_shared/schemas/fit_report_publication_v1.schema.json",
+    "source/skills/_shared/schemas/fit_report_revision_v1.schema.json",
+    "source/skills/_shared/schemas/fit_running_plan_v1.schema.json",
+    "source/skills/_shared/schemas/fit_sports_summary_v1.schema.json",
+    "source/skills/_shared/schemas/fit_weekly_evidence_v1.schema.json",
+    "source/skills/_shared/schemas/fit_weekly_evidence_v2.schema.json",
+    "source/skills/_shared/schemas/fit_weekly_evidence_v3.schema.json",
+    "source/skills/_shared/schemas/fit_weekly_stage_input_v1.schema.json",
+    "source/skills/_shared/schemas/fit_weekly_stage_input_v2.schema.json",
+    "source/skills/_shared/schemas/fit_weekly_stage_input_v3.schema.json",
+    "source/skills/_shared/schemas/fit_weekly_stages_result_v1.schema.json",
+    "source/skills/_shared/schemas/gmail_rest_auth_receipt_v1.schema.json",
+    "source/skills/_shared/schemas/training_goal_text_v1.schema.json",
+    "source/skills/_shared/schemas/training_goal_v1.schema.json",
+    "source/skills/_shared/scripts/schema_validation.py",
+    "source/skills/_shared/scripts/structured_outputs_validation.py",
+    "source/skills/_shared/typings/fitdecode/__init__.pyi",
+    "source/skills/_shared/typings/fitdecode/utils.pyi",
+    "source/skills/fit-weekly/SKILL.md",
+    "source/skills/garmin-sync/references/live-overrides.txt",
+    "source/skills/garmin-sync/scripts/mcp_server_guard.py",
+    "source/skills/gmail-sender/scripts/gmail_rest_auth.py",
+    "source/skills/gmail-sender/scripts/gmail_rest_common.py",
+    "source/state/raw/garmin/activities/.gitkeep",
+    "source/state/raw/garmin/health/.gitkeep",
+    "source/tests/ai/.gitkeep",
+    "source/tests/ai/README.md",
+    "source/tests/ai/cases/.gitkeep",
+    "source/tests/ai/cases/slot-already-complete.md",
+    "source/tests/ai/cases/weekly-crash-recovery.md",
+    "source/tests/ai/cases/weekly-entrypoint-edit-publication.md",
+    "source/tests/ai/cases/weekly-hard-load-conflict.md",
+    "source/tests/ai/cases/weekly-history-missing.md",
+    "source/tests/ai/cases/weekly-running-climbing.md",
+    "source/tests/ai/results/.gitkeep",
+    "source/tests/ai/rubrics/.gitkeep",
+    "source/tests/ai/schemas/.gitkeep",
+    "source/tests/ai/templates/.gitkeep",
+    "source/tests/ai/templates/m12_codex_probe.py",
+    "source/tests/ai/templates/result.json",
+    "source/tests/code/contract/test_ai_layout.py",
+    "source/tests/code/contract/test_m12_activity_names.py",
+    "source/tests/code/contract/test_m12_ci_boundary.py",
+    "source/tests/code/contract/test_m12_coaching_contract.py",
+    "source/tests/code/contract/test_m12_coaching_evidence.py",
+    "source/tests/code/contract/test_m12_coaching_plan.py",
+    "source/tests/code/contract/test_m12_codex_adapter.py",
+    "source/tests/code/contract/test_m12_codex_boundary.py",
+    "source/tests/code/contract/test_m12_codex_isolation.py",
+    "source/tests/code/contract/test_m12_codex_native.py",
+    "source/tests/code/contract/test_m12_codex_output.py",
+    "source/tests/code/contract/test_m12_codex_recovery.py",
+    "source/tests/code/contract/test_m12_command_runner.py",
+    "source/tests/code/contract/test_m12_daemon.py",
+    "source/tests/code/contract/test_m12_detail_server.py",
+    "source/tests/code/contract/test_m12_detail_transport.py",
+    "source/tests/code/contract/test_m12_email_config.py",
+    "source/tests/code/contract/test_m12_entrypoint.py",
+    "source/tests/code/contract/test_m12_fit_detail.py",
+    "source/tests/code/contract/test_m12_fit_field_sources.py",
+    "source/tests/code/contract/test_m12_fit_location.py",
+    "source/tests/code/contract/test_m12_fit_parse.py",
+    "source/tests/code/contract/test_m12_fit_sync.py",
+    "source/tests/code/contract/test_m12_fit_time_bounds.py",
+    "source/tests/code/contract/test_m12_garmin_fit_adapter.py",
+    "source/tests/code/contract/test_m12_garmin_publication.py",
+    "source/tests/code/contract/test_m12_gmail_labels.py",
+    "source/tests/code/contract/test_m12_gmail_publication.py",
+    "source/tests/code/contract/test_m12_goal_readonly.py",
+    "source/tests/code/contract/test_m12_goal_text.py",
+    "source/tests/code/contract/test_m12_history_archive.py",
+    "source/tests/code/contract/test_m12_input_privacy.py",
+    "source/tests/code/contract/test_m12_legacy_fit_import.py",
+    "source/tests/code/contract/test_m12_model_job.py",
+    "source/tests/code/contract/test_m12_model_process.py",
+    "source/tests/code/contract/test_m12_process_capture.py",
+    "source/tests/code/contract/test_m12_publication_ledger.py",
+    "source/tests/code/contract/test_m12_report_artifacts.py",
+    "source/tests/code/contract/test_m12_report_pdf.py",
+    "source/tests/code/contract/test_m12_report_revisions.py",
+    "source/tests/code/contract/test_m12_resource_closure.py",
+    "source/tests/code/contract/test_m12_retained_publication.py",
+    "source/tests/code/contract/test_m12_retained_scenarios.py",
+    "source/tests/code/contract/test_m12_retired_runner_safety.py",
+    "source/tests/code/contract/test_m12_retirement_boundary.py",
+    "source/tests/code/contract/test_m12_route_fragments.py",
+    "source/tests/code/contract/test_m12_sports_input.py",
+    "source/tests/code/contract/test_m12_stage_detail.py",
+    "source/tests/code/contract/test_m12_storage.py",
+    "source/tests/code/contract/test_m12_sync_calendar.py",
+    "source/tests/code/contract/test_m12_sync_command.py",
+    "source/tests/code/contract/test_m12_sync_wall_budget.py",
+    "source/tests/code/contract/test_m12_weekly_context.py",
+    "source/tests/code/contract/test_m12_weekly_evidence.py",
+    "source/tests/code/contract/test_m12_weekly_stages.py",
+    "source/tests/code/contract/test_schema_files.py",
+    "source/tests/code/fixtures/.gitkeep",
+    "source/tests/code/fixtures/README.md",
+    "source/tests/code/fixtures/m12_coaching_factory.py",
+    "source/tests/code/fixtures/m12_codex_cli_tools.json",
+    "source/tests/code/fixtures/m12_codex_cli_tools_v2.json",
+    "source/tests/code/fixtures/m12_codex_cli_tools_v3.json",
+    "source/tests/code/fixtures/m12_codex_native_surface_v1.json",
+    "source/tests/code/fixtures/m12_daemon_host.py",
+    "source/tests/code/fixtures/m12_fit_factory.py",
+    "source/tests/code/fixtures/m12_fit_field_sources.json",
+    "source/tests/code/fixtures/m12_fit_field_sources.md",
+    "source/tests/code/fixtures/m12_fit_time_factory.py",
+    "source/tests/code/fixtures/m12_fit_time_legacy_hashes.json",
+    "source/tests/code/fixtures/m12_history_factory.py",
+    "source/tests/code/fixtures/m12_legacy_command_factory.py",
+    "source/tests/code/fixtures/m12_legacy_goal.json",
+    "source/tests/code/fixtures/m12_mapping_history_baseline.json",
+    "source/tests/code/fixtures/m12_publication_factory.py",
+    "source/tests/code/fixtures/m12_report_factory.py",
+    "source/tests/code/fixtures/m12_retirement_chain_driver.py",
+    "source/tests/code/fixtures/m12_weekly_factory.py",
+    "source/tests/code/integration/.gitkeep",
+    "source/tests/code/integration/test_m12_coaching_stages.py",
+    "source/tests/code/integration/test_m12_daemon_process.py",
+    "source/tests/code/integration/test_m12_lifecycle.py",
+    "source/tests/code/integration/test_m12_publication_pipeline.py",
+    "source/tests/code/integration/test_m12_report_pipeline.py",
+    "source/tests/code/integration/test_m12_retirement_chain.py",
+    "source/tests/code/integration/test_m12_weekly_entrypoint.py",
+    "source/tests/code/unit/.gitkeep",
+    "source/tests/code/unit/test_garmin_cached_auth.py",
+    "source/tests/code/unit/test_gmail_auth.py",
+    "source/tests/code/unit/test_structured_outputs_contract.py"
+  ],
+  "case_rename": {
+    "memory.md": "MEMORY.md"
+  },
+  "index_entries_sha256": "ca081c39357d158a043573e2a2d8bcf0e4a8ed6249cd4b56d9cadfb06343068c",
+  "contract_sha256": "70c53a81071fd43833d032dc514a359c939bf4cdf2c36c1e518fc1bc29da34c3",
+  "frozen_by": "Parent stops reviewed writes until fresh V3 Validator returns. Prior snapshots and reports are historical, not current manifests."
+}

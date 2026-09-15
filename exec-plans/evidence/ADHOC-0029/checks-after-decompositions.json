@@ -1,0 +1,6223 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "check": "upstream:AGENTS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "upstream:README.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "upstream:exec-plans/template.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "upstream:subagent-templates/planner.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "upstream:subagent-templates/developer.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "upstream:subagent-templates/validator.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "upstream-base:references/README.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "upstream-base:skills/README.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "unrelated-unchanged:.gitignore",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "unrelated-unchanged:.github/workflows/ci.yml",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "unrelated-unchanged:references/longdou.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "preexisting-work:.gitignore",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:CHANGELOG.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:CLAUDE.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "preexisting-work:references/garmin-fit-parsing.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "preexisting-work:references/longdou.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:rules.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/AGENTS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/config/examples/Email.template.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/config/examples/fit-weekly.authorization.template.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/config/examples/fit-weekly.config.template.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/config/examples/fit-weekly.garmin.template.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/config/examples/fit-weekly.gmail.template.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/config/examples/fit-weekly.model.template.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/config/examples/fit-weekly.schedule.template.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/docs/codex-adapter.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/docs/codex-input-boundary.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/docs/codex-isolation.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/docs/codex-output.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/docs/codex-recovery.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/docs/command-runner.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/docs/email-configuration.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/docs/fit-detail-server.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/docs/fit-detail-transport.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/docs/fit-detail.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/docs/fit-parsing.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/docs/fit-sync.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/docs/fit-time-bounds.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/docs/fit-weekly-entrypoint.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/docs/fit-weekly-evidence.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/docs/fit-weekly-storage.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/docs/garmin-fit-adapter.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/docs/legacy-archive.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/docs/legacy-fit-import.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/docs/legacy-retirement.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/docs/legacy-test-mapping.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/docs/m12-location-admission.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/docs/model-job-ledger.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/docs/model-process.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/docs/process-capture.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/docs/publication.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/docs/sync-calendar.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/docs/weekly-coaching.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/docs/weekly-context.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/docs/weekly-reports.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/docs/weekly-stages.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/email.module.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/goal.module.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/requirements.txt",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/README.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/__init__.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/__init__.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/assets/report-fonts/LICENSE",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/assets/report-fonts/SOURCE.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/assets/report-fonts/TrainLabReportSans-Regular.ttf",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/__init__.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/__main__.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/cli.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/coaching.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/coaching_contract.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/coaching_evidence.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/coaching_facts.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/coaching_plan.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/coaching_summary.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/codex_adapter.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/codex_boundary.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/codex_capability.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/codex_isolation.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/codex_native.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/codex_output.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/codex_recovery.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/codex_runtime.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/command_adapter.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/command_capability.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/command_catalog.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/command_environment.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/command_output.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/command_runtime.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/detail_server.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/detail_transport.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/email_config.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/fit_detail.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/fit_parse.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/fit_sync.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/fit_time.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/garmin_fit.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/garmin_publication.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/garmin_workouts.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/gmail_auth.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/gmail_labels.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/gmail_message.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/gmail_rest.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/gmail_scopes.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/history_archive.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/input_privacy.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/legacy_import.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/lifecycle.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/model_job.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/model_process.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/parent_watch.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/process_capture.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/publication.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/publication_ledger.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/report_artifacts.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/report_markdown.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/report_pdf.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/report_revisions.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/report_view.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/run_authorization.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/run_config.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/run_daemon.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/run_models.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/run_publication.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/run_reconcile.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/run_services.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/run_state.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/run_sync.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/run_weekly.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/runtime_resources.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/schedule_state.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/stage_context.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/stage_policy.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/storage.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/sync_batch.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/sync_budget.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/sync_calendar.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/weekly_context.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/weekly_evidence.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/weekly_history.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/fit_weekly/weekly_stages.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/mypy.ini",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/prompts/fit-running-plan-v1.txt",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/prompts/fit-sports-summary-v1.txt",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/ruff.toml",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/fit_activity_v1.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/fit_activity_v2.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/fit_activity_v3.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/fit_coaching_report_v1.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/fit_delivery_call_v1.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/fit_delivery_intent_v1.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/fit_delivery_request_v1.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/fit_delivery_request_v2.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/fit_delivery_result_v1.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/fit_delivery_skipped_v1.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/fit_detail_request_v1.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/fit_detail_request_v2.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/fit_detail_table_v1.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/fit_detail_table_v2.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/fit_detail_table_v3.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/fit_detail_v1.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/fit_detail_v2.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/fit_detail_v3.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/fit_model_receipt_v1.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/fit_model_receipt_v2.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/fit_report_artifacts_v1.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/fit_report_publication_v1.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/fit_report_revision_v1.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/fit_running_plan_v1.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/fit_sports_summary_v1.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/fit_weekly_evidence_v1.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/fit_weekly_evidence_v2.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/fit_weekly_evidence_v3.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/fit_weekly_stage_input_v1.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/fit_weekly_stage_input_v2.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/fit_weekly_stage_input_v3.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/fit_weekly_stages_result_v1.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/gmail_rest_auth_receipt_v1.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/training_goal_text_v1.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/schemas/training_goal_v1.schema.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/scripts/schema_validation.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/scripts/structured_outputs_validation.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/typings/fitdecode/__init__.pyi",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/_shared/typings/fitdecode/utils.pyi",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/fit-weekly/SKILL.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/garmin-sync/references/live-overrides.txt",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/garmin-sync/scripts/mcp_server_guard.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/gmail-sender/scripts/gmail_rest_auth.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/skills/gmail-sender/scripts/gmail_rest_common.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/state/raw/garmin/activities/.gitkeep",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/state/raw/garmin/health/.gitkeep",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/ai/.gitkeep",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/ai/README.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/ai/cases/.gitkeep",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/ai/cases/slot-already-complete.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/ai/cases/weekly-crash-recovery.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/ai/cases/weekly-entrypoint-edit-publication.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/ai/cases/weekly-hard-load-conflict.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/ai/cases/weekly-history-missing.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/ai/cases/weekly-running-climbing.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/ai/results/.gitkeep",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/ai/rubrics/.gitkeep",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/ai/schemas/.gitkeep",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/ai/templates/.gitkeep",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/ai/templates/m12_codex_probe.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/ai/templates/result.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_ai_layout.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_activity_names.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_ci_boundary.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_coaching_contract.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_coaching_evidence.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_coaching_plan.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_codex_adapter.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_codex_boundary.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_codex_isolation.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_codex_native.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_codex_output.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_codex_recovery.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_command_runner.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_daemon.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_detail_server.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_detail_transport.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_email_config.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_entrypoint.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_fit_detail.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_fit_field_sources.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_fit_location.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_fit_parse.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_fit_sync.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_fit_time_bounds.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_garmin_fit_adapter.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_garmin_publication.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_gmail_labels.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_gmail_publication.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_goal_readonly.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_goal_text.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_history_archive.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_input_privacy.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_legacy_fit_import.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_model_job.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_model_process.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_process_capture.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_publication_ledger.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_report_artifacts.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_report_pdf.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_report_revisions.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_resource_closure.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_retained_publication.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_retained_scenarios.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_retired_runner_safety.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_retirement_boundary.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_route_fragments.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_sports_input.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_stage_detail.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_storage.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_sync_calendar.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_sync_command.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_sync_wall_budget.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_weekly_context.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_weekly_evidence.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_m12_weekly_stages.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/contract/test_schema_files.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/fixtures/.gitkeep",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/fixtures/README.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/fixtures/m12_coaching_factory.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/fixtures/m12_codex_cli_tools.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/fixtures/m12_codex_cli_tools_v2.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/fixtures/m12_codex_cli_tools_v3.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/fixtures/m12_codex_native_surface_v1.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/fixtures/m12_daemon_host.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/fixtures/m12_fit_factory.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/fixtures/m12_fit_field_sources.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/fixtures/m12_fit_field_sources.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/fixtures/m12_fit_time_factory.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/fixtures/m12_fit_time_legacy_hashes.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/fixtures/m12_history_factory.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/fixtures/m12_legacy_command_factory.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/fixtures/m12_legacy_goal.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/fixtures/m12_mapping_history_baseline.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/fixtures/m12_publication_factory.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/fixtures/m12_report_factory.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/fixtures/m12_retirement_chain_driver.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/fixtures/m12_weekly_factory.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/integration/.gitkeep",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/integration/test_m12_coaching_stages.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/integration/test_m12_daemon_process.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/integration/test_m12_lifecycle.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/integration/test_m12_publication_pipeline.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/integration/test_m12_report_pipeline.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/integration/test_m12_retirement_chain.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/integration/test_m12_weekly_entrypoint.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/unit/.gitkeep",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/unit/test_garmin_cached_auth.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/unit/test_gmail_auth.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "user-deletion:source/tests/code/unit/test_structured_outputs_contract.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "preexisting-work:states/Goal-example.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "preexisting-work:states/activities/.gitkeep",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "preexisting-work:states/health/.gitkeep",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "preexisting-work:states/verification/.gitkeep",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "baseline-299",
+      "passed": true,
+      "detail": 299
+    },
+    {
+      "check": "user-deletions-preserved",
+      "passed": true,
+      "detail": 280
+    },
+    {
+      "check": "branch",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "head",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "empty-index",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "no-docs",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "no-old-plan",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "exact-MEMORY-name",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "no-case-temp",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "no-source-or-database",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "no-phantom-skills",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-crc",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-exact-members",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/README.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/README.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/active/ADHOC-0018-data-fit-year-cleanup.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/active/ADHOC-0018-data-fit-year-cleanup.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/active/ADHOC-0023-fit-data-classification-discussion.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/active/ADHOC-0023-fit-data-classification-discussion.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/active/ADHOC-0024-fit-sqlite-parser.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/active/ADHOC-0024-fit-sqlite-parser.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/active/ADHOC-0025-fit-running-query-tool.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/active/ADHOC-0025-fit-running-query-tool.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/active/ADHOC-0026-tools-ai-index.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/active/ADHOC-0026-tools-ai-index.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/active/ADHOC-0027-activity-ai-report.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/active/ADHOC-0027-activity-ai-report.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/active/ADHOC-0028-weekly-ai-report.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/active/ADHOC-0028-weekly-ai-report.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/active/M12-fit-weekly-0001-rebuild.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/active/M12-fit-weekly-0001-rebuild.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/active/README.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/active/README.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/ADHOC-0002-repository-root-cleanup.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/ADHOC-0002-repository-root-cleanup.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/ADHOC-0003-generated-and-crash-artifact-cleanup.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/ADHOC-0003-generated-and-crash-artifact-cleanup.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/ADHOC-0004-support-directory-classification.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/ADHOC-0004-support-directory-classification.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/ADHOC-0005-authentication-health-check.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/ADHOC-0005-authentication-health-check.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/ADHOC-0006-garmin-token-sync.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/ADHOC-0006-garmin-token-sync.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/ADHOC-0007-production-backfill-and-monitor.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/ADHOC-0007-production-backfill-and-monitor.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/ADHOC-0012-current-runtime-tech-debt-audit.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/ADHOC-0012-current-runtime-tech-debt-audit.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/ADHOC-0013-mcp-and-runtime-adapter-audit.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/ADHOC-0013-mcp-and-runtime-adapter-audit.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/ADHOC-0014-m9-local-delivery.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/ADHOC-0014-m9-local-delivery.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/ADHOC-0016-agentforge-governance-update.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/ADHOC-0016-agentforge-governance-update.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/ADHOC-0019-adopt-next-before-api.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/ADHOC-0019-adopt-next-before-api.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/ADHOC-0020-states-activities-decisions.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/ADHOC-0020-states-activities-decisions.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/ADHOC-0021-garmin-fit-reference.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/ADHOC-0021-garmin-fit-reference.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/ADHOC-0022-longdou-real-fit-reference.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/ADHOC-0022-longdou-real-fit-reference.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/M1-agentforge-migration-0001-development-harness.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/M1-agentforge-migration-0001-development-harness.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/M1-product-root-0002-source-migration.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/M1-product-root-0002-source-migration.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/M1-runtime-root-0003-data-switch.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/M1-runtime-root-0003-data-switch.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/M10-live-e2e-0001-rolling-week.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/M10-live-e2e-0001-rolling-week.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/M11-email-presentation-0001-readable-cid-r02.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/M11-email-presentation-0001-readable-cid-r02.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/M4-source-root-0001-product-consolidation.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/M4-source-root-0001-product-consolidation.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/M6-activity-evidence-0001-lifecycle-and-preview.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/M6-activity-evidence-0001-lifecycle-and-preview.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/M7-ai-skills-0001-runtime-closure.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/M7-ai-skills-0001-runtime-closure.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/M8-real-data-0001-ai-coach-closure.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/M8-real-data-0001-ai-coach-closure.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/completed/README.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/completed/README.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/tech-debt-tracker.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/tech-debt-tracker.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/exec-plans/template.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/exec-plans/template.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/legal/third-party-notices.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/legal/third-party-notices.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/migration.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/migration.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:docs/product-contract.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:docs/product-contract.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:AGENTS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:AGENTS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:PLANS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:PLANS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:memory.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:memory.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:skills/README.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:skills/README.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:references/garmin-fit-parsing.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:references/garmin-fit-parsing.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-sha:references/longdou.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "archive-safe-path:references/longdou.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-all-66",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/active/ADHOC-0018-data-fit-year-cleanup.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/active/ADHOC-0018-data-fit-year-cleanup.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/active/ADHOC-0023-fit-data-classification-discussion.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/active/ADHOC-0023-fit-data-classification-discussion.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/active/ADHOC-0024-fit-sqlite-parser.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/active/ADHOC-0024-fit-sqlite-parser.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/active/ADHOC-0025-fit-running-query-tool.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/active/ADHOC-0025-fit-running-query-tool.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/active/ADHOC-0026-tools-ai-index.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/active/ADHOC-0026-tools-ai-index.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/active/ADHOC-0027-activity-ai-report.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/active/ADHOC-0027-activity-ai-report.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/active/ADHOC-0028-weekly-ai-report.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/active/ADHOC-0028-weekly-ai-report.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/active/M12-fit-weekly-0001-rebuild.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/active/M12-fit-weekly-0001-rebuild.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/ADHOC-0002-repository-root-cleanup.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/ADHOC-0002-repository-root-cleanup.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/ADHOC-0003-generated-and-crash-artifact-cleanup.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/ADHOC-0003-generated-and-crash-artifact-cleanup.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/ADHOC-0004-support-directory-classification.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/ADHOC-0004-support-directory-classification.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/ADHOC-0005-authentication-health-check.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/ADHOC-0005-authentication-health-check.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/ADHOC-0006-garmin-token-sync.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/ADHOC-0006-garmin-token-sync.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/ADHOC-0007-production-backfill-and-monitor.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/ADHOC-0007-production-backfill-and-monitor.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/ADHOC-0012-current-runtime-tech-debt-audit.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/ADHOC-0012-current-runtime-tech-debt-audit.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/ADHOC-0013-mcp-and-runtime-adapter-audit.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/ADHOC-0013-mcp-and-runtime-adapter-audit.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/ADHOC-0014-m9-local-delivery.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/ADHOC-0014-m9-local-delivery.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/ADHOC-0016-agentforge-governance-update.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/ADHOC-0016-agentforge-governance-update.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/ADHOC-0019-adopt-next-before-api.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/ADHOC-0019-adopt-next-before-api.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/ADHOC-0020-states-activities-decisions.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/ADHOC-0020-states-activities-decisions.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/ADHOC-0021-garmin-fit-reference.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/ADHOC-0021-garmin-fit-reference.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/ADHOC-0022-longdou-real-fit-reference.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/ADHOC-0022-longdou-real-fit-reference.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/M1-agentforge-migration-0001-development-harness.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/M1-agentforge-migration-0001-development-harness.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/M1-product-root-0002-source-migration.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/M1-product-root-0002-source-migration.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/M1-runtime-root-0003-data-switch.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/M1-runtime-root-0003-data-switch.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/M10-live-e2e-0001-rolling-week.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/M10-live-e2e-0001-rolling-week.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/M11-email-presentation-0001-readable-cid-r02.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/M11-email-presentation-0001-readable-cid-r02.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/M4-source-root-0001-product-consolidation.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/M4-source-root-0001-product-consolidation.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/M6-activity-evidence-0001-lifecycle-and-preview.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/M6-activity-evidence-0001-lifecycle-and-preview.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/M7-ai-skills-0001-runtime-closure.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/M7-ai-skills-0001-runtime-closure.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/M8-real-data-0001-ai-coach-closure.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/M8-real-data-0001-ai-coach-closure.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-source:docs/exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "mapped-status:docs/exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M12-0001",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M12-0002",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M12-0003",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M12-0004",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M12-0005",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M12-0006",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M1-0001",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M1-0002",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M1-0003",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M2-0001",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M3-0001",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M4-0001",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M4-0002",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M4-0003",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M4-0004",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M5-0001",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M5-0002",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M5-0003",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M5-0004",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M6-0001",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M6-0002",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M6-0003",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M6-0004",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:ADHOC-0011-0001",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:ADHOC-0011-0002",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:ADHOC-0011-0003",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:ADHOC-0011-0004",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M7-0001",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M7-0002",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M7-0003",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M7-0004",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M7-0005",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M8-0001",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M8-0002",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M8-0003",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M8-0004",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M8-0005",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M9-0001",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M9-0002",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M9-0003",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M9-0004",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M9-0005",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M10-0001",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M10-0002",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M10-0003",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M10-0004",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M10-0005",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M11-0001",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M11-0002",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M11-0003",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M11-0004",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M11-0005",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M11-0006",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M11-0007",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M11-0008",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M11-0009",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M11-0010",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M11-0011",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M11-0012",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M11-0013",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M11-0014",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M11-0015",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M11-0016",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M11-0017",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M11-0018",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "roadmap-leaf:M11-0019",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "query-synthetic-JSON-unchanged",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "all-records-single-id",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "45-execution-plans",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "new-template:exec-plans/active/ADHOC-0007-production-backfill-and-monitor.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/active/ADHOC-0007-production-backfill-and-monitor.md",
+      "passed": true,
+      "detail": "[exec]"
+    },
+    {
+      "check": "archive-state:exec-plans/active/ADHOC-0007-production-backfill-and-monitor.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0007-production-backfill-and-monitor.md:5",
+      "passed": true,
+      "detail": "[exec]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0007-production-backfill-and-monitor.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0007-production-backfill-and-monitor.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0007-production-backfill-and-monitor.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0007-production-backfill-and-monitor.md:12",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0007-production-backfill-and-monitor.md:13",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0007-production-backfill-and-monitor.md:14",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0007-production-backfill-and-monitor.md:15",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "new-template:exec-plans/active/ADHOC-0016-agentforge-governance-update.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/active/ADHOC-0016-agentforge-governance-update.md",
+      "passed": true,
+      "detail": "[exec]"
+    },
+    {
+      "check": "archive-state:exec-plans/active/ADHOC-0016-agentforge-governance-update.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0016-agentforge-governance-update.md:5",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0016-agentforge-governance-update.md:6",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0016-agentforge-governance-update.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0016-agentforge-governance-update.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0016-agentforge-governance-update.md:12",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0016-agentforge-governance-update.md:13",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0016-agentforge-governance-update.md:14",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "new-template:exec-plans/active/ADHOC-0018-data-fit-year-cleanup.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/active/ADHOC-0018-data-fit-year-cleanup.md",
+      "passed": true,
+      "detail": "[exec]"
+    },
+    {
+      "check": "archive-state:exec-plans/active/ADHOC-0018-data-fit-year-cleanup.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0018-data-fit-year-cleanup.md:5",
+      "passed": true,
+      "detail": "[exec]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0018-data-fit-year-cleanup.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0018-data-fit-year-cleanup.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0018-data-fit-year-cleanup.md:11",
+      "passed": true,
+      "detail": "[exec]"
+    },
+    {
+      "check": "new-template:exec-plans/active/ADHOC-0023-fit-data-classification-discussion.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/active/ADHOC-0023-fit-data-classification-discussion.md",
+      "passed": true,
+      "detail": "[exec]"
+    },
+    {
+      "check": "archive-state:exec-plans/active/ADHOC-0023-fit-data-classification-discussion.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0023-fit-data-classification-discussion.md:3",
+      "passed": true,
+      "detail": "[exec]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0023-fit-data-classification-discussion.md:7",
+      "passed": true,
+      "detail": "[exec]"
+    },
+    {
+      "check": "new-template:exec-plans/active/ADHOC-0024-fit-sqlite-parser.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/active/ADHOC-0024-fit-sqlite-parser.md",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "archive-state:exec-plans/active/ADHOC-0024-fit-sqlite-parser.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0024-fit-sqlite-parser.md:3",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0024-fit-sqlite-parser.md:7",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0024-fit-sqlite-parser.md:8",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0024-fit-sqlite-parser.md:9",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0024-fit-sqlite-parser.md:10",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "new-template:exec-plans/active/ADHOC-0025-fit-running-query-tool.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/active/ADHOC-0025-fit-running-query-tool.md",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "archive-state:exec-plans/active/ADHOC-0025-fit-running-query-tool.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0025-fit-running-query-tool.md:3",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0025-fit-running-query-tool.md:7",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0025-fit-running-query-tool.md:8",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0025-fit-running-query-tool.md:9",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0025-fit-running-query-tool.md:10",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "new-template:exec-plans/active/ADHOC-0026-tools-ai-index.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/active/ADHOC-0026-tools-ai-index.md",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "archive-state:exec-plans/active/ADHOC-0026-tools-ai-index.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0026-tools-ai-index.md:3",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0026-tools-ai-index.md:7",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0026-tools-ai-index.md:8",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0026-tools-ai-index.md:9",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0026-tools-ai-index.md:10",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "new-template:exec-plans/active/ADHOC-0027-activity-ai-report.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/active/ADHOC-0027-activity-ai-report.md",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "archive-state:exec-plans/active/ADHOC-0027-activity-ai-report.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0027-activity-ai-report.md:3",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0027-activity-ai-report.md:7",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0027-activity-ai-report.md:8",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0027-activity-ai-report.md:9",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0027-activity-ai-report.md:10",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "new-template:exec-plans/active/ADHOC-0028-weekly-ai-report.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/active/ADHOC-0028-weekly-ai-report.md",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "archive-state:exec-plans/active/ADHOC-0028-weekly-ai-report.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0028-weekly-ai-report.md:3",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0028-weekly-ai-report.md:7",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0028-weekly-ai-report.md:8",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0028-weekly-ai-report.md:9",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0028-weekly-ai-report.md:10",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "new-template:exec-plans/active/ADHOC-0029-agentsmd-upgrade.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/active/ADHOC-0029-agentsmd-upgrade.md",
+      "passed": true,
+      "detail": "[exec]"
+    },
+    {
+      "check": "archive-state:exec-plans/active/ADHOC-0029-agentsmd-upgrade.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0029-agentsmd-upgrade.md:3",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0029-agentsmd-upgrade.md:4",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0029-agentsmd-upgrade.md:5",
+      "passed": true,
+      "detail": "[exec]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0029-agentsmd-upgrade.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0029-agentsmd-upgrade.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0029-agentsmd-upgrade.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0029-agentsmd-upgrade.md:12",
+      "passed": true,
+      "detail": "[exec]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/ADHOC-0029-agentsmd-upgrade.md:13",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "new-template:exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md",
+      "passed": true,
+      "detail": "[exec]"
+    },
+    {
+      "check": "archive-state:exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md:5",
+      "passed": true,
+      "detail": "[exec]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md:12",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md:13",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md:14",
+      "passed": true,
+      "detail": "[exec]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md:15",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md:16",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md:17",
+      "passed": true,
+      "detail": "[exec]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md:18",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md:19",
+      "passed": true,
+      "detail": "[exec]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md:20",
+      "passed": true,
+      "detail": "[exec]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md:21",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md:22",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md:23",
+      "passed": true,
+      "detail": "[exec]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md:24",
+      "passed": true,
+      "detail": "[exec]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md:25",
+      "passed": true,
+      "detail": "[exec]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md:26",
+      "passed": true,
+      "detail": "[exec]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md:27",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md:28",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "new-template:exec-plans/active/M12-fit-weekly-0001-rebuild.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/active/M12-fit-weekly-0001-rebuild.md",
+      "passed": true,
+      "detail": "[exec]"
+    },
+    {
+      "check": "archive-state:exec-plans/active/M12-fit-weekly-0001-rebuild.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M12-fit-weekly-0001-rebuild.md:5",
+      "passed": true,
+      "detail": "[exec]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M12-fit-weekly-0001-rebuild.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M12-fit-weekly-0001-rebuild.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M12-fit-weekly-0001-rebuild.md:11",
+      "passed": true,
+      "detail": "[exec]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M12-fit-weekly-0001-rebuild.md:12",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M12-fit-weekly-0001-rebuild.md:13",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M12-fit-weekly-0001-rebuild.md:14",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M12-fit-weekly-0001-rebuild.md:15",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M12-fit-weekly-0001-rebuild.md:16",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M12-fit-weekly-0001-rebuild.md:17",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M12-fit-weekly-0001-rebuild.md:18",
+      "passed": true,
+      "detail": "[plan]"
+    },
+    {
+      "check": "new-template:exec-plans/active/M6-activity-evidence-0001-lifecycle-and-preview.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/active/M6-activity-evidence-0001-lifecycle-and-preview.md",
+      "passed": true,
+      "detail": "[exec]"
+    },
+    {
+      "check": "archive-state:exec-plans/active/M6-activity-evidence-0001-lifecycle-and-preview.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M6-activity-evidence-0001-lifecycle-and-preview.md:5",
+      "passed": true,
+      "detail": "[exec]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M6-activity-evidence-0001-lifecycle-and-preview.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M6-activity-evidence-0001-lifecycle-and-preview.md:10",
+      "passed": true,
+      "detail": "[exec]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M6-activity-evidence-0001-lifecycle-and-preview.md:11",
+      "passed": true,
+      "detail": "[exec]"
+    },
+    {
+      "check": "stage-task-enum:exec-plans/active/M6-activity-evidence-0001-lifecycle-and-preview.md:12",
+      "passed": true,
+      "detail": "[exec]"
+    },
+    {
+      "check": "new-template:exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "archive-state:exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md:5",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md:5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md:9",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md:10",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md:11",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md:12",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md:12",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md:13",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md:13",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md:14",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md:14",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "new-template:exec-plans/completed/ADHOC-0002-repository-root-cleanup.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/completed/ADHOC-0002-repository-root-cleanup.md",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "archive-state:exec-plans/completed/ADHOC-0002-repository-root-cleanup.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0002-repository-root-cleanup.md:5",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0002-repository-root-cleanup.md:5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0002-repository-root-cleanup.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0002-repository-root-cleanup.md:9",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0002-repository-root-cleanup.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0002-repository-root-cleanup.md:10",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0002-repository-root-cleanup.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0002-repository-root-cleanup.md:11",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0002-repository-root-cleanup.md:12",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0002-repository-root-cleanup.md:12",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0002-repository-root-cleanup.md:13",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0002-repository-root-cleanup.md:13",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "new-template:exec-plans/completed/ADHOC-0003-generated-and-crash-artifact-cleanup.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/completed/ADHOC-0003-generated-and-crash-artifact-cleanup.md",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "archive-state:exec-plans/completed/ADHOC-0003-generated-and-crash-artifact-cleanup.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0003-generated-and-crash-artifact-cleanup.md:5",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0003-generated-and-crash-artifact-cleanup.md:5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0003-generated-and-crash-artifact-cleanup.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0003-generated-and-crash-artifact-cleanup.md:9",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0003-generated-and-crash-artifact-cleanup.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0003-generated-and-crash-artifact-cleanup.md:10",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0003-generated-and-crash-artifact-cleanup.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0003-generated-and-crash-artifact-cleanup.md:11",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0003-generated-and-crash-artifact-cleanup.md:12",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0003-generated-and-crash-artifact-cleanup.md:12",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "new-template:exec-plans/completed/ADHOC-0004-support-directory-classification.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/completed/ADHOC-0004-support-directory-classification.md",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "archive-state:exec-plans/completed/ADHOC-0004-support-directory-classification.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0004-support-directory-classification.md:5",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0004-support-directory-classification.md:5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0004-support-directory-classification.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0004-support-directory-classification.md:9",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0004-support-directory-classification.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0004-support-directory-classification.md:10",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0004-support-directory-classification.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0004-support-directory-classification.md:11",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0004-support-directory-classification.md:12",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0004-support-directory-classification.md:12",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0004-support-directory-classification.md:13",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0004-support-directory-classification.md:13",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "new-template:exec-plans/completed/ADHOC-0005-authentication-health-check.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/completed/ADHOC-0005-authentication-health-check.md",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "archive-state:exec-plans/completed/ADHOC-0005-authentication-health-check.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0005-authentication-health-check.md:5",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0005-authentication-health-check.md:5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0005-authentication-health-check.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0005-authentication-health-check.md:9",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0005-authentication-health-check.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0005-authentication-health-check.md:10",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0005-authentication-health-check.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0005-authentication-health-check.md:11",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0005-authentication-health-check.md:12",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0005-authentication-health-check.md:12",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "new-template:exec-plans/completed/ADHOC-0006-garmin-token-sync.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/completed/ADHOC-0006-garmin-token-sync.md",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "archive-state:exec-plans/completed/ADHOC-0006-garmin-token-sync.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0006-garmin-token-sync.md:5",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0006-garmin-token-sync.md:5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0006-garmin-token-sync.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0006-garmin-token-sync.md:9",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0006-garmin-token-sync.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0006-garmin-token-sync.md:10",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0006-garmin-token-sync.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0006-garmin-token-sync.md:11",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0006-garmin-token-sync.md:12",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0006-garmin-token-sync.md:12",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "new-template:exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "archive-state:exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md:5",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md:5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md:9",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md:10",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md:11",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md:12",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md:12",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md:13",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md:13",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md:14",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md:14",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "new-template:exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "archive-state:exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md:5",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md:5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md:9",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md:10",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md:11",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md:12",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md:12",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md:13",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md:13",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md:14",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md:14",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "new-template:exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "archive-state:exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md:5",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md:5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md:9",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md:10",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md:11",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md:12",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md:12",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md:13",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md:13",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "new-template:exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "archive-state:exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md:5",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md:5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md:9",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md:10",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md:11",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md:12",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md:12",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md:13",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md:13",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md:14",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md:14",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md:15",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md:15",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md:16",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md:16",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "new-template:exec-plans/completed/ADHOC-0012-current-runtime-tech-debt-audit.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/completed/ADHOC-0012-current-runtime-tech-debt-audit.md",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "archive-state:exec-plans/completed/ADHOC-0012-current-runtime-tech-debt-audit.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0012-current-runtime-tech-debt-audit.md:5",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0012-current-runtime-tech-debt-audit.md:5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0012-current-runtime-tech-debt-audit.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0012-current-runtime-tech-debt-audit.md:9",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0012-current-runtime-tech-debt-audit.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0012-current-runtime-tech-debt-audit.md:10",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0012-current-runtime-tech-debt-audit.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0012-current-runtime-tech-debt-audit.md:11",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0012-current-runtime-tech-debt-audit.md:12",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0012-current-runtime-tech-debt-audit.md:12",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "new-template:exec-plans/completed/ADHOC-0013-mcp-and-runtime-adapter-audit.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/completed/ADHOC-0013-mcp-and-runtime-adapter-audit.md",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "archive-state:exec-plans/completed/ADHOC-0013-mcp-and-runtime-adapter-audit.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0013-mcp-and-runtime-adapter-audit.md:5",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0013-mcp-and-runtime-adapter-audit.md:5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0013-mcp-and-runtime-adapter-audit.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0013-mcp-and-runtime-adapter-audit.md:9",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0013-mcp-and-runtime-adapter-audit.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0013-mcp-and-runtime-adapter-audit.md:10",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0013-mcp-and-runtime-adapter-audit.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0013-mcp-and-runtime-adapter-audit.md:11",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0013-mcp-and-runtime-adapter-audit.md:12",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0013-mcp-and-runtime-adapter-audit.md:12",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "new-template:exec-plans/completed/ADHOC-0014-m9-local-delivery.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/completed/ADHOC-0014-m9-local-delivery.md",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "archive-state:exec-plans/completed/ADHOC-0014-m9-local-delivery.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0014-m9-local-delivery.md:5",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0014-m9-local-delivery.md:5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0014-m9-local-delivery.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0014-m9-local-delivery.md:9",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0014-m9-local-delivery.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0014-m9-local-delivery.md:10",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0014-m9-local-delivery.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0014-m9-local-delivery.md:11",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0014-m9-local-delivery.md:12",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0014-m9-local-delivery.md:12",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0014-m9-local-delivery.md:13",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0014-m9-local-delivery.md:13",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0014-m9-local-delivery.md:14",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0014-m9-local-delivery.md:14",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "new-template:exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "archive-state:exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md:5",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md:5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md:9",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md:10",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md:11",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md:12",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md:12",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md:13",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md:13",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md:14",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md:14",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "new-template:exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "archive-state:exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md:5",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md:5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md:9",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md:10",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md:11",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "new-template:exec-plans/completed/ADHOC-0019-adopt-next-before-api.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/completed/ADHOC-0019-adopt-next-before-api.md",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "archive-state:exec-plans/completed/ADHOC-0019-adopt-next-before-api.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0019-adopt-next-before-api.md:5",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0019-adopt-next-before-api.md:5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0019-adopt-next-before-api.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0019-adopt-next-before-api.md:9",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0019-adopt-next-before-api.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0019-adopt-next-before-api.md:10",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0019-adopt-next-before-api.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0019-adopt-next-before-api.md:11",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0019-adopt-next-before-api.md:12",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0019-adopt-next-before-api.md:12",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "new-template:exec-plans/completed/ADHOC-0020-states-activities-decisions.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/completed/ADHOC-0020-states-activities-decisions.md",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "archive-state:exec-plans/completed/ADHOC-0020-states-activities-decisions.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0020-states-activities-decisions.md:5",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0020-states-activities-decisions.md:5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0020-states-activities-decisions.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0020-states-activities-decisions.md:9",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0020-states-activities-decisions.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0020-states-activities-decisions.md:10",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0020-states-activities-decisions.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0020-states-activities-decisions.md:11",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "new-template:exec-plans/completed/ADHOC-0021-garmin-fit-reference.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/completed/ADHOC-0021-garmin-fit-reference.md",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "archive-state:exec-plans/completed/ADHOC-0021-garmin-fit-reference.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0021-garmin-fit-reference.md:5",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0021-garmin-fit-reference.md:5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0021-garmin-fit-reference.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0021-garmin-fit-reference.md:9",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0021-garmin-fit-reference.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0021-garmin-fit-reference.md:10",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0021-garmin-fit-reference.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0021-garmin-fit-reference.md:11",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "new-template:exec-plans/completed/ADHOC-0022-longdou-real-fit-reference.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/completed/ADHOC-0022-longdou-real-fit-reference.md",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "archive-state:exec-plans/completed/ADHOC-0022-longdou-real-fit-reference.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0022-longdou-real-fit-reference.md:5",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0022-longdou-real-fit-reference.md:5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0022-longdou-real-fit-reference.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0022-longdou-real-fit-reference.md:9",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0022-longdou-real-fit-reference.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0022-longdou-real-fit-reference.md:10",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0022-longdou-real-fit-reference.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0022-longdou-real-fit-reference.md:11",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/ADHOC-0022-longdou-real-fit-reference.md:12",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/ADHOC-0022-longdou-real-fit-reference.md:12",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "new-template:exec-plans/completed/M1-agentforge-migration-0001-development-harness.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/completed/M1-agentforge-migration-0001-development-harness.md",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "archive-state:exec-plans/completed/M1-agentforge-migration-0001-development-harness.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M1-agentforge-migration-0001-development-harness.md:5",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M1-agentforge-migration-0001-development-harness.md:5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M1-agentforge-migration-0001-development-harness.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M1-agentforge-migration-0001-development-harness.md:9",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M1-agentforge-migration-0001-development-harness.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M1-agentforge-migration-0001-development-harness.md:10",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M1-agentforge-migration-0001-development-harness.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M1-agentforge-migration-0001-development-harness.md:11",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M1-agentforge-migration-0001-development-harness.md:12",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M1-agentforge-migration-0001-development-harness.md:12",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M1-agentforge-migration-0001-development-harness.md:13",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M1-agentforge-migration-0001-development-harness.md:13",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "new-template:exec-plans/completed/M1-product-root-0002-source-migration.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/completed/M1-product-root-0002-source-migration.md",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "archive-state:exec-plans/completed/M1-product-root-0002-source-migration.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M1-product-root-0002-source-migration.md:5",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M1-product-root-0002-source-migration.md:5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M1-product-root-0002-source-migration.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M1-product-root-0002-source-migration.md:9",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M1-product-root-0002-source-migration.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M1-product-root-0002-source-migration.md:10",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M1-product-root-0002-source-migration.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M1-product-root-0002-source-migration.md:11",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M1-product-root-0002-source-migration.md:12",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M1-product-root-0002-source-migration.md:12",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M1-product-root-0002-source-migration.md:13",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M1-product-root-0002-source-migration.md:13",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "new-template:exec-plans/completed/M1-runtime-root-0003-data-switch.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/completed/M1-runtime-root-0003-data-switch.md",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "archive-state:exec-plans/completed/M1-runtime-root-0003-data-switch.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M1-runtime-root-0003-data-switch.md:5",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M1-runtime-root-0003-data-switch.md:5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M1-runtime-root-0003-data-switch.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M1-runtime-root-0003-data-switch.md:9",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M1-runtime-root-0003-data-switch.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M1-runtime-root-0003-data-switch.md:10",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M1-runtime-root-0003-data-switch.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M1-runtime-root-0003-data-switch.md:11",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M1-runtime-root-0003-data-switch.md:12",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M1-runtime-root-0003-data-switch.md:12",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M1-runtime-root-0003-data-switch.md:13",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M1-runtime-root-0003-data-switch.md:13",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "new-template:exec-plans/completed/M10-live-e2e-0001-rolling-week.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/completed/M10-live-e2e-0001-rolling-week.md",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "archive-state:exec-plans/completed/M10-live-e2e-0001-rolling-week.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M10-live-e2e-0001-rolling-week.md:5",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M10-live-e2e-0001-rolling-week.md:5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M10-live-e2e-0001-rolling-week.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M10-live-e2e-0001-rolling-week.md:9",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M10-live-e2e-0001-rolling-week.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M10-live-e2e-0001-rolling-week.md:10",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M10-live-e2e-0001-rolling-week.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M10-live-e2e-0001-rolling-week.md:11",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M10-live-e2e-0001-rolling-week.md:12",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M10-live-e2e-0001-rolling-week.md:12",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M10-live-e2e-0001-rolling-week.md:13",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M10-live-e2e-0001-rolling-week.md:13",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "new-template:exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "archive-state:exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md:5",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md:5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md:9",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md:10",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md:11",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md:12",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md:12",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md:13",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md:13",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "new-template:exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "archive-state:exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M11-email-presentation-0001-readable-cid.md:5",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M11-email-presentation-0001-readable-cid.md:5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M11-email-presentation-0001-readable-cid.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M11-email-presentation-0001-readable-cid.md:9",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M11-email-presentation-0001-readable-cid.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M11-email-presentation-0001-readable-cid.md:10",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M11-email-presentation-0001-readable-cid.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M11-email-presentation-0001-readable-cid.md:11",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M11-email-presentation-0001-readable-cid.md:12",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M11-email-presentation-0001-readable-cid.md:12",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M11-email-presentation-0001-readable-cid.md:13",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M11-email-presentation-0001-readable-cid.md:13",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M11-email-presentation-0001-readable-cid.md:14",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M11-email-presentation-0001-readable-cid.md:14",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M11-email-presentation-0001-readable-cid.md:15",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M11-email-presentation-0001-readable-cid.md:15",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M11-email-presentation-0001-readable-cid.md:16",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M11-email-presentation-0001-readable-cid.md:16",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M11-email-presentation-0001-readable-cid.md:17",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M11-email-presentation-0001-readable-cid.md:17",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M11-email-presentation-0001-readable-cid.md:18",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M11-email-presentation-0001-readable-cid.md:18",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M11-email-presentation-0001-readable-cid.md:19",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M11-email-presentation-0001-readable-cid.md:19",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M11-email-presentation-0001-readable-cid.md:20",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M11-email-presentation-0001-readable-cid.md:20",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M11-email-presentation-0001-readable-cid.md:21",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M11-email-presentation-0001-readable-cid.md:21",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M11-email-presentation-0001-readable-cid.md:22",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M11-email-presentation-0001-readable-cid.md:22",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M11-email-presentation-0001-readable-cid.md:23",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M11-email-presentation-0001-readable-cid.md:23",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "new-template:exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "archive-state:exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md:5",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md:5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md:9",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md:10",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md:11",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md:12",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md:12",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md:13",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md:13",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md:14",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md:14",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md:15",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md:15",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md:16",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md:16",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "new-template:exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "archive-state:exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md:5",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md:5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md:9",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md:10",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md:11",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md:12",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md:12",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md:13",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md:13",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md:14",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md:14",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md:15",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md:15",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "new-template:exec-plans/completed/M4-source-root-0001-product-consolidation.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/completed/M4-source-root-0001-product-consolidation.md",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "archive-state:exec-plans/completed/M4-source-root-0001-product-consolidation.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M4-source-root-0001-product-consolidation.md:5",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M4-source-root-0001-product-consolidation.md:5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M4-source-root-0001-product-consolidation.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M4-source-root-0001-product-consolidation.md:9",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M4-source-root-0001-product-consolidation.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M4-source-root-0001-product-consolidation.md:10",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M4-source-root-0001-product-consolidation.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M4-source-root-0001-product-consolidation.md:11",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M4-source-root-0001-product-consolidation.md:12",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M4-source-root-0001-product-consolidation.md:12",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "new-template:exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "archive-state:exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md:5",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md:5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md:9",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md:10",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md:11",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md:12",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md:12",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md:13",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md:13",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "new-template:exec-plans/completed/M7-ai-skills-0001-runtime-closure.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/completed/M7-ai-skills-0001-runtime-closure.md",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "archive-state:exec-plans/completed/M7-ai-skills-0001-runtime-closure.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M7-ai-skills-0001-runtime-closure.md:5",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M7-ai-skills-0001-runtime-closure.md:5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M7-ai-skills-0001-runtime-closure.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M7-ai-skills-0001-runtime-closure.md:9",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M7-ai-skills-0001-runtime-closure.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M7-ai-skills-0001-runtime-closure.md:10",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M7-ai-skills-0001-runtime-closure.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M7-ai-skills-0001-runtime-closure.md:11",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M7-ai-skills-0001-runtime-closure.md:12",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M7-ai-skills-0001-runtime-closure.md:12",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M7-ai-skills-0001-runtime-closure.md:13",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M7-ai-skills-0001-runtime-closure.md:13",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "new-template:exec-plans/completed/M8-real-data-0001-ai-coach-closure.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/completed/M8-real-data-0001-ai-coach-closure.md",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "archive-state:exec-plans/completed/M8-real-data-0001-ai-coach-closure.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M8-real-data-0001-ai-coach-closure.md:5",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M8-real-data-0001-ai-coach-closure.md:5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M8-real-data-0001-ai-coach-closure.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M8-real-data-0001-ai-coach-closure.md:9",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M8-real-data-0001-ai-coach-closure.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M8-real-data-0001-ai-coach-closure.md:10",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M8-real-data-0001-ai-coach-closure.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M8-real-data-0001-ai-coach-closure.md:11",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M8-real-data-0001-ai-coach-closure.md:12",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M8-real-data-0001-ai-coach-closure.md:12",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M8-real-data-0001-ai-coach-closure.md:13",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M8-real-data-0001-ai-coach-closure.md:13",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "new-template:exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "function-enum:exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "archive-state:exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md:5",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md:5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md:9",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md:9",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md:10",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md:10",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md:11",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md:11",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md:12",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md:12",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "stage-task-enum:exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md:13",
+      "passed": true,
+      "detail": "[completed]"
+    },
+    {
+      "check": "completed-children:exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md:13",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "product-not-started:24",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "product-not-started:25",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "product-not-started:26",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "product-not-started:27",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "product-not-started:28",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "activities12-records4",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "report-three-columns:27",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "report-three-columns:28",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "weekly-id-T-full-text",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "public-markdown-whitespace",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "check": "markdown-fences",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "check": "current-local-links",
+      "passed": true,
+      "detail": {
+        "count": 481,
+        "broken": []
+      }
+    },
+    {
+      "check": "JSON-load",
+      "passed": true,
+      "detail": 16
+    },
+    {
+      "check": "git-diff-check",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "only-four-public-states",
+      "passed": true,
+      "detail": [
+        "states/Goal-example.md",
+        "states/activities/.gitkeep",
+        "states/health/.gitkeep",
+        "states/verification/.gitkeep"
+      ]
+    },
+    {
+      "check": "ignored:states/Goal.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "ignored:states/verification/synthetic-secret.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "ignored:states/activities/synthetic.fit",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "ignored:states/data.db",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "ignored:states/data.db-wal",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "ignored:states/data.db-shm",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "public:states/Goal-example.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "public:states/activities/.gitkeep",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "public:states/verification/.gitkeep",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "public:states/health/.gitkeep",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "negative-old-state-rejected",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "negative-corrupted-source-rejected",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "negative-missing-local-link-detected",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "count": 1241,
+  "failed_count": 0,
+  "protected_existing_files": 7,
+  "preserved_prior_deletions": 280,
+  "scope": "Local scaffold/document migration only; not product tests, provider actions or remote CI."
+}

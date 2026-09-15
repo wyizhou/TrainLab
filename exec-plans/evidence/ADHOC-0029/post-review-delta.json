@@ -1,0 +1,395 @@
+{
+  "passed": true,
+  "changed": [
+    {
+      "before": "MEMORY.md",
+      "after": "MEMORY.md",
+      "before_sha256": "c2066fc087fc2ae6cc8d7e0d48deb3536b7cb12a439ab2b0cef0b2069dca1615",
+      "after_sha256": "a068589cf9d22d262e69dab4b06c6158de9b1ebde7292b88623225249de8bdce",
+      "kind": "truthful status/result backfill"
+    },
+    {
+      "before": "PLAN.md",
+      "after": "PLAN.md",
+      "before_sha256": "7f3b67fab721932cf5e7441f4b4c346fddb0565b7a5be1d2867a3c846f3c99e6",
+      "after_sha256": "f20008242310d916b3e9a20ecad464ab304b37b8911b02bef218bd9064a99e42",
+      "kind": "truthful status/result backfill"
+    },
+    {
+      "before": "exec-plans/active/ADHOC-0007-production-backfill-and-monitor.md",
+      "after": "exec-plans/active/ADHOC-0007-production-backfill-and-monitor.md",
+      "before_sha256": "8c3745b34fbcf32c83bf1c214069b2de59c596c33ee92b86ad0bc45ceee567f7",
+      "after_sha256": "8cd7d30662da885483d5d6f90bcb1ab06ce996061dac2dd256114862b198a31a",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/active/ADHOC-0016-agentforge-governance-update.md",
+      "after": "exec-plans/active/ADHOC-0016-agentforge-governance-update.md",
+      "before_sha256": "1cbdc76a7d156b0318ba98232ae2dd6e253bf67429bd346013af58498cdf6229",
+      "after_sha256": "28397b469d72ea7ff96a153d81e9b1d7177d9c5a81c0a4991c7c67c0b3c55d9f",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/active/ADHOC-0018-data-fit-year-cleanup.md",
+      "after": "exec-plans/active/ADHOC-0018-data-fit-year-cleanup.md",
+      "before_sha256": "12a024f4b37201c05a0e5c91aaa3911b81cf1ffcfb83d9f963105ba2931ec79b",
+      "after_sha256": "40e59681c0d55e005c648ccbd773b0279b0dbaac51109f0b66ef5b92ed8fa5a8",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/active/ADHOC-0023-fit-data-classification-discussion.md",
+      "after": "exec-plans/active/ADHOC-0023-fit-data-classification-discussion.md",
+      "before_sha256": "84e45a58c98ff02fbe2cae5b2a71542f4e97ad6d8d65b616f174e2799b8e1c37",
+      "after_sha256": "b2603ed3658b4280218c85c0ccc37a137d0847d000c5670675582aa7f9c91b98",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/active/ADHOC-0024-fit-sqlite-parser.md",
+      "after": "exec-plans/active/ADHOC-0024-fit-sqlite-parser.md",
+      "before_sha256": "f45ae205d6de14521c042c2f56b0ef74d6538713c31caa677c3118287340a419",
+      "after_sha256": "1d006f7d008c76e14976a1d621266bcab5384a1c0f093e8c3f72bc6b5f968307",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/active/ADHOC-0025-fit-running-query-tool.md",
+      "after": "exec-plans/active/ADHOC-0025-fit-running-query-tool.md",
+      "before_sha256": "65551b12609241c465226035d74cb6994ed231aa6eacf581d112280c9c9618a5",
+      "after_sha256": "6390f0f9c16cd9d69dabe013bb4d485dd3178fe43ef62e5fd6f3a2e5026de337",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/active/ADHOC-0026-tools-ai-index.md",
+      "after": "exec-plans/active/ADHOC-0026-tools-ai-index.md",
+      "before_sha256": "434a085272c16f663f64b77f6ced268941519822f45f8f47150d6c6387b0294d",
+      "after_sha256": "6ea2b0737216541d0d6ed0c9d2a93a5a3a8d35be2d836fbc82f8628146291e29",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/active/ADHOC-0027-activity-ai-report.md",
+      "after": "exec-plans/active/ADHOC-0027-activity-ai-report.md",
+      "before_sha256": "86b8277f771bb6458d7d44ed2fcffb7d63307a04031efb977b7bb323b57c6c2b",
+      "after_sha256": "dbcb90052d78338c78110f48d7a831312157f70eaeac413c685c66be589aefde",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/active/ADHOC-0028-weekly-ai-report.md",
+      "after": "exec-plans/active/ADHOC-0028-weekly-ai-report.md",
+      "before_sha256": "cbc8787de1cc962071cb50b8417f199195ae44ca368fcd23904c8249c808acb0",
+      "after_sha256": "99ae6824c473611c74d431bf1d51b35f0c52e7a5bf27b7572bcf63a8d9a0eced",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/active/ADHOC-0029-agentsmd-upgrade.md",
+      "after": "exec-plans/completed/ADHOC-0029-agentsmd-upgrade.md",
+      "before_sha256": "674a046e1b2e9296eb8ded71585e8bbef3f870d94bac0f47258513a0bc23e7d4",
+      "after_sha256": "c0522f573c1231f4b7861bc2174dacdd4626d635bedb4fed9c689f0c17f570ef",
+      "kind": "truthful status/result backfill"
+    },
+    {
+      "before": "exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md",
+      "after": "exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md",
+      "before_sha256": "c4f8b0461f56f53ed0321c36060df1951d3748041d82fdb8cf696b039dbef478",
+      "after_sha256": "b05f33abda410c8ae0a3f605e28820ba5581546e08f3ed500a5bf13b28ef5b56",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/active/M12-fit-weekly-0001-rebuild.md",
+      "after": "exec-plans/active/M12-fit-weekly-0001-rebuild.md",
+      "before_sha256": "d6bc614eda83a5b5df77bc540205719b636b1e0facfae0bc1533ba96a36d4de3",
+      "after_sha256": "8540b3c990ca6a7bfd6bb4cd97214cf832e7973b4a231b1c2b9bf2f15c879d55",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/active/M6-activity-evidence-0001-lifecycle-and-preview.md",
+      "after": "exec-plans/active/M6-activity-evidence-0001-lifecycle-and-preview.md",
+      "before_sha256": "57c305d27a3afebcc76c7675ef99a00d0179c043ab87872af6df5663624a386f",
+      "after_sha256": "c87ae1f0a9c58ac1ee01f67713edc84c0f532d17692ba812aaa040c2bc9a7209",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md",
+      "after": "exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md",
+      "before_sha256": "93549c39b058f0e8a131aa6a4406b1067b787d84ea55269a572d240d6ed9b11a",
+      "after_sha256": "06128121f63d2648add6a4f4c65957d4b181b7cf0a86d1302524b24771200943",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/completed/ADHOC-0002-repository-root-cleanup.md",
+      "after": "exec-plans/completed/ADHOC-0002-repository-root-cleanup.md",
+      "before_sha256": "6c13518857285f6eb90686f30122f75c768bfb65fb1c4f0729e615cd6298a8b4",
+      "after_sha256": "e9640611e2169cae7e8c04608eac7d3268d06e10773e0b81c77b7ad004967ecd",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/completed/ADHOC-0003-generated-and-crash-artifact-cleanup.md",
+      "after": "exec-plans/completed/ADHOC-0003-generated-and-crash-artifact-cleanup.md",
+      "before_sha256": "3474cd631cfe1331b0b60201daa4d5e3c3527190244296a2067564d0eed8c070",
+      "after_sha256": "cd94704dc444327885939eb77c2b7a6c2d9f9bcad878a418f5ce041efe1ffa2a",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/completed/ADHOC-0004-support-directory-classification.md",
+      "after": "exec-plans/completed/ADHOC-0004-support-directory-classification.md",
+      "before_sha256": "04ac49d1b52a1f241f473f8cfdafe0417c628eb56da2e5a458503cd6244ad291",
+      "after_sha256": "6801e8f101613d3c9a0f09755a3a796a6f6702c2454a9ccc1a3a78d34eb5675b",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/completed/ADHOC-0005-authentication-health-check.md",
+      "after": "exec-plans/completed/ADHOC-0005-authentication-health-check.md",
+      "before_sha256": "5d9c37fd4c7a1942cc6cd148ccb5527b6f8bb143f4004ca9a57b5c89923e6a3e",
+      "after_sha256": "b0f2114b7b72194d09c1f6266a0d0954f0d3239129d6ec1935659db18727a717",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/completed/ADHOC-0006-garmin-token-sync.md",
+      "after": "exec-plans/completed/ADHOC-0006-garmin-token-sync.md",
+      "before_sha256": "38b2cdc05e3c43fc158e4340d16832626c1589f02977f89d867baed7e2ac9232",
+      "after_sha256": "d6d3fb52151bb4e4d1255c1112a37070ef227bac9208a4ff02370accefd6283d",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md",
+      "after": "exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md",
+      "before_sha256": "e99bdd4a8ac3655a9d4579cb3dc9e758ce043b90ea24158122a9b1ae842e3b51",
+      "after_sha256": "7f8010e91bf6752db6e68233f69fd2635759810479a36e11ea6b30a95796ca0d",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md",
+      "after": "exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md",
+      "before_sha256": "4b9926c06d289a5c59a86bc9e3df499d5be1fa0a9282389d780d4d7ff8071f9f",
+      "after_sha256": "67d5924f7e76b525fbf803a8a40b1afa32cc7d64d7e33be8b4d8b4a7488caa01",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md",
+      "after": "exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md",
+      "before_sha256": "0cd75e77f3945c3acfbd4e5673466f5b794468b5ce5e362cdeae9a0313e23232",
+      "after_sha256": "78a2cd58bf0d63496099bdbcb0ac3ec84c5c681a865238ea2a184bf11f4d8086",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md",
+      "after": "exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md",
+      "before_sha256": "5d6e08f6406b5a0de5e3e8756b0f54501b7177edb68c2d78e078b98363e46912",
+      "after_sha256": "cdf0eb430794c7777cbc79d968290866b6f1a85392e27149ae7dd71d237381f5",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/completed/ADHOC-0012-current-runtime-tech-debt-audit.md",
+      "after": "exec-plans/completed/ADHOC-0012-current-runtime-tech-debt-audit.md",
+      "before_sha256": "a2d57d0342a542c2aa45f717794de9762ca6cfc35d7aa36b29a04bae28cf7fae",
+      "after_sha256": "60528fbffad28c09f26f3ca219bf920fa164e030337cb200990ee81b36db927d",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/completed/ADHOC-0013-mcp-and-runtime-adapter-audit.md",
+      "after": "exec-plans/completed/ADHOC-0013-mcp-and-runtime-adapter-audit.md",
+      "before_sha256": "2f0eed492f16ad46209e205c5efec33a8f587c67eccce41810ca59439d13443c",
+      "after_sha256": "263c0b391f4383a30548c4d24d6062d38a780c52963bdf4e5825874432607000",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/completed/ADHOC-0014-m9-local-delivery.md",
+      "after": "exec-plans/completed/ADHOC-0014-m9-local-delivery.md",
+      "before_sha256": "f8093adc4762b7c8f5b3dae570593db311f69342abd337bf0c219d1e1809866f",
+      "after_sha256": "555c2aee5269d78af254eb065cb1fdd78c055e6cba4f662daa25bdb3f60c4f99",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md",
+      "after": "exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md",
+      "before_sha256": "200c3caca094f3fbd3217a34045dc5f6d43206ebc57bc6feee7dcc3e5f7974f4",
+      "after_sha256": "09815950a32ce48ed53de1aa6bbc416c0fe4758ec69ff32e596d2d47a75799b5",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md",
+      "after": "exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md",
+      "before_sha256": "981c44a32fc16d7d1deb1bef3221c89bc7d909dad0129ece39b9257dfaf3f16e",
+      "after_sha256": "679154fe4f8e05d72c466b9efdeb4e4bc3069c3781321d7efef81a47f4e2f352",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/completed/ADHOC-0019-adopt-next-before-api.md",
+      "after": "exec-plans/completed/ADHOC-0019-adopt-next-before-api.md",
+      "before_sha256": "a9d9303d5d82d05e523c6867127f0e234c9efd01699bfba8c1a234f9adeba6bd",
+      "after_sha256": "8ed56105356ad39ba22ccd908243e8fde1487d7b14823059a87a615b355550f0",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/completed/ADHOC-0020-states-activities-decisions.md",
+      "after": "exec-plans/completed/ADHOC-0020-states-activities-decisions.md",
+      "before_sha256": "fe39b23b82334a56e5026c96150455a313d31166d7ca3a23ad3110eaef9574fa",
+      "after_sha256": "8389ea8a7ef9fc356f8f161efcced68ec569e332178873b87727587bf25edaa7",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/completed/ADHOC-0021-garmin-fit-reference.md",
+      "after": "exec-plans/completed/ADHOC-0021-garmin-fit-reference.md",
+      "before_sha256": "08b4dad3949677fb2ad2bcbd31ee256db6e18db20725ddc557da64d2887641f1",
+      "after_sha256": "78393a3a2ba606d9d7e070edee21db7bfabd08d204f88be0bcc6eb4fb7200a35",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/completed/ADHOC-0022-longdou-real-fit-reference.md",
+      "after": "exec-plans/completed/ADHOC-0022-longdou-real-fit-reference.md",
+      "before_sha256": "2ea6e64be67a8e7f932d8c71f65ebc06e07c4d3ce8b0d6a478451cf9745aea63",
+      "after_sha256": "2921df4b2b730be98adc4930428dd92fd68ce077abf089df501acdf3f6887a2a",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/completed/M1-agentforge-migration-0001-development-harness.md",
+      "after": "exec-plans/completed/M1-agentforge-migration-0001-development-harness.md",
+      "before_sha256": "aa4db7300ef0323769eebc95879a6a139c70badd770364df1b2de477e459b391",
+      "after_sha256": "1471f9c9e412c3f039b9d8baf84debbe2ce0c7ec6806d0c713d76d6ca7352a64",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/completed/M1-product-root-0002-source-migration.md",
+      "after": "exec-plans/completed/M1-product-root-0002-source-migration.md",
+      "before_sha256": "2396d5c36c0f4bc7acbed03f83b03e7fcb8bb419401f283a292ed82e370f8728",
+      "after_sha256": "8e912612508263322cf089ceff0421d8c70a7fafabb71a60a49cefda3116138b",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/completed/M1-runtime-root-0003-data-switch.md",
+      "after": "exec-plans/completed/M1-runtime-root-0003-data-switch.md",
+      "before_sha256": "2e6b49423168c3a769ff8396df7f437dde608754c36219ee3d7d6fda78edf1b3",
+      "after_sha256": "6c371eb52a3496c9bdb6af5d279b6698a8040532a625e8fcb6e016ff41dc89f4",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/completed/M10-live-e2e-0001-rolling-week.md",
+      "after": "exec-plans/completed/M10-live-e2e-0001-rolling-week.md",
+      "before_sha256": "3a0b235c3088a5ea8d8497ed31377392ccaa6ca46a4aae664534ba3737067eba",
+      "after_sha256": "86f562e5a6739412505e1a80b8a18a129e87b9ed6d100ed0197f866c4fb39ca0",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md",
+      "after": "exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md",
+      "before_sha256": "006023764daeb70d552cadc7c212341e93592beac82ef757809070d57aca6f9a",
+      "after_sha256": "703f33bb1f9584e98af18677ee9fd4a4b8826f423127922df802db5836544979",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "after": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "before_sha256": "3bba65f49b58cab9a9d6aeccac6bae144daac6a425049d4e300ca4f9f56aae43",
+      "after_sha256": "61caeffe63df86e99c448dc5c04e92537b0a1885ae07d70a10ccbb397df5028d",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md",
+      "after": "exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md",
+      "before_sha256": "44afb11c115a79faf27a6ec374c593e96bd6f664e80d0e05e7cf1de56b171e45",
+      "after_sha256": "ef597aaf2441ba3df73a3bbb6b637776a66d55a7fc9db59104fe4fdcdc42958d",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md",
+      "after": "exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md",
+      "before_sha256": "f74570876ee625fa8fc1066a5ed23e5f185d6260ca2b05f5148c22e79cac16fa",
+      "after_sha256": "016b6984f2b6607b3a40e32a4c666840d06ca3b32851c2b9940b3904cad6f899",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/completed/M4-source-root-0001-product-consolidation.md",
+      "after": "exec-plans/completed/M4-source-root-0001-product-consolidation.md",
+      "before_sha256": "537eec2c77b0b7752c40949ef65941e111262b28585b4df144788c3d9dc8d909",
+      "after_sha256": "7db01062ecb89d0c985f20809f2ec3bad9c38da49310e90a742bf0a3e50ad589",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md",
+      "after": "exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md",
+      "before_sha256": "d5200978576308ca63a190dac991437c75bae2804c6967d5a6099e0563fb371a",
+      "after_sha256": "0adcb6fe7e544b88d0e53cef390baaed98bb1d3666759ede1f75d7f9a0e0c577",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/completed/M7-ai-skills-0001-runtime-closure.md",
+      "after": "exec-plans/completed/M7-ai-skills-0001-runtime-closure.md",
+      "before_sha256": "dbaa50cdcf7e92dc5a9bfa5db44806a8133560f65872fb5846870544fd1ab36a",
+      "after_sha256": "702bdd18ca522dc85f999cfe124996920c769bff62a0f911c4d1e99456db6c32",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/completed/M8-real-data-0001-ai-coach-closure.md",
+      "after": "exec-plans/completed/M8-real-data-0001-ai-coach-closure.md",
+      "before_sha256": "8f6a40aca9f709db031bb90953897f8b3ead8e7ce6c5e042320201ba49131e51",
+      "after_sha256": "b3c68058cdd810c8e6a994f7ebcf896216a199f773dbdcd217384bc68b727072",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md",
+      "after": "exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md",
+      "before_sha256": "ff2c31a85b794214f06e65c4b326cc3ea9a7d26d792ad1bf843c499c7d8591c4",
+      "after_sha256": "d179f77eeb7c64ccaaa2c0059c074d7a0614fc0f06f2bec0b9af2e1b195c1667",
+      "kind": "same-plan archive link only"
+    },
+    {
+      "before": "exec-plans/evidence/ADHOC-0029/README.md",
+      "after": "exec-plans/evidence/ADHOC-0029/README.md",
+      "before_sha256": "d94c7aa5e4a630885a0ea1b468ee8e23f9b8cbd65c5481508ee2d117b887f345",
+      "after_sha256": "587dc05c9d8d7addac60e273b9e503f3f491e0f1989650344c9e5793adbfc4ed",
+      "kind": "truthful status/result backfill"
+    }
+  ],
+  "unchanged": [
+    ".github/workflows/ci.yml",
+    ".gitignore",
+    "AGENTS.md",
+    "README.md",
+    "exec-plans/evidence/ADHOC-0029/checks-after-decompositions.json",
+    "exec-plans/evidence/ADHOC-0029/checks-after-definitions.json",
+    "exec-plans/evidence/ADHOC-0029/checks-before-validator.json",
+    "exec-plans/evidence/ADHOC-0029/checks-initial.json",
+    "exec-plans/evidence/ADHOC-0029/decomposition-mapping.json",
+    "exec-plans/evidence/ADHOC-0029/decomposition-regression-v3.json",
+    "exec-plans/evidence/ADHOC-0029/decomposition-regression.json",
+    "exec-plans/evidence/ADHOC-0029/definition-mapping.json",
+    "exec-plans/evidence/ADHOC-0029/definition-regression-first.json",
+    "exec-plans/evidence/ADHOC-0029/definition-regression.json",
+    "exec-plans/evidence/ADHOC-0029/failure-index.json",
+    "exec-plans/evidence/ADHOC-0029/history-manifest.json",
+    "exec-plans/evidence/ADHOC-0029/history.zip",
+    "exec-plans/evidence/ADHOC-0029/migration-manifest.json",
+    "exec-plans/evidence/ADHOC-0029/parent-check-evidence.json",
+    "exec-plans/evidence/ADHOC-0029/parent-definition-evidence.json",
+    "exec-plans/evidence/ADHOC-0029/parent-repair-evidence.json",
+    "exec-plans/evidence/ADHOC-0029/reference-link-migration.json",
+    "exec-plans/evidence/ADHOC-0029/review-snapshot-v2.json",
+    "exec-plans/evidence/ADHOC-0029/review-snapshot.json",
+    "exec-plans/evidence/ADHOC-0029/roadmap-mapping.json",
+    "exec-plans/evidence/ADHOC-0029/upstream-files.json",
+    "exec-plans/evidence/ADHOC-0029/upstream.json",
+    "exec-plans/evidence/ADHOC-0029/validation-v1-evidence.zip",
+    "exec-plans/evidence/ADHOC-0029/validation-v1-plan-structure.json",
+    "exec-plans/evidence/ADHOC-0029/validation-v1-semantic-results.json",
+    "exec-plans/evidence/ADHOC-0029/validation-v1.md",
+    "exec-plans/evidence/ADHOC-0029/validation-v2-evidence.zip",
+    "exec-plans/evidence/ADHOC-0029/validation-v2-non-table-review.json",
+    "exec-plans/evidence/ADHOC-0029/validation-v2.md",
+    "exec-plans/tech-debt-tracker.md",
+    "exec-plans/template.md",
+    "references/.gitkeep",
+    "references/README.md",
+    "references/garmin-fit-parsing.md",
+    "references/longdou.md",
+    "skills/README.md",
+    "states/Goal-example.md",
+    "states/activities/.gitkeep",
+    "states/health/.gitkeep",
+    "states/verification/.gitkeep",
+    "subagent-templates/developer.md",
+    "subagent-templates/planner.md",
+    "subagent-templates/validator.md"
+  ],
+  "same_plan_link_only": 44,
+  "special_factual_files": 4,
+  "contract_unchanged": true,
+  "note": "Parent read the full four-file status diff; final next-action text additionally confirms archive and link updates actually completed. No goal, schema, rule, template or original history was changed after V3."
+}

@@ -1,0 +1,29 @@
+{
+  "observed_at_utc": "2026-09-15T12:42:45.970867+00:00",
+  "v1_snapshot_sha256": "4fea57268fed2c4d8d8c2fdf1b368f571efdfc32d3d34ace0a80408d843dfa4b",
+  "frozen_value": "ca081c39357d158a043573e2a2d8bcf0e4a8ed6249cd4b56d9cadfb06343068c",
+  "index_entries": {
+    "command": [
+      "git",
+      "ls-files",
+      "--stage",
+      "-z"
+    ],
+    "payload": "raw stdout bytes including NUL separators",
+    "sha256": "ca081c39357d158a043573e2a2d8bcf0e4a8ed6249cd4b56d9cadfb06343068c",
+    "matches_frozen": true
+  },
+  "index_file_observation": {
+    "path": ".git/index",
+    "sha256": "f14c937ccdcc50daae2bc6ad038ed4d4e3f21e50eae70b6732e39cd1b225c2a7",
+    "matches_entries_digest": false,
+    "matches_validator_v1_physical_observation": true
+  },
+  "candidate_files": 115,
+  "file_sha_size_mode_errors": [],
+  "path_set_unchanged": true,
+  "tracked_absent_count": 327,
+  "deletion_set_unchanged": true,
+  "cached_diff_quiet_exit": 0,
+  "interpretation": "Different payloads were compared. The frozen value matches the explicitly requested logical index entries; this is not evidence that index-file bytes changed. Original report remains unchanged; full independent verification still required."
+}

@@ -1,0 +1,54 @@
+{
+  "scope": "ADHOC-0029 VC-001 local scaffold migration; not product or remote delivery",
+  "result": "passed",
+  "observed_at_utc": "2026-09-15T11:10:30.581665+00:00",
+  "reviewed_snapshot": "review-snapshot-v3.json",
+  "reviewed_snapshot_sha256": "33081f66b3fd604f19dab07b11fb99408c074b12749a78eb0d07cd9ddb79b68f",
+  "independent_review": {
+    "workflow": "12d017fa-5af3-4949-bba8-52c89a32fb16",
+    "child": "7a5f61e9-9a07-4862-ab76-b2e2c5bb2b70",
+    "report": "validation-v3.md",
+    "sha256": "4b5ddff0d558ce14a0824e9027ad61580652d8492376c0189b70eb6791fbce56",
+    "result": "passed",
+    "checks": 876,
+    "final_freeze_checks": 3
+  },
+  "parent_actual_commands": [
+    {
+      "command": "python3 /private/var/tmp/trainlab-agentsmd-upgrade-tciokw12/check_migration.py checks-parent-final.json",
+      "exit": 0,
+      "checks": 1241,
+      "evidence": "checks-parent-final.json"
+    },
+    {
+      "command": "python3 /private/var/tmp/trainlab-agentsmd-upgrade-tciokw12/check_decompositions.py",
+      "exit": 0,
+      "checks": 1932,
+      "evidence": "decomposition-parent-final.json"
+    },
+    {
+      "command": "python3 /private/var/tmp/trainlab-agentsmd-upgrade-tciokw12/check_definitions.py",
+      "exit": 0,
+      "checks": 1599,
+      "evidence": "definition-parent-final.json"
+    }
+  ],
+  "parent_manual_review": [
+    "Read current AGENTS, full PLAN and MEMORY, task VC-001, independent report and actual notes; verified local-only delivery overrides PR default.",
+    "Rechecked M4 task-specific source definitions/links and dependency chain; full source projection and negative controls remain intact.",
+    "Checked 44 original plans, current five unimplemented designs, 66 roadmap leaves, source bytes, old entry removal, filename case and genuine failure preservation.",
+    "Confirmed same 96 reviewed files, branch/HEAD, index and 326 tracked missing paths before own final checks."
+  ],
+  "retained_failures": {
+    "ADHOC-0029-V001": 2,
+    "status": "Resolved by independent V3 review; count retained, no historical product verdict changed."
+  },
+  "next": "Only truthful result/status backfill, plan archive and corresponding links; parent inspects every post-review difference.",
+  "not_run": [
+    "Deleted product tests/linter/integration",
+    "Private data/backup verification",
+    "Providers or real reports",
+    "Remote CI/PR/commit/push"
+  ],
+  "record_kind": "Actual run evidence; runtime paths above are not general project templates or executable product entrypoints."
+}

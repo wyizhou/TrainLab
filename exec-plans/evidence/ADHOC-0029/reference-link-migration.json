@@ -1,0 +1,8 @@
+{
+  "source": "references/garmin-fit-parsing.md",
+  "original_sha256": "094d77bed67beb517987edc537835ef122dc2e12183c3fec8b66736dffedbd1c",
+  "current_sha256": "de228e02ce2ab637f55b947a88e95e62794458056ae2ce5b08fde22e31ccae11",
+  "old_link": "[rules.md](../rules.md)",
+  "new_link": "[项目边界](../PLAN.md#项目已有边界与当前设计)",
+  "change_scope": "Only this one Markdown link; technical body, values and examples unchanged. User request item 2 explicitly includes link synchronization."
+}

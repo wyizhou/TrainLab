@@ -1,0 +1,4503 @@
+[
+  {
+    "source": "docs/exec-plans/active/ADHOC-0018-data-fit-year-cleanup.md",
+    "destination": "exec-plans/active/ADHOC-0018-data-fit-year-cleanup.md",
+    "status": "[exec]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| ADHOC-0018 | HISTORY | [exec] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 旧清理最后验收为INCONCLUSIVE，未完成。用户已改用states/activities，旧路线不恢复。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# ADHOC-0018：data精简与FIT按运动年份命名"
+      },
+      {
+        "line": 7,
+        "text": "## 冻结合同"
+      },
+      {
+        "line": 31,
+        "text": "## 执行步骤"
+      },
+      {
+        "line": 39,
+        "text": "## 检查点"
+      },
+      {
+        "line": 59,
+        "text": "## 当前只读补证"
+      },
+      {
+        "line": 71,
+        "text": "## 迭代日志"
+      }
+    ],
+    "original_stage_table_rows": [
+      {
+        "line": 35,
+        "text": "| S1 冻结和映射 | done | 私有清单及17项合成检查；两份认证与原现用来源SHA一致 |"
+      },
+      {
+        "line": 36,
+        "text": "| S2 整理和精确清理 | done | 568份保留目标逐字核验后，删除精确清单中198759个旧节点 |"
+      },
+      {
+        "line": 37,
+        "text": "| S3 独立核对与交付 | blocked | 独立核对已返回INCONCLUSIVE；等待人工澄清FIT保留集合，不修改合同/数据或自动重验 |"
+      }
+    ]
+  },
+  {
+    "source": "docs/exec-plans/active/ADHOC-0023-fit-data-classification-discussion.md",
+    "destination": "exec-plans/active/ADHOC-0023-fit-data-classification-discussion.md",
+    "status": "[exec]",
+    "generic_history": false,
+    "current_task_rows": [
+      "| ADHOC-0023 | S1 | [exec] | 保存/维护已确认决定，不实施产品 | 用户明确请求 | 文档/链接/范围一致性 | 当前记录见本文；历史原件见证据快照 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 当前决策：FIT 数据、SQLite、AI 查询与报告"
+      },
+      {
+        "line": 9,
+        "text": "## 本次批准与权威"
+      },
+      {
+        "line": 19,
+        "text": "## 1. 四类含义与存储"
+      },
+      {
+        "line": 33,
+        "text": "## 2. 两表与字段：已确认"
+      },
+      {
+        "line": 37,
+        "text": "### activities"
+      },
+      {
+        "line": 43,
+        "text": "### records"
+      },
+      {
+        "line": 59,
+        "text": "## 3. 默认输入与唯一工具：已确认"
+      },
+      {
+        "line": 70,
+        "text": "## 4. AI报告：当前三字段与时间语义已确认"
+      },
+      {
+        "line": 85,
+        "text": "## 5. 对应开发计划"
+      },
+      {
+        "line": 97,
+        "text": "## 6. 尚未落实的实施事项（不是重新确认已批准设计）"
+      },
+      {
+        "line": 106,
+        "text": "## 证据与检查点"
+      },
+      {
+        "line": 115,
+        "text": "## 迭代记录"
+      }
+    ],
+    "original_stage_table_rows": [
+      {
+        "line": 89,
+        "text": "| [ADHOC-0024：解析与存储](ADHOC-0024-fit-sqlite-parser.md) | 建库及activities十二列＋records四列，解析和完整事务入库，准备默认123。 | planned；设计已确认，实施合同draft |"
+      },
+      {
+        "line": 90,
+        "text": "| [ADHOC-0025：全量records工具](ADHOC-0025-fit-running-query-tool.md) | get_running_records(activity_id)，只读关联授权，返回全部采样。 | planned；设计已确认，实施合同draft |"
+      },
+      {
+        "line": 91,
+        "text": "| [ADHOC-0026：tools索引](ADHOC-0026-tools-ai-index.md) | README仅说明上述唯一工具，与实际Schema/脚本一致，供后续API装配。 | planned；设计已确认，实施合同draft |"
+      },
+      {
+        "line": 92,
+        "text": "| [ADHOC-0027：活动AI报告](ADHOC-0027-activity-ai-report.md) | activties_report：activity_id＋运动start_time_utc＋完整文本summary。 | planned；三字段已确认，实施合同draft |"
+      },
+      {
+        "line": 93,
+        "text": "| [ADHOC-0028：滚动七天AI报告](ADHOC-0028-weekly-ai-report.md) | weekly_report：自增id＋run_time_utc＋完整文本summary，覆盖本次T往前七天。 | planned；身份/时间/三字段已确认，实施合同draft |"
+      }
+    ]
+  },
+  {
+    "source": "docs/exec-plans/active/ADHOC-0024-fit-sqlite-parser.md",
+    "destination": "exec-plans/active/ADHOC-0024-fit-sqlite-parser.md",
+    "status": "[plan]",
+    "generic_history": false,
+    "current_task_rows": [
+      "| T1 | S1 | [plan] | 落实目录、规则/CI对齐、JSON细则、容量与重解析边界；不超出本文目标/错误边界 | 前置依赖 | 保持已确认设计，按新版AGENTS审核实施拆解 | 未实施、未验证 |",
+      "| T2 | S1 | [plan] | 合成测试先行；不超出本文目标/错误边界 | T1 | 正常/缺失/重复时间/长活动/原生分段与采样分别验证 | 未实施、未验证 |",
+      "| T3 | S1 | [plan] | 实现建库、解析与两表整场写入，退出受影响旧路径；不超出本文目标/错误边界 | T2 | 代码/Schema/入口/规则/测试/CI/文档同批 | 未实施、未验证 |",
+      "| T4 | S1 | [plan] | 完整门禁及全新独立验收；不超出本文目标/错误边界 | T3 | 绑定当前快照，未接API不能宣称业务上线 | 未实施、未验证 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 开发计划一：FIT 解析与活动／采样记录 SQLite 存储"
+      },
+      {
+        "line": 10,
+        "text": "## 当前唯一有效设计"
+      },
+      {
+        "line": 19,
+        "text": "## 规则对齐与实施前门"
+      },
+      {
+        "line": 29,
+        "text": "## 验证合同草案"
+      },
+      {
+        "line": 49,
+        "text": "## activities：已确认12列"
+      },
+      {
+        "line": 72,
+        "text": "## records：已确认四列"
+      },
+      {
+        "line": 89,
+        "text": "## 完整性、数据量与写入"
+      },
+      {
+        "line": 97,
+        "text": "## 工作分解与测试映射"
+      },
+      {
+        "line": 110,
+        "text": "## 检查点与迭代"
+      }
+    ],
+    "original_stage_table_rows": []
+  },
+  {
+    "source": "docs/exec-plans/active/ADHOC-0025-fit-running-query-tool.md",
+    "destination": "exec-plans/active/ADHOC-0025-fit-running-query-tool.md",
+    "status": "[plan]",
+    "generic_history": false,
+    "current_task_rows": [
+      "| T1 | S1 | [plan] | 落实目录、规则/CI对齐、JSON细则、容量与宿主边界；不超出本文目标/错误边界 | 前置依赖 | 保持已确认接口，按新版AGENTS审核实施拆解 | 未实施、未验证 |",
+      "| T2 | S1 | [plan] | 合成测试固定全量与拒绝预期；不超出本文目标/错误边界 | T1 | 测试先行，不读取正式数据 | 未实施、未验证 |",
+      "| T3 | S1 | [plan] | 实现唯一按ID只读工具；不超出本文目标/错误边界 | T2 | 仅一个工具、仅activity_id参数、全量返回 | 未实施、未验证 |",
+      "| T4 | S1 | [plan] | 全面检查与全新独立验证；不超出本文目标/错误边界 | T3 | 离线能力交付，实际API另授权 | 未实施、未验证 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 开发计划二：按活动ID返回跑步全部records"
+      },
+      {
+        "line": 10,
+        "text": "## 当前唯一能力"
+      },
+      {
+        "line": 22,
+        "text": "## 合同草案及规则对齐"
+      },
+      {
+        "line": 44,
+        "text": "## 已确认接口与返回方式"
+      },
+      {
+        "line": 93,
+        "text": "## 查询实现建议与完整返回语义"
+      },
+      {
+        "line": 105,
+        "text": "## 工作分解与测试"
+      },
+      {
+        "line": 118,
+        "text": "## 检查点与迭代"
+      }
+    ],
+    "original_stage_table_rows": []
+  },
+  {
+    "source": "docs/exec-plans/active/ADHOC-0026-tools-ai-index.md",
+    "destination": "exec-plans/active/ADHOC-0026-tools-ai-index.md",
+    "status": "[plan]",
+    "generic_history": false,
+    "current_task_rows": [
+      "| T1 | S1 | [plan] | 落实目录、Schema细则与机器声明交付范围；不超出本文目标/错误边界 | 前置依赖 | 保持已确认接口，与前置计划共同冻结实施边界 | 未实施、未验证 |",
+      "| T2 | S1 | [plan] | 依据实际工具/Schema整理索引及合成示例；不超出本文目标/错误边界 | T1 | 只描述已交付能力 | 未实施、未验证 |",
+      "| T3 | S1 | [plan] | 建立签名/示例/索引漂移检查；不超出本文目标/错误边界 | T2 | pytest下离线验证，不调用AI Provider | 未实施、未验证 |",
+      "| T4 | S1 | [plan] | 适用检查与全新独立验证；不超出本文目标/错误边界 | T3 | 索引可用于后续API装配，不冒称已经接通 | 未实施、未验证 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 开发计划三：tools 索引与 AI 调用说明"
+      },
+      {
+        "line": 10,
+        "text": "## 当前目标与边界"
+      },
+      {
+        "line": 20,
+        "text": "## 验证合同草案"
+      },
+      {
+        "line": 38,
+        "text": "## README内容安排"
+      },
+      {
+        "line": 52,
+        "text": "## 工作分解与测试"
+      },
+      {
+        "line": 63,
+        "text": "## 检查点与迭代"
+      }
+    ],
+    "original_stage_table_rows": []
+  },
+  {
+    "source": "docs/exec-plans/active/ADHOC-0027-activity-ai-report.md",
+    "destination": "exec-plans/active/ADHOC-0027-activity-ai-report.md",
+    "status": "[plan]",
+    "generic_history": false,
+    "current_task_rows": [
+      "| T1 | S1 | [plan] | 落实主键/重复保存、时间格式/缺失、文本空值/容量及宿主写入边界；不超出本文目标/错误边界 | 前置依赖 | 保持三列及全文本目标，按新版AGENTS审核实施拆解 | 未实施、未验证 |",
+      "| T2 | S1 | [plan] | 先固定合成Schema及报告往返用例；不超出本文目标/错误边界 | T1 | 正常/错误/边界输入输出明确 | 未实施、未验证 |",
+      "| T3 | S1 | [plan] | 实现建表和受控保存/读取，配套测试/文档/CI；不超出本文目标/错误边界 | T2 | 与FIT底座共存，不新增AI工具 | 未实施、未验证 |",
+      "| T4 | S1 | [plan] | 完整适用门禁与全新独立验证；不超出本文目标/错误边界 | T3 | 存储交付，不冒称真实报告生成已完成 | 未实施、未验证 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 开发计划四：活动 AI 总结存储 activties_report"
+      },
+      {
+        "line": 11,
+        "text": "## 目标与边界"
+      },
+      {
+        "line": 30,
+        "text": "## 验证合同草案"
+      },
+      {
+        "line": 49,
+        "text": "## 工作分解与测试映射"
+      },
+      {
+        "line": 62,
+        "text": "## 检查点与迭代"
+      }
+    ],
+    "original_stage_table_rows": []
+  },
+  {
+    "source": "docs/exec-plans/active/ADHOC-0028-weekly-ai-report.md",
+    "destination": "exec-plans/active/ADHOC-0028-weekly-ai-report.md",
+    "status": "[plan]",
+    "generic_history": false,
+    "current_task_rows": [
+      "| T1 | S1 | [plan] | 落实时间格式/窗口与宿主衔接、文本空值/容量、保存重试和实际写入边界；不超出本文目标/错误边界 | 前置依赖 | 保持已确认三列与滚动七天语义，按新版AGENTS审核实施拆解 | 未实施、未验证 |",
+      "| T2 | S1 | [plan] | 固定合成Schema、自增ID、时间基准及全文往返预期；不超出本文目标/错误边界 | T1 | 测试先行，不读正式数据或调用AI | 未实施、未验证 |",
+      "| T3 | S1 | [plan] | 建立周报告表与受控保存/读取，配套文档/CI；不超出本文目标/错误边界 | T2 | 不新增AI工具或调度任务，不恢复旧产品 | 未实施、未验证 |",
+      "| T4 | S1 | [plan] | 完整门禁与全新独立验证；不超出本文目标/错误边界 | T3 | 存储验证闭合，不冒称真实AI周任务已完成 | 未实施、未验证 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 开发计划五：滚动七天 AI 总结存储 weekly_report"
+      },
+      {
+        "line": 11,
+        "text": "## 当前唯一字段设计"
+      },
+      {
+        "line": 27,
+        "text": "## 运行时间与统计周期：已确认"
+      },
+      {
+        "line": 38,
+        "text": "## 验证合同草案"
+      },
+      {
+        "line": 58,
+        "text": "## 工作分解与测试映射"
+      },
+      {
+        "line": 71,
+        "text": "## 检查点与迭代"
+      }
+    ],
+    "original_stage_table_rows": []
+  },
+  {
+    "source": "docs/exec-plans/active/M12-fit-weekly-0001-rebuild.md",
+    "destination": "exec-plans/active/M12-fit-weekly-0001-rebuild.md",
+    "status": "[exec]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| M12 | HISTORY | [exec] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 原M12实现/验收曾开展，现因用户转向直接API而暂停。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# M12：新旧系统收敛与 FIT-only 每周系统"
+      },
+      {
+        "line": 12,
+        "text": "## 当前完整冻结合同 VC-005"
+      },
+      {
+        "line": 50,
+        "text": "## 工作分解"
+      },
+      {
+        "line": 67,
+        "text": "## 当前保护与检查点"
+      },
+      {
+        "line": 75,
+        "text": "## 历史失败与修订索引"
+      },
+      {
+        "line": 80,
+        "text": "## 派发与迭代"
+      },
+      {
+        "line": 97,
+        "text": "## 完成条件"
+      },
+      {
+        "line": 99,
+        "text": "### 本批独立验证回写（2026-09-08）"
+      },
+      {
+        "line": 115,
+        "text": "### 旧CLI退出实施边界（同一VC-005，基准25e8b92）"
+      }
+    ],
+    "original_stage_table_rows": []
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md",
+    "destination": "exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md",
+    "status": "[completed]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| ADHOC-0001 | HISTORY | [completed] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 只保留原授权范围内的历史完成结论，不表示删除旧源码后仍能运行或本轮重新验收。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 执行计划：升级并严格适配 agentForge 0.4.2"
+      },
+      {
+        "line": 12,
+        "text": "## 目标与验收标准"
+      },
+      {
+        "line": 24,
+        "text": "## 范围与非目标"
+      },
+      {
+        "line": 34,
+        "text": "## 适用规则与参考资料"
+      },
+      {
+        "line": 41,
+        "text": "## 依赖与隔离"
+      },
+      {
+        "line": 51,
+        "text": "## 功能与测试映射"
+      },
+      {
+        "line": 55,
+        "text": "## 工具采用情况"
+      },
+      {
+        "line": 67,
+        "text": "## Subagent 派发"
+      },
+      {
+        "line": 75,
+        "text": "## 工作分解"
+      },
+      {
+        "line": 86,
+        "text": "## 当前检查点"
+      },
+      {
+        "line": 96,
+        "text": "## 决策与发现"
+      },
+      {
+        "line": 113,
+        "text": "## 任务级独立验证"
+      },
+      {
+        "line": 129,
+        "text": "## 集成级独立验证"
+      },
+      {
+        "line": 134,
+        "text": "## PLANS 回写清单"
+      },
+      {
+        "line": 141,
+        "text": "## 迭代日志"
+      }
+    ],
+    "original_stage_table_rows": [
+      {
+        "line": 71,
+        "text": "| 1 | 独立 Validator / `ADHOC-0001-validator` | 跨治理文件适配与规则保全 | `high` | `high` | 必须逐项核对上游协议、项目例外和无弱化 | 支持；全新独立 Agent | 只读 | 中性验收报告 | `FAIL`——发现 memory 旧测试路径与派发记录未同步 |"
+      },
+      {
+        "line": 72,
+        "text": "| 2 | 独立 Validator / `ADHOC-0001-validator-r02` | 修正后的完整治理复验 | `high` | `high` | 第一次验证发现状态一致性缺陷，需全新 Agent 重新检查全部验收项 | 支持；全新独立 Agent | 只读 | 中性验收报告 | `FAIL`——MIT permission notice 被缩写 |"
+      },
+      {
+        "line": 73,
+        "text": "| 3 | 独立 Validator / `ADHOC-0001-validator-r03` | 许可修正后的完整复验 | `high` | `high` | 第二次验证发现许可文本不精确，需全新 Agent 核对全部合同 | 支持；全新独立 Agent | 只读 | 中性验收报告 | `PASS` |"
+      }
+    ]
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0002-repository-root-cleanup.md",
+    "destination": "exec-plans/completed/ADHOC-0002-repository-root-cleanup.md",
+    "status": "[completed]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| ADHOC-0002 | HISTORY | [completed] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 只保留原授权范围内的历史完成结论，不表示删除旧源码后仍能运行或本轮重新验收。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 执行计划：审计并精简 TrainLab 根目录生成物与辅助目录"
+      },
+      {
+        "line": 12,
+        "text": "## 目标与验收标准"
+      },
+      {
+        "line": 20,
+        "text": "## 范围与非目标"
+      },
+      {
+        "line": 26,
+        "text": "## 适用规则与参考资料"
+      },
+      {
+        "line": 31,
+        "text": "## 依赖与隔离"
+      },
+      {
+        "line": 41,
+        "text": "## 功能与测试映射"
+      },
+      {
+        "line": 45,
+        "text": "## 工具采用情况"
+      },
+      {
+        "line": 51,
+        "text": "## Subagent 派发"
+      },
+      {
+        "line": 58,
+        "text": "## 工作分解"
+      },
+      {
+        "line": 68,
+        "text": "## 当前检查点"
+      },
+      {
+        "line": 78,
+        "text": "## 决策与发现"
+      },
+      {
+        "line": 93,
+        "text": "## 任务级独立验证"
+      },
+      {
+        "line": 103,
+        "text": "## 集成级独立验证"
+      },
+      {
+        "line": 108,
+        "text": "## PLANS 回写清单"
+      },
+      {
+        "line": 115,
+        "text": "## 迭代日志"
+      }
+    ],
+    "original_stage_table_rows": [
+      {
+        "line": 55,
+        "text": "| 1 | 独立 Validator / `ADHOC-0002-validator` | 根目录清理与隐私边界 | `medium` | `medium` | 需要独立确认无误删和引用回归 | 支持 | 只读 | 目录用途、删除范围和适用门禁 | `FAIL`：两处审计计数错误 |"
+      },
+      {
+        "line": 56,
+        "text": "| 2 | 独立 Validator / `ADHOC-0002-validator-r01` | 修正后的根目录清理与隐私边界 | `medium` | `medium` | 需由新鲜 Agent 复核修正证据 | 支持 | 只读 | 修正后的用途、删除范围和适用门禁 | `PASS` |"
+      }
+    ]
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0003-generated-and-crash-artifact-cleanup.md",
+    "destination": "exec-plans/completed/ADHOC-0003-generated-and-crash-artifact-cleanup.md",
+    "status": "[completed]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| ADHOC-0003 | HISTORY | [completed] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 只保留原授权范围内的历史完成结论，不表示删除旧源码后仍能运行或本轮重新验收。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 执行计划：删除根目录无用生成物和崩溃文件"
+      },
+      {
+        "line": 12,
+        "text": "## 目标与验收标准"
+      },
+      {
+        "line": 19,
+        "text": "## 范围与非目标"
+      },
+      {
+        "line": 24,
+        "text": "## 适用规则与参考资料"
+      },
+      {
+        "line": 29,
+        "text": "## 依赖与隔离"
+      },
+      {
+        "line": 36,
+        "text": "## 功能与测试映射"
+      },
+      {
+        "line": 40,
+        "text": "## 工具采用情况"
+      },
+      {
+        "line": 45,
+        "text": "## Subagent 派发"
+      },
+      {
+        "line": 51,
+        "text": "## 工作分解"
+      },
+      {
+        "line": 60,
+        "text": "## 当前检查点"
+      },
+      {
+        "line": 70,
+        "text": "## 决策与发现"
+      },
+      {
+        "line": 77,
+        "text": "## 任务级独立验证"
+      },
+      {
+        "line": 87,
+        "text": "## 集成级独立验证"
+      },
+      {
+        "line": 92,
+        "text": "## PLANS 回写清单"
+      },
+      {
+        "line": 99,
+        "text": "## 迭代日志"
+      }
+    ],
+    "original_stage_table_rows": [
+      {
+        "line": 49,
+        "text": "| 1 | 独立 Validator / `ADHOC-0003-validator` | 精确删除与正式库隔离 | `medium` | `medium` | 需独立确认未误删正式数据 | 支持 | 只读 | 四目标缺失、正式库保全 | `PASS` |"
+      }
+    ]
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0004-support-directory-classification.md",
+    "destination": "exec-plans/completed/ADHOC-0004-support-directory-classification.md",
+    "status": "[completed]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| ADHOC-0004 | HISTORY | [completed] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 只保留原授权范围内的历史完成结论，不表示删除旧源码后仍能运行或本轮重新验收。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 执行计划：厘清辅助目录职责并迁移第三方许可声明"
+      },
+      {
+        "line": 12,
+        "text": "## 目标与验收标准"
+      },
+      {
+        "line": 20,
+        "text": "## 范围与非目标"
+      },
+      {
+        "line": 26,
+        "text": "## 适用规则与参考资料"
+      },
+      {
+        "line": 31,
+        "text": "## 依赖与隔离"
+      },
+      {
+        "line": 38,
+        "text": "## 功能与测试映射"
+      },
+      {
+        "line": 44,
+        "text": "## 工具采用情况"
+      },
+      {
+        "line": 49,
+        "text": "## Subagent 派发"
+      },
+      {
+        "line": 55,
+        "text": "## 工作分解"
+      },
+      {
+        "line": 65,
+        "text": "## 当前检查点"
+      },
+      {
+        "line": 75,
+        "text": "## 决策与发现"
+      },
+      {
+        "line": 83,
+        "text": "## 任务级独立验证"
+      },
+      {
+        "line": 93,
+        "text": "## 集成级独立验证"
+      },
+      {
+        "line": 98,
+        "text": "## PLANS 回写清单"
+      },
+      {
+        "line": 105,
+        "text": "## 迭代日志"
+      }
+    ],
+    "original_stage_table_rows": [
+      {
+        "line": 53,
+        "text": "| 1 | 独立 Validator / `ADHOC-0004-validator` | 许可合规和目录职责 | `medium` | `medium` | 需独立确认许可未丢失及分类不误导 | 支持 | 只读 | 许可路径、构建、引用和边界 | `PASS` |"
+      }
+    ]
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0005-authentication-health-check.md",
+    "destination": "exec-plans/completed/ADHOC-0005-authentication-health-check.md",
+    "status": "[completed]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| ADHOC-0005 | HISTORY | [completed] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 只保留原授权范围内的历史完成结论，不表示删除旧源码后仍能运行或本轮重新验收。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 执行计划：Gmail 与 Garmin 认证健康检查"
+      },
+      {
+        "line": 12,
+        "text": "## 目标与验收标准"
+      },
+      {
+        "line": 19,
+        "text": "## 范围与非目标"
+      },
+      {
+        "line": 25,
+        "text": "## 适用规则与参考资料"
+      },
+      {
+        "line": 31,
+        "text": "## 依赖与隔离"
+      },
+      {
+        "line": 38,
+        "text": "## 功能与测试映射"
+      },
+      {
+        "line": 42,
+        "text": "## 工具采用情况"
+      },
+      {
+        "line": 48,
+        "text": "## Subagent 派发"
+      },
+      {
+        "line": 52,
+        "text": "## 工作分解"
+      },
+      {
+        "line": 61,
+        "text": "## 当前检查点"
+      },
+      {
+        "line": 71,
+        "text": "## 决策与发现"
+      },
+      {
+        "line": 80,
+        "text": "## 任务级独立验证"
+      },
+      {
+        "line": 84,
+        "text": "## 集成级独立验证"
+      },
+      {
+        "line": 88,
+        "text": "## PLANS 回写清单"
+      },
+      {
+        "line": 92,
+        "text": "## 迭代日志"
+      }
+    ],
+    "original_stage_table_rows": []
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0006-garmin-token-sync.md",
+    "destination": "exec-plans/completed/ADHOC-0006-garmin-token-sync.md",
+    "status": "[completed]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| ADHOC-0006 | HISTORY | [completed] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 只保留原授权范围内的历史完成结论，不表示删除旧源码后仍能运行或本轮重新验收。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 执行计划：同步已验证的 Garmin token"
+      },
+      {
+        "line": 12,
+        "text": "## 目标与验收标准"
+      },
+      {
+        "line": 19,
+        "text": "## 范围与非目标"
+      },
+      {
+        "line": 25,
+        "text": "## 适用规则与参考资料"
+      },
+      {
+        "line": 30,
+        "text": "## 依赖与隔离"
+      },
+      {
+        "line": 37,
+        "text": "## 功能与测试映射"
+      },
+      {
+        "line": 41,
+        "text": "## 工具采用情况"
+      },
+      {
+        "line": 46,
+        "text": "## Subagent 派发"
+      },
+      {
+        "line": 50,
+        "text": "## 工作分解"
+      },
+      {
+        "line": 59,
+        "text": "## 当前检查点"
+      },
+      {
+        "line": 69,
+        "text": "## 决策与发现"
+      },
+      {
+        "line": 76,
+        "text": "## 任务级独立验证"
+      },
+      {
+        "line": 80,
+        "text": "## 集成级独立验证"
+      },
+      {
+        "line": 84,
+        "text": "## PLANS 回写清单"
+      },
+      {
+        "line": 88,
+        "text": "## 迭代日志"
+      }
+    ],
+    "original_stage_table_rows": []
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0007-production-backfill-and-monitor.md",
+    "destination": "exec-plans/active/ADHOC-0007-production-backfill-and-monitor.md",
+    "status": "[exec]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| ADHOC-0007 | HISTORY | [exec] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 用户已取消/替代的历史任务；已发生的局部成果和失败保留，取消不等于完整验收通过。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 执行计划：增量更新、补发日报周计划并监测 12 小时"
+      },
+      {
+        "line": 12,
+        "text": "## 目标与验收标准"
+      },
+      {
+        "line": 21,
+        "text": "## 范围与非目标"
+      },
+      {
+        "line": 27,
+        "text": "## 适用规则与参考资料"
+      },
+      {
+        "line": 35,
+        "text": "## 依赖与隔离"
+      },
+      {
+        "line": 42,
+        "text": "## 功能与测试映射"
+      },
+      {
+        "line": 51,
+        "text": "## 工具采用情况"
+      },
+      {
+        "line": 58,
+        "text": "## Subagent 派发"
+      },
+      {
+        "line": 62,
+        "text": "## 工作分解"
+      },
+      {
+        "line": 74,
+        "text": "## 当前检查点"
+      },
+      {
+        "line": 86,
+        "text": "## 12 小时监测记录"
+      },
+      {
+        "line": 94,
+        "text": "## 决策与发现"
+      },
+      {
+        "line": 118,
+        "text": "## 任务级独立验证"
+      },
+      {
+        "line": 123,
+        "text": "## 集成级独立验证"
+      },
+      {
+        "line": 127,
+        "text": "## PLANS 回写清单"
+      },
+      {
+        "line": 131,
+        "text": "## 迭代日志"
+      }
+    ],
+    "original_stage_table_rows": []
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md",
+    "destination": "exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md",
+    "status": "[completed]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| ADHOC-0008 | HISTORY | [completed] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 只保留原授权范围内的历史完成结论，不表示删除旧源码后仍能运行或本轮重新验收。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 执行计划：简化 TrainLab 仓库并形成单一可部署产物"
+      },
+      {
+        "line": 12,
+        "text": "## 目标与验收标准"
+      },
+      {
+        "line": 23,
+        "text": "## 范围与非目标"
+      },
+      {
+        "line": 31,
+        "text": "## 适用规则与参考资料"
+      },
+      {
+        "line": 38,
+        "text": "## 依赖与隔离"
+      },
+      {
+        "line": 48,
+        "text": "## 功能与测试映射"
+      },
+      {
+        "line": 56,
+        "text": "## 工具采用情况"
+      },
+      {
+        "line": 62,
+        "text": "## Subagent 派发"
+      },
+      {
+        "line": 79,
+        "text": "## 工作分解"
+      },
+      {
+        "line": 90,
+        "text": "## 当前检查点"
+      },
+      {
+        "line": 100,
+        "text": "## 决策与发现"
+      },
+      {
+        "line": 109,
+        "text": "## 任务级独立验证"
+      },
+      {
+        "line": 118,
+        "text": "## 集成级独立验证"
+      },
+      {
+        "line": 122,
+        "text": "## PLANS 回写清单"
+      },
+      {
+        "line": 129,
+        "text": "## 迭代日志"
+      }
+    ],
+    "original_stage_table_rows": []
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md",
+    "destination": "exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md",
+    "status": "[completed]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| ADHOC-0009 | HISTORY | [completed] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 只保留原授权范围内的历史完成结论，不表示删除旧源码后仍能运行或本轮重新验收。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 执行计划：source 开发、数据与数据库来源审计"
+      },
+      {
+        "line": 12,
+        "text": "## 目标与验收标准"
+      },
+      {
+        "line": 20,
+        "text": "## 范围与非目标"
+      },
+      {
+        "line": 27,
+        "text": "## 适用规则与参考资料"
+      },
+      {
+        "line": 33,
+        "text": "## 依赖与隔离"
+      },
+      {
+        "line": 44,
+        "text": "## 功能与测试映射"
+      },
+      {
+        "line": 48,
+        "text": "## 工具采用情况"
+      },
+      {
+        "line": 54,
+        "text": "## Subagent 派发"
+      },
+      {
+        "line": 62,
+        "text": "## 工作分解"
+      },
+      {
+        "line": 73,
+        "text": "## 当前检查点"
+      },
+      {
+        "line": 83,
+        "text": "## 决策与发现"
+      },
+      {
+        "line": 112,
+        "text": "## 任务级独立验证"
+      },
+      {
+        "line": 119,
+        "text": "## 集成级独立验证"
+      },
+      {
+        "line": 123,
+        "text": "## PLANS 回写清单"
+      },
+      {
+        "line": 130,
+        "text": "## 迭代日志"
+      }
+    ],
+    "original_stage_table_rows": []
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md",
+    "destination": "exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md",
+    "status": "[completed]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| ADHOC-0010 | HISTORY | [completed] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 只保留原授权范围内的历史完成结论，不表示删除旧源码后仍能运行或本轮重新验收。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 执行计划：raw 目录分层与用途审计"
+      },
+      {
+        "line": 12,
+        "text": "## 目标与验收标准"
+      },
+      {
+        "line": 18,
+        "text": "## 范围与非目标"
+      },
+      {
+        "line": 24,
+        "text": "## 适用规则与参考资料"
+      },
+      {
+        "line": 30,
+        "text": "## 依赖与隔离"
+      },
+      {
+        "line": 37,
+        "text": "## Subagent 派发"
+      },
+      {
+        "line": 45,
+        "text": "## 工作分解"
+      },
+      {
+        "line": 55,
+        "text": "## 当前检查点"
+      },
+      {
+        "line": 62,
+        "text": "## 决策与发现"
+      },
+      {
+        "line": 83,
+        "text": "## 独立验证"
+      },
+      {
+        "line": 87,
+        "text": "## PLANS 回写清单"
+      },
+      {
+        "line": 93,
+        "text": "## 迭代日志"
+      }
+    ],
+    "original_stage_table_rows": []
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md",
+    "destination": "exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md",
+    "status": "[completed]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| ADHOC-0011 | HISTORY | [completed] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 只保留原授权范围内的历史完成结论，不表示删除旧源码后仍能运行或本轮重新验收。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 需求草案：source 运行结构、Skills 与 state 数据整理"
+      },
+      {
+        "line": 12,
+        "text": "## 文档用途"
+      },
+      {
+        "line": 18,
+        "text": "## 当前执行检查点"
+      },
+      {
+        "line": 58,
+        "text": "## 已确认需求"
+      },
+      {
+        "line": 60,
+        "text": "### R-001：按数据来源保留 Provider 层"
+      },
+      {
+        "line": 77,
+        "text": "### R-002：移除非 Provider 命名空间"
+      },
+      {
+        "line": 87,
+        "text": "### R-003：把运动活动文件与天气平铺归为一组"
+      },
+      {
+        "line": 117,
+        "text": "### R-004：把健康 raw 平铺到独立目录"
+      },
+      {
+        "line": 138,
+        "text": "### R-005：Activity Inventory 只作为数据库控制状态"
+      },
+      {
+        "line": 148,
+        "text": "### R-006：取消 Activity Summary 依赖"
+      },
+      {
+        "line": 156,
+        "text": "### R-007：每日一次、无历史回读的同步窗口"
+      },
+      {
+        "line": 172,
+        "text": "### R-008：重置现有非 raw state"
+      },
+      {
+        "line": 189,
+        "text": "### R-009：运行时改为完全由 AI 与本地 Skills 驱动"
+      },
+      {
+        "line": 202,
+        "text": "### R-010：最小 source 顶层结构"
+      },
+      {
+        "line": 227,
+        "text": "### R-011：goal 与 state 的 Git 表达"
+      },
+      {
+        "line": 246,
+        "text": "### R-012：六个初始本地 Skills"
+      },
+      {
+        "line": 312,
+        "text": "### R-013：Skill 采用脚本优先"
+      },
+      {
+        "line": 330,
+        "text": "### R-014：source 运行 AGENTS"
+      },
+      {
+        "line": 340,
+        "text": "### R-015：两套日报与周计划邮件模板"
+      },
+      {
+        "line": 358,
+        "text": "### R-020：两套报告展示路径与可选 Sites 快照"
+      },
+      {
+        "line": 376,
+        "text": "### R-016：无状态定时运行原则"
+      },
+      {
+        "line": 388,
+        "text": "### R-017：两个 cron Prompt"
+      },
+      {
+        "line": 433,
+        "text": "### R-018：管理 Garmin My Workouts 中的 GTS 模板"
+      },
+      {
+        "line": 446,
+        "text": "### R-019：SQLite 保存所有项目输出与状态"
+      },
+      {
+        "line": 476,
+        "text": "## 技术合同 1：SQLite 六表 Schema v1（初始设计记录；后续已实施）"
+      },
+      {
+        "line": 482,
+        "text": "### 全局规则"
+      },
+      {
+        "line": 496,
+        "text": "### 1. `skill_runs`：每次 Skill 的运行状态"
+      },
+      {
+        "line": 528,
+        "text": "### 2. `activity_inventory`：活动发现与文件采集控制状态"
+      },
+      {
+        "line": 558,
+        "text": "### 3. `raw_files`：原始文件索引与不可变修订"
+      },
+      {
+        "line": 596,
+        "text": "### 4. `skill_outputs`：不可覆盖的 Skill 输出"
+      },
+      {
+        "line": 626,
+        "text": "### 5. `approvals`：人工批准与定时 AI 授权链"
+      },
+      {
+        "line": 652,
+        "text": "### 6. `external_actions`：Gmail、Garmin 与 Sites 外部动作"
+      },
+      {
+        "line": 698,
+        "text": "### 六表的写入与保留规则"
+      },
+      {
+        "line": 710,
+        "text": "## 技术合同 2：SQLite 备份、恢复与保留 v1（初始设计记录；后续已实施）"
+      },
+      {
+        "line": 716,
+        "text": "### 备份位置与格式"
+      },
+      {
+        "line": 744,
+        "text": "### 建立备份"
+      },
+      {
+        "line": 755,
+        "text": "### 备份触发点"
+      },
+      {
+        "line": 771,
+        "text": "### 恢复流程"
+      },
+      {
+        "line": 796,
+        "text": "### 保留规则"
+      },
+      {
+        "line": 811,
+        "text": "### 必须验证的故障场景"
+      },
+      {
+        "line": 822,
+        "text": "## 技术合同 3：六个运行 Skills 输入、输出、失败与幂等 v1（已实施并通过独立验证）"
+      },
+      {
+        "line": 828,
+        "text": "### 公共调用信封"
+      },
+      {
+        "line": 861,
+        "text": "### 公共状态与失败规则"
+      },
+      {
+        "line": 874,
+        "text": "### 稳定失败码白名单"
+      },
+      {
+        "line": 904,
+        "text": "### 1. `garmin-sync`"
+      },
+      {
+        "line": 932,
+        "text": "### 2. `training-coach`"
+      },
+      {
+        "line": 957,
+        "text": "### 3. `weekly-fitness-summary`"
+      },
+      {
+        "line": 972,
+        "text": "### 4. `garmin-training-sender`"
+      },
+      {
+        "line": 993,
+        "text": "### 5. `training-report-publisher`"
+      },
+      {
+        "line": 1018,
+        "text": "### 6. `gmail-sender`"
+      },
+      {
+        "line": 1035,
+        "text": "### 每日与每周串行关系"
+      },
+      {
+        "line": 1058,
+        "text": "## 目标结构草图"
+      },
+      {
+        "line": 1107,
+        "text": "## 数据保护要求"
+      },
+      {
+        "line": 1117,
+        "text": "## 已执行与最终结果"
+      },
+      {
+        "line": 1128,
+        "text": "### 旧运行层退役清单（切换后执行）"
+      },
+      {
+        "line": 1145,
+        "text": "## 依赖与隔离"
+      },
+      {
+        "line": 1154,
+        "text": "## 当前只读审计"
+      },
+      {
+        "line": 1180,
+        "text": "## 当前检查点"
+      },
+      {
+        "line": 1195,
+        "text": "## 迭代日志"
+      }
+    ],
+    "original_stage_table_rows": [
+      {
+        "line": 1220,
+        "text": "| 2026-08-16 / final-cutover-and-retirement | r22 candidate 通过独立 Validator；旧 state/config/logs 与集中式源码可恢复归档；新 state 原子切换；旧入口、源码、测试和旧配置从 source 精确退役；最终树与治理独立 Validator PASS | ADHOC-0011 完成并归档 |"
+      }
+    ]
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0012-current-runtime-tech-debt-audit.md",
+    "destination": "exec-plans/completed/ADHOC-0012-current-runtime-tech-debt-audit.md",
+    "status": "[completed]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| ADHOC-0012 | HISTORY | [completed] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 只保留原授权范围内的历史完成结论，不表示删除旧源码后仍能运行或本轮重新验收。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 执行计划：当前运行架构完成度与技术债审计"
+      },
+      {
+        "line": 12,
+        "text": "## 目标与验收标准"
+      },
+      {
+        "line": 19,
+        "text": "## 范围与非目标"
+      },
+      {
+        "line": 24,
+        "text": "## 适用规则与参考资料"
+      },
+      {
+        "line": 29,
+        "text": "## 依赖与隔离"
+      },
+      {
+        "line": 39,
+        "text": "## 功能与测试映射"
+      },
+      {
+        "line": 43,
+        "text": "## 工具采用情况"
+      },
+      {
+        "line": 49,
+        "text": "## Subagent 派发"
+      },
+      {
+        "line": 57,
+        "text": "## 工作分解"
+      },
+      {
+        "line": 66,
+        "text": "## 当前检查点"
+      },
+      {
+        "line": 76,
+        "text": "## 决策与发现"
+      },
+      {
+        "line": 78,
+        "text": "### 客观完成度"
+      },
+      {
+        "line": 92,
+        "text": "### 启用前阻塞项"
+      },
+      {
+        "line": 112,
+        "text": "### 技术债候选"
+      },
+      {
+        "line": 133,
+        "text": "## 任务级独立验证"
+      },
+      {
+        "line": 144,
+        "text": "## 集成级独立验证"
+      },
+      {
+        "line": 148,
+        "text": "## PLANS 回写清单"
+      },
+      {
+        "line": 155,
+        "text": "## 迭代日志"
+      }
+    ],
+    "original_stage_table_rows": []
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0013-mcp-and-runtime-adapter-audit.md",
+    "destination": "exec-plans/completed/ADHOC-0013-mcp-and-runtime-adapter-audit.md",
+    "status": "[completed]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| ADHOC-0013 | HISTORY | [completed] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 只保留原授权范围内的历史完成结论，不表示删除旧源码后仍能运行或本轮重新验收。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 执行计划：Garmin/Gmail MCP 与运行适配状态核对"
+      },
+      {
+        "line": 12,
+        "text": "## 目标与验收标准"
+      },
+      {
+        "line": 19,
+        "text": "## 范围与非目标"
+      },
+      {
+        "line": 24,
+        "text": "## 适用规则与参考资料"
+      },
+      {
+        "line": 29,
+        "text": "## 依赖与隔离"
+      },
+      {
+        "line": 36,
+        "text": "## 功能与测试映射"
+      },
+      {
+        "line": 40,
+        "text": "## 工具采用情况"
+      },
+      {
+        "line": 45,
+        "text": "## Subagent 派发"
+      },
+      {
+        "line": 51,
+        "text": "## 工作分解"
+      },
+      {
+        "line": 60,
+        "text": "## 当前检查点"
+      },
+      {
+        "line": 70,
+        "text": "## 决策与发现"
+      },
+      {
+        "line": 84,
+        "text": "## 任务级独立验证"
+      },
+      {
+        "line": 92,
+        "text": "## 集成级独立验证"
+      },
+      {
+        "line": 96,
+        "text": "## PLANS 回写清单"
+      },
+      {
+        "line": 103,
+        "text": "## 迭代日志"
+      }
+    ],
+    "original_stage_table_rows": []
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0014-m9-local-delivery.md",
+    "destination": "exec-plans/completed/ADHOC-0014-m9-local-delivery.md",
+    "status": "[completed]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| ADHOC-0014 | HISTORY | [completed] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 只保留原授权范围内的历史完成结论，不表示删除旧源码后仍能运行或本轮重新验收。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 执行计划：M9 本地完整交付"
+      },
+      {
+        "line": 12,
+        "text": "## 目标与验收标准"
+      },
+      {
+        "line": 18,
+        "text": "## 范围与非目标"
+      },
+      {
+        "line": 24,
+        "text": "## 适用规则与参考资料"
+      },
+      {
+        "line": 29,
+        "text": "## 依赖与隔离"
+      },
+      {
+        "line": 39,
+        "text": "## 功能与测试映射"
+      },
+      {
+        "line": 43,
+        "text": "## 工具采用情况"
+      },
+      {
+        "line": 49,
+        "text": "## Subagent 派发"
+      },
+      {
+        "line": 55,
+        "text": "## 工作分解"
+      },
+      {
+        "line": 66,
+        "text": "## 当前检查点"
+      },
+      {
+        "line": 76,
+        "text": "## 决策与发现"
+      },
+      {
+        "line": 82,
+        "text": "## 任务级独立验证"
+      },
+      {
+        "line": 91,
+        "text": "## 集成级独立验证"
+      },
+      {
+        "line": 101,
+        "text": "## PLANS 回写清单"
+      },
+      {
+        "line": 108,
+        "text": "## 迭代日志"
+      }
+    ],
+    "original_stage_table_rows": [
+      {
+        "line": 53,
+        "text": "| 1 | Delivery Validator / ADHOC-0014 | high | high | high | 私人归档、Git 范围和跨检出复现属于高风险交付 | supported | 只读 | 提交范围、归档闭包、clean worktree 全部门禁、零外部动作 | PASS：提交、207 tests、静态门、9,439文件归档、SQLite/报告/正式边界与无push全部通过 |"
+      }
+    ]
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md",
+    "destination": "exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md",
+    "status": "[completed]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| ADHOC-0015 | HISTORY | [completed] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 只保留原授权范围内的历史完成结论，不表示删除旧源码后仍能运行或本轮重新验收。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 执行计划：升级 agentForge v0.4.4 并迁移 M11 诊断状态"
+      },
+      {
+        "line": 12,
+        "text": "## 目标与验收标准"
+      },
+      {
+        "line": 19,
+        "text": "## 范围与非目标"
+      },
+      {
+        "line": 27,
+        "text": "## 适用规则与参考资料"
+      },
+      {
+        "line": 35,
+        "text": "## 冻结验证合同"
+      },
+      {
+        "line": 43,
+        "text": "### 验收标准"
+      },
+      {
+        "line": 54,
+        "text": "### 行为不变量"
+      },
+      {
+        "line": 63,
+        "text": "### 威胁模型"
+      },
+      {
+        "line": 72,
+        "text": "### 明确排除项"
+      },
+      {
+        "line": 80,
+        "text": "### Lint/Test 与静态门禁"
+      },
+      {
+        "line": 92,
+        "text": "### 合同修订记录"
+      },
+      {
+        "line": 98,
+        "text": "## 依赖与隔离"
+      },
+      {
+        "line": 108,
+        "text": "## 功能与测试映射"
+      },
+      {
+        "line": 112,
+        "text": "## 工具采用情况"
+      },
+      {
+        "line": 118,
+        "text": "## Subagent 派发"
+      },
+      {
+        "line": 124,
+        "text": "## 工作分解"
+      },
+      {
+        "line": 135,
+        "text": "## 当前检查点"
+      },
+      {
+        "line": 147,
+        "text": "## Validator 结论处理"
+      },
+      {
+        "line": 153,
+        "text": "## 失败尝试与诊断"
+      },
+      {
+        "line": 160,
+        "text": "## 决策与发现"
+      },
+      {
+        "line": 167,
+        "text": "### v0.4.2 → v0.4.4 差异映射"
+      },
+      {
+        "line": 181,
+        "text": "## Validator 固定输出"
+      },
+      {
+        "line": 187,
+        "text": "## 任务级独立验证"
+      },
+      {
+        "line": 200,
+        "text": "## 集成级独立验证"
+      },
+      {
+        "line": 204,
+        "text": "## PLANS 回写清单"
+      },
+      {
+        "line": 208,
+        "text": "## 迭代日志"
+      }
+    ],
+    "original_stage_table_rows": [
+      {
+        "line": 122,
+        "text": "| 1 | Validator / ADHOC-0015 | VC-001 | 高：跨治理适配与当前脏工作区保护 | high | high | 只读 | 固定输出、全部 AC/INV/TM/EX/GATE | PASS |"
+      },
+      {
+        "line": 151,
+        "text": "| 1 | 全新只读 ADHOC-0015 Validator | VC-001 | PASS | AC-001～006、INV-001～004、GATE-001～007 全部通过 | 完成并归档 | 否 | 无 |"
+      }
+    ]
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0016-agentforge-governance-update.md",
+    "destination": "exec-plans/active/ADHOC-0016-agentforge-governance-update.md",
+    "status": "[exec]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| ADHOC-0016 | HISTORY | [exec] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 原记录仅确认治理实现与独立验证；归档时后置提交/推送尚未核实。原completed表述的适用范围不扩大。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 执行计划：适配 agentForge 最新开发脚手架"
+      },
+      {
+        "line": 12,
+        "text": "## 冻结验证合同"
+      },
+      {
+        "line": 50,
+        "text": "## 工作分解"
+      },
+      {
+        "line": 61,
+        "text": "## 当前检查点"
+      },
+      {
+        "line": 70,
+        "text": "## 上游差异映射"
+      },
+      {
+        "line": 85,
+        "text": "## 验证与结论处理"
+      },
+      {
+        "line": 92,
+        "text": "### 最终独立验证"
+      },
+      {
+        "line": 104,
+        "text": "### 主协调 Agent 实测记录（不作为 Validator 结论输入）"
+      },
+      {
+        "line": 110,
+        "text": "### 首轮独立报告与同合同修正"
+      },
+      {
+        "line": 122,
+        "text": "## 迭代日志"
+      }
+    ],
+    "original_stage_table_rows": [
+      {
+        "line": 83,
+        "text": "| 上游 ADHOC-0011-governance-simplification.md | not_applicable | 上游自身历史，不复制 |"
+      }
+    ]
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md",
+    "destination": "exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md",
+    "status": "[completed]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| ADHOC-0017 | HISTORY | [completed] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 只保留原授权范围内的历史完成结论，不表示删除旧源码后仍能运行或本轮重新验收。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# CONSOLIDATE-20260914：单目录整合与 API 改造前旧版基线"
+      },
+      {
+        "line": 9,
+        "text": "## 当前收尾合同 VC-002"
+      },
+      {
+        "line": 30,
+        "text": "### 本次执行步骤（唯一现行状态）"
+      },
+      {
+        "line": 38,
+        "text": "### 2026-09-14 本次边界与恢复偏差"
+      },
+      {
+        "line": 45,
+        "text": "### D-01 实际结果与D-02派发"
+      },
+      {
+        "line": 54,
+        "text": "### D-02/D-03 最终交付事实（2026-09-14）"
+      },
+      {
+        "line": 64,
+        "text": "## 历史：VC-001 已确认目标与边界（已被收窄，非本轮指令）"
+      },
+      {
+        "line": 74,
+        "text": "## 历史冻结合同 VC-001（superseded，以下原文不改写）"
+      },
+      {
+        "line": 115,
+        "text": "## 历史工作分解（停止驱动本轮；以D-01–03为准）"
+      },
+      {
+        "line": 139,
+        "text": "## 当前检查点与证据"
+      },
+      {
+        "line": 154,
+        "text": "## Agent 派发记录"
+      },
+      {
+        "line": 164,
+        "text": "## C-06 实际结果与待复核缺口"
+      },
+      {
+        "line": 184,
+        "text": "## Main 审核决策与分步边界"
+      },
+      {
+        "line": 194,
+        "text": "## 迭代日志"
+      }
+    ],
+    "original_stage_table_rows": []
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0019-adopt-next-before-api.md",
+    "destination": "exec-plans/completed/ADHOC-0019-adopt-next-before-api.md",
+    "status": "[completed]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| ADHOC-0019 | HISTORY | [completed] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 只保留原授权范围内的历史完成结论，不表示删除旧源码后仍能运行或本轮重新验收。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# ADHOC-0019：Goal保留、主目录检查点及采用next代码"
+      },
+      {
+        "line": 9,
+        "text": "## 当前合同 VC-002：仅保存重构前快照"
+      },
+      {
+        "line": 32,
+        "text": "## 历史合同 VC-001（已由VC-002替代，原文字节保留）"
+      },
+      {
+        "line": 60,
+        "text": "## 步骤与写入职责"
+      },
+      {
+        "line": 69,
+        "text": "## 当前检查点"
+      },
+      {
+        "line": 79,
+        "text": "## 历史检查点与证据"
+      },
+      {
+        "line": 95,
+        "text": "### 2026-09-15中断恢复与偏差"
+      },
+      {
+        "line": 109,
+        "text": "### 恢复诊断结果与人工决定"
+      },
+      {
+        "line": 127,
+        "text": "## 派发记录"
+      },
+      {
+        "line": 133,
+        "text": "## 迭代记录"
+      }
+    ],
+    "original_stage_table_rows": [
+      {
+        "line": 48,
+        "text": "| INV-02 | 既有失败/INCONCLUSIVE记录不改判。ADHOC-0018原“data仅两目录”的布局目标被本轮明确新增Goal.md替代该处边界，其历史删除证据不足不自动修复/判PASS，不阻塞对本轮起始已存在566份FIT字节的精确保护。来源：用户新增Goal请求，历史记录真实边界。 |"
+      },
+      {
+        "line": 50,
+        "text": "| GATE-02 | S1检查点门：全新只读Validator核Goal原字节/权限/ignore、当前公开主树白名单与秘密边界、已有成果保全、Git身份及可达对象、适用syntax/JSON/diff检查；核第一提交仅快照性质，不评价或修复被替代旧产品的完整业务。不将此PASS当整合交付PASS。来源：检查点目标、独立验证及用户先提交顺序。 |"
+      },
+      {
+        "line": 51,
+        "text": "| GATE-03 | S2整合门：沿用当前完整适用pytest、Ruff/format/mypy、只读compile、Schema/JSON/metadata/布局/隐私/ignore/diff及必要合成离线链；使用隔离的公开代码环境，不读正式私人资料。保留主仓既有CI门而非通过复制next手动触发配置削弱检查；macOS实测，Linux按已有CI实测并如实记录。禁止删弱测试/skip/隐藏失败，环境缺失不记通过。来源：A-009/A-023及根已有CI。 |"
+      },
+      {
+        "line": 52,
+        "text": "| GATE-04 | S2由另一全新只读Validator接收逐字本合同/规则/当前快照，自行核对实现、来源一致性、适用完整检查及隐私保护，返回八字段。Main核摘要、暂存内容、提交与远端事实后收口。代码/合同语义后改需重验；仅真实协调回写按协议豁免。来源：A-019/A-020。 |"
+      },
+      {
+        "line": 64,
+        "text": "| S1a Goal及基准 | done | Goal原字节复制/0700-0600/源不变；next公开来源及主/data/state基准已留私有证据 |"
+      },
+      {
+        "line": 65,
+        "text": "| S1b 检查点验证/提交 | done | S1独立报告已返回；本地检查点fb6fe6d已实际形成。原受审清单丢失后的提交绑定限制见恢复记录，不等同整合PASS |"
+      },
+      {
+        "line": 66,
+        "text": "| S2 接回next快照 | done | 已有next代码/测试不再修改；README/Unreleased及来源说明已标注未验证、未来API方向与主治理边界，不采用next开发Harness |"
+      },
+      {
+        "line": 67,
+        "text": "| S3 快照提交与推送 | done | 公开快照6965654已本地提交并正常推送origin/main，远端HEAD已核一致；用户明确免验，不记功能PASS |"
+      },
+      {
+        "line": 119,
+        "text": "| ADHOC-0019-REC-01 | ENVIRONMENT_FAILURE；GATE-04/AC-06；原native状态不可寻址，Writer已停止且无交付 | false；旧run不可直接resume，其余阻塞解除后由Main在同native协议按明确当前快照建立新步骤，不伪称旧任务续跑 |"
+      },
+      {
+        "line": 120,
+        "text": "| ADHOC-0019-REC-02 | UNDETERMINED；AC-01/02/03、INV-01/02、GATE-01/02/04；历史内容与私人/ignored保护证据缺失 | false；缺证不等于损坏。若无真正原始证据，须用户明确接受列举的历史证明限制并批准新的前瞻保护/验收安排，冻结VC-002后才恢复；不得自动重做rsync或豁免门禁 |"
+      },
+      {
+        "line": 121,
+        "text": "| ADHOC-0019-REC-03 | IMPLEMENTATION_DEFECT（执行授权偏差，非产品代码失败）；GATE-03/AC-06及VC-001网络安装排除项 | false；安装已越界且pytest未完。需明确后续使用现存或另一已有离线环境；新增联网默认禁止，过去越界不改成合规 |"
+      }
+    ]
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0020-states-activities-decisions.md",
+    "destination": "exec-plans/completed/ADHOC-0020-states-activities-decisions.md",
+    "status": "[completed]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| ADHOC-0020 | HISTORY | [completed] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 只保留原授权范围内的历史完成结论，不表示删除旧源码后仍能运行或本轮重新验收。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# ADHOC-0020：记录 states / activities 数据目录决策"
+      },
+      {
+        "line": 7,
+        "text": "## 当前冻结合同"
+      },
+      {
+        "line": 30,
+        "text": "### 版本替代记录"
+      },
+      {
+        "line": 34,
+        "text": "## 历史合同 VC-001（superseded，原文保留）"
+      },
+      {
+        "line": 55,
+        "text": "## 步骤与检查点"
+      },
+      {
+        "line": 68,
+        "text": "## 当前检查与受审材料"
+      },
+      {
+        "line": 80,
+        "text": "## 独立验证与主协调收口"
+      },
+      {
+        "line": 95,
+        "text": "## 迭代日志"
+      }
+    ],
+    "original_stage_table_rows": [
+      {
+        "line": 59,
+        "text": "| S1 记录与隐私配置 | done | VC-002记录、公开白名单、目标示例及自检已交付 |"
+      },
+      {
+        "line": 60,
+        "text": "| S2 独立核对 | done | fresh只读Validator对VC-002返回PASS；范围仅本次记录/配置 |"
+      },
+      {
+        "line": 61,
+        "text": "| S3 收口 | done | Main复核受审快照及原件元数据，归档并回写链接；未提交/推送 |"
+      }
+    ]
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0021-garmin-fit-reference.md",
+    "destination": "exec-plans/completed/ADHOC-0021-garmin-fit-reference.md",
+    "status": "[completed]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| ADHOC-0021 | HISTORY | [completed] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 只保留原授权范围内的历史完成结论，不表示删除旧源码后仍能运行或本轮重新验收。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 执行计划：Garmin FIT 官方解析资料整理"
+      },
+      {
+        "line": 11,
+        "text": "## 冻结验证合同"
+      },
+      {
+        "line": 39,
+        "text": "## 工作分解"
+      },
+      {
+        "line": 47,
+        "text": "## 当前检查点"
+      },
+      {
+        "line": 60,
+        "text": "## 验证设计与派发"
+      },
+      {
+        "line": 72,
+        "text": "## 独立验证结果与主协调处理"
+      },
+      {
+        "line": 92,
+        "text": "## 迭代日志"
+      }
+    ],
+    "original_stage_table_rows": []
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0022-longdou-real-fit-reference.md",
+    "destination": "exec-plans/completed/ADHOC-0022-longdou-real-fit-reference.md",
+    "status": "[completed]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| ADHOC-0022 | HISTORY | [completed] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 只保留原授权范围内的历史完成结论，不表示删除旧源码后仍能运行或本轮重新验收。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 执行计划：龙豆传感器资料与真实跑步 FIT 对照"
+      },
+      {
+        "line": 10,
+        "text": "## 冻结验证合同"
+      },
+      {
+        "line": 39,
+        "text": "## 步骤"
+      },
+      {
+        "line": 48,
+        "text": "## 检查点与证据"
+      },
+      {
+        "line": 67,
+        "text": "## 验证边界"
+      },
+      {
+        "line": 79,
+        "text": "## 独立验证与完成回写"
+      },
+      {
+        "line": 91,
+        "text": "## 迭代日志"
+      }
+    ],
+    "original_stage_table_rows": []
+  },
+  {
+    "source": "docs/exec-plans/completed/M1-agentforge-migration-0001-development-harness.md",
+    "destination": "exec-plans/completed/M1-agentforge-migration-0001-development-harness.md",
+    "status": "[completed]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| M1-0001 | HISTORY | [completed] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 只保留原授权范围内的历史完成结论，不表示删除旧源码后仍能运行或本轮重新验收。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# Execution plan: install the agentForge development Harness"
+      },
+      {
+        "line": 10,
+        "text": "## Goal and acceptance"
+      },
+      {
+        "line": 16,
+        "text": "## Scope and exclusions"
+      },
+      {
+        "line": 21,
+        "text": "## Work"
+      },
+      {
+        "line": 31,
+        "text": "## Current checkpoint"
+      },
+      {
+        "line": 40,
+        "text": "## Independent validation"
+      },
+      {
+        "line": 46,
+        "text": "## Iteration log"
+      }
+    ],
+    "original_stage_table_rows": []
+  },
+  {
+    "source": "docs/exec-plans/completed/M1-product-root-0002-source-migration.md",
+    "destination": "exec-plans/completed/M1-product-root-0002-source-migration.md",
+    "status": "[completed]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| M1-0002 | HISTORY | [completed] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 只保留原授权范围内的历史完成结论，不表示删除旧源码后仍能运行或本轮重新验收。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# Execution plan: move the sole TrainLab product source into product/"
+      },
+      {
+        "line": 10,
+        "text": "## Goal and acceptance"
+      },
+      {
+        "line": 17,
+        "text": "## Scope and exclusions"
+      },
+      {
+        "line": 23,
+        "text": "## Work"
+      },
+      {
+        "line": 33,
+        "text": "## Current checkpoint"
+      },
+      {
+        "line": 42,
+        "text": "## Independent validation"
+      },
+      {
+        "line": 48,
+        "text": "## Iteration log"
+      }
+    ],
+    "original_stage_table_rows": [
+      {
+        "line": 52,
+        "text": "| 2026-08-12/current | M1-0001 independent PASS | dependencies satisfied | migrate product paths |"
+      }
+    ]
+  },
+  {
+    "source": "docs/exec-plans/completed/M1-runtime-root-0003-data-switch.md",
+    "destination": "exec-plans/completed/M1-runtime-root-0003-data-switch.md",
+    "status": "[completed]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| M1-0003 | HISTORY | [completed] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 只保留原授权范围内的历史完成结论，不表示删除旧源码后仍能运行或本轮重新验收。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# Execution plan: move local runtime data and switch product root"
+      },
+      {
+        "line": 10,
+        "text": "## Goal and acceptance"
+      },
+      {
+        "line": 16,
+        "text": "## Scope and exclusions"
+      },
+      {
+        "line": 22,
+        "text": "## Work"
+      },
+      {
+        "line": 32,
+        "text": "## Current checkpoint"
+      },
+      {
+        "line": 41,
+        "text": "## Independent validation"
+      },
+      {
+        "line": 47,
+        "text": "## Iteration log"
+      }
+    ],
+    "original_stage_table_rows": [
+      {
+        "line": 51,
+        "text": "| 2026-08-12/current | M1-0002 final Validator PASS | runtime switch dependency satisfied | preflight and freeze evidence |"
+      }
+    ]
+  },
+  {
+    "source": "docs/exec-plans/completed/M10-live-e2e-0001-rolling-week.md",
+    "destination": "exec-plans/completed/M10-live-e2e-0001-rolling-week.md",
+    "status": "[completed]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| M10-0001..M10-0005 | HISTORY | [completed] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 只保留原授权范围内的历史完成结论，不表示删除旧源码后仍能运行或本轮重新验收。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 执行计划：M10 滚动七日真实端到端验收"
+      },
+      {
+        "line": 12,
+        "text": "## 目标与验收标准"
+      },
+      {
+        "line": 19,
+        "text": "## 范围与非目标"
+      },
+      {
+        "line": 35,
+        "text": "## 冻结预算"
+      },
+      {
+        "line": 54,
+        "text": "## 适用规则与参考资料"
+      },
+      {
+        "line": 63,
+        "text": "## 依赖与隔离"
+      },
+      {
+        "line": 77,
+        "text": "## 功能与测试映射"
+      },
+      {
+        "line": 87,
+        "text": "## 工具采用情况"
+      },
+      {
+        "line": 94,
+        "text": "## Subagent 派发"
+      },
+      {
+        "line": 135,
+        "text": "## 工作分解"
+      },
+      {
+        "line": 145,
+        "text": "## 当前检查点"
+      },
+      {
+        "line": 155,
+        "text": "## 决策与发现"
+      },
+      {
+        "line": 161,
+        "text": "## 任务级独立验证"
+      },
+      {
+        "line": 170,
+        "text": "## 集成级独立验证"
+      },
+      {
+        "line": 175,
+        "text": "## PLANS 回写清单"
+      },
+      {
+        "line": 182,
+        "text": "## 迭代日志"
+      }
+    ],
+    "original_stage_table_rows": [
+      {
+        "line": 98,
+        "text": "| 1 | Code Validator / M10-0003 | high | high | high | 真实 Gmail/Garmin 写入前的状态机与边界验证 | supported | 只读 | 完整 code gates、Fake MCP、预算/所有权/清理回归 | FAIL：发现 Candidate、血缘、持久预算、复杂课、邮件哈希和清理状态机 6 项缺口 |"
+      },
+      {
+        "line": 99,
+        "text": "| 2 | Final Code Validator / M10-0003 | high | high | high | 合并修正后复验冻结范围内全部门禁 | supported | 只读 | 复现 attempt 1 全部缺口并运行完整门 | FAIL：滚动收据提交门、SQLite完整顺序/总量清理、预览授权绑定仍不闭合 |"
+      },
+      {
+        "line": 100,
+        "text": "| 3 | Final Code Validator / M10-0003 | high | high | high | 第二批收敛后复验全部冻结合同 | supported | 只读 | 端到端提交门、SQL直接绕过、最多4项、精确预览授权与完整门 | FAIL：省略 `m10_phase` 可绕过顺序/预算/清理；直接终态与 adopt 未被 M10 SQL 门拒绝 |"
+      },
+      {
+        "line": 101,
+        "text": "| 4 | Final Code Validator / M10-0003 | high | high | high | 第三批 SQL fail-closed 收敛后复验冻结合同 | supported | 只读 | 阶段必填、禁止 adopt、直接终态证据、独占名称预算/清理及完整门 | FAIL：具体动作未逐项绑定预览；Gmail终态证据/重试与MCP调用预算未闭合 |"
+      },
+      {
+        "line": 102,
+        "text": "| 5 | Final Code Validator / M10-0003 | high | high | high | 第四批逐项预览与外部预算收敛后复验 | supported | 只读 | 精确请求成员、邮件终态、零重试、独占命名、SQLite MCP预算及完整门 | FAIL：Candidate 边界、规范预览哈希/固定8份来源及MCP写请求到动作绑定未闭合 |"
+      },
+      {
+        "line": 103,
+        "text": "| 6 | Final Code Validator / M10-0003 | high | high | high | 第五批 Candidate、预览来源与MCP动作绑定收敛后复验 | supported | 只读 | Candidate guard、7日报+1周报、预览哈希、精确MCP写请求与完整门 | FAIL：SQLite仍可伪造无真实来源预览或无批准/动作的写调用账本 |"
+      },
+      {
+        "line": 104,
+        "text": "| 7 | Final Code Validator / M10-0003 | high | high | high | 第六批 SQLite 来源与写调用事实源收敛后复验 | supported | 只读 | 真实7日报+1周报/邮件/计划血缘与MCP写调用批准/action绑定；完整门 | FAIL：Schema/run/lineage、计划课表投影及Garmin请求仍可SQL绕过 |"
+      },
+      {
+        "line": 105,
+        "text": "| 8 | Final Code Validator / M10-0003 | high | high | high | 第七批统一课表投影和精确来源/请求绑定后复验 | supported | 只读 | 完整代码门、直写对抗、来源与请求闭包、零外部调用 | FAIL：错误 workflow、带额外字段的 Garmin 请求和无边界读取仍可绕过 MCP SQL 门 |"
+      },
+      {
+        "line": 106,
+        "text": "| 9 | Final Code Validator / M10-0003 | high | high | high | 第八批精确 workflow、完整请求对象和有界读取收敛后复验 | supported | 只读 | 29项 M10 回归、完整代码门、SQL直写与合法精确读取 | FAIL：同时省略角色和M10 workflow时，普通operation无法与真实MCP调用意图区分 |"
+      },
+      {
+        "line": 107,
+        "text": "| 10 | Final Code Validator / M10-0003 | high | high | high | 第九批独立MCP operation与完整信封收敛后复验 | supported | 只读 | 外部调用唯一operation、完整信封、持久预算、全部冻结合同与代码门 | PASS：29/29、236/236及全部静态门通过；合成合法账本成功、四类不完整身份均fail closed |"
+      },
+      {
+        "line": 108,
+        "text": "| 11 | Gmail/Garmin Release Validator / M10-0004 | high | high | high | 首次真实写入前复验 Gmail 唯一结果证据 | supported | 只读 | 结果总行数、终态追加、0/2命中和完整代码门 | FAIL：有效结果外仍可追加无效结果而成功终结 |"
+      },
+      {
+        "line": 109,
+        "text": "| 12 | Gmail/Garmin Release Validator / M10-0004 | high | high | high | 合并结果基数修正后复验完整 Schema | supported | 只读 | 单条结果完整 Schema、直接SQL和完整代码门 | FAIL：Schema-invalid 单条结果仍可直接SQL终结 |"
+      },
+      {
+        "line": 110,
+        "text": "| 13 | Final Gmail/Garmin Release Validator / M10-0004 | high | high | high | 最终释放前复验冻结写入合同 | supported | 只读 | 38项M10、245项全量测试、结果Schema/基数/ID绑定、预算和零重试 | PASS：全部代码与静态门通过，允许执行用户已确认的8封邮件和4项临时Workout生命周期 |"
+      },
+      {
+        "line": 111,
+        "text": "| 14 | Garmin Resume Code Validator / M10-0004 | high | high | high | r02真实写入前验证按ID读回解析和旧账本隔离 | supported | 只读 | 精确存在/404/身份不匹配/其他错误、CLI、现有冻结安全矩阵、44项M10与251项全量门 | FAIL：混合500/404错误可被误判为不存在；布尔值可冒充Workout ID；其余门禁通过，未创建r02 |"
+      },
+      {
+        "line": 112,
+        "text": "| 15 | Final Garmin Resume Code Validator / M10-0004 | high | high | high | 合并两项按ID读回缺口后最终释放前验收 | supported | 只读 | 混合状态码、畸形ID、精确404/存在、CLI、全部M10与代码门；不引入新威胁假设 | PASS：47项M10、254项全量及全部静态门通过；精确存在/404接受，混合状态与畸形ID均fail closed；未创建r02或调用外部服务 |"
+      },
+      {
+        "line": 113,
+        "text": "| 16 | Gmail Recipient Config Validator / M10-0004 | high | high | high | 私人收件地址配置进入真实发送前的隐私、账本和防篡改验收 | supported | 只读 | `email.json`权限/Git忽略、地址与预览/请求哈希绑定、链接拒绝、255项完整代码门 | FAIL：CLI标准输出泄漏完整收件地址；缺失、错属主、超限、非法格式及stdout脱敏回归未闭合 |"
+      },
+      {
+        "line": 114,
+        "text": "| 17 | Final Gmail Recipient Config Validator / M10-0004 | high | high | high | 合并隐私输出与文件异常矩阵后最终释放前验收 | supported | 只读 | CLI仅输出脱敏收据；全部配置异常、SQLite绑定、256项代码门和静态门 | PASS：M10 49项、全量256项及全部静态/隐私门通过；真实地址仍为空占位，外部调用0 |"
+      },
+      {
+        "line": 115,
+        "text": "| 18 | Email Module Privacy Validator / M10-0004 | high | high | high | 可提交空模板与永不提交私人配置的最终边界验收 | supported | 只读 | 模板结构/空值、private ignore/0600/untracked、257项代码门与静态门 | FAIL：测试仅检查ignore文本，未调用Git真实判定，未来宽泛规则可能漏检 |"
+      },
+      {
+        "line": 116,
+        "text": "| 19 | Final Email Module Privacy Validator / M10-0004 | high | high | high | Git真实ignore边界修正后的最终模板验收 | supported | 只读 | `git check-ignore`正反例、模板/私人边界、257项代码门与静态门 | PASS：M10 50项、全量257项及全部静态/隐私门通过；模板可跟踪、私人文件ignored/untracked |"
+      },
+      {
+        "line": 117,
+        "text": "| 20 | Final r05 Gmail Delivery Code Validator / M10-0004 | high | high | high | r05单进程真实发送前最终复验 | supported | 只读 | 人工对账证据、三步capture/EML/SQLite终态、274项完整门 | FAIL：伪search run仍可生成manual对账并把旧unknown改为failed_safe；伪reconciliation run/capture/result仍可把新动作改为succeeded |"
+      },
+      {
+        "line": 118,
+        "text": "| 21 | r06 Gmail REST Code Validator / M10-0004 | high | high | high | REST认证、单写者、幂等和崩溃恢复在真实发送前的冻结范围验收 | supported | 只读 | OAuth/Fake REST、确定性MIME、API预算、canary门、权限/隐私和完整代码门 | FAIL：Desktop类型、认证profile总账和可重载refresh token三项缺口 |"
+      },
+      {
+        "line": 119,
+        "text": "| 22 | Final r06 Gmail REST Code Validator / M10-0004 | high | high | high | 合并认证修正后的冻结范围最终复验 | supported | 只读 | 298项代码门、认证失败证据、官方端点和查询合同 | FAIL：profile失败无持久回执、OAuth端点未锁定Google；只读查询重试意见与批准计划冲突，不计为缺口 |"
+      },
+      {
+        "line": 120,
+        "text": "| 23 | r06 Gmail REST Authentication Closure Validator / M10-0004 | high | high | high | 用户批准的窄化认证门与5次只读恢复最终验收 | supported | 只读 | 官方端点、profile失败回执、每阶段5次持久查询预算、每封单次发送及完整代码门 | FAIL：失败profile回执路径可由调用方更换，重启后可重新获得profile预算；其余冻结门全部通过 |"
+      },
+      {
+        "line": 121,
+        "text": "| 24 | Final r06 Gmail REST Authentication Closure Validator / M10-0004 | high | high | high | 合并唯一profile账本路径后复验相同冻结范围 | supported | 只读 | 固定client/recipient/token/receipt路径、失败后跨进程Provider 0次、原冻结矩阵与完整代码门 | FAIL：Candidate/REST Client仍接受替代recipient/token；普通非连接异常也会重试；其余静态门通过 |"
+      },
+      {
+        "line": 122,
+        "text": "| 25 | Definitive r06 Gmail REST Authentication Closure Validator / M10-0004 | high | high | high | 合并投递路径和异常分类后最终复验冻结范围 | supported | 只读 | 全入口固定私有路径、仅连接/429/5xx重试、单次send、持久预算与完整代码门 | FAIL：批量入口绑定认证回执，但直接单封发送入口仍可在无成功认证回执时建立Provider会话；其余冻结门通过 |"
+      },
+      {
+        "line": 123,
+        "text": "| 26 | Final r06 Gmail REST Authentication Closure Validator / M10-0004 | high | high | high | 将认证门下沉到所有Provider入口后复验同一冻结范围 | supported | 只读 | 固定成功认证回执必须在任一发送入口、session与Provider调用前成立；315项代码门及原冻结矩阵 | PASS：定向57项、全量315项、Ruff/format/mypy/AST/33 Schema及隐私布局门全部通过；OAuth、浏览器、网络和Provider调用0 |"
+      },
+      {
+        "line": 124,
+        "text": "| 27 | r07 Gmail Subject Continuation Code Validator / M10-0004 | high | high | high | 新标题、canary零调用对账、实际Message-ID与剩余7封发送前验收 | supported | 只读 | 真实r06证据语义、MIME唯一性、marker/action/approval/request精确绑定与完整代码门 | FAIL：Gmail RAW Base64文本SHA被误当解码EML SHA；重复Message-ID/Subject及额外HTML part可通过；交换action ID后仍可进入Fake Provider |"
+      },
+      {
+        "line": 125,
+        "text": "| 28 | Final r07 Gmail Subject Continuation Code Validator / M10-0004 | high | high | high | 合并修正3项冻结缺陷后最终释放前验收 | supported | 只读 | 真实r06 capture、唯一MIME、7项action精确映射、重放/预算及全部代码门 | PASS：M10定向121项、全量328项、Ruff/format/mypy/AST/36 Schema/隐私布局/diff全部通过；真实r06证据闭合，外部调用0 |"
+      },
+      {
+        "line": 126,
+        "text": "| 29 | r08 Corrected Subject Code Validator / M10-0004 | high | high | high | 更正标题8封进入真实canary前验收 | supported | 只读 | A-012、旧8封不可变、v3标题/血缘/预算、canary门、单次send、重放及全部代码门 | PASS：331项全量、13项定向及全部静态门通过；合成build/canary/7封/预算/replay闭合，真实Provider调用0 |"
+      },
+      {
+        "line": 127,
+        "text": "| 30 | r08 AI Validator / M10-0005 | high | high | high | 更正标题8封后的语义、证据与训练安全最终验收 | supported | 只读 | 新旧16封身份、标题、正文、7日报+1周报、canary顺序和零外部调用 | PASS：8个v3结果和8个动作闭合；标题与正文顶部一致，训练内容/证据/安全和周计划未漂移 |"
+      },
+      {
+        "line": 128,
+        "text": "| 31 | r08 Data/Privacy Validator / M10-0005 | high | high | high | 更正批次正式边界、权限、预算与重放最终验收 | supported | 只读 | Candidate全树0700/0600、SQLite、16封身份、正式state/Token/Git隔离 | FAIL：其余全部通过，但`gmail-rest-r08/`与`gmail-rest-r08/actions/`为0755而非0700 |"
+      },
+      {
+        "line": 129,
+        "text": "| 32 | r08 Permission Remediation Code Validator / M10-0005 | high | high | high | 目录创建权限回归修正后的完整代码复验 | supported | 只读 | 新回归、331项全量、静态门、真实Candidate权限与零Provider | PASS：73目录/9634文件权限闭合；331项测试和全部静态门通过，账本与Provider计数无漂移 |"
+      },
+      {
+        "line": 130,
+        "text": "| 33 | r08 Final AI Validator / M10-0005 | high | high | high | 最终快照的日报/周报语义、证据、安全与邮件一致性 | supported | 只读 | 7日报+1周报、标题变更边界、16封身份、canary顺序和TD-0002 | PASS：训练内容/证据/安全与父输出一致，仅标题按批准变化；16封身份和RAW闭合 |"
+      },
+      {
+        "line": 131,
+        "text": "| 34 | r08 Final Delivery/Data-Privacy Validator / M10-0005 | high | high | high | 权限修正后最终数据、隐私、边界、预算与重放验收 | supported | 只读 | 全树权限、SQLite/raw、r07/r08、正式state/Token/Git和零越界 | PASS：73目录0700、9634文件0600；16封、API64/send16、正式state/Token/r07父证据与重放全部闭合 |"
+      },
+      {
+        "line": 132,
+        "text": "| 1 | AI Validator / M10-0005 | high | high | high | 私人日报/周报/课表语义与不编造验证 | supported | 只读 | 8 份报告、证据、安全与一致性 | validating：r07已累计投递8封，正做最终只读语义验收 |"
+      },
+      {
+        "line": 133,
+        "text": "| 1 | Data/Privacy Validator / M10-0005 | high | high | high | 正式边界、Token、邮件和 Workout 生命周期验证 | supported | 只读 | 指纹、闭包、预算、清理和零越界 | INCONCLUSIVE：正式state/权限/账本/预算通过；Gmail失效无法远端复核，Workout阶段后缺独立Token after指纹；Validator自身一次`mode=ro`只改变Candidate SHM元数据 |"
+      },
+      {
+        "line": 139,
+        "text": "| M10-0001 冻结治理、窗口与外部预算 | completed | Roadmap、exec plan、预算、写入边界和精确确认门已冻结 |"
+      },
+      {
+        "line": 140,
+        "text": "| M10-0002 七日 Candidate 补数和完整报告闭环 | validated | r01 Candidate 完成39次MCP只读、40次Provider进入、34个新文件、7日报+1周报及零AI确定性恢复；Final Validator 16 PASS，预览output 77已生成 |"
+      },
+      {
+        "line": 141,
+        "text": "| M10-0003 外部动作执行器与离线验证 | validated | Final Code Validator 10 PASS：M10 29项、全量236项、全部静态门及仓库外精确账本正反例通过；外部调用0 |"
+      },
+      {
+        "line": 142,
+        "text": "| M10-0004 精确确认与真实动作 | completed | r02 Garmin生命周期已完成并清理；r07旧标题8封完整保留；r08更正标题8封已全部投递并确定性重放，累计16封 |"
+      },
+      {
+        "line": 143,
+        "text": "| M10-0005 最终独立验收与归档 | completed | 最终Code、AI、Delivery/Data-Privacy三名全新只读Validator全部PASS；旧权限FAIL保留，最终快照已闭合 |"
+      }
+    ]
+  },
+  {
+    "source": "docs/exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md",
+    "destination": "exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md",
+    "status": "[completed]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| M11-0015 | HISTORY | [completed] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 只保留原授权范围内的历史完成结论，不表示删除旧源码后仍能运行或本轮重新验收。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 执行计划：M11 v3 八封 Gmail 真实投递"
+      },
+      {
+        "line": 12,
+        "text": "## 目标与验收标准"
+      },
+      {
+        "line": 22,
+        "text": "## 范围与非目标"
+      },
+      {
+        "line": 32,
+        "text": "## 适用规则与参考资料"
+      },
+      {
+        "line": 38,
+        "text": "## 依赖与隔离"
+      },
+      {
+        "line": 51,
+        "text": "## 功能与测试映射"
+      },
+      {
+        "line": 59,
+        "text": "## 工具采用情况"
+      },
+      {
+        "line": 67,
+        "text": "## Subagent 派发"
+      },
+      {
+        "line": 74,
+        "text": "## 工作分解"
+      },
+      {
+        "line": 84,
+        "text": "## 当前检查点"
+      },
+      {
+        "line": 94,
+        "text": "## 决策与发现"
+      },
+      {
+        "line": 99,
+        "text": "## 任务级独立验证"
+      },
+      {
+        "line": 108,
+        "text": "## 集成级独立验证"
+      },
+      {
+        "line": 118,
+        "text": "## PLANS 回写清单"
+      },
+      {
+        "line": 125,
+        "text": "## 迭代日志"
+      }
+    ],
+    "original_stage_table_rows": [
+      {
+        "line": 71,
+        "text": "| 1 | Code Validator / M11-0015 | 高：真实外部写入前的8项状态机与崩溃恢复 | high | high | Gmail真实发送、幂等和隐私均为高风险 | available | 只读 | 完整测试/静态门、Fake REST、r06绑定、send≤1 | PASS：600全量/44 Live、r06 9472 manifest/8 MIME/37 CID、严格串行/unknown/重放、旧入口和隐私门全部通过；网络/Provider 0 |"
+      },
+      {
+        "line": 72,
+        "text": "| 1 | Delivery/Data-Privacy Validator / M11-0015 | 高：8项远端事实、私人Candidate和正式边界 | high | high | 真实投递后必须独立验证远端证据与隐私 | available | 只读 | 8 Gmail ID/RAW、重放0、state/Token/Git边界 | PASS：8项succeeded/attempt=1，8个Gmail ID与实际Message-ID互异，32 REST/8 send、RAW/text/HTML/CID闭合，state/Token/Git与零越界调用通过 |"
+      },
+      {
+        "line": 78,
+        "text": "| M11-0015-01 冻结授权、r06/OAuth/收件人/正式state基线 | done | r06 DB/build receipt SHA、owner-only收件/OAuth/Token和正式state指纹均只读核对通过；Provider调用0 |"
+      },
+      {
+        "line": 79,
+        "text": "| M11-0015-02 实现参数化v3八封REST批次与回归 | done | 新v3 marker/固定策略/根manifest/唯一item_key/严格串行/动态N项验证；44项Live定向测试PASS |"
+      },
+      {
+        "line": 80,
+        "text": "| M11-0015-03 完整代码门与全新Code Validator | done | 600 tests、Ruff、format、mypy、compile、65 Schema、metadata/Markdown、隐私/Git/diff全部PASS；全新high/high只读Code Validator PASS |"
+      },
+      {
+        "line": 81,
+        "text": "| M11-0015-04 建立Live Candidate并严格串行发送8封 | done | 新Candidate `trainlab-m11-v3-live-r01.k2jDQJ`发送前8项均为prepared/0尝试；真实Gmail REST严格串行完成8项，32次API、8次send、0 unknown |"
+      },
+      {
+        "line": 82,
+        "text": "| M11-0015-05 重放、最终边界和Delivery/Data-Privacy Validator | done | final verify PASS；重放Provider增量0、SQLite逻辑增量0、非DB产物增量0；全新high/high最终Validator PASS |"
+      }
+    ]
+  },
+  {
+    "source": "docs/exec-plans/completed/M11-email-presentation-0001-readable-cid-r02.md",
+    "destination": "exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md",
+    "status": "[exec]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| M11-0016..M11-0019 | HISTORY | [exec] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 用户已取消/替代的历史任务；已发生的局部成果和失败保留，取消不等于完整验收通过。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 执行计划：M11 v4 内容优先日报、技术周报与固定周计划"
+      },
+      {
+        "line": 12,
+        "text": "## M12 替代记录"
+      },
+      {
+        "line": 18,
+        "text": "## 目标与验收标准"
+      },
+      {
+        "line": 29,
+        "text": "## 范围与非目标"
+      },
+      {
+        "line": 36,
+        "text": "## 适用规则与参考资料"
+      },
+      {
+        "line": 42,
+        "text": "## 冻结验证合同"
+      },
+      {
+        "line": 54,
+        "text": "### 验收标准"
+      },
+      {
+        "line": 74,
+        "text": "### 行为不变量"
+      },
+      {
+        "line": 86,
+        "text": "### 威胁模型"
+      },
+      {
+        "line": 100,
+        "text": "### 明确排除项"
+      },
+      {
+        "line": 109,
+        "text": "### Lint/Test 与静态门禁"
+      },
+      {
+        "line": 119,
+        "text": "### 合同修订记录"
+      },
+      {
+        "line": 134,
+        "text": "### VC-002 健康状态矩阵"
+      },
+      {
+        "line": 151,
+        "text": "### VC-003 结构化训练目标合同"
+      },
+      {
+        "line": 174,
+        "text": "### VC-004 有限输入矩阵"
+      },
+      {
+        "line": 212,
+        "text": "### VC-005 机器词法与基线"
+      },
+      {
+        "line": 240,
+        "text": "### VC-006 目标模板、有限词法与故障门"
+      },
+      {
+        "line": 283,
+        "text": "### VC-007 模型输入双视图合同"
+      },
+      {
+        "line": 315,
+        "text": "### VC-008 结构化斜杠例外"
+      },
+      {
+        "line": 333,
+        "text": "### VC-009 仓库外模型工作目录命令合同"
+      },
+      {
+        "line": 346,
+        "text": "### VC-010 Prompt、Schema 与业务校验同构合同"
+      },
+      {
+        "line": 374,
+        "text": "## 依赖与隔离"
+      },
+      {
+        "line": 385,
+        "text": "## 功能与测试映射"
+      },
+      {
+        "line": 396,
+        "text": "## 工具采用情况"
+      },
+      {
+        "line": 403,
+        "text": "## Subagent 派发"
+      },
+      {
+        "line": 444,
+        "text": "## 工作分解"
+      },
+      {
+        "line": 469,
+        "text": "## 当前检查点"
+      },
+      {
+        "line": 481,
+        "text": "## 决策与发现"
+      },
+      {
+        "line": 489,
+        "text": "## Validator 结论处理"
+      },
+      {
+        "line": 498,
+        "text": "## 失败尝试与诊断"
+      },
+      {
+        "line": 510,
+        "text": "### Failure Analyst 固定输出"
+      },
+      {
+        "line": 517,
+        "text": "## Validator 固定输出"
+      },
+      {
+        "line": 524,
+        "text": "## 任务级独立验证"
+      },
+      {
+        "line": 530,
+        "text": "## 集成级独立验证"
+      },
+      {
+        "line": 535,
+        "text": "## PLANS 回写清单"
+      },
+      {
+        "line": 542,
+        "text": "## 迭代日志"
+      }
+    ],
+    "original_stage_table_rows": [
+      {
+        "line": 407,
+        "text": "| 1 | Contract Validator / M11-0016 | 高：规则替代、日期、训练与安全边界 | high | high | 实现前必须冻结无冲突合同 | available | 只读 | A-018/AGENTS/Skills/plan 一致性 | 首轮FAIL保留；全新终验 PASS |"
+      },
+      {
+        "line": 408,
+        "text": "| 2 | Code Validator / M11-0017..18 | 高：FIT、Schema、旧版本兼容和一次真实调用前门 | high | high | 跨模块与私人数据边界 | available | 只读 | 完整代码门、合成Candidate、Provider=0 | FAIL：发现5项冻结范围内闭包缺口，真实调用未开始 |"
+      },
+      {
+        "line": 409,
+        "text": "| 3 | Final Code Validator / M11-0017..18 | 高：集中修正后的完整终验 | high | high | 首轮FAIL后只允许一个集中修正批次和全新终验 | available | 只读 | 独立inventory、技术排除、AI引用、课程lineage、模型隔离 | FAIL：启动前隐私复验及逐活动技术证据绑定仍有2项缺口 |"
+      },
+      {
+        "line": 410,
+        "text": "| 4 | Closure Code Validator / M11-0017..18 | 高：用户批准的两项最终闭包终验 | high | high | 只验收启动前隐私复验与逐活动技术证据绑定，PASS前禁止真实调用 | available | 只读 | 完整代码门、两项闭包、旧版本隔离、模型调用仍为0 | FAIL：逐活动绑定PASS；任意绝对路径、开放value子字段及Schema同步漂移仍可在启动前绕过 |"
+      },
+      {
+        "line": 411,
+        "text": "| 5 | r09 Closure Code Validator / M11-0017..18 | 高：最终输入边界、严格Schema与独立权威绑定 | high | high | 用户批准一次性关闭三项已知绕过，PASS前禁止真实调用 | available | 只读 | 绝对路径、开放value、Candidate Schema漂移及完整门 | FAIL：跨活动证据复用、健康status/value合同缺失、普通中文路径误判；模型调用0 |"
+      },
+      {
+        "line": 412,
+        "text": "| 6 | AI/Coaching Content Validator / M11-0018 | 高：真实周报语义、技术置信度与课表 | high | high | 真实健康/训练内容高风险 | available | 只读 | 日报/周报内容与A-018 | pending |"
+      },
+      {
+        "line": 413,
+        "text": "| 7 | Information Architecture Validator / M11-0018 | 中高：双格式、层级和多视口 | high | medium | 内容结构独立验收 | available | 只读 | MD/HTML一致、读时、单层容器 | pending |"
+      },
+      {
+        "line": 414,
+        "text": "| 8 | Data/Privacy Validator / M11-0019 | 高：私人Candidate、正式state和模型输入 | high | high | 最终隐私与边界验收 | available | 只读 | SHA/权限/manifest/零越界调用 | pending |"
+      },
+      {
+        "line": 448,
+        "text": "| M11-0016-01 冻结 A-018、Roadmap、运行说明和 active plan | completed | 用户批准计划；Git基线 `b172f95`，工作树摘要已记录；首轮FAIL后集中消除4项治理歧义 |"
+      },
+      {
+        "line": 449,
+        "text": "| M11-0016-02 全新 Contract Validator | completed | 首轮FAIL证据保留；集中修正后全新终验 PASS |"
+      },
+      {
+        "line": 450,
+        "text": "| M11-0017-01 测试先行定义 v4 Schema、日期与技术矩阵 | completed | 红灯确认后转绿；旧测试未删除/skip/xfail |"
+      },
+      {
+        "line": 451,
+        "text": "| M11-0017-02 实现全量观察、技术摘要、Prompt与固定课表 | completed | 唯一共享Context验证器由builder/runner共同使用；runner在pending/模型前复验完整Context及规范Prompt；每个activity_ref分别绑定available指标 |"
+      },
+      {
+        "line": 452,
+        "text": "| M11-0018-01 同源生成MD/低保真HTML和公开合成样例 | completed | 五视口、图表上限、单层结构及公开样例测试通过 |"
+      },
+      {
+        "line": 453,
+        "text": "| M11-0018-02 完整门与全新 Code Validator | blocked | 主协调690 tests及全部静态门PASS；全新Closure Code Validator复现中文紧邻POSIX绝对路径漏检并绑定AC-004/TM-002/TM-005/GATE-004，依冻结停止条款恢复诊断门 |"
+      },
+      {
+        "line": 454,
+        "text": "| M11-0017-03 Failure Analyst 归因与 VC-002 冻结 | completed | Failure Analyst 已完成；用户批准六类健康三状态；全新 Contract Validator PASS |"
+      },
+      {
+        "line": 455,
+        "text": "| M11-0017-04 v4-r10 测试先行与受限实现修正 | completed | 六类健康三状态、逐活动规范证据身份、Unicode/词元路径边界和四份权威Schema独立绑定已转绿；真实模型调用仍为0 |"
+      },
+      {
+        "line": 456,
+        "text": "| M11-0017-05 v4-r11 结构化训练目标与Context v2 | blocked | 703项门PASS，但全新Closure Code Validator返回FAIL：章节归属/强度格式、敏感值覆盖及Prompt独立冻结仍不满足VC-003；进入DIAGNOSIS_PENDING |"
+      },
+      {
+        "line": 457,
+        "text": "| M11-0017-06 v4-r12 输入合同一次性收敛 | completed | Failure Analyst闭合F05A/B/C；两次Contract Validator的INCONCLUSIVE推动合同词法形式化，不进入代码实现 |"
+      },
+      {
+        "line": 458,
+        "text": "| M11-0017-07 v4-r13 VC-006实现与原闭环续跑 | blocked | 25项旧缺口红灯后完成修正；743 tests及全部静态门PASS；Closure Code Validator复现换行坐标漏检并绑定`AC-004/TM-006`，依批准停止条款不自动修补 |"
+      },
+      {
+        "line": 459,
+        "text": "| M11-0017-08 v4-r14 ASCII空白坐标闭包 | blocked | 六种ASCII空白已闭合且757项门PASS；Final Closure发现NFKC把NBSP/EM SPACE折叠为SP，违反矩阵外Unicode空白仅advisory的冻结边界；依停止条款不自动修补 |"
+      },
+      {
+        "line": 460,
+        "text": "| M11-0017-09 v4-r15 双视图输入边界收敛 | completed | Contract与Closure Code Validator均PASS；52项旧实现缺口红灯后转绿，857项及全部静态门闭合 |"
+      },
+      {
+        "line": 461,
+        "text": "| M11-0017-10 v4-r16 VC-008结构化斜杠例外与SQLite兼容闭包 | completed | Contract与Closure Code Validator均PASS；869项及全部静态门独立闭合，模型调用0 |"
+      },
+      {
+        "line": 462,
+        "text": "| M11-0018-03 建立owner-only Candidate并执行一次真实周报 | blocked | r16 Candidate prepare完整闭合；唯一CLI调用因仓库外模型目录缺少`--skip-git-repo-check`在模型请求前失败；终态证据已保存，禁止重试 |"
+      },
+      {
+        "line": 463,
+        "text": "| M11-0018-04 v4-r17命令合同修正与原闭环续跑 | blocked | 命令修正与Validator均PASS；唯一模型调用已返回，wire Schema通过但业务合同因period、课程phase集和事实bpm误判共8项失败，依冻结规则停止且不重试 |"
+      },
+      {
+        "line": 464,
+        "text": "| M11-0018-05 v4-r18三层同构修正与公开canary | blocked | 首次3项缺口已修复且896 tests/静态门PASS；Final Code Validator发现Prompt与Schema缺少自动语义parity，绑定AC-013/GATE-004；依冻结停止规则不再修补或调用模型 |"
+      },
+      {
+        "line": 465,
+        "text": "| M11-0018-06 v4-r19 Prompt语义同构闭包与原流程续跑 | blocked | Code Validator PASS后唯一公开canary完成1次模型调用；wire通过，但day_3/day_6休息课的`technique_notes=[]`违反业务Schema `minItems:1`，终态`model_failed`；依计划不重试，私人调用0 |"
+      },
+      {
+        "line": 466,
+        "text": "| M11-0019-01 三类最终内容/架构/数据验证 | pending | 全部PASS |"
+      },
+      {
+        "line": 467,
+        "text": "| M11-0019-02 交付预览与OpenDesign内容包，等待用户确认 | pending | 不执行高保真或邮件 |"
+      }
+    ]
+  },
+  {
+    "source": "docs/exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+    "destination": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+    "status": "[completed]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| M11-0001..M11-0014 | HISTORY | [completed] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 只保留原授权范围内的历史完成结论，不表示删除旧源码后仍能运行或本轮重新验收。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 执行计划：人类可读日报/周报与私有 CID 图表闭环"
+      },
+      {
+        "line": 15,
+        "text": "## 目标与验收标准"
+      },
+      {
+        "line": 33,
+        "text": "## 范围与非目标"
+      },
+      {
+        "line": 42,
+        "text": "## 适用规则与参考资料"
+      },
+      {
+        "line": 55,
+        "text": "## 依赖与隔离"
+      },
+      {
+        "line": 71,
+        "text": "## 功能与测试映射"
+      },
+      {
+        "line": 85,
+        "text": "## 工具采用情况"
+      },
+      {
+        "line": 93,
+        "text": "## Subagent 派发"
+      },
+      {
+        "line": 179,
+        "text": "## 工作分解"
+      },
+      {
+        "line": 199,
+        "text": "## 当前检查点"
+      },
+      {
+        "line": 211,
+        "text": "## 决策与发现"
+      },
+      {
+        "line": 219,
+        "text": "## 任务级独立验证"
+      },
+      {
+        "line": 228,
+        "text": "## 集成级独立验证"
+      },
+      {
+        "line": 238,
+        "text": "## PLANS 回写清单"
+      },
+      {
+        "line": 247,
+        "text": "## 迭代日志"
+      }
+    ],
+    "original_stage_table_rows": [
+      {
+        "line": 97,
+        "text": "| 1 | Code Validator / M11-0005 | 高：Schema、MIME、幂等、隐私 | high | high | 跨模块与投递安全 | available | 只读 | 完整代码门和冻结验收 | INCONCLUSIVE：返工前未收到最终结论；不复用 |"
+      },
+      {
+        "line": 98,
+        "text": "| 1 | Visual Validator / M11-0005 | 高：邮件客户端兼容与状态覆盖 | high | high | 需要独立视觉判断 | available | 只读 | 桌面/375px/状态矩阵 | FAIL：自由文本泄漏工程字段、缺少 title；进入原范围返工 |"
+      },
+      {
+        "line": 99,
+        "text": "| 1 | Data/Privacy Validator / M11-0005 | 高：私人预览与来源闭包 | high | high | 私人证据边界 | available | 只读 | state 不变、manifest/隐私/零 Provider | PASS：旧快照权限、SQLite、MIME/RAW、零外部调用和正式 state 边界闭合；代码变化后不沿用为最终 PASS |"
+      },
+      {
+        "line": 100,
+        "text": "| 2 | Code Validator / M11-0005 | 高：Schema、MIME、幂等、展示隔离 | high | high | 返工后跨模块最终复验 | available | 只读 | 385 tests、静态门、逻辑重放和泄漏回归 | FAIL：title 未在 MIME 层核验、课程停止条件直出、隐私门不全、持久化 ViewModel 纯文本键序不稳定 |"
+      },
+      {
+        "line": 101,
+        "text": "| 2 | Visual Validator / M11-0005 | 高：真实数据可读性与响应式 | high | high | 返工后独立视觉复验 | available | 只读 | 8份桌面/375px、title/h1、图表、工程字段0 | FAIL：weekly hold 被错误表达为绿色“可以训练” |"
+      },
+      {
+        "line": 102,
+        "text": "| 2 | Data/Privacy Validator / M11-0005 | 高：私人预览与来源闭包 | high | high | 新 Candidate 必须重新验收 | available | 只读 | state 不变、manifest/权限/隐私/零 Provider | PASS：r02 数据、权限、lineage、正式边界和零 Provider 闭合；代码变化后不沿用 |"
+      },
+      {
+        "line": 103,
+        "text": "| 3 | Code Validator / M11-0005 | 高：Schema、MIME、幂等、展示隔离 | high | high | r03 冻结结果最终复验 | available | 只读 | 396 tests、完整静态门、重放和冻结合同 | FAIL：发送成功后RAW核验失败时回执漏记send/get；未跟踪设计文件空白未被普通diff门发现 |"
+      },
+      {
+        "line": 104,
+        "text": "| 3 | Visual Validator / M11-0005 | 高：真实数据可读性与响应式 | high | high | r03 桌面/手机与状态语义终验 | available | 只读 | 8份桌面/375px、title/h1、图表、hold语义 | PASS：16次实际渲染、CID/PNG、hold中性语义和展示隐私闭合；代码变化后不沿用 |"
+      },
+      {
+        "line": 105,
+        "text": "| 3 | Data/Privacy Validator / M11-0005 | 高：私人预览与来源闭包 | high | high | r03 私有产物与正式边界终验 | available | 只读 | state不变、manifest/权限/隐私/零Provider | PASS：r03权限、SQLite、lineage、Git和正式state边界闭合；代码变化后不沿用 |"
+      },
+      {
+        "line": 106,
+        "text": "| 4 | Code Validator / M11-0005 | 高：发送账本、Schema、MIME、幂等 | high | high | attempt3阻断修正后最终复验 | available | 只读 | 397 tests、发送后失败账本、完整含未跟踪diff门 | FAIL：unknown只读恢复在RAW/确认失败时未发布reconciliation回执 |"
+      },
+      {
+        "line": 107,
+        "text": "| 4 | Visual Validator / M11-0005 | 高：真实数据可读性与响应式 | high | high | 最终源码与r03必须重新独立验收 | available | 只读 | 8份桌面/375px、title/h1、图表、hold语义 | PASS：16次实际渲染和展示闭包；代码变化后不沿用 |"
+      },
+      {
+        "line": 108,
+        "text": "| 4 | Data/Privacy Validator / M11-0005 | 高：私人预览与来源闭包 | high | high | 最终源码与r03必须重新独立验收 | available | 只读 | state不变、manifest/权限/隐私/零Provider | PASS：r03和正式边界闭合；代码变化后不沿用 |"
+      },
+      {
+        "line": 109,
+        "text": "| 5 | Code Validator / M11-0005 | 高：完整投递/恢复账本矩阵 | high | high | attempt4恢复分支收敛后最终复验 | available | 只读 | 401 tests、全部Provider失败分支和完整门 | FAIL：明确send错误归类、已知Gmail ID恢复、本地MIME断点三项缺口 |"
+      },
+      {
+        "line": 110,
+        "text": "| 5 | Visual Validator / M11-0005 | 高：真实数据可读性与响应式 | high | high | 最终源码与r03重新独立验收 | available | 只读 | 8份桌面/375px、title/h1、图表、hold语义 | PASS：16次实际渲染和展示闭包；代码变化后不沿用 |"
+      },
+      {
+        "line": 111,
+        "text": "| 5 | Data/Privacy Validator / M11-0005 | 高：私人预览与来源闭包 | high | high | 最终源码与r03重新独立验收 | available | 只读 | state不变、manifest/权限/隐私/零Provider | PASS：r03和正式边界闭合；代码变化后不沿用 |"
+      },
+      {
+        "line": 112,
+        "text": "| 6 | Code Validator / M11-0005 | 高：重排后的单写者完整状态机 | high | high | attempt5三项状态机缺口结构性收敛 | available | 只读 | 406 tests、有限I/O、改写Message-ID和禁止重发 | PASS：406 tests和全部静态门；有限I/O、改写Message-ID、send-started只读恢复、零调用重放均闭合 |"
+      },
+      {
+        "line": 113,
+        "text": "| 6 | Visual Validator / M11-0005 | 高：真实数据可读性与响应式 | high | high | 最终源码与r03重新独立验收 | available | 只读 | 8份桌面/375px、title/h1、图表、hold语义 | PASS：16次实际渲染、8图、MIME和展示隐私闭合 |"
+      },
+      {
+        "line": 114,
+        "text": "| 6 | Data/Privacy Validator / M11-0005 | 高：私人预览与来源闭包 | high | high | 最终源码与r03重新独立验收 | available | 只读 | state不变、manifest/权限/隐私/零Provider | PASS：r03权限/来源/SQLite/lineage/Git闭合，正式state前后不变 |"
+      },
+      {
+        "line": 115,
+        "text": "| 7 | Code Validator / M11-0006 | 高：真实 Gmail REST、单次发送、跨进程预算 | high | high | 新增外部动作适配器且发送前必须独立放行 | available | 只读 | 完整测试/静态门、两动作 Candidate、日报人工门、重放零发送 | INCONCLUSIVE：验证期间发现 capture 中间目录需显式 0700，源码冻结变化后主动中止；不复用 |"
+      },
+      {
+        "line": 116,
+        "text": "| 8 | Code Validator / M11-0006 | 高：真实 Gmail REST、单次发送、跨进程预算 | high | high | 目录权限回归补齐后重新完整独立放行 | available | 只读 | 412 tests与全部静态门、两动作Candidate、锁/预算/重放/隐私 | FAIL：Token 漂移会被覆盖接受；正式 state 检查位于 Candidate 锁外，存在先发送后发现漂移的窗口 |"
+      },
+      {
+        "line": 117,
+        "text": "| 9 | Code Validator / M11-0006 | 高：发送前冻结输入与 TOCTOU 回归 | high | high | attempt8 两项发送前 fail-closed 缺陷修复后必须重新完整独立放行 | available | 只读 | 414 tests与全部静态门；Token/state漂移均须 Gmail 调用为0 | FAIL：检查通过后至 transport 创建间仍可替换 Token/state；Fake Provider 已发生4次调用/1次send后才发现 |"
+      },
+      {
+        "line": 118,
+        "text": "| 10 | Code Validator / M11-0006 | 高：冻结文件身份、正式锁和调用前复核 | high | high | attempt9 定位的最后竞态窗口收敛后重新完整独立放行 | available | 只读 | 416 tests与全部静态门；已打开Token身份绑定、正式锁覆盖发送、transport后零调用复核 | FAIL：请求记账后至HTTP调用前缺最后身份核对；Token刷新检查与覆盖不是原子比较交换 |"
+      },
+      {
+        "line": 119,
+        "text": "| 11 | Code Validator / M11-0006 | 高：逐调用 Token 绑定与原子刷新 | high | high | attempt10 后本应继续复验，但已触发 high/high 停止规则 | available | 只读 | 未启动、无验收产物 | cancelled：用户批准恢复 A-010；不再用同 UID 任意篡改扩大威胁模型 |"
+      },
+      {
+        "line": 120,
+        "text": "| 1 | Design Validator / M11-0006 | 高：信任边界、线性化点与有限故障矩阵 | high | high | 先冻结设计合同，避免 Code Validator 逐轮增加威胁 | available | 只读 | A-010/A-011/A-013、F01-F12、历史 Block 分类、Validator 停止规则 | FAIL：F09布尔门、F08刷新崩溃前后、Skill/external双层状态、F06/F07错误分类四项未决；信任边界和停止规则PASS |"
+      },
+      {
+        "line": 121,
+        "text": "| 2 | Design Validator / M11-0006 closure | 高：四项章程澄清的最终设计放行 | high | high | 用户明确批准一次性澄清后必须由全新 Agent 复核 | available | 只读 | F09严格布尔门、F08阶段恢复、双层状态、F06/F07重试分类及F12 CID闭包 | PASS：候选澄清形成 decision-complete 有限故障矩阵；未扩张 A-010 信任边界 |"
+      },
+      {
+        "line": 122,
+        "text": "| 1 | Code Validator / M11-0006 closure | 高：简化后的 REST 状态机、正常刷新崩溃恢复 | high | high | Design PASS 后按冻结矩阵一次性验收 | available | 只读 | 426 tests、完整门、Fake HTTP REST 两封闭环、F01-F12 | FAIL：F01-F04 内的外部动作与 Skill run 未形成失败双终态，崩溃恢复也未形成 interrupted→recovery 运行链 |"
+      },
+      {
+        "line": 123,
+        "text": "| 2 | Final Code Validator / M11-0006 closure | 高：双终态与崩溃恢复汇总修正 | high | high | 冻结计划只允许一个汇总修正批次和一次最终复验 | available | 只读 | 431 tests、F01-F12、双终态、恢复运行链、完整门 | FAIL：F05/A-011 中 Gmail ID 已返回但 `send-response` 尚未发布即崩溃时，恢复未采用已有 durable capture 的 Gmail ID；遇实际 Message-ID 改写会停在 unknown |"
+      },
+      {
+        "line": 124,
+        "text": "| 3 | Code Validator / M11-0006 F05 recovery | 高：durable capture 身份绑定与只读恢复 | high | high | 用户明确批准仅修复冻结 F05/A-011 缺口并增加一次独立复验 | available | 只读 | F01-F12、capture 绑定、改写 Message-ID、单次发送、442 tests与完整门 | FAIL：F05与全部门PASS，但明确HTTP 400且无Gmail ID时 external action 被归为unknown而非F06/F07要求的failed_safe |"
+      },
+      {
+        "line": 125,
+        "text": "| 4 | Code Validator / M11-0006 F06/F07 classification | 高：明确send拒绝双终态与禁止重发 | high | high | 用户在停止后明确批准仅修正Validator定位的终态分类 | available | 只读 | 明确HTTP 4xx→failed_safe、Skill blocked、send=1、重放=0、443 tests与完整门 | PASS：64项定向、443项全量和全部静态门通过；4xx/unknown/F05恢复均闭合 |"
+      },
+      {
+        "line": 126,
+        "text": "| 5 | Code Validator / M11-0006 recent-health correction | 高：有界历史健康选择、旧证据隔离、累计发送预算 | high | high | A-014 改变日报确定性输入和新 Candidate，真实重发前必须重新独立放行 | available | 只读 | 30/14天边界、日期/单位/完整性、AI SHA不变、旧周报零调用、累计send3/API48及完整门 | FAIL：真实解析器忽略显式异常单位，且同一节点多个日期字段冲突时只读取第一个；455项与其余门通过 |"
+      },
+      {
+        "line": 127,
+        "text": "| 6 | Final Code Validator / M11-0006 recent-health parser closure | 高：真实 Garmin JSON 单位与日期冲突修正后的最终放行 | high | high | attempt5 定位 A-014 范围内真实缺口，修正实现和回归后必须由全新 Agent 复验 | available | 只读 | 真实解析器错误单位/日期冲突、r05c闭包、全部代码门及既有预算/旧证据 | FAIL：解析器与全部门通过，但修正版日报text/plain遗漏VO₂ Max和体重的实际测量日期，违反A-014展示合同 |"
+      },
+      {
+        "line": 128,
+        "text": "| 7 | Code Validator / M11-0006 text-date closure | 高：用户授权high/high停止后的单点展示修正复验 | high | high | 用户明确批准仅修正最终Validator定位的text/plain日期缺口 | available | 只读 | HTML/text日期一致、解析器回归、全门、r06预览与既有预算/旧证据 | FAIL：实现把全部日报metric detail写入text/plain，额外改变睡眠文字，超出仅VO₂ Max/体重日期的单点授权 |"
+      },
+      {
+        "line": 129,
+        "text": "| 8 | Final Code Validator / M11-0006 text-date scope closure | 高：用户再次确认严格限定两个指标后的最终放行 | high | high | 用户明确授权仅vo2_max/weight写入纯文本detail，其他纯文本必须不变 | available | 只读 | r05c→r07纯文本仅两行变化、全门、解析器、旧证据、预算与重放 | PASS：131项定向、463项全量及全部静态门通过；冻结范围无未满足项，旧M9时序抖动fail-closed且不阻断本范围 |"
+      },
+      {
+        "line": 130,
+        "text": "| 1 | Delivery/Data-Privacy Validator / M11-0006 | 高：两封真实远端证据与正式边界 | high | high | 真实发送完成后必须复验 RAW、权限、state/Token 和越界调用 | available | 只读 | 两 Gmail ID/RAW、正式state不变、零非授权Provider | 等待两封用户确认后派发 |"
+      },
+      {
+        "line": 131,
+        "text": "| 1 | Design Validator / M11-0007 | 高：跨Schema教练合同、安全与验收边界 | high | high | 先冻结无心率区间、SOS和内容可用性，避免实现后改变预期 | available | 只读 | A-015、v2章程、Skills/AGENTS/计划一致性 | FAIL：周报raw回退、硬负荷间隔、SOS零课、v2路由和可比配速存在歧义 |"
+      },
+      {
+        "line": 132,
+        "text": "| 2 | Final Design Validator / M11-0007 | 高：五项设计歧义收敛 | high | high | 以公式、版本名和Host选择合同形成唯一判定 | available | 只读 | 禁止raw、日期差≥3、零SOS证据、v2路由、42天参考配速 | PASS：五项均形成唯一判定；Provider 0、正式state 9345项指纹不变 |"
+      },
+      {
+        "line": 133,
+        "text": "| 1 | Code Validator / M11-0008..0009 | 高：v2 Schema、SOS、安全门、日周渲染与v1隔离 | high | high | 跨模块教练合同和内容安全 | available | 只读 | 484 tests、Ruff/format/mypy/compile/Schema、冻结章程 | FAIL：心率别名、SOS理由、工程字段、纯文本细节和v1 rubric五项缺口 |"
+      },
+      {
+        "line": 134,
+        "text": "| 2 | Final Code Validator / M11-0008..0009 | 高：五项缺口汇总收敛 | high | high | 只允许一次汇总修正后完整复验 | available | 只读 | 492 tests、反例门、v1映射、完整静态门 | FAIL：周总结自由文本仍可输出Zone/BPM处方；工程禁词遗漏output_id/content_json/skill_run_id等 |"
+      },
+      {
+        "line": 135,
+        "text": "| 3 | Authorized Final Code Validator / M11-0008..0009 | 高：统一读者文字安全门 | high | high | 用户明确授权仅闭合最终两项缺口 | available | 只读 | 503 tests、全部可见文字心率处方/工程字段反例、完整门 | FAIL：组合字段source_output_id等可利用下划线词边界绕过 |"
+      },
+      {
+        "line": 136,
+        "text": "| 4 | Composite Identifier Final Validator / M11-0008..0009 | 高：组合内部标识符闭合 | high | high | 用户要求问题在原目标内持续修复至真实完成 | available | 只读 | 组合字段反例、完整门、零Provider | FAIL：组合内部标识符已闭合；中文紧邻Z2、独立BPM及HRmax仍可绕过心率处方门 |"
+      },
+      {
+        "line": 137,
+        "text": "| 5 | Chinese Heart-rate Boundary Final Validator / M11-0008..0009 | 高：中文连接形式与心率别名闭合 | high | high | 只修复同一冻结读者安全门，不改变训练业务合同 | available | 只读 | 中文紧邻反例、完整门、零Provider | FAIL：中文紧邻Z2、BPM、HRmax均闭合；独立Zone仍可进入周报可见文字 |"
+      },
+      {
+        "line": 138,
+        "text": "| 6 | Standalone Zone Final Validator / M11-0008..0009 | 高：无数字Zone与中文心率分区闭合 | high | high | 同一冻结无心率区间合同的最后词法反例 | available | 只读 | 独立Zone/心率分区、完整门、零Provider | FAIL：独立Zone和已列形式闭合；合并写法“心率上下限”仍可见 |"
+      },
+      {
+        "line": 139,
+        "text": "| 7 | Chinese Range Synonym Final Validator / M11-0008..0009 | 高：中文心率范围同义表达闭合 | high | high | 只扩充同一冻结词法集合 | available | 只读 | 上下限/范围/区带、完整门、零Provider | FAIL：前置最大/阈值闭合，但倒装“心率最大/阈值”因两份词表不对称而遗漏 |"
+      },
+      {
+        "line": 140,
+        "text": "| 8 | Symmetric Chinese Term Final Validator / M11-0008..0009 | 高：中文词表前后置对称闭合 | high | high | 结构性消除同一词表的顺序遗漏 | available | 只读 | 双向词表、完整门、零Provider | FAIL：输入词法门闭合；周报模板自身硬编码免责声明含“心率区间”且最终HTML未二次校验 |"
+      },
+      {
+        "line": 141,
+        "text": "| 9 | Final Render Safety Validator / M11-0008..0009 | 高：模板常量与最终HTML/text安全闭合 | high | high | 同一冻结读者安全门覆盖最终产物 | available | 只读 | 最终产物安全门、完整门、零Provider | FAIL：模板产物闭合；Z-2、BPM150、HR-max、target HR及A-015明确禁止的乳酸阈值仍可绕过 |"
+      },
+      {
+        "line": 142,
+        "text": "| 10 | Separator and Threshold Final Validator / M11-0008..0009 | 高：分隔符、缩写和乳酸阈值闭合 | high | high | 冻结词法合同的结构化变体覆盖 | available | 只读 | 分隔/顺序变体、最终产物、完整门、零Provider | PASS：521 tests与全部静态门；174种心率变体、21种工程标识符零遗漏，Provider 0 |"
+      },
+      {
+        "line": 143,
+        "text": "| 1 | AI Validator / M11-0010 | 高：私人健康/训练语义、证据与课程可执行性 | high | high | 真实私人结果且不得自我认证 | available | 只读 | 7日报、1周报、证据引用、SOS、详细步骤、安全与不编造 | FAIL：8月12日原课来自本轮新生成的测试基准而非历史计划；周报把日报建议误写成已执行负荷；6份日报未单独解释昨日非睡眠健康数据 |"
+      },
+      {
+        "line": 144,
+        "text": "| 1 | Visual/Coach Utility Validator / M11-0010 | 高：8份真实邮件的桌面/375px可读性 | high | high | 需独立视觉和内容可用性判断 | available | 只读 | 8份HTML/text、响应式、无工程泄漏、课程层级与摘要可读 | FAIL：8月12日有效课缺少独立 recovery 阶段；其余课程、摘要和响应式检查通过 |"
+      },
+      {
+        "line": 145,
+        "text": "| 1 | Data/Privacy Validator / M11-0010 | 高：Candidate、血缘、权限与正式边界 | high | high | 私人证据和零外部调用终验 | available | 只读 | SQLite/manifest/SHA、权限、9次AI、Provider/external=0、正式state不变 | FAIL：只读审计错误使用普通SQLite连接，在r01创建SHM；其余完整性、血缘、权限、零外部调用和正式state边界通过。r01永久保留失败证据 |"
+      },
+      {
+        "line": 146,
+        "text": "| 1 | Code Validator / M11-0010 r02 | 高：原课身份、四阶段、健康分栏与建议/执行隔离 | high | high | 三项私人验收缺口已下沉为确定性合同 | available | 只读 | 526 tests、新回归、全部代码门、r01不变、Provider 0 | FAIL：来源缺失会默认verified_original；昨日健康缺失会回退睡眠文字；“本周已执行降级，训练负荷比原计划减少”可绕过建议/执行门 |"
+      },
+      {
+        "line": 147,
+        "text": "| 2 | Final Code Validator / M11-0010 r02 | 高：三项fail-closed缺口汇总修正 | high | high | 同一冻结范围只允许一次汇总修正后最终复验 | available | 只读 | 527 tests、缺字段拒绝、语义组合门、全部静态边界 | PASS：527项全量、64项定向及全部静态/隐私门通过；四项冻结合同和v1隔离独立闭合 |"
+      },
+      {
+        "line": 148,
+        "text": "| 3 | Phase Prompt Validator / M11-0010 r02 | 高：AI有效课四阶段和四种决策 | high | high | 首轮r02模型结果缺少独立recovery，需先闭合提示合同 | available | 只读 | keep/downgrade/rest/blocked、四阶段、527 tests与全部门 | FAIL：提示仅明确keep/downgrade，未完整覆盖rest/blocked |"
+      },
+      {
+        "line": 149,
+        "text": "| 4 | Final Phase Prompt Validator / M11-0010 r02 | 高：四决策与四阶段闭合 | high | high | 同一提示合同修正后全新复验 | available | 只读 | 四种决策、四阶段、527 tests与全部门 | PASS：提示与Schema/Host门一致，四种决策均不得省略recovery；完整门通过 |"
+      },
+      {
+        "line": 150,
+        "text": "| 5 | Observed BPM Validator / M11-0010 r02 | 高：历史观测与课程处方隔离 | high | high | r02真实健康摘要含RHR观测值，需允许事实但禁止课程心率 | available | 只读 | 观测上下文、课程零心率、处方同义表达、530 tests | FAIL：观测值可注入课程，且目标静息心率、提高平均心率、target heart rate等可绕过 |"
+      },
+      {
+        "line": 151,
+        "text": "| 6 | Course Render Final Validator / M11-0010 r02 | 高：最终渲染层课程零心率保证 | high | high | ViewModel可能被篡改，最终渲染必须独立保护课程 | available | 只读 | 24项课程篡改、16项处方/渲染探针、530 tests与全部门 | PASS：课程构建与最终渲染双层门闭合；历史观测只在明确健康上下文显示 |"
+      },
+      {
+        "line": 152,
+        "text": "| 2 | AI Validator / M11-0010 r02 | 高：修正后的七日报一周报语义终验 | high | high | 必须使用全新Candidate和全新Agent | available | 只读 | 测试基准披露、昨日健康/睡眠分栏、建议不冒充执行、训练合理性 | FAIL：该日Host将周均HRV覆盖为昨夜HRV字段；源证据的昨夜值与周均值不同，错误不能靠uncertainty变为有效 |"
+      },
+      {
+        "line": 153,
+        "text": "| 2 | Visual/Coach Utility Validator / M11-0010 r02 | 高：修正后8份真实邮件桌面/375px可用性 | high | high | 四阶段和展示语义发生修正 | available | 只读 | localhost实际渲染、课程层级、健康分栏、无工程泄漏 | PASS：8份×2视口共16次实际渲染；布局、课程四阶段、摘要层级和读者安全闭合 |"
+      },
+      {
+        "line": 154,
+        "text": "| 2 | Data/Privacy Validator / M11-0010 r02 | 高：全新Candidate、不可变只读审计与正式边界 | high | high | r01审计产生sidecar后不得复用 | available | 只读 | immutable SQLite、无sidecar、manifest/SHA、权限、Provider/external=0、正式state不变 | PASS：108项manifest、26项输出、7次AI、SQLite/权限/正式state/零外部动作闭合；未创建sidecar |"
+      },
+      {
+        "line": 155,
+        "text": "| 1 | Code Validator / M11-0010 r03 HRV binding | 高：低频健康指标语义绑定 | high | high | 唯一AI阻断来自确定性Host映射，真实发送前必须测试先行闭合 | available | 只读 | 昨夜/周均HRV顺序无关、真实7日字段名、全门、r02不变 | FAIL：顺序和真实字段均闭合，但任意后缀匹配仍接受伪造前缀other_/weekly_*_last_night，缺少拒绝测试 |"
+      },
+      {
+        "line": 156,
+        "text": "| 2 | Final Code Validator / M11-0010 r03 HRV allowlist | 高：昨夜HRV字段白名单 | high | high | 只收敛Validator定位的任意前缀缺口 | available | 只读 | 6个批准名称、2个恶意前缀拒绝、540 tests与全部门 | PASS：5040种顺序探针、6项allowlist/非法前缀、540 tests和全部静态/隐私门通过 |"
+      },
+      {
+        "line": 157,
+        "text": "| 3 | Weekly Evidence Prompt Validator / M11-0010 r03 | 高：周洞察只引用v2日报 | high | high | 首次周报模型误用嵌套legacy ID，重试前必须消除提示歧义 | available | 只读 | 顶层7个daily_input_refs、禁止digest/nested legacy/raw、541 tests与全门 | FAIL：提示歧义已消除，但refs校验接受bool ID和非hex SHA；非mapping输入未稳定拒绝 |"
+      },
+      {
+        "line": 158,
+        "text": "| 4 | Final Weekly Evidence Validator / M11-0010 r03 | 高：v2日报引用严格绑定 | high | high | 只闭合首次Validator定位的确定性输入校验缺口 | available | 只读 | 正整数ID、64位hex SHA、7项唯一refs、546 tests与全部门 | PASS：22类恶意ref探针、546 tests及全部门通过；放行预算内仅一次周报重试 |"
+      },
+      {
+        "line": 159,
+        "text": "| 5 | Observed HR Range Validator / M11-0010 r03 | 高：历史健康事实与心率处方隔离 | high | high | 周报成功后渲染安全门误拒绝历史静息心率范围 | available | 只读 | 历史范围允许、目标/控制范围拒绝、课程零心率、547 tests与全部门 | FAIL：远距离“必须达到的目标”可绕过，且历史BPM例外未限定health字段 |"
+      },
+      {
+        "line": 160,
+        "text": "| 6 | Final Health-context HR Validator / M11-0010 r03 | 高：字段级历史观测例外与整句处方阻断 | high | high | 只闭合Validator定位的两项同源fail-open | available | 只读 | health-only、整句目标/必须/控制、最终渲染绑定、549 tests与全部门 | FAIL：独立“达到/应达到”仍可绕过；en dash历史范围被误拒 |"
+      },
+      {
+        "line": 161,
+        "text": "| 7 | Final HR Sentence Validator / M11-0010 r03 | 高：达到词与范围分隔符闭合 | high | high | 仅补齐上一Validator一次性汇总的两个词法边界 | available | 只读 | 达到/应达到拒绝、6种范围允许、课程/非health严格、550 tests与全部门 | FAIL：活动最高心率允许，但同义“活动最大心率”被通用最大心率门误拒 |"
+      },
+      {
+        "line": 162,
+        "text": "| 8 | Final Observed-fragment Validator / M11-0010 r03 | 高：完整历史片段遮盖后再扫描剩余处方 | high | high | 结构性消除健康历史事实与通用禁词冲突 | available | 只读 | 3类标签×6分隔符、处方残余、非health/课程/最终渲染、550 tests与全部门 | FAIL：裸“保持”真实绕过；另三项中同句历史词、重复观测唯一性及平均心率限制均超出A-015 |"
+      },
+      {
+        "line": 163,
+        "text": "| 9 | Final A-015 Observed-fact Validator / M11-0010 r03 | 高：按批准规则冻结health字段与处方残余 | high | high | 修复真实保持绕过，并拒绝Validator临时扩张合同 | available | 只读 | health字段即历史上下文、平均/最高事实、保持拒绝、非health严格、551 tests与全部门 | FAIL：中文/英文分号被当句界，后半句“必须达到”可与前面BPM脱钩 |"
+      },
+      {
+        "line": 164,
+        "text": "| 10 | Final Semicolon Boundary Validator / M11-0010 r03 | 高：分号内处方关联闭合 | high | high | 只修复唯一剩余的句界词法漏洞 | available | 只读 | 中英文分号、合法多观测、A-015字段边界、551 tests与全部门 | PASS：131项定向、551项全量与全部门通过；放行现有92/93确定性渲染，零新模型/Provider |"
+      },
+      {
+        "line": 165,
+        "text": "| 11 | Final Narrative/Course Boundary Validator / M11-0010 r03 | 高：A-015历史事实与课程处方分层 | high | high | 真实日报调整理由含合法RHR事实，暴露先前health-only人为收窄 | available | 只读 | narrative历史事实、course零心率、可见HTML分块、551 tests与全部门 | PASS：120项定向、551项全量、端到端正负探针与全部门通过；放行现有r03确定性渲染 |"
+      },
+      {
+        "line": 166,
+        "text": "| 3 | AI Validator / M11-0010 r03 | 高：最终七日报一周报语义、证据和课程可执行性 | high | high | r02 AI FAIL后必须以全新r03完整复验 | available | 只读 | 7日报、1周报、证据、指标复算、SOS、四阶段、安全与不编造 | PASS：指标独立复算一致，7日报与周报证据闭合；下一周恰好1节条件性SOS，课程零心率处方，v2新增外部动作0 |"
+      },
+      {
+        "line": 167,
+        "text": "| 3 | Visual/Coach Utility Validator / M11-0010 r03 | 高：最终8份邮件桌面/375px可用性 | high | high | 最终内容和渲染必须重新实际检查 | available | 只读 | 8份HTML×2视口、层级、无溢出/断图/工程泄漏、课程可执行性 | PASS：16/16无溢出、裁切或断图；标题/章节/课程细节完整，历史BPM仅作事实展示 |"
+      },
+      {
+        "line": 168,
+        "text": "| 3 | Data/Privacy Validator / M11-0010 r03 | 高：DB-only Candidate、血缘、权限和正式边界 | high | high | r03为全新派生Candidate且必须immutable审计 | available | 只读 | SQLite/Schema/SHA、父库绑定、权限、重放、零v2外部动作、正式state不变 | PASS：26项v2输出和52条血缘闭合，7次AI/Provider0/v2外部动作0，正式9347项不变且无sidecar/隐私泄漏 |"
+      },
+      {
+        "line": 169,
+        "text": "| 1 | Code Validator / M11-0012..0014 v3 r01 | 高：FIT/睡眠解析、Schema、冻结输出、共享渲染、MIME与隐私 | high | high | v3跨模块与私人Candidate终验 | available | 只读 | 576 tests、84–93冻结、SQLite/raw/MIME/lineage、Provider/external=0 | FAIL：五个合法`training_plan_v2`课程类型缺少中文映射，最终HTML泄漏内部英文枚举；其余代码与Candidate闭包通过 |"
+      },
+      {
+        "line": 170,
+        "text": "| 2 | Final Code Validator / M11-0012..0014 v3 r02 | 高：完整课程枚举中文展示与既有v3合同 | high | high | 仅修正首次Validator定位的范围内显示缺口后完整复验 | available | 只读 | 577 tests、9种课程类型、r02完整门与Candidate闭包 | FAIL：多session FIT中非0 index在唯一性计数前被忽略，可把index0误当唯一分区；其余全部门通过 |"
+      },
+      {
+        "line": 171,
+        "text": "| 3 | Final Code Validator / M11-0012..0014 v3 r03 | 高：所有session候选先计数与完整v3合同 | high | high | 闭合A-016重复session fail-closed后完整复验 | available | 只读 | 578 tests、跨index重复/异常index、r03完整门与Candidate闭包 | FAIL：缺失/None/浮点index及字符串数值仍被接纳；其余全部门通过 |"
+      },
+      {
+        "line": 172,
+        "text": "| 4 | Final Code Validator / M11-0012..0014 v3 r04 | 高：FIT分区严格类型与完整v3合同 | high | high | 闭合A-016格式异常fail-closed后完整复验 | available | 只读 | 585 tests、32组额外恶意FIT探针、冻结84–93、r04 SQLite/raw/MIME/重放与零Provider闭包 | PASS：所有合法与异常分区输入均fail-closed；未从采样重划区；其余完整代码门与Candidate闭包通过 |"
+      },
+      {
+        "line": 173,
+        "text": "| 5 | Design-Fidelity Validator / M11-0014 v3 r04 | 高：OpenDesign日报/周报逐组件及672/375响应式终验 | high | high | 必须实际渲染两类邮件并独立比较完整交接规范 | available | 只读 | 八份预览、日报/周报顺序、卡片/KPI/图表/时间轴、九种课程中文化、状态与无数据分支 | FAIL：品牌外壳/颜色偏离交接；状态无图形标识；睡眠时间显示UTC原串；周报降级单位仍为英文；其余顺序、响应式、图表、隐私通过 |"
+      },
+      {
+        "line": 174,
+        "text": "| 6 | Code Validator / M11-0012..0014 v3 r05 | 高：四项视觉修正、CID品牌资产、MIME跨层合同和完整既有边界 | high | high | r04视觉返工修改生产代码与Schema后必须重新执行完整独立代码验收 | available | 只读 | 592 tests、四项显示回归、品牌/状态CID MIME、冻结84–93、r05 Candidate闭包 | FAIL：展示转换层以宽松相等接纳`False`和`0.0`为session index 0；其余代码、Candidate、视觉、MIME和隐私门全部通过 |"
+      },
+      {
+        "line": 175,
+        "text": "| 7 | Final Code Validator / M11-0012..0014 v3 r06 | 高：FIT session index双层严格类型与完整v3闭包 | high | high | r05 Validator定位原始解析后第二转换层的同范围类型缺口，修复后必须全新复验 | available | 只读 | 594 tests、`False`/`0.0`反例、冻结84–93、r06 Candidate、重放、MIME、正式state和零Provider | PASS：两层原生整数0、全部异常输入、冻结输出、七日报引用、9473文件/9370 raw/8 MIME、正式state及零外部调用全部闭合 |"
+      },
+      {
+        "line": 176,
+        "text": "| 8 | Design-Fidelity Validator / M11-0014 v3 r06 | 高：OpenDesign逐组件、真实图表和双视口响应式终验 | high | high | r04视觉FAIL后的四项修正及r06最终代码需由全新视觉Agent实际浏览器复验 | available | 只读 | 七日报一周报、672×1000/375×812、外壳/品牌/状态/KPI/图表/时间轴/缺失状态及文本降级 | PASS：16次实际渲染；OpenDesign组件/色彩/状态/HKT/中文单位/真实图表/响应式与缺失状态全部闭合 |"
+      },
+      {
+        "line": 177,
+        "text": "| 9 | Data/Privacy Validator / M11-0014 v3 r06 | 高：私人真实数组、血缘、权限、正式state及零外部调用终验 | high | high | Code与Design串行PASS后，最终私人Candidate仍需全新数据隐私Agent独立放行 | available | 只读 | SQLite/raw/SHA/manifest、84–93冻结、七日报聚合、权限/隐私、正式state、Provider/external=0 | PASS：9473文件/9370 raw、SQLite/86 triggers、84–93、真实数组、37 PNG/8 MIME、权限、正式state及零外部调用全部闭合 |"
+      },
+      {
+        "line": 183,
+        "text": "| M11-0001 M10 基线、设计快照与治理冻结 | done | M10 门 331 PASS；本地提交 `b172f95`；A-013、41 文件设计摘要和 183 行映射已冻结 |"
+      },
+      {
+        "line": 184,
+        "text": "| M11-0002 ViewModel、模板、字段映射与图表 | done | 显式 daily/weekly ViewModel、Pillow PNG、HTML/text、35 项定向测试通过 |"
+      },
+      {
+        "line": 185,
+        "text": "| M11-0003 CID MIME v2、RAW 核验与 Fake 投递 | done | MIME v2、实际 Message-ID RAW 闭合、Fake 单写者与只读恢复通过 |"
+      },
+      {
+        "line": 186,
+        "text": "| M11-0004 完整代码门与私有真实预览 | done | r03：8份预览/8份离线MIME，396 tests与完整静态门通过；桌面/375px全绿，确定性重放产物字节与16项业务输出不变 |"
+      },
+      {
+        "line": 187,
+        "text": "| M11-0005 三类全新只读 Validator | done | attempt6 Code、Visual、Data/Privacy 三类全新只读 Validator 全部 PASS |"
+      },
+      {
+        "line": 189,
+        "text": "| M11-0006 真实 Gmail 样式 canary | done | 历史技术投递/RAW/CID闭合，内容与视觉验收失败证据保留；后续v2/v3替代旧展示，v3真实重发不在本计划 |"
+      },
+      {
+        "line": 190,
+        "text": "| M11-0007 Coaching Utility v2 治理和设计合同 | done | A-015、冻结章程与五项收敛修订经全新 Final Design Validator PASS |"
+      },
+      {
+        "line": 191,
+        "text": "| M11-0008 v2 证据、AI、课程与安全合同 | done | 521 tests；174种心率处方变体、SOS/硬负荷/七日报合同经全新Validator PASS |"
+      },
+      {
+        "line": 192,
+        "text": "| M11-0009 v2 ViewModel 与可读渲染 | done | ViewModel、模板常量、最终HTML/text共用安全门；21种工程标识符经Validator PASS |"
+      },
+      {
+        "line": 193,
+        "text": "| M11-0010 七日报一周报私有离线验收 | done | r03：7日报、1周报、2份计划、8份预览；551 tests与Code/AI/Visual/Data-Privacy全部PASS，重放零增量，Provider与v2外部动作均为0 |"
+      },
+      {
+        "line": 194,
+        "text": "| M11-0011 v3 规则与设计验收冻结 | done | A-016；三项只读审计确认交接完整、真实分区/睡眠字段存在，缺口位于解析及简化渲染路由 |"
+      },
+      {
+        "line": 195,
+        "text": "| M11-0012 v3 展示证据与共享高保真渲染 | done | 测试先行；冻结AI/课表84–93，新增五项版本化Schema并恢复日报/周报卡片、KPI、真实图表和时间轴；补齐9种课程中文映射与FIT严格类型，585 tests及全部静态门通过 |"
+      },
+      {
+        "line": 196,
+        "text": "| M11-0013 v3 owner-only 离线 Candidate | done | r01–r05及首个MIME白名单失败r05证据保留；全新 `/private/tmp/trainlab-m11-v3-r06.T6nbtk` 含七日报一周报、8份MIME，重放零增量且SQLite/raw/权限/正式state闭合 |"
+      },
+      {
+        "line": 197,
+        "text": "| M11-0014 三类全新只读 Validator | done | r06按 Code → Design-Fidelity → Data/Privacy 严格串行全部PASS；仅交付离线预览，真实邮件另行授权 |"
+      },
+      {
+        "line": 251,
+        "text": "| 2026-08-21 / start | M10 331 tests、Ruff、format、mypy、compile、Schema/隐私/布局通过并提交 `b172f95` | 交接包筛选 manifest SHA 已冻结；生产图表不能复用样例数据 | 精简设计快照并实现 M11-0002 |"
+      },
+      {
+        "line": 297,
+        "text": "| 2026-08-22 / coach-utility-v2-code-final-pass | 全新Separator and Threshold Validator运行521项全量与全部静态门，174种心率变体、21种工程标识符探针零遗漏并返回PASS | M11-0008/0009代码合同已闭合，剩余风险仅为尚未运行私人Candidate与AI语义验收 | 进入M11-0010，建立全新owner-only Candidate并生成七日报一周报 |"
+      }
+    ]
+  },
+  {
+    "source": "docs/exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md",
+    "destination": "exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md",
+    "status": "[completed]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| M2-0001 | HISTORY | [completed] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 只保留原授权范围内的历史完成结论，不表示删除旧源码后仍能运行或本轮重新验收。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 执行计划：将 TrainLab 完整迁移到 agentForge 0.4.2 根项目布局"
+      },
+      {
+        "line": 13,
+        "text": "## 目标与验收标准"
+      },
+      {
+        "line": 30,
+        "text": "## 范围与非目标"
+      },
+      {
+        "line": 39,
+        "text": "## 适用规则与参考资料"
+      },
+      {
+        "line": 47,
+        "text": "## 依赖与隔离"
+      },
+      {
+        "line": 58,
+        "text": "## 功能与测试映射"
+      },
+      {
+        "line": 69,
+        "text": "## 工具采用情况"
+      },
+      {
+        "line": 75,
+        "text": "## Subagent 派发"
+      },
+      {
+        "line": 82,
+        "text": "## 工作分解"
+      },
+      {
+        "line": 95,
+        "text": "## 当前检查点"
+      },
+      {
+        "line": 105,
+        "text": "## 决策与发现"
+      },
+      {
+        "line": 122,
+        "text": "## 任务级独立验证"
+      },
+      {
+        "line": 134,
+        "text": "## 集成级独立验证"
+      },
+      {
+        "line": 139,
+        "text": "## PLANS 回写清单"
+      },
+      {
+        "line": 146,
+        "text": "## 迭代日志"
+      }
+    ],
+    "original_stage_table_rows": [
+      {
+        "line": 79,
+        "text": "| 1 | 独立 Validator / `M2-0001-validator` | 跨全仓布局、私有运行根和构建边界迁移 | `high` | `high` | 高风险跨模块迁移，需完整只读复验 | 支持；全新独立 Agent | 只读 | 全部验收项报告 | 会话误关闭，未保留终态 |"
+      },
+      {
+        "line": 80,
+        "text": "| 2 | 独立 Validator / `M2-0001-validator-recovery` | 跨全仓布局、私有运行根和构建边界迁移 | `high` | `high` | 新鲜只读复验，替代无终态的首次会话 | 支持；全新独立 Agent | 只读 | 全部验收项报告 | `PASS` |"
+      },
+      {
+        "line": 93,
+        "text": "| 归档计划、完成 Roadmap 并清除 memory 指针 | `done` | 计划归档；M2/M2-0001 completed；memory 活动指针清除 |"
+      }
+    ]
+  },
+  {
+    "source": "docs/exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md",
+    "destination": "exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md",
+    "status": "[completed]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| M3-0001 | HISTORY | [completed] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 只保留原授权范围内的历史完成结论，不表示删除旧源码后仍能运行或本轮重新验收。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 执行计划：用合成 FIT 夹具替代私人 test_data"
+      },
+      {
+        "line": 12,
+        "text": "## 目标与验收标准"
+      },
+      {
+        "line": 22,
+        "text": "## 范围与非目标"
+      },
+      {
+        "line": 28,
+        "text": "## 适用规则与参考资料"
+      },
+      {
+        "line": 33,
+        "text": "## 依赖与隔离"
+      },
+      {
+        "line": 40,
+        "text": "## 功能与测试映射"
+      },
+      {
+        "line": 48,
+        "text": "## 工具采用情况"
+      },
+      {
+        "line": 54,
+        "text": "## Subagent 派发"
+      },
+      {
+        "line": 62,
+        "text": "## 工作分解"
+      },
+      {
+        "line": 74,
+        "text": "## 当前检查点"
+      },
+      {
+        "line": 84,
+        "text": "## 决策与发现"
+      },
+      {
+        "line": 97,
+        "text": "## 任务级独立验证"
+      },
+      {
+        "line": 106,
+        "text": "## 集成级独立验证"
+      },
+      {
+        "line": 111,
+        "text": "## PLANS 回写清单"
+      },
+      {
+        "line": 118,
+        "text": "## 迭代日志"
+      }
+    ],
+    "original_stage_table_rows": [
+      {
+        "line": 58,
+        "text": "| 1 | 独立 Validator / `M3-0001-validator` | FIT 协议、测试真实性和隐私删除 | `high` | `high` | 高风险跨测试夹具迁移，需确认无隐私与无测试弱化 | 支持 | 只读 | 全部验收项报告 | `FAIL`：发现历史值复用和 4 类断言缺口 |"
+      },
+      {
+        "line": 59,
+        "text": "| 2 | 独立 Validator / `M3-0001-validator-r01` | 返修后的隐私来源与测试强度 | `high` | `high` | 必须由未参与实施的新 Agent 复核阻塞项 | 支持 | 只读 | 全部验收项报告 | `FAIL`：lap 与 course-point timestamp 断言不明确 |"
+      },
+      {
+        "line": 60,
+        "text": "| 3 | 独立 Validator / `M3-0001-validator-r02` | lap 与 course-point 时间合同返修 | `high` | `high` | 第二次 Validator 发现精确断言缺口，需再次独立复核 | 支持 | 只读 | 全部验收项报告 | `PASS` |"
+      }
+    ]
+  },
+  {
+    "source": "docs/exec-plans/completed/M4-source-root-0001-product-consolidation.md",
+    "destination": "exec-plans/completed/M4-source-root-0001-product-consolidation.md",
+    "status": "[completed]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| M4 | HISTORY | [completed] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 只保留原授权范围内的历史完成结论，不表示删除旧源码后仍能运行或本轮重新验收。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 执行计划：M4 `source/` 工程、健康数据重建与教练 Harness v2"
+      },
+      {
+        "line": 10,
+        "text": "## 目标"
+      },
+      {
+        "line": 19,
+        "text": "## 硬边界"
+      },
+      {
+        "line": 32,
+        "text": "## 串行任务与验收"
+      },
+      {
+        "line": 34,
+        "text": "### M4-0001：工程布局与历史运行层清理"
+      },
+      {
+        "line": 46,
+        "text": "### M4-0002：Foundation v4 离线 Garmin 重建"
+      },
+      {
+        "line": 58,
+        "text": "### M4-0003：运行时教练 Harness v2"
+      },
+      {
+        "line": 70,
+        "text": "### M4-0004：原子切换与独立验证"
+      },
+      {
+        "line": 79,
+        "text": "## 当前状态"
+      },
+      {
+        "line": 88,
+        "text": "## 变更范围"
+      },
+      {
+        "line": 94,
+        "text": "## 独立验证"
+      },
+      {
+        "line": 99,
+        "text": "## 迭代日志"
+      }
+    ],
+    "original_stage_table_rows": [
+      {
+        "line": 83,
+        "text": "| M4-0001 | `completed` | source 迁移、入口、CI、ignore 和历史运行层清理已完成；独立 Validator PASS |"
+      },
+      {
+        "line": 84,
+        "text": "| M4-0002 | `completed` | Foundation v4 候选已重建：active raw 27344 + backup-only 44，4 个 legacy FIT 登记为 unresolved 缺口；schema/完整性/来源闭包/权限检查通过 |"
+      },
+      {
+        "line": 85,
+        "text": "| M4-0003 | `completed` | course/profile/sleep/负荷合同已接入结果 schema 与生产 Validator；独立 Validator PASS |"
+      },
+      {
+        "line": 86,
+        "text": "| M4-0004 | `completed` | source/state 已原子切换，入口、只读状态、静态门和完整 pytest 已通过；独立 Validator PASS |"
+      }
+    ]
+  },
+  {
+    "source": "docs/exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md",
+    "destination": "exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md",
+    "status": "[completed]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| M5 | HISTORY | [completed] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 只保留原授权范围内的历史完成结论，不表示删除旧源码后仍能运行或本轮重新验收。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 执行计划：M5 自适应教练画像与本地报告校准"
+      },
+      {
+        "line": 12,
+        "text": "## 目标与验收标准"
+      },
+      {
+        "line": 23,
+        "text": "## 范围与非目标"
+      },
+      {
+        "line": 40,
+        "text": "## 适用规则与参考资料"
+      },
+      {
+        "line": 50,
+        "text": "## 依赖与隔离"
+      },
+      {
+        "line": 64,
+        "text": "## 功能与测试映射"
+      },
+      {
+        "line": 72,
+        "text": "## 工具采用情况"
+      },
+      {
+        "line": 80,
+        "text": "## Subagent 派发"
+      },
+      {
+        "line": 86,
+        "text": "## 工作分解"
+      },
+      {
+        "line": 96,
+        "text": "## 当前检查点"
+      },
+      {
+        "line": 106,
+        "text": "## 决策与发现"
+      },
+      {
+        "line": 113,
+        "text": "## 任务级独立验证"
+      },
+      {
+        "line": 122,
+        "text": "## 集成级独立验证"
+      },
+      {
+        "line": 132,
+        "text": "## PLANS 回写清单"
+      },
+      {
+        "line": 139,
+        "text": "## 迭代日志"
+      }
+    ],
+    "original_stage_table_rows": [
+      {
+        "line": 90,
+        "text": "| M5-0001 保存 M4 单一本地基线 | `done` | `bab3649`, `git status` clean（忽略项除外） |"
+      },
+      {
+        "line": 91,
+        "text": "| M5-0002 画像 schema、提案、确认应用和回归测试 | `done` | 画像 CLI、私有备份/审计和画像聚焦测试通过；默认画像已在正式配置中应用，非画像字段保全 |"
+      },
+      {
+        "line": 92,
+        "text": "| M5-0003 动态周容量、硬负荷和排课接入 | `done` | `weekly_capacity_assessment_v1`、主机容量门、分析结果容量校验和容量测试通过 |"
+      },
+      {
+        "line": 93,
+        "text": "| M5-0004 隔离周报/日报及 HTML/JSON 预览 | `done` | 预览读取/写出模块、隔离 SQLite 备份和预览测试已实现；真实隔离数据因 activity_stage_incomplete/安全候选拒绝按合同延期，未伪造 delivery |"
+      },
+      {
+        "line": 143,
+        "text": "| 2026-08-14 / initial | M4 基线 `bab3649` 已提交；M5 计划已创建 | M5 代码尚未开始 | 实现 M5-0002 |"
+      },
+      {
+        "line": 146,
+        "text": "| 2026-08-14 / validator-followup | 补充容量 `hold` 独立回归并通过；不改变生产源码或正式数据 | 真实隔离库仍按覆盖不足合同延期，未产生可预览 delivery | 新 Validator 判定 fail-closed 延期是否满足 M5-0004 |"
+      }
+    ]
+  },
+  {
+    "source": "docs/exec-plans/completed/M6-activity-evidence-0001-lifecycle-and-preview.md",
+    "destination": "exec-plans/active/M6-activity-evidence-0001-lifecycle-and-preview.md",
+    "status": "[exec]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| M6 | HISTORY | [exec] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 用户已取消/替代的历史任务；已发生的局部成果和失败保留，取消不等于完整验收通过。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 执行计划：M6 活动证据一致性与真实报告预览（已被 ADHOC-0011 取代）"
+      },
+      {
+        "line": 12,
+        "text": "## 目标与验收标准"
+      },
+      {
+        "line": 18,
+        "text": "## 范围与非目标"
+      },
+      {
+        "line": 24,
+        "text": "## 适用规则与参考资料"
+      },
+      {
+        "line": 30,
+        "text": "## 依赖与隔离"
+      },
+      {
+        "line": 39,
+        "text": "## 功能与测试映射"
+      },
+      {
+        "line": 47,
+        "text": "## 工具采用情况"
+      },
+      {
+        "line": 53,
+        "text": "## 工作分解"
+      },
+      {
+        "line": 62,
+        "text": "## 当前检查点"
+      },
+      {
+        "line": 72,
+        "text": "## 决策与发现"
+      },
+      {
+        "line": 78,
+        "text": "## 任务级独立验证"
+      },
+      {
+        "line": 86,
+        "text": "## 集成级独立验证"
+      },
+      {
+        "line": 92,
+        "text": "## PLANS 回写清单"
+      },
+      {
+        "line": 99,
+        "text": "## 迭代日志"
+      }
+    ],
+    "original_stage_table_rows": [
+      {
+        "line": 57,
+        "text": "| M6-0001 保存 M5 单一本地基线 | `done` | commit `0687d9f`，敏感路径未跟踪 |"
+      },
+      {
+        "line": 58,
+        "text": "| M6-0002 审计并统一 inventory 生命周期证据 | `validated` | 任务级独立 Validator PASS；最终脱敏审计含 28 observations、28 unique revisions、512 seen、absence_proven=0、parse/hash failures=0；正式库未写 |"
+      },
+      {
+        "line": 59,
+        "text": "| M6-0003 candidate 离线修复与完整性验证 | `validated` | 任务级独立 Validator PASS；`/private/tmp/trainlab-m6-audit/candidate-r01-activity-lifecycle.json` SHA `9064a82adaefdf66986d20a8180338745452f096da95d553bb9ed18eb0e91c7b`；candidate quick_check/FK/raw 闭包通过；7 条 seen evidence 重激活，21 条保持 unresolved |"
+      },
+      {
+        "line": 60,
+        "text": "| M6-0004 真实周报、日报和 HTML/JSON 预览 | `active` | 先在同一任务内修复离线课程合同与容量闭门；真实 weekly→daily→preview 仍未运行 |"
+      },
+      {
+        "line": 105,
+        "text": "| 2026-08-14 / candidate | `/private/tmp/trainlab-m6-candidate-r01` owner-only；Foundation verify ready、quick_check ok、FK 0、raw 27388 与 formal 一致；formal DB SHA `0b380b596022af17a1f87a000780be0864ea84c7ac57c0fa9053a1fef0acdb57` 未变；candidate audit SHA `9064a82adaefdf66986d20a8180338745452f096da95d553bb9ed18eb0e91c7b` | candidate weekly 3 次 rejected、0 delivery、0 artifact、无 interrupted started run；无外部调用 | 保持 M6-0004 blocked，不运行无前置 delivery 的 daily/preview |"
+      },
+      {
+        "line": 109,
+        "text": "| 2026-08-14 / validator-r02 | 独立 Validator `PASS`（仅 M6-0002/0003 与 M6-0004 失败关闭）；最终 pytest `/private/tmp/trainlab-m6-final-Dk2i5h/pytest.log` SHA `1b1002ffe35c3bed0e8da301d2b3ffc3ddb18700d95c195e4991cc0c1eb9d93b`，exit `0`；mypy 105 files/0、Ruff/format/schema/quality/layout/compile/shell/diff 全绿 | 21 条活动仍无离线缺席证明；无 weekly delivery/artifact，真实 daily/preview 未运行 | M6 保持 blocked；需要当前 Provider 状态时另立 M7 |"
+      },
+      {
+        "line": 110,
+        "text": "| 2026-08-14 / offline-contract-repair | 在同一 M6-0004 内完成离线返修：running/climbing/rest 处方按运动类型严格约束；climbing 模板补受控 rationale；oneOf 分支错误保留 required/pattern/type 且不泄露模型原文；四周窗口含 lifecycle unresolved 时容量返回 `activity_lifecycle_unresolved`；新增混合周和诊断回归 | 真实 weekly→daily→preview 仍未运行；不调用 Provider | 完成静态门后仅运行一次完整 pytest，再交给全新只读 Validator；若门禁通过，M6 回到 blocked 等待 M7 批准 |"
+      },
+      {
+        "line": 112,
+        "text": "| 2026-08-14 / paused-for-audit | 用户决定先检查 source 开发状态、文件数据和数据库来源；已中止进行中的离线合同 Validator | 是否继续 M6 或进入 M7 取决于 ADHOC-0009 来源审计 | 保持代码和正式数据原状，完成只读审计 |"
+      },
+      {
+        "line": 113,
+        "text": "| 2026-08-15 / state-decision | ADHOC-0009/0010 已解释数据库来源和 raw 目录；建立 ADHOC-0011 记录 state-only 数据调整与后续开发需求 | backup 有登记证据；gmail/legacy 是现行目录合同；仅 `.DS_Store` 可无合同变更清理 | 保持 M6 blocked，等待用户确认精确数据动作 |"
+      },
+      {
+        "line": 114,
+        "text": "| 2026-08-15 / provider-layout-plan | 用户确认 future active raw 删除 backup/gmail/legacy 命名空间并保留 Garmin Provider 层；ADHOC-0011 已细化为可开发规格 | 44 份 backup-only 文件实际属于 Garmin，规划无损归入 Garmin；入站 Mail 路径需退役才能防止 gmail 重建 | 继续保持 M6 blocked；只完善规划，不执行 |"
+      }
+    ]
+  },
+  {
+    "source": "docs/exec-plans/completed/M7-ai-skills-0001-runtime-closure.md",
+    "destination": "exec-plans/completed/M7-ai-skills-0001-runtime-closure.md",
+    "status": "[completed]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| M7 | HISTORY | [completed] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 只保留原授权范围内的历史完成结论，不表示删除旧源码后仍能运行或本轮重新验收。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 执行计划：M7 AI + Skills 执行闭环与双层测试体系"
+      },
+      {
+        "line": 12,
+        "text": "## 目标与验收标准"
+      },
+      {
+        "line": 27,
+        "text": "## 范围与非目标"
+      },
+      {
+        "line": 36,
+        "text": "## 适用规则与参考资料"
+      },
+      {
+        "line": 42,
+        "text": "## 依赖与隔离"
+      },
+      {
+        "line": 54,
+        "text": "## 功能与测试映射"
+      },
+      {
+        "line": 64,
+        "text": "## 工具采用情况"
+      },
+      {
+        "line": 73,
+        "text": "## Subagent 派发"
+      },
+      {
+        "line": 79,
+        "text": "## 工作分解"
+      },
+      {
+        "line": 89,
+        "text": "## 当前检查点"
+      },
+      {
+        "line": 99,
+        "text": "## 决策与发现"
+      },
+      {
+        "line": 108,
+        "text": "## 任务级独立验证"
+      },
+      {
+        "line": 117,
+        "text": "## 集成级独立验证"
+      },
+      {
+        "line": 127,
+        "text": "## PLANS 回写清单"
+      },
+      {
+        "line": 134,
+        "text": "## 迭代日志"
+      }
+    ],
+    "original_stage_table_rows": [
+      {
+        "line": 77,
+        "text": "| 1 | 集成 Validator（M7-0005） | 高风险状态、边界、语义与隐私验证 | `high` | `high` | 独立检查完整离线闭环 | platform-default | 只读 | code/AI 门、candidate、正式 state 不变 | PASS |"
+      },
+      {
+        "line": 83,
+        "text": "| M7-0001 保存基线并更新治理 | `done` | 基线提交 `2e63250`；A-009、AGENTS、CI 与测试布局已写入 |"
+      },
+      {
+        "line": 84,
+        "text": "| M7-0002 状态合同与唯一自动入口 | `done` | 受管连接、append-only、重试、HKT resolver 与 `auto.txt` 已实现 |"
+      },
+      {
+        "line": 85,
+        "text": "| M7-0003 六个 Skills 离线业务闭环 | `done` | candidate daily/weekly、报告、未发送邮件与未执行 GTS 合同均可离线落库 |"
+      },
+      {
+        "line": 86,
+        "text": "| M7-0004 建立 code/ai 双层测试 | `done` | `tests/code` 31 项通过；`tests/ai` cases/rubrics/templates 已建立，AI 评测按需 |"
+      },
+      {
+        "line": 87,
+        "text": "| M7-0005 独立验证与第二个本地提交 | `done` | 全新集成 Validator PASS；第二个本地提交已建立；clean checkout 的 31 项测试、Ruff、format、mypy 通过 |"
+      },
+      {
+        "line": 138,
+        "text": "| 2026-08-16 / M7-0001 | 基线提交 `2e63250` 建立；暂存私有路径检查为空 | 旧 A-008 测试路径仍需替换 | 更新 A-009 对应治理与测试入口 |"
+      },
+      {
+        "line": 139,
+        "text": "| 2026-08-16 / M7-0002 | `recursive_triggers=ON`、REPLACE 绕过回归、attempt 重试与 HKT noon resolver 已实现；旧 daily/weekly prompt/config 已删除 | `request-id` 不是 Codex CLI 参数 | 只保留 `auto.txt`，由 SQLite receipt 判断 due |"
+      },
+      {
+        "line": 140,
+        "text": "| 2026-08-16 / M7-0003/0004 | candidate 离线 daily→weekly→report→email envelope→GTS contract 通过；`source/tests/code` 21 passed；Ruff、format、mypy 全部通过 | 真实 Codex AI 评测启动曾卡在模型启动阶段，未调用外部服务 | 交给全新 Code/AI Validator；如 AI 服务仍不可用保持 validating |"
+      },
+      {
+        "line": 141,
+        "text": "| 2026-08-16 / M7-0003 修正 | 发现离线 raw 未登记会使 `verify_state` 报 `raw_unregistered_file`；新增 `garmin-sync/scripts/index_raw.py`，先校验模式/日期/SHA 并写入 `raw_files`，再进入日报 | 现有 candidate 需用新脚本重建，旧 AI 回执不再作为最终证据 | 重新冻结源码后交给全新 Code/AI Validator |"
+      },
+      {
+        "line": 142,
+        "text": "| 2026-08-16 / M7-0005 rework | 独立 Code Validator 发现输出未实校验、租约/身份未冻结、重复 index 产生修订、raw 指标不足、weekly 依赖未强制；已补本地 Schema 验证、HKT workflow 锁/lease、run identity trigger、稳定 index 输出、bounded metrics、Sunday receipt gate 与回归案例 | 上一轮 Validator 结果作废，不作为最终 PASS | 冻结当前源码，重新派发全新 Code/AI Validator |"
+      },
+      {
+        "line": 143,
+        "text": "| 2026-08-16 / M7-0005 rework-02 | 修复日报 review/sleep 分离门、Schema 日期与字段边界、严格课表剂量/RPE/降级/停止合同、weekly fitness review 输出、日报最多14份历史摘要、FIT bounded activity metrics、weather/FIT/AI 布局回归；`pytest source/tests/code` 27 passed，Ruff、format、mypy 通过 | 尚未完成独立验证；正式 state 与外部调用保持冻结 | 冻结工作区，派发全新 Code/AI Validator |"
+      },
+      {
+        "line": 144,
+        "text": "| 2026-08-16 / M7-0005 rework-03 | 修复恢复红旗攀岩步骤剂量一致性；`pytest source/tests/code` 30 passed，Ruff、format、mypy 通过 | 集成 Validator 发现日报将昨日睡眠/今日活动混入错误分桶 | 按日期与资源过滤 review/sleep 证据并补回归 |"
+      },
+      {
+        "line": 145,
+        "text": "| 2026-08-16 / M7-0005 final | review 仅保留 D-1 非睡眠证据，sleep 仅保留 D 日睡眠；新增 4 活动/短睡边界回归；`pytest source/tests/code` 31 passed；Ruff、format、mypy、compile、8 schemas 通过；集成 Validator PASS | 无；candidate、正式 state、Git 状态与外部调用均保持冻结 | 检查公开暂存范围、建立第二个本地提交并做 clean checkout |"
+      }
+    ]
+  },
+  {
+    "source": "docs/exec-plans/completed/M8-real-data-0001-ai-coach-closure.md",
+    "destination": "exec-plans/completed/M8-real-data-0001-ai-coach-closure.md",
+    "status": "[completed]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| M8 | HISTORY | [completed] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 只保留原授权范围内的历史完成结论，不表示删除旧源码后仍能运行或本轮重新验收。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 执行计划：M8 真实私人数据离线 AI 教练闭环"
+      },
+      {
+        "line": 12,
+        "text": "## 目标与验收标准"
+      },
+      {
+        "line": 22,
+        "text": "## 范围与非目标"
+      },
+      {
+        "line": 28,
+        "text": "## 适用规则与参考资料"
+      },
+      {
+        "line": 33,
+        "text": "## 依赖与隔离"
+      },
+      {
+        "line": 41,
+        "text": "## 功能与测试映射"
+      },
+      {
+        "line": 50,
+        "text": "## 工具采用情况"
+      },
+      {
+        "line": 56,
+        "text": "## 工作分解"
+      },
+      {
+        "line": 66,
+        "text": "## 当前检查点"
+      },
+      {
+        "line": 75,
+        "text": "## 设计合同"
+      },
+      {
+        "line": 84,
+        "text": "## 任务级独立验证"
+      },
+      {
+        "line": 90,
+        "text": "## 集成级独立验证"
+      },
+      {
+        "line": 96,
+        "text": "## PLANS 回写清单"
+      },
+      {
+        "line": 103,
+        "text": "## 迭代日志"
+      }
+    ],
+    "original_stage_table_rows": [
+      {
+        "line": 60,
+        "text": "| M8-0001 冻结基线、Roadmap 与硬性反绿灯规则 | `completed` | 当前 HEAD `d08a893`；计划、固定窗口和禁止反绿灯规则已冻结 |"
+      },
+      {
+        "line": 61,
+        "text": "| M8-0002 修复真实 weather/sleep/health/activity 解析和片段接口 | `completed` | 真实 weather 381/381 识别为 `activity_weather`+JSON；真实嵌套 sleep 解析为 complete；FIT/GPX/TCX 30 秒序列与 5 秒细读通过 |"
+      },
+      {
+        "line": 62,
+        "text": "| M8-0003 实现真正 AI 日报/周报提交与路径无关幂等 | `completed` | 真实 Codex 日报 8/3..9、8/12 与周报 8/9 成功；周报修复两次严格拒绝后按合同重试成功；同输入重跑复用既有 output |"
+      },
+      {
+        "line": 63,
+        "text": "| M8-0004 建 candidate，运行固定真实日期并生成私有产物 | `completed` | r38 `/private/tmp/trainlab-m8-candidate-r38.YwwZl6` 从正式 state 全新建立；9336 raw/119992332 bytes 闭合；四套报告、两份 prepared 邮件、GTS prepared 合同和 8/16 blocked 产物完成 |"
+      },
+      {
+        "line": 64,
+        "text": "| M8-0005 Code、AI、数据/隐私独立验证 | `completed` | r38 Code、AI、Data/Privacy 三名全新只读 Validator 均 `PASS`；provider/external actions 均为 0 |"
+      },
+      {
+        "line": 107,
+        "text": "| 2026-08-16 / M8-0001 | 用户批准 M8；固定真实日期、输入范围和反绿灯规则 | 正式 state 仍需 candidate 升级；真实解析需修复 | 完成 Roadmap/治理回写，开始 M8-0002 |"
+      },
+      {
+        "line": 108,
+        "text": "| 2026-08-16 / M8-0002 | 修复资源专用 health parser、Garmin 嵌套 sleep、weather 后缀/资源识别、活动 30 秒序列与 1/5 秒片段预算；`pytest source/tests/code` 34 passed | 初次真实周报模型输出缺失 climbing/rest 合同字段，按现有合同拒绝 | 仅补充提示约束并在同一固定窗口重试，不改变 Schema 或预期 |"
+      },
+      {
+        "line": 109,
+        "text": "| 2026-08-16 / M8-0003 | 真实 Codex 日报 8/3..9、8/12 与周报 8/9 均经 response schema、证据 SHA、日期和课程安全门后落库；同输入周报/日报重跑均 `reused=true` | 首次周报调用收到 503；两次确定性课程拒绝均保留在 `/tmp/m8-r18-weekly-*` 日志 | 继续 candidate 报告、邮件信封、GTS 合同和 blocked 槽位验证 |"
+      },
+      {
+        "line": 110,
+        "text": "| 2026-08-16 / M8-0004 | candidate r18 9336 raw 全字节闭包；报告 HTML/JSON 0600；邮件与 GTS 均 prepared、provider/external actions 0；`2026-08-16` 返回双缺失错误并未调用模型 | 正式 state 仍保留用户删除后的无 backups/recovery-quarantine 形态，未重建 | 冻结源码/candidate，进入三类独立 Validator |"
+      },
+      {
+        "line": 111,
+        "text": "| 2026-08-16 / M8-0005-r27 | 修复 blocked context 持久化、daily 顶层 stop_conditions Schema、秒到分钟证据换算、报告标题落库和 Gmail 源输出血缘；代码测试 40 passed、Ruff/format/mypy/compile/schema 全绿；r27 完成 8 份真实日报、1 份真实周报、两套模板、两份邮件信封和 GTS prepared 合同；同输入重跑计数不变，正式 state manifest 前后相同 | 代码 Validator 发现证据数值未按引用 raw 限定、跨 workflow 片段缓存可绕过预算、嵌套课表 Schema 失败未落库、GTS 幂等键过窄和导入门失败 | 停止认证，修复实现并建立 r28 candidate；不改变固定窗口、数据、Schema 或失败预期 |"
+      },
+      {
+        "line": 112,
+        "text": "| 2026-08-16 / M8-0005-r28 | 证据数值现在只从对应 `evidence_ref` raw 对象收窄；daily 校验 `recent_trend_sha256`、weekly 校验 `goal_sha256`；片段缓存键绑定 workflow；嵌套课表 Schema 失败写入 blocked run；GTS 幂等键绑定完整课程项；新增回归后 `pytest source/tests/code` 42 passed，Ruff/format/mypy 全绿；r28 重新复制 9336 raw 并通过 `verify_state`，重放日报/周报复用，GTS 重放字节一致，外部调用 0 | r27 验证结果因源码漂移作废；r28 等待三名全新只读 Validator | 保持冻结，完成代码、AI 语义和数据/隐私独立复验 |"
+      },
+      {
+        "line": 113,
+        "text": "| 2026-08-16 / M8-0005-r29 | 发现片段接口仍信任调用者传入的 workflow key，可用伪造 key 绕过每日预算；将 workflow 绑定为 `daily:<activity_date+1>`，并修复活动段导入格式；r29 验证期间发现报告 HTML 仍受 JSON 键顺序影响 | r29 不能认证，源码继续冻结后建立干净 candidate | 修复渲染顺序并从正式 state 重新建立 r30，重新运行全部真实 AI 输入与离线输出 |"
+      },
+      {
+        "line": 114,
+        "text": "| 2026-08-16 / M8-0005-r30 | `body_html` 按稳定键序渲染；从正式 state 重新建立 r30，9336 raw/119992332 bytes，8+1 真实 AI 输出按固定窗口落库，报告 open/fixed 四套、邮件 2 份、GTS prepared 1 份、8/16 blocked；同路径重放报告 HTML 字节一致、日报/周报/GTS/邮件复用且计数不变；verify_state integrity/FK/schema 通过，外部调用 0 | 代码 Validator 发现嵌套 JSON 键顺序和片段预算并发问题，r30 不能认证 | 修复实现并建立 r31，不沿用 r30 证据 |"
+      },
+      {
+        "line": 115,
+        "text": "| 2026-08-16 / M8-0005-r31-fix | 代码 Validator 发现嵌套 JSON 键顺序仍会改变 HTML，并发现片段预算检查存在并发 TOCTOU；已将报告嵌套 JSON 改为递归稳定排序，并让片段读取在预算检查、证据读取和运行预留期间持有 workflow lock；`pytest source/tests/code` 43 passed，Ruff/format/mypy 全绿 | r30 验证作废；必须从正式 state 重新建立候选并由三名全新 Validator 重验，不能沿用 r30 证据 | 建立 r31，重跑固定真实窗口和全部独立验证 |"
+      },
+      {
+        "line": 116,
+        "text": "| 2026-08-16 / M8-0005-r31 | 从正式 state 重新建立 `/private/tmp/trainlab-m8-candidate-r31.8U4lRN`；固定窗口 8+1 真实 AI 提交、四套当前模板报告、两份 prepared 邮件信封、GTS prepared、8/16 blocked；报告/GTS/邮件同输入重放均复用且 HTML 字节一致；candidate 9336 raw/119992332 bytes、integrity/FK/schema 通过，外部调用 0 | 等待三名全新只读 Validator；正式 state 未写入 | 保持源码与 r31 冻结，完成最终代码、AI、数据/隐私复验 |"
+      },
+      {
+        "line": 117,
+        "text": "| 2026-08-16 / M8-0005-r31-data-fail | 数据/隐私 Validator 对 r31 判定 `FAIL`：候选构建器使用普通 `mode=ro` 读取正式 SQLite，正式 `trainlab.db-shm` 的 mtime/ctime 在候选创建后变化；真实输出根还留下 0 字节、0644 的 `reports/replay-result.json`。raw 闭包、SQLite、产物血缘和外部零调用均通过 | 违反“正式 source/state 不写入/不触碰”和 owner-only 产物门禁；r31 不可认证。已修复构建器为 `mode=ro&immutable=1`，但不能抹去 r31 已有的正式 sidecar 触碰证据 | M8 停在 `blocked`，等待用户批准新的修订计划后再重建候选；不沿用 r31 PASS |"
+      },
+      {
+        "line": 118,
+        "text": "| 2026-08-16 / M8-0005-r32-start | 用户批准继续当前 M8 active plan 的 `r32 blocker-recovery batch`；固定窗口、Schema、阈值、输入边界、零外部调用和失败语义保持不变 | r31 的普通 `mode=ro` 读取曾触碰正式 SHM，immutable 模式还必须拒绝非零 WAL；正式 lock/WAL 指纹和产物根完整性需要在同一批次回归 | 先完成代码回归与只读快照门，再从正式 state 全新建立 r32；三名全新 Validator 全部 PASS 前保持 validating/blocked |"
+      },
+      {
+        "line": 119,
+        "text": "| 2026-08-16 / M8-0005-r32-code | 新增正式 state 只读锁、零 WAL 门、DB/WAL/SHM/lock/raw 全树 before/after 指纹；candidate 非零 sidecar 不再删除；新增显式 owner-only 产物 verifier，并将 AI context/报告文件改为 fsync 后原子写入；代码测试 50 passed，Ruff/format/mypy 全绿 | 尚未重新建立真实 candidate；当前旧 r32 candidate 在最新原子写入修复前建立，不得复用 | 重新跑代码门后，建立新的 r32 candidate 并从固定窗口执行全新 AI 调用 |"
+      },
+      {
+        "line": 120,
+        "text": "| 2026-08-16 / M8-0005-r32-ai-fail | r32 全新 candidate 完成 8/12、8/3..8/9 的真实 Codex 调用尝试；8/7 出现一次确定性 `ai_metric_not_in_evidence`，且批量执行器重复写入同名结果文件，导致 candidate 证据不可作为稳定认证快照 | r32 candidate 永久作废；保留其失败日志、blocked run 和先前成功 run，不复用数据库、AI 输出或报告；正式 state 未写入 | 在同一冻结范围内建立全新 r33；驱动器对已存在路径 fail closed，逐日顺序运行并在每步确认结果不可覆盖 |"
+      },
+      {
+        "line": 121,
+        "text": "| 2026-08-16 / M8-0005-r33-gts-driver-fail | r33 完成 8/12、8/3..8/9 七份日报及周报 AI 提交；生成 GTS 时驱动器使用原始模型课表，未使用提交脚本归一化后的 `training_plan` 输出，导致 `garmin_source_unbound`/`garmin_contract_invalid` blocked 合同 | r33 candidate 永久作废；不删除 blocked 记录、不复用其 AI/DB；该错误不涉及业务计划、Schema 或安全阈值 | 建立全新 r34；从 candidate SQLite 已提交的 `training_plan` 读取 GTS 输入，并重新执行全部真实 AI 窗口 |"
+      },
+      {
+        "line": 122,
+        "text": "| 2026-08-16 / M8-0005-r34-recovery | r34 从正式 state 在既有 lock 下以 immutable 零 WAL 快照建立；正式 fingerprint `7cc9f67d...` 前后相同；9336 raw/119992332 bytes 闭合。真实 Codex 新生成 8 份日报与 1 份周报；8/16 在模型调用前以 `daily_review_health_missing`/`daily_sleep_evidence_missing` blocked；GTS 读取已落库 `training_plan` 后 prepared 4 actions；邮件 2 份 prepared；四套报告已渲染；AI、报告、邮件、GTS 同输入重放复用，provider/external actions=0；artifact verifier 89 files PASS，candidate verify_state PASS | r34 尚未经过三名独立 Validator；r31 的 SHM 触碰失败证据仍保留且不被覆盖 | 冻结 r34，交 Code、AI、Data/Privacy 三名全新只读 Validator；全部 PASS 后才可完成 M8-0004/0005 |"
+      },
+      {
+        "line": 123,
+        "text": "| 2026-08-16 / M8-0005-r34-code-fail | Code Validator 复验 50 tests、Ruff/format/mypy、SQLite、artifact、嵌套渲染和正式指纹均通过；但并发活动片段遇到 `state_lock_unavailable` 时异常未转为稳定 blocked run，5 个竞争请求没有写入 SQLite | r34 candidate 永久失效；AI 与 Data/Privacy 的 r34 PASS 不继承，旧候选和产物不复用 | 修复 `activity_segment` 锁竞争记录与回归测试；从正式 state 全新建立 r35，完整重跑固定窗口和三类独立验证 |"
+      },
+      {
+        "line": 124,
+        "text": "| 2026-08-16 / M8-0005-r35-start | 将 `activity_segment` 的正式锁竞争转换为稳定 `blocked/state_lock_unavailable` 运行并写入 candidate SQLite，补充并发回归；Ruff、format、mypy 和 `pytest tests/code` 均通过（51 passed） | r34 的锁竞争失败证据不继承；r35 必须重新从正式 state 建立并重新执行全部真实 AI、报告、邮件/GTS prepared、重放和 8/16 blocked 门禁 | 清理测试缓存后，在正式 lock/WAL 零门下建立新的 r35 candidate；完成后冻结源码与产物并交三名全新 Validator |"
+      },
+      {
+        "line": 125,
+        "text": "| 2026-08-16 / M8-0005-r35-ai-fail | r35 全新 candidate 完成 8/12 与 8/3..8/8 日报；2026-08-09 模型输出未通过既有证据绑定，`commit_ai_result` 持久化 `ai_metric_not_in_evidence` blocked；周报检测到精确日报缺失并在模型输出后按合同 blocked | r35 永久失效；不复用其数据库、AI 输出或 blocked 结果；该失败不是通过放宽证据合同解决，固定 prompt/Schema/日期保持不变 | 从正式 state 全新建立 r36，重新执行 8/12、8/3..8/9 日报和后续周报/报告/重放/8/16 blocked，再交三名全新 Validator |"
+      },
+      {
+        "line": 126,
+        "text": "| 2026-08-16 / M8-0005-r36 | 从正式 state 在既有 lock 下以 immutable 零 WAL 快照建立 r36；formal fingerprint `7cc9f67d...` before/after/current 完全一致；9336 raw/119992332 bytes 闭合。8 份日报和周报由全新 Codex 会话生成并落库，8/16 在模型前记录 `daily_review_health_missing` 与 `daily_sleep_evidence_missing`；GTS 3 actions prepared、邮件 2 份 prepared、报告 open/fixed 四套；重放复用原 output/HTML，candidate integrity/FK/schema/trigger 和 artifact 85 files 通过，provider/external actions 0 | r36 尚未经过三类独立 Validator；正式 state 未写入 | 冻结源码、r36 candidate、产物和 manifest，分别交 Code、AI、Data/Privacy 全新只读 Validator |"
+      },
+      {
+        "line": 127,
+        "text": "| 2026-08-16 / M8-0005-r36-validators | Code Validator `FAIL`：`activity_segment.py` 的 Ruff 导入门、workflow receipt artifact 多余 `output_id`、render replay 回执缺少首次的 `source_output_id/source_output_sha256`；AI Validator `PASS`、Data/Privacy Validator `PASS` 不继承。r36 candidate 和产物完整保留，正式 state 未写入、零外部调用 | r36 永久失效；不得把两个 PASS 与 Code FAIL 拼成阶段 PASS | 修复冻结范围内的三项问题，新增 receipt writer 与 replay 回归；代码门全绿后从正式 state 全新建立 r37 |"
+      },
+      {
+        "line": 128,
+        "text": "| 2026-08-16 / M8-0005-r37-fix | 修复 `render_report.persist_outputs` replay 返回完整 source lineage；新增 `write_workflow_receipt.py`，严格拒绝内部 `output_id` 并原子写 owner-only receipt；新增 replay/receipt 回归，当前 `pytest tests/code` 53 passed、Ruff check/format、mypy 通过 | r37 执行中发现周流程尚未先行运行 `weekly-fitness-summary`，为保持流程合同不掩盖顺序偏差，r37 在最终验收前作废；其 candidate、AI 输出和产物均不复用 | 清理缓存、冻结当前源码，从正式 state 全新建立 r38；日报完成后先运行 `weekly-fitness-summary`，再生成周报、报告、信封和回执 |"
+      },
+      {
+        "line": 129,
+        "text": "| 2026-08-17 / M8-0005-r38 | 从正式 state 在既有 lock 下以 immutable 零 WAL 快照建立 `/private/tmp/trainlab-m8-candidate-r38.YwwZl6`；formal fingerprint `7cc9f67d...` 前后相同；9336 raw/119992332 bytes 闭合。全新 Codex 完成 `2026-08-12`、`2026-08-03..09` 七份日报和 `2026-08-09` 周报；周报前先落库 `weekly-fitness-summary` 精确七日报选择；`2026-08-16` 在模型调用前 blocked。生成四套报告、两份 prepared 邮件、四项 prepared GTS 课程、两份 workflow receipt；所有重放复用 output/HTML，candidate verify_state、artifact verifier、53 code tests、Ruff/format/mypy、provider/external actions=0 通过 | r38 正在等待三类独立 Validator，尚未宣称 M8 完成；r31 的正式 SHM 触碰失败证据继续保留 | 冻结当前源码、r38 candidate 与 `/private/tmp/m8-r38-real.o0jbne`，交 Code、AI、Data/Privacy 三类全新只读 Validator |"
+      },
+      {
+        "line": 130,
+        "text": "| 2026-08-17 / M8-0005-r38-validators | Code、AI、Data/Privacy 三名全新只读 Validator 均返回 `PASS`；Code 53 tests/Ruff/format/mypy/compile/schema、活动片段并发预算、receipt 和报告幂等通过；AI 8 日报+1 周报、8/16 模型前 blocked、七日报顺序、证据/课程/不编造通过；Data/Privacy 正式指纹、raw 闭包、权限/隐私/产物血缘/零外部调用通过 | M8 仅覆盖离线 candidate；真实 Garmin/Gmail/Sites 写入、cron 和正式 state 变更仍未授权 | 归档本计划，更新 PLANS.md 与 memory.md；保留 r31 SHM 触碰失败记录，不声称整个 M8 历史从未触碰 sidecar |"
+      }
+    ]
+  },
+  {
+    "source": "docs/exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md",
+    "destination": "exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md",
+    "status": "[completed]",
+    "generic_history": true,
+    "current_task_rows": [
+      "| M9-0001..M9-0005 | HISTORY | [completed] | 只登记原功能的历史交付/暂停范围，不恢复原执行指令 | 原用户授权及历史结果 | 核对不可变原件与原验收范围；本轮不重跑产品 | 只保留原授权范围内的历史完成结论，不表示删除旧源码后仍能运行或本轮重新验收。 |"
+    ],
+    "original_heading_lines": [
+      {
+        "line": 1,
+        "text": "# 执行计划：M9 单日 Garmin MCP 有界真实只读闭环"
+      },
+      {
+        "line": 12,
+        "text": "## 目标与验收标准"
+      },
+      {
+        "line": 22,
+        "text": "## 范围与非目标"
+      },
+      {
+        "line": 32,
+        "text": "## 适用规则与参考资料"
+      },
+      {
+        "line": 39,
+        "text": "## 依赖与隔离"
+      },
+      {
+        "line": 53,
+        "text": "## 冻结预算"
+      },
+      {
+        "line": 69,
+        "text": "## r04 AI 阻塞恢复批次"
+      },
+      {
+        "line": 87,
+        "text": "## r05 Structured Outputs Schema 修正批次"
+      },
+      {
+        "line": 113,
+        "text": "## r06 threat-model closure batch"
+      },
+      {
+        "line": 135,
+        "text": "## r07 Structured Outputs v2 与 attempt 4 批次"
+      },
+      {
+        "line": 156,
+        "text": "## 功能与测试映射"
+      },
+      {
+        "line": 166,
+        "text": "## 工具采用情况"
+      },
+      {
+        "line": 173,
+        "text": "## Subagent 派发"
+      },
+      {
+        "line": 217,
+        "text": "## 工作分解"
+      },
+      {
+        "line": 227,
+        "text": "## 当前检查点"
+      },
+      {
+        "line": 237,
+        "text": "## 决策与发现"
+      },
+      {
+        "line": 243,
+        "text": "## 任务级独立验证"
+      },
+      {
+        "line": 253,
+        "text": "## 集成级独立验证"
+      },
+      {
+        "line": 263,
+        "text": "## PLANS 回写清单"
+      },
+      {
+        "line": 270,
+        "text": "## 迭代日志"
+      }
+    ],
+    "original_stage_table_rows": [
+      {
+        "line": 177,
+        "text": "| 1 | Code Validator / M9-0003 | high | high | high | 首次真实 Provider 读取前验证范围、Token 与预算安全 | supported | 只读 | 完整 code gates 与 fake MCP 对抗验证 | FAIL：发现 Token 刷新/库内重试、正式路径、失败重入、权限、既有 FIT、回执与错误摘要 8 项缺口；Provider 保持 0 |"
+      },
+      {
+        "line": 178,
+        "text": "| 2 | Code Validator / M9-0003 | high | high | high | 对首轮 8 项修正做全新高风险复验 | supported | 只读 | Token 影子+刷新禁用、Candidate 门、一次授权、FIT/回执/错误摘要及完整门禁 | FAIL：发现依赖库 profile/settings 隐藏重试、Candidate DB 符号链接越界、重复活动 ID 与返回回执 Schema 4 项缺口；Provider 保持 0 |"
+      },
+      {
+        "line": 179,
+        "text": "| 3 | Code Validator / M9-0003 | high | high | high | 对第二轮 4 项修正做全新高风险复验 | supported | 只读 | 实际依赖单次 profile/settings、Candidate 路径、活动唯一性、回执 Schema 及完整门禁 | FAIL：发现 raw 子目录 symlink、candidate 未绑定运行 guard、VO₂ 内部 fallback、context 原始字节复核、分页回执与 finalizer scope 6 项缺口；Provider 保持 0 |"
+      },
+      {
+        "line": 180,
+        "text": "| 4 | Code Validator / M9-0003 | high | high | high | 对第三轮 6 项修正做全新高风险复验 | supported | 只读 | Candidate 全路径、受验证 runtime guard、Provider 单入口、context SHA、分页与 finalizer scope | FAIL：初始化仍有2次 Provider 进入，最坏总量13；日报输出目录可 symlink 越界；Provider 保持0 |"
+      },
+      {
+        "line": 181,
+        "text": "| 5 | Code Validator / M9-0003 | high | high | high | 对第四轮 2 项修正做全新高风险复验 | supported | 只读 | 零Provider初始化、最坏11次实际工具进入、Candidate内报告输出边界及完整门禁 | FAIL：零初始化无法取得RHR所需display_name，首个工具在Provider前失败；Provider保持0 |"
+      },
+      {
+        "line": 182,
+        "text": "| 6 | Code Validator / M9-0003 | high | high | high | 对第五轮初始化修正做全新高风险复验 | supported | 只读 | 单次profile初始化、无settings、最坏12次实际Provider进入及完整门禁 | FAIL：activity evidence 未绑定同步回执中的精确 FIT raw ID，多修订时可选中旧文件；Provider 保持0 |"
+      },
+      {
+        "line": 183,
+        "text": "| 7 | Code Validator / M9-0003 | high | high | high | 对第六轮 FIT 回执绑定修正做全新高风险复验 | supported | 只读 | 精确 raw ID、路径/权限/链接/大小/SHA 复核、双 FIT 修订与完整门禁 | FAIL：finalizer 可接受 receipt 外 raw、成功重放不复核 raw、两字段 Candidate marker 可伪造；Provider 保持0 |"
+      },
+      {
+        "line": 184,
+        "text": "| 8 | Code Validator / M9-0003 | high | high | high | 对第七轮证据闭包与 Candidate provenance 修正做全新高风险复验 | supported | 只读 | finalizer 重建 context、重放 raw 复核、DB 绑定 Candidate 构建收据及完整门禁 | FAIL：HRV `_ms` 字段丢失、封存后 raw 未限来源、初始化失败少记 Provider、running receipt 可误复用；Provider 保持0 |"
+      },
+      {
+        "line": 185,
+        "text": "| 9 | Code Validator / M9-0003 | high | high | high | 对第八轮解析、来源链、计数与终态修正做全新高风险复验 | supported | 只读 | 实际 HRV 字段、post-seed raw provenance、初始化失败计数、仅 succeeded receipt 复用及完整门禁 | FAIL：Candidate 未精确绑定正式 source、nap/多主睡眠边界不完整、空 JSON 健康壳可进入 AI、计划写入范围漏列；Provider 保持0 |"
+      },
+      {
+        "line": 186,
+        "text": "| 10 | Code Validator / M9-0003 | high | high | high | 对第九轮 Candidate 正式来源、睡眠和空健康门做全新高风险复验 | supported | 只读 | 正式 seed/fingerprint 绑定、唯一主睡眠、至少一项有效非睡眠健康证据及完整门禁 | FAIL：下游上下文/AI提交/finalizer 可接受所属 run 仍为 running 的回执；Provider 保持0 |"
+      },
+      {
+        "line": 187,
+        "text": "| 11 | Code Validator / M9-0003 | high | high | high | 对第十轮同步终态下游绑定修正做全新高风险复验 | supported | 只读 | context、commit、finalizer 三层只接受 succeeded run 回执及完整门禁 | FAIL：Candidate 只验自洽指纹，未在放行前与当前正式 state 重新核对；Provider 保持0 |"
+      },
+      {
+        "line": 188,
+        "text": "| 12 | Code Validator / M9-0003 | high | high | high | 对第十一轮正式 state 即时核对修正做全新高风险复验 | supported | 只读 | Provider 前持正式锁重算 fingerprint 与 DB raw seed，与 Candidate receipt 精确相等，再跑完整门 | FAIL：blocked context 仍生成 AI Prompt 且 CLI 返回0；Provider 保持0 |"
+      },
+      {
+        "line": 189,
+        "text": "| 13 | Code Validator / M9-0003 | high | high | high | 对第十二轮 AI 前 blocked 门修正做全新高风险复验 | supported | 只读 | blocked context 只留审计 JSON、不生成 Prompt、CLI 非0且 AI 调用0，再跑完整门 | FAIL：旧 Prompt 路径未在入口 fail closed；90秒未包含 Candidate/正式指纹和 Token 准备；Provider 保持0 |"
+      },
+      {
+        "line": 190,
+        "text": "| 14 | Code Validator / M9-0003 | high | high | high | 对第十三轮 Prompt 新路径与全流程墙钟修正做全新高风险复验 | supported | 只读 | Prompt path 必须初始不存在；90秒从 collect 入口开始且 Provider 前再查；完整门 | FAIL：Candidate 非零 WAL 可被 immutable 读取忽略，post-seed 写入可绕过来源门；Provider 保持0 |"
+      },
+      {
+        "line": 191,
+        "text": "| 15 | Code Validator / M9-0003 | high | high | high | 对第十四轮 Candidate SQLite sidecar 静止门做全新高风险复验 | supported | 只读 | Provider 前拒绝非零 WAL、活动 SHM、symlink/异常 sidecar；保持写连接探针与完整门 | FAIL：正式 raw/DB/WAL/SHM 的 mode/nlink 与活动 SHM 门不完整；清理和回执未纳入完整墙钟；Provider 保持0 |"
+      },
+      {
+        "line": 192,
+        "text": "| 16 | Code Validator / M9-0003 | high | high | high | 对第十五轮正式 state 元数据和完整墙钟修正做全新高风险复验 | supported | 只读 | owner/mode/nlink、活动 SHM、Finder 杂项隔离、90秒内清理落账及完整门 | FAIL：回执写入期超时未降级、外部空闲SQLite连接未拒绝、Candidate根目录未验0700；Provider保持0 |"
+      },
+      {
+        "line": 193,
+        "text": "| 17 | Code Validator / M9-0003 | high | high | high | 对第十六轮外部句柄、Candidate根和回执期限修正做全新高风险复验 | supported | 只读 | 外部空闲/活动SQLite、Candidate根0700、回执写入超时降级及完整门 | FAIL：回执后第二次期限检查可降级内存/run，却未追加对应blocked回执；Provider保持0 |"
+      },
+      {
+        "line": 194,
+        "text": "| 18 | Code Validator / M9-0003 | high | high | high | 对第十七轮回执终态一致性修正做全新高风险复验 | supported | 只读 | 收口预留、回执写入跨线时返回/最新receipt/run三者一致及完整门 | PASS：106 tests与全部静态/对抗门通过；Provider/MCP/网络为0 |"
+      },
+      {
+        "line": 195,
+        "text": "| 19 | Code Validator / M9-0004 | high | high | high | Candidate r01 在安全收口门失败后复验 checkpoint 修正 | supported | 只读 | Candidate writable schema应用后显式checkpoint、仅清理零WAL、全新构建与完整门 | PASS：107 tests、合成全构建和静态门通过；Provider为0 |"
+      },
+      {
+        "line": 196,
+        "text": "| 20 | Code Validator / M9-0004 | high | high | high | Candidate r02 暴露失活非零SHM后复验安全清理 | supported | 只读 | WAL必须为零；SHM仅在无句柄/锁时可清理，活动SHM保留并fail closed；真实形态全构建 | FAIL：检查结束后释放SHM锁、再删除旁车，真实SQLite连接可在两步之间进入；Provider保持0 |"
+      },
+      {
+        "line": 197,
+        "text": "| 21 | Code Validator / M9-0004 | high | high | high | 对SHM检查/删除同锁原子化修正做全新高风险复验 | supported | 只读 | 持SQLite SHM排他锁到零WAL与失活SHM删除完成；活动连接、并发进入、部分删除和完整构建均fail closed | FAIL：扫描后仍可出现新数据库句柄，且第二次unlink失败会留下部分清理；Provider保持0 |"
+      },
+      {
+        "line": 198,
+        "text": "| 22 | Code Validator / M9-0004 | high | high | high | 对Candidate旁车非破坏保留策略做全新高风险复验 | supported | 只读 | checkpoint后WAL为零、SHM无活动连接；不unlink任何旁车；live门接受失活SHM并拒绝活动连接/非零WAL；完整构建与静态门 | FAIL：可写打开/checkpoint发生在首次旁车检查前，预存非零WAL会被合并进主库；Provider保持0 |"
+      },
+      {
+        "line": 199,
+        "text": "| 23 | Code Validator / M9-0004 | high | high | high | 对Candidate写前/写后双旁车门做全新高风险复验 | supported | 只读 | 每次可写打开前拒绝并原样保留非零WAL/活动SHM；写后checkpoint并再次验证；非破坏保留与完整构建 | FAIL：首次门返回后、原库connect前仍可注入崩溃WAL并被合并；Provider保持0 |"
+      },
+      {
+        "line": 200,
+        "text": "| 24 | Code Validator / M9-0004 | high | high | high | 对Candidate数据库写时复制发布做全新高风险复验 | supported | 只读 | 原库只immutable读取；Schema/receipt写私有副本；发布前复核原库/旁车未变后原子替换；两处WAL竞态、失败保全与完整构建 | FAIL：最终复核与普通replace之间的原库变化仍会被覆盖；Provider保持0 |"
+      },
+      {
+        "line": 201,
+        "text": "| 25 | Code Validator / M9-0004 | high | high | high | 对Candidate数据库原子交换后验验证做全新高风险复验 | supported | 只读 | Darwin原子交换新旧DB；从交换后的旧inode验证复核前状态，漂移则原子换回；WAL/主库各阶段注入、失败保全与完整构建 | FAIL：私有工作库未放在state子目录，合法零WAL/32KB失活SHM被路径门误拒；Provider保持0 |"
+      },
+      {
+        "line": 202,
+        "text": "| 26 | Code Validator / M9-0004 | high | high | high | 对受控私有state工作库与原子交换做全新高风险复验 | supported | 只读 | 私有work_root/state复用相同sidecar锁门；当前六表Schema checkpoint、完整build+receipt、交换竞态与全部静态门 | FAIL：后验失败且原子换回也失败时finally删除了保存旧库的work_root；Provider保持0 |"
+      },
+      {
+        "line": 203,
+        "text": "| 27 | Code Validator / M9-0004 | high | high | high | 对原子换回失败证据保全做全新高风险复验 | supported | 只读 | 换回失败返回独立错误，保留0700 work_root与0600旧DB；Candidate判废；正常完整build与全部门 | PASS：115 tests与全部静态/对抗门、完整Candidate、正式state不变均通过；Provider/MCP/网络为0 |"
+      },
+      {
+        "line": 204,
+        "text": "| 28 | Code Validator / M9-0004 | high | high | high | 对live_sync独立CLI启动修正做全新高风险复验 | supported | 只读 | 从仓库根/任意cwd且无PYTHONPATH加载CLI；不启动MCP的help门；完整116 tests和此前安全门不回退 | PASS：三种cwd、116 tests与全部门通过；r03无live run/capture，Provider/MCP/网络为0 |"
+      },
+      {
+        "line": 205,
+        "text": "| 29 | Code Validator / M9-0004 | high | high | high | 对在线后离线日报启动器修正和r04整体做全新高风险复验 | supported | 只读 | Python 3.12 offline/no-PYTHONPATH 的 Prompt/finalizer CLI；118 tests；r04 live回执/raw闭合/正式state不变 | PASS：118 tests与全部门通过；r04为9,342 raw/120,646,692 B、8 MCP/9 Provider、重放Provider=0、external_actions=0；本Validator未调用外部服务 |"
+      },
+      {
+        "line": 206,
+        "text": "| 30 | Code Validator / M9-0004 r06 | high | high | high | 对合并修正后的 T01～T16 冻结矩阵做最终高风险复验 | supported | 只读 | 进程组静默、双 Schema、正式 state/Token 门、有限 I/O、attempt 3 状态机与完整代码门 | FAIL：仅 T06/T12 仍不完整；发送终止信号后没有观察进程组实际消失即可返回成功，其余门通过且外部调用为0 |"
+      },
+      {
+        "line": 207,
+        "text": "| 31 | Final Code Validator / M9-0004 r06 | high | high | high | 对严格进程组消失证明及完整冻结矩阵做最终复验 | supported | 只读 | 能终止的后代进程须在发布前消失；无法证明消失则保留 pending；180 tests与全部静态门 | PASS：完整套件两次180 passed、晚到后代20/20、T01～T16与全部静态门通过；r04仍只有attempt 2，外部调用0 |"
+      },
+      {
+        "line": 208,
+        "text": "| 32 | Code Validator / M9-0004 r07 | high | high | high | 对 wire v2、离线 allowlist、公开 canary 与 attempt 4 证据链做一次性冻结范围复验 | supported | 只读 | FAIL：完整 `$defs`/引用深度与 canary 根隔离缺口 | completed |"
+      },
+      {
+        "line": 209,
+        "text": "| 33 | Final Code Validator / M9-0004 r07 | high | high | high | 只复验冻结范围内的合并修正、既有安全矩阵和完整代码门 | supported | 只读 | FAIL：canary隔离未贯穿消费端；计划写入范围漏列Skills索引 | completed |"
+      },
+      {
+        "line": 210,
+        "text": "| 34 | Definitive Code Validator / M9-0004 r07 | high | high | high | 最终复验共享canary根门、冻结Schema/attempt链和完整代码门 | supported | 只读 | FAIL：专用根仍可嵌套于temp下的state/token/private目录 | completed |"
+      },
+      {
+        "line": 211,
+        "text": "| 35 | Boundary Code Validator / M9-0004 r07 | high | high | high | 复验系统临时目录直接子级边界、冻结Schema/attempt链和完整代码门 | supported | 只读 | PASS：207 tests、全部冻结门、r04 attempt2/3闭包与零外部动作通过 | completed |"
+      },
+      {
+        "line": 212,
+        "text": "| 1 | AI Validator / M9-0005 | high | high | high | 私人健康/训练语义与不编造复核 | supported | 只读 | 日报证据、训练解释、报告一致性 | blocked：attempt 3 未产生 AI result，不能执行语义认证 |"
+      },
+      {
+        "line": 213,
+        "text": "| 1 | Data/Privacy Validator / M9-0005 | high | high | high | 正式 state、Token、raw/capture 血缘与权限高风险复核 | supported | 只读 | 指纹、闭包、预算、零外部动作 | PASS：仅认证 attempt 3 安全失败闭包，不认证 M9 完成 |"
+      },
+      {
+        "line": 214,
+        "text": "| 2 | AI Validator / M9-0005 r07 | high | high | high | 复核attempt4日报证据、结论、安全、不编造及报告一致性 | supported | 只读 | 私人AI结果、bounded evidence、报告/SQLite/receipt一致 | PASS：日期与证据边界、数值绑定、安全降级、不编造、attempt链及报告一致性全部通过；无外部动作 |"
+      },
+      {
+        "line": 215,
+        "text": "| 2 | Data/Privacy Validator / M9-0005 r07 | high | high | high | 复核正式边界、Candidate闭包、权限、血缘与零外部动作 | supported | 只读 | state/Token稳定门、raw/capture/AI/report/receipt闭包、幂等 | PASS：9,342 raw双向闭包、SQLite/权限/血缘、正式state与Token稳定、幂等及零外部动作全部通过 |"
+      },
+      {
+        "line": 221,
+        "text": "| M9-0001 保存 M8 本地基线 | `done` | `69ed9b4 feat: complete real-data AI coaching closure`；M8 53 tests 与静态门重跑通过 |"
+      },
+      {
+        "line": 222,
+        "text": "| M9-0002 实现确定性 Garmin MCP 采集器与三个合同 | `done` | 采集、mcp_capture/FIT、Token/预算、live context、AI提交/报告/receipt 已实现；fake MCP 14项专项通过 |"
+      },
+      {
+        "line": 223,
+        "text": "| M9-0003 冻结在线范围、完整离线测试并获 Code Validator PASS | `done` | 第十八名全新只读 Code Validator PASS；106 tests、依赖/权限/预算/证据闭包与全部静态门通过；Provider entry 为 0 |"
+      },
+      {
+        "line": 224,
+        "text": "| M9-0004 建立 candidate、一次真实只读采集并生成离线日报 | `done` | r04读取复用；r07 canary与唯一attempt4成功，summary/output/report/workflow receipt已落Candidate，幂等重放行数/ID/SHA/HTML不变 |"
+      },
+      {
+        "line": 225,
+        "text": "| M9-0005 AI 与 Data/Privacy 独立验证并回写 | `done` | 全新 AI 与 Data/Privacy Validator 均 PASS；证据、安全、数据闭包、权限、血缘、幂等和零外部动作均通过 |"
+      },
+      {
+        "line": 274,
+        "text": "| 2026-08-17 / M9-0001 | M8 门禁重跑通过并本地提交 `69ed9b4`；用户批准 M9 固定单日范围 | 正式 state、Token 和 Provider 均未触碰 | 建立测试与确定性采集器；Code Validator PASS 前不进入 Provider |"
+      },
+      {
+        "line": 275,
+        "text": "| 2026-08-17 / M9-0002 | 三个 live Schema、pinned/offline stdio adapter、cached-token-only 采集器、capture/FIT原子登记、live日报context和无邮件/GTS finalizer完成；67 tests与静态门通过 | 离线 `uv run` 无法应用 tool override，因为上游声明 garminconnect 0.3.2；生产命令使用支持 `--overrides` 的 `uvx --offline`，需由 Validator 核对缓存与命令，不能为验证提前启动会话 | 冻结源码，执行首次Provider entry前Code Validator |"
+      },
+      {
+        "line": 276,
+        "text": "| 2026-08-17 / M9-0003 attempt 1 | 独立 Code Validator 返回 FAIL；未调用 Provider、未读取私人 raw/Token 内容、未修改正式 state | 固定 garminconnect 仍含 refresh/401 retry；另有 Candidate、一次授权、权限、既有 FIT、reused ID、错误摘要和 mypy 共 8 项真实缺口 | 保持计划/日期/预算不变，先加回归再修实现，交全新 Validator |"
+      },
+      {
+        "line": 277,
+        "text": "| 2026-08-17 / M9-0003 attempt 2 | 第二名独立 Code Validator 返回 FAIL；74 tests 与静态门通过，Provider/MCP/网络调用均为 0 | 固定依赖 profile/settings 各有隐藏三次循环；Candidate DB symlink 可越界；重复 activity ID 可重复 FIT；返回回执多出未声明 ID | 保持计划、日期、预算与正确预期不变，新增 4 项回归并修实现，交第三名全新 Validator |"
+      },
+      {
+        "line": 278,
+        "text": "| 2026-08-17 / M9-0003 attempt 3 | 第三名独立 Code Validator 返回 FAIL；77 tests 与静态门通过，Provider/MCP/网络调用均为 0 | raw 子目录可 symlink 越界；真实 MCP 使用 candidate guard；VO₂ fallback 产生额外 Provider 进入；AI context 不复核字节；分页回执与日报 finalizer scope 不完整 | 保持计划、日期、预算与正确预期不变，新增 6 类回归并修实现，交第四名全新 Validator |"
+      },
+      {
+        "line": 279,
+        "text": "| 2026-08-17 / M9-0003 attempt 4 | 第四名独立 Code Validator 返回 FAIL；82 tests 与静态门通过，Provider/MCP/网络调用均为 0 | profile/settings 初始化仍有2次Provider进入，使最坏13>12；日报输出目录symlink可越界 | 保持计划、日期、预算与正确预期不变，改为零Provider初始化并收紧Candidate内输出目录，交第五名全新Validator |"
+      },
+      {
+        "line": 280,
+        "text": "| 2026-08-17 / M9-0003 attempt 5 | 第五名独立 Code Validator 返回 FAIL；83 tests 与静态门通过，Provider/MCP/网络调用均为0 | 零Provider初始化导致真实Garmin实例display_name为空，RHR工具在Provider前失败；fake测试用cached-user掩盖差异 | 保持预算不变，初始化仅单次读取profile、不读settings，最坏12次，交第六名全新Validator |"
+      },
+      {
+        "line": 281,
+        "text": "| 2026-08-17 / M9-0003 attempt 6 | 第六名独立 Code Validator 返回 FAIL；83 tests 与静态门通过，Provider/MCP/网络调用均为0 | 同一活动存在多个 FIT 修订时，AI 前 activity evidence 可自行选旧 raw，未绑定本次同步回执 | 保持范围与预算不变，新增精确 raw ID 和全字节复核、双修订回归，交第七名全新 Validator |"
+      },
+      {
+        "line": 282,
+        "text": "| 2026-08-17 / M9-0003 attempt 7 | 第七名独立 Code Validator 返回 FAIL；84 tests 与静态门通过，Provider/MCP/网络调用均为0 | finalizer 可接受回执外旧 raw；成功重放不复核已登记字节；Candidate marker 缺 DB 构建来源绑定 | 保持范围与预算不变，重建并比对 context、重放验 raw、增加 DB 内 Candidate 构建收据和完整 marker 验证，交第八名全新 Validator |"
+      },
+      {
+        "line": 283,
+        "text": "| 2026-08-17 / M9-0003 attempt 8 | 第八名独立 Code Validator 返回 FAIL；86 tests 与静态门通过，Provider/MCP/网络调用均为0 | 固定 MCP 的 HRV `_ms` 字段未识别；封存后伪 raw 可注入；初始化失败少记 Provider；running receipt 可误复用 | 保持范围和预算不变，补资源字段、post-seed run provenance、保守初始化计数及 succeeded-only receipt，交第九名全新 Validator |"
+      },
+      {
+        "line": 284,
+        "text": "| 2026-08-17 / M9-0003 attempt 9 | 第九名独立 Code Validator 返回 FAIL；90 tests 与静态门通过，Provider/MCP/网络调用均为0 | Candidate 可由任意合成 source 封存；nap 和多主睡眠未 fail closed；五类健康空 JSON 仍 ready；计划漏列 Coach/Publisher 写入范围 | 不改日期、预算和预期，补正式 seed 绑定、睡眠唯一性、有效健康门和计划边界，交第十名全新 Validator |"
+      },
+      {
+        "line": 285,
+        "text": "| 2026-08-17 / M9-0003 attempt 10 | 第十名独立 Code Validator 返回 FAIL；94 tests 与静态门通过，Provider/MCP/网络调用均为0 | 同步回执先写入、run 后终态之间崩溃时，context/commit/finalizer 未核对所属 run 已 succeeded | 不改范围与预期，三层关联 skill_runs 且 fail closed，补端到端回归后交第十一名全新 Validator |"
+      },
+      {
+        "line": 286,
+        "text": "| 2026-08-17 / M9-0003 attempt 11 | 第十一名独立 Code Validator 返回 FAIL；95 tests 与静态门通过，Provider/MCP/网络调用均为0 | Candidate marker/DB 仅内部自洽，放行前未与当前正式 state 即时比对，可伪造空快照 | 不改范围与预期，放行前持正式锁重算 fingerprint/seed 并精确绑定，补回归后交第十二名全新 Validator |"
+      },
+      {
+        "line": 287,
+        "text": "| 2026-08-17 / M9-0003 attempt 12 | 第十二名独立 Code Validator 返回 FAIL；96 tests 与静态门通过，Provider/MCP/网络调用均为0 | 睡眠/健康等前置 context 已 blocked 时，Prompt 生成器仍写文件并返回0，无法证明模型前停止 | 不改范围与预期，blocked 时只写审计 context、禁止 Prompt 且返回2，补回归后交第十三名全新 Validator |"
+      },
+      {
+        "line": 288,
+        "text": "| 2026-08-17 / M9-0003 attempt 13 | 第十三名独立 Code Validator 返回 FAIL；97 tests 与静态门通过，Provider/MCP/网络调用均为0 | blocked 路径如已有旧 Prompt 则不会清晰 fail closed；90秒未包含正式快照核对和 Token 准备时间 | 不改预算数值，要求全新 Prompt path，墙钟从 collect 入口开始并在 Provider 前查剩余时间，补回归后交第十四名全新 Validator |"
+      },
+      {
+        "line": 289,
+        "text": "| 2026-08-17 / M9-0003 attempt 14 | 第十四名独立 Code Validator 返回 FAIL；98 tests 与静态门通过，Provider/MCP/网络调用均为0 | 封存后保持写连接并提交 WAL 时，immutable Candidate 读不见 post-seed 写入却仍放行 | 不改范围与预期，Provider 前拒绝非零 WAL/活动 SHM/异常 sidecar，补保持写连接回归后交第十五名全新 Validator |"
+      },
+      {
+        "line": 290,
+        "text": "| 2026-08-17 / M9-0003 attempt 15 | 第十五名独立 Code Validator 返回 FAIL；99 tests 与静态门通过，Provider/MCP/网络调用均为0 | 正式 raw/SQLite 文件的 mode/nlink 和活动 SHM 未全部 fail closed；90秒检查早于 Token 复核、清理和回执 | 不改范围、日期、预算与预期，补 owner/mode/nlink、活动 SHM 双门及15秒本地收口预留；103 tests与静态门通过后交第十六名全新 Validator |"
+      },
+      {
+        "line": 291,
+        "text": "| 2026-08-17 / M9-0003 attempt 16 | 第十六名独立 Code Validator 返回 FAIL；103 tests 与静态门通过，Provider/MCP/网络调用均为0 | 外部空闲SQLite连接未被锁区发现；Candidate根可0755；回执写入期间跨过90秒仍可成功 | 不改范围、日期、预算与预期，增加外部句柄门、Candidate根0700及回执后期限降级；106 tests与静态门通过后交第十七名全新 Validator |"
+      },
+      {
+        "line": 292,
+        "text": "| 2026-08-17 / M9-0003 attempt 17 | 第十七名独立 Code Validator 返回 FAIL；106 tests 与静态门通过，Provider/MCP/网络调用均为0 | 第一次回执写后两个期限检查之间跨线时，返回/run为blocked但最新回执仍succeeded | 将单一缺陷拆为收口预留和回执终态一致性：75秒后不再发布成功，任何回执后降级立即持久化blocked修订；完整门通过后交第十八名全新 Validator |"
+      },
+      {
+        "line": 293,
+        "text": "| 2026-08-17 / M9-0003 attempt 18 | 第十八名独立 Code Validator 返回 PASS；106 tests、依赖版本、墙钟/回执、Candidate/正式state与全部静态门通过 | 真实MCP/Provider/网络调用仍为0 | M9-0003完成；进入M9-0004全新Candidate和唯一一次获批真实读取 |"
+      },
+      {
+        "line": 294,
+        "text": "| 2026-08-17 / M9-0004 candidate r01 | 正式state复制与代码文件完成后，Candidate当前schema应用产生非零WAL，清理门返回`candidate_wal_nonempty`；Provider/MCP/网络均为0 | Candidate写入后缺少允许的显式checkpoint，不能直接清理非零sidecar | r01永久失效；增加Candidate-only checkpoint和回归，107 tests与静态门通过后交第十九名全新Validator；PASS后全新建r02 |"
+      },
+      {
+        "line": 295,
+        "text": "| 2026-08-17 / M9-0004 candidate r02 | 第十九名Validator PASS后全新构建；Candidate WAL已清零并消失，但失活SHM为32768B，旧门仍按非零统一拒绝；Provider/MCP/网络均为0 | SHM大小不能代表活动状态，不能直接删除也不能与WAL共用零字节规则 | r02永久失效；仅对无句柄/SQLite锁的owner-only单链接SHM允许Candidate清理，活动SHM保留并失败；108 tests与静态门通过后交第二十名全新Validator |"
+      },
+      {
+        "line": 296,
+        "text": "| 2026-08-17 / M9-0004 attempt 20 | 第二十名独立Code Validator返回FAIL；完整代码门通过且Provider/MCP/网络为0 | 无句柄检查释放SHM锁后才执行unlink，真实SQLite连接可在检查与删除之间进入 | 不改范围、预算或预期；持SHM排他锁到零WAL和失活SHM删除完成，释放后复核未重建；109 tests与静态门通过后交第二十一名全新Validator |"
+      },
+      {
+        "line": 297,
+        "text": "| 2026-08-17 / M9-0004 attempt 21 | 第二十一名独立Code Validator返回FAIL；109 tests与静态门通过，失活32KB SHM合成构建通过，Provider/MCP/网络为0 | 扫描后仍可出现新数据库句柄；第二个unlink失败会使零WAL已删而SHM仍在，多文件删除不具事务性 | 不改范围、预算或正确预期；停止删除旁车，只验证并保留零WAL与失活SHM，live门同步fail closed；完整门通过后交第二十二名全新Validator |"
+      },
+      {
+        "line": 298,
+        "text": "| 2026-08-17 / M9-0004 attempt 22 | 第二十二名独立Code Validator返回FAIL；109 tests与静态门通过，失活32KB SHM与live scope通过，Provider/MCP/网络为0 | checkpoint在首次旁车检查前运行，预存12392字节WAL可被静默合并并删除，未批准表进入主库 | 不改范围、预算或正确预期；每次可写打开前先做非破坏旁车门，写后再次checkpoint/复核；110 tests与静态门通过后交第二十三名全新Validator |"
+      },
+      {
+        "line": 299,
+        "text": "| 2026-08-17 / M9-0004 attempt 23 | 第二十三名独立Code Validator返回FAIL；110 tests与静态门通过，失活SHM/完整构建/live门通过，Provider/MCP/网络为0 | 写前门返回到原库connect之间仍可注入16512字节崩溃WAL；checkpoint与seal都会合并未批准表 | 不改范围、预算或正确预期；原库只immutable读取，所有写入在私有副本完成，发布前复核原库/旁车未变后原子替换；112 tests与静态门通过后交第二十四名全新Validator |"
+      },
+      {
+        "line": 300,
+        "text": "| 2026-08-17 / M9-0004 attempt 24 | 第二十四名独立Code Validator返回FAIL；112 tests与静态门、写时复制和完整构建通过，Provider/MCP/网络为0 | 发布前最终指纹复核到普通os.replace之间注入主库变化时，函数仍成功并覆盖该变化 | 不改范围、预算或正确预期；使用Darwin原子交换，新旧交换后从旧inode做后验验证，漂移则原子换回；113 tests与静态门通过后交第二十五名全新Validator |"
+      },
+      {
+        "line": 301,
+        "text": "| 2026-08-17 / M9-0004 attempt 25 | 第二十五名独立Code Validator返回FAIL；113 tests与静态门、原子交换竞态通过，Provider/MCP/网络为0 | 私有work_database父目录不名为state，当前六表Schema写入后合法0B WAL+32768B失活SHM被`candidate_sidecar_unsafe`误拒，完整build无receipt | 不改范围、预算或门；work_root内增加state子目录并复用原锁门，补当前Schema checkpoint回归；114 tests与静态门通过后交第二十六名全新Validator |"
+      },
+      {
+        "line": 302,
+        "text": "| 2026-08-17 / M9-0004 attempt 26 | 第二十六名独立Code Validator返回FAIL；114 tests与静态门、当前Schema、完整Candidate build+receipt均通过，Provider/MCP/网络为0 | 后验漂移触发换回且第二次原子交换也失败时，finally仍删除work_root，旧DB恢复证据丢失 | 不改范围、预算或正确预期；换回失败时保留work_root/旧DB并返回独立错误，Candidate判废；115 tests与静态门通过后交第二十七名全新Validator |"
+      },
+      {
+        "line": 303,
+        "text": "| 2026-08-17 / M9-0004 attempt 27 | 第二十七名独立Code Validator返回PASS；115 tests、完整合成Candidate、写时复制/换回故障、正式state指纹和全部静态门通过 | 发现3组在Validator开始前已存在的Garmin MCP后台进程，未由本任务启动或调用 | 允许进入r03构建；真实读取前只读核对既有进程与Token边界，不能停止或计作本次Provider，也不能在不确定时消耗授权 |"
+      },
+      {
+        "line": 304,
+        "text": "| 2026-08-17 / M9-0004 candidate r03 | 从正式state全新构建成功；9336 raw、119992332B、SQLite integrity=ok/FK=0/schema exact，全部目录0700/文件0600、无symlink/hardlink/.DS_Store/.gitkeep/WAL/SHM；正式state unchanged | Token目录元数据安全且既有MCP无打开Token文件句柄；尚未调用Provider | 构建时合格；随后launcher前置失败使r03永久失效，不复用 |"
+      },
+      {
+        "line": 305,
+        "text": "| 2026-08-17 / M9-0004 r03 launcher | 固定命令在导入`skills`时退出1；Candidate live_runs=0，Token无打开句柄，未启动新MCP且Provider/网络为0 | `live_sync.py`作为文件从仓库根运行时，Python只加入脚本目录，未加入`source/` | 该失败发生在在线边界前，不消耗冻结Provider读取；r03永久失效。CLI自行加入source根并补无PYTHONPATH回归，116 tests/静态门通过后交第二十八名全新Validator；PASS后全新建r04 |"
+      },
+      {
+        "line": 306,
+        "text": "| 2026-08-17 / M9-0004 attempt 28 | 第二十八名独立Code Validator返回PASS；三种cwd/无PYTHONPATH CLI、116 tests、Candidate写时复制与全部门通过 | r03无live run/capture，正式state不变；通用Garmin MCP后台进程非M9固定guard且未被调用 | 允许从正式state全新建立r04；验证通过后执行唯一一次固定live_sync |"
+      },
+      {
+        "line": 307,
+        "text": "| 2026-08-17 / M9-0004 candidate r04 | 从正式 state 全新建立；9,336 raw/119,992,332 B、SQLite 完整性/FK/六表/62 triggers、权限、链接、旁车和正式指纹门全部通过 | Token 目录无打开句柄，固定 M9 进程为 0；Provider/MCP/网络调用仍为 0 | 执行用户批准的唯一一次固定 live_sync；失败即停止且不重试 |"
+      },
+      {
+        "line": 308,
+        "text": "| 2026-08-17 / M9-0004 live read | 固定窗口成功；8 MCP/9 Provider、1 inventory、1 FIT、6 个新文件，Token unchanged、weather=0、external_actions=0；完全相同输入重放为 reused、MCP/Provider=0 | 实际数据返回未触及 11/12/10/2/2/11/90s 任一冻结上限；未调用 Gmail/Workout/Sites/cron | 停止所有 Garmin 读取；仅在 r04 内离线生成 AI 日报和报告 |"
+      },
+      {
+        "line": 309,
+        "text": "| 2026-08-17 / M9-0004 attempt 29 | 第二十九名独立Code Validator返回PASS；118 tests、Prompt/finalizer CLI、r04 SQLite/raw/live回执与正式state不变全部通过 | 离线上下文随后证明 ready：4类健康、1活动、inventory complete、已结束主睡眠 | 以 `--ignore-user-config` 执行一次 ephemeral AI，严格 Schema 验证后才允许落库/报告 |"
+      },
+      {
+        "line": 310,
+        "text": "| 2026-08-17 / M9-0004 AI attempt 1 | 以冻结 Prompt/context/Schema、`--ephemeral --ignore-user-config`执行；进程 exit 1，未生成 `ai-result.json`；Candidate 中无 daily summary/email/GTS，external_actions=0 | 调用输出未被 owner-only 保留，无法事后确认是 transport/5xx 还是 Schema/其他失败；按冻结规则不得假设为可重试 | M9-0004 标记 blocked；不重试、不改 Prompt/Schema、不再读 Garmin，等待新授权或不消耗模型调用的取证改进 |"
+      },
+      {
+        "line": 314,
+        "text": "| 2026-08-17 / M9-r04 AI attempt 2 | 完全相同 Prompt/context/Schema 通过冻结 SHA 前检后执行；三份 0600 失败证据有效，正式 state/Token 前后相同，Candidate SQLite integrity/FK/合同通过，外部动作0 | Codex 结构化输出接口以 HTTP 400 拒绝 Schema 中的 `allOf`；未生成 `ai-result.json`。既有回执为不可改写 `unknown_non_retryable`，事件证据证明实际是 `schema_non_retryable` | M9-0004 设为 blocked；不调用第三次、不改冻结 Schema、不生成日报/报告；分类器补充 `invalid_json_schema` 回归，等待用户批准新计划修订 |"
+      },
+      {
+        "line": 331,
+        "text": "| 2026-08-18 / M9-r05 Code Validator 10 | 44 项定向、162 项完整测试及全部静态门通过；未启动 Codex/MCP/Provider，attempt 3 未消耗 | 同步 capture 持久化在文件系统阻塞时可越过 180 秒；异步失败优先发布若在替换后阻塞，则返回时可能尚无可靠 fallback。两项要求在无限阻塞 I/O 假设下不能同时无条件成立 | M9-0004 标记 blocked；保留全部失败证据，停止实现与验证，向用户请求最小合同修订 |"
+      },
+      {
+        "line": 341,
+        "text": "| 2026-08-18 / M9-r06 AI attempt 3 | r04、冻结 Prompt/Context/双 Schema、正式 state 与 Token 前检全部通过后执行唯一 Codex 调用；无 Garmin/Gmail/Workout/Sites | Codex 返回 HTTP 400 `invalid_json_schema`：`schema_version` 子 Schema 只有 `const`、缺少显式 `type`；终态为 failed，无 AI result、pending 或 attempt 4 | 按冻结计划停止；不提交日报、报告或 workflow receipt，不执行第四次调用，M9-0004 设为 blocked |"
+      },
+      {
+        "line": 355,
+        "text": "| 2026-08-18 / M9 completion | 三类独立Validator全部PASS；M9-0001..0005完成，未提交、未推送、未迁移正式state、未启用任何外部写入 | r04 Candidate和owner-only报告保留供用户审核 | 归档计划并等待用户决定后续动作 |"
+      }
+    ]
+  }
+]
