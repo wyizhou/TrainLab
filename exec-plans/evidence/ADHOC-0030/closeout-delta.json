@@ -1,0 +1,85 @@
+{
+  "observed_at_utc": "2026-09-15T13:15:46.227372+00:00",
+  "verified_first_commit": "c302e67e63d4208d8cddaabcef3ee7659cb219d9",
+  "verified_pr": "https://github.com/wyizhou/TrainLab/pull/20",
+  "unchanged_first_commit_files": 114,
+  "changes": [
+    {
+      "before_path": "MEMORY.md",
+      "after_path": "MEMORY.md",
+      "before_sha256": "f96d090e965af64ea5b7a7daa2deb236a23eb84bd36671b69dad7127061daae0",
+      "after_sha256": "3918aba8b73e20d2739f6dba9ba0cadbbfd8c0ce9ccbf706d06d32961653aea1",
+      "reason": "Verified delivery facts/status or same-plan archive link only"
+    },
+    {
+      "before_path": "PLAN.md",
+      "after_path": "PLAN.md",
+      "before_sha256": "88a29c13b0da5a42e71118895d11d42cdef6addaaaf86dcb544a195b2a195450",
+      "after_sha256": "772ca5a47020aa960f648f0742b13e75e3ffc0cd1127eca427fe24ff8f69aec6",
+      "reason": "Verified delivery facts/status or same-plan archive link only"
+    },
+    {
+      "before_path": "exec-plans/active/ADHOC-0023-fit-data-classification-discussion.md",
+      "after_path": "exec-plans/active/ADHOC-0023-fit-data-classification-discussion.md",
+      "before_sha256": "75e078b2f81da644a9821e3a505242ba072f559f07a3fbfbb6308ca35113cd6e",
+      "after_sha256": "641a52b6c0fa24023c074196ef3a02bcb86b0c8008ba5b31c72e291c21d2a8b1",
+      "reason": "Verified delivery facts/status or same-plan archive link only"
+    },
+    {
+      "before_path": "exec-plans/active/ADHOC-0024-fit-sqlite-parser.md",
+      "after_path": "exec-plans/active/ADHOC-0024-fit-sqlite-parser.md",
+      "before_sha256": "4c78deff9953255849563f82cde2b147cc81a2d4fecb37a369de7b1ba6c03d35",
+      "after_sha256": "9497e84e5417ac67b82afc78aac7d0cd0558381109d5fd2f7cc9c320f8aed791",
+      "reason": "Verified delivery facts/status or same-plan archive link only"
+    },
+    {
+      "before_path": "exec-plans/active/ADHOC-0025-fit-running-query-tool.md",
+      "after_path": "exec-plans/active/ADHOC-0025-fit-running-query-tool.md",
+      "before_sha256": "b789b065dc5c984d1bcd00d8feaac33ae99af158f5b0377014397df40c9a4398",
+      "after_sha256": "93e1539da4047af765d49063616f85fb4988bf846182ae70156e64e17c8be2ff",
+      "reason": "Verified delivery facts/status or same-plan archive link only"
+    },
+    {
+      "before_path": "exec-plans/active/ADHOC-0026-tools-ai-index.md",
+      "after_path": "exec-plans/active/ADHOC-0026-tools-ai-index.md",
+      "before_sha256": "56e9a315b24994be9f7c4bf713257436c0f27ec76c1d1ab525c07fd7fe96503e",
+      "after_sha256": "481855f66076754c05ae693cea4ff2b5d8bab6f57cc6b3bdec68e155031ffee8",
+      "reason": "Verified delivery facts/status or same-plan archive link only"
+    },
+    {
+      "before_path": "exec-plans/active/ADHOC-0027-activity-ai-report.md",
+      "after_path": "exec-plans/active/ADHOC-0027-activity-ai-report.md",
+      "before_sha256": "6ea77aad0a441666bd645a67b25ead5e828873707edecf87b41ade37d3682782",
+      "after_sha256": "96eeb3b0ea835f065bb62b311a1d49bbc95130a1957495ee85daef0f055a4302",
+      "reason": "Verified delivery facts/status or same-plan archive link only"
+    },
+    {
+      "before_path": "exec-plans/active/ADHOC-0028-weekly-ai-report.md",
+      "after_path": "exec-plans/active/ADHOC-0028-weekly-ai-report.md",
+      "before_sha256": "1e9f27bcafbda449379cc8435a68ac5fe62a558d022376c27280937c85300a38",
+      "after_sha256": "90095382762f960984f762011026dc5fffa002675eca23d11e0d8b318b5bf2aa",
+      "reason": "Verified delivery facts/status or same-plan archive link only"
+    },
+    {
+      "before_path": "exec-plans/active/ADHOC-0030-retire-ci-and-publish.md",
+      "after_path": "exec-plans/completed/ADHOC-0030-retire-ci-and-publish.md",
+      "before_sha256": "d90ef863fd7eecf518a1624dcda7eb6b4e8d3a8b105d8ec1237d6d682ddc3a63",
+      "after_sha256": "833e6995dd6c17d2cfa8a0d12731aeb2e67054dec2d19120139940cac1fd4a8b",
+      "reason": "Verified delivery facts/status or same-plan archive link only"
+    },
+    {
+      "before_path": "exec-plans/evidence/ADHOC-0030/README.md",
+      "after_path": "exec-plans/evidence/ADHOC-0030/README.md",
+      "before_sha256": "500519b64e9ec8d85d3b4150c3c4feeb1b2ee3d409f518f8a37b1f131dd09dee",
+      "after_sha256": "78bd00211123ea5e27f9cd0ec11e588bccd2997ae2b0ee018fdfb42c126dd1c0",
+      "reason": "Verified delivery facts/status or same-plan archive link only"
+    }
+  ],
+  "new_evidence": [
+    "exec-plans/evidence/ADHOC-0030/closeout-delta.json",
+    "exec-plans/evidence/ADHOC-0030/first-publication.json",
+    "exec-plans/evidence/ADHOC-0030/staged-verification.json"
+  ],
+  "contract_and_task_requirements_unchanged": true,
+  "scope": "Only factual closeout/archival links and evidence. This file does not predict its own commit hash or claim its subsequent push has occurred."
+}

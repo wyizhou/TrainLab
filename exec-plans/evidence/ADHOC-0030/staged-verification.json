@@ -1,0 +1,36 @@
+{
+  "accepted_manifest_sha256": "5dfd6a0817f4e70b9f19a36870b331093b2f6d40d1c9b00923441e6108794237",
+  "index_file_count": 124,
+  "exact_names_modes_and_blob_bytes_match": true,
+  "memory_case_resolved": true,
+  "tree": "464dab9a4f81c323c66c60b907ed5570f54131c7",
+  "raw_cached_check": {
+    "command": [
+      "git",
+      "diff",
+      "--cached",
+      "--check"
+    ],
+    "exit": 2,
+    "stdout": "exec-plans/evidence/ADHOC-0029/closeout-status.diff:4: trailing whitespace.\n+ \nexec-plans/evidence/ADHOC-0029/closeout-status.diff:22: trailing whitespace.\n+ \nexec-plans/evidence/ADHOC-0029/closeout-status.diff:28: trailing whitespace.\n+ \nexec-plans/evidence/ADHOC-0029/closeout-status.diff:30: trailing whitespace.\n+ \nexec-plans/evidence/ADHOC-0029/closeout-status.diff:39: trailing whitespace.\n+ \nexec-plans/evidence/ADHOC-0029/closeout-status.diff:41: trailing whitespace.\n+ \nexec-plans/evidence/ADHOC-0029/closeout-status.diff:48: trailing whitespace.\n+ \nexec-plans/evidence/ADHOC-0029/closeout-status.diff:50: trailing whitespace.\n+ \nexec-plans/evidence/ADHOC-0029/closeout-status.diff:57: trailing whitespace.\n+ \nexec-plans/evidence/ADHOC-0029/closeout-status.diff:70: trailing whitespace.\n+ \nexec-plans/evidence/ADHOC-0029/closeout-status.diff:80: trailing whitespace.\n+ \nexec-plans/evidence/ADHOC-0029/closeout-status.diff:82: trailing whitespace.\n+ \nexec-plans/evidence/ADHOC-0029/closeout-status.diff:94: trailing whitespace.\n+ \nexec-plans/evidence/ADHOC-0029/closeout-status.diff:96: trailing whitespace.\n+ \nexec-plans/evidence/ADHOC-0029/closeout-status.diff:104: trailing whitespace.\n+ \nexec-plans/evidence/ADHOC-0029/closeout-status.diff:107: trailing whitespace.\n+ \nexec-plans/evidence/ADHOC-0029/closeout-status.diff:109: trailing whitespace.\n+ \nexec-plans/evidence/ADHOC-0029/closeout-status.diff:115: trailing whitespace.\n+ \nexec-plans/evidence/ADHOC-0029/closeout-status.diff:117: trailing whitespace.\n+ \n",
+    "stderr": ""
+  },
+  "ordinary_cached_check": {
+    "command": [
+      "git",
+      "diff",
+      "--cached",
+      "--check",
+      "--",
+      ".",
+      ":(exclude)exec-plans/evidence/ADHOC-0029/closeout-status.diff"
+    ],
+    "exit": 0
+  },
+  "historical_patch": {
+    "original_hash_unchanged": true,
+    "empty_context_markers": 19,
+    "parse_only_exit": 0
+  },
+  "note": "Exact immutable unified-diff payload is validated as patch data. No global whitespace rule changed; no diagnostic suppressed from this report."
+}

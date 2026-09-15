@@ -5,7 +5,7 @@
 | 事项 | 已确认的决定及理由 | 来源与日期 |
 | --- | --- | --- |
 | 当前脚手架 | 采用agentsmd固定提交768a3143；AGENTS和角色/执行计划模板直接采用上游。旧开发协议退出，PLAN/exec是任务状态来源，记忆不重复维护进度。 | 用户八项迁移要求及分支批准，2026-09-15；[迁移计划](exec-plans/completed/ADHOC-0029-agentsmd-upgrade.md) |
-| CI与Git交付 | 用户授权删除依赖已退役source的旧CI，提交/推送当前公开成果并创建PR；不合并main，不新增或主动运行远端CI，保留适用本地检查。此授权不改写原迁移的本地完成范围。 | 用户后续请求，2026-09-15；[交付记录](exec-plans/active/ADHOC-0030-retire-ci-and-publish.md) |
+| CI与Git交付 | 用户授权删除依赖已退役source的旧CI，提交/推送当前公开成果并创建PR；不合并main，不新增或主动运行远端CI，保留适用本地检查。此授权不改写原迁移的本地完成范围。 | 用户后续请求，2026-09-15；[交付记录](exec-plans/completed/ADHOC-0030-retire-ci-and-publish.md) |
 | 子任务派发 | 一次给齐材料，不追加消息、审批回执或续聊；结束后交全新实例。用户说明追加消息会影响回收，本轮未把此说明推广为已验证的平台普遍行为。 | 用户补充及当前AGENTS，2026-09-15 |
 | 产品方向 | 用户明确不修复/验证即将重构的旧代码；转为直接API。保存的next代码只是未验证快照，不代表可运行产品。 | 2026-09-15；[保存记录](exec-plans/completed/ADHOC-0019-adopt-next-before-api.md) |
 | 主动删除 | 用户已删除旧fit保全目录、将data改名states，随后删除source、根README/CHANGELOG/rules/CLAUDE；此次只按请求新增上游README，不恢复旧代码/数据。 | 用户确认，2026-09-15；当前Git与文件事实 |

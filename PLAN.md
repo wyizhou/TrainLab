@@ -1,7 +1,7 @@
 # PLAN.md
 
 - 总体状态：[exec]
-- 总目标及确认依据：按用户2026-09-15要求已完成agentsmd脚手架本地升级与验收；用户随后授权删除旧CI，并提交、推送当前公开工作区及创建PR。产品转向直接API的FIT数据/AI报告方向，已有五项开发计划保持未实施；旧M12及更早产品只保留历史事实，不自动恢复。
+- 总目标及确认依据：按用户2026-09-15要求已完成agentsmd脚手架本地升级与验收；用户随后授权的旧CI退役、当前公开工作区提交/推送及PR创建也已完成，PR #20尚未合并。产品转向直接API的FIT数据/AI报告方向，已有五项开发计划保持未实施；旧M12及更早产品只保留历史事实，不自动恢复。
 - 允许修改的范围：本次后续交付删除.github/workflows/ci.yml、同步必要的现行协调记录与证据，将已认可的公开成果和用户主动删除提交/推送到当前功能分支并创建main为base的PR；不合并main、不修改私人资料、不恢复旧产品、不改仓库设置或新增CI。ADHOC-0029原本地迁移范围与历史结果保持不变。
 - 整体验收标准：已完成迁移按ADHOC-0029的AC-01至AC-10；本次CI/Git交付按ADHOC-0030的RC-0030-01，经本地检查、全新独立验证与主验收后核实Git/PR实际结果。未来产品按各功能已确认目标实施并验收，不把脚手架或Git交付当产品完成。
 
@@ -10,7 +10,7 @@
 | 编号 | 状态 | 功能与预期结果 | 验收标准 | 依赖 | 执行计划链接 |
 | --- | --- | --- | --- | --- | --- |
 | ADHOC-0029 | [completed] | 最新agentsmd及全部协调记录迁移，退出旧入口 | AC-01..10；本地迁移、独立复验与主验收通过 | 用户八项要求与本地分支授权 | [执行计划](exec-plans/completed/ADHOC-0029-agentsmd-upgrade.md) |
-| ADHOC-0030 | [exec] | 删除旧CI并交付当前公开工作区的Git提交/推送/PR，不合并main | RC-0030-01 AC-01..06；独立与主验收、候选隐私/树一致性及实际Git/PR核对 | 已完成迁移及用户新交付授权；沿用同一功能分支 | [执行计划](exec-plans/active/ADHOC-0030-retire-ci-and-publish.md) |
+| ADHOC-0030 | [completed] | 旧CI退役，当前公开工作区已提交/推送并创建PR #20，不合并main | RC-0030-01 AC-01..06；独立与主验收通过，完整Git树与实际PR头核对完成 | 已完成迁移及用户新交付授权；沿用同一功能分支 | [执行计划](exec-plans/completed/ADHOC-0030-retire-ci-and-publish.md) |
 | ADHOC-0023 | [exec] | FIT/报告当前决定及实施边界，非产品代码 | 不丢已批准设计、不猜未知项 | 用户已确认设计 | [执行计划](exec-plans/active/ADHOC-0023-fit-data-classification-discussion.md) |
 | ADHOC-0024 | [plan] | activities十二列＋records四列，完整FIT入库 | 完整/缺失/顺序/事务；默认123 | ADHOC-0023及目录/容量条件 | [执行计划](exec-plans/active/ADHOC-0024-fit-sqlite-parser.md) |
 | ADHOC-0025 | [plan] | 唯一get_running_records(activity_id)，只跑步返回全部采样 | 真实sport和本次作用域、只读/全量/超限明确失败 | ADHOC-0024 | [执行计划](exec-plans/active/ADHOC-0025-fit-running-query-tool.md) |
@@ -20,7 +20,7 @@
 
 ## 当前关注
 
-- 当前关注：ADHOC-0030执行旧CI退役与当前公开成果的Git/PR交付；ADHOC-0029保持已完成，旧产品暂停，ADHOC-0024至0028未开始实施。
+- 当前关注：ADHOC-0030已完成，用户可审阅[PR #20](https://github.com/wyizhou/TrainLab/pull/20)，未合并main；ADHOC-0029保持已完成，旧产品暂停，ADHOC-0024至0028未开始实施。
 - 待确认事项：新产品代码落点/现有架构例外、当前本地测试入口及字段/容量/宿主权限等实现边界；旧CI退役已有明确授权，不重复询问已确认四表/UTC/报告身份。
 - 整体暂停原因：仅产品开发尚未进入本轮范围，source由用户主动删除；不恢复旧代码或旧真实任务。CI退役与Git交付不以启动产品为前提。
 - 恢复条件：用户明确启动产品功能，前置边界和实现拆解由主Agent审核后，按AGENTS使用全新子角色实施、独立验证、主验收。本次推送/PR前核对旧CI退役、实际自动触发规则及合并条件，不直接推送或合并main。

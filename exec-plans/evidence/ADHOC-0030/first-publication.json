@@ -1,0 +1,27 @@
+{
+  "observed_at_utc": "2026-09-15T13:09:24.734906+00:00",
+  "local_head": "c302e67e63d4208d8cddaabcef3ee7659cb219d9",
+  "remote_head": "c302e67e63d4208d8cddaabcef3ee7659cb219d9",
+  "main_unchanged": true,
+  "pr": {
+    "baseRefName": "main",
+    "baseRefOid": "ec36ce7bbdf9d70a509238dd771b155eb6f84261",
+    "changedFiles": 448,
+    "headRefName": "work/adhoc-0029-agentsmd-upgrade",
+    "headRefOid": "c302e67e63d4208d8cddaabcef3ee7659cb219d9",
+    "isDraft": false,
+    "mergeStateStatus": "CLEAN",
+    "mergeable": "MERGEABLE",
+    "mergedAt": null,
+    "number": 20,
+    "state": "OPEN",
+    "statusCheckRollup": [],
+    "url": "https://github.com/wyizhou/TrainLab/pull/20"
+  },
+  "actions_at_observation": {
+    "runs": [],
+    "total_count": 0
+  },
+  "worktree_clean": true,
+  "scope": "First publication verified. Subsequent factual closeout commit is not covered by these SHA values."
+}

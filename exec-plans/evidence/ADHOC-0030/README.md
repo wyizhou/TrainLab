@@ -2,7 +2,7 @@
 
 范围：按用户要求删除旧CI，保护当前公开成果及既有删除，经本地独立验证和主验收后提交、推送当前功能分支并创建PR；不合并main，不启动产品开发。
 
-- [当前执行计划](../../active/ADHOC-0030-retire-ci-and-publish.md)：RC-0030-01、任务状态、问题与实际交付记录。
+- [已归档执行计划](../../completed/ADHOC-0030-retire-ci-and-publish.md)：RC-0030-01、任务状态、问题与实际交付记录。
 - [合同与审核拆解](contract-and-plan.md)：冻结要求及独立验证输入，不附开发者辩护或历史裁决。
 - [公开原基线](baseline.json)：本轮前110公开文件及326个已有删除的摘要/路径，无私人文件内容或API下载链接。
 - [预冻结本地检查](checks-before-review.json)：113文件候选的180项检查，不替代后续完整冻结及独立验证。
@@ -12,6 +12,8 @@
 - [第二轮独立报告](validation-v2.md)、[受审快照](review-snapshot-v2.json)：118文件候选及本地交付前提通过；不预先证明Git/PR已交付。
 - [主验收](parent-acceptance.json)与[189项重跑结果](checks-parent-final.json)：主Agent亲自检查冻结候选及独立证据。
 - [验证原始证据](verification-evidence.zip)：validator/为独立检查，parent/为主检查脚本，11项；区分角色，不执行归档脚本。
+- [精确暂存原收据](staged-verification.json)：完整124文件及树464dab9a…，对应首次提交，不包含收据自身或后置归档。
+- [首次交付收据](first-publication.json)：c302e67三端一致、[PR #20](https://github.com/wyizhou/TrainLab/pull/20)为OPEN、main未变；观察时无检查或Actions运行。后置归档提交以PR最新头和最终报告为准。
 
 旧ADHOC-0029及更早证据保持原字节，本任务不会把其历史失败或INCONCLUSIVE改判。首轮临时检查器的异构元数据比较失败、主Agent过早假定CI已删除的观测错误、历史diff格式诊断和规则集403均保留于本任务问题记录，不计为新的产品失败。
 
