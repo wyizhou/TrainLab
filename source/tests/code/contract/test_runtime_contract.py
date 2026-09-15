@@ -25,8 +25,28 @@ from skills._shared.state import (  # noqa: E402
 
 
 def run_script(path: Path, *args: str) -> subprocess.CompletedProcess[str]:
+    # VC-005 retires these CLIs. Until their mapped capabilities move to M12,
+    # execute the unchanged functions against synthetic inputs, not a live route.
+    retained_for_migration = {
+        "skills/_shared/scripts/init_state.py",
+        "skills/training-coach/scripts/validate_course.py",
+        "skills/garmin-training-sender/scripts/prepare_gts.py",
+        "skills/gmail-sender/scripts/prepare_message.py",
+        "skills/training-report-publisher/scripts/render_report.py",
+    }
+    command = [PYTHON, str(path), *args]
+    if path.relative_to(ROOT).as_posix() in retained_for_migration:
+        command = [
+            PYTHON,
+            "-c",
+            "import runpy,sys; path=sys.argv.pop(1); sys.argv[0]=path; "
+            "namespace=runpy.run_path(path,run_name='migration_test'); "
+            "raise SystemExit(namespace['main']())",
+            str(path),
+            *args,
+        ]
     return subprocess.run(
-        [PYTHON, str(path), *args],
+        command,
         cwd=ROOT,
         text=True,
         capture_output=True,
@@ -54,15 +74,13 @@ def test_goal_module_and_private_mode(tmp_path: Path) -> None:
     assert result.returncode == 0, result.stdout + result.stderr
 
 
-def test_window_does_not_read_history() -> None:
+def test_old_health_window_command_is_retired() -> None:
     result = run_script(
         ROOT / "skills/garmin-sync/scripts/plan_window.py", "--run-date", "2026-08-15"
     )
-    payload = json.loads(result.stdout)
-    assert result.returncode == 0
-    assert payload["history_readback_days"] == 0
-    assert payload["activity_summary"] is False
-    assert payload["main_sleep_wake_date"] == "2026-08-15"
+    assert result.returncode == 1
+    assert result.stdout == ""
+    assert result.stderr.strip() == "legacy_runtime_retired"
 
 
 def test_state_schema_is_exact(tmp_path: Path) -> None:

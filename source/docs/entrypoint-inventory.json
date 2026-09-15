@@ -1,0 +1,330 @@
+{
+  "schema_version": "m12_entrypoint_inventory_v1",
+  "contract_version": "VC-005",
+  "baseline_commit": "25e8b92cd170809610d2e5feb4dbdb0033594ff2",
+  "policy": "此清单属于开发/退役验收，不由产品运行读取。retired 仅关闭直接入口；函数临时保留用于已映射迁移回归，不是新运行回退。",
+  "entries": [
+    {
+      "path": "skills/_shared/fit_weekly/detail_server.py",
+      "status": "current",
+      "purpose": "当前受限 FIT 细读；按冻结任务/活动/预算访问。",
+      "exit_task": "current_capability",
+      "baseline_sha256": "ca69b7a5a7df1830a4ab525d4544a3d916916594e884fd5cc4c6cf365a79db21"
+    },
+    {
+      "path": "skills/_shared/fit_weekly/legacy_import.py",
+      "status": "maintenance",
+      "purpose": "显式一次性 FIT 导入；非日常依赖，不自动读取旧实例。",
+      "exit_task": "current_capability",
+      "baseline_sha256": "e14ef49897b650bfab75e10f50f545c05670324e181edf4a30737f7be3e4bd79"
+    },
+    {
+      "path": "skills/_shared/scripts/archive_legacy.py",
+      "status": "maintenance",
+      "purpose": "显式归档、指纹与恢复检查；不启动旧业务。",
+      "exit_task": "current_capability",
+      "baseline_sha256": "6d99fa02327d4987c54bd4a3c6879d9b168eb2128f7373a2c8bd2d9b6e6dc8bc"
+    },
+    {
+      "path": "skills/_shared/scripts/backup_state.py",
+      "status": "maintenance",
+      "purpose": "旧库显式备份，仅供获批维护和回滚，不属 M12 新库运行。",
+      "exit_task": "explicit_maintenance_only",
+      "baseline_sha256": "240297a5c475ebb1ca481c8da8f955562a68d0b41ae6820437636a1c77e18d1a"
+    },
+    {
+      "path": "skills/_shared/scripts/build_m8_candidate.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "f9dd7244e7137c95917a46b7f066513c7911b142b4a884739a5c8c6a1fc498b0"
+    },
+    {
+      "path": "skills/_shared/scripts/init_state.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "3612cbbd95f2d7ba21abec04c96ea96eb30d4eac71122cd17139afe599af676e"
+    },
+    {
+      "path": "skills/_shared/scripts/m10_external_actions.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "088a25f97645a33a0ca980d2ce1b0e4fe03e0d16333b2ed427ac092eab769125"
+    },
+    {
+      "path": "skills/_shared/scripts/offline_workflow.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "85fbbef56cd926b19db7f47beb33001e9568e3fbca7b5237a1ec09637c7dba1d"
+    },
+    {
+      "path": "skills/_shared/scripts/resolve_slot.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "dd8a8fc7ceb2c7eb8af4468c9ee9f344efe2ba6c5e28dda2592f398d121f169f"
+    },
+    {
+      "path": "skills/_shared/scripts/restore_state.py",
+      "status": "maintenance",
+      "purpose": "旧库显式恢复维护，不自动恢复旧执行器。",
+      "exit_task": "explicit_maintenance_only",
+      "baseline_sha256": "3ffee5e724ea7a6c4bc24bd4f96afa40a84282a1ddac79e3102f19e3d45d05a0"
+    },
+    {
+      "path": "skills/_shared/scripts/validate_goal.py",
+      "status": "maintenance",
+      "purpose": "独立目标校验；供新实例配置检查。",
+      "exit_task": "current_capability",
+      "baseline_sha256": "eb13c6a1bf0749d7fc9783d1d052c7c152e9dbb6517f78a9e123bda6e857a07c"
+    },
+    {
+      "path": "skills/_shared/scripts/verify_m8_artifacts.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "d2dacbcdf9f45ffab81310735d64c14773eeabbc261e0c98aa80d60e289c616c"
+    },
+    {
+      "path": "skills/_shared/scripts/verify_state.py",
+      "status": "maintenance",
+      "purpose": "旧库显式核验维护，不将六表作为 M12 运行要求。",
+      "exit_task": "explicit_maintenance_only",
+      "baseline_sha256": "292138b4ff7b73f0c45291f01234fee6d84f9668fd7b5d2ab94d2d562a8d7326"
+    },
+    {
+      "path": "skills/_shared/scripts/write_workflow_receipt.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "7e3f2318fd80125b69c257585139ecea2e6c143390464c117159d9368fbac6cf"
+    },
+    {
+      "path": "skills/garmin-sync/scripts/build_candidate.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "8d0549d4ac4cd61fd48fbad0e95e437ae0c6cbca2e3ccf5adce58fadbdc3234e"
+    },
+    {
+      "path": "skills/garmin-sync/scripts/complete_live_daily.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "7b2ccf18348820c4fe3165e7153707b117b73f702142acdc38357157175e66da"
+    },
+    {
+      "path": "skills/garmin-sync/scripts/index_raw.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "e1ac6d10d50aa07e2018dbf3a503eca5453975d186eb8774fd7bd0d91810c382"
+    },
+    {
+      "path": "skills/garmin-sync/scripts/live_sync.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "792c2c71a30450dbe869f60fc36c55e55e6c3b8efdcc523d43a577b6b261f646"
+    },
+    {
+      "path": "skills/garmin-sync/scripts/mcp_server_guard.py",
+      "status": "current",
+      "purpose": "当前 FIT 采集所需缓存认证/工具白名单防护。",
+      "exit_task": "current_capability",
+      "baseline_sha256": "665badff53c3eca0e87ae6208b405ae0ff4cf9d27697a0c334ac69179a77d93c"
+    },
+    {
+      "path": "skills/garmin-sync/scripts/plan_window.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "3084ca2295b1835c789bfd823afae63dba6e5e0cb9394fda4c58cb50b96f4fc4"
+    },
+    {
+      "path": "skills/garmin-sync/scripts/rolling_week_sync.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "bd05a4e1df6950051637fd0afdb3689cbe059d614cc5687d6c08de1dea34ae39"
+    },
+    {
+      "path": "skills/garmin-training-sender/scripts/prepare_gts.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "bfa772c67edcd18974054c34b2e83cb651a5ed039f7f008ecef1f1e5f788b113"
+    },
+    {
+      "path": "skills/gmail-sender/scripts/gmail_readable_delivery.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "e47a8c2e3521d1f08c468b656c56ebfb804aa62656d65c69e30d5c4b748f8be6"
+    },
+    {
+      "path": "skills/gmail-sender/scripts/gmail_readable_live.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "e9272604022d04f2f136e0372f1eb3b3d1140089eb4cd8338f8e840b5aff1cd4"
+    },
+    {
+      "path": "skills/gmail-sender/scripts/gmail_rest_auth.py",
+      "status": "maintenance",
+      "purpose": "独立 Gmail OAuth；只显式认证，禁止历史投递入口。",
+      "exit_task": "current_capability",
+      "baseline_sha256": "a9d6560e11152811e9caac399d56029a301eecf0fc55da231da060bb5a8e2632"
+    },
+    {
+      "path": "skills/gmail-sender/scripts/gmail_rest_continuation.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "2761c30e2b9be9a7e931d22cc38dc191931497b0a072dd8753df5da5feeb4bd7"
+    },
+    {
+      "path": "skills/gmail-sender/scripts/gmail_rest_delivery.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "a22c277bf9d8907ba38ca27f23af114a132ed74026b876ddb55229ccc6859188"
+    },
+    {
+      "path": "skills/gmail-sender/scripts/prepare_message.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "e4dbb2358d794f2532b6ebb3aa0ba3bf8c083c04d1e00d19f0f6159d40b2f0cc"
+    },
+    {
+      "path": "skills/training-coach/scripts/activity_evidence.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "080d0761c06f9c8522ad3f3304e933d67fb260e6fa257035907d38f100fdf577"
+    },
+    {
+      "path": "skills/training-coach/scripts/activity_segment.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "b497e0c13b91d0db9af883d2fb8cff66ade99bb78595959a55199ee7c75b162c"
+    },
+    {
+      "path": "skills/training-coach/scripts/build_context.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "954d4f5b706387999642954e3db3858849b9beffe3028e93f80f00802ca8be0f"
+    },
+    {
+      "path": "skills/training-coach/scripts/commit_ai_result.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "00429c65a7583e8202c3fefc5cddcb73fedb4f808c83f47abfb4896cf3a6cb06"
+    },
+    {
+      "path": "skills/training-coach/scripts/create_ai_prompt.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "c49cf3d56e0b65b3374f663a8efd46c636b9350abc5090201ac7981887e350c8"
+    },
+    {
+      "path": "skills/training-coach/scripts/parse_raw.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "e2e089c0250afac00b2ad39e46750577eb06386abcef473bc15ce95b223bc477"
+    },
+    {
+      "path": "skills/training-coach/scripts/run_rolling_week.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "3cae8b72b74e99298ff78da4338039f4f0839634d3870eb6f9b9156a9acfa71f"
+    },
+    {
+      "path": "skills/training-coach/scripts/run_schema_canary.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "aeee8fd2617523eef062e6fcf653aac01e30c6faedc9393afef68a280bb69d65"
+    },
+    {
+      "path": "skills/training-coach/scripts/run_weekly_content_v4_v3.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "ba3afbab472c410095e0c939e0fb7677e400704791fa13abdf3fba48df7f4bd9"
+    },
+    {
+      "path": "skills/training-coach/scripts/run_weekly_content_v4.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "68c83bd169c0f4429fa8f08060a65ae2b937b1c4fa5ac38d527317722edee019"
+    },
+    {
+      "path": "skills/training-coach/scripts/validate_course.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "d7f94ec90b454c24ac3dc1b6a0c2f4b0e8f5ef98082279799cdb7c45b0a29fba"
+    },
+    {
+      "path": "skills/training-report-publisher/scripts/build_m11_preview_candidate.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "7cc31cd66422e38d5b224701c0ad08c398eb393c7f2bec170e0711803bb3dd8c"
+    },
+    {
+      "path": "skills/training-report-publisher/scripts/build_m11_v3_candidate.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "9082e58d44a9393a39040a45d70430e1b34359fc572e888a7bfdcad405a27a70"
+    },
+    {
+      "path": "skills/training-report-publisher/scripts/build_m11_v4_candidate_v3.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "6fe1dd943d43c87fecb322f28c6c9f8f601af583cb4de7e3de7f0ff960f12ea4"
+    },
+    {
+      "path": "skills/training-report-publisher/scripts/build_m11_v4_candidate.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "f622407aa209bd26b1462f6a4d0c01e4cb7e5fcfd43c27b6cefb42575700a5f9"
+    },
+    {
+      "path": "skills/training-report-publisher/scripts/render_email_v2.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "06ae2a790e6c5ea533f0a4848ce5d86ca42f6f10dc947b75d92baa50c83a9aaa"
+    },
+    {
+      "path": "skills/training-report-publisher/scripts/render_report.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "96cd48b7f6d5c7d71b519eadfa74d638e1b86f12aec41dbf74bac3c785481cfa"
+    },
+    {
+      "path": "skills/weekly-fitness-summary/scripts/select_history.py",
+      "status": "retired",
+      "purpose": "旧固定批次/日报/健康/HTML 业务命令退出；仅供 legacy-test-mapping.json 中待迁移场景使用。",
+      "exit_task": "M12-0005",
+      "baseline_sha256": "6e45d087f25885c8b6aacacc8479abb33e3d212deefd3c8367a47c4370a7048c"
+    }
+  ]
+}

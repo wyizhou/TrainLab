@@ -313,7 +313,7 @@ def _token_dir(root: Path) -> Path:
     return tokens
 
 
-def test_live_sync_cli_loads_from_repository_root_without_pythonpath() -> None:
+def test_old_live_sync_cli_is_retired_without_pythonpath() -> None:
     environment = dict(os.environ)
     environment.pop("PYTHONPATH", None)
     environment["PYTHONDONTWRITEBYTECODE"] = "1"
@@ -330,10 +330,9 @@ def test_live_sync_cli_loads_from_repository_root_without_pythonpath() -> None:
         text=True,
         timeout=10,
     )
-    assert result.returncode == 0
-    assert "--source-root" in result.stdout
-    assert "--database" in result.stdout
-    assert "--token-dir" in result.stdout
+    assert result.returncode == 1
+    assert result.stdout == ""
+    assert result.stderr.strip() == "legacy_runtime_retired"
 
 
 @pytest.mark.parametrize(
@@ -343,7 +342,7 @@ def test_live_sync_cli_loads_from_repository_root_without_pythonpath() -> None:
         ("skills/garmin-sync/scripts/complete_live_daily.py", "--run-root"),
     ],
 )
-def test_daily_offline_clis_load_from_repository_root_without_pythonpath(
+def test_old_daily_offline_clis_are_retired_without_pythonpath(
     relative_script: str, required_flag: str
 ) -> None:
     environment = dict(os.environ)
@@ -358,8 +357,10 @@ def test_daily_offline_clis_load_from_repository_root_without_pythonpath(
         text=True,
         timeout=10,
     )
-    assert result.returncode == 0, result.stderr
-    assert required_flag in result.stdout
+    assert result.returncode == 1
+    assert required_flag not in result.stdout
+    assert result.stdout == ""
+    assert result.stderr.strip() == "legacy_runtime_retired"
 
 
 def _seal_source(source: Path) -> None:

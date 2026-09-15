@@ -5826,7 +5826,7 @@
       "baseline_sha256": "9fde9795e18775dc0d0495a9080d3593e4af52137a3a6f85cabf5b0e30c42e70",
       "baseline_function_count": 44,
       "file_status": "temporary_migration",
-      "current_sha256": "9fde9795e18775dc0d0495a9080d3593e4af52137a3a6f85cabf5b0e30c42e70",
+      "current_sha256": "b8a6907e00133ae0be9ce8972c83c7fa8c0f18ede06582f6be22fc420d71b5dc",
       "temporary_reason": "仅在适用安全场景提取期间保留；不作为M12运行依赖、旧业务授权或最终完成证据。",
       "exit_task": "M12-0005",
       "scenarios": [
@@ -5837,7 +5837,9 @@
           "criterion_ids": [
             "RET-004"
           ],
-          "existing_nodes": [],
+          "existing_nodes": [
+            "tests/code/contract/test_m9_garmin_live.py::test_old_live_sync_cli_is_retired_without_pythonpath"
+          ],
           "proposed_nodes": [],
           "exit_task": "M12-0003n",
           "reason": "旧sync/daily CLI从仓库根加载的参数契约退出；M12公开入口由新CLI交付测试验证，不能保留旧入口作为兼容执行器。",
@@ -5855,7 +5857,9 @@
           "criterion_ids": [
             "RET-004"
           ],
-          "existing_nodes": [],
+          "existing_nodes": [
+            "tests/code/contract/test_m9_garmin_live.py::test_old_daily_offline_clis_are_retired_without_pythonpath"
+          ],
           "proposed_nodes": [],
           "exit_task": "M12-0003n",
           "reason": "旧sync/daily CLI从仓库根加载的参数契约退出；M12公开入口由新CLI交付测试验证，不能保留旧入口作为兼容执行器。",
@@ -6770,8 +6774,8 @@
       "baseline_sha256": "aae9467c89a78d1eee7a9e29188ab3387501863ec97a4e5c9e8e1e904231e871",
       "baseline_function_count": 14,
       "file_status": "temporary_migration",
-      "current_sha256": "aae9467c89a78d1eee7a9e29188ab3387501863ec97a4e5c9e8e1e904231e871",
-      "temporary_reason": "仅在适用安全场景提取期间保留；不作为M12运行依赖、旧业务授权或最终完成证据。",
+      "current_sha256": "47be9146a54bc620bafdf65fdb0e37c415a4cd29e29fdd0599a4e029e7236cfc",
+      "temporary_reason": "旧CLI已关闭；仅在隔离合成测试中直接调用未改变的迁移函数，保留剂量/转义/旧库备份恢复/幂等断言，不作为M12运行入口。对应能力接替后退出。",
       "exit_task": "M12-0005",
       "scenarios": [
         {
@@ -6805,7 +6809,9 @@
             "AC-001",
             "RET-004"
           ],
-          "existing_nodes": [],
+          "existing_nodes": [
+            "tests/code/contract/test_runtime_contract.py::test_old_health_window_command_is_retired"
+          ],
           "proposed_nodes": [],
           "exit_task": "M12-0003n",
           "reason": "取消旧wake-day/no history每日窗口，当前每周输入规则不同。",
@@ -11933,6 +11939,7 @@
     "tests/code/contract/test_email_delivery_v2.py",
     "tests/code/contract/test_email_design_v3.py",
     "tests/code/contract/test_email_mime_v2.py",
+    "tests/code/contract/test_legacy_entrypoint_retirement.py",
     "tests/code/contract/test_m10_gmail_rest.py",
     "tests/code/contract/test_m10_gmail_rest_continuation.py",
     "tests/code/contract/test_m10_live_e2e.py",

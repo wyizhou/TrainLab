@@ -33,6 +33,7 @@
 - Gmail 只用官方 REST，正常原子刷新专用 Token；单次发送，unknown 只读对账。
   Garmin 只能管理已知自有 ID；历史成功验收不授权新的在线动作。
 - 根 references 仅按用户主动请求维护，不自动沉淀开发结论。
+- 2026-09-14：pi-subagents native fresh 子进程已实测完成（smoke run `99563d59-058a-475e-8633-431e2d3a23cf`）；原接口缺失阻塞已解除。该证据只证明调度可用，不替代产品验证。
 
 ## 验证入口
 
@@ -46,11 +47,13 @@
 - 根目录执行 git diff --check；完整检查包含 tracked 与 untracked 文件。
 - 旧 macOS 专用 Candidate 的 Linux CI 失败记录仍保留；不得把 macOS 通过称为 Linux 已验证。
 
-## 唯一活动计划
+## 当前活动指针
 
-[ M12 FIT-only 周系统重建 ](docs/exec-plans/active/M12-fit-weekly-0001-rebuild.md)。
+2026-09-14 用户明确后续转向直接API接入、不再依赖其他产品Agent；当前[ADHOC-0019](docs/exec-plans/active/ADHOC-0019-adopt-next-before-api.md)按新授权将既有Goal保留到`data/Goal.md`，先做主目录本地检查点，再以next现行代码接回主工程，验证后本地提交及正常推送。不含API实现或真实服务调用，外部原目录不删除。此前[ADHOC-0017保全阶段](docs/exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md)结束后，用户另行批准[data目录精简及FIT年份命名](docs/exec-plans/active/ADHOC-0018-data-fit-year-cleanup.md)，清理任务的独立验收仍为INCONCLUSIVE；后续只读补证确认，所查旧recovery对应现存来源的565种FIT字节均已包含在当前566份中，没有新增补充候选，但已删副本本身无法重哈希。未宣告整个任务完成。data的资料目录为fit及verification：566份FIT按香港运动开始日期/英文类型命名，重名加序号，11份解码或运动信息不明文件保留到unknown；认证入口为`data/verification/garmin.json`及`gmail.json`。旧data/README、config、recovery和多余认证副本已按新授权删除，旧证据路径仅作历史定位，不作为当前入口；界外原件保留。不包含令牌在线有效性或SQLite一致性验收，API实现尚未启动，真实R7和旧失败修复不自动续跑；新的代码接回仅按ADHOC-0019边界执行。
 
-当前0003n按VC-005进行依赖与验收收敛；首批公共资源、周输入与安全接替已获全新独立PASS，macOS/Linux完整回归均3049项通过。提交推送/CI和其余旧CLI退出仍待完成，不等于M12交付。修改前保护/恢复副本及正式state不变。旧M9停止确认失败原因仍未确定，不声称已修复。0004–0006未进入真实调用。
+原 [M12 FIT-only 周系统重建](docs/exec-plans/active/M12-fit-weekly-0001-rebuild.md)暂停续跑，以下为其历史检查点，不是本轮执行指令。
+
+当前0003n按VC-005进行依赖与验收收敛；首批公共资源、周输入与安全接替已获全新独立PASS，提交25e8b92已推送，远端macOS/Linux完整CI均3049项通过。剩余旧CLI退出正在验收，不等于M12交付。修改前保护/恢复副本及正式state不变。旧M9停止确认失败原因仍未确定，不声称已修复。0004–0006未进入真实调用。
 
 ## 历史交付定位
 
