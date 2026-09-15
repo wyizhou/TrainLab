@@ -1,0 +1,1521 @@
+{
+  "docs/exec-plans/active/ADHOC-0018-data-fit-year-cleanup.md": {
+    "identifiers": [
+      "A-004",
+      "AC-01",
+      "AC-02",
+      "AC-03",
+      "AC-04",
+      "AC-05",
+      "AC-06",
+      "ADHOC-0017",
+      "ADHOC-0018",
+      "ADHOC-0018-Validator",
+      "GATE-01",
+      "GATE-02",
+      "SHA-256",
+      "U-01",
+      "VC-001",
+      "VC-001-BEGIN",
+      "VC-001-END",
+      "YYYYMMDD-english-sport"
+    ],
+    "entries": [
+      {
+        "line": 37,
+        "text": "| S3 独立核对与交付 | blocked | 独立核对已返回INCONCLUSIVE；等待人工澄清FIT保留集合，不修改合同/数据或自动重验 |"
+      },
+      {
+        "line": 52,
+        "text": "- 独立验证结束：native async workflow `b9f26dc2-1f6e-4217-a3f6-352da0bb30cd`，key `adhoc-0018-final-validator`，child `76d5ca3b-c518-4796-ba4e-a0870e00acf0`；总体`INCONCLUSIVE`，不是FAIL或PASS。实际报告：`/Users/lucas/.pi/agent/sessions/--Volumes-DiskOther-Code-TrainLab--/subagent-artifacts/outputs/b9f26dc2-1f6e-4217-a3f6-352da0bb30cd/adhoc-0018-data-layout-validation.md`。"
+      },
+      {
+        "line": 54,
+        "text": "- AC-02/GATE-01为INCONCLUSIVE（U-01）：精确删除清单共16499个FIT路径，其中566个源在保留清单，另15933个全部位于已明确可删除的recovery树。后者只有lstat，无本轮删除前SHA；大小能匹配保留文件不等于字节证明，不能声称它们全是566份的重复字节。合同同时写“全部现有FIT”及允许整体删除recovery，集合关系不明确。Main已如实答复，不补造授权、不引用旧PASS、不改判。尚无证据证明违反保留要求，也无证据支持无条件全部保留。"
+      },
+      {
+        "line": 55,
+        "text": "- 用户后续选择先检查旧FIT是否重复及能否补充，未确认缩窄合同。只读补证见下节；本轮不升合同、不追加删除/恢复或自动重验，不改旧代码，也不将历史INCONCLUSIVE回写成PASS。"
+      },
+      {
+        "line": 73,
+        "text": "2026-09-14：用户批准序号及unknown，Main冻结VC-001后实施一次性整理/删除；当前566份FIT和两份认证完整，独立实测其命名/字节/权限/原件边界通过，但旧recovery中15933个额外FIT没有删除前SHA，保留集合语义不明确，总体INCONCLUSIVE。未修改旧代码、追加删除或自动重试。用户随后要求只读查看是否重复/能否补充；本轮实查8722个现存来源，565种字节全部已在data/fit，新增候选0；该补证不是对已删副本直接重哈希，不改旧裁决。"
+      }
+    ],
+    "complete_source": "history.zip::docs/exec-plans/active/ADHOC-0018-data-fit-year-cleanup.md",
+    "sha256": "5bffadd9bec6db8efe98f235021fe4842ad74c7f9b0cf91d9994f69a3d57a364",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/active/ADHOC-0023-fit-data-classification-discussion.md": {
+    "identifiers": [
+      "A-021",
+      "ADHOC-0023",
+      "ADHOC-0024",
+      "ADHOC-0024-fit-sqlite-parser",
+      "ADHOC-0025",
+      "ADHOC-0025-fit-running-query-tool",
+      "ADHOC-0026",
+      "ADHOC-0026-tools-ai-index",
+      "ADHOC-0027",
+      "ADHOC-0027-activity-ai-report",
+      "ADHOC-0028",
+      "ADHOC-0028-weekly-ai-report",
+      "SHA-256"
+    ],
+    "entries": [],
+    "complete_source": "history.zip::docs/exec-plans/active/ADHOC-0023-fit-data-classification-discussion.md",
+    "sha256": "324b492c943e30331bac1b4117688ae14a4d72a1945c6d4b2b085e2dff34af84",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/active/ADHOC-0024-fit-sqlite-parser.md": {
+    "identifiers": [
+      "A-001",
+      "A-002",
+      "A-004",
+      "A-009",
+      "A-016",
+      "A-019",
+      "A-020",
+      "A-021",
+      "A-022",
+      "A-023",
+      "AC-01",
+      "AC-02",
+      "AC-03",
+      "AC-04",
+      "AC-05",
+      "ADHOC-0023",
+      "ADHOC-0023-fit-data-classification-discussion",
+      "ADHOC-0024",
+      "ADHOC-0025-fit-running-query-tool",
+      "ADHOC-0026-tools-ai-index",
+      "ADHOC-0027",
+      "ADHOC-0027-activity-ai-report",
+      "ADHOC-0028",
+      "ADHOC-0028-weekly-ai-report",
+      "GATE-01",
+      "GATE-02",
+      "GATE-03",
+      "SHA-256",
+      "VC-001"
+    ],
+    "entries": [],
+    "complete_source": "history.zip::docs/exec-plans/active/ADHOC-0024-fit-sqlite-parser.md",
+    "sha256": "a68c06f23d218f089b3f9e102cef87dab15823d61868d47ec98d7c484a3968d5",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/active/ADHOC-0025-fit-running-query-tool.md": {
+    "identifiers": [
+      "A-002",
+      "A-004",
+      "A-009",
+      "A-016",
+      "A-019",
+      "A-020",
+      "A-021",
+      "A-022",
+      "A-023",
+      "AC-01",
+      "AC-02",
+      "AC-03",
+      "AC-04",
+      "AC-05",
+      "ADHOC-0023",
+      "ADHOC-0023-fit-data-classification-discussion",
+      "ADHOC-0024-fit-sqlite-parser",
+      "ADHOC-0025",
+      "ADHOC-0026-tools-ai-index",
+      "ADHOC-0027-activity-ai-report",
+      "ADHOC-0028-weekly-ai-report",
+      "GATE-01",
+      "GATE-02",
+      "GATE-03",
+      "VC-001"
+    ],
+    "entries": [],
+    "complete_source": "history.zip::docs/exec-plans/active/ADHOC-0025-fit-running-query-tool.md",
+    "sha256": "4eb12742c6a1badf46ace22b6ee035c6c7c5abc50237cbfa603b88ee48147b3a",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/active/ADHOC-0026-tools-ai-index.md": {
+    "identifiers": [
+      "A-002",
+      "A-004",
+      "A-009",
+      "A-019",
+      "A-020",
+      "A-021",
+      "A-022",
+      "A-023",
+      "AC-01",
+      "AC-02",
+      "AC-03",
+      "AC-04",
+      "ADHOC-0023",
+      "ADHOC-0023-fit-data-classification-discussion",
+      "ADHOC-0024-fit-sqlite-parser",
+      "ADHOC-0025-fit-running-query-tool",
+      "ADHOC-0026",
+      "ADHOC-0027-activity-ai-report",
+      "ADHOC-0028-weekly-ai-report",
+      "GATE-01",
+      "GATE-02",
+      "GATE-03",
+      "VC-001"
+    ],
+    "entries": [],
+    "complete_source": "history.zip::docs/exec-plans/active/ADHOC-0026-tools-ai-index.md",
+    "sha256": "1e5950103a2bd0a2d9b41369108984dce004d7ff0f95b7430a672c534fa151b2",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/active/ADHOC-0027-activity-ai-report.md": {
+    "identifiers": [
+      "AC-01",
+      "AC-02",
+      "AC-03",
+      "AC-04",
+      "ADHOC-0023",
+      "ADHOC-0023-fit-data-classification-discussion",
+      "ADHOC-0024",
+      "ADHOC-0024-fit-sqlite-parser",
+      "ADHOC-0027",
+      "ADHOC-0028-weekly-ai-report",
+      "GATE-01",
+      "GATE-02",
+      "GATE-03",
+      "VC-001"
+    ],
+    "entries": [],
+    "complete_source": "history.zip::docs/exec-plans/active/ADHOC-0027-activity-ai-report.md",
+    "sha256": "4f5269ff37998f856410e06215947648ec56d7332b0c732e6e4b32bbbd994ba3",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/active/ADHOC-0028-weekly-ai-report.md": {
+    "identifiers": [
+      "AC-01",
+      "AC-02",
+      "AC-03",
+      "AC-04",
+      "ADHOC-0023",
+      "ADHOC-0023-fit-data-classification-discussion",
+      "ADHOC-0024",
+      "ADHOC-0024-fit-sqlite-parser",
+      "ADHOC-0027-activity-ai-report",
+      "ADHOC-0028",
+      "GATE-01",
+      "GATE-02",
+      "GATE-03",
+      "VC-001"
+    ],
+    "entries": [],
+    "complete_source": "history.zip::docs/exec-plans/active/ADHOC-0028-weekly-ai-report.md",
+    "sha256": "d9bdd9550d09e8ef9d0a3e60d4471ef7c13747d70ea034afb32eb11f625b723c",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/active/M12-fit-weekly-0001-rebuild.md": {
+    "identifiers": [
+      "A-023",
+      "AC-001",
+      "AC-002",
+      "AC-003",
+      "AC-004",
+      "AC-005",
+      "AC-006",
+      "AC-007",
+      "AC-008",
+      "AC-009",
+      "AC-010",
+      "AC-011",
+      "AC-012",
+      "AC-013",
+      "AC-014",
+      "AC-015",
+      "AC-016",
+      "AC-017",
+      "AC-018",
+      "ADHOC-0017",
+      "ADHOC-0017-consolidate-pre-api-baseline",
+      "ADV-001",
+      "CONSOLIDATE-20260914",
+      "EX-001",
+      "FIT-only",
+      "GATE-001",
+      "GATE-002",
+      "GATE-003",
+      "INV-001",
+      "INV-002",
+      "M12-0003n",
+      "M12-fit-weekly-0001-rebuild",
+      "M9-M11",
+      "RET-001",
+      "RET-002",
+      "RET-003",
+      "RET-004",
+      "RET-005",
+      "RET-006",
+      "TM-001",
+      "VC-002",
+      "VC-004",
+      "VC-005"
+    ],
+    "entries": [],
+    "complete_source": "history.zip::docs/exec-plans/active/M12-fit-weekly-0001-rebuild.md",
+    "sha256": "d156f2309611cabe373a2a32631d57e434d3d538199ee5553bd89c644e204696",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md": {
+    "identifiers": [
+      "A-001",
+      "A-002",
+      "ADHOC-0001",
+      "ADHOC-0001-validator",
+      "ADHOC-0001-validator-r02",
+      "ADHOC-0001-validator-r03"
+    ],
+    "entries": [
+      {
+        "line": 146,
+        "text": "| 2026-08-12 / Loop 1 续 | 三轮全新只读验证：前两轮分别发现 memory/派发状态与 MIT 文本问题，修正后第三轮完整 PASS | 全部验收项满足 | 归档并交付 |"
+      }
+    ],
+    "complete_source": "history.zip::docs/exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md",
+    "sha256": "090bf95f5fb6196805e0447ef493d17caed20157308d536cb0ca75131327f919",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/ADHOC-0002-repository-root-cleanup.md": {
+    "identifiers": [
+      "A-001",
+      "A-002",
+      "A-003",
+      "ADHOC-0002",
+      "ADHOC-0002-validator",
+      "ADHOC-0002-validator-r01",
+      "E-04"
+    ],
+    "entries": [],
+    "complete_source": "history.zip::docs/exec-plans/completed/ADHOC-0002-repository-root-cleanup.md",
+    "sha256": "ecb08c926a8e08eaf68001e1ebbb7a28a80a7b463c475abdd63376dd09aa7fb4",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/ADHOC-0003-generated-and-crash-artifact-cleanup.md": {
+    "identifiers": [
+      "A-001",
+      "A-002",
+      "A-003",
+      "ADHOC-0002",
+      "ADHOC-0003",
+      "ADHOC-0003-validator"
+    ],
+    "entries": [],
+    "complete_source": "history.zip::docs/exec-plans/completed/ADHOC-0003-generated-and-crash-artifact-cleanup.md",
+    "sha256": "0f683f0f786f5dea981c3275c83820811bcc72c1b0332e5f55979f2c388a022a",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/ADHOC-0004-support-directory-classification.md": {
+    "identifiers": [
+      "A-001",
+      "A-002",
+      "A-003",
+      "ADHOC-0002",
+      "ADHOC-0003",
+      "ADHOC-0004",
+      "ADHOC-0004-validator"
+    ],
+    "entries": [],
+    "complete_source": "history.zip::docs/exec-plans/completed/ADHOC-0004-support-directory-classification.md",
+    "sha256": "79353e47570b03bd2247533f1810170029e670a50171369b6c18028478a72ce3",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/ADHOC-0005-authentication-health-check.md": {
+    "identifiers": [
+      "A-001",
+      "A-002",
+      "A-003",
+      "A-004",
+      "ADHOC-0005"
+    ],
+    "entries": [],
+    "complete_source": "history.zip::docs/exec-plans/completed/ADHOC-0005-authentication-health-check.md",
+    "sha256": "f960d9d53bbf8f7d32d405b01e7dd3c0b6f0282898d975495c4667c5678663bc",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/ADHOC-0006-garmin-token-sync.md": {
+    "identifiers": [
+      "A-001",
+      "A-002",
+      "A-003",
+      "A-004",
+      "ADHOC-0005",
+      "ADHOC-0006",
+      "SHA-256"
+    ],
+    "entries": [],
+    "complete_source": "history.zip::docs/exec-plans/completed/ADHOC-0006-garmin-token-sync.md",
+    "sha256": "098b72e36b87480bd9bf9a95ea2aaf44714bb6eb469f4801dab8e6aca56fd7e4",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/ADHOC-0007-production-backfill-and-monitor.md": {
+    "identifiers": [
+      "A-001",
+      "A-002",
+      "A-003",
+      "A-004",
+      "ADHOC-0005",
+      "ADHOC-0007"
+    ],
+    "entries": [],
+    "complete_source": "history.zip::docs/exec-plans/completed/ADHOC-0007-production-backfill-and-monitor.md",
+    "sha256": "a381d45672ca328d4b39223b9c380f9f8e5c661501663248a9691da3ce9be9c9",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md": {
+    "identifiers": [
+      "A-001",
+      "A-002",
+      "A-003",
+      "A-004",
+      "A3-01",
+      "ADHOC-0007",
+      "ADHOC-0008"
+    ],
+    "entries": [
+      {
+        "line": 75,
+        "text": "| 1 | Validator / final | 高风险结构迁移 | high | high | 必须独立覆盖结构、测试与隐私 | supported | 只读 | PASS/FAIL/INCONCLUSIVE | FAIL；3728 passed/9 failed，并发现解包前资产白名单与 instance root cwd 回退两项边界缺口 |"
+      }
+    ],
+    "complete_source": "history.zip::docs/exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md",
+    "sha256": "06390e176bd1b246b5b919b8ece115dd919062d0c998f56757f79e3ce8447c84",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md": {
+    "identifiers": [
+      "A-001",
+      "A-004",
+      "A-007",
+      "ADHOC-0009",
+      "SHA-256"
+    ],
+    "entries": [],
+    "complete_source": "history.zip::docs/exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md",
+    "sha256": "b6494703ef05bfede6f206ac0345ad5f48e34642461aa0134549fcd99061d698",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md": {
+    "identifiers": [
+      "A-001",
+      "A-004",
+      "A-007",
+      "ADHOC-0009",
+      "ADHOC-0010",
+      "SHA-256"
+    ],
+    "entries": [],
+    "complete_source": "history.zip::docs/exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md",
+    "sha256": "31471797c0e6c80dfbafacddd6a40139e52ac5f9e90c033573882746d32a7be2",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md": {
+    "identifiers": [
+      "ADHOC-0011",
+      "ADHOC-0011-0001",
+      "ADHOC-0011-0002",
+      "ADHOC-0011-0003",
+      "ADHOC-0011-0004",
+      "D-1",
+      "R-001",
+      "R-002",
+      "R-003",
+      "R-004",
+      "R-005",
+      "R-006",
+      "R-007",
+      "R-008",
+      "R-009",
+      "R-010",
+      "R-011",
+      "R-012",
+      "R-013",
+      "R-014",
+      "R-015",
+      "R-016",
+      "R-017",
+      "R-018",
+      "R-019",
+      "R-020",
+      "SHA-256",
+      "YYYY-MM-DD"
+    ],
+    "entries": [],
+    "complete_source": "history.zip::docs/exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md",
+    "sha256": "8a72efbbecc4169959b15380bb5d1d760cf05d01193407d1c286663ec9d7e933",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/ADHOC-0012-current-runtime-tech-debt-audit.md": {
+    "identifiers": [
+      "A-001",
+      "A-002",
+      "A-004",
+      "A-007",
+      "A-008",
+      "ADHOC-0011",
+      "ADHOC-0012",
+      "TD-0001"
+    ],
+    "entries": [],
+    "complete_source": "history.zip::docs/exec-plans/completed/ADHOC-0012-current-runtime-tech-debt-audit.md",
+    "sha256": "a1586026ebd264f7d19c5d75a4ec6b14d6e3fb8fb0fb849363cf745d42fb3c90",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/ADHOC-0013-mcp-and-runtime-adapter-audit.md": {
+    "identifiers": [
+      "A-001",
+      "A-002",
+      "A-004",
+      "A-008",
+      "ADHOC-0011",
+      "ADHOC-0012",
+      "ADHOC-0013"
+    ],
+    "entries": [],
+    "complete_source": "history.zip::docs/exec-plans/completed/ADHOC-0013-mcp-and-runtime-adapter-audit.md",
+    "sha256": "4f9f8386a3baf0d6ee79e503ba1a59532fb19a8db24b65bbc86101178ac86726",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/ADHOC-0014-m9-local-delivery.md": {
+    "identifiers": [
+      "A-001",
+      "A-004",
+      "A-008",
+      "A-009",
+      "ADHOC-0014",
+      "SHA-256"
+    ],
+    "entries": [],
+    "complete_source": "history.zip::docs/exec-plans/completed/ADHOC-0014-m9-local-delivery.md",
+    "sha256": "0f2924d47f4adc072b1ef79c2066593d29bb15c5698bb85de87b36639da2ad70",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md": {
+    "identifiers": [
+      "A-001",
+      "A-003",
+      "A-009",
+      "A-018",
+      "A-019",
+      "AC-001",
+      "AC-002",
+      "AC-003",
+      "AC-004",
+      "AC-005",
+      "AC-006",
+      "ADHOC-0001-agentforge-0",
+      "ADHOC-0015",
+      "EX-001",
+      "EX-002",
+      "EX-003",
+      "GATE-001",
+      "GATE-002",
+      "GATE-003",
+      "GATE-004",
+      "GATE-005",
+      "GATE-006",
+      "GATE-007",
+      "INV-001",
+      "INV-002",
+      "INV-003",
+      "INV-004",
+      "TM-001",
+      "TM-002",
+      "TM-003",
+      "TM-004",
+      "VC-001"
+    ],
+    "entries": [
+      {
+        "line": 48,
+        "text": "| `AC-002` | 根治理完整采用冻结合同、固定 Validator 输出、FAIL/INCONCLUSIVE 边界、失败诊断门和五类 Failure Analyst 归因。 |"
+      },
+      {
+        "line": 59,
+        "text": "| `INV-002` | 未绑定冻结标准的 blocker 必须为 INCONCLUSIVE；TM/EX 外发现只能 advisory/scope candidate。 |"
+      },
+      {
+        "line": 69,
+        "text": "| `TM-003` | Validator 可能新增未冻结要求、读取历史 verdict 或把 INCONCLUSIVE 当成实现 FAIL。 |"
+      },
+      {
+        "line": 184,
+        "text": "`blocking_findings`、`advisories`、`scope_change_candidates`、`unknowns` 和"
+      },
+      {
+        "line": 185,
+        "text": "`commands_and_evidence`。未绑定冻结标准的 blocker 使报告为 `INCONCLUSIVE`。"
+      },
+      {
+        "line": 193,
+        "text": "- `blocking_findings`：`[]`"
+      }
+    ],
+    "complete_source": "history.zip::docs/exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md",
+    "sha256": "a629877ebb1c4e91ecb2fae43a21fcbd8e721f0f386633198244bd02e341bfa9",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/ADHOC-0016-agentforge-governance-update.md": {
+    "identifiers": [
+      "A-001",
+      "A-013",
+      "A-018",
+      "A-019",
+      "A-020",
+      "AC-001",
+      "AC-002",
+      "AC-003",
+      "AC-004",
+      "AC-005",
+      "AC-006",
+      "ADHOC-0011-governance-simplification",
+      "ADHOC-0016",
+      "B-001",
+      "EX-001",
+      "GATE-001",
+      "GATE-002",
+      "GATE-003",
+      "GATE-004",
+      "GATE-005",
+      "GATE-006",
+      "INV-001",
+      "INV-002",
+      "SHA-256",
+      "TM-001",
+      "VC-001"
+    ],
+    "entries": [
+      {
+        "line": 44,
+        "text": "| GATE-006 | 全新只读 high/high Validator，固定八字段报告 | PASS；FAIL/INCONCLUSIVE 停止，不自动扩大合同 |"
+      },
+      {
+        "line": 89,
+        "text": "- 返回：contract_version、overall_verdict、criterion_results、blocking_findings、advisories、scope_change_candidates、unknowns、commands_and_evidence。"
+      },
+      {
+        "line": 97,
+        "text": "- `blocking_findings`：[]。"
+      },
+      {
+        "line": 102,
+        "text": "- 主协调处理：接受当前PASS，首轮FAIL原样保留；仅归档、记录真实检查结果和移除本任务活动指针，不改变合同或交付语义。后置提交/推送前再核对scope、state、index和远端。"
+      },
+      {
+        "line": 113,
+        "text": "- `overall_verdict`：FAIL（永久保留，不改写）。"
+      },
+      {
+        "line": 115,
+        "text": "- `blocking_findings`：B-001，绑定AC-005/GATE-003/TM-001；受审提交树memory.md第22～32行同时存在main 9964970与旧v0.4.2固定事实，第63～66行同时存在活动指针与“无”。复现为基准b172f95到受审树54dc1161的memory差异检查。"
+      },
+      {
+        "line": 120,
+        "text": "- 修正依据：唯一范围内实施缺陷，尚未触发两种修法/三轮诊断门。停止原提交动作，保留首轮导出树、index、manifest与patch；只修正提交内容组装，不改VC-001、产品或正确预期。补充新版固定事实唯一及活动状态不矛盾的断言，重新生成快照，交另一名全新Validator；不得把本报告交给新Validator作裁决输入。"
+      }
+    ],
+    "complete_source": "history.zip::docs/exec-plans/completed/ADHOC-0016-agentforge-governance-update.md",
+    "sha256": "60f8980e6414c871746420ae883786662df64497aefc4785f5f55757b25e1794",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md": {
+    "identifiers": [
+      "A-001",
+      "A-002",
+      "A-004",
+      "A-009",
+      "A-010",
+      "A-011",
+      "A-019",
+      "A-020",
+      "A-021",
+      "A-023",
+      "AC-C01",
+      "AC-C02",
+      "AC-C03",
+      "AC-C04",
+      "AC-C05",
+      "AC-C06",
+      "AC-C07",
+      "AC-C08",
+      "AC-D01",
+      "AC-D02",
+      "AC-D03",
+      "AC-D04",
+      "AC-D05",
+      "ADHOC-0017",
+      "C-01",
+      "C-02",
+      "C-03",
+      "C-04",
+      "C-05",
+      "C-06",
+      "C-06R1",
+      "C-06R1V",
+      "C-06V1",
+      "C-07",
+      "C-07V",
+      "C-08",
+      "C-08V",
+      "C-09",
+      "C-10",
+      "C-11",
+      "C-12",
+      "C-13",
+      "C-14",
+      "C06-65523615-491c-459c-a630-e71f7c213905",
+      "C06-F001",
+      "C06-U001",
+      "C06-U002",
+      "C06-U003",
+      "C06R1-20260914T035541Z-30296",
+      "C08-20260914T042523Z-36541",
+      "C09-09efg58v",
+      "CONSOLIDATE-20260914",
+      "D-01",
+      "D-02",
+      "D-03",
+      "ENV-SUBAGENT-INTERFACE-001",
+      "EX-C01",
+      "EX-C02",
+      "GATE-C01",
+      "GATE-C02",
+      "GATE-C03",
+      "GATE-C04",
+      "GATE-C05",
+      "GATE-C06",
+      "GATE-D01",
+      "GATE-D02",
+      "INV-C01",
+      "INV-C02",
+      "M12-fit-weekly",
+      "M12-fit-weekly-0001-rebuild",
+      "MAIN-C06V1-m2zc4dbp",
+      "SEALED-PARTIAL",
+      "SHA-256",
+      "UTF-8",
+      "VC-001",
+      "VC-001-BEGIN",
+      "VC-001-END",
+      "VC-002",
+      "VC-002-BEGIN",
+      "VC-002-END"
+    ],
+    "entries": [
+      {
+        "line": 123,
+        "text": "| C-06V1 保护缺口独立复核 | done | 全新只读Validator返回INCONCLUSIVE：保护目标SHA/权限适用检查通过、未见仅副本丢对象，但有限Git候选、DB安全/分类/链接载体边界未闭合；非C-04全产品验收 |"
+      },
+      {
+        "line": 149,
+        "text": "- blocker_type：`EVIDENCE_PENDING`；诊断状态：`not_triggered`。首次保护结果存在恢复和分类未知，C-06V1已独立复现为INCONCLUSIVE且无新增FAIL；尚无两种修法/三轮不收敛，不触发Failure Analyst。任何清理/覆盖/提交仍暂停。"
+      },
+      {
+        "line": 176,
+        "text": "- 首次完整派发key `consolidate-validator-c06v1`；workflow `09dfa15d-db7c-4002-acca-0cc46b09292e`、child `4cba20c5-39d6-41e1-b223-cc0acdf1b131` 已完成；报告 `/Users/lucas/.pi/agent/sessions/--Volumes-DiskOther-Code-TrainLab--/subagent-artifacts/outputs/09dfa15d-db7c-4002-acca-0cc46b09292e/consolidate-validator-c06v1.md`。裁决 INCONCLUSIVE：71,046保护目标SHA匹配、data权限/ignore通过；主Git fsck异常源/raw/restore一致且有有限当前候选；DB安全分类、链接/载体边界仍未知。报告不是C-06完成、不是清理或提交授权。"
+      }
+    ],
+    "complete_source": "history.zip::docs/exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md",
+    "sha256": "9d49196475440256f20d32835cd2db304d2829e51d128726863df22c0f6858fe",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/ADHOC-0019-adopt-next-before-api.md": {
+    "identifiers": [
+      "A-002",
+      "A-004",
+      "A-009",
+      "A-019",
+      "A-020",
+      "A-021",
+      "A-023",
+      "AC-01",
+      "AC-02",
+      "AC-03",
+      "AC-04",
+      "AC-05",
+      "AC-06",
+      "ADHOC-0018",
+      "ADHOC-0019",
+      "ADHOC-0019-REC-01",
+      "ADHOC-0019-REC-02",
+      "ADHOC-0019-REC-03",
+      "GATE-01",
+      "GATE-02",
+      "GATE-03",
+      "GATE-04",
+      "INV-01",
+      "INV-02",
+      "PRIVATE-01",
+      "RECORD-01",
+      "RECORD-02",
+      "SNAP-01",
+      "SNAP-02",
+      "SNAP-03",
+      "VC-001",
+      "VC-001-BEGIN",
+      "VC-001-END",
+      "VC-002",
+      "VC-002-BEGIN",
+      "VC-002-END"
+    ],
+    "entries": [
+      {
+        "line": 23,
+        "text": "| RECORD-01 | 取消VC-001历史快照补证、旧功能验收及完整适配正确性作为本次快照提交前提；不恢复pytest/lint/type/Schema/双平台或独立Validator循环，不要求重新验证历史代码。原缺证、联网安装越界、失败/INCONCLUSIVE仍如实保留，不写成修复或PASS；本轮不使用测试环境、不再安装。来源：用户明确不要验证。 |"
+      },
+      {
+        "line": 48,
+        "text": "| INV-02 | 既有失败/INCONCLUSIVE记录不改判。ADHOC-0018原“data仅两目录”的布局目标被本轮明确新增Goal.md替代该处边界，其历史删除证据不足不自动修复/判PASS，不阻塞对本轮起始已存在566份FIT字节的精确保护。来源：用户新增Goal请求，历史记录真实边界。 |"
+      },
+      {
+        "line": 123,
+        "text": "- Supervisor已明确无新增证据来源/批准，限定路径查找结束，不扩大Home/私人业务归档扫描。原S1/旧失败判定不变；用户中断不计作实施三轮失败。"
+      }
+    ],
+    "complete_source": "history.zip::docs/exec-plans/completed/ADHOC-0019-adopt-next-before-api.md",
+    "sha256": "8fe1f34d5d36252180a7fd362b8f76afa4bd7caab7b1c05c45d3fd8faccd53f4",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/ADHOC-0020-states-activities-decisions.md": {
+    "identifiers": [
+      "A-004",
+      "A-019",
+      "A-020",
+      "A-023",
+      "AC-01",
+      "AC-02",
+      "AC-03",
+      "AC-04",
+      "AC-05",
+      "AC-06",
+      "ADHOC-0018",
+      "ADHOC-0020",
+      "ADHOC-0020-Validator",
+      "GATE-01",
+      "GATE-02",
+      "VC-001",
+      "VC-001-BEGIN",
+      "VC-001-END",
+      "VC-002",
+      "VC-002-BEGIN",
+      "VC-002-END"
+    ],
+    "entries": [
+      {
+        "line": 65,
+        "text": "- 本任务不恢复 ADHOC-0018 清理验收、M12 或旧 R7；本轮用户选择作为新的当前决策记录，旧 INCONCLUSIVE 不改判。"
+      },
+      {
+        "line": 87,
+        "text": "- `blocking_findings`：无。"
+      }
+    ],
+    "complete_source": "history.zip::docs/exec-plans/completed/ADHOC-0020-states-activities-decisions.md",
+    "sha256": "53d3c65b2aa6b4de5e5beb8a3cb53795180626b0e1e8bb6fb009e13a4ec7be9b",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/ADHOC-0021-garmin-fit-reference.md": {
+    "identifiers": [
+      "A-001",
+      "A-002",
+      "A-004",
+      "A-009",
+      "A-019",
+      "A-020",
+      "A-022",
+      "AC-01",
+      "AC-02",
+      "AC-03",
+      "AC-04",
+      "ADHOC-0020",
+      "ADHOC-0021",
+      "ADHOC-0021-garmin-fit-reference",
+      "GATE-01",
+      "GATE-02",
+      "SHA-256",
+      "VC-001",
+      "VC-001-BEGIN",
+      "VC-001-END"
+    ],
+    "entries": [
+      {
+        "line": 81,
+        "text": "| blocking_findings | 无。 |"
+      }
+    ],
+    "complete_source": "history.zip::docs/exec-plans/completed/ADHOC-0021-garmin-fit-reference.md",
+    "sha256": "629e10b3fb1df23f32b4a65f6a9158024cbab87b63da8ef713d0e294d524e7eb",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/ADHOC-0022-longdou-real-fit-reference.md": {
+    "identifiers": [
+      "A-001",
+      "A-002",
+      "A-004",
+      "A-009",
+      "A-019",
+      "A-020",
+      "A-022",
+      "AC-01",
+      "AC-02",
+      "AC-03",
+      "AC-04",
+      "ADHOC-0022",
+      "ADHOC-0022-longdou-real-fit-reference",
+      "DR-010",
+      "DR-013",
+      "GATE-01",
+      "GATE-02",
+      "SHA-256",
+      "VC-001",
+      "VC-001-BEGIN",
+      "VC-001-END"
+    ],
+    "entries": [],
+    "complete_source": "history.zip::docs/exec-plans/completed/ADHOC-0022-longdou-real-fit-reference.md",
+    "sha256": "70943fbdb520265b8022b411fdb45f6dd451885c07b2f350e70741c97a816621",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/M1-agentforge-migration-0001-development-harness.md": {
+    "identifiers": [
+      "A-001",
+      "M1-0001",
+      "M1-0002"
+    ],
+    "entries": [
+      {
+        "line": 50,
+        "text": "| 2026-08-12/current | Git clean; old Dashboard stopped; exact worktree path/branch/commit recorded above; directory trashed | first Validator INCONCLUSIVE because the initial plan omitted exact worktree identity; all other checks passed | preserve the same plan, add evidence, request a fresh Validator |"
+      }
+    ],
+    "complete_source": "history.zip::docs/exec-plans/completed/M1-agentforge-migration-0001-development-harness.md",
+    "sha256": "a435c2d3b0391b6a0368585208d8b3c0f303cece8b1e831e107a65fff1e8abc1",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/M1-product-root-0002-source-migration.md": {
+    "identifiers": [
+      "M1-0001",
+      "M1-0002",
+      "M1-0003"
+    ],
+    "entries": [],
+    "complete_source": "history.zip::docs/exec-plans/completed/M1-product-root-0002-source-migration.md",
+    "sha256": "356e41f2701b63fcf2f129a2b99e7cb99ca5f093eebee49e90d5d5bf26529bcf",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/M1-runtime-root-0003-data-switch.md": {
+    "identifiers": [
+      "M1-0002",
+      "M1-0003"
+    ],
+    "entries": [],
+    "complete_source": "history.zip::docs/exec-plans/completed/M1-runtime-root-0003-data-switch.md",
+    "sha256": "bf0d29a3e53fb02dadcff7ffaf5abafb266250bf3f26b6d3932bf41129d1e364",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/M10-live-e2e-0001-rolling-week.md": {
+    "identifiers": [
+      "A-001",
+      "A-004",
+      "A-008",
+      "A-009",
+      "A-010",
+      "A-011",
+      "A-012",
+      "M10-0001",
+      "M10-0002",
+      "M10-0003",
+      "M10-0004",
+      "M10-0005",
+      "TD-0002"
+    ],
+    "entries": [
+      {
+        "line": 133,
+        "text": "| 1 | Data/Privacy Validator / M10-0005 | high | high | high | 正式边界、Token、邮件和 Workout 生命周期验证 | supported | 只读 | 指纹、闭包、预算、清理和零越界 | INCONCLUSIVE：正式state/权限/账本/预算通过；Gmail失效无法远端复核，Workout阶段后缺独立Token after指纹；Validator自身一次`mode=ro`只改变Candidate SHM元数据 |"
+      },
+      {
+        "line": 202,
+        "text": "| 2026-08-19 / 外部释放前最终验证 | 两次独立复验先后发现结果总行数和Schema-invalid直写缺口；合并修正后 Final Release Validator 以M10 38项、全量245项和全部静态门给出PASS | 旧FAIL永久保留，不转为PASS；冻结写入合同已闭合 | 按用户确认严格串行执行真实动作 |"
+      },
+      {
+        "line": 204,
+        "text": "| 2026-08-19 / Data与隐私复核 | Validator确认Candidate integrity/FK/六表/85触发器、正式state 9347项指纹、权限/Git隔离和预算；Gmail成功数0，Garmin账本仅1项且补偿删除 | 结论INCONCLUSIVE：邮箱无法远端复核、外部阶段后无独立Token after指纹；Validator一次`mode=ro`仅改变Candidate SHM元数据 | 不归档M10；保留blocked状态，后续只需认证恢复与新的有界续跑/证据批次，不重做已通过的离线报告 |"
+      },
+      {
+        "line": 212,
+        "text": "| 2026-08-19 / 邮箱配置隐私返工 | Validator 16判FAIL；CLI改为仅输出preview/output ID、SHA和数量的脱敏收据，不再打印完整预览；补齐缺失、错属主、超限、非法地址和CLI泄漏回归，保留原有空值/0644/symlink/hardlink/地址变化测试；256项完整测试和全部静态门通过 | 旧FAIL永久保留；真实地址仍未填写，邮件0/8 | 交全新Final Validator 17，不继承旧结论 |"
+      },
+      {
+        "line": 228,
+        "text": "| 2026-08-20 / r06窄化修复 | 用户批准并完成Google端点、profile失败回执、每阶段5次持久只读查询与每封单次发送；三名Validator依次发现认证账本可换路径、替代recipient/token与异常误重试、直接单封入口缺少认证门，均属原冻结范围并已合并修复；固定成功认证回执现于任一发送入口、session和Provider调用前验证；总预算129；Final Validator最终PASS：定向57项、全量315项、Ruff/format/mypy、60文件AST、33 Schema、metadata/Markdown/隐私/布局/diff全部通过 | 查询0命中只记录`unknown`并退出，人工重发需要新的明确授权；本批次OAuth/Gmail调用仍为0；旧Validator FAIL永久保留 | 按计划硬停止在人工OAuth前；等待用户另行明确要求开始认证 |"
+      },
+      {
+        "line": 229,
+        "text": "| 2026-08-20 / r06人工OAuth与canary | 用户完成Google Auth品牌发布与授权；账号/Scope/Profile/refresh token、owner-only Token/回执及正式state指纹通过。首个Candidate因日报渲染日期来源错误在Provider 0次安全阻断并永久保留；改用已绑定AI源日期、严格核对父preview/envelope SHA、成功email-render及三种正文后，318项代码门与全新Validator PASS。全新attempt执行canary：初查0、`messages.send`恰好1次并获Gmail ID、RAW两次读取均成功；收件人/主题/text/HTML完全一致，但Google改写预设RFC822 Message-ID，动作按合同保持`unknown`；其余7项仍`prepared/attempt=0` | Gmail API共4次、send 1次；正式state不变，Token文件在合法API使用期间变化且当前仍owner-only有效；不得重发canary或继续其余7封 | 等待用户人工确认是否收到；获批后版本化Message-ID合同，以Google实际ID完成已发送canary对账并再验证，不能发送第9封 |"
+      }
+    ],
+    "complete_source": "history.zip::docs/exec-plans/completed/M10-live-e2e-0001-rolling-week.md",
+    "sha256": "63f2362657d586f3b950ef4e328129a0da4718b0ba652134856260f30d35eb33",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md": {
+    "identifiers": [
+      "A-004",
+      "A-008",
+      "A-009",
+      "A-010",
+      "A-011",
+      "A-013",
+      "A-014",
+      "A-015",
+      "A-016",
+      "A-017",
+      "M11-0014",
+      "M11-0015",
+      "M11-0015-01",
+      "M11-0015-02",
+      "M11-0015-03",
+      "M11-0015-04",
+      "M11-0015-05",
+      "M11-email-presentation-0001-readable-cid"
+    ],
+    "entries": [],
+    "complete_source": "history.zip::docs/exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md",
+    "sha256": "c48168d139c828cb0755f28983c1674eaa17ebfd2faf0e1c5c29b40248db662f",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/M11-email-presentation-0001-readable-cid-r02.md": {
+    "identifiers": [
+      "A-001",
+      "A-004",
+      "A-008",
+      "A-010",
+      "A-013",
+      "A-018",
+      "A-019",
+      "A-021",
+      "A-Z",
+      "A-Z0-9",
+      "AC-001",
+      "AC-002",
+      "AC-003",
+      "AC-004",
+      "AC-005",
+      "AC-006",
+      "AC-007",
+      "AC-008",
+      "AC-009",
+      "AC-01",
+      "AC-010",
+      "AC-011",
+      "AC-012",
+      "AC-013",
+      "AC-014",
+      "AC-015",
+      "AC-02",
+      "ADHOC-0015",
+      "ASCII-only",
+      "B-001",
+      "D-1",
+      "EX-001",
+      "EX-002",
+      "EX-003",
+      "EX-004",
+      "FIT-only",
+      "GATE-001",
+      "GATE-002",
+      "GATE-003",
+      "GATE-004",
+      "GATE-005",
+      "GATE-01",
+      "INV-001",
+      "INV-002",
+      "INV-003",
+      "INV-004",
+      "INV-005",
+      "INV-006",
+      "INV-007",
+      "M11-0015",
+      "M11-0016",
+      "M11-0016-01",
+      "M11-0016-02",
+      "M11-0017",
+      "M11-0017-01",
+      "M11-0017-02",
+      "M11-0017-03",
+      "M11-0017-04",
+      "M11-0017-05",
+      "M11-0017-06",
+      "M11-0017-07",
+      "M11-0017-08",
+      "M11-0017-09",
+      "M11-0017-10",
+      "M11-0018",
+      "M11-0018-01",
+      "M11-0018-02",
+      "M11-0018-03",
+      "M11-0018-04",
+      "M11-0018-05",
+      "M11-0018-06",
+      "M11-0019",
+      "M11-0019-01",
+      "M11-0019-02",
+      "M11-V4-F01",
+      "M11-V4-F02A",
+      "M11-V4-F02B",
+      "M11-V4-F03",
+      "M11-V4-F04",
+      "M11-V4-F07A",
+      "M11-V4-F08",
+      "M11-email-presentation-0001-readable-cid",
+      "M11-v4",
+      "M11-v4-r10",
+      "M11-v4-r11",
+      "M11-v4-r12",
+      "M11-v4-r13",
+      "M11-v4-r14",
+      "M11-v4-r15",
+      "M11-v4-r16",
+      "M11-v4-r17",
+      "M11-v4-r18",
+      "M11-v4-r19",
+      "TM-001",
+      "TM-002",
+      "TM-003",
+      "TM-004",
+      "TM-005",
+      "TM-006",
+      "TM-007",
+      "TM-008",
+      "TM-009",
+      "TM-01",
+      "UTF-8",
+      "VC-001",
+      "VC-002",
+      "VC-003",
+      "VC-004",
+      "VC-005",
+      "VC-006",
+      "VC-007",
+      "VC-008",
+      "VC-009",
+      "VC-010"
+    ],
+    "entries": [
+      {
+        "line": 343,
+        "text": "与回执永久保留，不重放；r17必须从已验证父Candidate建立全新owner-only Candidate，"
+      },
+      {
+        "line": 350,
+        "text": "不同根因或环境故障；r16/r17失败终态永久保留，VC-010使用全新版本和全新Candidate。"
+      },
+      {
+        "line": 407,
+        "text": "| 1 | Contract Validator / M11-0016 | 高：规则替代、日期、训练与安全边界 | high | high | 实现前必须冻结无冲突合同 | available | 只读 | A-018/AGENTS/Skills/plan 一致性 | 首轮FAIL保留；全新终验 PASS |"
+      },
+      {
+        "line": 409,
+        "text": "| 3 | Final Code Validator / M11-0017..18 | 高：集中修正后的完整终验 | high | high | 首轮FAIL后只允许一个集中修正批次和全新终验 | available | 只读 | 独立inventory、技术排除、AI引用、课程lineage、模型隔离 | FAIL：启动前隐私复验及逐活动技术证据绑定仍有2项缺口 |"
+      },
+      {
+        "line": 421,
+        "text": "| 15 | Contract Validator / M11-v4-r12 VC-004 | 高：强度兼容格式、有限隐私矩阵与Prompt权威根 | high | high | 合同升级后实施前必须独立确认无冲突 | available | 只读 | 仅VC-004、A-018/A-019与当前事实 | INCONCLUSIVE：无有效blocking finding；日期/四类技术、有限矩阵词法、Prompt拓扑和GATE入口未逐字闭合 |"
+      },
+      {
+        "line": 422,
+        "text": "| 16 | Final Contract Validator / M11-v4-r12 VC-004 | 高：澄清后的完整合同终验 | high | high | 用户逐字批准补齐日期/技术/词法/Prompt拓扑/GATE | available | 只读 | 仅完整VC-004、A-018/A-019与当前事实 | INCONCLUSIVE：A-018/Prompt拓扑PASS；Unicode说明、既有隐私词法及复合GATE基线仍有多解 |"
+      },
+      {
+        "line": 423,
+        "text": "| 17 | Contract Validator / M11-v4-r13 VC-005 | 高：最终机器词法、有限矩阵及测试节点基线 | high | high | 用户批准将全部剩余歧义形式化；实现前最后合同门 | available | 只读 | 仅VC-005、A-018/A-019与当前事实 | INCONCLUSIVE：AC-01、AC-02、TM-01、GATE-01仍存在机器解释歧义；无blocking finding，未修改文件 |"
+      },
+      {
+        "line": 434,
+        "text": "| 28 | Contract Validator / M11-v4-r18 VC-010 | 高：模型/Host职责、强结构课程、BPM字段边界和双调用门 | high | high | 合同升级后实现前必须独立确认无冲突 | available | 只读 | 仅VC-010、A-018/A-019、适用规则和当前仓库事实 | INCONCLUSIVE：AC-005残留r17成功要求；Schema投影删除集合含“等”而未穷举；无blocking finding |"
+      },
+      {
+        "line": 442,
+        "text": "最终 Validator；最终仍 FAIL/INCONCLUSIVE 时停止，不循环补丁或执行真实模型调用。"
+      },
+      {
+        "line": 448,
+        "text": "| M11-0016-01 冻结 A-018、Roadmap、运行说明和 active plan | completed | 用户批准计划；Git基线 `b172f95`，工作树摘要已记录；首轮FAIL后集中消除4项治理歧义 |"
+      },
+      {
+        "line": 449,
+        "text": "| M11-0016-02 全新 Contract Validator | completed | 首轮FAIL证据保留；集中修正后全新终验 PASS |"
+      },
+      {
+        "line": 457,
+        "text": "| M11-0017-06 v4-r12 输入合同一次性收敛 | completed | Failure Analyst闭合F05A/B/C；两次Contract Validator的INCONCLUSIVE推动合同词法形式化，不进入代码实现 |"
+      },
+      {
+        "line": 520,
+        "text": "`blocking_findings`、`advisories`、`scope_change_candidates`、`unknowns` 和"
+      },
+      {
+        "line": 522,
+        "text": "`GATE-*`；未绑定时整体为 `INCONCLUSIVE`。"
+      },
+      {
+        "line": 569,
+        "text": "| 2026-08-24 / vc004-contract-inconclusive-23 | 全新只读Contract Validator返回INCONCLUSIVE，无blocking finding | 合同摘要未逐字列出继承日期/四类技术指标；有限矩阵词法、Prompt模板SHA绑定拓扑和GATE入口仍可多解 | 不修改实现；请求用户确认澄清文本，随后用完整同一合同交全新Contract Validator |"
+      },
+      {
+        "line": 571,
+        "text": "| 2026-08-24 / vc004-final-contract-inconclusive-25 | 全新Final Contract Validator仍返回INCONCLUSIVE，无blocking finding | A-018与Prompt拓扑PASS；强度说明Unicode计数、沿用邮箱/秘密/GPS/路径词法、skip/xfail与复合GATE目标集合仍未形式化 | 不修改实现；请求人工批准仅做词法和门禁基线澄清的VC-005 |"
+      },
+      {
+        "line": 573,
+        "text": "| 2026-08-25 / vc005-contract-inconclusive-27 | 全新只读 high/high Contract Validator 返回 INCONCLUSIVE；无blocking finding | AC-01未逐字冻结章节/字段及强度字段映射；AC-02未列活动标签、坐标语法和Unicode邮箱优先级；TM-01未枚举故障点；GATE-01未定义节点清单规范化算法 | 依A-019停止实施与模型调用；保持validating，等待用户批准VC-006澄清，不以实现猜测补合同 |"
+      },
+      {
+        "line": 596,
+        "text": "| 2026-08-25 / vc010-contract-inconclusive-50 | 全新Contract Validator返回INCONCLUSIVE且无blocking finding | 写入合同的AC-005错误残留VC-009的r17成功要求；Schema投影删除集合使用“等”造成多解。两项均与用户已批准r18原文不一致 | 按原批准计划修正映射：r16/r17永久失败；穷举十个允许删除关键词；交全新Final Contract Validator |"
+      },
+      {
+        "table_header": [
+          "Failure ID",
+          "合同版本",
+          "标准 ID",
+          "失败特征",
+          "历史尝试",
+          "当前结果"
+        ],
+        "row": "| `M11-V4-F01` | legacy → VC-002 | `AC-003`、`TM-003` | 同一规范 evidence ref 可登记给多个活动 | Failure Analyst 复现字符串归属未校验 | `IMPLEMENTATION_DEFECT / safe_auto_fix=true` |"
+      },
+      {
+        "table_header": [
+          "Failure ID",
+          "合同版本",
+          "标准 ID",
+          "失败特征",
+          "历史尝试",
+          "当前结果"
+        ],
+        "row": "| `M11-V4-F02A` | legacy → VC-002 | `AC-004`、`TM-002` | 普通中文斜线文本被识别为绝对路径 | Failure Analyst 复现正则只认识 ASCII 左边界 | `IMPLEMENTATION_DEFECT / safe_auto_fix=true` |"
+      },
+      {
+        "table_header": [
+          "Failure ID",
+          "合同版本",
+          "标准 ID",
+          "失败特征",
+          "历史尝试",
+          "当前结果"
+        ],
+        "row": "| `M11-V4-F02B` | VC-001 → VC-002 | `AC-007`、`TM-002` | 六类健康缺失状态、value、原因和 lineage 语义未冻结 | 用户批准 available/missing/insufficient_data 三状态 | `PLAN_CONTRACT_CONFLICT resolved by VC-002` |"
+      },
+      {
+        "table_header": [
+          "Failure ID",
+          "合同版本",
+          "标准 ID",
+          "失败特征",
+          "历史尝试",
+          "当前结果"
+        ],
+        "row": "| `M11-V4-F03` | legacy → VC-001 | `INV-004`、`GATE-005` | 历史合同形成晚于实现，无法可靠裁决当时责任 | 历史记录保留但不交给新 Validator | `UNDETERMINED / no code action` |"
+      }
+    ],
+    "complete_source": "history.zip::docs/exec-plans/completed/M11-email-presentation-0001-readable-cid-r02.md",
+    "sha256": "97dd33d8ad92c77849da3ccaed3f9c95797aca7da17f31dddaa2f47496920f86",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/M11-email-presentation-0001-readable-cid.md": {
+    "identifiers": [
+      "A-004",
+      "A-008",
+      "A-009",
+      "A-010",
+      "A-011",
+      "A-013",
+      "A-014",
+      "A-015",
+      "A-016",
+      "DB-only",
+      "F01-F04",
+      "F01-F12",
+      "HR-max",
+      "M11-0001",
+      "M11-0002",
+      "M11-0003",
+      "M11-0004",
+      "M11-0005",
+      "M11-0006",
+      "M11-0007",
+      "M11-0008",
+      "M11-0009",
+      "M11-0010",
+      "M11-0011",
+      "M11-0012",
+      "M11-0013",
+      "M11-0014",
+      "SHA-256",
+      "TD-0002",
+      "Z-2"
+    ],
+    "entries": [
+      {
+        "line": 97,
+        "text": "| 1 | Code Validator / M11-0005 | 高：Schema、MIME、幂等、隐私 | high | high | 跨模块与投递安全 | available | 只读 | 完整代码门和冻结验收 | INCONCLUSIVE：返工前未收到最终结论；不复用 |"
+      },
+      {
+        "line": 115,
+        "text": "| 7 | Code Validator / M11-0006 | 高：真实 Gmail REST、单次发送、跨进程预算 | high | high | 新增外部动作适配器且发送前必须独立放行 | available | 只读 | 完整测试/静态门、两动作 Candidate、日报人工门、重放零发送 | INCONCLUSIVE：验证期间发现 capture 中间目录需显式 0700，源码冻结变化后主动中止；不复用 |"
+      },
+      {
+        "line": 145,
+        "text": "| 1 | Data/Privacy Validator / M11-0010 | 高：Candidate、血缘、权限与正式边界 | high | high | 私人证据和零外部调用终验 | available | 只读 | SQLite/manifest/SHA、权限、9次AI、Provider/external=0、正式state不变 | FAIL：只读审计错误使用普通SQLite连接，在r01创建SHM；其余完整性、血缘、权限、零外部调用和正式state边界通过。r01永久保留失败证据 |"
+      },
+      {
+        "line": 255,
+        "text": "| 2026-08-21 / validator-rework-closed | AI 自由文本摘要、claim、停止条件不再直接进入邮件；读者摘要/来源/安全文案从结构化状态确定性生成；新增 title 与 12 项泄漏回归。r01 因两份预览被安全门拒绝永久保留；r02 生成 8 份预览和 MIME，工程字段0，桌面/375px全绿，385 tests、Ruff/format/mypy/AST/46 Schema/隐私布局/diff全绿，重放产物与逻辑行摘要完全一致 | SQLite 正常连接会改变数据库文件头，因此幂等按业务行、output ID/SHA 和产物字节判断，不把文件头当业务输出 | 冻结 r02 与源码，交三名全新 Validator attempt 2 |"
+      },
+      {
+        "line": 256,
+        "text": "| 2026-08-21 / validator-attempt-2 | Code FAIL：MIME title、课程停止条件、隐私词表和持久化 ViewModel 键序共4项；Visual FAIL：weekly hold 被显示为“可以训练”；Data/Privacy PASS 仅适用于 r02 | 五项均属于冻结展示/MIME合同，不改变日期、数据、结论或发送边界 | 合并为一次原范围返工，r02 永久保留，建立全新 r03 并重新三类验证 |"
+      },
+      {
+        "line": 267,
+        "text": "| 2026-08-21 / code-validator-closure-1 | 全新 high/high Code Validator 对完整门与 F01-F12 返回FAIL；全部静态门及426 tests本身通过 | 冻结矩阵内的真实缺口是发送失败只终结 external action，未同步终结 Skill run；崩溃恢复也没有旧 interrupted 与新 recovery run | 按计划合并为唯一修正批次，不扩张威胁模型、不进入第三轮 |"
+      },
+      {
+        "line": 269,
+        "text": "| 2026-08-21 / final-code-validator | 全新最终 high/high Code Validator 运行100项M11定向、431项完整测试和全部静态门，随后返回FAIL | F05/A-011 可达缺口：Provider 返回 Gmail ID 后、`send-response` 发布前崩溃；durable REST capture 已含 Gmail ID，但恢复未读取，遇实际 Message-ID 改写只能 unknown；未重发且双终态正确 | 按停止规则保持blocked，不真实发送、不自动第三轮，等待用户决定 |"
+      },
+      {
+        "line": 283,
+        "text": "| 2026-08-22 / coach-utility-v2-freeze | 用户确认日报/周报技术内容齐全但无法指导训练，批准无心率区间的v2返工、七日报一周报离线预览及独立验收 | v1投递/样式证据永久保留；内容验收失败不能归档M11；Provider调用0 | 写入A-015与冻结章程，先交全新Design Validator，再测试先行实现 |"
+      },
+      {
+        "line": 286,
+        "text": "| 2026-08-22 / coach-utility-v2-code-rework | Code Validator FAIL定位五项范围内缺口；汇总修正Zone/BPM别名、结构化SOS证据、daily downgrade证据、外部Schema引用与渲染白名单、纯文本细节，并恢复v1 rubric | 未删除/跳过/弱化测试；新增9项反例，完整492 tests和静态门通过 | 交全新Final Code Validator；FAIL/INCONCLUSIVE即停止，不进入私人Candidate |"
+      },
+      {
+        "line": 299,
+        "text": "| 2026-08-22 / coach-utility-v2-private-validator-fail | r01三类全新Validator均FAIL；同时确认训练计划安全门、SOS、响应式、SQLite血缘、权限、零Provider/external和正式state边界均通过 | 测试基准被称为历史原课、有效课缺recovery、日报未单列昨日非睡眠健康、周报把调整建议冒充实际执行；Data审计使用普通SQLite连接创建SHM | r01永久保留失败证据；增加确定性身份/四阶段/健康分栏/建议执行隔离门，以immutable SQLite建立全新r02并完整重跑 |"
+      },
+      {
+        "line": 303,
+        "text": "| 2026-08-22 / coach-utility-v2-r02-offline-ready | r02在7次Codex调用内完成7日报、1周报和8份预览；26项输出84–109通过Schema/SHA/lineage，SQLite integrity/FK、manifest/权限、重放、Provider/external=0和正式state指纹闭合；根Agent实际浏览器检查1280/375px共16次页面 | 首次日报对的安全门失败永久保留；审计脚本最初使用错误表名和错误SHA口径，修正审计脚本后Candidate本身无需改动且通过 | 派发AI、Visual/Coach Utility、Data/Privacy三名全新只读Validator；全部PASS后才进入真实Gmail日报canary |"
+      },
+      {
+        "line": 304,
+        "text": "| 2026-08-22 / coach-utility-v2-r02-final-validation | Visual与Data/Privacy返回PASS；AI仅因8月18日昨夜/周均HRV绑定错误返回FAIL，其余七日报、周报、SOS省略理由、课程、安全和建议/执行隔离均通过 | 私有Harness用任意`hrv`包含匹配，周均值覆盖昨夜值；错误属于确定性Host映射而非模型、样式或Gmail | r02永久保留语义FAIL；下沉为产品级精确映射和回归后建立全新r03 |"
+      },
+      {
+        "line": 307,
+        "text": "| 2026-08-22 / coach-utility-v2-r03-weekly-evidence-rework | r03 6次AI调用已生成基准计划和7日报；该日HRV已正确绑定。首次周报被Host拒绝并永久保留，因为insights误引43/47等嵌套legacy ID而非85–91 | 提示写“daily output IDs”但同一上下文同时暴露digest.daily_refs，存在可消除的歧义；安全门正确阻止入库 | 提示明确只允许顶层daily_input_refs并禁止digest/nested legacy/raw；541 tests与全门通过后交全新Validator，再在9次预算内重试一次 |"
+      },
+      {
+        "line": 309,
+        "text": "| 2026-08-22 / coach-utility-v2-r03-weekly-ref-final-pass | 全新Final Validator以22类恶意ref探针、546 tests和全部门返回PASS；预算内第7次模型调用成功生成周报92与计划93 | 周洞察仅引用顶层85–91，首次legacy引用失败证据永久保留 | 进入确定性渲染；不重跑日报、不追加模型调用 |"
+      },
+      {
+        "line": 324,
+        "text": "| 2026-08-23 / opendesign-v3-design-fidelity-rework | 全新Design-Fidelity Validator实际检查7日报、1周报的672×1000与375×812渲染并返回FAIL；顺序、响应式、图表/CID、缺活动和隐私均通过 | 共享渲染仍偏离白色圆角品牌外壳和规范色；状态只有色块无图形；睡眠卡泄漏UTC ISO；周报图表降级单位为英文 | r04永久保留视觉FAIL；一次性修正四项展示合同、测试先行、建立全新Candidate后交全新Design-Fidelity Validator |"
+      }
+    ],
+    "complete_source": "history.zip::docs/exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+    "sha256": "5963e6ccbb1ece65ef8e0d4ffa9154bbe74678144f63a28b79837ce6ebafc70c",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md": {
+    "identifiers": [
+      "A-001",
+      "A-002",
+      "A-003",
+      "ADHOC-0001",
+      "M1-product-root-0002-source-migration",
+      "M1-runtime-root-0003-data-switch",
+      "M2-0001",
+      "M2-0001-validator",
+      "M2-0001-validator-recovery"
+    ],
+    "entries": [],
+    "complete_source": "history.zip::docs/exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md",
+    "sha256": "ae8ba0bc23815dc70fa252786a5d378df10207968c103473a16debeba93e5b3e",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md": {
+    "identifiers": [
+      "A-001",
+      "A-002",
+      "A-003",
+      "A-004",
+      "ADHOC-0004",
+      "M3-0001",
+      "M3-0001-validator",
+      "M3-0001-validator-r01",
+      "M3-0001-validator-r02"
+    ],
+    "entries": [],
+    "complete_source": "history.zip::docs/exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md",
+    "sha256": "98b32741342838d0abe517d53229530a6e7908e3c7ce18328484454ce26c190d",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/M4-source-root-0001-product-consolidation.md": {
+    "identifiers": [
+      "D-1",
+      "M4-0001",
+      "M4-0002",
+      "M4-0003",
+      "M4-0004",
+      "SHA-256",
+      "TD-0001"
+    ],
+    "entries": [
+      {
+        "line": 97,
+        "text": "`FAIL` 或 `INCONCLUSIVE`，并提供实际命令、观察和未满足项；主协调 Agent 不得以自检替代。"
+      }
+    ],
+    "complete_source": "history.zip::docs/exec-plans/completed/M4-source-root-0001-product-consolidation.md",
+    "sha256": "73f3d5d6a30dc57f414d32e05eb3539ad17fcd4ac9c6a86a6ca96659156c548d",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md": {
+    "identifiers": [
+      "A-001",
+      "A-002",
+      "A-004",
+      "A-007",
+      "M4-source-root-0001-product-consolidation",
+      "M5-0001",
+      "M5-0002",
+      "M5-0003",
+      "M5-0004",
+      "TD-0001"
+    ],
+    "entries": [],
+    "complete_source": "history.zip::docs/exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md",
+    "sha256": "13d124737b892d523de6f53565652d7d40a86ae974880022088d2cfd00765d1f",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/M6-activity-evidence-0001-lifecycle-and-preview.md": {
+    "identifiers": [
+      "A-001",
+      "A-004",
+      "A-007",
+      "ADHOC-0009",
+      "ADHOC-0011",
+      "M6-0001",
+      "M6-0002",
+      "M6-0003",
+      "M6-0004"
+    ],
+    "entries": [],
+    "complete_source": "history.zip::docs/exec-plans/completed/M6-activity-evidence-0001-lifecycle-and-preview.md",
+    "sha256": "8ec0afea11dee21fb50d0865ead1fbe46e1f9ee61598008b9484c590546d393d",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/M7-ai-skills-0001-runtime-closure.md": {
+    "identifiers": [
+      "A-001",
+      "A-002",
+      "A-004",
+      "A-008",
+      "A-009",
+      "ADHOC-0011",
+      "ADHOC-0012",
+      "D-1",
+      "M7-0001",
+      "M7-0002",
+      "M7-0003",
+      "M7-0004",
+      "M7-0005"
+    ],
+    "entries": [],
+    "complete_source": "history.zip::docs/exec-plans/completed/M7-ai-skills-0001-runtime-closure.md",
+    "sha256": "99fd2ddf28ac2cea9fc2689e7bf343da08887d5d2d1bbf68b883cac70dcd3af0",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/M8-real-data-0001-ai-coach-closure.md": {
+    "identifiers": [
+      "A-001",
+      "A-004",
+      "A-008",
+      "A-009",
+      "M8-0001",
+      "M8-0002",
+      "M8-0003",
+      "M8-0004",
+      "M8-0005",
+      "M8-0005-r27",
+      "M8-0005-r28",
+      "M8-0005-r29",
+      "M8-0005-r30",
+      "M8-0005-r31",
+      "M8-0005-r31-data-fail",
+      "M8-0005-r31-fix",
+      "M8-0005-r32-ai-fail",
+      "M8-0005-r32-code",
+      "M8-0005-r32-start",
+      "M8-0005-r33-gts-driver-fail",
+      "M8-0005-r34-code-fail",
+      "M8-0005-r34-recovery",
+      "M8-0005-r35-ai-fail",
+      "M8-0005-r35-start",
+      "M8-0005-r36",
+      "M8-0005-r36-validators",
+      "M8-0005-r37-fix",
+      "M8-0005-r38",
+      "M8-0005-r38-validators"
+    ],
+    "entries": [],
+    "complete_source": "history.zip::docs/exec-plans/completed/M8-real-data-0001-ai-coach-closure.md",
+    "sha256": "7ebf3f15cea1b0e4a77bec0768000d2f97d1f97db31ebb4e5324bf2f1ee56768",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  },
+  "docs/exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md": {
+    "identifiers": [
+      "A-001",
+      "A-004",
+      "A-008",
+      "A-009",
+      "M9-0001",
+      "M9-0002",
+      "M9-0003",
+      "M9-0004",
+      "M9-0005",
+      "M9-r04",
+      "M9-r05",
+      "M9-r06",
+      "M9-r07"
+    ],
+    "entries": [
+      {
+        "line": 73,
+        "text": "- attempt 1 永久保留为 `exit 1 / 原因未分类`；不得事后改写为 transport/5xx 或 PASS。"
+      },
+      {
+        "line": 93,
+        "text": "  `ai-attempt-1/`。attempt 2 的失败目录、回执和分类证据永久保留，不覆盖、不改写、不复用为成功。"
+      },
+      {
+        "line": 140,
+        "text": "- attempt 2、attempt 3 与 `daily_ai_result_codex_v1` 永久保留原字节和失败语义。新增"
+      },
+      {
+        "line": 180,
+        "text": "| 4 | Code Validator / M9-0003 | high | high | high | 对第三轮 6 项修正做全新高风险复验 | supported | 只读 | Candidate 全路径、受验证 runtime guard、Provider 单入口、context SHA、分页与 finalizer scope | FAIL：初始化仍有2次 Provider 进入，最坏总量13；日报输出目录可 symlink 越界；Provider 保持0 |"
+      },
+      {
+        "line": 190,
+        "text": "| 14 | Code Validator / M9-0003 | high | high | high | 对第十三轮 Prompt 新路径与全流程墙钟修正做全新高风险复验 | supported | 只读 | Prompt path 必须初始不存在；90秒从 collect 入口开始且 Provider 前再查；完整门 | FAIL：Candidate 非零 WAL 可被 immutable 读取忽略，post-seed 写入可绕过来源门；Provider 保持0 |"
+      }
+    ],
+    "complete_source": "history.zip::docs/exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md",
+    "sha256": "b27e69279df27d2000afa051f1459fa8fd09eedd76334ebf6d3f73799dca101e",
+    "count_policy": "保留源原文，不重新计算或把未知计为0"
+  }
+}

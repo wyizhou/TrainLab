@@ -1,0 +1,29 @@
+{
+  "observed_at_utc": "2026-09-15T13:05:46.720108+00:00",
+  "reviewed_snapshot_sha256": "71e0537431f3e3f49d9cf27935b73c97cd27b8ebff84557359bce34838858183",
+  "reviewed_files_unchanged": 116,
+  "changes": [
+    {
+      "path": "exec-plans/active/ADHOC-0030-retire-ci-and-publish.md",
+      "before_sha256": "a769523632d0323c372f053e560ce97de8d429c657bd444680353d9253d8a6e2",
+      "after_sha256": "d90ef863fd7eecf518a1624dcda7eb6b4e8d3a8b105d8ec1237d6d682ddc3a63",
+      "classification": "true validation results/status/evidence references only"
+    },
+    {
+      "path": "exec-plans/evidence/ADHOC-0030/README.md",
+      "before_sha256": "71b1df9bcf18b003f03ed18fb4b6092738f390c360ecce458cf64b62c419cc9b",
+      "after_sha256": "500519b64e9ec8d85d3b4150c3c4feeb1b2ee3d409f518f8a37b1f131dd09dee",
+      "classification": "true validation results/status/evidence references only"
+    }
+  ],
+  "new_evidence_files": [
+    "exec-plans/evidence/ADHOC-0030/checks-parent-final.json",
+    "exec-plans/evidence/ADHOC-0030/parent-acceptance.json",
+    "exec-plans/evidence/ADHOC-0030/post-review-delta.json",
+    "exec-plans/evidence/ADHOC-0030/review-snapshot-v2.json",
+    "exec-plans/evidence/ADHOC-0030/validation-v2.md",
+    "exec-plans/evidence/ADHOC-0030/verification-evidence.zip"
+  ],
+  "contract_unchanged": true,
+  "scope": "Factual verification/staging results and evidence additions only; commit/push/PR not yet performed."
+}

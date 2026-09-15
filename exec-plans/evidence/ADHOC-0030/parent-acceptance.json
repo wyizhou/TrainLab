@@ -1,0 +1,29 @@
+{
+  "observed_at_utc": "2026-09-15T12:55:50.539614+00:00",
+  "verdict": "passed",
+  "scope": "RC-0030-01 frozen disk candidate and local publication prerequisites; not AC-06 remote delivery",
+  "review_snapshot_sha256": "71e0537431f3e3f49d9cf27935b73c97cd27b8ebff84557359bce34838858183",
+  "independent_run": "76bc15a5-c267-4b6d-be9c-93722152dbb5",
+  "independent_evidence": "validation-v2.md and verification-evidence.zip validator/",
+  "parent_checks": {
+    "command": "python3 -B check_candidate.py review-snapshot-v2.json checks-parent-final.json (isolated evidence directory)",
+    "exit": 0,
+    "passed": 189,
+    "report": "checks-parent-final.json"
+  },
+  "manual_review": [
+    "Read full independent report, actual checkers/results/final freeze and privacy result.",
+    "Rechecked 118 frozen SHA/size/mode files before any record changes.",
+    "Previously read all eight coordination diffs; product AC/JSON/states unchanged.",
+    "Validated original patch hash and legal empty-context semantics; ordinary text still checked."
+  ],
+  "remaining": [
+    "Precise staging and uppercase index entry",
+    "Commit/push/PR and immediate remote checks",
+    "No product tests or remote CI run"
+  ],
+  "limitations": [
+    "Finite secret scans do not prove absence of all secrets.",
+    "Before/after freeze checks are not continuous filesystem audit."
+  ]
+}

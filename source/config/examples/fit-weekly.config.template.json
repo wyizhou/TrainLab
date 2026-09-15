@@ -1,9 +1,0 @@
-{
-  "schema_version": "fit_run_config_v1",
-  "goal": "",
-  "services": {
-    "garmin": "",
-    "gmail": "",
-    "model": ""
-  }
-}

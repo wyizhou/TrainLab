@@ -10,7 +10,18 @@ __pycache__/
 build/
 dist/
 
-# Personal health data and runtime-only files are excluded from normal commits.
+# Private states contents stay local; only the directory skeleton and synthetic
+# goal example are public. The real states/Goal.md is intentionally ignored.
+/states/**
+!/states/activities/
+!/states/activities/.gitkeep
+!/states/health/
+!/states/health/.gitkeep
+!/states/verification/
+!/states/verification/.gitkeep
+!/states/Goal-example.md
+
+# Retain protection for retired data paths and other private runtime files.
 /data/
 *.[Ff][Ii][Tt]
 raw/

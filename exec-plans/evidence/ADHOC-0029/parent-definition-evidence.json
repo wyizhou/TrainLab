@@ -1,0 +1,31 @@
+{
+  "problem_id": "ADHOC-0029-V001",
+  "repair_method": "Complete source-definition projection with direct in-file task association; task tables no longer substitute for non-table requirements. Source text remains historical data, not active rules.",
+  "current_scope": {
+    "plans": 38,
+    "original_lines": 6693,
+    "task_associations": 237
+  },
+  "parent_checks": [
+    {
+      "script": "check_migration.py",
+      "sha256": "765033e65c4817029047fb88ff4c113742458d6461dcebe6ddf84be12b8cf005",
+      "exit": 0,
+      "checks": 1241
+    },
+    {
+      "script": "check_decompositions.py",
+      "sha256": "128abc4a3d5aea8044d8f779f427abe57222c053b765ae28b70f99a0a72a1e54",
+      "exit": 0,
+      "checks": 1932
+    },
+    {
+      "script": "check_definitions.py",
+      "sha256": "96d097d7379da89c47f73ea00ad9b9f351720259a1152b2c5da9a45d55930fc0",
+      "exit": 0,
+      "checks": 1599
+    }
+  ],
+  "independent_status": "Current V3 review pending; V1 and V2 failures preserved with cumulative count 2. Stop if third review does not converge.",
+  "limits": "No product/private data/provider/remote operation. Parent checks are not independent acceptance."
+}

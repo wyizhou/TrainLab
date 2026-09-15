@@ -1,0 +1,997 @@
+{
+  "observed_at_utc": "2026-09-15T12:34:21.195587+00:00",
+  "passed": true,
+  "checks": 180,
+  "results": [
+    {
+      "check": "Git root",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Branch",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Frozen HEAD",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Frozen logical index",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Exact public path set",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Only approved public states",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "No private-type paths",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "No old product or naming entry",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Physical uppercase memory",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "No workflow files",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "CI absent",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Prior deletions preserved",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "All 101 unchanged original public files",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "check": "Regular nonsymlink: .gitignore",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: AGENTS.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: MEMORY.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: PLAN.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: README.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/active/ADHOC-0007-production-backfill-and-monitor.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/active/ADHOC-0016-agentforge-governance-update.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/active/ADHOC-0018-data-fit-year-cleanup.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/active/ADHOC-0023-fit-data-classification-discussion.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/active/ADHOC-0024-fit-sqlite-parser.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/active/ADHOC-0025-fit-running-query-tool.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/active/ADHOC-0026-tools-ai-index.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/active/ADHOC-0027-activity-ai-report.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/active/ADHOC-0028-weekly-ai-report.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/active/ADHOC-0030-retire-ci-and-publish.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/active/M12-fit-weekly-0001-rebuild.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/active/M6-activity-evidence-0001-lifecycle-and-preview.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/completed/ADHOC-0002-repository-root-cleanup.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/completed/ADHOC-0003-generated-and-crash-artifact-cleanup.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/completed/ADHOC-0004-support-directory-classification.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/completed/ADHOC-0005-authentication-health-check.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/completed/ADHOC-0006-garmin-token-sync.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/completed/ADHOC-0012-current-runtime-tech-debt-audit.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/completed/ADHOC-0013-mcp-and-runtime-adapter-audit.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/completed/ADHOC-0014-m9-local-delivery.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/completed/ADHOC-0019-adopt-next-before-api.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/completed/ADHOC-0020-states-activities-decisions.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/completed/ADHOC-0021-garmin-fit-reference.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/completed/ADHOC-0022-longdou-real-fit-reference.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/completed/ADHOC-0029-agentsmd-upgrade.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/completed/M1-agentforge-migration-0001-development-harness.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/completed/M1-product-root-0002-source-migration.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/completed/M1-runtime-root-0003-data-switch.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/completed/M10-live-e2e-0001-rolling-week.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/completed/M4-source-root-0001-product-consolidation.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/completed/M7-ai-skills-0001-runtime-closure.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/completed/M8-real-data-0001-ai-coach-closure.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/README.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/checks-after-closeout.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/checks-after-decompositions.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/checks-after-definitions.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/checks-before-validator.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/checks-initial.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/checks-parent-final.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/closeout-status.diff",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Historical patch whitespace is only required empty-context markers",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Historical patch original hash",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Historical patch parses without applying",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/decomposition-mapping.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/decomposition-parent-final.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/decomposition-regression-v3.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/decomposition-regression.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/definition-after-closeout.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/definition-mapping.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/definition-parent-final.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/definition-regression-first.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/definition-regression.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/failure-index.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/final-closeout.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/history-manifest.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/history.zip",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "ZIP unique safe names: exec-plans/evidence/ADHOC-0029/history.zip",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "ZIP no symlink/encrypted/nested: exec-plans/evidence/ADHOC-0029/history.zip",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "ZIP CRC: exec-plans/evidence/ADHOC-0029/history.zip",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/migration-manifest.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/parent-check-evidence.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/parent-check-evidence.zip",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "ZIP unique safe names: exec-plans/evidence/ADHOC-0029/parent-check-evidence.zip",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "ZIP no symlink/encrypted/nested: exec-plans/evidence/ADHOC-0029/parent-check-evidence.zip",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "ZIP CRC: exec-plans/evidence/ADHOC-0029/parent-check-evidence.zip",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/parent-definition-evidence.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/parent-final-acceptance.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/parent-final-freeze.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/parent-repair-evidence.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/post-review-delta.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/reference-link-migration.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/review-snapshot-v2.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/review-snapshot-v3.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/review-snapshot.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/roadmap-mapping.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/upstream-files.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/upstream.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/validation-v1-evidence.zip",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "ZIP unique safe names: exec-plans/evidence/ADHOC-0029/validation-v1-evidence.zip",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "ZIP no symlink/encrypted/nested: exec-plans/evidence/ADHOC-0029/validation-v1-evidence.zip",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "ZIP CRC: exec-plans/evidence/ADHOC-0029/validation-v1-evidence.zip",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/validation-v1-plan-structure.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/validation-v1-semantic-results.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/validation-v1.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/validation-v2-evidence.zip",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "ZIP unique safe names: exec-plans/evidence/ADHOC-0029/validation-v2-evidence.zip",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "ZIP no symlink/encrypted/nested: exec-plans/evidence/ADHOC-0029/validation-v2-evidence.zip",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "ZIP CRC: exec-plans/evidence/ADHOC-0029/validation-v2-evidence.zip",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/validation-v2-non-table-review.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/validation-v2.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/validation-v3-evidence.zip",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "ZIP unique safe names: exec-plans/evidence/ADHOC-0029/validation-v3-evidence.zip",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "ZIP no symlink/encrypted/nested: exec-plans/evidence/ADHOC-0029/validation-v3-evidence.zip",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "ZIP CRC: exec-plans/evidence/ADHOC-0029/validation-v3-evidence.zip",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0029/validation-v3.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0030/README.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0030/baseline.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/evidence/ADHOC-0030/contract-and-plan.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/tech-debt-tracker.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: exec-plans/template.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: references/.gitkeep",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: references/README.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: references/garmin-fit-parsing.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: references/longdou.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: skills/README.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: states/Goal-example.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: states/activities/.gitkeep",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: states/health/.gitkeep",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: states/verification/.gitkeep",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: subagent-templates/developer.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: subagent-templates/planner.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Regular nonsymlink: subagent-templates/validator.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Every frozen SHA and byte size",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "check": "All public JSON parses",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "check": "Local Markdown file targets exist",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "check": "Non-patch public text whitespace",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "check": "No common secret signatures",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "check": "Synthetic ignored path: states/private-negative.fit",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Synthetic ignored path: states/data.db",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Synthetic ignored path: states/data.db-wal",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Synthetic ignored path: states/data.db-shm",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Synthetic ignored path: states/Goal.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Synthetic ignored path: states/verification/private-token.json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Synthetic ignored path: .DS_Store",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Product JSON examples unchanged: exec-plans/active/ADHOC-0023-fit-data-classification-discussion.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Product AC rows unchanged: exec-plans/active/ADHOC-0023-fit-data-classification-discussion.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Product states unchanged: exec-plans/active/ADHOC-0023-fit-data-classification-discussion.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Product JSON examples unchanged: exec-plans/active/ADHOC-0024-fit-sqlite-parser.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Product AC rows unchanged: exec-plans/active/ADHOC-0024-fit-sqlite-parser.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Product states unchanged: exec-plans/active/ADHOC-0024-fit-sqlite-parser.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Product JSON examples unchanged: exec-plans/active/ADHOC-0025-fit-running-query-tool.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Product AC rows unchanged: exec-plans/active/ADHOC-0025-fit-running-query-tool.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Product states unchanged: exec-plans/active/ADHOC-0025-fit-running-query-tool.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Product JSON examples unchanged: exec-plans/active/ADHOC-0026-tools-ai-index.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Product AC rows unchanged: exec-plans/active/ADHOC-0026-tools-ai-index.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Product states unchanged: exec-plans/active/ADHOC-0026-tools-ai-index.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Product JSON examples unchanged: exec-plans/active/ADHOC-0027-activity-ai-report.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Product AC rows unchanged: exec-plans/active/ADHOC-0027-activity-ai-report.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Product states unchanged: exec-plans/active/ADHOC-0027-activity-ai-report.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Product JSON examples unchanged: exec-plans/active/ADHOC-0028-weekly-ai-report.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Product AC rows unchanged: exec-plans/active/ADHOC-0028-weekly-ai-report.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Product states unchanged: exec-plans/active/ADHOC-0028-weekly-ai-report.md",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Tracked diff whitespace",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Negative forbidden FIT path",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Negative traversal",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Negative changed digest",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Negative additional workflow path",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "Negative malformed JSON",
+      "passed": true,
+      "detail": null
+    }
+  ],
+  "commands": [
+    {
+      "command": [
+        "git",
+        "ls-files",
+        "--cached",
+        "--others",
+        "--exclude-standard",
+        "-z"
+      ],
+      "exit": 0
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "--show-toplevel"
+      ],
+      "exit": 0
+    },
+    {
+      "command": [
+        "git",
+        "branch",
+        "--show-current"
+      ],
+      "exit": 0
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "exit": 0
+    },
+    {
+      "command": [
+        "git",
+        "ls-files",
+        "--stage",
+        "-z"
+      ],
+      "exit": 0
+    },
+    {
+      "command": [
+        "git",
+        "apply",
+        "--numstat",
+        "exec-plans/evidence/ADHOC-0029/closeout-status.diff"
+      ],
+      "exit": 0
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--no-index",
+        "--check",
+        "--",
+        "/dev/null",
+        "exec-plans/evidence/ADHOC-0029/closeout-status.diff"
+      ],
+      "exit": 3,
+      "note": "Raw diagnostic retained; unified-diff payload checked separately, not trimmed or globally suppressed."
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit": 0
+    }
+  ],
+  "public_files": 113,
+  "archives": {
+    "exec-plans/evidence/ADHOC-0029/history.zip": 58,
+    "exec-plans/evidence/ADHOC-0029/parent-check-evidence.zip": 47,
+    "exec-plans/evidence/ADHOC-0029/validation-v1-evidence.zip": 15,
+    "exec-plans/evidence/ADHOC-0029/validation-v2-evidence.zip": 22,
+    "exec-plans/evidence/ADHOC-0029/validation-v3-evidence.zip": 20
+  },
+  "limits": [
+    "No product tests, private state, business providers, or remote CI run.",
+    "Secret-signature absence is not a proof against all possible secrets.",
+    "Local link existence checked; anchors changed by this task require manual review.",
+    "Historical unified-diff blank-context markers are data, independently parsed and original-hash protected."
+  ]
+}

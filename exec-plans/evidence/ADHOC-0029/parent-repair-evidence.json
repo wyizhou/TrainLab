@@ -1,0 +1,26 @@
+{
+  "problem_id": "ADHOC-0029-V001",
+  "repair_method": "Original-item migration, not functional/history revalidation",
+  "checks": [
+    {
+      "method": "check_migration.py; owner-only external helper; Python standard library",
+      "sha256": "765033e65c4817029047fb88ff4c113742458d6461dcebe6ddf84be12b8cf005",
+      "exit": 0,
+      "assertions": 1241
+    },
+    {
+      "method": "check_decompositions.py; independent-of-renderer extraction from source work tables",
+      "sha256": "128abc4a3d5aea8044d8f779f427abe57222c053b765ae28b70f99a0a72a1e54",
+      "exit": 0,
+      "assertions": 1932,
+      "source_rows_checked": 228,
+      "negative_controls": [
+        "original HISTORY-only files",
+        "omitted original task",
+        "renamed stable ID",
+        "incorrect completion state"
+      ]
+    }
+  ],
+  "limits": "Parent checks only; current independent revalidation pending. No products/providers/private data/remote CI."
+}

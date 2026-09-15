@@ -1,0 +1,5073 @@
+[
+  {
+    "source": "docs/exec-plans/active/ADHOC-0018-data-fit-year-cleanup.md",
+    "destination": "exec-plans/active/ADHOC-0018-data-fit-year-cleanup.md",
+    "source_sha256": "5bffadd9bec6db8efe98f235021fe4842ad74c7f9b0cf91d9994f69a3d57a364",
+    "source_lines": 73,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 6,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 7,
+        "end_line": 30,
+        "title": "冻结合同",
+        "anchor": "原定义-l7"
+      },
+      {
+        "start_line": 31,
+        "end_line": 38,
+        "title": "执行步骤",
+        "anchor": "原定义-l31"
+      },
+      {
+        "start_line": 39,
+        "end_line": 58,
+        "title": "检查点",
+        "anchor": "原定义-l39"
+      },
+      {
+        "start_line": 59,
+        "end_line": 70,
+        "title": "当前只读补证",
+        "anchor": "原定义-l59"
+      },
+      {
+        "start_line": 71,
+        "end_line": 73,
+        "title": "迭代日志",
+        "anchor": "原定义-l71"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "S1",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "S2",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "S3",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/active/M12-fit-weekly-0001-rebuild.md",
+    "destination": "exec-plans/active/M12-fit-weekly-0001-rebuild.md",
+    "source_sha256": "d156f2309611cabe373a2a32631d57e434d3d538199ee5553bd89c644e204696",
+    "source_lines": 125,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 11,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 12,
+        "end_line": 49,
+        "title": "当前完整冻结合同 VC-005",
+        "anchor": "原定义-l12"
+      },
+      {
+        "start_line": 50,
+        "end_line": 66,
+        "title": "工作分解",
+        "anchor": "原定义-l50"
+      },
+      {
+        "start_line": 67,
+        "end_line": 74,
+        "title": "当前保护与检查点",
+        "anchor": "原定义-l67"
+      },
+      {
+        "start_line": 75,
+        "end_line": 79,
+        "title": "历史失败与修订索引",
+        "anchor": "原定义-l75"
+      },
+      {
+        "start_line": 80,
+        "end_line": 96,
+        "title": "派发与迭代",
+        "anchor": "原定义-l80"
+      },
+      {
+        "start_line": 97,
+        "end_line": 98,
+        "title": "完成条件",
+        "anchor": "原定义-l97"
+      },
+      {
+        "start_line": 99,
+        "end_line": 114,
+        "title": "本批独立验证回写（2026-09-08）",
+        "anchor": "原定义-l99"
+      },
+      {
+        "start_line": 115,
+        "end_line": 125,
+        "title": "旧CLI退出实施边界（同一VC-005，基准25e8b92）",
+        "anchor": "原定义-l115"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "0001/0002及0003a-m",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "0003n-1",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "0003n-2",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "0003n-3",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "0004A",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "0004B",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "0004C",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "0004D",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "0005",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "0006",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md",
+    "destination": "exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md",
+    "source_sha256": "090bf95f5fb6196805e0447ef493d17caed20157308d536cb0ca75131327f919",
+    "source_lines": 146,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 11,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 12,
+        "end_line": 23,
+        "title": "目标与验收标准",
+        "anchor": "原定义-l12"
+      },
+      {
+        "start_line": 24,
+        "end_line": 33,
+        "title": "范围与非目标",
+        "anchor": "原定义-l24"
+      },
+      {
+        "start_line": 34,
+        "end_line": 40,
+        "title": "适用规则与参考资料",
+        "anchor": "原定义-l34"
+      },
+      {
+        "start_line": 41,
+        "end_line": 50,
+        "title": "依赖与隔离",
+        "anchor": "原定义-l41"
+      },
+      {
+        "start_line": 51,
+        "end_line": 54,
+        "title": "功能与测试映射",
+        "anchor": "原定义-l51"
+      },
+      {
+        "start_line": 55,
+        "end_line": 66,
+        "title": "工具采用情况",
+        "anchor": "原定义-l55"
+      },
+      {
+        "start_line": 67,
+        "end_line": 74,
+        "title": "Subagent 派发",
+        "anchor": "原定义-l67"
+      },
+      {
+        "start_line": 75,
+        "end_line": 85,
+        "title": "工作分解",
+        "anchor": "原定义-l75"
+      },
+      {
+        "start_line": 86,
+        "end_line": 95,
+        "title": "当前检查点",
+        "anchor": "原定义-l86"
+      },
+      {
+        "start_line": 96,
+        "end_line": 112,
+        "title": "决策与发现",
+        "anchor": "原定义-l96"
+      },
+      {
+        "start_line": 113,
+        "end_line": 128,
+        "title": "任务级独立验证",
+        "anchor": "原定义-l113"
+      },
+      {
+        "start_line": 129,
+        "end_line": 133,
+        "title": "集成级独立验证",
+        "anchor": "原定义-l129"
+      },
+      {
+        "start_line": 134,
+        "end_line": 140,
+        "title": "PLANS 回写清单",
+        "anchor": "原定义-l134"
+      },
+      {
+        "start_line": 141,
+        "end_line": 146,
+        "title": "迭代日志",
+        "anchor": "原定义-l141"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "L01",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L02",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L03",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L04",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L05",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L06",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0002-repository-root-cleanup.md",
+    "destination": "exec-plans/completed/ADHOC-0002-repository-root-cleanup.md",
+    "source_sha256": "ecb08c926a8e08eaf68001e1ebbb7a28a80a7b463c475abdd63376dd09aa7fb4",
+    "source_lines": 120,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 11,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 12,
+        "end_line": 19,
+        "title": "目标与验收标准",
+        "anchor": "原定义-l12"
+      },
+      {
+        "start_line": 20,
+        "end_line": 25,
+        "title": "范围与非目标",
+        "anchor": "原定义-l20"
+      },
+      {
+        "start_line": 26,
+        "end_line": 30,
+        "title": "适用规则与参考资料",
+        "anchor": "原定义-l26"
+      },
+      {
+        "start_line": 31,
+        "end_line": 40,
+        "title": "依赖与隔离",
+        "anchor": "原定义-l31"
+      },
+      {
+        "start_line": 41,
+        "end_line": 44,
+        "title": "功能与测试映射",
+        "anchor": "原定义-l41"
+      },
+      {
+        "start_line": 45,
+        "end_line": 50,
+        "title": "工具采用情况",
+        "anchor": "原定义-l45"
+      },
+      {
+        "start_line": 51,
+        "end_line": 57,
+        "title": "Subagent 派发",
+        "anchor": "原定义-l51"
+      },
+      {
+        "start_line": 58,
+        "end_line": 67,
+        "title": "工作分解",
+        "anchor": "原定义-l58"
+      },
+      {
+        "start_line": 68,
+        "end_line": 77,
+        "title": "当前检查点",
+        "anchor": "原定义-l68"
+      },
+      {
+        "start_line": 78,
+        "end_line": 92,
+        "title": "决策与发现",
+        "anchor": "原定义-l78"
+      },
+      {
+        "start_line": 93,
+        "end_line": 102,
+        "title": "任务级独立验证",
+        "anchor": "原定义-l93"
+      },
+      {
+        "start_line": 103,
+        "end_line": 107,
+        "title": "集成级独立验证",
+        "anchor": "原定义-l103"
+      },
+      {
+        "start_line": 108,
+        "end_line": 114,
+        "title": "PLANS 回写清单",
+        "anchor": "原定义-l108"
+      },
+      {
+        "start_line": 115,
+        "end_line": 120,
+        "title": "迭代日志",
+        "anchor": "原定义-l115"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "L01",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L02",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L03",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L04",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L05",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0003-generated-and-crash-artifact-cleanup.md",
+    "destination": "exec-plans/completed/ADHOC-0003-generated-and-crash-artifact-cleanup.md",
+    "source_sha256": "0f683f0f786f5dea981c3275c83820811bcc72c1b0332e5f55979f2c388a022a",
+    "source_lines": 104,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 11,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 12,
+        "end_line": 18,
+        "title": "目标与验收标准",
+        "anchor": "原定义-l12"
+      },
+      {
+        "start_line": 19,
+        "end_line": 23,
+        "title": "范围与非目标",
+        "anchor": "原定义-l19"
+      },
+      {
+        "start_line": 24,
+        "end_line": 28,
+        "title": "适用规则与参考资料",
+        "anchor": "原定义-l24"
+      },
+      {
+        "start_line": 29,
+        "end_line": 35,
+        "title": "依赖与隔离",
+        "anchor": "原定义-l29"
+      },
+      {
+        "start_line": 36,
+        "end_line": 39,
+        "title": "功能与测试映射",
+        "anchor": "原定义-l36"
+      },
+      {
+        "start_line": 40,
+        "end_line": 44,
+        "title": "工具采用情况",
+        "anchor": "原定义-l40"
+      },
+      {
+        "start_line": 45,
+        "end_line": 50,
+        "title": "Subagent 派发",
+        "anchor": "原定义-l45"
+      },
+      {
+        "start_line": 51,
+        "end_line": 59,
+        "title": "工作分解",
+        "anchor": "原定义-l51"
+      },
+      {
+        "start_line": 60,
+        "end_line": 69,
+        "title": "当前检查点",
+        "anchor": "原定义-l60"
+      },
+      {
+        "start_line": 70,
+        "end_line": 76,
+        "title": "决策与发现",
+        "anchor": "原定义-l70"
+      },
+      {
+        "start_line": 77,
+        "end_line": 86,
+        "title": "任务级独立验证",
+        "anchor": "原定义-l77"
+      },
+      {
+        "start_line": 87,
+        "end_line": 91,
+        "title": "集成级独立验证",
+        "anchor": "原定义-l87"
+      },
+      {
+        "start_line": 92,
+        "end_line": 98,
+        "title": "PLANS 回写清单",
+        "anchor": "原定义-l92"
+      },
+      {
+        "start_line": 99,
+        "end_line": 104,
+        "title": "迭代日志",
+        "anchor": "原定义-l99"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "L01",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L02",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L03",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L04",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0004-support-directory-classification.md",
+    "destination": "exec-plans/completed/ADHOC-0004-support-directory-classification.md",
+    "source_sha256": "79353e47570b03bd2247533f1810170029e670a50171369b6c18028478a72ce3",
+    "source_lines": 110,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 11,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 12,
+        "end_line": 19,
+        "title": "目标与验收标准",
+        "anchor": "原定义-l12"
+      },
+      {
+        "start_line": 20,
+        "end_line": 25,
+        "title": "范围与非目标",
+        "anchor": "原定义-l20"
+      },
+      {
+        "start_line": 26,
+        "end_line": 30,
+        "title": "适用规则与参考资料",
+        "anchor": "原定义-l26"
+      },
+      {
+        "start_line": 31,
+        "end_line": 37,
+        "title": "依赖与隔离",
+        "anchor": "原定义-l31"
+      },
+      {
+        "start_line": 38,
+        "end_line": 43,
+        "title": "功能与测试映射",
+        "anchor": "原定义-l38"
+      },
+      {
+        "start_line": 44,
+        "end_line": 48,
+        "title": "工具采用情况",
+        "anchor": "原定义-l44"
+      },
+      {
+        "start_line": 49,
+        "end_line": 54,
+        "title": "Subagent 派发",
+        "anchor": "原定义-l49"
+      },
+      {
+        "start_line": 55,
+        "end_line": 64,
+        "title": "工作分解",
+        "anchor": "原定义-l55"
+      },
+      {
+        "start_line": 65,
+        "end_line": 74,
+        "title": "当前检查点",
+        "anchor": "原定义-l65"
+      },
+      {
+        "start_line": 75,
+        "end_line": 82,
+        "title": "决策与发现",
+        "anchor": "原定义-l75"
+      },
+      {
+        "start_line": 83,
+        "end_line": 92,
+        "title": "任务级独立验证",
+        "anchor": "原定义-l83"
+      },
+      {
+        "start_line": 93,
+        "end_line": 97,
+        "title": "集成级独立验证",
+        "anchor": "原定义-l93"
+      },
+      {
+        "start_line": 98,
+        "end_line": 104,
+        "title": "PLANS 回写清单",
+        "anchor": "原定义-l98"
+      },
+      {
+        "start_line": 105,
+        "end_line": 110,
+        "title": "迭代日志",
+        "anchor": "原定义-l105"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "L01",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L02",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L03",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L04",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L05",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0005-authentication-health-check.md",
+    "destination": "exec-plans/completed/ADHOC-0005-authentication-health-check.md",
+    "source_sha256": "f960d9d53bbf8f7d32d405b01e7dd3c0b6f0282898d975495c4667c5678663bc",
+    "source_lines": 97,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 11,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 12,
+        "end_line": 18,
+        "title": "目标与验收标准",
+        "anchor": "原定义-l12"
+      },
+      {
+        "start_line": 19,
+        "end_line": 24,
+        "title": "范围与非目标",
+        "anchor": "原定义-l19"
+      },
+      {
+        "start_line": 25,
+        "end_line": 30,
+        "title": "适用规则与参考资料",
+        "anchor": "原定义-l25"
+      },
+      {
+        "start_line": 31,
+        "end_line": 37,
+        "title": "依赖与隔离",
+        "anchor": "原定义-l31"
+      },
+      {
+        "start_line": 38,
+        "end_line": 41,
+        "title": "功能与测试映射",
+        "anchor": "原定义-l38"
+      },
+      {
+        "start_line": 42,
+        "end_line": 47,
+        "title": "工具采用情况",
+        "anchor": "原定义-l42"
+      },
+      {
+        "start_line": 48,
+        "end_line": 51,
+        "title": "Subagent 派发",
+        "anchor": "原定义-l48"
+      },
+      {
+        "start_line": 52,
+        "end_line": 60,
+        "title": "工作分解",
+        "anchor": "原定义-l52"
+      },
+      {
+        "start_line": 61,
+        "end_line": 70,
+        "title": "当前检查点",
+        "anchor": "原定义-l61"
+      },
+      {
+        "start_line": 71,
+        "end_line": 79,
+        "title": "决策与发现",
+        "anchor": "原定义-l71"
+      },
+      {
+        "start_line": 80,
+        "end_line": 83,
+        "title": "任务级独立验证",
+        "anchor": "原定义-l80"
+      },
+      {
+        "start_line": 84,
+        "end_line": 87,
+        "title": "集成级独立验证",
+        "anchor": "原定义-l84"
+      },
+      {
+        "start_line": 88,
+        "end_line": 91,
+        "title": "PLANS 回写清单",
+        "anchor": "原定义-l88"
+      },
+      {
+        "start_line": 92,
+        "end_line": 97,
+        "title": "迭代日志",
+        "anchor": "原定义-l92"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "L01",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L02",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L03",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L04",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0006-garmin-token-sync.md",
+    "destination": "exec-plans/completed/ADHOC-0006-garmin-token-sync.md",
+    "source_sha256": "098b72e36b87480bd9bf9a95ea2aaf44714bb6eb469f4801dab8e6aca56fd7e4",
+    "source_lines": 93,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 11,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 12,
+        "end_line": 18,
+        "title": "目标与验收标准",
+        "anchor": "原定义-l12"
+      },
+      {
+        "start_line": 19,
+        "end_line": 24,
+        "title": "范围与非目标",
+        "anchor": "原定义-l19"
+      },
+      {
+        "start_line": 25,
+        "end_line": 29,
+        "title": "适用规则与参考资料",
+        "anchor": "原定义-l25"
+      },
+      {
+        "start_line": 30,
+        "end_line": 36,
+        "title": "依赖与隔离",
+        "anchor": "原定义-l30"
+      },
+      {
+        "start_line": 37,
+        "end_line": 40,
+        "title": "功能与测试映射",
+        "anchor": "原定义-l37"
+      },
+      {
+        "start_line": 41,
+        "end_line": 45,
+        "title": "工具采用情况",
+        "anchor": "原定义-l41"
+      },
+      {
+        "start_line": 46,
+        "end_line": 49,
+        "title": "Subagent 派发",
+        "anchor": "原定义-l46"
+      },
+      {
+        "start_line": 50,
+        "end_line": 58,
+        "title": "工作分解",
+        "anchor": "原定义-l50"
+      },
+      {
+        "start_line": 59,
+        "end_line": 68,
+        "title": "当前检查点",
+        "anchor": "原定义-l59"
+      },
+      {
+        "start_line": 69,
+        "end_line": 75,
+        "title": "决策与发现",
+        "anchor": "原定义-l69"
+      },
+      {
+        "start_line": 76,
+        "end_line": 79,
+        "title": "任务级独立验证",
+        "anchor": "原定义-l76"
+      },
+      {
+        "start_line": 80,
+        "end_line": 83,
+        "title": "集成级独立验证",
+        "anchor": "原定义-l80"
+      },
+      {
+        "start_line": 84,
+        "end_line": 87,
+        "title": "PLANS 回写清单",
+        "anchor": "原定义-l84"
+      },
+      {
+        "start_line": 88,
+        "end_line": 93,
+        "title": "迭代日志",
+        "anchor": "原定义-l88"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "L01",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L02",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L03",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L04",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0007-production-backfill-and-monitor.md",
+    "destination": "exec-plans/active/ADHOC-0007-production-backfill-and-monitor.md",
+    "source_sha256": "a381d45672ca328d4b39223b9c380f9f8e5c661501663248a9691da3ce9be9c9",
+    "source_lines": 149,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 11,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 12,
+        "end_line": 20,
+        "title": "目标与验收标准",
+        "anchor": "原定义-l12"
+      },
+      {
+        "start_line": 21,
+        "end_line": 26,
+        "title": "范围与非目标",
+        "anchor": "原定义-l21"
+      },
+      {
+        "start_line": 27,
+        "end_line": 34,
+        "title": "适用规则与参考资料",
+        "anchor": "原定义-l27"
+      },
+      {
+        "start_line": 35,
+        "end_line": 41,
+        "title": "依赖与隔离",
+        "anchor": "原定义-l35"
+      },
+      {
+        "start_line": 42,
+        "end_line": 50,
+        "title": "功能与测试映射",
+        "anchor": "原定义-l42"
+      },
+      {
+        "start_line": 51,
+        "end_line": 57,
+        "title": "工具采用情况",
+        "anchor": "原定义-l51"
+      },
+      {
+        "start_line": 58,
+        "end_line": 61,
+        "title": "Subagent 派发",
+        "anchor": "原定义-l58"
+      },
+      {
+        "start_line": 62,
+        "end_line": 73,
+        "title": "工作分解",
+        "anchor": "原定义-l62"
+      },
+      {
+        "start_line": 74,
+        "end_line": 85,
+        "title": "当前检查点",
+        "anchor": "原定义-l74"
+      },
+      {
+        "start_line": 86,
+        "end_line": 93,
+        "title": "12 小时监测记录",
+        "anchor": "原定义-l86"
+      },
+      {
+        "start_line": 94,
+        "end_line": 117,
+        "title": "决策与发现",
+        "anchor": "原定义-l94"
+      },
+      {
+        "start_line": 118,
+        "end_line": 122,
+        "title": "任务级独立验证",
+        "anchor": "原定义-l118"
+      },
+      {
+        "start_line": 123,
+        "end_line": 126,
+        "title": "集成级独立验证",
+        "anchor": "原定义-l123"
+      },
+      {
+        "start_line": 127,
+        "end_line": 130,
+        "title": "PLANS 回写清单",
+        "anchor": "原定义-l127"
+      },
+      {
+        "start_line": 131,
+        "end_line": 149,
+        "title": "迭代日志",
+        "anchor": "原定义-l131"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "L01",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L02",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L03",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L04",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L05",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L06",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L07",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md",
+    "destination": "exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md",
+    "source_sha256": "06390e176bd1b246b5b919b8ece115dd919062d0c998f56757f79e3ce8447c84",
+    "source_lines": 142,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 11,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 12,
+        "end_line": 22,
+        "title": "目标与验收标准",
+        "anchor": "原定义-l12"
+      },
+      {
+        "start_line": 23,
+        "end_line": 30,
+        "title": "范围与非目标",
+        "anchor": "原定义-l23"
+      },
+      {
+        "start_line": 31,
+        "end_line": 37,
+        "title": "适用规则与参考资料",
+        "anchor": "原定义-l31"
+      },
+      {
+        "start_line": 38,
+        "end_line": 47,
+        "title": "依赖与隔离",
+        "anchor": "原定义-l38"
+      },
+      {
+        "start_line": 48,
+        "end_line": 55,
+        "title": "功能与测试映射",
+        "anchor": "原定义-l48"
+      },
+      {
+        "start_line": 56,
+        "end_line": 61,
+        "title": "工具采用情况",
+        "anchor": "原定义-l56"
+      },
+      {
+        "start_line": 62,
+        "end_line": 78,
+        "title": "Subagent 派发",
+        "anchor": "原定义-l62"
+      },
+      {
+        "start_line": 79,
+        "end_line": 89,
+        "title": "工作分解",
+        "anchor": "原定义-l79"
+      },
+      {
+        "start_line": 90,
+        "end_line": 99,
+        "title": "当前检查点",
+        "anchor": "原定义-l90"
+      },
+      {
+        "start_line": 100,
+        "end_line": 108,
+        "title": "决策与发现",
+        "anchor": "原定义-l100"
+      },
+      {
+        "start_line": 109,
+        "end_line": 117,
+        "title": "任务级独立验证",
+        "anchor": "原定义-l109"
+      },
+      {
+        "start_line": 118,
+        "end_line": 121,
+        "title": "集成级独立验证",
+        "anchor": "原定义-l118"
+      },
+      {
+        "start_line": 122,
+        "end_line": 128,
+        "title": "PLANS 回写清单",
+        "anchor": "原定义-l122"
+      },
+      {
+        "start_line": 129,
+        "end_line": 142,
+        "title": "迭代日志",
+        "anchor": "原定义-l129"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "L01",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L02",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L03",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L04",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L05",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L06",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md",
+    "destination": "exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md",
+    "source_sha256": "b6494703ef05bfede6f206ac0345ad5f48e34642461aa0134549fcd99061d698",
+    "source_lines": 135,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 11,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 12,
+        "end_line": 19,
+        "title": "目标与验收标准",
+        "anchor": "原定义-l12"
+      },
+      {
+        "start_line": 20,
+        "end_line": 26,
+        "title": "范围与非目标",
+        "anchor": "原定义-l20"
+      },
+      {
+        "start_line": 27,
+        "end_line": 32,
+        "title": "适用规则与参考资料",
+        "anchor": "原定义-l27"
+      },
+      {
+        "start_line": 33,
+        "end_line": 43,
+        "title": "依赖与隔离",
+        "anchor": "原定义-l33"
+      },
+      {
+        "start_line": 44,
+        "end_line": 47,
+        "title": "功能与测试映射",
+        "anchor": "原定义-l44"
+      },
+      {
+        "start_line": 48,
+        "end_line": 53,
+        "title": "工具采用情况",
+        "anchor": "原定义-l48"
+      },
+      {
+        "start_line": 54,
+        "end_line": 61,
+        "title": "Subagent 派发",
+        "anchor": "原定义-l54"
+      },
+      {
+        "start_line": 62,
+        "end_line": 72,
+        "title": "工作分解",
+        "anchor": "原定义-l62"
+      },
+      {
+        "start_line": 73,
+        "end_line": 82,
+        "title": "当前检查点",
+        "anchor": "原定义-l73"
+      },
+      {
+        "start_line": 83,
+        "end_line": 111,
+        "title": "决策与发现",
+        "anchor": "原定义-l83"
+      },
+      {
+        "start_line": 112,
+        "end_line": 118,
+        "title": "任务级独立验证",
+        "anchor": "原定义-l112"
+      },
+      {
+        "start_line": 119,
+        "end_line": 122,
+        "title": "集成级独立验证",
+        "anchor": "原定义-l119"
+      },
+      {
+        "start_line": 123,
+        "end_line": 129,
+        "title": "PLANS 回写清单",
+        "anchor": "原定义-l123"
+      },
+      {
+        "start_line": 130,
+        "end_line": 135,
+        "title": "迭代日志",
+        "anchor": "原定义-l130"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "L01",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L02",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L03",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L04",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L05",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L06",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md",
+    "destination": "exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md",
+    "source_sha256": "31471797c0e6c80dfbafacddd6a40139e52ac5f9e90c033573882746d32a7be2",
+    "source_lines": 98,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 11,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 12,
+        "end_line": 17,
+        "title": "目标与验收标准",
+        "anchor": "原定义-l12"
+      },
+      {
+        "start_line": 18,
+        "end_line": 23,
+        "title": "范围与非目标",
+        "anchor": "原定义-l18"
+      },
+      {
+        "start_line": 24,
+        "end_line": 29,
+        "title": "适用规则与参考资料",
+        "anchor": "原定义-l24"
+      },
+      {
+        "start_line": 30,
+        "end_line": 36,
+        "title": "依赖与隔离",
+        "anchor": "原定义-l30"
+      },
+      {
+        "start_line": 37,
+        "end_line": 44,
+        "title": "Subagent 派发",
+        "anchor": "原定义-l37"
+      },
+      {
+        "start_line": 45,
+        "end_line": 54,
+        "title": "工作分解",
+        "anchor": "原定义-l45"
+      },
+      {
+        "start_line": 55,
+        "end_line": 61,
+        "title": "当前检查点",
+        "anchor": "原定义-l55"
+      },
+      {
+        "start_line": 62,
+        "end_line": 82,
+        "title": "决策与发现",
+        "anchor": "原定义-l62"
+      },
+      {
+        "start_line": 83,
+        "end_line": 86,
+        "title": "独立验证",
+        "anchor": "原定义-l83"
+      },
+      {
+        "start_line": 87,
+        "end_line": 92,
+        "title": "PLANS 回写清单",
+        "anchor": "原定义-l87"
+      },
+      {
+        "start_line": 93,
+        "end_line": 98,
+        "title": "迭代日志",
+        "anchor": "原定义-l93"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "L01",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L02",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L03",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L04",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L05",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md",
+    "destination": "exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md",
+    "source_sha256": "8a72efbbecc4169959b15380bb5d1d760cf05d01193407d1c286663ec9d7e933",
+    "source_lines": 1220,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 11,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 12,
+        "end_line": 17,
+        "title": "文档用途",
+        "anchor": "原定义-l12"
+      },
+      {
+        "start_line": 18,
+        "end_line": 57,
+        "title": "当前执行检查点",
+        "anchor": "原定义-l18"
+      },
+      {
+        "start_line": 58,
+        "end_line": 59,
+        "title": "已确认需求",
+        "anchor": "原定义-l58"
+      },
+      {
+        "start_line": 60,
+        "end_line": 76,
+        "title": "R-001：按数据来源保留 Provider 层",
+        "anchor": "原定义-l60"
+      },
+      {
+        "start_line": 77,
+        "end_line": 86,
+        "title": "R-002：移除非 Provider 命名空间",
+        "anchor": "原定义-l77"
+      },
+      {
+        "start_line": 87,
+        "end_line": 116,
+        "title": "R-003：把运动活动文件与天气平铺归为一组",
+        "anchor": "原定义-l87"
+      },
+      {
+        "start_line": 117,
+        "end_line": 137,
+        "title": "R-004：把健康 raw 平铺到独立目录",
+        "anchor": "原定义-l117"
+      },
+      {
+        "start_line": 138,
+        "end_line": 147,
+        "title": "R-005：Activity Inventory 只作为数据库控制状态",
+        "anchor": "原定义-l138"
+      },
+      {
+        "start_line": 148,
+        "end_line": 155,
+        "title": "R-006：取消 Activity Summary 依赖",
+        "anchor": "原定义-l148"
+      },
+      {
+        "start_line": 156,
+        "end_line": 171,
+        "title": "R-007：每日一次、无历史回读的同步窗口",
+        "anchor": "原定义-l156"
+      },
+      {
+        "start_line": 172,
+        "end_line": 188,
+        "title": "R-008：重置现有非 raw state",
+        "anchor": "原定义-l172"
+      },
+      {
+        "start_line": 189,
+        "end_line": 201,
+        "title": "R-009：运行时改为完全由 AI 与本地 Skills 驱动",
+        "anchor": "原定义-l189"
+      },
+      {
+        "start_line": 202,
+        "end_line": 226,
+        "title": "R-010：最小 source 顶层结构",
+        "anchor": "原定义-l202"
+      },
+      {
+        "start_line": 227,
+        "end_line": 245,
+        "title": "R-011：goal 与 state 的 Git 表达",
+        "anchor": "原定义-l227"
+      },
+      {
+        "start_line": 246,
+        "end_line": 311,
+        "title": "R-012：六个初始本地 Skills",
+        "anchor": "原定义-l246"
+      },
+      {
+        "start_line": 312,
+        "end_line": 329,
+        "title": "R-013：Skill 采用脚本优先",
+        "anchor": "原定义-l312"
+      },
+      {
+        "start_line": 330,
+        "end_line": 339,
+        "title": "R-014：source 运行 AGENTS",
+        "anchor": "原定义-l330"
+      },
+      {
+        "start_line": 340,
+        "end_line": 357,
+        "title": "R-015：两套日报与周计划邮件模板",
+        "anchor": "原定义-l340"
+      },
+      {
+        "start_line": 358,
+        "end_line": 375,
+        "title": "R-020：两套报告展示路径与可选 Sites 快照",
+        "anchor": "原定义-l358"
+      },
+      {
+        "start_line": 376,
+        "end_line": 387,
+        "title": "R-016：无状态定时运行原则",
+        "anchor": "原定义-l376"
+      },
+      {
+        "start_line": 388,
+        "end_line": 432,
+        "title": "R-017：两个 cron Prompt",
+        "anchor": "原定义-l388"
+      },
+      {
+        "start_line": 433,
+        "end_line": 445,
+        "title": "R-018：管理 Garmin My Workouts 中的 GTS 模板",
+        "anchor": "原定义-l433"
+      },
+      {
+        "start_line": 446,
+        "end_line": 475,
+        "title": "R-019：SQLite 保存所有项目输出与状态",
+        "anchor": "原定义-l446"
+      },
+      {
+        "start_line": 476,
+        "end_line": 481,
+        "title": "技术合同 1：SQLite 六表 Schema v1（初始设计记录；后续已实施）",
+        "anchor": "原定义-l476"
+      },
+      {
+        "start_line": 482,
+        "end_line": 495,
+        "title": "全局规则",
+        "anchor": "原定义-l482"
+      },
+      {
+        "start_line": 496,
+        "end_line": 527,
+        "title": "1. `skill_runs`：每次 Skill 的运行状态",
+        "anchor": "原定义-l496"
+      },
+      {
+        "start_line": 528,
+        "end_line": 557,
+        "title": "2. `activity_inventory`：活动发现与文件采集控制状态",
+        "anchor": "原定义-l528"
+      },
+      {
+        "start_line": 558,
+        "end_line": 595,
+        "title": "3. `raw_files`：原始文件索引与不可变修订",
+        "anchor": "原定义-l558"
+      },
+      {
+        "start_line": 596,
+        "end_line": 625,
+        "title": "4. `skill_outputs`：不可覆盖的 Skill 输出",
+        "anchor": "原定义-l596"
+      },
+      {
+        "start_line": 626,
+        "end_line": 651,
+        "title": "5. `approvals`：人工批准与定时 AI 授权链",
+        "anchor": "原定义-l626"
+      },
+      {
+        "start_line": 652,
+        "end_line": 697,
+        "title": "6. `external_actions`：Gmail、Garmin 与 Sites 外部动作",
+        "anchor": "原定义-l652"
+      },
+      {
+        "start_line": 698,
+        "end_line": 709,
+        "title": "六表的写入与保留规则",
+        "anchor": "原定义-l698"
+      },
+      {
+        "start_line": 710,
+        "end_line": 715,
+        "title": "技术合同 2：SQLite 备份、恢复与保留 v1（初始设计记录；后续已实施）",
+        "anchor": "原定义-l710"
+      },
+      {
+        "start_line": 716,
+        "end_line": 743,
+        "title": "备份位置与格式",
+        "anchor": "原定义-l716"
+      },
+      {
+        "start_line": 744,
+        "end_line": 754,
+        "title": "建立备份",
+        "anchor": "原定义-l744"
+      },
+      {
+        "start_line": 755,
+        "end_line": 770,
+        "title": "备份触发点",
+        "anchor": "原定义-l755"
+      },
+      {
+        "start_line": 771,
+        "end_line": 795,
+        "title": "恢复流程",
+        "anchor": "原定义-l771"
+      },
+      {
+        "start_line": 796,
+        "end_line": 810,
+        "title": "保留规则",
+        "anchor": "原定义-l796"
+      },
+      {
+        "start_line": 811,
+        "end_line": 821,
+        "title": "必须验证的故障场景",
+        "anchor": "原定义-l811"
+      },
+      {
+        "start_line": 822,
+        "end_line": 827,
+        "title": "技术合同 3：六个运行 Skills 输入、输出、失败与幂等 v1（已实施并通过独立验证）",
+        "anchor": "原定义-l822"
+      },
+      {
+        "start_line": 828,
+        "end_line": 860,
+        "title": "公共调用信封",
+        "anchor": "原定义-l828"
+      },
+      {
+        "start_line": 861,
+        "end_line": 873,
+        "title": "公共状态与失败规则",
+        "anchor": "原定义-l861"
+      },
+      {
+        "start_line": 874,
+        "end_line": 903,
+        "title": "稳定失败码白名单",
+        "anchor": "原定义-l874"
+      },
+      {
+        "start_line": 904,
+        "end_line": 931,
+        "title": "1. `garmin-sync`",
+        "anchor": "原定义-l904"
+      },
+      {
+        "start_line": 932,
+        "end_line": 956,
+        "title": "2. `training-coach`",
+        "anchor": "原定义-l932"
+      },
+      {
+        "start_line": 957,
+        "end_line": 971,
+        "title": "3. `weekly-fitness-summary`",
+        "anchor": "原定义-l957"
+      },
+      {
+        "start_line": 972,
+        "end_line": 992,
+        "title": "4. `garmin-training-sender`",
+        "anchor": "原定义-l972"
+      },
+      {
+        "start_line": 993,
+        "end_line": 1017,
+        "title": "5. `training-report-publisher`",
+        "anchor": "原定义-l993"
+      },
+      {
+        "start_line": 1018,
+        "end_line": 1034,
+        "title": "6. `gmail-sender`",
+        "anchor": "原定义-l1018"
+      },
+      {
+        "start_line": 1035,
+        "end_line": 1057,
+        "title": "每日与每周串行关系",
+        "anchor": "原定义-l1035"
+      },
+      {
+        "start_line": 1058,
+        "end_line": 1106,
+        "title": "目标结构草图",
+        "anchor": "原定义-l1058"
+      },
+      {
+        "start_line": 1107,
+        "end_line": 1116,
+        "title": "数据保护要求",
+        "anchor": "原定义-l1107"
+      },
+      {
+        "start_line": 1117,
+        "end_line": 1127,
+        "title": "已执行与最终结果",
+        "anchor": "原定义-l1117"
+      },
+      {
+        "start_line": 1128,
+        "end_line": 1144,
+        "title": "旧运行层退役清单（切换后执行）",
+        "anchor": "原定义-l1128"
+      },
+      {
+        "start_line": 1145,
+        "end_line": 1153,
+        "title": "依赖与隔离",
+        "anchor": "原定义-l1145"
+      },
+      {
+        "start_line": 1154,
+        "end_line": 1179,
+        "title": "当前只读审计",
+        "anchor": "原定义-l1154"
+      },
+      {
+        "start_line": 1180,
+        "end_line": 1194,
+        "title": "当前检查点",
+        "anchor": "原定义-l1180"
+      },
+      {
+        "start_line": 1195,
+        "end_line": 1220,
+        "title": "迭代日志",
+        "anchor": "原定义-l1195"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "ADHOC-0011-0001",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "ADHOC-0011-0002",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "ADHOC-0011-0003",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "ADHOC-0011-0004",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "CLOSE-01",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "CLOSE-02",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "CLOSE-03",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "CLOSE-04",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0012-current-runtime-tech-debt-audit.md",
+    "destination": "exec-plans/completed/ADHOC-0012-current-runtime-tech-debt-audit.md",
+    "source_sha256": "a1586026ebd264f7d19c5d75a4ec6b14d6e3fb8fb0fb849363cf745d42fb3c90",
+    "source_lines": 159,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 11,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 12,
+        "end_line": 18,
+        "title": "目标与验收标准",
+        "anchor": "原定义-l12"
+      },
+      {
+        "start_line": 19,
+        "end_line": 23,
+        "title": "范围与非目标",
+        "anchor": "原定义-l19"
+      },
+      {
+        "start_line": 24,
+        "end_line": 28,
+        "title": "适用规则与参考资料",
+        "anchor": "原定义-l24"
+      },
+      {
+        "start_line": 29,
+        "end_line": 38,
+        "title": "依赖与隔离",
+        "anchor": "原定义-l29"
+      },
+      {
+        "start_line": 39,
+        "end_line": 42,
+        "title": "功能与测试映射",
+        "anchor": "原定义-l39"
+      },
+      {
+        "start_line": 43,
+        "end_line": 48,
+        "title": "工具采用情况",
+        "anchor": "原定义-l43"
+      },
+      {
+        "start_line": 49,
+        "end_line": 56,
+        "title": "Subagent 派发",
+        "anchor": "原定义-l49"
+      },
+      {
+        "start_line": 57,
+        "end_line": 65,
+        "title": "工作分解",
+        "anchor": "原定义-l57"
+      },
+      {
+        "start_line": 66,
+        "end_line": 75,
+        "title": "当前检查点",
+        "anchor": "原定义-l66"
+      },
+      {
+        "start_line": 76,
+        "end_line": 77,
+        "title": "决策与发现",
+        "anchor": "原定义-l76"
+      },
+      {
+        "start_line": 78,
+        "end_line": 91,
+        "title": "客观完成度",
+        "anchor": "原定义-l78"
+      },
+      {
+        "start_line": 92,
+        "end_line": 111,
+        "title": "启用前阻塞项",
+        "anchor": "原定义-l92"
+      },
+      {
+        "start_line": 112,
+        "end_line": 132,
+        "title": "技术债候选",
+        "anchor": "原定义-l112"
+      },
+      {
+        "start_line": 133,
+        "end_line": 143,
+        "title": "任务级独立验证",
+        "anchor": "原定义-l133"
+      },
+      {
+        "start_line": 144,
+        "end_line": 147,
+        "title": "集成级独立验证",
+        "anchor": "原定义-l144"
+      },
+      {
+        "start_line": 148,
+        "end_line": 154,
+        "title": "PLANS 回写清单",
+        "anchor": "原定义-l148"
+      },
+      {
+        "start_line": 155,
+        "end_line": 159,
+        "title": "迭代日志",
+        "anchor": "原定义-l155"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "1.",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "2.",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "3.",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "4.",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0013-mcp-and-runtime-adapter-audit.md",
+    "destination": "exec-plans/completed/ADHOC-0013-mcp-and-runtime-adapter-audit.md",
+    "source_sha256": "4f9f8386a3baf0d6ee79e503ba1a59532fb19a8db24b65bbc86101178ac86726",
+    "source_lines": 107,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 11,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 12,
+        "end_line": 18,
+        "title": "目标与验收标准",
+        "anchor": "原定义-l12"
+      },
+      {
+        "start_line": 19,
+        "end_line": 23,
+        "title": "范围与非目标",
+        "anchor": "原定义-l19"
+      },
+      {
+        "start_line": 24,
+        "end_line": 28,
+        "title": "适用规则与参考资料",
+        "anchor": "原定义-l24"
+      },
+      {
+        "start_line": 29,
+        "end_line": 35,
+        "title": "依赖与隔离",
+        "anchor": "原定义-l29"
+      },
+      {
+        "start_line": 36,
+        "end_line": 39,
+        "title": "功能与测试映射",
+        "anchor": "原定义-l36"
+      },
+      {
+        "start_line": 40,
+        "end_line": 44,
+        "title": "工具采用情况",
+        "anchor": "原定义-l40"
+      },
+      {
+        "start_line": 45,
+        "end_line": 50,
+        "title": "Subagent 派发",
+        "anchor": "原定义-l45"
+      },
+      {
+        "start_line": 51,
+        "end_line": 59,
+        "title": "工作分解",
+        "anchor": "原定义-l51"
+      },
+      {
+        "start_line": 60,
+        "end_line": 69,
+        "title": "当前检查点",
+        "anchor": "原定义-l60"
+      },
+      {
+        "start_line": 70,
+        "end_line": 83,
+        "title": "决策与发现",
+        "anchor": "原定义-l70"
+      },
+      {
+        "start_line": 84,
+        "end_line": 91,
+        "title": "任务级独立验证",
+        "anchor": "原定义-l84"
+      },
+      {
+        "start_line": 92,
+        "end_line": 95,
+        "title": "集成级独立验证",
+        "anchor": "原定义-l92"
+      },
+      {
+        "start_line": 96,
+        "end_line": 102,
+        "title": "PLANS 回写清单",
+        "anchor": "原定义-l96"
+      },
+      {
+        "start_line": 103,
+        "end_line": 107,
+        "title": "迭代日志",
+        "anchor": "原定义-l103"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "1.",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "2.",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "3.",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "4.",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0014-m9-local-delivery.md",
+    "destination": "exec-plans/completed/ADHOC-0014-m9-local-delivery.md",
+    "source_sha256": "0f2924d47f4adc072b1ef79c2066593d29bb15c5698bb85de87b36639da2ad70",
+    "source_lines": 116,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 11,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 12,
+        "end_line": 17,
+        "title": "目标与验收标准",
+        "anchor": "原定义-l12"
+      },
+      {
+        "start_line": 18,
+        "end_line": 23,
+        "title": "范围与非目标",
+        "anchor": "原定义-l18"
+      },
+      {
+        "start_line": 24,
+        "end_line": 28,
+        "title": "适用规则与参考资料",
+        "anchor": "原定义-l24"
+      },
+      {
+        "start_line": 29,
+        "end_line": 38,
+        "title": "依赖与隔离",
+        "anchor": "原定义-l29"
+      },
+      {
+        "start_line": 39,
+        "end_line": 42,
+        "title": "功能与测试映射",
+        "anchor": "原定义-l39"
+      },
+      {
+        "start_line": 43,
+        "end_line": 48,
+        "title": "工具采用情况",
+        "anchor": "原定义-l43"
+      },
+      {
+        "start_line": 49,
+        "end_line": 54,
+        "title": "Subagent 派发",
+        "anchor": "原定义-l49"
+      },
+      {
+        "start_line": 55,
+        "end_line": 65,
+        "title": "工作分解",
+        "anchor": "原定义-l55"
+      },
+      {
+        "start_line": 66,
+        "end_line": 75,
+        "title": "当前检查点",
+        "anchor": "原定义-l66"
+      },
+      {
+        "start_line": 76,
+        "end_line": 81,
+        "title": "决策与发现",
+        "anchor": "原定义-l76"
+      },
+      {
+        "start_line": 82,
+        "end_line": 90,
+        "title": "任务级独立验证",
+        "anchor": "原定义-l82"
+      },
+      {
+        "start_line": 91,
+        "end_line": 100,
+        "title": "集成级独立验证",
+        "anchor": "原定义-l91"
+      },
+      {
+        "start_line": 101,
+        "end_line": 107,
+        "title": "PLANS 回写清单",
+        "anchor": "原定义-l101"
+      },
+      {
+        "start_line": 108,
+        "end_line": 116,
+        "title": "迭代日志",
+        "anchor": "原定义-l108"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "L01",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L02",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L03",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L04",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L05",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L06",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md",
+    "destination": "exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md",
+    "source_sha256": "a629877ebb1c4e91ecb2fae43a21fcbd8e721f0f386633198244bd02e341bfa9",
+    "source_lines": 214,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 11,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 12,
+        "end_line": 18,
+        "title": "目标与验收标准",
+        "anchor": "原定义-l12"
+      },
+      {
+        "start_line": 19,
+        "end_line": 26,
+        "title": "范围与非目标",
+        "anchor": "原定义-l19"
+      },
+      {
+        "start_line": 27,
+        "end_line": 34,
+        "title": "适用规则与参考资料",
+        "anchor": "原定义-l27"
+      },
+      {
+        "start_line": 35,
+        "end_line": 42,
+        "title": "冻结验证合同",
+        "anchor": "原定义-l35"
+      },
+      {
+        "start_line": 43,
+        "end_line": 53,
+        "title": "验收标准",
+        "anchor": "原定义-l43"
+      },
+      {
+        "start_line": 54,
+        "end_line": 62,
+        "title": "行为不变量",
+        "anchor": "原定义-l54"
+      },
+      {
+        "start_line": 63,
+        "end_line": 71,
+        "title": "威胁模型",
+        "anchor": "原定义-l63"
+      },
+      {
+        "start_line": 72,
+        "end_line": 79,
+        "title": "明确排除项",
+        "anchor": "原定义-l72"
+      },
+      {
+        "start_line": 80,
+        "end_line": 91,
+        "title": "Lint/Test 与静态门禁",
+        "anchor": "原定义-l80"
+      },
+      {
+        "start_line": 92,
+        "end_line": 97,
+        "title": "合同修订记录",
+        "anchor": "原定义-l92"
+      },
+      {
+        "start_line": 98,
+        "end_line": 107,
+        "title": "依赖与隔离",
+        "anchor": "原定义-l98"
+      },
+      {
+        "start_line": 108,
+        "end_line": 111,
+        "title": "功能与测试映射",
+        "anchor": "原定义-l108"
+      },
+      {
+        "start_line": 112,
+        "end_line": 117,
+        "title": "工具采用情况",
+        "anchor": "原定义-l112"
+      },
+      {
+        "start_line": 118,
+        "end_line": 123,
+        "title": "Subagent 派发",
+        "anchor": "原定义-l118"
+      },
+      {
+        "start_line": 124,
+        "end_line": 134,
+        "title": "工作分解",
+        "anchor": "原定义-l124"
+      },
+      {
+        "start_line": 135,
+        "end_line": 146,
+        "title": "当前检查点",
+        "anchor": "原定义-l135"
+      },
+      {
+        "start_line": 147,
+        "end_line": 152,
+        "title": "Validator 结论处理",
+        "anchor": "原定义-l147"
+      },
+      {
+        "start_line": 153,
+        "end_line": 159,
+        "title": "失败尝试与诊断",
+        "anchor": "原定义-l153"
+      },
+      {
+        "start_line": 160,
+        "end_line": 166,
+        "title": "决策与发现",
+        "anchor": "原定义-l160"
+      },
+      {
+        "start_line": 167,
+        "end_line": 180,
+        "title": "v0.4.2 → v0.4.4 差异映射",
+        "anchor": "原定义-l167"
+      },
+      {
+        "start_line": 181,
+        "end_line": 186,
+        "title": "Validator 固定输出",
+        "anchor": "原定义-l181"
+      },
+      {
+        "start_line": 187,
+        "end_line": 199,
+        "title": "任务级独立验证",
+        "anchor": "原定义-l187"
+      },
+      {
+        "start_line": 200,
+        "end_line": 203,
+        "title": "集成级独立验证",
+        "anchor": "原定义-l200"
+      },
+      {
+        "start_line": 204,
+        "end_line": 207,
+        "title": "PLANS 回写清单",
+        "anchor": "原定义-l204"
+      },
+      {
+        "start_line": 208,
+        "end_line": 214,
+        "title": "迭代日志",
+        "anchor": "原定义-l208"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "L01",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L02",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L03",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L04",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L05",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L06",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0016-agentforge-governance-update.md",
+    "destination": "exec-plans/active/ADHOC-0016-agentforge-governance-update.md",
+    "source_sha256": "60f8980e6414c871746420ae883786662df64497aefc4785f5f55757b25e1794",
+    "source_lines": 126,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 11,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 12,
+        "end_line": 49,
+        "title": "冻结验证合同",
+        "anchor": "原定义-l12"
+      },
+      {
+        "start_line": 50,
+        "end_line": 60,
+        "title": "工作分解",
+        "anchor": "原定义-l50"
+      },
+      {
+        "start_line": 61,
+        "end_line": 69,
+        "title": "当前检查点",
+        "anchor": "原定义-l61"
+      },
+      {
+        "start_line": 70,
+        "end_line": 84,
+        "title": "上游差异映射",
+        "anchor": "原定义-l70"
+      },
+      {
+        "start_line": 85,
+        "end_line": 91,
+        "title": "验证与结论处理",
+        "anchor": "原定义-l85"
+      },
+      {
+        "start_line": 92,
+        "end_line": 103,
+        "title": "最终独立验证",
+        "anchor": "原定义-l92"
+      },
+      {
+        "start_line": 104,
+        "end_line": 109,
+        "title": "主协调 Agent 实测记录（不作为 Validator 结论输入）",
+        "anchor": "原定义-l104"
+      },
+      {
+        "start_line": 110,
+        "end_line": 121,
+        "title": "首轮独立报告与同合同修正",
+        "anchor": "原定义-l110"
+      },
+      {
+        "start_line": 122,
+        "end_line": 126,
+        "title": "迭代日志",
+        "anchor": "原定义-l122"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "L01",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L02",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L03",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L04",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "POST-GIT-01",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md",
+    "destination": "exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md",
+    "source_sha256": "9d49196475440256f20d32835cd2db304d2829e51d128726863df22c0f6858fe",
+    "source_lines": 200,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 8,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 9,
+        "end_line": 29,
+        "title": "当前收尾合同 VC-002",
+        "anchor": "原定义-l9"
+      },
+      {
+        "start_line": 30,
+        "end_line": 37,
+        "title": "本次执行步骤（唯一现行状态）",
+        "anchor": "原定义-l30"
+      },
+      {
+        "start_line": 38,
+        "end_line": 44,
+        "title": "2026-09-14 本次边界与恢复偏差",
+        "anchor": "原定义-l38"
+      },
+      {
+        "start_line": 45,
+        "end_line": 53,
+        "title": "D-01 实际结果与D-02派发",
+        "anchor": "原定义-l45"
+      },
+      {
+        "start_line": 54,
+        "end_line": 63,
+        "title": "D-02/D-03 最终交付事实（2026-09-14）",
+        "anchor": "原定义-l54"
+      },
+      {
+        "start_line": 64,
+        "end_line": 73,
+        "title": "历史：VC-001 已确认目标与边界（已被收窄，非本轮指令）",
+        "anchor": "原定义-l64"
+      },
+      {
+        "start_line": 74,
+        "end_line": 114,
+        "title": "历史冻结合同 VC-001（superseded，以下原文不改写）",
+        "anchor": "原定义-l74"
+      },
+      {
+        "start_line": 115,
+        "end_line": 138,
+        "title": "历史工作分解（停止驱动本轮；以D-01–03为准）",
+        "anchor": "原定义-l115"
+      },
+      {
+        "start_line": 139,
+        "end_line": 153,
+        "title": "当前检查点与证据",
+        "anchor": "原定义-l139"
+      },
+      {
+        "start_line": 154,
+        "end_line": 163,
+        "title": "Agent 派发记录",
+        "anchor": "原定义-l154"
+      },
+      {
+        "start_line": 164,
+        "end_line": 183,
+        "title": "C-06 实际结果与待复核缺口",
+        "anchor": "原定义-l164"
+      },
+      {
+        "start_line": 184,
+        "end_line": 193,
+        "title": "Main 审核决策与分步边界",
+        "anchor": "原定义-l184"
+      },
+      {
+        "start_line": 194,
+        "end_line": 200,
+        "title": "迭代日志",
+        "anchor": "原定义-l194"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "D-01",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": [
+          "原定义-l45",
+          "原定义-l115"
+        ]
+      },
+      {
+        "task_id": "D-02",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": [
+          "原定义-l45",
+          "原定义-l54"
+        ]
+      },
+      {
+        "task_id": "D-03",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": [
+          "原定义-l54"
+        ]
+      },
+      {
+        "task_id": "C-01",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "C-02",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "C-03",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "C-06",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": [
+          "原定义-l164"
+        ]
+      },
+      {
+        "task_id": "C-06V1",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "C-06R1",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "C-06R1V",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "C-07",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "C-07V",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "C-08",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "C-08V",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "C-09",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "C-10",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "C-11",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "C-12",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "C-04",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "C-13",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "C-14",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "C-05",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0019-adopt-next-before-api.md",
+    "destination": "exec-plans/completed/ADHOC-0019-adopt-next-before-api.md",
+    "source_sha256": "8fe1f34d5d36252180a7fd362b8f76afa4bd7caab7b1c05c45d3fd8faccd53f4",
+    "source_lines": 137,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 8,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 9,
+        "end_line": 31,
+        "title": "当前合同 VC-002：仅保存重构前快照",
+        "anchor": "原定义-l9"
+      },
+      {
+        "start_line": 32,
+        "end_line": 59,
+        "title": "历史合同 VC-001（已由VC-002替代，原文字节保留）",
+        "anchor": "原定义-l32"
+      },
+      {
+        "start_line": 60,
+        "end_line": 68,
+        "title": "步骤与写入职责",
+        "anchor": "原定义-l60"
+      },
+      {
+        "start_line": 69,
+        "end_line": 78,
+        "title": "当前检查点",
+        "anchor": "原定义-l69"
+      },
+      {
+        "start_line": 79,
+        "end_line": 94,
+        "title": "历史检查点与证据",
+        "anchor": "原定义-l79"
+      },
+      {
+        "start_line": 95,
+        "end_line": 108,
+        "title": "2026-09-15中断恢复与偏差",
+        "anchor": "原定义-l95"
+      },
+      {
+        "start_line": 109,
+        "end_line": 126,
+        "title": "恢复诊断结果与人工决定",
+        "anchor": "原定义-l109"
+      },
+      {
+        "start_line": 127,
+        "end_line": 132,
+        "title": "派发记录",
+        "anchor": "原定义-l127"
+      },
+      {
+        "start_line": 133,
+        "end_line": 137,
+        "title": "迭代记录",
+        "anchor": "原定义-l133"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "S1a",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "S1b",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "S2",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "S3",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0020-states-activities-decisions.md",
+    "destination": "exec-plans/completed/ADHOC-0020-states-activities-decisions.md",
+    "source_sha256": "53d3c65b2aa6b4de5e5beb8a3cb53795180626b0e1e8bb6fb009e13a4ec7be9b",
+    "source_lines": 97,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 6,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 7,
+        "end_line": 29,
+        "title": "当前冻结合同",
+        "anchor": "原定义-l7"
+      },
+      {
+        "start_line": 30,
+        "end_line": 33,
+        "title": "版本替代记录",
+        "anchor": "原定义-l30"
+      },
+      {
+        "start_line": 34,
+        "end_line": 54,
+        "title": "历史合同 VC-001（superseded，原文保留）",
+        "anchor": "原定义-l34"
+      },
+      {
+        "start_line": 55,
+        "end_line": 67,
+        "title": "步骤与检查点",
+        "anchor": "原定义-l55"
+      },
+      {
+        "start_line": 68,
+        "end_line": 79,
+        "title": "当前检查与受审材料",
+        "anchor": "原定义-l68"
+      },
+      {
+        "start_line": 80,
+        "end_line": 94,
+        "title": "独立验证与主协调收口",
+        "anchor": "原定义-l80"
+      },
+      {
+        "start_line": 95,
+        "end_line": 97,
+        "title": "迭代日志",
+        "anchor": "原定义-l95"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "S1",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "S2",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "S3",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0021-garmin-fit-reference.md",
+    "destination": "exec-plans/completed/ADHOC-0021-garmin-fit-reference.md",
+    "source_sha256": "629e10b3fb1df23f32b4a65f6a9158024cbab87b63da8ef713d0e294d524e7eb",
+    "source_lines": 96,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 10,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 11,
+        "end_line": 38,
+        "title": "冻结验证合同",
+        "anchor": "原定义-l11"
+      },
+      {
+        "start_line": 39,
+        "end_line": 46,
+        "title": "工作分解",
+        "anchor": "原定义-l39"
+      },
+      {
+        "start_line": 47,
+        "end_line": 59,
+        "title": "当前检查点",
+        "anchor": "原定义-l47"
+      },
+      {
+        "start_line": 60,
+        "end_line": 71,
+        "title": "验证设计与派发",
+        "anchor": "原定义-l60"
+      },
+      {
+        "start_line": 72,
+        "end_line": 91,
+        "title": "独立验证结果与主协调处理",
+        "anchor": "原定义-l72"
+      },
+      {
+        "start_line": 92,
+        "end_line": 96,
+        "title": "迭代日志",
+        "anchor": "原定义-l92"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "L01",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L02",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L03",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/ADHOC-0022-longdou-real-fit-reference.md",
+    "destination": "exec-plans/completed/ADHOC-0022-longdou-real-fit-reference.md",
+    "source_sha256": "70943fbdb520265b8022b411fdb45f6dd451885c07b2f350e70741c97a816621",
+    "source_lines": 95,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 9,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 10,
+        "end_line": 38,
+        "title": "冻结验证合同",
+        "anchor": "原定义-l10"
+      },
+      {
+        "start_line": 39,
+        "end_line": 47,
+        "title": "步骤",
+        "anchor": "原定义-l39"
+      },
+      {
+        "start_line": 48,
+        "end_line": 66,
+        "title": "检查点与证据",
+        "anchor": "原定义-l48"
+      },
+      {
+        "start_line": 67,
+        "end_line": 78,
+        "title": "验证边界",
+        "anchor": "原定义-l67"
+      },
+      {
+        "start_line": 79,
+        "end_line": 90,
+        "title": "独立验证与完成回写",
+        "anchor": "原定义-l79"
+      },
+      {
+        "start_line": 91,
+        "end_line": 95,
+        "title": "迭代日志",
+        "anchor": "原定义-l91"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "L01",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L02",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L03",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L04",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/M1-agentforge-migration-0001-development-harness.md",
+    "destination": "exec-plans/completed/M1-agentforge-migration-0001-development-harness.md",
+    "source_sha256": "a435c2d3b0391b6a0368585208d8b3c0f303cece8b1e831e107a65fff1e8abc1",
+    "source_lines": 51,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 9,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 10,
+        "end_line": 15,
+        "title": "Goal and acceptance",
+        "anchor": "原定义-l10"
+      },
+      {
+        "start_line": 16,
+        "end_line": 20,
+        "title": "Scope and exclusions",
+        "anchor": "原定义-l16"
+      },
+      {
+        "start_line": 21,
+        "end_line": 30,
+        "title": "Work",
+        "anchor": "原定义-l21"
+      },
+      {
+        "start_line": 31,
+        "end_line": 39,
+        "title": "Current checkpoint",
+        "anchor": "原定义-l31"
+      },
+      {
+        "start_line": 40,
+        "end_line": 45,
+        "title": "Independent validation",
+        "anchor": "原定义-l40"
+      },
+      {
+        "start_line": 46,
+        "end_line": 51,
+        "title": "Iteration log",
+        "anchor": "原定义-l46"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "L01",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L02",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L03",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L04",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L05",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/M1-product-root-0002-source-migration.md",
+    "destination": "exec-plans/completed/M1-product-root-0002-source-migration.md",
+    "source_sha256": "356e41f2701b63fcf2f129a2b99e7cb99ca5f093eebee49e90d5d5bf26529bcf",
+    "source_lines": 54,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 9,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 10,
+        "end_line": 16,
+        "title": "Goal and acceptance",
+        "anchor": "原定义-l10"
+      },
+      {
+        "start_line": 17,
+        "end_line": 22,
+        "title": "Scope and exclusions",
+        "anchor": "原定义-l17"
+      },
+      {
+        "start_line": 23,
+        "end_line": 32,
+        "title": "Work",
+        "anchor": "原定义-l23"
+      },
+      {
+        "start_line": 33,
+        "end_line": 41,
+        "title": "Current checkpoint",
+        "anchor": "原定义-l33"
+      },
+      {
+        "start_line": 42,
+        "end_line": 47,
+        "title": "Independent validation",
+        "anchor": "原定义-l42"
+      },
+      {
+        "start_line": 48,
+        "end_line": 54,
+        "title": "Iteration log",
+        "anchor": "原定义-l48"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "L01",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L02",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L03",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L04",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L05",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/M1-runtime-root-0003-data-switch.md",
+    "destination": "exec-plans/completed/M1-runtime-root-0003-data-switch.md",
+    "source_sha256": "bf0d29a3e53fb02dadcff7ffaf5abafb266250bf3f26b6d3932bf41129d1e364",
+    "source_lines": 53,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 9,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 10,
+        "end_line": 15,
+        "title": "Goal and acceptance",
+        "anchor": "原定义-l10"
+      },
+      {
+        "start_line": 16,
+        "end_line": 21,
+        "title": "Scope and exclusions",
+        "anchor": "原定义-l16"
+      },
+      {
+        "start_line": 22,
+        "end_line": 31,
+        "title": "Work",
+        "anchor": "原定义-l22"
+      },
+      {
+        "start_line": 32,
+        "end_line": 40,
+        "title": "Current checkpoint",
+        "anchor": "原定义-l32"
+      },
+      {
+        "start_line": 41,
+        "end_line": 46,
+        "title": "Independent validation",
+        "anchor": "原定义-l41"
+      },
+      {
+        "start_line": 47,
+        "end_line": 53,
+        "title": "Iteration log",
+        "anchor": "原定义-l47"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "L01",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L02",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L03",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L04",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L05",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/M10-live-e2e-0001-rolling-week.md",
+    "destination": "exec-plans/completed/M10-live-e2e-0001-rolling-week.md",
+    "source_sha256": "63f2362657d586f3b950ef4e328129a0da4718b0ba652134856260f30d35eb33",
+    "source_lines": 234,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 11,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 12,
+        "end_line": 18,
+        "title": "目标与验收标准",
+        "anchor": "原定义-l12"
+      },
+      {
+        "start_line": 19,
+        "end_line": 34,
+        "title": "范围与非目标",
+        "anchor": "原定义-l19"
+      },
+      {
+        "start_line": 35,
+        "end_line": 53,
+        "title": "冻结预算",
+        "anchor": "原定义-l35"
+      },
+      {
+        "start_line": 54,
+        "end_line": 62,
+        "title": "适用规则与参考资料",
+        "anchor": "原定义-l54"
+      },
+      {
+        "start_line": 63,
+        "end_line": 76,
+        "title": "依赖与隔离",
+        "anchor": "原定义-l63"
+      },
+      {
+        "start_line": 77,
+        "end_line": 86,
+        "title": "功能与测试映射",
+        "anchor": "原定义-l77"
+      },
+      {
+        "start_line": 87,
+        "end_line": 93,
+        "title": "工具采用情况",
+        "anchor": "原定义-l87"
+      },
+      {
+        "start_line": 94,
+        "end_line": 134,
+        "title": "Subagent 派发",
+        "anchor": "原定义-l94"
+      },
+      {
+        "start_line": 135,
+        "end_line": 144,
+        "title": "工作分解",
+        "anchor": "原定义-l135"
+      },
+      {
+        "start_line": 145,
+        "end_line": 154,
+        "title": "当前检查点",
+        "anchor": "原定义-l145"
+      },
+      {
+        "start_line": 155,
+        "end_line": 160,
+        "title": "决策与发现",
+        "anchor": "原定义-l155"
+      },
+      {
+        "start_line": 161,
+        "end_line": 169,
+        "title": "任务级独立验证",
+        "anchor": "原定义-l161"
+      },
+      {
+        "start_line": 170,
+        "end_line": 174,
+        "title": "集成级独立验证",
+        "anchor": "原定义-l170"
+      },
+      {
+        "start_line": 175,
+        "end_line": 181,
+        "title": "PLANS 回写清单",
+        "anchor": "原定义-l175"
+      },
+      {
+        "start_line": 182,
+        "end_line": 234,
+        "title": "迭代日志",
+        "anchor": "原定义-l182"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "M10-0001",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M10-0002",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M10-0003",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M10-0004",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M10-0005",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md",
+    "destination": "exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md",
+    "source_sha256": "c48168d139c828cb0755f28983c1674eaa17ebfd2faf0e1c5c29b40248db662f",
+    "source_lines": 132,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 11,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 12,
+        "end_line": 21,
+        "title": "目标与验收标准",
+        "anchor": "原定义-l12"
+      },
+      {
+        "start_line": 22,
+        "end_line": 31,
+        "title": "范围与非目标",
+        "anchor": "原定义-l22"
+      },
+      {
+        "start_line": 32,
+        "end_line": 37,
+        "title": "适用规则与参考资料",
+        "anchor": "原定义-l32"
+      },
+      {
+        "start_line": 38,
+        "end_line": 50,
+        "title": "依赖与隔离",
+        "anchor": "原定义-l38"
+      },
+      {
+        "start_line": 51,
+        "end_line": 58,
+        "title": "功能与测试映射",
+        "anchor": "原定义-l51"
+      },
+      {
+        "start_line": 59,
+        "end_line": 66,
+        "title": "工具采用情况",
+        "anchor": "原定义-l59"
+      },
+      {
+        "start_line": 67,
+        "end_line": 73,
+        "title": "Subagent 派发",
+        "anchor": "原定义-l67"
+      },
+      {
+        "start_line": 74,
+        "end_line": 83,
+        "title": "工作分解",
+        "anchor": "原定义-l74"
+      },
+      {
+        "start_line": 84,
+        "end_line": 93,
+        "title": "当前检查点",
+        "anchor": "原定义-l84"
+      },
+      {
+        "start_line": 94,
+        "end_line": 98,
+        "title": "决策与发现",
+        "anchor": "原定义-l94"
+      },
+      {
+        "start_line": 99,
+        "end_line": 107,
+        "title": "任务级独立验证",
+        "anchor": "原定义-l99"
+      },
+      {
+        "start_line": 108,
+        "end_line": 117,
+        "title": "集成级独立验证",
+        "anchor": "原定义-l108"
+      },
+      {
+        "start_line": 118,
+        "end_line": 124,
+        "title": "PLANS 回写清单",
+        "anchor": "原定义-l118"
+      },
+      {
+        "start_line": 125,
+        "end_line": 132,
+        "title": "迭代日志",
+        "anchor": "原定义-l125"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "M11-0015-01",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0015-02",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0015-03",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0015-04",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0015-05",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/M11-email-presentation-0001-readable-cid-r02.md",
+    "destination": "exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md",
+    "source_sha256": "97dd33d8ad92c77849da3ccaed3f9c95797aca7da17f31dddaa2f47496920f86",
+    "source_lines": 603,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 11,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 12,
+        "end_line": 17,
+        "title": "M12 替代记录",
+        "anchor": "原定义-l12"
+      },
+      {
+        "start_line": 18,
+        "end_line": 28,
+        "title": "目标与验收标准",
+        "anchor": "原定义-l18"
+      },
+      {
+        "start_line": 29,
+        "end_line": 35,
+        "title": "范围与非目标",
+        "anchor": "原定义-l29"
+      },
+      {
+        "start_line": 36,
+        "end_line": 41,
+        "title": "适用规则与参考资料",
+        "anchor": "原定义-l36"
+      },
+      {
+        "start_line": 42,
+        "end_line": 53,
+        "title": "冻结验证合同",
+        "anchor": "原定义-l42"
+      },
+      {
+        "start_line": 54,
+        "end_line": 73,
+        "title": "验收标准",
+        "anchor": "原定义-l54"
+      },
+      {
+        "start_line": 74,
+        "end_line": 85,
+        "title": "行为不变量",
+        "anchor": "原定义-l74"
+      },
+      {
+        "start_line": 86,
+        "end_line": 99,
+        "title": "威胁模型",
+        "anchor": "原定义-l86"
+      },
+      {
+        "start_line": 100,
+        "end_line": 108,
+        "title": "明确排除项",
+        "anchor": "原定义-l100"
+      },
+      {
+        "start_line": 109,
+        "end_line": 118,
+        "title": "Lint/Test 与静态门禁",
+        "anchor": "原定义-l109"
+      },
+      {
+        "start_line": 119,
+        "end_line": 133,
+        "title": "合同修订记录",
+        "anchor": "原定义-l119"
+      },
+      {
+        "start_line": 134,
+        "end_line": 150,
+        "title": "VC-002 健康状态矩阵",
+        "anchor": "原定义-l134"
+      },
+      {
+        "start_line": 151,
+        "end_line": 173,
+        "title": "VC-003 结构化训练目标合同",
+        "anchor": "原定义-l151"
+      },
+      {
+        "start_line": 174,
+        "end_line": 211,
+        "title": "VC-004 有限输入矩阵",
+        "anchor": "原定义-l174"
+      },
+      {
+        "start_line": 212,
+        "end_line": 239,
+        "title": "VC-005 机器词法与基线",
+        "anchor": "原定义-l212"
+      },
+      {
+        "start_line": 240,
+        "end_line": 282,
+        "title": "VC-006 目标模板、有限词法与故障门",
+        "anchor": "原定义-l240"
+      },
+      {
+        "start_line": 283,
+        "end_line": 314,
+        "title": "VC-007 模型输入双视图合同",
+        "anchor": "原定义-l283"
+      },
+      {
+        "start_line": 315,
+        "end_line": 332,
+        "title": "VC-008 结构化斜杠例外",
+        "anchor": "原定义-l315"
+      },
+      {
+        "start_line": 333,
+        "end_line": 345,
+        "title": "VC-009 仓库外模型工作目录命令合同",
+        "anchor": "原定义-l333"
+      },
+      {
+        "start_line": 346,
+        "end_line": 373,
+        "title": "VC-010 Prompt、Schema 与业务校验同构合同",
+        "anchor": "原定义-l346"
+      },
+      {
+        "start_line": 374,
+        "end_line": 384,
+        "title": "依赖与隔离",
+        "anchor": "原定义-l374"
+      },
+      {
+        "start_line": 385,
+        "end_line": 395,
+        "title": "功能与测试映射",
+        "anchor": "原定义-l385"
+      },
+      {
+        "start_line": 396,
+        "end_line": 402,
+        "title": "工具采用情况",
+        "anchor": "原定义-l396"
+      },
+      {
+        "start_line": 403,
+        "end_line": 443,
+        "title": "Subagent 派发",
+        "anchor": "原定义-l403"
+      },
+      {
+        "start_line": 444,
+        "end_line": 468,
+        "title": "工作分解",
+        "anchor": "原定义-l444"
+      },
+      {
+        "start_line": 469,
+        "end_line": 480,
+        "title": "当前检查点",
+        "anchor": "原定义-l469"
+      },
+      {
+        "start_line": 481,
+        "end_line": 488,
+        "title": "决策与发现",
+        "anchor": "原定义-l481"
+      },
+      {
+        "start_line": 489,
+        "end_line": 497,
+        "title": "Validator 结论处理",
+        "anchor": "原定义-l489"
+      },
+      {
+        "start_line": 498,
+        "end_line": 509,
+        "title": "失败尝试与诊断",
+        "anchor": "原定义-l498"
+      },
+      {
+        "start_line": 510,
+        "end_line": 516,
+        "title": "Failure Analyst 固定输出",
+        "anchor": "原定义-l510"
+      },
+      {
+        "start_line": 517,
+        "end_line": 523,
+        "title": "Validator 固定输出",
+        "anchor": "原定义-l517"
+      },
+      {
+        "start_line": 524,
+        "end_line": 529,
+        "title": "任务级独立验证",
+        "anchor": "原定义-l524"
+      },
+      {
+        "start_line": 530,
+        "end_line": 534,
+        "title": "集成级独立验证",
+        "anchor": "原定义-l530"
+      },
+      {
+        "start_line": 535,
+        "end_line": 541,
+        "title": "PLANS 回写清单",
+        "anchor": "原定义-l535"
+      },
+      {
+        "start_line": 542,
+        "end_line": 603,
+        "title": "迭代日志",
+        "anchor": "原定义-l542"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "M11-0016-01",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0016-02",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0017-01",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0017-02",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0018-01",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0018-02",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0017-03",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0017-04",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0017-05",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0017-06",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0017-07",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0017-08",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0017-09",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0017-10",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0018-03",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0018-04",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0018-05",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0018-06",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0019-01",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0019-02",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+    "destination": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+    "source_sha256": "5963e6ccbb1ece65ef8e0d4ffa9154bbe74678144f63a28b79837ce6ebafc70c",
+    "source_lines": 329,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 14,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 15,
+        "end_line": 32,
+        "title": "目标与验收标准",
+        "anchor": "原定义-l15"
+      },
+      {
+        "start_line": 33,
+        "end_line": 41,
+        "title": "范围与非目标",
+        "anchor": "原定义-l33"
+      },
+      {
+        "start_line": 42,
+        "end_line": 54,
+        "title": "适用规则与参考资料",
+        "anchor": "原定义-l42"
+      },
+      {
+        "start_line": 55,
+        "end_line": 70,
+        "title": "依赖与隔离",
+        "anchor": "原定义-l55"
+      },
+      {
+        "start_line": 71,
+        "end_line": 84,
+        "title": "功能与测试映射",
+        "anchor": "原定义-l71"
+      },
+      {
+        "start_line": 85,
+        "end_line": 92,
+        "title": "工具采用情况",
+        "anchor": "原定义-l85"
+      },
+      {
+        "start_line": 93,
+        "end_line": 178,
+        "title": "Subagent 派发",
+        "anchor": "原定义-l93"
+      },
+      {
+        "start_line": 179,
+        "end_line": 198,
+        "title": "工作分解",
+        "anchor": "原定义-l179"
+      },
+      {
+        "start_line": 199,
+        "end_line": 210,
+        "title": "当前检查点",
+        "anchor": "原定义-l199"
+      },
+      {
+        "start_line": 211,
+        "end_line": 218,
+        "title": "决策与发现",
+        "anchor": "原定义-l211"
+      },
+      {
+        "start_line": 219,
+        "end_line": 227,
+        "title": "任务级独立验证",
+        "anchor": "原定义-l219"
+      },
+      {
+        "start_line": 228,
+        "end_line": 237,
+        "title": "集成级独立验证",
+        "anchor": "原定义-l228"
+      },
+      {
+        "start_line": 238,
+        "end_line": 246,
+        "title": "PLANS 回写清单",
+        "anchor": "原定义-l238"
+      },
+      {
+        "start_line": 247,
+        "end_line": 329,
+        "title": "迭代日志",
+        "anchor": "原定义-l247"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "M11-0001",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0002",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0003",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0004",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0005",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L06",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0006",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0007",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0008",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0009",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0010",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0011",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0012",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0013",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M11-0014",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md",
+    "destination": "exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md",
+    "source_sha256": "ae8ba0bc23815dc70fa252786a5d378df10207968c103473a16debeba93e5b3e",
+    "source_lines": 152,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 12,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 13,
+        "end_line": 29,
+        "title": "目标与验收标准",
+        "anchor": "原定义-l13"
+      },
+      {
+        "start_line": 30,
+        "end_line": 38,
+        "title": "范围与非目标",
+        "anchor": "原定义-l30"
+      },
+      {
+        "start_line": 39,
+        "end_line": 46,
+        "title": "适用规则与参考资料",
+        "anchor": "原定义-l39"
+      },
+      {
+        "start_line": 47,
+        "end_line": 57,
+        "title": "依赖与隔离",
+        "anchor": "原定义-l47"
+      },
+      {
+        "start_line": 58,
+        "end_line": 68,
+        "title": "功能与测试映射",
+        "anchor": "原定义-l58"
+      },
+      {
+        "start_line": 69,
+        "end_line": 74,
+        "title": "工具采用情况",
+        "anchor": "原定义-l69"
+      },
+      {
+        "start_line": 75,
+        "end_line": 81,
+        "title": "Subagent 派发",
+        "anchor": "原定义-l75"
+      },
+      {
+        "start_line": 82,
+        "end_line": 94,
+        "title": "工作分解",
+        "anchor": "原定义-l82"
+      },
+      {
+        "start_line": 95,
+        "end_line": 104,
+        "title": "当前检查点",
+        "anchor": "原定义-l95"
+      },
+      {
+        "start_line": 105,
+        "end_line": 121,
+        "title": "决策与发现",
+        "anchor": "原定义-l105"
+      },
+      {
+        "start_line": 122,
+        "end_line": 133,
+        "title": "任务级独立验证",
+        "anchor": "原定义-l122"
+      },
+      {
+        "start_line": 134,
+        "end_line": 138,
+        "title": "集成级独立验证",
+        "anchor": "原定义-l134"
+      },
+      {
+        "start_line": 139,
+        "end_line": 145,
+        "title": "PLANS 回写清单",
+        "anchor": "原定义-l139"
+      },
+      {
+        "start_line": 146,
+        "end_line": 152,
+        "title": "迭代日志",
+        "anchor": "原定义-l146"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "L01",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L02",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L03",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L04",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L05",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L06",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L07",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L08",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md",
+    "destination": "exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md",
+    "source_sha256": "98b32741342838d0abe517d53229530a6e7908e3c7ce18328484454ce26c190d",
+    "source_lines": 126,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 11,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 12,
+        "end_line": 21,
+        "title": "目标与验收标准",
+        "anchor": "原定义-l12"
+      },
+      {
+        "start_line": 22,
+        "end_line": 27,
+        "title": "范围与非目标",
+        "anchor": "原定义-l22"
+      },
+      {
+        "start_line": 28,
+        "end_line": 32,
+        "title": "适用规则与参考资料",
+        "anchor": "原定义-l28"
+      },
+      {
+        "start_line": 33,
+        "end_line": 39,
+        "title": "依赖与隔离",
+        "anchor": "原定义-l33"
+      },
+      {
+        "start_line": 40,
+        "end_line": 47,
+        "title": "功能与测试映射",
+        "anchor": "原定义-l40"
+      },
+      {
+        "start_line": 48,
+        "end_line": 53,
+        "title": "工具采用情况",
+        "anchor": "原定义-l48"
+      },
+      {
+        "start_line": 54,
+        "end_line": 61,
+        "title": "Subagent 派发",
+        "anchor": "原定义-l54"
+      },
+      {
+        "start_line": 62,
+        "end_line": 73,
+        "title": "工作分解",
+        "anchor": "原定义-l62"
+      },
+      {
+        "start_line": 74,
+        "end_line": 83,
+        "title": "当前检查点",
+        "anchor": "原定义-l74"
+      },
+      {
+        "start_line": 84,
+        "end_line": 96,
+        "title": "决策与发现",
+        "anchor": "原定义-l84"
+      },
+      {
+        "start_line": 97,
+        "end_line": 105,
+        "title": "任务级独立验证",
+        "anchor": "原定义-l97"
+      },
+      {
+        "start_line": 106,
+        "end_line": 110,
+        "title": "集成级独立验证",
+        "anchor": "原定义-l106"
+      },
+      {
+        "start_line": 111,
+        "end_line": 117,
+        "title": "PLANS 回写清单",
+        "anchor": "原定义-l111"
+      },
+      {
+        "start_line": 118,
+        "end_line": 126,
+        "title": "迭代日志",
+        "anchor": "原定义-l118"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "L01",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L02",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L03",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L04",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L05",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L06",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L07",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/M4-source-root-0001-product-consolidation.md",
+    "destination": "exec-plans/completed/M4-source-root-0001-product-consolidation.md",
+    "source_sha256": "73f3d5d6a30dc57f414d32e05eb3539ad17fcd4ac9c6a86a6ca96659156c548d",
+    "source_lines": 109,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 9,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 10,
+        "end_line": 18,
+        "title": "目标",
+        "anchor": "原定义-l10"
+      },
+      {
+        "start_line": 19,
+        "end_line": 31,
+        "title": "硬边界",
+        "anchor": "原定义-l19"
+      },
+      {
+        "start_line": 32,
+        "end_line": 33,
+        "title": "串行任务与验收",
+        "anchor": "原定义-l32"
+      },
+      {
+        "start_line": 34,
+        "end_line": 45,
+        "title": "M4-0001：工程布局与历史运行层清理",
+        "anchor": "原定义-l34"
+      },
+      {
+        "start_line": 46,
+        "end_line": 57,
+        "title": "M4-0002：Foundation v4 离线 Garmin 重建",
+        "anchor": "原定义-l46"
+      },
+      {
+        "start_line": 58,
+        "end_line": 69,
+        "title": "M4-0003：运行时教练 Harness v2",
+        "anchor": "原定义-l58"
+      },
+      {
+        "start_line": 70,
+        "end_line": 78,
+        "title": "M4-0004：原子切换与独立验证",
+        "anchor": "原定义-l70"
+      },
+      {
+        "start_line": 79,
+        "end_line": 87,
+        "title": "当前状态",
+        "anchor": "原定义-l79"
+      },
+      {
+        "start_line": 88,
+        "end_line": 93,
+        "title": "变更范围",
+        "anchor": "原定义-l88"
+      },
+      {
+        "start_line": 94,
+        "end_line": 98,
+        "title": "独立验证",
+        "anchor": "原定义-l94"
+      },
+      {
+        "start_line": 99,
+        "end_line": 109,
+        "title": "迭代日志",
+        "anchor": "原定义-l99"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "M4-0001",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": [
+          "原定义-l34"
+        ]
+      },
+      {
+        "task_id": "M4-0002",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": [
+          "原定义-l46"
+        ]
+      },
+      {
+        "task_id": "M4-0003",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": [
+          "原定义-l58"
+        ]
+      },
+      {
+        "task_id": "M4-0004",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": [
+          "原定义-l70"
+        ]
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md",
+    "destination": "exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md",
+    "source_sha256": "13d124737b892d523de6f53565652d7d40a86ae974880022088d2cfd00765d1f",
+    "source_lines": 147,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 11,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 12,
+        "end_line": 22,
+        "title": "目标与验收标准",
+        "anchor": "原定义-l12"
+      },
+      {
+        "start_line": 23,
+        "end_line": 39,
+        "title": "范围与非目标",
+        "anchor": "原定义-l23"
+      },
+      {
+        "start_line": 40,
+        "end_line": 49,
+        "title": "适用规则与参考资料",
+        "anchor": "原定义-l40"
+      },
+      {
+        "start_line": 50,
+        "end_line": 63,
+        "title": "依赖与隔离",
+        "anchor": "原定义-l50"
+      },
+      {
+        "start_line": 64,
+        "end_line": 71,
+        "title": "功能与测试映射",
+        "anchor": "原定义-l64"
+      },
+      {
+        "start_line": 72,
+        "end_line": 79,
+        "title": "工具采用情况",
+        "anchor": "原定义-l72"
+      },
+      {
+        "start_line": 80,
+        "end_line": 85,
+        "title": "Subagent 派发",
+        "anchor": "原定义-l80"
+      },
+      {
+        "start_line": 86,
+        "end_line": 95,
+        "title": "工作分解",
+        "anchor": "原定义-l86"
+      },
+      {
+        "start_line": 96,
+        "end_line": 105,
+        "title": "当前检查点",
+        "anchor": "原定义-l96"
+      },
+      {
+        "start_line": 106,
+        "end_line": 112,
+        "title": "决策与发现",
+        "anchor": "原定义-l106"
+      },
+      {
+        "start_line": 113,
+        "end_line": 121,
+        "title": "任务级独立验证",
+        "anchor": "原定义-l113"
+      },
+      {
+        "start_line": 122,
+        "end_line": 131,
+        "title": "集成级独立验证",
+        "anchor": "原定义-l122"
+      },
+      {
+        "start_line": 132,
+        "end_line": 138,
+        "title": "PLANS 回写清单",
+        "anchor": "原定义-l132"
+      },
+      {
+        "start_line": 139,
+        "end_line": 147,
+        "title": "迭代日志",
+        "anchor": "原定义-l139"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "M5-0001",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M5-0002",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M5-0003",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M5-0004",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "L05",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/M6-activity-evidence-0001-lifecycle-and-preview.md",
+    "destination": "exec-plans/active/M6-activity-evidence-0001-lifecycle-and-preview.md",
+    "source_sha256": "8ec0afea11dee21fb50d0865ead1fbe46e1f9ee61598008b9484c590546d393d",
+    "source_lines": 114,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 11,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 12,
+        "end_line": 17,
+        "title": "目标与验收标准",
+        "anchor": "原定义-l12"
+      },
+      {
+        "start_line": 18,
+        "end_line": 23,
+        "title": "范围与非目标",
+        "anchor": "原定义-l18"
+      },
+      {
+        "start_line": 24,
+        "end_line": 29,
+        "title": "适用规则与参考资料",
+        "anchor": "原定义-l24"
+      },
+      {
+        "start_line": 30,
+        "end_line": 38,
+        "title": "依赖与隔离",
+        "anchor": "原定义-l30"
+      },
+      {
+        "start_line": 39,
+        "end_line": 46,
+        "title": "功能与测试映射",
+        "anchor": "原定义-l39"
+      },
+      {
+        "start_line": 47,
+        "end_line": 52,
+        "title": "工具采用情况",
+        "anchor": "原定义-l47"
+      },
+      {
+        "start_line": 53,
+        "end_line": 61,
+        "title": "工作分解",
+        "anchor": "原定义-l53"
+      },
+      {
+        "start_line": 62,
+        "end_line": 71,
+        "title": "当前检查点",
+        "anchor": "原定义-l62"
+      },
+      {
+        "start_line": 72,
+        "end_line": 77,
+        "title": "决策与发现",
+        "anchor": "原定义-l72"
+      },
+      {
+        "start_line": 78,
+        "end_line": 85,
+        "title": "任务级独立验证",
+        "anchor": "原定义-l78"
+      },
+      {
+        "start_line": 86,
+        "end_line": 91,
+        "title": "集成级独立验证",
+        "anchor": "原定义-l86"
+      },
+      {
+        "start_line": 92,
+        "end_line": 98,
+        "title": "PLANS 回写清单",
+        "anchor": "原定义-l92"
+      },
+      {
+        "start_line": 99,
+        "end_line": 114,
+        "title": "迭代日志",
+        "anchor": "原定义-l99"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "M6-0001",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M6-0002",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M6-0003",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M6-0004",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/M7-ai-skills-0001-runtime-closure.md",
+    "destination": "exec-plans/completed/M7-ai-skills-0001-runtime-closure.md",
+    "source_sha256": "99fd2ddf28ac2cea9fc2689e7bf343da08887d5d2d1bbf68b883cac70dcd3af0",
+    "source_lines": 145,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 11,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 12,
+        "end_line": 26,
+        "title": "目标与验收标准",
+        "anchor": "原定义-l12"
+      },
+      {
+        "start_line": 27,
+        "end_line": 35,
+        "title": "范围与非目标",
+        "anchor": "原定义-l27"
+      },
+      {
+        "start_line": 36,
+        "end_line": 41,
+        "title": "适用规则与参考资料",
+        "anchor": "原定义-l36"
+      },
+      {
+        "start_line": 42,
+        "end_line": 53,
+        "title": "依赖与隔离",
+        "anchor": "原定义-l42"
+      },
+      {
+        "start_line": 54,
+        "end_line": 63,
+        "title": "功能与测试映射",
+        "anchor": "原定义-l54"
+      },
+      {
+        "start_line": 64,
+        "end_line": 72,
+        "title": "工具采用情况",
+        "anchor": "原定义-l64"
+      },
+      {
+        "start_line": 73,
+        "end_line": 78,
+        "title": "Subagent 派发",
+        "anchor": "原定义-l73"
+      },
+      {
+        "start_line": 79,
+        "end_line": 88,
+        "title": "工作分解",
+        "anchor": "原定义-l79"
+      },
+      {
+        "start_line": 89,
+        "end_line": 98,
+        "title": "当前检查点",
+        "anchor": "原定义-l89"
+      },
+      {
+        "start_line": 99,
+        "end_line": 107,
+        "title": "决策与发现",
+        "anchor": "原定义-l99"
+      },
+      {
+        "start_line": 108,
+        "end_line": 116,
+        "title": "任务级独立验证",
+        "anchor": "原定义-l108"
+      },
+      {
+        "start_line": 117,
+        "end_line": 126,
+        "title": "集成级独立验证",
+        "anchor": "原定义-l117"
+      },
+      {
+        "start_line": 127,
+        "end_line": 133,
+        "title": "PLANS 回写清单",
+        "anchor": "原定义-l127"
+      },
+      {
+        "start_line": 134,
+        "end_line": 145,
+        "title": "迭代日志",
+        "anchor": "原定义-l134"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "M7-0001",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M7-0002",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M7-0003",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M7-0004",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M7-0005",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/M8-real-data-0001-ai-coach-closure.md",
+    "destination": "exec-plans/completed/M8-real-data-0001-ai-coach-closure.md",
+    "source_sha256": "7ebf3f15cea1b0e4a77bec0768000d2f97d1f97db31ebb4e5324bf2f1ee56768",
+    "source_lines": 130,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 11,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 12,
+        "end_line": 21,
+        "title": "目标与验收标准",
+        "anchor": "原定义-l12"
+      },
+      {
+        "start_line": 22,
+        "end_line": 27,
+        "title": "范围与非目标",
+        "anchor": "原定义-l22"
+      },
+      {
+        "start_line": 28,
+        "end_line": 32,
+        "title": "适用规则与参考资料",
+        "anchor": "原定义-l28"
+      },
+      {
+        "start_line": 33,
+        "end_line": 40,
+        "title": "依赖与隔离",
+        "anchor": "原定义-l33"
+      },
+      {
+        "start_line": 41,
+        "end_line": 49,
+        "title": "功能与测试映射",
+        "anchor": "原定义-l41"
+      },
+      {
+        "start_line": 50,
+        "end_line": 55,
+        "title": "工具采用情况",
+        "anchor": "原定义-l50"
+      },
+      {
+        "start_line": 56,
+        "end_line": 65,
+        "title": "工作分解",
+        "anchor": "原定义-l56"
+      },
+      {
+        "start_line": 66,
+        "end_line": 74,
+        "title": "当前检查点",
+        "anchor": "原定义-l66"
+      },
+      {
+        "start_line": 75,
+        "end_line": 83,
+        "title": "设计合同",
+        "anchor": "原定义-l75"
+      },
+      {
+        "start_line": 84,
+        "end_line": 89,
+        "title": "任务级独立验证",
+        "anchor": "原定义-l84"
+      },
+      {
+        "start_line": 90,
+        "end_line": 95,
+        "title": "集成级独立验证",
+        "anchor": "原定义-l90"
+      },
+      {
+        "start_line": 96,
+        "end_line": 102,
+        "title": "PLANS 回写清单",
+        "anchor": "原定义-l96"
+      },
+      {
+        "start_line": 103,
+        "end_line": 130,
+        "title": "迭代日志",
+        "anchor": "原定义-l103"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "M8-0001",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M8-0002",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M8-0003",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M8-0004",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M8-0005",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  },
+  {
+    "source": "docs/exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md",
+    "destination": "exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md",
+    "source_sha256": "b27e69279df27d2000afa051f1459fa8fd09eedd76334ebf6d3f73799dca101e",
+    "source_lines": 355,
+    "chunks": [
+      {
+        "start_line": 1,
+        "end_line": 11,
+        "title": "原文导言",
+        "anchor": "原定义-l1"
+      },
+      {
+        "start_line": 12,
+        "end_line": 21,
+        "title": "目标与验收标准",
+        "anchor": "原定义-l12"
+      },
+      {
+        "start_line": 22,
+        "end_line": 31,
+        "title": "范围与非目标",
+        "anchor": "原定义-l22"
+      },
+      {
+        "start_line": 32,
+        "end_line": 38,
+        "title": "适用规则与参考资料",
+        "anchor": "原定义-l32"
+      },
+      {
+        "start_line": 39,
+        "end_line": 52,
+        "title": "依赖与隔离",
+        "anchor": "原定义-l39"
+      },
+      {
+        "start_line": 53,
+        "end_line": 68,
+        "title": "冻结预算",
+        "anchor": "原定义-l53"
+      },
+      {
+        "start_line": 69,
+        "end_line": 86,
+        "title": "r04 AI 阻塞恢复批次",
+        "anchor": "原定义-l69"
+      },
+      {
+        "start_line": 87,
+        "end_line": 112,
+        "title": "r05 Structured Outputs Schema 修正批次",
+        "anchor": "原定义-l87"
+      },
+      {
+        "start_line": 113,
+        "end_line": 134,
+        "title": "r06 threat-model closure batch",
+        "anchor": "原定义-l113"
+      },
+      {
+        "start_line": 135,
+        "end_line": 155,
+        "title": "r07 Structured Outputs v2 与 attempt 4 批次",
+        "anchor": "原定义-l135"
+      },
+      {
+        "start_line": 156,
+        "end_line": 165,
+        "title": "功能与测试映射",
+        "anchor": "原定义-l156"
+      },
+      {
+        "start_line": 166,
+        "end_line": 172,
+        "title": "工具采用情况",
+        "anchor": "原定义-l166"
+      },
+      {
+        "start_line": 173,
+        "end_line": 216,
+        "title": "Subagent 派发",
+        "anchor": "原定义-l173"
+      },
+      {
+        "start_line": 217,
+        "end_line": 226,
+        "title": "工作分解",
+        "anchor": "原定义-l217"
+      },
+      {
+        "start_line": 227,
+        "end_line": 236,
+        "title": "当前检查点",
+        "anchor": "原定义-l227"
+      },
+      {
+        "start_line": 237,
+        "end_line": 242,
+        "title": "决策与发现",
+        "anchor": "原定义-l237"
+      },
+      {
+        "start_line": 243,
+        "end_line": 252,
+        "title": "任务级独立验证",
+        "anchor": "原定义-l243"
+      },
+      {
+        "start_line": 253,
+        "end_line": 262,
+        "title": "集成级独立验证",
+        "anchor": "原定义-l253"
+      },
+      {
+        "start_line": 263,
+        "end_line": 269,
+        "title": "PLANS 回写清单",
+        "anchor": "原定义-l263"
+      },
+      {
+        "start_line": 270,
+        "end_line": 355,
+        "title": "迭代日志",
+        "anchor": "原定义-l270"
+      }
+    ],
+    "task_associations": [
+      {
+        "task_id": "M9-0001",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M9-0002",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M9-0003",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M9-0004",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      },
+      {
+        "task_id": "M9-0005",
+        "shared_anchor": "原任务定义与验收",
+        "specific_anchors": []
+      }
+    ],
+    "projection": "Every source line retained in contiguous quoted chunks; Markdown links displayed as literal original locators, never reactivated. Current task rows link shared definitions and explicit same-ID source headings."
+  }
+]

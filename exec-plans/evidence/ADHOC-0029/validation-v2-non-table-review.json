@@ -1,0 +1,116 @@
+{
+  "review": "manual non-table decomposition semantic comparison; string markers are evidence locators, not a required wording policy",
+  "source": "docs/exec-plans/completed/M4-source-root-0001-product-consolidation.md",
+  "destination": "exec-plans/completed/M4-source-root-0001-product-consolidation.md",
+  "scanned_plans": 38,
+  "task_headings": [
+    {
+      "source": "docs/exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md",
+      "line": 45,
+      "heading": "### D-01 实际结果与D-02派发"
+    },
+    {
+      "source": "docs/exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md",
+      "line": 54,
+      "heading": "### D-02/D-03 最终交付事实（2026-09-14）"
+    },
+    {
+      "source": "docs/exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md",
+      "line": 164,
+      "heading": "## C-06 实际结果与待复核缺口"
+    },
+    {
+      "source": "docs/exec-plans/completed/M4-source-root-0001-product-consolidation.md",
+      "line": 34,
+      "heading": "### M4-0001：工程布局与历史运行层清理"
+    },
+    {
+      "source": "docs/exec-plans/completed/M4-source-root-0001-product-consolidation.md",
+      "line": 46,
+      "heading": "### M4-0002：Foundation v4 离线 Garmin 重建"
+    },
+    {
+      "source": "docs/exec-plans/completed/M4-source-root-0001-product-consolidation.md",
+      "line": 58,
+      "heading": "### M4-0003：运行时教练 Harness v2"
+    },
+    {
+      "source": "docs/exec-plans/completed/M4-source-root-0001-product-consolidation.md",
+      "line": 70,
+      "heading": "### M4-0004：原子切换与独立验证"
+    }
+  ],
+  "original": {
+    "32": "## 串行任务与验收",
+    "33": "",
+    "34": "### M4-0001：工程布局与历史运行层清理",
+    "35": "",
+    "36": "- `src/trainlab/*` 已迁入 `source/src/*`，不建立 `source/src/trainlab/`。",
+    "37": "- `source/index.py` 预先设置默认 `TRAINLAB_INSTANCE_ROOT=source/`，尊重显式覆盖，并",
+    "38": "  校验实际 `src.__file__` 来自 `source/src/`。",
+    "39": "- 删除产品 Orchestration、Supervisor、自动调度 CLI、相关 schema/config/docs/deploy",
+    "40": "  和专属测试；保留 Foundation/Garmin/Analysis/Mail 的手动一次性命令。",
+    "41": "- 删除 wheel/runtime bundle 构建器、安装器、`dist/build/deploy` 与仓库 `.venv` 依赖。",
+    "42": "- CI、质量脚本和文档均从 `source/` 工作；锁文件仅为 `source/requirements.lock`。",
+    "43": "- `.gitignore` 只忽略私有配置、state、logs、数据库、raw、FIT、token、凭据及整个",
+    "44": "  `data-backup/`，反向允许 README、examples、`.gitkeep`。",
+    "45": "",
+    "46": "### M4-0002：Foundation v4 离线 Garmin 重建",
+    "47": "",
+    "48": "- 候选库只读取 `active raw ∪ backup-only raw ∪ legacy FIT`，按字节 SHA-256 去重，按",
+    "49": "  Provider 身份和 revision 顺序重放 inventory、summary、FIT、weather、健康、睡眠和",
+    "50": "  physiology。",
+    "51": "- 新库只保留 Garmin 健康/活动事实、覆盖/cursor/gap/lifecycle 和必要来源闭包；不迁移",
+    "52": "  旧 AI 报告、计划、邮件、用户事实、交付或运行历史。",
+    "53": "- 无法唯一绑定的 legacy FIT 只归档并登记缺口，禁止猜测。",
+    "54": "- 完整性、外键、哈希、来源闭包、权限和只读验证通过后，旧 `state/config/logs` 与旧库",
+    "55": "  原子归档到 `data-backup/<timestamp>/`；正式配置/凭据只迁入 `source/`，",
+    "56": "  `orchestration.yaml` 仅归档。",
+    "57": "",
+    "58": "### M4-0003：运行时教练 Harness v2",
+    "59": "",
+    "60": "- 运行时资源位于 `source/src/resources/harness/`；跑步、攀岩、休息统一进入七日计划，",
+    "61": "  每日最多一项主课，首版不单独安排力量课。",
+    "62": "- 新增 `coaching_profile_contract_v1` 和 `course_contract_v2`：课程剂量、步骤唯一结束",
+    "63": "  条件、数值配速/心率/RPE、目标、guardrail、停止/降级、恢复成本和 Garmin 映射状态",
+    "64": "  均为结构化字段；攀岩始终 `unsupported_skip`。",
+    "65": "- 日报严格区分 D-1 非睡眠复盘、D 夜间唯一已结束主睡眠和 D 当日周计划 item；睡眠样本",
+    "66": "  采用半开区间，nap/未结束/多主睡眠明确缺失或歧义，日报只评估不修改正式计划。",
+    "67": "- 周报覆盖完整周一至周日，缺少周日数据则延后；输出 `advance/hold/deload`，一次只",
+    "68": "  改变容量或强度一个维度。",
+    "69": "",
+    "70": "### M4-0004：原子切换与独立验证",
+    "71": "",
+    "72": "- 在没有产品写进程时完成候选切换前后的路径、权限、属主、摘要、SQLite 完整性、入口、",
+    "73": "  schema、隐私和 Git ignore 验证。",
+    "74": "- 在仓库外全新 Python 3.12 环境中从锁文件安装依赖；从任意工作目录运行 `source/index.py`",
+    "75": "  的帮助和只读 Foundation 状态，不执行 Garmin/Gmail/分析/邮件/Supervisor。",
+    "76": "- 完整 pytest、repository quality、Ruff/format、mypy、compile、schema、shell 和隐私",
+    "77": "  扫描全部通过；由全新只读 Validator 最终 `PASS` 后才归档计划。"
+  },
+  "current_rows": {
+    "21": "| M4-0001 | HISTORY | [completed] | M4-0001；原事项/输出：证据/下一步：source 迁移、入口、CI、ignore 和历史运行层清理已完成；独立 Validator PASS；边界不超出原目标/授权 | 原表未单列；沿用原功能前置条件，不按编号新增依赖 | 核对原记录的验证方式/实际结果及源文件同编号验收；本轮不执行历史命令 | 原记录：证据/下一步：source 迁移、入口、CI、ignore 和历史运行层清理已完成；独立 Validator PASS；原完成范围不扩大；对应原执行计划 L83 |",
+    "22": "| M4-0002 | HISTORY | [completed] | M4-0002；原事项/输出：证据/下一步：Foundation v4 候选已重建：active raw 27344 + backup-only 44，4 个 legacy FIT 登记为 unresolved 缺口；schema/完整性/来源闭包/权限检查通过；边界不超出原目标/授权 | 原表未单列；沿用原功能前置条件，不按编号新增依赖 | 核对原记录的验证方式/实际结果及源文件同编号验收；本轮不执行历史命令 | 原记录：证据/下一步：Foundation v4 候选已重建：active raw 27344 + backup-only 44，4 个 legacy FIT 登记为 unresolved 缺口；schema/完整性/来源闭包/权限检查通过；原完成范围不扩大；对应原执行计划 L84 |",
+    "23": "| M4-0003 | HISTORY | [completed] | M4-0003；原事项/输出：证据/下一步：course/profile/sleep/负荷合同已接入结果 schema 与生产 Validator；独立 Validator PASS；边界不超出原目标/授权 | 原表未单列；沿用原功能前置条件，不按编号新增依赖 | 核对原记录的验证方式/实际结果及源文件同编号验收；本轮不执行历史命令 | 原记录：证据/下一步：course/profile/sleep/负荷合同已接入结果 schema 与生产 Validator；独立 Validator PASS；原完成范围不扩大；对应原执行计划 L85 |",
+    "24": "| M4-0004 | HISTORY | [completed] | M4-0004；原事项/输出：证据/下一步：source/state 已原子切换，入口、只读状态、静态门和完整 pytest 已通过；独立 Validator PASS；边界不超出原目标/授权 | 原表未单列；沿用原功能前置条件，不按编号新增依赖 | 核对原记录的验证方式/实际结果及源文件同编号验收；本轮不执行历史命令 | 原记录：证据/下一步：source/state 已原子切换，入口、只读状态、静态门和完整 pytest 已通过；独立 Validator PASS；原完成范围不扩大；对应原执行计划 L86 |"
+  },
+  "findings": [
+    {
+      "id": "ADHOC-0029-V001",
+      "requirement": "AC-02 / original non-table task inputs, error boundaries and checks must be carried into migrated task structure",
+      "task": "M4-0002",
+      "original_lines": "48-56",
+      "expected": "展示限定输入 active raw ∪ backup-only raw ∪ legacy FIT、按SHA去重/身份和revision重放；不迁移旧AI报告/计划/邮件/用户事实/交付运行历史；legacy FIT不能唯一绑定时仅归档并登记、不猜测。",
+      "actual": "当前行只复述原状态表L84的已重建数量及检查通过，边界为通用不超出原目标/授权，检查方法为通用核对原记录；上述任务级输入、排除项和歧义处理仅在ZIP原件。"
+    },
+    {
+      "id": "ADHOC-0029-V001",
+      "requirement": "AC-02",
+      "task": "M4-0003",
+      "original_lines": "58-68",
+      "expected": "承接任务名及明确合同/错误边界，包括课程与画像合同版本、攀岩unsupported_skip、主睡眠歧义/未结束处理、完整周缺周日延期。",
+      "actual": "当前行只复述原状态表L85 course/profile/sleep/负荷已接入且PASS，具体任务范围/错误处理未进入新任务结构。"
+    }
+  ],
+  "conclusion": "失败：工作表行覆盖通过不等于原非表格任务定义完整迁移。原件保全通过，不重判旧M4产品。"
+}

@@ -1,0 +1,62 @@
+{
+  "AGENTS.md": {
+    "url": "https://raw.githubusercontent.com/wyizhou/agentsmd/768a3143bff5e970b6c4ce03431dbfce425e2e32/AGENTS.md",
+    "git_blob": "27199f7c5ffdd9723f9f7815d33893e9ed8c0ab6",
+    "sha256": "d5dadbb4720aa5357af5f043a0fe327b29f09c3c383de8733c8c2a674c12ad60",
+    "bytes": 10419
+  },
+  "MEMORY.md": {
+    "url": "https://raw.githubusercontent.com/wyizhou/agentsmd/768a3143bff5e970b6c4ce03431dbfce425e2e32/MEMORY.md",
+    "git_blob": "07ce350005531834a451aa70bab5f6743086548c",
+    "sha256": "0f38eee082a214540eff1a0733ba1553ccff70d999e555105c011077997a9d25",
+    "bytes": 248
+  },
+  "PLAN.md": {
+    "url": "https://raw.githubusercontent.com/wyizhou/agentsmd/768a3143bff5e970b6c4ce03431dbfce425e2e32/PLAN.md",
+    "git_blob": "4cef0911e54c08f81ab1bd61be7dbd16bff134cb",
+    "sha256": "5833f72ceb5d2b91f05e1125483aef692d0320572b1420132bf7216442994eb4",
+    "bytes": 360
+  },
+  "README.md": {
+    "url": "https://raw.githubusercontent.com/wyizhou/agentsmd/768a3143bff5e970b6c4ce03431dbfce425e2e32/README.md",
+    "git_blob": "a5eb97cbc3f66c1cdeb36334464f0a47a1a70c22",
+    "sha256": "b6e07bd00be8815d527699400742ec07dc5c11f0db899855b88237fe918d4a19",
+    "bytes": 5384
+  },
+  "exec-plans/template.md": {
+    "url": "https://raw.githubusercontent.com/wyizhou/agentsmd/768a3143bff5e970b6c4ce03431dbfce425e2e32/exec-plans/template.md",
+    "git_blob": "ec8200f35ef8c06255394a3e63b5a14bfb208ef8",
+    "sha256": "17d0d93e3f79e2174bf751a5c8e80acf70aa35807ed8db73050e8faafe842f05",
+    "bytes": 826
+  },
+  "references/README.md": {
+    "url": "https://raw.githubusercontent.com/wyizhou/agentsmd/768a3143bff5e970b6c4ce03431dbfce425e2e32/references/README.md",
+    "git_blob": "334f21b3e19ad729f66a4833899bb9ccfdf8e555",
+    "sha256": "2a8ba436bc6f7d6af50067afa7e1bc00e55aed441afa91df5286f338c64c3daa",
+    "bytes": 147
+  },
+  "skills/README.md": {
+    "url": "https://raw.githubusercontent.com/wyizhou/agentsmd/768a3143bff5e970b6c4ce03431dbfce425e2e32/skills/README.md",
+    "git_blob": "a5e5cc2f3b5bd6b14c795d02ec3d01a77e56e8dc",
+    "sha256": "4883ab13c02e438571dd43fdbe77cbc492abce40cfbdeda80c6ab46c0ecbb43a",
+    "bytes": 147
+  },
+  "subagent-templates/developer.md": {
+    "url": "https://raw.githubusercontent.com/wyizhou/agentsmd/768a3143bff5e970b6c4ce03431dbfce425e2e32/subagent-templates/developer.md",
+    "git_blob": "1070e34cd6684122734c1f93116b6e442dda04de",
+    "sha256": "4bd1ad1fedc44e95ff9eb36aa71ad18c48db3d6861e127f333d760f9daf25c00",
+    "bytes": 3127
+  },
+  "subagent-templates/planner.md": {
+    "url": "https://raw.githubusercontent.com/wyizhou/agentsmd/768a3143bff5e970b6c4ce03431dbfce425e2e32/subagent-templates/planner.md",
+    "git_blob": "ac3bf4025dcaaef909acbb37e11af4d73a289791",
+    "sha256": "e6ae5034b21d6422c2d6c116360f57c645acba9e71b7efb9b9f1c55b4a00999e",
+    "bytes": 2735
+  },
+  "subagent-templates/validator.md": {
+    "url": "https://raw.githubusercontent.com/wyizhou/agentsmd/768a3143bff5e970b6c4ce03431dbfce425e2e32/subagent-templates/validator.md",
+    "git_blob": "f3d0226fe30ab892b0cc058b70d991882acfbfcb",
+    "sha256": "4f5aa20b33b513b9889336ae2d80841b18f6c6ee5f892becfd5c2697fd6d22b5",
+    "bytes": 3545
+  }
+}

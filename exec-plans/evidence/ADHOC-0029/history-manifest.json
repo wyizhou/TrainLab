@@ -1,0 +1,234 @@
+{
+  "docs/exec-plans/README.md": {
+    "sha256": "f1ff6f37136f6c7b1c6e85d1bae0ae22be4ef0267706849b3c861fd4a5600824",
+    "bytes": 18693
+  },
+  "docs/exec-plans/active/ADHOC-0018-data-fit-year-cleanup.md": {
+    "sha256": "5bffadd9bec6db8efe98f235021fe4842ad74c7f9b0cf91d9994f69a3d57a364",
+    "bytes": 13079
+  },
+  "docs/exec-plans/active/ADHOC-0023-fit-data-classification-discussion.md": {
+    "sha256": "324b492c943e30331bac1b4117688ae14a4d72a1945c6d4b2b085e2dff34af84",
+    "bytes": 12922
+  },
+  "docs/exec-plans/active/ADHOC-0024-fit-sqlite-parser.md": {
+    "sha256": "a68c06f23d218f089b3f9e102cef87dab15823d61868d47ec98d7c484a3968d5",
+    "bytes": 12583
+  },
+  "docs/exec-plans/active/ADHOC-0025-fit-running-query-tool.md": {
+    "sha256": "4eb12742c6a1badf46ace22b6ee035c6c7c5abc50237cbfa603b88ee48147b3a",
+    "bytes": 10251
+  },
+  "docs/exec-plans/active/ADHOC-0026-tools-ai-index.md": {
+    "sha256": "1e5950103a2bd0a2d9b41369108984dce004d7ff0f95b7430a672c534fa151b2",
+    "bytes": 6560
+  },
+  "docs/exec-plans/active/ADHOC-0027-activity-ai-report.md": {
+    "sha256": "4f5269ff37998f856410e06215947648ec56d7332b0c732e6e4b32bbbd994ba3",
+    "bytes": 6814
+  },
+  "docs/exec-plans/active/ADHOC-0028-weekly-ai-report.md": {
+    "sha256": "d9bdd9550d09e8ef9d0a3e60d4471ef7c13747d70ea034afb32eb11f625b723c",
+    "bytes": 8435
+  },
+  "docs/exec-plans/active/M12-fit-weekly-0001-rebuild.md": {
+    "sha256": "d156f2309611cabe373a2a32631d57e434d3d538199ee5553bd89c644e204696",
+    "bytes": 20778
+  },
+  "docs/exec-plans/active/README.md": {
+    "sha256": "86af2af79aae4dae34a950816f97424f0eff6c9a46c52779081e7423b8c63151",
+    "bytes": 294
+  },
+  "docs/exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md": {
+    "sha256": "090bf95f5fb6196805e0447ef493d17caed20157308d536cb0ca75131327f919",
+    "bytes": 8834
+  },
+  "docs/exec-plans/completed/ADHOC-0002-repository-root-cleanup.md": {
+    "sha256": "ecb08c926a8e08eaf68001e1ebbb7a28a80a7b463c475abdd63376dd09aa7fb4",
+    "bytes": 7029
+  },
+  "docs/exec-plans/completed/ADHOC-0003-generated-and-crash-artifact-cleanup.md": {
+    "sha256": "0f683f0f786f5dea981c3275c83820811bcc72c1b0332e5f55979f2c388a022a",
+    "bytes": 4757
+  },
+  "docs/exec-plans/completed/ADHOC-0004-support-directory-classification.md": {
+    "sha256": "79353e47570b03bd2247533f1810170029e670a50171369b6c18028478a72ce3",
+    "bytes": 5887
+  },
+  "docs/exec-plans/completed/ADHOC-0005-authentication-health-check.md": {
+    "sha256": "f960d9d53bbf8f7d32d405b01e7dd3c0b6f0282898d975495c4667c5678663bc",
+    "bytes": 3955
+  },
+  "docs/exec-plans/completed/ADHOC-0006-garmin-token-sync.md": {
+    "sha256": "098b72e36b87480bd9bf9a95ea2aaf44714bb6eb469f4801dab8e6aca56fd7e4",
+    "bytes": 3525
+  },
+  "docs/exec-plans/completed/ADHOC-0007-production-backfill-and-monitor.md": {
+    "sha256": "a381d45672ca328d4b39223b9c380f9f8e5c661501663248a9691da3ce9be9c9",
+    "bytes": 15864
+  },
+  "docs/exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md": {
+    "sha256": "06390e176bd1b246b5b919b8ece115dd919062d0c998f56757f79e3ce8447c84",
+    "bytes": 17784
+  },
+  "docs/exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md": {
+    "sha256": "b6494703ef05bfede6f206ac0345ad5f48e34642461aa0134549fcd99061d698",
+    "bytes": 8522
+  },
+  "docs/exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md": {
+    "sha256": "31471797c0e6c80dfbafacddd6a40139e52ac5f9e90c033573882746d32a7be2",
+    "bytes": 5341
+  },
+  "docs/exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md": {
+    "sha256": "8a72efbbecc4169959b15380bb5d1d760cf05d01193407d1c286663ec9d7e933",
+    "bytes": 85493
+  },
+  "docs/exec-plans/completed/ADHOC-0012-current-runtime-tech-debt-audit.md": {
+    "sha256": "a1586026ebd264f7d19c5d75a4ec6b14d6e3fb8fb0fb849363cf745d42fb3c90",
+    "bytes": 9629
+  },
+  "docs/exec-plans/completed/ADHOC-0013-mcp-and-runtime-adapter-audit.md": {
+    "sha256": "4f9f8386a3baf0d6ee79e503ba1a59532fb19a8db24b65bbc86101178ac86726",
+    "bytes": 5172
+  },
+  "docs/exec-plans/completed/ADHOC-0014-m9-local-delivery.md": {
+    "sha256": "0f2924d47f4adc072b1ef79c2066593d29bb15c5698bb85de87b36639da2ad70",
+    "bytes": 7721
+  },
+  "docs/exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md": {
+    "sha256": "a629877ebb1c4e91ecb2fae43a21fcbd8e721f0f386633198244bd02e341bfa9",
+    "bytes": 12623
+  },
+  "docs/exec-plans/completed/ADHOC-0016-agentforge-governance-update.md": {
+    "sha256": "60f8980e6414c871746420ae883786662df64497aefc4785f5f55757b25e1794",
+    "bytes": 13131
+  },
+  "docs/exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md": {
+    "sha256": "9d49196475440256f20d32835cd2db304d2829e51d128726863df22c0f6858fe",
+    "bytes": 40009
+  },
+  "docs/exec-plans/completed/ADHOC-0019-adopt-next-before-api.md": {
+    "sha256": "8fe1f34d5d36252180a7fd362b8f76afa4bd7caab7b1c05c45d3fd8faccd53f4",
+    "bytes": 27325
+  },
+  "docs/exec-plans/completed/ADHOC-0020-states-activities-decisions.md": {
+    "sha256": "53d3c65b2aa6b4de5e5beb8a3cb53795180626b0e1e8bb6fb009e13a4ec7be9b",
+    "bytes": 14523
+  },
+  "docs/exec-plans/completed/ADHOC-0021-garmin-fit-reference.md": {
+    "sha256": "629e10b3fb1df23f32b4a65f6a9158024cbab87b63da8ef713d0e294d524e7eb",
+    "bytes": 9832
+  },
+  "docs/exec-plans/completed/ADHOC-0022-longdou-real-fit-reference.md": {
+    "sha256": "70943fbdb520265b8022b411fdb45f6dd451885c07b2f350e70741c97a816621",
+    "bytes": 13935
+  },
+  "docs/exec-plans/completed/M1-agentforge-migration-0001-development-harness.md": {
+    "sha256": "a435c2d3b0391b6a0368585208d8b3c0f303cece8b1e831e107a65fff1e8abc1",
+    "bytes": 2553
+  },
+  "docs/exec-plans/completed/M1-product-root-0002-source-migration.md": {
+    "sha256": "356e41f2701b63fcf2f129a2b99e7cb99ca5f093eebee49e90d5d5bf26529bcf",
+    "bytes": 2724
+  },
+  "docs/exec-plans/completed/M1-runtime-root-0003-data-switch.md": {
+    "sha256": "bf0d29a3e53fb02dadcff7ffaf5abafb266250bf3f26b6d3932bf41129d1e364",
+    "bytes": 2852
+  },
+  "docs/exec-plans/completed/M10-live-e2e-0001-rolling-week.md": {
+    "sha256": "63f2362657d586f3b950ef4e328129a0da4718b0ba652134856260f30d35eb33",
+    "bytes": 44668
+  },
+  "docs/exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md": {
+    "sha256": "c48168d139c828cb0755f28983c1674eaa17ebfd2faf0e1c5c29b40248db662f",
+    "bytes": 9427
+  },
+  "docs/exec-plans/completed/M11-email-presentation-0001-readable-cid-r02.md": {
+    "sha256": "97dd33d8ad92c77849da3ccaed3f9c95797aca7da17f31dddaa2f47496920f86",
+    "bytes": 79868
+  },
+  "docs/exec-plans/completed/M11-email-presentation-0001-readable-cid.md": {
+    "sha256": "5963e6ccbb1ece65ef8e0d4ffa9154bbe74678144f63a28b79837ce6ebafc70c",
+    "bytes": 78164
+  },
+  "docs/exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md": {
+    "sha256": "ae8ba0bc23815dc70fa252786a5d378df10207968c103473a16debeba93e5b3e",
+    "bytes": 10052
+  },
+  "docs/exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md": {
+    "sha256": "98b32741342838d0abe517d53229530a6e7908e3c7ce18328484454ce26c190d",
+    "bytes": 8288
+  },
+  "docs/exec-plans/completed/M4-source-root-0001-product-consolidation.md": {
+    "sha256": "73f3d5d6a30dc57f414d32e05eb3539ad17fcd4ac9c6a86a6ca96659156c548d",
+    "bytes": 8721
+  },
+  "docs/exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md": {
+    "sha256": "13d124737b892d523de6f53565652d7d40a86ae974880022088d2cfd00765d1f",
+    "bytes": 10276
+  },
+  "docs/exec-plans/completed/M6-activity-evidence-0001-lifecycle-and-preview.md": {
+    "sha256": "8ec0afea11dee21fb50d0865ead1fbe46e1f9ee61598008b9484c590546d393d",
+    "bytes": 11507
+  },
+  "docs/exec-plans/completed/M7-ai-skills-0001-runtime-closure.md": {
+    "sha256": "99fd2ddf28ac2cea9fc2689e7bf343da08887d5d2d1bbf68b883cac70dcd3af0",
+    "bytes": 11019
+  },
+  "docs/exec-plans/completed/M8-real-data-0001-ai-coach-closure.md": {
+    "sha256": "7ebf3f15cea1b0e4a77bec0768000d2f97d1f97db31ebb4e5324bf2f1ee56768",
+    "bytes": 21472
+  },
+  "docs/exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md": {
+    "sha256": "b27e69279df27d2000afa051f1459fa8fd09eedd76334ebf6d3f73799dca101e",
+    "bytes": 64758
+  },
+  "docs/exec-plans/completed/README.md": {
+    "sha256": "5d48ebe621f5dac3741aa18121ce9767384933565fad805a27e923f2cf059d08",
+    "bytes": 379
+  },
+  "docs/exec-plans/tech-debt-tracker.md": {
+    "sha256": "ed67621b053204919ed597146f49c6b5822f32ea539ba0db3f9a133e62e7a001",
+    "bytes": 1888
+  },
+  "docs/exec-plans/template.md": {
+    "sha256": "eae1b41ce82c8be5bfe1ca850a3811a9c58d31001589671da9dc7e80a10876e3",
+    "bytes": 4239
+  },
+  "docs/legal/third-party-notices.md": {
+    "sha256": "f66b9887ab065ec5208dfc4e8cfb4dda7da38cd61097192a4d81707ea5b4af25",
+    "bytes": 3616
+  },
+  "docs/migration.md": {
+    "sha256": "bebcf74aa62f137effed186770c5474ed77b625b5f6d02d81b0b0e4f9a6ef5e2",
+    "bytes": 17662
+  },
+  "docs/product-contract.md": {
+    "sha256": "e344457a458c037840cd1741f6e177fb14364c7669a9fa3330204e31e6939ab5",
+    "bytes": 26608
+  },
+  "AGENTS.md": {
+    "sha256": "0a9da8212ceb13e3d128ec11cbbf34d7489efd5a23160b4f2c9cc64df5533900",
+    "bytes": 11594
+  },
+  "PLANS.md": {
+    "sha256": "f646f78799544f5f3a93bb71f453073b566c0d6fbf96cc752264c633681e695e",
+    "bytes": 28916
+  },
+  "memory.md": {
+    "sha256": "1895b882ca65ab5325d708a231a7e8d89fde06fb87a0313ab88d48786cb05dd1",
+    "bytes": 8917
+  },
+  "skills/README.md": {
+    "sha256": "dd8357c0ebf5644b394c203e96515a4595ef14a06ff0445154c04bbe178109ac",
+    "bytes": 849
+  },
+  "references/garmin-fit-parsing.md": {
+    "sha256": "094d77bed67beb517987edc537835ef122dc2e12183c3fec8b66736dffedbd1c",
+    "bytes": 24427
+  },
+  "references/longdou.md": {
+    "sha256": "8278d5d8a89b3b34b6c5d96084068b39c1b9a775806b503045ada04962efa8ce",
+    "bytes": 19321
+  }
+}

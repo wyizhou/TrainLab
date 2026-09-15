@@ -1,0 +1,28 @@
+{
+  "verification_type": "parent local scaffold checks; not independent validation",
+  "commands": [
+    {
+      "method": "python3, standard-library-only check_migration.py in owner-only external evidence directory",
+      "script_sha256": "765033e65c4817029047fb88ff4c113742458d6461dcebe6ddf84be12b8cf005",
+      "exit_code": 0,
+      "result": "923 checks passed; no product tests, business Provider or remote CI executed"
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0
+    },
+    {
+      "command": "git diff --cached --name-only",
+      "exit_code": 0,
+      "stdout": ""
+    }
+  ],
+  "first_result": "920 checks; one stale link failure, retained in checks-initial.json",
+  "baseline_head": "ec36ce7bbdf9d70a509238dd771b155eb6f84261",
+  "branch": "work/adhoc-0029-agentsmd-upgrade",
+  "limits": [
+    "No continuous OS audit or post-deletion private backup assurance.",
+    "Case-sensitive spelling checked through directory entries; index not staged.",
+    "No claim of product test or remote CI success."
+  ]
+}

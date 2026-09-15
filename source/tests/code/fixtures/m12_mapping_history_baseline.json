@@ -1,9 +1,0 @@
-{
-  "schema_version": "m12_mapping_history_baseline_v1",
-  "source_description": "Public legacy-test-mapping.json saved before the first CFG-EMAIL implementation; RET-001/RET-002 historical evidence.",
-  "source_sha256": "15d4eeab82c487e735331b55f87cc7b857a70e5d734f26afae9d67935ad0fcd7",
-  "projection": "Recursively retain the whole value at the first key whose key contains previous or its underscore-separated tokens include source, original, or baseline; retain JSON paths including list indices.",
-  "serialization": "json.dumps(fields, sort_keys=True, separators=(\",\", \":\")), default ensure_ascii=True, UTF-8",
-  "historical_field_count": 4392,
-  "historical_fields_sha256": "cfde5442b1c969a973c3ae03f55a6253b2b62800531fa90b13c05e9d303da66e"
-}
