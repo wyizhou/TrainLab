@@ -3,7 +3,7 @@
 2026-09-15：本目录仅保存来自 TrainLab-next 的未验证源码快照，供后续直接 API 重构参考。
 本次不验证或修复旧代码，不实现 API，不启动现存 Agent runner、旧 R7、daemon 或业务服务。
 开发指令、私人资料与外部动作边界以主根 [AGENTS.md](../AGENTS.md)、[rules.md](../rules.md)
-和本次 [ADHOC-0019](../docs/exec-plans/active/ADHOC-0019-adopt-next-before-api.md) 为准。
+和本次 [ADHOC-0019](../docs/exec-plans/completed/ADHOC-0019-adopt-next-before-api.md) 为准。
 未来工程检查规则并未取消；用户本轮免验仅针对本次旧代码快照保存。
 
 以下完整保留来源文件作为历史说明。其中“已验收”“已恢复”、next 的 PLAN/exec-plans 路径

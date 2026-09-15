@@ -1,7 +1,7 @@
 # TrainLab-next 产品合同来源快照
 
 2026-09-15：下文为接回代码的来源说明，不代表主目录已完成产品验收，也不覆盖主根
-[AGENTS.md](../AGENTS.md)、[rules.md](../rules.md)及本轮[快照保存任务](exec-plans/active/ADHOC-0019-adopt-next-before-api.md)。
+[AGENTS.md](../AGENTS.md)、[rules.md](../rules.md)及本轮[快照保存任务](exec-plans/completed/ADHOC-0019-adopt-next-before-api.md)。
 用户本次不需要旧代码验证；后续转向直接 API 接入，具体重构另行开展。源文中的阶段恢复、
 验收、另一开发流程及原计划/归档路径只解释 next 当时的上下文，不产生主目录执行授权。
 原安全边界不因保存快照放宽；既有 Agent runner 尚未替换，API 尚未实施。

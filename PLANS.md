@@ -61,7 +61,7 @@
 
 ## 当前已批准 Roadmap
 
-2026-09-15状态说明：M12原执行计划保持暂停。用户要求先保存next公开代码作为直接API重构前的未验证快照，明确本次不需要旧代码验证，见[ADHOC-0019](docs/exec-plans/active/ADHOC-0019-adopt-next-before-api.md)。此保存不等同下表功能交付，不勾选既有叶子任务，也不自动启动旧任务；未来API重构范围另行确定。
+2026-09-15状态说明：M12原执行计划保持暂停。用户要求先保存next公开代码作为直接API重构前的未验证快照，明确本次不需要旧代码验证，快照已提交推送，见[ADHOC-0019](docs/exec-plans/completed/ADHOC-0019-adopt-next-before-api.md)。此保存不等同下表功能交付，不勾选既有叶子任务，也不自动启动旧任务；未来API重构范围另行确定。
 
 ### [ ] `M12` FIT 运动数据与每周跑步教练重建 — `active`
 

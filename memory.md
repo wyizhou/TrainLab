@@ -51,9 +51,9 @@
 
 ## 当前活动指针
 
-2026-09-15：[ADHOC-0019](docs/exec-plans/active/ADHOC-0019-adopt-next-before-api.md)已按用户明确取消旧代码验证改为VC-002快照保存。主main检查点fb6fe6d已存在；next源码已接回，不再追补历史证据、运行旧功能检查或使用测试环境，当前只做公开提交隐私核对及正常Git保存。旧保护基准缺失和此前联网安装越界如实保留，用户新方向不把旧失败改判PASS。API未实施，原件不删除，当前推送尚待执行。
+2026-09-15：[ADHOC-0019](docs/exec-plans/completed/ADHOC-0019-adopt-next-before-api.md)按用户明确取消旧代码验证的VC-002结束。主检查点fb6fe6d及next未验证源码快照6965654已正常推送并核远端；只做公开提交隐私检查，不宣称功能/CI通过。旧保护基准缺失和此前联网安装越界如实保留，不改判历史失败。后续转向直接API，具体实现尚未开始；不自动恢复旧任务或删除原件。
 
-2026-09-14原授权（验证前置已由上述VC-002替代）：用户明确后续转向直接API接入、不再依赖其他产品Agent；[ADHOC-0019](docs/exec-plans/active/ADHOC-0019-adopt-next-before-api.md)按新授权将既有Goal保留到`data/Goal.md`，先做主目录本地检查点，再以next现行代码接回主工程，验证后本地提交及正常推送。不含API实现或真实服务调用，外部原目录不删除。此前[ADHOC-0017保全阶段](docs/exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md)结束后，用户另行批准[data目录精简及FIT年份命名](docs/exec-plans/active/ADHOC-0018-data-fit-year-cleanup.md)，清理任务的独立验收仍为INCONCLUSIVE；后续只读补证确认，所查旧recovery对应现存来源的565种FIT字节均已包含在当前566份中，没有新增补充候选，但已删副本本身无法重哈希。未宣告整个任务完成。data的资料目录为fit及verification：566份FIT按香港运动开始日期/英文类型命名，重名加序号，11份解码或运动信息不明文件保留到unknown；认证入口为`data/verification/garmin.json`及`gmail.json`。旧data/README、config、recovery和多余认证副本已按新授权删除，旧证据路径仅作历史定位，不作为当前入口；界外原件保留。不包含令牌在线有效性或SQLite一致性验收，API实现尚未启动，真实R7和旧失败修复不自动续跑；新的代码接回仅按ADHOC-0019边界执行。
+2026-09-14原授权（验证前置已由上述VC-002替代）：用户明确后续转向直接API接入、不再依赖其他产品Agent；[ADHOC-0019](docs/exec-plans/completed/ADHOC-0019-adopt-next-before-api.md)按新授权将既有Goal保留到`data/Goal.md`，先做主目录本地检查点，再以next现行代码接回主工程，验证后本地提交及正常推送。不含API实现或真实服务调用，外部原目录不删除。此前[ADHOC-0017保全阶段](docs/exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md)结束后，用户另行批准[data目录精简及FIT年份命名](docs/exec-plans/active/ADHOC-0018-data-fit-year-cleanup.md)，清理任务的独立验收仍为INCONCLUSIVE；后续只读补证确认，所查旧recovery对应现存来源的565种FIT字节均已包含在当前566份中，没有新增补充候选，但已删副本本身无法重哈希。未宣告整个任务完成。data的资料目录为fit及verification：566份FIT按香港运动开始日期/英文类型命名，重名加序号，11份解码或运动信息不明文件保留到unknown；认证入口为`data/verification/garmin.json`及`gmail.json`。旧data/README、config、recovery和多余认证副本已按新授权删除，旧证据路径仅作历史定位，不作为当前入口；界外原件保留。不包含令牌在线有效性或SQLite一致性验收，API实现尚未启动，真实R7和旧失败修复不自动续跑；新的代码接回仅按ADHOC-0019边界执行。
 
 原 [M12 FIT-only 周系统重建](docs/exec-plans/active/M12-fit-weekly-0001-rebuild.md)暂停续跑，以下为其历史检查点，不是本轮执行指令。
 

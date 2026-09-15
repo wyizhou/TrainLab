@@ -41,7 +41,7 @@ TrainLab/
 
 [来源产品说明](docs/product-contract.md)、[来源迁移记录](docs/migration.md)及 `source/docs/`
 保存 next 的上下文；其中旧验收、阶段状态及外部计划链接仅供来源追溯，不代表当前主树通过。
-本次范围和实际 Git 结果见 [ADHOC-0019](docs/exec-plans/active/ADHOC-0019-adopt-next-before-api.md)。
+本次范围和实际 Git 结果见 [ADHOC-0019](docs/exec-plans/completed/ADHOC-0019-adopt-next-before-api.md)。
 私人 `data/Goal.md`、`data/fit/`、`data/verification/` 和旧 `source/state/` 不进入 Git。
 
 ## 安装依赖与检查

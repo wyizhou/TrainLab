@@ -2,7 +2,7 @@
 
 2026-09-15：以下是随源码保留的 next 历史记录，不表示主 TrainLab 已升级到其开发脚手架。
 主根仍使用 [AGENTS.md](../AGENTS.md) 指定的 Harness；本次只保存 API 重构前的未验证代码
-快照，范围见 [ADHOC-0019](exec-plans/active/ADHOC-0019-adopt-next-before-api.md)。
+快照，范围见 [ADHOC-0019](exec-plans/completed/ADHOC-0019-adopt-next-before-api.md)。
 下文原计划、归档和工作目录链接仅作历史定位，不要求补建这些目录，也不据其恢复旧任务。
 
 ---
