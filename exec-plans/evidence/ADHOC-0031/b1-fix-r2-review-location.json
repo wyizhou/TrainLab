@@ -1,0 +1,13 @@
+{
+  "review_directory": "/var/folders/dh/4th4rwbd7xlg8qslxz62hbjc0000gn/T/trainlab-0031-b1-fix-r2-review-npe5w0e9",
+  "product_file_count": 56,
+  "product_aggregate_sha256": "5cb22a1f1950c1e73c0624c2ac2981f090c246738dc53f62eb13f9a5996149d8",
+  "head": "9db8bb1dda5922e85fe42581e27d2428dbc9f195",
+  "branch": "work/adhoc-0031-local-web-system",
+  "snapshot": "b1-fix-r2-review-snapshot.json",
+  "scope": "Fixed current product + objective requirements and public references only; no developer report or historical verdicts",
+  "public_sources": {
+    "protocol-content.txt": "67d986e4649292edbee0c317c7310d22352368a79f6af5e8067a203b6f99da93",
+    "activity-content.txt": "94d79baa80f554ec84d7d45076eb63d29d865ce6a93d7597101a39ae921e0b30"
+  }
+}

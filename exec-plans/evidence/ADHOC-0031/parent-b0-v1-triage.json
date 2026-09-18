@@ -1,0 +1,36 @@
+{
+  "scope": "ADHOC-0031 B0 first independent validation and parent triage",
+  "head": "9db8bb1dda5922e85fe42581e27d2428dbc9f195",
+  "branch": "work/adhoc-0031-local-web-system",
+  "source_aggregate_sha256": "71c2bbac5b502e8afcb571c57791dc309a28f175ee658bcd5c3822bdb566f25a",
+  "validation_result": "failed",
+  "parent_reproduction": {
+    "test": "scratch-validator/test_independent_b0.py, source copied from frozen baseline",
+    "command": "python -m pytest test_independent_b0.py -q -p no:cacheprovider --basetemp=pytest-temp",
+    "exit_code": 1,
+    "result": "8 failed, 11 passed, 2 warnings",
+    "source_unchanged": true
+  },
+  "accepted_findings": [
+    "V31-B0-001",
+    "V31-B0-002",
+    "V31-B0-003",
+    "V31-B0-004",
+    "V31-B0-005",
+    "V31-B0-006"
+  ],
+  "counts": {
+    "initial_validation_failures": 1,
+    "repair_attempts": 0,
+    "repair_validation_failures": 0,
+    "parent_reproduction_is_not_a_new_repair_round": true
+  },
+  "next_action": "Wait for current Planner result, then approve contract adjustment and dispatch a fresh Developer. B1 not started.",
+  "evidence": {
+    "report": "validator-b0-v1.md",
+    "bundle": "validator-b0-v1-evidence.zip",
+    "bundle_sha256": "9c249821ffc44c589d49efe6f6c14ab425d711650f1374c0e39a419be0b8b9a8",
+    "normalization": "Filesystem prefixes only normalized to review-root, parent-review-root, user-home, or project-relative dot. No test outcomes changed; original external artifacts retained."
+  },
+  "remaining": "No B0 acceptance; shared module placement and remaining technical protocol decisions need planning review. No real private-state or Provider tests."
+}

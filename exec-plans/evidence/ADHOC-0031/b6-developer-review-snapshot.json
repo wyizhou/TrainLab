@@ -1,0 +1,458 @@
+{
+  "head": "9db8bb1dda5922e85fe42581e27d2428dbc9f195",
+  "branch": "work/adhoc-0031-local-web-system",
+  "items": [
+    {
+      "path": ".gitignore",
+      "sha256": "0cd996af7c48c68f9aeff73906a03b2043f10aa8011649ddbde6ba371615be56",
+      "size": 2320,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/README.md",
+      "sha256": "4cae28ca354ce8db48819aa5cb96d1684ff5c2d61ab89199b8177a123de82109",
+      "size": 5278,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/frontend/eslint.config.js",
+      "sha256": "ef816702ad27d4bf31f64aab5ff65bcad9ec2dc7910273810e71c6e810e80587",
+      "size": 410,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/frontend/index.html",
+      "sha256": "eba6550c9ab194bb2486b90d0ea82a770ee00601c22d3afc562a0eddd9a80060",
+      "size": 304,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/frontend/package-lock.json",
+      "sha256": "fcae09805b8754ba8c6944bd382a352f58e01954dcf8f134cc50a8312b7f55c0",
+      "size": 83808,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/frontend/package.json",
+      "sha256": "8ddd67bf3deb092539d1d452f24582d6566e9e6a7e4440cd119627c1e2769933",
+      "size": 598,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/frontend/src/App.tsx",
+      "sha256": "9e3e61323140190dbf3020fb9143349642de1222395765648ca8a2e3b95cc8e9",
+      "size": 7925,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/frontend/src/contracts.ts",
+      "sha256": "d709a4d8e9de09564bb1f32e74fdf5adfcb31ef605e8218fec0c10f2db8741f2",
+      "size": 2179,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/frontend/src/main.tsx",
+      "sha256": "02bf4d640076558d1c9316a8ad3b0c175294d4c6ae76ddbb6932c0ca9c031357",
+      "size": 367,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/frontend/src/styles.css",
+      "sha256": "9491a20648853ae44d4fc7c6db570f584438a9b19d9116108ac5e265f93e8296",
+      "size": 2266,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/frontend/src/vite-env.d.ts",
+      "sha256": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5",
+      "size": 38,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/frontend/tests/app-contract.test.tsx",
+      "sha256": "bc0db7cb611fada99075601f7a1c69572ee87392380422e1b940fdc3d71ed9bf",
+      "size": 3409,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/frontend/tsconfig.json",
+      "sha256": "8e9d59c26ada66a63af5e4821932419d8a2158cbb44bf34a92bd4e5f8e299e82",
+      "size": 554,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/frontend/vite.config.ts",
+      "sha256": "05dfa93fef5d9171d28e225fa6df54861786f69654129be37febe813d5a698fd",
+      "size": 214,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/pyproject.toml",
+      "sha256": "ccd230d0c59960d7da24b257d803f02a279b8cf803375d387987448ab984eb18",
+      "size": 1361,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/schemas/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/schemas/contracts.schema.json",
+      "sha256": "ef5ec777f247a340c0027bb599e7405f4ad6d6acea737d86d3356fe7670b0212",
+      "size": 20641,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/schemas/examples.json",
+      "sha256": "afdacf5edca6e4a2db143ae444d22e70851e45e80f7690d5e1df4402e158de42",
+      "size": 1417,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/_shared/scripts/trainlab/__init__.py",
+      "sha256": "b2d7955ed705fd5f6c5ae31ede55fa0d4b24566f5335604a93f87bc59dbf9ae8",
+      "size": 94,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/_shared/scripts/trainlab/ai.py",
+      "sha256": "ab235054ee3241c122dab908bb6a2244e8cb26451da4b67854f0b0aabba46987",
+      "size": 10275,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/_shared/scripts/trainlab/check_architecture.py",
+      "sha256": "0438f4d6040abb8ff1662dcaa041ce2ff02c2aa55a404d90edb2df6b4eeca1d9",
+      "size": 6028,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/_shared/scripts/trainlab/context.py",
+      "sha256": "0e86ce054e4ed4386778f850a7e9a9bd29b2ca29475585e10d4593ad0d495b18",
+      "size": 4958,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/_shared/scripts/trainlab/contracts/__init__.py",
+      "sha256": "643e37b90b99faa71936f831373e81e460a9d696146cf63681363b99dd722406",
+      "size": 1009,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/_shared/scripts/trainlab/contracts/config.py",
+      "sha256": "a2b0b1c0f14d51fc03ae2bc58709ed02b9f85a111dbcb81f52a1b221aad71a46",
+      "size": 1492,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/_shared/scripts/trainlab/contracts/errors.py",
+      "sha256": "d6c1391001cdd4e7697ed455f039889b4a310a2547e54fe9bbf6f8662ed23c07",
+      "size": 2788,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/_shared/scripts/trainlab/contracts/fit_consistency.py",
+      "sha256": "d2d908da35826ac6f9b3ed3491a7770714309e92eca77ab7a04e143ed85fd015",
+      "size": 1440,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/_shared/scripts/trainlab/contracts/fit_profile.py",
+      "sha256": "f5cfa510fc7956f354ec25231b6d90fc9c947d49a623a51f85634f3ac8213646",
+      "size": 2334,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/_shared/scripts/trainlab/contracts/interfaces.py",
+      "sha256": "e007476d1d09ac641d98ad151086be2b5c1899bbb04deab57c220533e8447aa2",
+      "size": 5287,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/_shared/scripts/trainlab/contracts/json_validation.py",
+      "sha256": "affe7f8eb967278efba61b2029ca213d02ca4e264de86468a6007ead3decb401",
+      "size": 7476,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/_shared/scripts/trainlab/contracts/paths.py",
+      "sha256": "8a59a0f779b9e4259a42ecc5835da0c154fe70639613405288f4d55282271387",
+      "size": 3504,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/_shared/scripts/trainlab/contracts/schema.py",
+      "sha256": "dde8eecb349f6764a659d274692da478cd9696992beef23204551e920c5ba438",
+      "size": 5096,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/_shared/scripts/trainlab/contracts/session.py",
+      "sha256": "d305e188c92d97b9b451a5f8609b8095d89ed2f94c71bf8f8c5b6afe123c61d4",
+      "size": 929,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/_shared/scripts/trainlab/contracts/time.py",
+      "sha256": "d187c04bfd9855d1ee317e369291ffff9752eb5284fb8dca68bc129c8d8be5bc",
+      "size": 1623,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/_shared/scripts/trainlab/contracts/web.py",
+      "sha256": "eea865ed956da83fc4d751dc530edae915ed7ff834db09a57dfdbe6b2a60618e",
+      "size": 1577,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/_shared/scripts/trainlab/database.py",
+      "sha256": "28403acf2b3807ee7cd156c11fe8ae9305cfe59be8a9de1f56a9561b9d292374",
+      "size": 1117,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/_shared/scripts/trainlab/exports.py",
+      "sha256": "57c78c81fb9a5a8c2e7f1710838f007485587afc8fbd27a0b9a7d76e26a501b8",
+      "size": 2442,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/_shared/scripts/trainlab/garmin_sync.py",
+      "sha256": "6095f02f52477d6f65ab7110ecf00fab4361fde6e527655a8a5cc05366fa24ab",
+      "size": 17831,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/_shared/scripts/trainlab/py.typed",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/_shared/scripts/trainlab/reference_tools.py",
+      "sha256": "c01d7919d568a73e9b6d47fc9de31d32c214307c23645368153e2b47e50d4b30",
+      "size": 2478,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/_shared/scripts/trainlab/report_service.py",
+      "sha256": "25ae621ceddb84fc84059f3daaa9d14016addbded05bcbc8b77c935c49f68769",
+      "size": 4175,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/_shared/scripts/trainlab/reports.py",
+      "sha256": "7db4c3f38604aef9c6ee7f546291e2999729714cca85e9515bfefff209e1a904",
+      "size": 4543,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/_shared/scripts/trainlab/running_records.py",
+      "sha256": "c44d4314ba2031c5eec4d94b11de0b81c3eb467204ac32ef6129175fa45312ed",
+      "size": 7183,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/fit-store/README.md",
+      "sha256": "eb9a2a9d1af7e589afd721d64dc64165964e2af2ae5d9a1bbd8784ea5edaf193",
+      "size": 6713,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/fit-store/scripts/__init__.py",
+      "sha256": "2f783baee5d7ea0efb5da0d7b04633f59f346496e09b2b05339f9a7ba6a2d628",
+      "size": 658,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/fit-store/scripts/models.py",
+      "sha256": "1be5e2ea2cedc9006cf029f68c5436d852782f3fb2b439e5df5b014537b5ac20",
+      "size": 743,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/fit-store/scripts/parser.py",
+      "sha256": "e9e83a3295f3d5fb0dc898fb07de05077b4a32a362df5a21bf20a77748d3c060",
+      "size": 7941,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/fit-store/scripts/profile_fields.py",
+      "sha256": "7048c2534e82a393d377d29be77cb83c29a10446507d164bcafd4101da60d18c",
+      "size": 11419,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/fit-store/scripts/storage.py",
+      "sha256": "c60b7c33afa9c91f9057af604f456ee0cada57b80bfd1aac5dbf7b99fff69ecd",
+      "size": 12398,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/fit-store/scripts/wire.py",
+      "sha256": "cd168dc3b151859dafd0a73cde34706a92c7060811cfb785193cf4b24fd87b12",
+      "size": 6937,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/local-web/scripts/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/local-web/scripts/server.py",
+      "sha256": "0fc9fafae3d09c40df52e9b5a51cc6be0aa59075bb87b38b47733c7c54a29248",
+      "size": 21638,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/local-web/web/assets/index-CG8UOJ96.css",
+      "sha256": "03479a8dd9975fcc3e3bc43eaba7bc4638a57832d6ceb0bd8ffd9e1de4079a48",
+      "size": 1846,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/local-web/web/assets/index-CPbYmAtq.js",
+      "sha256": "e25e1b3ac17bac4c121512fea8eb94ea340f44d77165550b4b265d402cc5db7f",
+      "size": 225875,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/local-web/web/index.html",
+      "sha256": "58a006ed5bc2f2349f5241da3c24b7345683b349a8ca62f207479dfaa12c7759",
+      "size": 402,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/tests/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/tests/ai/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/tests/ai/test_b5_ai_context.py",
+      "sha256": "db6f1a51180af971d382cd2774536f3cd41e71cac1f269e9f5bd89a6bf9b8497",
+      "size": 19042,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/tests/contracts/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/tests/contracts/test_b0_contracts.py",
+      "sha256": "c194f75ba7ab2d1e8889e8dc232b09146d7845e613a21e8dfd5d03559879234a",
+      "size": 15426,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/tests/fit/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/tests/fit/fit_bytes.py",
+      "sha256": "9d6e286d113d6fc9e052806e617c3ffa5ffb50b102f1e35248422ff1b73e6e39",
+      "size": 3465,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/tests/fit/test_additional_boundaries.py",
+      "sha256": "144b5dbf04e143871fcfb3d91bd89ef206923e4c23c20f5ef502087bacb89f2c",
+      "size": 12230,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/tests/fit/test_b1_r2.py",
+      "sha256": "1870d754d5f440c6ef1695e5a2f04a56f8bf0d961e84a3e8003849e877f1612d",
+      "size": 14507,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/tests/fit/test_b1_regressions.py",
+      "sha256": "fd3233147220bc01375250cabe44790f258645307fc5772966840f4a03314549",
+      "size": 9496,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/tests/fit/test_decoder.py",
+      "sha256": "78dead20eb46a181dcbf0e28da609df4f6ededa68590d458b89fecacc7f9086e",
+      "size": 6733,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/tests/fit/test_storage.py",
+      "sha256": "19dc5c645140231fec402ca812f48db05bbf22432149ae78464ab5cf554776c2",
+      "size": 7918,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/tests/reports/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/tests/reports/test_report_storage.py",
+      "sha256": "978c9a7fc7f55380d8837dc9031194a3d6ef598effebceb3ea5e7815a6b4aaee",
+      "size": 10558,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/tests/sync/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/tests/sync/test_garmin_sync.py",
+      "sha256": "47e3b399bd25cad2c9c4b2cc5bc81a25870364a4a1c8df3b009d7ef91a3468c9",
+      "size": 11904,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/tests/tools/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/tests/tools/test_running_records.py",
+      "sha256": "f63f4ef743b76c511624df9bbcc6b0412f11be7f95c7d9a9084fed5fd22d37bf",
+      "size": 7670,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/tests/web/test_b6_api.py",
+      "sha256": "30d9b8f8e9525ad65a671500a6352755650760d6b2ee4e07bd9e41932ca18a9e",
+      "size": 7225,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/tools/README.md",
+      "sha256": "2e2ecf8a7b1c2c99b9c1526ba6322ac4c28c9e69f4814fefc304601816e8c0df",
+      "size": 3603,
+      "mode": "0o644"
+    },
+    {
+      "path": "source/uv.lock",
+      "sha256": "ff0885fe3ac6d546f132ff130e54e5a750467118fd9497339fcdd560ee285077",
+      "size": 216290,
+      "mode": "0o644"
+    }
+  ],
+  "product_file_count": 75,
+  "product_aggregate_sha256": "9517163e2fbb318765cae4537b76f2969c99c08d7c61b489007184bb8e330196"
+}

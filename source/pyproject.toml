@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools==82.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "trainlab-source"
+version = "0.1.12"
+description = "TrainLab local web system source contracts"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.116,<1",
+  "uvicorn[standard]>=0.35,<1",
+  "garmin-fit-sdk==21.214.0",
+  "garminconnect>=0.2.8,<0.3",
+  "jsonschema==4.26.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "httpx>=0.28,<1",
+  "mypy>=1.19,<2",
+  "pytest>=9,<10",
+  "ruff>=0.14,<1",
+  "types-jsonschema==4.26.0.20260202",
+]
+
+[tool.trainlab]
+state_root = "states"
+ai_config = "states/ai.json"
+web_static = "source/skills/local-web/web"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+
+[[tool.mypy.overrides]]
+module = ["garmin_fit_sdk.*", "garminconnect.*", "garth.*"]
+ignore_missing_imports = true
+
+[tool.setuptools]
+packages = ["trainlab", "trainlab.contracts", "trainlab.fit", "trainlab.local_web", "trainlab_schemas"]
+
+[tool.setuptools.package-dir]
+trainlab = "skills/_shared/scripts/trainlab"
+"trainlab.contracts" = "skills/_shared/scripts/trainlab/contracts"
+"trainlab.fit" = "skills/fit-store/scripts"
+"trainlab.local_web" = "skills/local-web/scripts"
+trainlab_schemas = "schemas"
+
+[tool.setuptools.package-data]
+trainlab = ["py.typed"]
+trainlab_schemas = ["*.json"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint.isort]
+known-first-party = ["trainlab", "tests"]

@@ -1,0 +1,21 @@
+{
+  "scope": "Parent reproduces initial B1 Validator on a separate synthetic snapshot",
+  "cwd_name": "trainlab-0031-b1-parent-repro-v00oa82b",
+  "reviewed_aggregate_sha256": "2d31f4664f988146533561e7517836376e7e4d12fbaa0ab40c6961dd99ad2215",
+  "command": [
+    "/tmp/trainlab-b0-fix-venv/bin/python",
+    "-m",
+    "pytest",
+    "../evidence/test_b1_independent.py",
+    "-q",
+    "-s",
+    "--tb=short",
+    "-p",
+    "no:cacheprovider",
+    "--basetemp=../evidence/pytest-temp",
+    "--junitxml=../evidence/parent-results.xml"
+  ],
+  "cwd": "source",
+  "exit_code": 1,
+  "summary_tail": "ract_invalid_json_before_commit[unsafe-integer] ___\n../evidence/test_b1_independent.py:336: in test_storage_rejects_contract_invalid_json_before_commit\n    assert rejected, f'Invalid {case} accepted and committed instead of failing full DTO validation'\nE   AssertionError: Invalid unsafe-integer accepted and committed instead of failing full DTO validation\nE   assert False\n_ test_storage_rejects_contract_invalid_json_before_commit[arbitrary-value-object] _\n../evidence/test_b1_independent.py:336: in test_storage_rejects_contract_invalid_json_before_commit\n    assert rejected, f'Invalid {case} accepted and committed instead of failing full DTO validation'\nE   AssertionError: Invalid arbitrary-value-object accepted and committed instead of failing full DTO validation\nE   assert False\n=========================== short test summary info ============================\nFAILED ../evidence/test_b1_independent.py::test_product_provides_concrete_fit_decoder\nFAILED ../evidence/test_b1_independent.py::test_architecture_approved_physical_root\nFAILED ../evidence/test_b1_independent.py::test_tools_contains_no_runtime_sys_path_patch\nFAILED ../evidence/test_b1_independent.py::test_same_bytes_import_is_fully_idempotent\nFAILED ../evidence/test_b1_independent.py::test_reparse_with_report_requires_conflict_and_keeps_all_facts\nFAILED ../evidence/test_b1_independent.py::test_accepted_segments_container_can_be_stored\nFAILED ../evidence/test_b1_independent.py::test_default_123_shape_and_minimal_dictionary\nFAILED ../evidence/test_b1_independent.py::test_existing_public_contract_accepts_required_default_shape\nFAILED ../evidence/test_b1_independent.py::test_existing_public_contract_rejects_unknown_keys\nFAILED ../evidence/test_b1_independent.py::test_storage_rejects_contract_invalid_json_before_commit[undefined-field]\nFAILED ../evidence/test_b1_independent.py::test_storage_rejects_contract_invalid_json_before_commit[missing-time-evidence]\nFAILED ../evidence/test_b1_independent.py::test_storage_rejects_contract_invalid_json_before_commit[wrong-source]\nFAILED ../evidence/test_b1_independent.py::test_storage_rejects_contract_invalid_json_before_commit[bad-definition]\nFAILED ../evidence/test_b1_independent.py::test_storage_rejects_contract_invalid_json_before_commit[extra-container-key]\nFAILED ../evidence/test_b1_independent.py::test_storage_rejects_contract_invalid_json_before_commit[inconsistent-sport]\nFAILED ../evidence/test_b1_independent.py::test_storage_rejects_contract_invalid_json_before_commit[inconsistent-time]\nFAILED ../evidence/test_b1_independent.py::test_storage_rejects_contract_invalid_json_before_commit[unsafe-integer]\nFAILED ../evidence/test_b1_independent.py::test_storage_rejects_contract_invalid_json_before_commit[arbitrary-value-object]\n18 failed, 21 passed in 0.30s\n"
+}

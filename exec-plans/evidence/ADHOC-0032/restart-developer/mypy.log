@@ -1,0 +1,9 @@
+{
+  "name": "mypy",
+  "cwd": "source",
+  "command": "$UV_PROJECT_ENVIRONMENT/bin/python -m mypy -p trainlab -p tests --no-incremental",
+  "exit_code": 0,
+  "seconds": 2.777
+}
+
+Success: no issues found in 54 source files

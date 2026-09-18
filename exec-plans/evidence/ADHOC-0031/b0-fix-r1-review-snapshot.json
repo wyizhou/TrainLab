@@ -1,0 +1,212 @@
+{
+  "scope": "ADHOC-0031 B0 repair r1 fixed review snapshot",
+  "created_at_utc": "2026-09-16T08:35:15Z",
+  "head": "9db8bb1dda5922e85fe42581e27d2428dbc9f195",
+  "branch": "work/adhoc-0031-local-web-system",
+  "workflow": "f8ab6615-ff6e-455d-b0a2-c1db662ee38d",
+  "child": "adfe5740-aa87-4d72-a20b-6d23b747ab03",
+  "product_file_count": 33,
+  "product_aggregate_sha256": "c80313240e8eb91ea20e152f8bf63a57f26788c92a37fcd9f11b1576d015d37d",
+  "git_status_short": "## work/adhoc-0031-local-web-system\n M .gitignore\n M MEMORY.md\n M PLAN.md\n M exec-plans/active/ADHOC-0024-fit-sqlite-parser.md\n M exec-plans/active/ADHOC-0025-fit-running-query-tool.md\n M exec-plans/active/ADHOC-0026-tools-ai-index.md\n M exec-plans/active/ADHOC-0027-activity-ai-report.md\n M exec-plans/active/ADHOC-0028-weekly-ai-report.md\n?? exec-plans/active/ADHOC-0031-local-web-system.md\n?? exec-plans/evidence/ADHOC-0031/\n?? source/\n",
+  "ignored_generated_sample": "!! source/.DS_Store\n!! source/.mypy_cache/\n!! source/.ruff_cache/\n!! source/frontend/node_modules/\n!! source/skills/local-web/web/assets/\n!! source/skills/local-web/web/index.html\n",
+  "items": [
+    {
+      "path": ".gitignore",
+      "sha256": "4d8279e4241e54204202def2fb733e4e79f3d0ba3d5b67659e2ae01cc68da013",
+      "mode": "0o644",
+      "size": 2303
+    },
+    {
+      "path": "source/README.md",
+      "sha256": "e952417dfc0d1df45d2e0c17a4affb4af72a7b732e2343e3f88f6c275f225686",
+      "mode": "0o644",
+      "size": 1141
+    },
+    {
+      "path": "source/frontend/eslint.config.js",
+      "sha256": "ef816702ad27d4bf31f64aab5ff65bcad9ec2dc7910273810e71c6e810e80587",
+      "mode": "0o644",
+      "size": 410
+    },
+    {
+      "path": "source/frontend/index.html",
+      "sha256": "eba6550c9ab194bb2486b90d0ea82a770ee00601c22d3afc562a0eddd9a80060",
+      "mode": "0o644",
+      "size": 304
+    },
+    {
+      "path": "source/frontend/package-lock.json",
+      "sha256": "fcae09805b8754ba8c6944bd382a352f58e01954dcf8f134cc50a8312b7f55c0",
+      "mode": "0o644",
+      "size": 83808
+    },
+    {
+      "path": "source/frontend/package.json",
+      "sha256": "8ddd67bf3deb092539d1d452f24582d6566e9e6a7e4440cd119627c1e2769933",
+      "mode": "0o644",
+      "size": 598
+    },
+    {
+      "path": "source/frontend/src/App.tsx",
+      "sha256": "00be1b8ebc63316b5a833ccb884102d54f99d928d745eb215a3babb1452132ae",
+      "mode": "0o644",
+      "size": 1385
+    },
+    {
+      "path": "source/frontend/src/contracts.ts",
+      "sha256": "fc76ddabac33c68e3ae51bb17fd8e82ae3bd56b754ef0ecfa89165b5462894ef",
+      "mode": "0o644",
+      "size": 468
+    },
+    {
+      "path": "source/frontend/src/main.tsx",
+      "sha256": "02bf4d640076558d1c9316a8ad3b0c175294d4c6ae76ddbb6932c0ca9c031357",
+      "mode": "0o644",
+      "size": 367
+    },
+    {
+      "path": "source/frontend/src/styles.css",
+      "sha256": "d5a2e0676065d9bd9a9c2c1ea2a787718d9b891f800303c258a4c1ada4d6e881",
+      "mode": "0o644",
+      "size": 813
+    },
+    {
+      "path": "source/frontend/src/vite-env.d.ts",
+      "sha256": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5",
+      "mode": "0o644",
+      "size": 38
+    },
+    {
+      "path": "source/frontend/tests/app-contract.test.tsx",
+      "sha256": "43e139fe0aed92a90f08e96ea0244a9d3f343c959a837f14105518ecac0ac30e",
+      "mode": "0o644",
+      "size": 951
+    },
+    {
+      "path": "source/frontend/tsconfig.json",
+      "sha256": "8e9d59c26ada66a63af5e4821932419d8a2158cbb44bf34a92bd4e5f8e299e82",
+      "mode": "0o644",
+      "size": 554
+    },
+    {
+      "path": "source/frontend/vite.config.ts",
+      "sha256": "05dfa93fef5d9171d28e225fa6df54861786f69654129be37febe813d5a698fd",
+      "mode": "0o644",
+      "size": 214
+    },
+    {
+      "path": "source/pyproject.toml",
+      "sha256": "3be90831b2d622010edb7a580bfade752c1552f6ffdeef5ce6181afb9bc2c631",
+      "mode": "0o644",
+      "size": 569
+    },
+    {
+      "path": "source/skills/_shared/scripts/contracts.py",
+      "sha256": "163c3c8065fe10b371974ebe5f26eff6bda98bca8c084b1b9fda00713c5a51bb",
+      "mode": "0o644",
+      "size": 941
+    },
+    {
+      "path": "source/skills/local-web/scripts/server.py",
+      "sha256": "7fcbd03e2ac5675de5dbb75d67577a9c97c12222a2976270dae8b315aa1fb1c9",
+      "mode": "0o644",
+      "size": 2203
+    },
+    {
+      "path": "source/tests/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o644",
+      "size": 0
+    },
+    {
+      "path": "source/tests/contracts/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o644",
+      "size": 0
+    },
+    {
+      "path": "source/tests/contracts/test_b0_contracts.py",
+      "sha256": "c194f75ba7ab2d1e8889e8dc232b09146d7845e613a21e8dfd5d03559879234a",
+      "mode": "0o644",
+      "size": 15426
+    },
+    {
+      "path": "source/tools/README.md",
+      "sha256": "e278eaff92246d44cb3a02b172f7afdc2fea273da27ddc7cfdb5303b213eb57e",
+      "mode": "0o644",
+      "size": 2392
+    },
+    {
+      "path": "source/tools/check_b0_static.py",
+      "sha256": "d1da4f55bb7d649e76b47cea9fa069065770a600a5eded7efe2b6277d1bdaed7",
+      "mode": "0o644",
+      "size": 1602
+    },
+    {
+      "path": "source/trainlab/__init__.py",
+      "sha256": "44b3428a4cefdc17ff3e1b0db2f9d54a3803cc0615e91b8ca4486288e4eb6b30",
+      "mode": "0o644",
+      "size": 93
+    },
+    {
+      "path": "source/trainlab/contracts/__init__.py",
+      "sha256": "643e37b90b99faa71936f831373e81e460a9d696146cf63681363b99dd722406",
+      "mode": "0o644",
+      "size": 1009
+    },
+    {
+      "path": "source/trainlab/contracts/config.py",
+      "sha256": "a2b0b1c0f14d51fc03ae2bc58709ed02b9f85a111dbcb81f52a1b221aad71a46",
+      "mode": "0o644",
+      "size": 1492
+    },
+    {
+      "path": "source/trainlab/contracts/errors.py",
+      "sha256": "3a8af2a90a63f805b39fc7660fdac3028ab05fbdf909f28723ad09c5025ea58e",
+      "mode": "0o644",
+      "size": 2578
+    },
+    {
+      "path": "source/trainlab/contracts/interfaces.py",
+      "sha256": "3bccf475c055e07e2ef2e58b6ebd19a0188545fdc6594a80aca4e1eba2d8397e",
+      "mode": "0o644",
+      "size": 12889
+    },
+    {
+      "path": "source/trainlab/contracts/paths.py",
+      "sha256": "8a59a0f779b9e4259a42ecc5835da0c154fe70639613405288f4d55282271387",
+      "mode": "0o644",
+      "size": 3504
+    },
+    {
+      "path": "source/trainlab/contracts/schema.py",
+      "sha256": "dde8eecb349f6764a659d274692da478cd9696992beef23204551e920c5ba438",
+      "mode": "0o644",
+      "size": 5096
+    },
+    {
+      "path": "source/trainlab/contracts/session.py",
+      "sha256": "d305e188c92d97b9b451a5f8609b8095d89ed2f94c71bf8f8c5b6afe123c61d4",
+      "mode": "0o644",
+      "size": 929
+    },
+    {
+      "path": "source/trainlab/contracts/time.py",
+      "sha256": "d187c04bfd9855d1ee317e369291ffff9752eb5284fb8dca68bc129c8d8be5bc",
+      "mode": "0o644",
+      "size": 1623
+    },
+    {
+      "path": "source/trainlab/contracts/web.py",
+      "sha256": "04320487fe418660e84104383e86e8c2bda1b020ce545cffa3733d7da63f59fe",
+      "mode": "0o644",
+      "size": 1051
+    },
+    {
+      "path": "source/trainlab/py.typed",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o644",
+      "size": 0
+    }
+  ]
+}

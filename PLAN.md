@@ -1,9 +1,9 @@
 # PLAN.md
 
 - 总体状态：[exec]
-- 总目标及确认依据：按用户2026-09-15要求已完成agentsmd脚手架本地升级与验收；用户随后授权的旧CI退役、当前公开工作区提交/推送及PR创建也已完成，PR #20尚未合并。产品转向直接API的FIT数据/AI报告方向，已有五项开发计划保持未实施；旧M12及更早产品只保留历史事实，不自动恢复。
-- 允许修改的范围：本次后续交付删除.github/workflows/ci.yml、同步必要的现行协调记录与证据，将已认可的公开成果和用户主动删除提交/推送到当前功能分支并创建main为base的PR；不合并main、不修改私人资料、不恢复旧产品、不改仓库设置或新增CI。ADHOC-0029原本地迁移范围与历史结果保持不变。
-- 整体验收标准：已完成迁移按ADHOC-0029的AC-01至AC-10；本次CI/Git交付按ADHOC-0030的RC-0030-01，经本地检查、全新独立验证与主验收后核实Git/PR实际结果。未来产品按各功能已确认目标实施并验收，不把脚手架或Git交付当产品完成。
+- 总目标及确认依据：用户2026-09-15明确启动本地React/FastAPI Web、三小时Garmin同步、兼容AI接口、三模式Context，以及既有FIT/records/报告功能。ADHOC-0031承接系统集成，ADHOC-0024～0028保持原编号；B0～B7本地/合成范围已完成，历史失败、公共合同累计修复和环境恢复证据保留；最终B7独立验证通过，主Agent核快照并复跑pytest 196通过、Python/前端门禁及`git diff --check`通过。脚手架和旧CI交付已完成，PR #20随后经另行授权合并；旧M12及更早产品不自动恢复。
+- 允许修改的范围：新产品位于source，依本次明确目标实现代码/Schema/Prompt/本地配置和测试并同步当前协调记录；保留四表、全文报告、完整采样、UTC及私人数据边界。不恢复旧工程，不改全局配置/仓库设置，不新增或主动运行远端CI。首次真实同步、AI实调用与留存按ADHOC-0031的待确认事项闭合后执行，不自动合并本功能PR。
+- 整体验收标准：本次按ADHOC-0031用户目标及ADHOC-0024～0028已确认设计，在完整实施合同明确后做功能级和集成级本地独立验证、主验收及适用交付；未运行的实服务检查单列，不把规划、脚手架或Git成功当产品通过。ADHOC-0029/0030原合同、受验快照及历史结果不改写。
 
 ## 功能总览
 
@@ -11,30 +11,32 @@
 | --- | --- | --- | --- | --- | --- |
 | ADHOC-0029 | [completed] | 最新agentsmd及全部协调记录迁移，退出旧入口 | AC-01..10；本地迁移、独立复验与主验收通过 | 用户八项要求与本地分支授权 | [执行计划](exec-plans/completed/ADHOC-0029-agentsmd-upgrade.md) |
 | ADHOC-0030 | [completed] | 旧CI退役，当前公开工作区已提交/推送并创建PR #20，不合并main | RC-0030-01 AC-01..06；独立与主验收通过，完整Git树与实际PR头核对完成 | 已完成迁移及用户新交付授权；沿用同一功能分支 | [执行计划](exec-plans/completed/ADHOC-0030-retire-ci-and-publish.md) |
+| ADHOC-0031 | [completed] | 本机8080 Web/API、三小时同步、AI工具循环与三模式Context，接通既有FIT/报告功能 | U31-01～06；本地/合成完整正常/错误/边界、独立验证与主验收通过；真实外部检查单列未验证 | ADHOC-0024～0028；首次同步/AI配置/触发留存已确认 | [执行计划](exec-plans/completed/ADHOC-0031-local-web-system.md) |
+| ADHOC-0032 | [exec] | Playwright Chrome Web验收、真实Garmin及认证维护；两区Web登录/2FA GUI、真实有界同步及既有Web/Context错误修复已通过；AI模型实测暂停 | AU32-01～06及GUI32-01～06：GUI完整操作/安全HTTP/维护生命周期须Chrome实际验证；Garmin有界同步/下载/入库及真实认证无证据不通过；AI继续暂停；既有Web/Context错误须修复并验证 | ADHOC-0031 PR #21；用户2026-09-18最新授权 | [执行计划](exec-plans/active/ADHOC-0032-real-garmin-and-web-e2e.md) |
 | ADHOC-0023 | [exec] | FIT/报告当前决定及实施边界，非产品代码 | 不丢已批准设计、不猜未知项 | 用户已确认设计 | [执行计划](exec-plans/active/ADHOC-0023-fit-data-classification-discussion.md) |
-| ADHOC-0024 | [plan] | activities十二列＋records四列，完整FIT入库 | 完整/缺失/顺序/事务；默认123 | ADHOC-0023及目录/容量条件 | [执行计划](exec-plans/active/ADHOC-0024-fit-sqlite-parser.md) |
-| ADHOC-0025 | [plan] | 唯一get_running_records(activity_id)，只跑步返回全部采样 | 真实sport和本次作用域、只读/全量/超限明确失败 | ADHOC-0024 | [执行计划](exec-plans/active/ADHOC-0025-fit-running-query-tool.md) |
-| ADHOC-0026 | [plan] | 本地tools README与实际唯一工具一致 | 参数/返回/错误/权限与实际Schema一致 | ADHOC-0024、ADHOC-0025 | [执行计划](exec-plans/active/ADHOC-0026-tools-ai-index.md) |
-| ADHOC-0027 | [plan] | activties_report：activity_id、运动start_time_utc、全文本summary | 关联活动/运动时间、全文保真、失败回滚 | ADHOC-0024 | [执行计划](exec-plans/active/ADHOC-0027-activity-ai-report.md) |
-| ADHOC-0028 | [plan] | weekly_report：自增id、run_time_utc、全文本summary | 实际T往前七天、多活动总结、统一时间锚 | ADHOC-0024；不预设必须依赖活动AI报告 | [执行计划](exec-plans/active/ADHOC-0028-weekly-ai-report.md) |
+| ADHOC-0024 | [completed] | activities十二列＋records四列，完整FIT入库 | 完整/缺失/顺序/事务；默认123；独立复验与主复核通过 | ADHOC-0023及目录/容量条件；ADHOC-0031 B0相关前置同批修复 | [执行计划](exec-plans/completed/ADHOC-0024-fit-sqlite-parser.md) |
+| ADHOC-0025 | [completed] | 唯一get_running_records(activity_id)，只跑步返回全部采样 | 真实sport和本次作用域、只读/全量/超限明确失败；独立复验与主复核通过 | ADHOC-0024 | [执行计划](exec-plans/completed/ADHOC-0025-fit-running-query-tool.md) |
+| ADHOC-0026 | [completed] | 本地tools README与唯一采样工具及本轮要求的受限资料读取一致 | 参数/返回/错误/权限与实际Schema一致；资料读取不开放任意文件；本阶段不冒称B5资料工具已接通；独立复验与主复核通过 | ADHOC-0024、ADHOC-0025、ADHOC-0031 Context接线 | [执行计划](exec-plans/completed/ADHOC-0026-tools-ai-index.md) |
+| ADHOC-0027 | [completed] | activties_report：activity_id、运动start_time_utc、全文本summary | 关联活动/运动时间、全文保真、失败回滚；独立复验与主复核通过 | ADHOC-0024 | [执行计划](exec-plans/completed/ADHOC-0027-activity-ai-report.md) |
+| ADHOC-0028 | [completed] | weekly_report：自增id、run_time_utc、全文本summary | 实际T往前七天、多活动总结、统一时间锚；独立复验与主复核通过 | ADHOC-0024、ADHOC-0027；本轮明确由程序取七天运动总结给Context | [执行计划](exec-plans/completed/ADHOC-0028-weekly-ai-report.md) |
 
 ## 当前关注
 
-- 当前关注：ADHOC-0030已完成，用户可审阅[PR #20](https://github.com/wyizhou/TrainLab/pull/20)，未合并main；ADHOC-0029保持已完成，旧产品暂停，ADHOC-0024至0028未开始实施。
-- 待确认事项：新产品代码落点/现有架构例外、当前本地测试入口及字段/容量/宿主权限等实现边界；旧CI退役已有明确授权，不重复询问已确认四表/UTC/报告身份。
-- 整体暂停原因：仅产品开发尚未进入本轮范围，source由用户主动删除；不恢复旧代码或旧真实任务。CI退役与Git交付不以启动产品为前提。
-- 恢复条件：用户明确启动产品功能，前置边界和实现拆解由主Agent审核后，按AGENTS使用全新子角色实施、独立验证、主验收。本次推送/PR前核对旧CI退役、实际自动触发规则及合并条件，不直接推送或合并main。
+- 当前关注：ADHOC-0032基础认证模块及两区Web登录/2FA/运行期维护GUI已完成独立验证、主Agent实际Chrome验收与本机页面交付；用户已在正式GUI完成真实认证。2026-09-18主Agent继续原授权有界Garmin检查：CLI可重载持久认证，`maintain --once`退出0且未到刷新期，`sync-once`退出0，最近7天下载5个真实FIT并入库，activities=5、records=22995；G2、T2、T9已完成。随后用户授权修复两个既有Context/资料问题AU32-V1-002/003，已修复并通过主Agent补充验收：目标10项、web+ai 62项、全量pytest 326项、ruff、非editable mypy、前端14项/typecheck/build、默认Chrome2项和认证Chrome24项均通过；环境失败记录保留。PR #21已更新到`4126ead`并评论交付，GitHub显示可干净合并；G3及整体功能仍[exec]，等待用户确认无问题后转入AI相关。AI继续暂停，未合并PR #21。
+- 已确认事项：首次同步最近七天，UTC日期+FIT字节SHA命名；AI私有配置在states/ai.json，允许真实请求且数据不限、暂不设上限；活动总结中国时区每日凌晨4点自动触发，允许新增配置表，无活动周总结入库`本周无任何运动记录`，多轮历史仅内存。2026-09-18用户进一步确认：每日进程按上次状态补齐到当前的所有空缺活动总结；周报按中国时区每周日15:00执行，窗口为上周日15:00到本周日15:00，周报前先运行一次同类运动总结补跑且不与定时进程冲突；第一个版本不做分段查询和records配额，AI需要时给对应running活动全量records。不重问四表/UTC/全量records、Garmin指定认证文件使用或按需龙豆资料读取。
+- 整体暂停原因：临时整体暂停已解除；AI仍单独暂停。认证基础模块、本地Web GUI、真实有界Garmin同步和两个既有Web/Context错误修复均已通过；PR已更新且可干净合并，等待用户确认无问题后进入AI相关，不预写合并通过。
+- 恢复条件：安全GUI、真实Garmin有界检查和AU32-V1-002/003修复已满足，PR #21已更新；下一步由用户确认本PR无问题后开始AI相关。任何产品后续改动仍须全新独立验证。AI参数与实调用待用户确认，合并另行确认。
 
 ## 项目已有边界与当前设计
 
 - 四类不变：基本情况、整场FIT摘要、原生lap/split/set、设备与采样。所有受支持单项运动默认给AI第1/2/3类；铁三排除，只有真实sport=running可调用唯一采样工具，子类不设白名单。
-- states/data.db为目标库，共四张业务表；SQLite自增系统表不是业务元数据表。所有绝对时刻字段存UTC，显示时转换用户时区；时长/偏移不是时区时间。当前没有数据库、实际工具或API接线。
+- states/data.db为目标库，共四张业务表；SQLite自增系统表不是业务元数据表。所有绝对时刻字段存UTC，显示时转换用户时区；时长/偏移不是时区时间。已有Schema与合成SQLite入库检查，未创建正式数据库或完成实际工具/API业务接线。
 - activities十二列、records四列及联合键/原顺序、完整解析与合法缺失不造值已确认；不恢复被否决的has_running、parse_status、session_count、parser_version、data_revision、quality_json。
 - activties_report保留用户拼写，运动开始时间与AI生成时间不同；weekly_report自增id＋实际run_time_utc＋全文本summary，覆盖T往前七天，不再用活动ID/自然周键。summary不替代FIT事实summary_json。
-- 根只承载开发Harness/Git元数据；原source-only产品边界没有在本次迁移中批准改变。根tools与旧脚本落点的冲突仍须在产品实施前明确；不恢复集中source/src、source/index.py或发布bundle/dist层。
+- 根只承载开发Harness/Git元数据，source仍为唯一产品工程。本次采用source内产品模块/脚本、前端和工具索引，不申请根tools例外；前端构建直接输出后端专用web目录，不恢复集中source/src、source/index.py或旧发布bundle/dist层。
 - 不恢复orchestrate-parallel-work、旧控制面或旧runner。不安装/复制项目技能到仓库外，不改全局配置；用户另行指定的操作另行明确。references仅按用户主动专题请求维护，不自动沉淀普通开发结论。
 - FIT、GPS、数据库、raw、报告、目标、凭据/Token及私人配置不进入Git。states仅放行三个.gitkeep和虚构Goal-example.md。测试用合成数据；正式FIT/Goal/凭据及业务Provider另按精确授权，不因脚手架升级读取。
-- Gmail仍只用官方REST，Garmin保持既有精确授权边界；不静默安装/登录/刷新凭据，不继承历史外部动作许可。
+- Gmail仍只用官方REST，本轮不增加邮件/健康/训练写入。Garmin按本次明确目标使用指定认证文件、检查新活动和可用认证刷新；首次真实下载范围尚待确定，刷新需要人工登录/MFA时明确提示，不猜凭据、不绕过验证，不继承历史外部动作许可。
 - 旧CI的source依赖/测试入口已被用户删除；唯一旧workflow已在ADHOC-0030按用户授权删除，不新增或主动运行远端CI，不把缺失检查当通过。新实现沿用Python3.12/pytest/Ruff/mypy并同批落实适用本地测试/配置，不能以删弱断言换绿灯。
 - 新开发协作只按当前AGENTS与角色模板。旧Failure Analyst、强制八字段、多层状态和旧每模块自动推送等开发协议不再生效；历史受审合同仅作证据，不能拼接为当前新要求。
 - 根README为用户要求原样采用的上游通用说明及MIT许可，不表示TrainLab全部历史产品以MIT重新许可；旧来源和许可原文在公开历史快照保全。

@@ -10,6 +10,12 @@ __pycache__/
 build/
 dist/
 
+# ADHOC-0031 local frontend generated files.
+/source/frontend/node_modules/
+/source/frontend/.vite/
+/source/frontend/coverage/
+/source/skills/local-web/web/**
+
 # Private states contents stay local; only the directory skeleton and synthetic
 # goal example are public. The real states/Goal.md is intentionally ignored.
 /states/**
@@ -34,6 +40,7 @@ data.db-journal
 *.sqlite
 *.sqlite3
 *.lock
+!/source/uv.lock
 
 # The old runtime is retained outside the product tree for rollback/audit only.
 /data-backup/

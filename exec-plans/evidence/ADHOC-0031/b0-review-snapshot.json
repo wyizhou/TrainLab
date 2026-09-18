@@ -1,0 +1,193 @@
+{
+  "scope": "ADHOC-0031 B0 first independent validation; code and test scope source/**",
+  "created_at_utc": "2026-09-16T01:10:50.307442+00:00",
+  "head": "9db8bb1dda5922e85fe42581e27d2428dbc9f195",
+  "branch": "work/adhoc-0031-local-web-system",
+  "git_status": [
+    " M MEMORY.md",
+    " M PLAN.md",
+    " M exec-plans/active/ADHOC-0024-fit-sqlite-parser.md",
+    " M exec-plans/active/ADHOC-0025-fit-running-query-tool.md",
+    " M exec-plans/active/ADHOC-0026-tools-ai-index.md",
+    " M exec-plans/active/ADHOC-0027-activity-ai-report.md",
+    " M exec-plans/active/ADHOC-0028-weekly-ai-report.md",
+    "?? exec-plans/active/ADHOC-0031-local-web-system.md",
+    "?? exec-plans/evidence/ADHOC-0031/developer-b0-report.md",
+    "?? exec-plans/evidence/ADHOC-0031/parent-planning-review.json",
+    "?? exec-plans/evidence/ADHOC-0031/planner-v1.md",
+    "?? exec-plans/evidence/ADHOC-0031/user-answers-2026-09-16.md",
+    "?? source/README.md",
+    "?? source/frontend/package.json",
+    "?? source/frontend/scripts/build.mjs",
+    "?? source/frontend/src/app-contract.mjs",
+    "?? source/frontend/tests/app-contract.test.mjs",
+    "?? source/pyproject.toml",
+    "?? source/skills/_shared/scripts/contracts.py",
+    "?? source/skills/local-web/scripts/server.py",
+    "?? source/skills/local-web/web/assets/main.css",
+    "?? source/skills/local-web/web/index.html",
+    "?? source/tests/__init__.py",
+    "?? source/tests/contracts/__init__.py",
+    "?? source/tests/contracts/test_b0_contracts.py",
+    "?? source/tools/README.md",
+    "?? source/tools/check_b0_static.py",
+    "?? source/trainlab/__init__.py",
+    "?? source/trainlab/contracts/__init__.py",
+    "?? source/trainlab/contracts/config.py",
+    "?? source/trainlab/contracts/errors.py",
+    "?? source/trainlab/contracts/paths.py",
+    "?? source/trainlab/contracts/schema.py",
+    "?? source/trainlab/contracts/session.py",
+    "?? source/trainlab/contracts/time.py",
+    "?? source/trainlab/contracts/web.py",
+    "?? source/trainlab/py.typed"
+  ],
+  "source_files": 25,
+  "files": [
+    {
+      "path": "source/README.md",
+      "sha256": "828936aa2c1841ae453e9ca8668837484844401675c61524db770d9085fececa",
+      "mode": "0o644"
+    },
+    {
+      "path": "source/frontend/package.json",
+      "sha256": "9e662aad6b5f6a3fa297a4b9928182eb1f1d2d64de047ca2945a0f97b1b0b84e",
+      "mode": "0o644"
+    },
+    {
+      "path": "source/frontend/scripts/build.mjs",
+      "sha256": "df9ce5c3f60fdd8e8e43bbabd18a1d972a21f441f2f69e0afef49cc50fe975ae",
+      "mode": "0o644"
+    },
+    {
+      "path": "source/frontend/src/app-contract.mjs",
+      "sha256": "3a8cac8715fbd1a48728a486b3ba4e665ba5e272d64b55f6c8c633d1a767e999",
+      "mode": "0o644"
+    },
+    {
+      "path": "source/frontend/tests/app-contract.test.mjs",
+      "sha256": "4111d2a7e47fe7e710f867edd5fd19c3b2d7a0d1ac915466ccc71d2889c1196c",
+      "mode": "0o644"
+    },
+    {
+      "path": "source/pyproject.toml",
+      "sha256": "d8d6c88e81524f86c5417413369d8910beaa846a41200824d697d8885cf1e3ec",
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/_shared/scripts/contracts.py",
+      "sha256": "d086c8c9a1d16d36c80cc7d657e4cab128f22888366cc983ac45e0835b8cf4ea",
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/local-web/scripts/server.py",
+      "sha256": "e0116a6d059d83742f71e16a32b82763e08671f4d76cc21e4dfd8e270816362c",
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/local-web/web/assets/main.css",
+      "sha256": "f2b6862bd61026f5208f6fd11b5f7b6544b3bb873b2107252a61f312403d37aa",
+      "mode": "0o644"
+    },
+    {
+      "path": "source/skills/local-web/web/index.html",
+      "sha256": "8e2216c806982cbc5dcf35f9ea661d961b4bcea125cf56fd47966e8c5db40bdf",
+      "mode": "0o644"
+    },
+    {
+      "path": "source/tests/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o644"
+    },
+    {
+      "path": "source/tests/contracts/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o644"
+    },
+    {
+      "path": "source/tests/contracts/test_b0_contracts.py",
+      "sha256": "a965c384d52138277063365471ea5f0742162ad7ec055c1c4b380ff079674347",
+      "mode": "0o644"
+    },
+    {
+      "path": "source/tools/README.md",
+      "sha256": "d6d37a1e38987c268e26aaeb415b29f5e2a4b1e9c8044b2c1f56ca831bb3ffab",
+      "mode": "0o644"
+    },
+    {
+      "path": "source/tools/check_b0_static.py",
+      "sha256": "dd72c8f31466260b4dcf9a671ebdafc52d209cfd22d2253b6d4ba7fc3b874d08",
+      "mode": "0o644"
+    },
+    {
+      "path": "source/trainlab/__init__.py",
+      "sha256": "44b3428a4cefdc17ff3e1b0db2f9d54a3803cc0615e91b8ca4486288e4eb6b30",
+      "mode": "0o644"
+    },
+    {
+      "path": "source/trainlab/contracts/__init__.py",
+      "sha256": "05074966ea3815b3ab0409f1953545d04ced04b30f8dd0702e05092a0750f76e",
+      "mode": "0o644"
+    },
+    {
+      "path": "source/trainlab/contracts/config.py",
+      "sha256": "e0d53bdfd4d213c13a35d60a2c4e34d70adff460382d34047c5d429d00121571",
+      "mode": "0o644"
+    },
+    {
+      "path": "source/trainlab/contracts/errors.py",
+      "sha256": "02fe5ac80920a367754e09130e3dc99ca1d957baf87301535e3992d2bb8d1973",
+      "mode": "0o644"
+    },
+    {
+      "path": "source/trainlab/contracts/paths.py",
+      "sha256": "975c5fc069f1a5d7f86b651432cc3f9c655898acb941ea3b092d182154226834",
+      "mode": "0o644"
+    },
+    {
+      "path": "source/trainlab/contracts/schema.py",
+      "sha256": "ad4f3e51cb03451a12874e377375278eb11245ae8a06d250bc81d32ba0044aec",
+      "mode": "0o644"
+    },
+    {
+      "path": "source/trainlab/contracts/session.py",
+      "sha256": "785044253970ca90b4e94563173347f85d115e72a7ab7414584ff3da5a34aab0",
+      "mode": "0o644"
+    },
+    {
+      "path": "source/trainlab/contracts/time.py",
+      "sha256": "5035556e78930825c148267409f07291f7269b332190fb7c5dd73e4215a79815",
+      "mode": "0o644"
+    },
+    {
+      "path": "source/trainlab/contracts/web.py",
+      "sha256": "04320487fe418660e84104383e86e8c2bda1b020ce545cffa3733d7da63f59fe",
+      "mode": "0o644"
+    },
+    {
+      "path": "source/trainlab/py.typed",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o644"
+    },
+    {
+      "path": "AGENTS.md",
+      "sha256": "d5dadbb4720aa5357af5f043a0fe327b29f09c3c383de8733c8c2a674c12ad60",
+      "mode": "0o644"
+    },
+    {
+      "path": "subagent-templates/validator.md",
+      "sha256": "4f5aa20b33b513b9889336ae2d80841b18f6c6ee5f892becfd5c2697fd6d22b5",
+      "mode": "0o600"
+    },
+    {
+      "path": "exec-plans/active/ADHOC-0031-local-web-system.md",
+      "sha256": "0c007ba8268c529e1d5fbb31b69d3718090caaa7255cde186c72aff5be7d58b8",
+      "mode": "0o644"
+    },
+    {
+      "path": "exec-plans/evidence/ADHOC-0031/user-answers-2026-09-16.md",
+      "sha256": "290b7165d2d5c2c03455cc4bf081bef8980afaf8f9332db80cc0634ea4955f9f",
+      "mode": "0o644"
+    }
+  ]
+}
