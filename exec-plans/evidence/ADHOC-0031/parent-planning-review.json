@@ -1,0 +1,32 @@
+{
+  "at_utc": "2026-09-15T14:22:58.357490+00:00",
+  "workflow": "20f5c34f-ec40-496e-9486-94251a48fe7d",
+  "child": "9f7371cf-6030-4c49-8807-2cc5bdaa2a1a",
+  "planner_report_sha256": "a3fda9377c85d7bf1d992bb83fa3a91c2e9055011e9f65f8266651a1d8ed0f65",
+  "baseline_verified": true,
+  "disposition": "Accept overall serial task structure; do not freeze unapproved recommendations as requirements. No implementation started.",
+  "accepted": [
+    "Preserve ADHOC-0024 through 0028 and T1..T4 identities; ADHOC-0031 owns system integration.",
+    "Directory A keeps product source and executable scripts inside current source/skills boundaries.",
+    "Localhost8080 without account authentication, not without engineering tests.",
+    "Existing strict FIT/records/12-4-3-3 schema and UTC rules.",
+    "Weekly Context reads recent seven days of stored activity summaries as newly requested."
+  ],
+  "not_additional_user_questions": [
+    "Constrained reference reader is an implementation of the user explicit request to read longdou.md on demand; no need to ask permission for the same capability again.",
+    "Garmin runtime credential-file use/refresh is expressly requested; do not re-ask that direction. Distinguish it from unbounded real-data/paid acceptance runs.",
+    "No separate common source/backend exception is needed if current-compatible layout A is adopted."
+  ],
+  "not_accepted_as_requirements": [
+    "Do not turn an undefined weekly20-records budget into a new rolling7day policy merely because it is stricter.",
+    "Do not require live paid Provider acceptance beyond user-approved data/cost scope or call unrun live tests passed.",
+    "Do not silently add persistent conversation retention, automatic paid report generation or extra generic chat product.",
+    "Numerical time/round/byte defaults and completeness policies are proposals for explicit implementation-contract review, not user requirements."
+  ],
+  "material_inputs": [
+    "First download date range and filename algorithm/date timezone",
+    "AI base_url/model/local private key configuration plus whether bounded live validation is authorized",
+    "Manual/automatic report generation and private conversation persistence policy"
+  ],
+  "source_state": "127 public files, logical index and clean workspace preserved through Planner completion; only branch creation before this review."
+}

@@ -1,0 +1,56 @@
+{
+  "ActivityFacts": {
+    "activity_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "schema_version": 1,
+    "basic_json": {
+      "sport": null,
+      "sub_sport": null,
+      "start_time_utc": null,
+      "end_time_utc": null,
+      "messages": []
+    },
+    "summary_json": {
+      "messages": []
+    },
+    "segments_json": {
+      "items": []
+    },
+    "field_definitions": {},
+    "developer_sources": {}
+  },
+  "GetRunningRecordsRequest": {
+    "activity_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "GetRunningRecordsResult": {
+    "schema_version": "fit-records/1",
+    "ok": true,
+    "activity_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "data": {
+      "field_definitions": {},
+      "developer_sources": {},
+      "records": []
+    },
+    "error": null
+  },
+  "ReadReferenceRequest": {
+    "reference_id": "longdou"
+  },
+  "ReadReferenceResult": {
+    "ok": true,
+    "data": {
+      "reference_id": "longdou",
+      "title": "公开资料",
+      "content": "合成全文"
+    },
+    "error": null
+  },
+  "ActivityReportSave": {
+    "activity_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "start_time_utc": null,
+    "summary": "全文总结"
+  },
+  "WeeklyReportSave": {
+    "run_time_utc": "2030-01-01T00:00:00.000000Z",
+    "summary": "本周无任何运动记录"
+  }
+}

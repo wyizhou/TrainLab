@@ -1,0 +1,157 @@
+{
+  "snapshot": "5cb22a1f1950c1e73c0624c2ac2981f090c246738dc53f62eb13f9a5996149d8",
+  "files": 56,
+  "protected_unchanged": 161,
+  "changes": {
+    "added": [
+      "source/skills/_shared/scripts/trainlab/contracts/fit_consistency.py",
+      "source/skills/_shared/scripts/trainlab/contracts/fit_profile.py",
+      "source/tests/fit/test_b1_r2.py"
+    ],
+    "removed": [],
+    "modified": [
+      "source/README.md",
+      "source/schemas/contracts.schema.json",
+      "source/skills/_shared/scripts/trainlab/check_architecture.py",
+      "source/skills/_shared/scripts/trainlab/contracts/json_validation.py",
+      "source/skills/fit-store/README.md",
+      "source/skills/fit-store/scripts/parser.py",
+      "source/skills/fit-store/scripts/profile_fields.py",
+      "source/skills/fit-store/scripts/wire.py",
+      "source/tests/fit/test_additional_boundaries.py",
+      "source/tests/fit/test_b1_regressions.py"
+    ]
+  },
+  "evidence_directory": "/var/folders/dh/4th4rwbd7xlg8qslxz62hbjc0000gn/T/trainlab-b1-fix-r2-parent-intake-25yy6flg",
+  "checks": [
+    {
+      "check": "install-parity",
+      "command": [
+        "/tmp/trainlab-b1-r2-0vQR45/green/evidence/venv/bin/python",
+        "-c",
+        "from pathlib import Path\nimport importlib.util,json,sys,tomllib\nroot=Path(sys.argv[1]);project=tomllib.loads((root/'source/pyproject.toml').read_text());n=0\nfor package,relative in project['tool']['setuptools']['package-dir'].items():\n spec=importlib.util.find_spec(package);assert spec and spec.origin;target=Path(spec.origin).parent\n for p in (root/'source'/relative).iterdir():\n  if p.is_file() and (p.suffix in ('.py','.json') or p.name=='py.typed'):\n   assert p.read_bytes()==(target/p.name).read_bytes(),str(p);n+=1\nprint('Installed/source module and schema parity:',n)\n",
+        "/Volumes/DiskOther/Code/TrainLab"
+      ],
+      "cwd": "/var/folders/dh/4th4rwbd7xlg8qslxz62hbjc0000gn/T/trainlab-b1-fix-r2-parent-intake-25yy6flg",
+      "exit_code": 0,
+      "tail": "Installed/source module and schema parity: 28\n",
+      "log": "/var/folders/dh/4th4rwbd7xlg8qslxz62hbjc0000gn/T/trainlab-b1-fix-r2-parent-intake-25yy6flg/install-parity.log"
+    },
+    {
+      "check": "pytest",
+      "command": [
+        "/tmp/trainlab-b1-r2-0vQR45/green/evidence/venv/bin/python",
+        "-m",
+        "pytest",
+        "tests",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "--basetemp",
+        "/var/folders/dh/4th4rwbd7xlg8qslxz62hbjc0000gn/T/trainlab-b1-fix-r2-parent-intake-25yy6flg/test-temp",
+        "--junitxml",
+        "/var/folders/dh/4th4rwbd7xlg8qslxz62hbjc0000gn/T/trainlab-b1-fix-r2-parent-intake-25yy6flg/pytest.xml",
+        "--tb=short"
+      ],
+      "cwd": "/Volumes/DiskOther/Code/TrainLab/source",
+      "exit_code": 0,
+      "tail": "........................................................................ [ 45%]\n........................................................................ [ 91%]\n.............                                                            [100%]\n=============================== warnings summary ===============================\n../../../../../tmp/trainlab-b1-r2-0vQR45/green/evidence/venv/lib/python3.12/site-packages/fastapi/testclient.py:1\n  /tmp/trainlab-b1-r2-0vQR45/green/evidence/venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n../../../../../tmp/trainlab-b1-r2-0vQR45/green/evidence/venv/lib/python3.12/site-packages/starlette/testclient.py:53\n  /tmp/trainlab-b1-r2-0vQR45/green/evidence/venv/lib/python3.12/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.\n    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n157 passed, 2 warnings in 8.02s\n",
+      "log": "/var/folders/dh/4th4rwbd7xlg8qslxz62hbjc0000gn/T/trainlab-b1-fix-r2-parent-intake-25yy6flg/pytest.log"
+    },
+    {
+      "check": "ruff",
+      "command": [
+        "/tmp/trainlab-b1-r2-0vQR45/green/evidence/venv/bin/python",
+        "-m",
+        "ruff",
+        "check",
+        "--no-cache",
+        "."
+      ],
+      "cwd": "/Volumes/DiskOther/Code/TrainLab/source",
+      "exit_code": 0,
+      "tail": "All checks passed!\n",
+      "log": "/var/folders/dh/4th4rwbd7xlg8qslxz62hbjc0000gn/T/trainlab-b1-fix-r2-parent-intake-25yy6flg/ruff.log"
+    },
+    {
+      "check": "mypy",
+      "command": [
+        "/tmp/trainlab-b1-r2-0vQR45/green/evidence/venv/bin/python",
+        "-m",
+        "mypy",
+        "-p",
+        "trainlab",
+        "-p",
+        "tests",
+        "--no-incremental"
+      ],
+      "cwd": "/Volumes/DiskOther/Code/TrainLab/source",
+      "exit_code": 0,
+      "tail": "Success: no issues found in 35 source files\n",
+      "log": "/var/folders/dh/4th4rwbd7xlg8qslxz62hbjc0000gn/T/trainlab-b1-fix-r2-parent-intake-25yy6flg/mypy.log"
+    },
+    {
+      "check": "compile",
+      "command": [
+        "/tmp/trainlab-b1-r2-0vQR45/green/evidence/venv/bin/python",
+        "-m",
+        "compileall",
+        "-q",
+        "skills",
+        "schemas",
+        "tests"
+      ],
+      "cwd": "/Volumes/DiskOther/Code/TrainLab/source",
+      "exit_code": 0,
+      "tail": "",
+      "log": "/var/folders/dh/4th4rwbd7xlg8qslxz62hbjc0000gn/T/trainlab-b1-fix-r2-parent-intake-25yy6flg/compile.log"
+    },
+    {
+      "check": "architecture",
+      "command": [
+        "/tmp/trainlab-b1-r2-0vQR45/green/evidence/venv/bin/python",
+        "-m",
+        "trainlab.check_architecture"
+      ],
+      "cwd": "/Volumes/DiskOther/Code/TrainLab/source",
+      "exit_code": 1,
+      "tail": "Traceback (most recent call last):\n  File \"<frozen runpy>\", line 198, in _run_module_as_main\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/tmp/trainlab-b1-r2-0vQR45/green/evidence/venv/lib/python3.12/site-packages/trainlab/check_architecture.py\", line 179, in <module>\n    sys.exit(main())\n             ^^^^^^\n  File \"/tmp/trainlab-b1-r2-0vQR45/green/evidence/venv/lib/python3.12/site-packages/trainlab/check_architecture.py\", line 163, in main\n    check_layout(source)\n  File \"/tmp/trainlab-b1-r2-0vQR45/green/evidence/venv/lib/python3.12/site-packages/trainlab/check_architecture.py\", line 155, in check_layout\n    raise ValueError(\"runtime implementation outside Skill/scripts: \" + str(relative))\nValueError: runtime implementation outside Skill/scripts: tools/__pycache__/check_b0_static.cpython-312.pyc\n",
+      "log": "/var/folders/dh/4th4rwbd7xlg8qslxz62hbjc0000gn/T/trainlab-b1-fix-r2-parent-intake-25yy6flg/architecture.log"
+    },
+    {
+      "check": "architecture-after-cache-isolation",
+      "command": [
+        "/tmp/trainlab-b1-r2-0vQR45/green/evidence/venv/bin/python",
+        "-m",
+        "trainlab.check_architecture"
+      ],
+      "cwd": "/Volumes/DiskOther/Code/TrainLab/source",
+      "exit_code": 0,
+      "tail": "architecture and public Schema checks passed\n",
+      "log": "/var/folders/dh/4th4rwbd7xlg8qslxz62hbjc0000gn/T/trainlab-b1-fix-r2-parent-intake-25yy6flg/architecture-after-cache-isolation.log"
+    }
+  ],
+  "scope": "Parent intake and regression, not independent final acceptance",
+  "generated_artifact_resolution": {
+    "frozen_layout_directory": "/var/folders/dh/4th4rwbd7xlg8qslxz62hbjc0000gn/T/trainlab-b1-r2-layout-check-m_v9djng",
+    "command": [
+      "/tmp/trainlab-b1-r2-0vQR45/green/evidence/venv/bin/python",
+      "-m",
+      "trainlab.check_architecture"
+    ],
+    "cwd": "source",
+    "exit_code": 0,
+    "output": "architecture and public Schema checks passed\n",
+    "workspace_only_ignored_file": {
+      "path": "source/tools/__pycache__/check_b0_static.cpython-312.pyc",
+      "size": 3109,
+      "sha256": "a5c81a26a815333610382dc680fc7aa6e1368d4876bad7419af6fd1772815e16",
+      "mtime_ns": 1789555007617612966
+    },
+    "snapshot_contains_file": false,
+    "resolution": "After clean 56-file snapshot passed the same command, moved only the ignored bytecode of the removed historical script to external evidence; no implementation/Schema/tests changed.",
+    "preserved_bytecode": "/var/folders/dh/4th4rwbd7xlg8qslxz62hbjc0000gn/T/trainlab-b1-fix-r2-parent-intake-25yy6flg/obsolete-bytecode/check_b0_static.cpython-312.pyc",
+    "workspace_recheck_exit_code": 0,
+    "workspace_recheck_output": "architecture and public Schema checks passed\n"
+  }
+}

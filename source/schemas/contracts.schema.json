@@ -1,0 +1,974 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "Value": {
+      "anyOf": [
+        {
+          "type": [
+            "null",
+            "boolean",
+            "string"
+          ]
+        },
+        {
+          "type": "number",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Value"
+          }
+        },
+        {
+          "type": "object",
+          "properties": {
+            "integer": {
+              "type": "string",
+              "pattern": "^(0|-?[1-9][0-9]*)(?![\\s\\S])"
+            }
+          },
+          "required": [
+            "integer"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "bytes_hex": {
+              "type": "string",
+              "pattern": "^([0-9a-f]{2})*(?![\\s\\S])"
+            }
+          },
+          "required": [
+            "bytes_hex"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "FieldMap": {
+      "type": "object",
+      "patternProperties": {
+        "^f(0|[1-9][0-9]*)(?![\\s\\S])": {
+          "$ref": "#/$defs/Value"
+        }
+      },
+      "additionalProperties": false
+    },
+    "FieldSet": {
+      "type": "object",
+      "properties": {
+        "standard": {
+          "$ref": "#/$defs/FieldMap"
+        },
+        "developer": {
+          "$ref": "#/$defs/FieldMap"
+        }
+      },
+      "required": [
+        "standard",
+        "developer"
+      ],
+      "additionalProperties": false
+    },
+    "Definition": {
+      "type": "object",
+      "properties": {
+        "message_number": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "message_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "field_number": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 254
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "base_type": {
+          "enum": [
+            "enum",
+            "sint8",
+            "uint8",
+            "sint16",
+            "uint16",
+            "sint32",
+            "uint32",
+            "string",
+            "float32",
+            "float64",
+            "uint8z",
+            "uint16z",
+            "uint32z",
+            "byte",
+            "sint64",
+            "uint64",
+            "uint64z"
+          ]
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "origin": {
+          "enum": [
+            "direct",
+            "expanded",
+            "merged"
+          ]
+        },
+        "source_ref": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^d(0|[1-9][0-9]*)(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "definition_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "chain_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "component_of": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^f(0|[1-9][0-9]*)(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "value_form": {
+          "enum": [
+            "physical",
+            "raw"
+          ]
+        }
+      },
+      "required": [
+        "message_number",
+        "message_name",
+        "field_number",
+        "name",
+        "base_type",
+        "unit",
+        "origin",
+        "source_ref",
+        "definition_index",
+        "chain_index",
+        "component_of",
+        "value_form"
+      ],
+      "additionalProperties": false
+    },
+    "Definitions": {
+      "type": "object",
+      "patternProperties": {
+        "^f(0|[1-9][0-9]*)(?![\\s\\S])": {
+          "$ref": "#/$defs/Definition"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Source": {
+      "type": "object",
+      "properties": {
+        "chain_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "developer_data_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "application_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "manufacturer": {
+          "anyOf": [
+            {
+              "type": [
+                "string",
+                "integer"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "chain_index",
+        "developer_data_index",
+        "application_name",
+        "manufacturer"
+      ],
+      "additionalProperties": false
+    },
+    "Sources": {
+      "type": "object",
+      "patternProperties": {
+        "^d(0|[1-9][0-9]*)(?![\\s\\S])": {
+          "$ref": "#/$defs/Source"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Message": {
+      "type": "object",
+      "properties": {
+        "message_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "chain_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "message_number": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "message_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fields": {
+          "$ref": "#/$defs/FieldSet"
+        }
+      },
+      "required": [
+        "message_index",
+        "chain_index",
+        "message_number",
+        "message_name",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "basic_jsonMessage": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/Message"
+        },
+        {
+          "properties": {
+            "message_number": {
+              "enum": [
+                0,
+                34,
+                49
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "summary_jsonMessage": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/Message"
+        },
+        {
+          "properties": {
+            "message_number": {
+              "enum": [
+                18
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "segments_jsonMessage": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/Message"
+        },
+        {
+          "properties": {
+            "message_number": {
+              "enum": [
+                19,
+                101,
+                142,
+                225,
+                312,
+                313
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "SensorsMessage": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/Message"
+        },
+        {
+          "properties": {
+            "message_number": {
+              "not": {
+                "enum": [
+                  20,
+                  0,
+                  34,
+                  49,
+                  18,
+                  19,
+                  101,
+                  142,
+                  225,
+                  312,
+                  313
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "Basic": {
+      "type": "object",
+      "properties": {
+        "sport": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sub_sport": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "start_time_utc": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "end_time_utc": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "messages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/basic_jsonMessage"
+          }
+        }
+      },
+      "required": [
+        "sport",
+        "sub_sport",
+        "start_time_utc",
+        "end_time_utc",
+        "messages"
+      ],
+      "additionalProperties": false
+    },
+    "Summary": {
+      "type": "object",
+      "properties": {
+        "messages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/summary_jsonMessage"
+          }
+        }
+      },
+      "required": [
+        "messages"
+      ],
+      "additionalProperties": false
+    },
+    "Segments": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/segments_jsonMessage"
+          }
+        }
+      },
+      "required": [
+        "items"
+      ],
+      "additionalProperties": false
+    },
+    "Sensors": {
+      "type": "object",
+      "properties": {
+        "field_definitions": {
+          "$ref": "#/$defs/Definitions"
+        },
+        "developer_sources": {
+          "$ref": "#/$defs/Sources"
+        },
+        "messages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SensorsMessage"
+          }
+        }
+      },
+      "required": [
+        "field_definitions",
+        "developer_sources",
+        "messages"
+      ],
+      "additionalProperties": false
+    },
+    "TimeEvidence": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "enum": [
+            "absolute",
+            "relative",
+            "local",
+            "invalid",
+            "missing"
+          ]
+        },
+        "raw": {
+          "$ref": "#/$defs/Value"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "raw",
+        "unit"
+      ],
+      "additionalProperties": false
+    },
+    "Metrics": {
+      "type": "object",
+      "properties": {
+        "standard": {
+          "$ref": "#/$defs/FieldMap"
+        },
+        "developer": {
+          "$ref": "#/$defs/FieldMap"
+        },
+        "time_evidence": {
+          "$ref": "#/$defs/TimeEvidence"
+        }
+      },
+      "required": [
+        "standard",
+        "developer",
+        "time_evidence"
+      ],
+      "additionalProperties": false
+    },
+    "Record": {
+      "type": "object",
+      "properties": {
+        "record_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "timestamp_utc": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "metrics_json": {
+          "$ref": "#/$defs/Metrics"
+        }
+      },
+      "required": [
+        "record_index",
+        "timestamp_utc",
+        "metrics_json"
+      ],
+      "additionalProperties": false
+    },
+    "ActivityFacts": {
+      "type": "object",
+      "properties": {
+        "activity_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+        },
+        "schema_version": {
+          "const": 1,
+          "type": "integer"
+        },
+        "basic_json": {
+          "$ref": "#/$defs/Basic"
+        },
+        "summary_json": {
+          "$ref": "#/$defs/Summary"
+        },
+        "segments_json": {
+          "$ref": "#/$defs/Segments"
+        },
+        "field_definitions": {
+          "$ref": "#/$defs/Definitions"
+        },
+        "developer_sources": {
+          "$ref": "#/$defs/Sources"
+        }
+      },
+      "required": [
+        "activity_id",
+        "schema_version",
+        "basic_json",
+        "summary_json",
+        "segments_json",
+        "field_definitions",
+        "developer_sources"
+      ],
+      "additionalProperties": false
+    },
+    "ParsedActivity": {
+      "type": "object",
+      "properties": {
+        "sport": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sub_sport": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "start_time_utc": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "end_time_utc": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "basic_json": {
+          "$ref": "#/$defs/Basic"
+        },
+        "summary_json": {
+          "$ref": "#/$defs/Summary"
+        },
+        "segments_json": {
+          "$ref": "#/$defs/Segments"
+        },
+        "sensors_json": {
+          "$ref": "#/$defs/Sensors"
+        },
+        "records": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Record"
+          }
+        }
+      },
+      "required": [
+        "sport",
+        "sub_sport",
+        "start_time_utc",
+        "end_time_utc",
+        "basic_json",
+        "summary_json",
+        "segments_json",
+        "sensors_json",
+        "records"
+      ],
+      "additionalProperties": false
+    },
+    "GetRunningRecordsRequest": {
+      "type": "object",
+      "properties": {
+        "activity_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+        }
+      },
+      "required": [
+        "activity_id"
+      ],
+      "additionalProperties": false
+    },
+    "Error": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "details"
+      ],
+      "additionalProperties": false
+    },
+    "GetRunningRecordsResult": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "const": "fit-records/1"
+        },
+        "ok": {
+          "type": "boolean"
+        },
+        "activity_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "data": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "field_definitions": {
+                  "$ref": "#/$defs/Definitions"
+                },
+                "developer_sources": {
+                  "$ref": "#/$defs/Sources"
+                },
+                "records": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/Record"
+                  }
+                }
+              },
+              "required": [
+                "field_definitions",
+                "developer_sources",
+                "records"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "error": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Error"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "schema_version",
+        "ok",
+        "activity_id",
+        "data",
+        "error"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "ok": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "activity_id": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+              },
+              "data": {
+                "type": "object"
+              },
+              "error": {
+                "type": "null"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "data": {
+                "type": "null"
+              },
+              "error": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ReadReferenceRequest": {
+      "type": "object",
+      "properties": {
+        "reference_id": {
+          "enum": [
+            "longdou",
+            "garmin-fit-parsing"
+          ]
+        }
+      },
+      "required": [
+        "reference_id"
+      ],
+      "additionalProperties": false
+    },
+    "ReadReferenceResult": {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "data": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "reference_id": {
+                  "enum": [
+                    "longdou",
+                    "garmin-fit-parsing"
+                  ]
+                },
+                "title": {
+                  "type": "string"
+                },
+                "content": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "reference_id",
+                "title",
+                "content"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "error": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Error"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "ok",
+        "data",
+        "error"
+      ],
+      "additionalProperties": false
+    },
+    "ActivityReportSave": {
+      "type": "object",
+      "properties": {
+        "activity_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+        },
+        "start_time_utc": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "pattern": "\\S"
+        }
+      },
+      "required": [
+        "activity_id",
+        "start_time_utc",
+        "summary"
+      ],
+      "additionalProperties": false
+    },
+    "WeeklyReportSave": {
+      "type": "object",
+      "properties": {
+        "run_time_utc": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z(?![\\s\\S])"
+        },
+        "summary": {
+          "type": "string",
+          "pattern": "\\S"
+        }
+      },
+      "required": [
+        "run_time_utc",
+        "summary"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "x-message-containers": {
+    "basic_json": [
+      0,
+      34,
+      49
+    ],
+    "summary_json": [
+      18
+    ],
+    "segments_json": [
+      19,
+      101,
+      142,
+      225,
+      312,
+      313
+    ]
+  }
+}

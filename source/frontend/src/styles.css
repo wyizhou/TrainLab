@@ -1,0 +1,154 @@
+:root {
+  color-scheme: light;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f7f4ef;
+  color: #1f2933;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+.shell {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 40px 24px 64px;
+}
+
+.hero,
+.panel,
+.info-card,
+.detail-card {
+  background: #fffaf0;
+  border: 1px solid #eadfca;
+  border-radius: 24px;
+  padding: 24px;
+}
+
+.hero h1,
+.panel h2,
+.info-card h2,
+.detail-card h2 {
+  margin-top: 0;
+}
+
+.eyebrow {
+  color: #8a5a22;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.status-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  margin: 24px 0;
+}
+
+.panel {
+  margin-top: 24px;
+  background: white;
+}
+
+.panel-header {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+form[role="search"] {
+  display: grid;
+  gap: 6px;
+  min-width: min(100%, 280px);
+}
+
+input {
+  border: 1px solid #d6c7b5;
+  border-radius: 12px;
+  font: inherit;
+  padding: 10px 12px;
+}
+
+.activity-layout {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(220px, 320px) 1fr;
+  margin-top: 20px;
+}
+
+.activity-list {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.activity-list button {
+  width: 100%;
+  border: 1px solid #e5e0d8;
+  border-radius: 16px;
+  background: #fff;
+  color: inherit;
+  cursor: pointer;
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  text-align: left;
+}
+
+.activity-list button.selected {
+  border-color: #8a5a22;
+  box-shadow: 0 0 0 3px rgba(138, 90, 34, 0.14);
+}
+
+.activity-list small,
+.state {
+  color: #667085;
+}
+
+.error {
+  color: #b42318;
+}
+
+dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 8px 12px;
+}
+
+dt {
+  color: #667085;
+  font-weight: 700;
+}
+
+dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+pre {
+  background: #f6f3ed;
+  border-radius: 16px;
+  padding: 16px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.report-block {
+  background: #fff;
+  border: 1px solid #e5e0d8;
+  border-radius: 18px;
+  padding: 16px;
+}
+
+@media (max-width: 760px) {
+  .activity-layout {
+    grid-template-columns: 1fr;
+  }
+}

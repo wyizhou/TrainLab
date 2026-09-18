@@ -1,0 +1,34 @@
+{
+  "issue_id": "E31-B1-001",
+  "conclusion": "无法判断；验证基础设施阻塞，非产品测试失败",
+  "workflow_id": "80ec335d-7562-4fcb-9291-f3d647671bbc",
+  "child_id": "90fe0729-16fa-4b4d-8688-17772215b007",
+  "workflow_status": "complete",
+  "child_status": "complete",
+  "repo": "/Volumes/DiskOther/Code/TrainLab",
+  "review_cwd": "/var/folders/dh/4th4rwbd7xlg8qslxz62hbjc0000gn/T/trainlab-0031-b1-fix-r2-review-npe5w0e9",
+  "review_git_metadata": false,
+  "head": "9db8bb1dda5922e85fe42581e27d2428dbc9f195",
+  "branch": "work/adhoc-0031-local-web-system",
+  "original_worktree_status": " M .gitignore\n M MEMORY.md\n M PLAN.md\n M exec-plans/active/ADHOC-0024-fit-sqlite-parser.md\n M exec-plans/active/ADHOC-0025-fit-running-query-tool.md\n M exec-plans/active/ADHOC-0026-tools-ai-index.md\n M exec-plans/active/ADHOC-0027-activity-ai-report.md\n M exec-plans/active/ADHOC-0028-weekly-ai-report.md\n?? exec-plans/active/ADHOC-0031-local-web-system.md\n?? exec-plans/evidence/ADHOC-0031/\n?? source/\n",
+  "source_review_files_matching": 56,
+  "snapshot_sha256": "5cb22a1f1950c1e73c0624c2ac2981f090c246738dc53f62eb13f9a5996149d8",
+  "no_staged_files": true,
+  "parent_environment_observation": {
+    "command": [
+      "/var/folders/dh/4th4rwbd7xlg8qslxz62hbjc0000gn/T/trainlab-0031-b1-fix-r2-review-npe5w0e9/evidence/venv/bin/python",
+      "-c",
+      "import importlib.metadata as m; import json; print(json.dumps([(d.metadata[\"Name\"],d.version) for d in m.distributions()]))"
+    ],
+    "cwd": "/var/folders/dh/4th4rwbd7xlg8qslxz62hbjc0000gn/T/trainlab-0031-b1-fix-r2-review-npe5w0e9/evidence",
+    "exit_code": 0,
+    "stdout": "[]\n",
+    "stderr": ""
+  },
+  "installation_retries": 0,
+  "product_repair_attempts": 2,
+  "shared_contract_repair_attempts": 3,
+  "product_verification_failures_unchanged": true,
+  "environment_block_occurrences": 1,
+  "next_action": "暂停；请求用户允许仅恢复验证环境，取得恢复证据后由新Validator复验同一56文件；不改产品或自动续修。"
+}

@@ -1,0 +1,23 @@
+{
+  "scope": "Parent independent replay of B1 first-repair validation on separate fixed synthetic copy",
+  "directory_name": "trainlab-b1-fix-r1-parent-repro-8k9x2qhw",
+  "review_aggregate_sha256": "25f7f11d0e31787bddde584f7103de90c7a95522e5b7379521c6ef9affaa8d0f",
+  "installed_parity_exit": 0,
+  "command": [
+    "/var/folders/dh/4th4rwbd7xlg8qslxz62hbjc0000gn/T/trainlab-0031-b1-fix-r1-review-uhlaq6oc/evidence/venv/bin/python",
+    "-m",
+    "pytest",
+    "test_independent.py",
+    "test_followup.py",
+    "test_final_boundaries.py",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "--basetemp=parent-repro-temp",
+    "--junitxml=parent-repro.xml",
+    "--tb=short"
+  ],
+  "cwd": "evidence",
+  "exit_code": 1,
+  "summary_tail": "ory[timestamp-field-mismatch] ______\ntest_independent.py:250: in test_V003_single_mutation_real_repository\n    with pytest.raises(ValueError):storage.import_activity(c,activity_id='c'*64,fit_path='new.fit',parsed=v,parsed_at_utc=NOW)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^\nE   Failed: DID NOT RAISE ValueError\n________ test_V003_single_mutation_real_repository[record-message-name] ________\ntest_independent.py:250: in test_V003_single_mutation_real_repository\n    with pytest.raises(ValueError):storage.import_activity(c,activity_id='c'*64,fit_path='new.fit',parsed=v,parsed_at_utc=NOW)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^\nE   Failed: DID NOT RAISE ValueError\n______ test_V003_single_mutation_real_repository[definition-message-name] ______\ntest_independent.py:250: in test_V003_single_mutation_real_repository\n    with pytest.raises(ValueError):storage.import_activity(c,activity_id='c'*64,fit_path='new.fit',parsed=v,parsed_at_utc=NOW)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^\nE   Failed: DID NOT RAISE ValueError\n____________ test_V001_accumulated_hr_array_seeds_later_components _____________\ntest_followup.py:39: in test_V001_accumulated_hr_array_seeds_later_components\n    assert actual['event_timestamp']==[12,13],actual\nE   AssertionError: {'event_timestamp_12': [0, 0, 64], 'event_timestamp': [0.0, 1.0]}\nE   assert [0.0, 1.0] == [12, 13]\nE     \nE     At index 0 diff: 0.0 != 12\nE     Use -v to get more diff\n____________ test_V001_valid_profile_timestamp_threshold_raw_value _____________\ntest_followup.py:50: in test_V001_valid_profile_timestamp_threshold_raw_value\n    assert values['standard'][k]==start,values\nE   AssertionError: {'developer': {}, 'standard': {'f10': 6.0, 'f5': 'min', 'f6': 0, 'f7': 2.25, ...}, 'time_evidence': {'kind': 'absolute', 'raw': 268435456, 'unit': 's'}}\nE   assert 'min' == 268435456\n=============================== warnings summary ===============================\n../../../../../../../..REVIEW_ROOT/evidence/venv/lib/python3.12/site-packages/fastapi/testclient.py:1\n  REVIEW_ROOT/evidence/venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n../../../../../../../..REVIEW_ROOT/evidence/venv/lib/python3.12/site-packages/starlette/testclient.py:53\n  REVIEW_ROOT/evidence/venv/lib/python3.12/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.\n    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n=========================== short test summary info ============================\nFAILED test_independent.py::test_V001_required_structure_not_empty_success[invalid-field-255]\nFAILED test_independent.py::test_V001_required_structure_not_empty_success[empty-session]\nFAILED test_independent.py::test_V001_required_structure_not_empty_success[empty-lap]\nFAILED test_independent.py::test_V001_required_structure_not_empty_success[empty-record]\nFAILED test_independent.py::test_V002_negative_architecture[sys-assignment]\nFAILED test_independent.py::test_V002_negative_architecture[tools-shell] - Fa...\nFAILED test_independent.py::test_V002_negative_architecture[root-runtime] - F...\nFAILED test_independent.py::test_V003_single_mutation_real_repository[timestamp-field-mismatch]\nFAILED test_independent.py::test_V003_single_mutation_real_repository[record-message-name]\nFAILED test_independent.py::test_V003_single_mutation_real_repository[definition-message-name]\nFAILED test_followup.py::test_V001_accumulated_hr_array_seeds_later_components\nFAILED test_followup.py::test_V001_valid_profile_timestamp_threshold_raw_value\n12 failed, 79 passed, 2 warnings in 8.86s\n"
+}
