@@ -21,10 +21,10 @@
 
 ## 当前关注
 
-- 当前关注：ADHOC-0031 本地/合成范围已完成。B7完整本地独立验证通过，主Agent核快照、复跑Python/前端门禁及`git diff --check`通过；未做真实AI/Garmin/network、真实浏览器人工8080、提交/推送/PR。B0～B7历史失败、累计修复及mypy入口限制记录保留。新分支work/adhoc-0031-local-web-system基于9db8bb1；[PR #20后置合并/清理记录](https://github.com/wyizhou/TrainLab/pull/20#issuecomment-5681203528)已核实，不改旧交付合同的原时点“不合并”事实。
+- 当前关注：ADHOC-0031 本地/合成范围已完成。B7完整本地独立验证通过；用户随后授权提交/推送/PR，主Agent复跑本地门禁后提交`4eb2734`、推送分支work/adhoc-0031-local-web-system并创建[PR #21](https://github.com/wyizhou/TrainLab/pull/21)。未做真实AI/Garmin/network、真实浏览器人工8080或合并。B0～B7历史失败、累计修复及mypy入口限制记录保留。新分支基于9db8bb1；[PR #20后置合并/清理记录](https://github.com/wyizhou/TrainLab/pull/20#issuecomment-5681203528)已核实，不改旧交付合同的原时点“不合并”事实。
 - 已确认事项：首次同步最近七天，UTC日期+FIT字节SHA命名；AI私有配置在states/ai.json，允许真实请求且数据不限、暂不设上限；活动总结中国时区每日凌晨4点自动触发，允许新增配置表，无活动周总结入库`本周无任何运动记录`，多轮历史仅内存。不重问四表/UTC/全量records、Garmin指定认证文件使用或按需龙豆资料读取。
 - 整体暂停原因：无当前整体暂停。D31-03A/B、D31-02A仍是后续自动批次/周触发/真实records配额政策待决项；本次未实现也未阻塞本地/合成验收。
-- 恢复条件：已满足；ADHOC-0031本地/合成范围完成。后续若要真实AI/Garmin/浏览器人工8080检查、提交/推送/PR或合并，需要另行确认；当前不自动执行。
+- 恢复条件：已满足；ADHOC-0031本地/合成范围完成且PR #21已创建。后续若要真实AI/Garmin/浏览器人工8080检查或合并，需要另行确认；当前不自动执行。
 
 ## 项目已有边界与当前设计
 

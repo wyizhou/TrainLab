@@ -36,4 +36,4 @@
 | 环境与平台经验 | 原本地子进程曾实测可用；只证明当时调度，不替产品验证。旧macOS专用Candidate的Linux CI失败保留，不把单平台通过推广到另一平台。 | 每次实际派发/检查仍核对当前环境；没有恢复证据不自动重试或切换模式 | 原记录及新AGENTS检查规则，2026-09-15 |
 | 方案替换 | 已批准的新方案必须同批对齐受影响约束、实现、Schema/Prompt、配置/入口、适用本地测试和文档；旧CI按后续明确授权退役，不自动恢复或新增远端CI；必要安全场景迁移，不保留两套有效答案或永久固定旧测试数量。 | 只对受影响范围，不扩大授权、不弱化正确预期 | 用户A-023确认及当前PLAN，2026-09-15 |
 | 本地检查 | 规划/治理可查Markdown、JSON、链接、来源摘要、状态/路径映射、Git差异和忽略；静态检查不替代真实产品集成/语义验收。 | 当前迁移不运行已被删除的产品测试；后续功能按实际范围验收 | [迁移计划](exec-plans/completed/ADHOC-0029-agentsmd-upgrade.md)，2026-09-15 |
-| ADHOC-0031本地验收 | 本地/合成范围已验证通过：FIT/SQLite、records、报告存储、Garmin假同步、AI工具循环/Context、Web/API、React静态构建和重启持久化均通过；真实AI/Garmin/network、真实浏览器人工8080和私人数据检查未运行，不能冒充已验证。 | 后续若做真实联调或PR，需要单独确认范围并新增证据；当前结论只适用同一B7快照及本地/合成边界。 | [B7验证报告](exec-plans/evidence/ADHOC-0031/validator-b7.md)，2026-09-18 |
+| ADHOC-0031本地验收 | 本地/合成范围已验证通过：FIT/SQLite、records、报告存储、Garmin假同步、AI工具循环/Context、Web/API、React静态构建和重启持久化均通过；用户随后授权提交/推送/PR，已创建PR #21；真实AI/Garmin/network、真实浏览器人工8080和私人数据检查未运行，不能冒充已验证。 | 后续若做真实联调或合并，需要单独确认范围并新增证据；当前结论只适用同一B7快照及本地/合成边界。 | [B7验证报告](exec-plans/evidence/ADHOC-0031/validator-b7.md)、[PR #21](https://github.com/wyizhou/TrainLab/pull/21)，2026-09-18 |
