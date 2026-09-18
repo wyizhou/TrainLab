@@ -1,0 +1,27 @@
+{
+  "checked_at_utc": "2026-09-18T13:12:57.124112Z",
+  "maintain_once": {
+    "exit_code": 0,
+    "ok": true,
+    "state": "unchanged",
+    "note": "认证可加载；未到刷新期，未执行真实刷新。原始本地日志含私人时间/账号状态，不提交。"
+  },
+  "sync_once": {
+    "exit_code": 0,
+    "ok": true,
+    "message": "Garmin sync completed",
+    "window": "最近7天有界窗口",
+    "downloaded_fit_count": 5,
+    "skipped_remote_id_count": 0,
+    "note": "原始本地日志含真实活动remote_id、activity_id和文件名，不提交。"
+  },
+  "database_check": {
+    "db_exists": true,
+    "activities_count": 5,
+    "records_count": 22995,
+    "activties_report_count": 0,
+    "weekly_report_count": 0,
+    "sports_observed": ["running", "rock_climbing"],
+    "note": "不提交真实活动ID、时间、FIT或数据库。"
+  }
+}

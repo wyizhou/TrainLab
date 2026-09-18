@@ -14,8 +14,10 @@ from trainlab.ai import AIConfig, AIProtocolError, ToolDispatcher, load_ai_confi
 from trainlab.context import ContextError, build_context
 from trainlab.contracts.errors import ErrorCode
 from trainlab.contracts.interfaces import (
+    REFERENCE_CONTRACTS,
     TOOL_CONTRACTS,
     CapacityPolicy,
+    ReferenceContract,
     ReferenceId,
     ToolAuthorization,
 )
@@ -194,6 +196,58 @@ def test_dispatcher_and_reference_reader_allow_only_registered_tools_and_ids(tmp
         assert active_dispatcher.dispatch("shell", {})["error"]["code"] == ErrorCode.TOOL_NOT_ALLOWED.value
     finally:
         connection.close()
+
+
+@pytest.mark.parametrize("kind", ["traversal", "absolute", "symlink"])
+def test_reference_reader_rejects_escape_without_path_or_content_leak(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    kind: str,
+) -> None:
+    connection, db_path, activity_id = file_db(tmp_path)
+    project = tmp_path / "project"
+    references = project / "references"
+    references.mkdir(parents=True)
+    outside = tmp_path / "outside.md"
+    outside.write_text("外部资料-不得读取", encoding="utf-8")
+    if kind == "traversal":
+        relative_path = Path("../outside.md")
+    elif kind == "absolute":
+        relative_path = outside
+    else:
+        (references / "longdou.md").symlink_to(outside)
+        relative_path = Path("references/longdou.md")
+    monkeypatch.setitem(
+        REFERENCE_CONTRACTS,
+        "longdou",
+        ReferenceContract("longdou", relative_path, "Public sensor reference."),
+    )
+    try:
+        result = ToolDispatcher(
+            db_path=db_path,
+            authorization=auth(activity_id),
+            project_root=project,
+        ).dispatch("read_reference", {"reference_id": "longdou"})
+    finally:
+        connection.close()
+
+    rendered = json.dumps(result, ensure_ascii=False)
+    assert result["ok"] is False
+    assert result["error"]["code"] == ErrorCode.CONFIG_UNAVAILABLE.value
+    assert "外部资料-不得读取" not in rendered
+    assert str(tmp_path) not in rendered
+    assert outside.as_posix() not in rendered
+
+
+def test_context_missing_material_fails_with_public_error(tmp_path: Path) -> None:
+    (tmp_path / "source/tools").mkdir(parents=True)
+    (tmp_path / "source/tools/README.md").write_text("工具索引", encoding="utf-8")
+    with pytest.raises(ContextError) as error:
+        build_context(mode="daily", current_user_message="日报", project_root=tmp_path)
+
+    assert error.value.code == ErrorCode.CONFIG_UNAVAILABLE
+    assert error.value.message == "context material is unavailable"
+    assert str(tmp_path) not in str(error.value)
 
 
 def test_context_activity_daily_weekly_history_and_policy_boundaries(tmp_path: Path) -> None:

@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from collections.abc import Mapping
+from collections.abc import AsyncIterator, Callable, Mapping
+from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
@@ -35,7 +36,11 @@ from trainlab.contracts.web import (
     route_paths,
     static_mount_dir,
 )
+from trainlab.garmin_auth import GarminAuthService
 from trainlab.garmin_sync import GarminSyncError, GarminSyncState, load_sync_state, should_run_sync
+from trainlab.local_web.auth_routes import register_auth_routes
+from trainlab.local_web.auth_runtime import AuthRuntime
+from trainlab.local_web.auth_security import PREFIX, LocalSecurity, error_response
 from trainlab.report_service import ReportGenerationError, ReportService
 from trainlab.reports import ReportStorageError, get_activity_report, get_weekly_report
 
@@ -57,6 +62,8 @@ class WebAppSettings:
         ai_client: CompatibleAIClient | None = None,
         ai_config: AIConfig | None = None,
         capacity: CapacityPolicy | None = None,
+        auth_maintenance: bool = True,
+        auth_runtime_factory: Callable[[Path], AuthRuntime] | None = None,
     ) -> None:
         self.instance_root = Path.cwd() if instance_root is None else instance_root
         self.project_root = Path.cwd() if project_root is None else project_root
@@ -64,6 +71,8 @@ class WebAppSettings:
         self.ai_client = ai_client
         self.ai_config = ai_config
         self.capacity = capacity
+        self.auth_maintenance = auth_maintenance
+        self.auth_runtime_factory = auth_runtime_factory
 
     @property
     def db_path(self) -> Path:
@@ -76,7 +85,8 @@ def app_contract() -> dict[str, Any]:
         "port": DEFAULT_PORT,
         "static_dir": static_mount_dir().as_posix(),
         "routes": [route.__dict__ for route in API_ROUTES],
-        "starts_background_jobs": False,
+        "starts_background_jobs_on_create": False,
+        "background_jobs_on_lifespan": ["garmin_auth_maintenance"],
         "reads_private_state_on_import": False,
     }
 
@@ -84,11 +94,27 @@ def app_contract() -> dict[str, Any]:
 def create_app(settings: WebAppSettings | None = None) -> FastAPI:
     config = WebAppSettings() if settings is None else settings
     static_dir = (config.project_root / static_mount_dir()).resolve(strict=False)
-    app = FastAPI(title="TrainLab Local Web", version="0.1.0")
+    @asynccontextmanager
+    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        runtime = (config.auth_runtime_factory(config.instance_root) if config.auth_runtime_factory
+                   else AuthRuntime(GarminAuthService(config.instance_root), enabled=config.auth_maintenance))
+        app.state.auth = runtime
+        try:
+            await runtime.start()
+            yield
+        finally:
+            await runtime.stop()
+            app.state.auth = None
+
+    app = FastAPI(title="TrainLab Local Web", version="0.1.0", lifespan=lifespan)
+    app.add_middleware(LocalSecurity)
+    register_auth_routes(app)
     history = InMemoryConversationHistory()
 
     @app.exception_handler(StarletteHTTPException)
     async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
+        if request.url.path.startswith(PREFIX):
+            return error_response(ErrorCode.INVALID_ARGUMENT, "invalid_request", exc.status_code)
         if request.url.path.startswith("/api/"):
             code = ErrorCode.ACTIVITY_NOT_FOUND if exc.status_code == 404 else ErrorCode.INVALID_ARGUMENT
             message = "not found" if exc.status_code == 404 else str(exc.detail)
@@ -101,6 +127,8 @@ def create_app(settings: WebAppSettings | None = None) -> FastAPI:
 
     @app.exception_handler(ValueError)
     async def value_error_handler(_request: Request, exc: ValueError) -> JSONResponse:
+        if _request.url.path.startswith(PREFIX):
+            return error_response(ErrorCode.INVALID_ARGUMENT, "invalid_request", 400)
         return _error_response(ErrorCode.INVALID_ARGUMENT, str(exc))
 
     @app.get("/api/health")
@@ -110,7 +138,11 @@ def create_app(settings: WebAppSettings | None = None) -> FastAPI:
             {
                 "service": "trainlab-local-web",
                 "local_only": True,
-                "starts_background_jobs": False,
+                "starts_background_jobs": bool(getattr(app.state, "auth", None) and app.state.auth.enabled),
+                "auth_maintenance_enabled": bool(getattr(app.state, "auth", None) and app.state.auth.enabled),
+                "auth_maintenance_state": app.state.auth.maintenance["state"] if getattr(app.state, "auth", None) else "not_started",
+                "ai_background_jobs": False,
+                "sync_background_jobs": False,
                 "reads_private_state_on_import": False,
                 "ai_generation_configured": _ai_configured(config),
                 "database": {"relative_path": config.db_relative_path.as_posix(), "exists": db_path.exists()},

@@ -1,0 +1,17 @@
+{
+  "ready": true,
+  "url": "http://127.0.0.1:8080",
+  "pid": 28099,
+  "checked_at_utc": "2026-09-18T13:00:01Z",
+  "page_http_status": 200,
+  "auth_session_and_status_http_status": 200,
+  "auth_maintenance_enabled": true,
+  "ai_generation_configured": false,
+  "stored_state": "legacy",
+  "maintenance_state": "manual_required",
+  "server_verified": false,
+  "actual_account_login_submitted": false,
+  "real_authentication_success_verified": false,
+  "test_transport_enabled": false,
+  "private_runtime_log_outside_repository": true
+}

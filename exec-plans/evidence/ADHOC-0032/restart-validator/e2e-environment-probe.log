@@ -1,0 +1,12 @@
+$ $UV_PROJECT_ENVIRONMENT/bin/python ./exec-plans/evidence/ADHOC-0032/restart-validator/probe-e2e-environment.py
+Only an isolated uv recording shim was executed; no actual uv, login, server, or shared environment access.
+Caller-owned environment was ignored by the exact reviewed webServer command.
+effective_environment=/tmp/trainlab-web-e2e-venv
+argument=run
+argument=python
+argument=-m
+argument=tests.e2e_support.serve_web
+
+Probe assertions passed; this confirms a config/installation-contract mismatch, not a browser rendering failure.
+
+EXIT_CODE=0

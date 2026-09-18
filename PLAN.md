@@ -12,7 +12,7 @@
 | ADHOC-0029 | [completed] | 最新agentsmd及全部协调记录迁移，退出旧入口 | AC-01..10；本地迁移、独立复验与主验收通过 | 用户八项要求与本地分支授权 | [执行计划](exec-plans/completed/ADHOC-0029-agentsmd-upgrade.md) |
 | ADHOC-0030 | [completed] | 旧CI退役，当前公开工作区已提交/推送并创建PR #20，不合并main | RC-0030-01 AC-01..06；独立与主验收通过，完整Git树与实际PR头核对完成 | 已完成迁移及用户新交付授权；沿用同一功能分支 | [执行计划](exec-plans/completed/ADHOC-0030-retire-ci-and-publish.md) |
 | ADHOC-0031 | [completed] | 本机8080 Web/API、三小时同步、AI工具循环与三模式Context，接通既有FIT/报告功能 | U31-01～06；本地/合成完整正常/错误/边界、独立验证与主验收通过；真实外部检查单列未验证 | ADHOC-0024～0028；首次同步/AI配置/触发留存已确认 | [执行计划](exec-plans/completed/ADHOC-0031-local-web-system.md) |
-| ADHOC-0032 | [exec] | 按用户最新要求补Playwright Chrome真实Web验收与真实Garmin接线；AI模型实测暂停 | Web必须由Playwright操作Chrome覆盖每个功能；Garmin需产品级真实client有界同步/下载/入库且不泄露secret；AI不实施不验证 | ADHOC-0031 PR #21；用户2026-09-18最新授权 | [执行计划](exec-plans/active/ADHOC-0032-real-garmin-and-web-e2e.md) |
+| ADHOC-0032 | [exec] | Playwright Chrome Web验收、真实Garmin及认证维护；两区Web登录/2FA GUI、真实有界同步及既有Web/Context错误修复已通过；AI模型实测暂停 | AU32-01～06及GUI32-01～06：GUI完整操作/安全HTTP/维护生命周期须Chrome实际验证；Garmin有界同步/下载/入库及真实认证无证据不通过；AI继续暂停；既有Web/Context错误须修复并验证 | ADHOC-0031 PR #21；用户2026-09-18最新授权 | [执行计划](exec-plans/active/ADHOC-0032-real-garmin-and-web-e2e.md) |
 | ADHOC-0023 | [exec] | FIT/报告当前决定及实施边界，非产品代码 | 不丢已批准设计、不猜未知项 | 用户已确认设计 | [执行计划](exec-plans/active/ADHOC-0023-fit-data-classification-discussion.md) |
 | ADHOC-0024 | [completed] | activities十二列＋records四列，完整FIT入库 | 完整/缺失/顺序/事务；默认123；独立复验与主复核通过 | ADHOC-0023及目录/容量条件；ADHOC-0031 B0相关前置同批修复 | [执行计划](exec-plans/completed/ADHOC-0024-fit-sqlite-parser.md) |
 | ADHOC-0025 | [completed] | 唯一get_running_records(activity_id)，只跑步返回全部采样 | 真实sport和本次作用域、只读/全量/超限明确失败；独立复验与主复核通过 | ADHOC-0024 | [执行计划](exec-plans/completed/ADHOC-0025-fit-running-query-tool.md) |
@@ -22,10 +22,10 @@
 
 ## 当前关注
 
-- 当前关注：ADHOC-0032 已启动。用户明确：Web需要使用Playwright操作Chrome测试每一个功能，真实Garmin可以开始，AI模型参数先暂停。主Agent已创建执行计划并派发规划调整；下一步实现Playwright Chrome E2E和真实Garmin产品级接线。ADHOC-0031 本地/合成范围已完成，PR #21已创建；此前真实检查显示8080 HTTP/API/静态入口通过，但AI/Garmin/浏览器人工验收未全过，因此不进入合并询问。新分支基于9db8bb1；[PR #20后置合并/清理记录](https://github.com/wyizhou/TrainLab/pull/20#issuecomment-5681203528)已核实。
+- 当前关注：ADHOC-0032基础认证模块及两区Web登录/2FA/运行期维护GUI已完成独立验证、主Agent实际Chrome验收与本机页面交付；用户已在正式GUI完成真实认证。2026-09-18主Agent继续原授权有界Garmin检查：CLI可重载持久认证，`maintain --once`退出0且未到刷新期，`sync-once`退出0，最近7天下载5个真实FIT并入库，activities=5、records=22995；G2、T2、T9已完成。随后用户授权修复两个既有Context/资料问题AU32-V1-002/003，已修复并通过主Agent补充验收：目标10项、web+ai 62项、全量pytest 326项、ruff、非editable mypy、前端14项/typecheck/build、默认Chrome2项和认证Chrome24项均通过；环境失败记录保留。G3及整体功能仍[exec]，因为PR尚未提交/推送/交付。AI继续暂停，未合并PR #21。
 - 已确认事项：首次同步最近七天，UTC日期+FIT字节SHA命名；AI私有配置在states/ai.json，允许真实请求且数据不限、暂不设上限；活动总结中国时区每日凌晨4点自动触发，允许新增配置表，无活动周总结入库`本周无任何运动记录`，多轮历史仅内存。2026-09-18用户进一步确认：每日进程按上次状态补齐到当前的所有空缺活动总结；周报按中国时区每周日15:00执行，窗口为上周日15:00到本周日15:00，周报前先运行一次同类运动总结补跑且不与定时进程冲突；第一个版本不做分段查询和records配额，AI需要时给对应running活动全量records。不重问四表/UTC/全量records、Garmin指定认证文件使用或按需龙豆资料读取。
-- 整体暂停原因：无当前整体暂停。D31-03A/B、D31-02A已确认策略但本PR未完整实现自动策略/真实接线；不阻塞本地/合成验收和PR #21。
-- 恢复条件：本地/合成范围完成且PR #21已创建；真实检查未全部通过。恢复真实验收需先补齐AI模型配置与真实Garmin客户端/适配入口，并按需要提供真实浏览器人工检查方式；合并仍需另行确认。
+- 整体暂停原因：临时整体暂停已解除；AI仍单独暂停。认证基础模块、本地Web GUI、真实有界Garmin同步和两个既有Web/Context错误修复均已通过；整体交付待提交、推送和PR更新，不预写合并通过。
+- 恢复条件：安全GUI、真实Garmin有界检查和AU32-V1-002/003修复已满足；下一步提交、推送并更新PR #21。任何产品后续改动仍须全新独立验证。AI参数与实调用待用户确认，合并另行确认。
 
 ## 项目已有边界与当前设计
 

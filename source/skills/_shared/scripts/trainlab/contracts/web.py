@@ -21,6 +21,12 @@ class RouteContract:
 
 
 API_ROUTES = (
+    RouteContract("GET", "/api/garmin/auth/session", "Bootstrap local browser session"),
+    RouteContract("GET", "/api/garmin/auth/status", "Observe saved authentication and maintenance"),
+    RouteContract("POST", "/api/garmin/auth/login", "Begin selected-region login"),
+    RouteContract("POST", "/api/garmin/auth/mfa", "Complete browser-bound verification"),
+    RouteContract("POST", "/api/garmin/auth/cancel", "Cancel browser-bound verification"),
+    RouteContract("POST", "/api/garmin/auth/maintenance/retry", "Retry paused maintenance"),
     RouteContract("GET", "/api/health", "Local process health and version"),
     RouteContract("GET", "/api/status", "Combined local status without secrets"),
     RouteContract("GET", "/api/sync/status", "Latest FIT sync status"),

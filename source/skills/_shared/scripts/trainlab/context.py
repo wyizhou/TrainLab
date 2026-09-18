@@ -128,4 +128,7 @@ def _weekly_payload(connection: sqlite3.Connection, run_time_utc: datetime) -> d
 
 
 def _read_text(path: Path) -> str:
-    return path.read_text(encoding="utf-8")
+    try:
+        return path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise ContextError(ErrorCode.CONFIG_UNAVAILABLE, "context material is unavailable") from exc

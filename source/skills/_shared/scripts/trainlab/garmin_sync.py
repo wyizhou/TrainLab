@@ -2,21 +2,24 @@
 
 from __future__ import annotations
 
+import fcntl
 import hashlib
 import json
+import os
+import stat
 import threading
 import zipfile
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
+from contextlib import AbstractContextManager, contextmanager
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Literal, Protocol
+from typing import Any, Protocol
 
 from trainlab.contracts.errors import ErrorCode
 from trainlab.contracts.paths import (
     ACTIVITIES_DIR,
-    GARMIN_CONFIG_PATH,
     STATE_ROOT,
     activity_fit_name,
 )
@@ -28,6 +31,8 @@ from trainlab.contracts.time import (
     utc_fit_date,
 )
 from trainlab.fit import import_fit_file
+from trainlab.garmin_auth import GarminAuthService, _AuthLease
+from trainlab.garmin_auth_types import GarminAuthError
 
 GARMIN_SYNC_STATE_PATH = STATE_ROOT / "garmin-sync.json"
 _SYNC_LOCK = threading.Lock()
@@ -45,22 +50,8 @@ class GarminActivityPage:
     next_page_token: str | None = None
 
 
-@dataclass(frozen=True)
-class AuthRefreshResult:
-    status: Literal["ok", "manual_required"]
-    updated_config: Mapping[str, Any] | None = None
-
-    @classmethod
-    def ok(cls, updated_config: Mapping[str, Any] | None = None) -> AuthRefreshResult:
-        return cls("ok", updated_config)
-
-    @classmethod
-    def manual_required(cls) -> AuthRefreshResult:
-        return cls("manual_required")
-
-
 class GarminSyncClient(Protocol):
-    def refresh_auth(self, auth_config: Mapping[str, Any]) -> AuthRefreshResult: ...
+    def session(self) -> AbstractContextManager[GarminSyncClient]: ...
 
     def list_activities(
         self,
@@ -161,57 +152,55 @@ class GarminSyncError(ValueError):
         self.message = message
 
 
-class PyGarminConnectAdapter:
-    """Thin optional adapter; tests use fakes and this class performs no import until constructed."""
+class GarminConnectClientAdapter:
+    def __init__(self, owner: GarminAuthService) -> None:
+        self._owner = owner
+        self._lease: _AuthLease | None = None
 
-    def __init__(self, client: Any) -> None:
-        self._client = client
-
-    def refresh_auth(self, auth_config: Mapping[str, Any]) -> AuthRefreshResult:
-        refresh = getattr(self._client, "refresh", None)
-        if refresh is None:
-            return AuthRefreshResult.ok(auth_config)
-        refreshed = refresh()
-        if refreshed is False:
-            return AuthRefreshResult.manual_required()
-        if isinstance(refreshed, Mapping):
-            return AuthRefreshResult.ok(refreshed)
-        return AuthRefreshResult.ok(auth_config)
+    @contextmanager
+    def session(self) -> Iterator[GarminSyncClient]:
+        with self._owner._session() as lease:
+            self._lease = lease
+            try:
+                yield self
+            finally:
+                self._lease = None
 
     def list_activities(
-        self,
-        *,
-        start_utc: datetime,
-        end_utc: datetime,
-        page_token: str | None,
+        self, *, start_utc: datetime, end_utc: datetime, page_token: str | None,
     ) -> GarminActivityPage:
         if page_token is not None:
             return GarminActivityPage(())
-        raw = self._client.list_activities(start_utc, end_utc)
-        return GarminActivityPage(tuple(_activity_from_mapping(item) for item in raw))
+        assert self._lease is not None
+        raw = self._lease.call("list", start_utc.date().isoformat(), end_utc.date().isoformat())
+        if not isinstance(raw, list):
+            raise GarminSyncError(ErrorCode.DATA_INVALID, "Garmin activities response is invalid")
+        return GarminActivityPage(tuple(_activity_from_mapping(_as_mapping(item)) for item in raw))
 
     def download_activity_fit(self, activity: GarminActivity) -> bytes:
-        data = self._client.download_activity(activity.remote_id)
+        assert self._lease is not None
+        data = self._lease.call("download", activity.remote_id)
         if not isinstance(data, bytes):
             raise GarminSyncError(ErrorCode.EXTERNAL_SERVICE_FAILED, "Garmin download did not return bytes")
         return data
 
 
+def run_real_garmin_sync(
+    instance_root: Path, *, now_utc: datetime, force: bool = False,
+    state_path: Path = GARMIN_SYNC_STATE_PATH, importer: FitImporter = import_fit_file,
+) -> GarminSyncResult:
+    owner = GarminAuthService(instance_root)
+    try:
+        return run_garmin_sync(
+            instance_root, GarminConnectClientAdapter(owner), now_utc=now_utc,
+            state_path=state_path, importer=importer, force=force,
+        )
+    finally:
+        owner.close()
+
+
 def should_run_sync(state: GarminSyncState, now_utc: datetime) -> bool:
     return state.due(now_utc)
-
-
-def load_garmin_auth_config(instance_root: Path, relative_path: Path = GARMIN_CONFIG_PATH) -> dict[str, Any]:
-    path = _inside_instance(instance_root, relative_path)
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except FileNotFoundError as exc:
-        raise GarminSyncError(ErrorCode.CONFIG_UNAVAILABLE, "Garmin auth config is unavailable") from exc
-    except json.JSONDecodeError as exc:
-        raise GarminSyncError(ErrorCode.DATA_INVALID, "Garmin auth config is invalid JSON") from exc
-    if not isinstance(data, dict):
-        raise GarminSyncError(ErrorCode.DATA_INVALID, "Garmin auth config must be a JSON object")
-    return data
 
 
 def load_sync_state(instance_root: Path, relative_path: Path = GARMIN_SYNC_STATE_PATH) -> GarminSyncState:
@@ -262,7 +251,6 @@ def run_garmin_sync(
     client: GarminSyncClient,
     *,
     now_utc: datetime,
-    auth_config_path: Path = GARMIN_CONFIG_PATH,
     state_path: Path = GARMIN_SYNC_STATE_PATH,
     importer: FitImporter = import_fit_file,
     force: bool = False,
@@ -271,71 +259,67 @@ def run_garmin_sync(
     if not _SYNC_LOCK.acquire(blocking=False):
         return GarminSyncResult(False, ErrorCode.RUN_BUSY, "Garmin sync is already running", False, None, None)
     try:
-        state = load_sync_state(instance_root, state_path)
-        if not force and not state.due(now):
-            start, end = state.sync_window(now)
-            return GarminSyncResult(
-                True,
-                None,
-                "Garmin sync is not due",
-                False,
-                format_utc(start),
-                format_utc(end),
-            )
-        start, end = state.sync_window(now)
-        attempted_state = GarminSyncState(now, state.last_success_at_utc, state.synced)
-        current_state = attempted_state
-        save_sync_state(instance_root, attempted_state, state_path)
+        with _sync_process_lock(instance_root):
+            return _run_locked(instance_root, client, now, state_path, importer, force)
+    except (GarminSyncError, GarminAuthError) as exc:
+        return GarminSyncResult(False, exc.code, exc.message, False, None, None)
+    except OSError:
+        return GarminSyncResult(False, ErrorCode.EXTERNAL_SERVICE_FAILED, "Sync storage unavailable", False, None, None)
+    finally:
+        _SYNC_LOCK.release()
+
+
+@contextmanager
+def _sync_process_lock(instance_root: Path) -> Iterator[None]:
+    path = _inside_instance(instance_root, STATE_ROOT / ".garmin-sync.lock")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(path, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+    try:
+        info = os.fstat(fd)
+        if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+            raise GarminSyncError(ErrorCode.CONFIG_UNAVAILABLE, "Unsafe sync lock")
         try:
-            auth_config = load_garmin_auth_config(instance_root, auth_config_path)
-            refreshed = client.refresh_auth(auth_config)
-            if refreshed.status == "manual_required":
-                return _sync_failure(
-                    instance_root,
-                    state_path,
-                    current_state,
-                    ErrorCode.AUTH_REFRESH_REQUIRED,
-                    "Garmin authentication requires manual login or MFA",
-                    start,
-                    end,
-                )
-            if refreshed.updated_config is not None and dict(refreshed.updated_config) != auth_config:
-                _write_json_atomic(_inside_instance(instance_root, auth_config_path), refreshed.updated_config)
-            listed = _list_new_activities(client, start, end, attempted_state)
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise GarminSyncError(ErrorCode.RUN_BUSY, "Garmin sync is already running") from None
+        yield
+    finally:
+        os.close(fd)
+
+
+def _run_locked(
+    instance_root: Path, client: GarminSyncClient, now: datetime, state_path: Path,
+    importer: FitImporter, force: bool,
+) -> GarminSyncResult:
+    state = load_sync_state(instance_root, state_path)
+    start, end = state.sync_window(now)
+    if not force and not state.due(now):
+        return GarminSyncResult(True, None, "Garmin sync is not due", False, format_utc(start), format_utc(end))
+    attempted_state = GarminSyncState(now, state.last_success_at_utc, state.synced)
+    current_state = attempted_state
+    try:
+        with client.session() as active:
+            save_sync_state(instance_root, attempted_state, state_path)
+            listed = _list_new_activities(active, start, end, attempted_state)
             downloaded: list[SyncedActivity] = []
             synced = dict(attempted_state.synced)
             for activity in listed.new_activities:
-                item = _download_store_import(instance_root, client, activity, importer, now)
+                item = _download_store_import(instance_root, active, activity, importer, now)
                 synced[activity.remote_id] = item
                 downloaded.append(item)
                 current_state = GarminSyncState(now, attempted_state.last_success_at_utc, synced)
                 save_sync_state(instance_root, current_state, state_path)
             final_state = GarminSyncState(now, now, synced)
             save_sync_state(instance_root, final_state, state_path)
-            return GarminSyncResult(
-                True,
-                None,
-                "Garmin sync completed",
-                True,
-                format_utc(start),
-                format_utc(end),
-                tuple(downloaded),
-                listed.skipped_remote_ids,
-            )
-        except GarminSyncError as exc:
-            return _sync_failure(instance_root, state_path, current_state, exc.code, exc.message, start, end)
-        except (OSError, RuntimeError, ValueError, zipfile.BadZipFile) as exc:
-            return _sync_failure(
-                instance_root,
-                state_path,
-                current_state,
-                ErrorCode.EXTERNAL_SERVICE_FAILED,
-                exc.__class__.__name__,
-                start,
-                end,
-            )
-    finally:
-        _SYNC_LOCK.release()
+            return GarminSyncResult(True, None, "Garmin sync completed", True,
+                format_utc(start), format_utc(end), tuple(downloaded), listed.skipped_remote_ids)
+    except (GarminSyncError, GarminAuthError) as exc:
+        if exc.code == ErrorCode.RUN_BUSY:
+            return GarminSyncResult(False, exc.code, exc.message, True, format_utc(start), format_utc(end))
+        return _sync_failure(instance_root, state_path, current_state, exc.code, exc.message, start, end)
+    except (OSError, RuntimeError, ValueError, zipfile.BadZipFile) as exc:
+        return _sync_failure(instance_root, state_path, current_state,
+            ErrorCode.EXTERNAL_SERVICE_FAILED, exc.__class__.__name__, start, end)
 
 
 @dataclass(frozen=True)
@@ -483,17 +467,37 @@ def _optional_str(value: Mapping[str, Any], key: str) -> str | None:
     raise KeyError(key)
 
 
+def _as_mapping(item: object) -> Mapping[str, Any]:
+    if not isinstance(item, Mapping):
+        raise GarminSyncError(ErrorCode.DATA_INVALID, "Garmin activity item is invalid")
+    return item
+
+
 def _activity_from_mapping(value: Mapping[str, Any]) -> GarminActivity:
-    remote_id = value.get("remote_id") or value.get("activity_id")
+    remote_id = value.get("remote_id") or value.get("activity_id") or value.get("activityId")
+    if isinstance(remote_id, int):
+        remote_id = str(remote_id)
     if not isinstance(remote_id, str):
         raise GarminSyncError(ErrorCode.DATA_INVALID, "Garmin activity id is missing")
-    raw_start = value.get("start_time_utc")
+    raw_start = value.get("start_time_utc") or value.get("startTimeGMT") or value.get("beginTimestamp")
     if raw_start is None:
         start = None
     elif isinstance(raw_start, datetime):
         start = ensure_utc(raw_start)
     elif isinstance(raw_start, str):
-        start = _parse_optional_utc(raw_start)
+        start = _parse_garmin_start(raw_start)
     else:
         raise GarminSyncError(ErrorCode.DATA_INVALID, "Garmin activity start time is invalid")
     return GarminActivity(remote_id, start)
+
+
+def _parse_garmin_start(value: str) -> datetime | None:
+    if value == "":
+        return None
+    normalized = value.replace("T", " ").removesuffix("Z")
+    for fmt in ("%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(normalized, fmt).replace(tzinfo=UTC)
+        except ValueError:
+            continue
+    return _parse_optional_utc(value)

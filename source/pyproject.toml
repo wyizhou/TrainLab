@@ -11,6 +11,7 @@ dependencies = [
   "fastapi>=0.116,<1",
   "uvicorn[standard]>=0.35,<1",
   "garmin-fit-sdk==21.214.0",
+  "garminconnect>=0.2.8,<0.3",
   "jsonschema==4.26.0",
 ]
 
@@ -33,7 +34,7 @@ python_version = "3.12"
 strict = true
 
 [[tool.mypy.overrides]]
-module = ["garmin_fit_sdk.*"]
+module = ["garmin_fit_sdk.*", "garminconnect.*", "garth.*"]
 ignore_missing_imports = true
 
 [tool.setuptools]

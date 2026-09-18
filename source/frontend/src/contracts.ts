@@ -1,4 +1,10 @@
 export const apiRoutes = [
+  "/api/garmin/auth/session",
+  "/api/garmin/auth/status",
+  "/api/garmin/auth/login",
+  "/api/garmin/auth/mfa",
+  "/api/garmin/auth/cancel",
+  "/api/garmin/auth/maintenance/retry",
   "/api/health",
   "/api/status",
   "/api/sync/status",
@@ -11,10 +17,18 @@ export const apiRoutes = [
   "/api/reports/weekly/generate",
 ] as const;
 
+const postRoutes: readonly string[] = [
+  "/api/garmin/auth/login", "/api/garmin/auth/mfa", "/api/garmin/auth/cancel",
+  "/api/garmin/auth/maintenance/retry", "/api/reports/activity/{activity_id}/generate",
+  "/api/reports/weekly/generate",
+];
+export const apiRouteContracts = apiRoutes.map((path) => ({ path, method: postRoutes.includes(path) ? "POST" : "GET" }));
+
 export const staticPolicy = {
   outputDir: "../skills/local-web/web",
   exposesStates: false,
-  startsBackgroundJobs: false,
+  startsBackgroundJobsOnCreate: false,
+  backgroundJobsOnLifespan: ["garmin_auth_maintenance"],
 } as const;
 
 export type ApiEnvelope<T> =

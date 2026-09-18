@@ -24,8 +24,8 @@ from trainlab.contracts.interfaces import (
 )
 from trainlab.contracts.schema import ddl_statements, table_contracts
 from trainlab.contracts.time import next_activity_report_run_utc, weekly_window
+from trainlab.garmin_auth import GarminAuthService
 from trainlab.garmin_sync import (
-    AuthRefreshResult,
     GarminActivity,
     GarminActivityPage,
     GarminSyncError,
@@ -53,12 +53,12 @@ __all__ = [
     "UNCONFIGURED_POLICIES",
     "AIConfig",
     "AIProtocolError",
-    "AuthRefreshResult",
     "CapacityPolicy",
     "ContextError",
     "ErrorCode",
     "GarminActivity",
     "GarminActivityPage",
+    "GarminAuthService",
     "GarminSyncError",
     "GarminSyncResult",
     "GarminSyncState",

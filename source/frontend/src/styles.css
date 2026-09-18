@@ -152,3 +152,10 @@ pre {
     grid-template-columns: 1fr;
   }
 }
+
+.auth-panel { background: white; padding: 1.5rem; border-radius: 12px; }
+.auth-panel form { display: flex; flex-wrap: wrap; align-items: end; gap: 1rem; }
+.auth-panel label { display: grid; gap: .4rem; }
+.auth-panel input, .auth-panel select { padding: .6rem; max-width: 100%; }
+.auth-panel dd { overflow-wrap: anywhere; }
+.auth-panel button:disabled { opacity: .55; cursor: not-allowed; }

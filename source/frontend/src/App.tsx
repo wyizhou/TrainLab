@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ActivityListData, ActivitySummary, ApiEnvelope, DashboardState, StatusData, WeeklyListData } from "./contracts";
 import { apiRoutes, staticPolicy } from "./contracts";
+import { GarminAuthPanel } from "./GarminAuthPanel";
 
 const initialDashboardState: DashboardState = {
   loading: true,
@@ -74,12 +75,15 @@ export function App(): React.ReactElement {
   }, [queryDraft]);
 
   return (
+    <>
+    <div className="shell"><GarminAuthPanel /></div>
     <DashboardView
       state={state}
       queryDraft={queryDraft}
       onQueryDraftChange={setQueryDraft}
       onSelectActivity={(activityId) => setState((current) => ({ ...current, selectedActivityId: activityId }))}
     />
+    </>
   );
 }
 

@@ -28,14 +28,15 @@ const baseState: DashboardState = {
 
 describe("TrainLab B6 React frontend", () => {
   it("keeps all public API routes under /api", () => {
-    expect(apiRoutes.length).toBeGreaterThanOrEqual(10);
+    expect(apiRoutes.length).toBe(16);
     expect(allApiRoutesStayUnderPrefix()).toBe(true);
   });
 
   it("documents the static output and privacy boundary", () => {
     expect(staticPolicy.outputDir).toBe("../skills/local-web/web");
     expect(staticPolicy.exposesStates).toBe(false);
-    expect(staticPolicy.startsBackgroundJobs).toBe(false);
+    expect(staticPolicy.startsBackgroundJobsOnCreate).toBe(false);
+    expect(staticPolicy.backgroundJobsOnLifespan).toEqual(["garmin_auth_maintenance"]);
   });
 
   it("renders loading, empty and status areas", () => {

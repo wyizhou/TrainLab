@@ -1,0 +1,26 @@
+{
+  "frozen_files": 133,
+  "source_files": 116,
+  "reference_files": 4,
+  "changed_files": [],
+  "diagnostic_redactions_only": {
+    "independent-python.log": 25,
+    "independent-python.xml": 25,
+    "independent-python-v2.log": 6,
+    "independent-python-v2.xml": 8
+  },
+  "public_evidence_canary_hits": {},
+  "positive_scanner_control": true,
+  "unexpected_python_network_attempts": 0,
+  "build": {
+    "source/skills/local-web/web/index.html": "cf7ac2c27fb7a610471089a7331305a4febf2aea904f6c1f7c18dab790188af9",
+    "source/skills/local-web/web/assets/index-BR-81EYd.js": "aba0bbec456f1a3e33e26fd78e56cf0a8239082633242070f63f3466094d537c",
+    "source/skills/local-web/web/assets/index-CCaFPvCk.css": "d960e95a72aeb30c96d7c62819dac6c60128c0539df103fb729abeae77880fce"
+  },
+  "versions": {
+    "react": "19.3.0",
+    "vite": "8.3.0",
+    "@playwright/test": "1.63.0",
+    "chrome": "Google Chrome 152.0.7977.83"
+  }
+}

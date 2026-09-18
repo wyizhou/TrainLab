@@ -1,0 +1,27 @@
+COMMAND: $VALIDATOR_TMP/venv/bin/python -m pytest exec-plans/evidence/ADHOC-0032/restart-validator/test_validator_garmin.py -q -p no:cacheprovider --tb=short -k malformed_tokenstore
+CWD: source
+EXIT_CODE: 1
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_malformed_tokenstore_does_not_log_sensitive_config_values ________
+../exec-plans/evidence/ADHOC-0032/restart-validator/test_validator_garmin.py:165: in test_malformed_tokenstore_does_not_log_sensitive_config_values
+    assert leaked is False, 'upstream SDK log exposed synthetic sensitive config value'
+E   AssertionError: upstream SDK log exposed synthetic sensitive config value
+E   assert True is False
+------------------------------ Captured log call -------------------------------
+ERROR    garminconnect:__init__.py:581 Login failed
+Traceback (most recent call last):
+  File "$VALIDATOR_TMP/venv/lib/python3.12/site-packages/garminconnect/__init__.py", line 454, in login
+    self.garth.load(normalized_path)
+  File "$VALIDATOR_TMP/venv/lib/python3.12/site-packages/garth/http.py", line 271, in load
+    oauth1 = OAuth1Token(**json.load(f))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "$VALIDATOR_TMP/venv/lib/python3.12/site-packages/pydantic/_internal/_dataclasses.py", line 121, in __init__
+    s.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs), self_instance=s)
+pydantic_core._pydantic_core.ValidationError: 1 validation error for OAuth1Token
+oauth_token
+  Input should be a valid string [type=string_type, input_value={'unexpected': '<REDACTED_SYNTHETIC_MARKER>'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.13/v/string_type
+=========================== short test summary info ============================
+FAILED ../exec-plans/evidence/ADHOC-0032/restart-validator/test_validator_garmin.py::test_malformed_tokenstore_does_not_log_sensitive_config_values
+1 failed, 11 deselected in 0.49s

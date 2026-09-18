@@ -53,10 +53,13 @@ def read_reference(
 
 def _inside_project(project_root: Path, relative_path: Path) -> Path:
     if relative_path.is_absolute():
-        raise OSError("reference path must be relative")
+        raise OSError("reference path is unavailable")
     root = project_root.resolve(strict=False)
     path = (root / relative_path).resolve(strict=False)
-    path.relative_to(root)
+    try:
+        path.relative_to(root)
+    except ValueError as exc:
+        raise OSError("reference path is unavailable") from exc
     return path
 
 

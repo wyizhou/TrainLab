@@ -283,7 +283,7 @@ class B0ContractTests(unittest.TestCase):
             (web_dir / "index.html").write_text("<html><body>synthetic</body></html>", encoding="utf-8")
             with chdir(root):
                 app = server.create_app()
-                with TestClient(app) as client:
+                with TestClient(app, base_url="http://127.0.0.1:8080") as client:
                     health = client.get("/api/health")
                     self.assertEqual(health.status_code, 200)
                     self.assertEqual(health.json()["ok"], True)

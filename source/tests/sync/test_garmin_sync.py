@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import hashlib
+import importlib
 import json
 import zipfile
-from collections.abc import Mapping
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from io import BytesIO
@@ -19,9 +21,9 @@ from trainlab.contracts.paths import ACTIVITIES_DIR, GARMIN_CONFIG_PATH, activit
 from trainlab.contracts.time import FIRST_SYNC_LOOKBACK, SYNC_INTERVAL, format_utc
 from trainlab.fit import import_fit_file
 from trainlab.garmin_sync import (
-    AuthRefreshResult,
     GarminActivity,
     GarminActivityPage,
+    GarminSyncClient,
     GarminSyncError,
     GarminSyncState,
     extract_single_fit,
@@ -50,14 +52,17 @@ def zip_payload(entries: dict[str, bytes]) -> bytes:
 class FakeClient:
     pages: dict[str | None, GarminActivityPage]
     downloads: dict[str, bytes] = field(default_factory=dict)
-    refresh_result: AuthRefreshResult = field(default_factory=AuthRefreshResult.ok)
-    refreshed_with: list[dict[str, Any]] = field(default_factory=list)
+    manual_required: bool = False
+    sessions: int = 0
     list_calls: list[tuple[datetime, datetime, str | None]] = field(default_factory=list)
     downloaded_ids: list[str] = field(default_factory=list)
 
-    def refresh_auth(self, auth_config: Mapping[str, Any]) -> AuthRefreshResult:
-        self.refreshed_with.append(dict(auth_config))
-        return self.refresh_result
+    @contextmanager
+    def session(self) -> Iterator[GarminSyncClient]:
+        self.sessions += 1
+        if self.manual_required:
+            raise GarminSyncError(ErrorCode.AUTH_REFRESH_REQUIRED, "Manual login required")
+        yield self
 
     def list_activities(
         self,
@@ -90,7 +95,6 @@ def test_initial_sync_uses_seven_day_window_paginates_dedupes_refreshes_and_impo
             "next": GarminActivityPage((second,)),
         },
         downloads={"remote-1": fit_one, "remote-2": zip_payload({"payload/activity.fit": fit_two})},
-        refresh_result=AuthRefreshResult.ok({"token": "new"}),
     )
 
     result = run_garmin_sync(tmp_path, client, now_utc=now, importer=import_fit_file)
@@ -103,8 +107,8 @@ def test_initial_sync_uses_seven_day_window_paginates_dedupes_refreshes_and_impo
     assert [call[2] for call in client.list_calls] == [None, "next"]
     assert client.list_calls[0][0] == now - FIRST_SYNC_LOOKBACK
     assert client.list_calls[0][1] == now
-    assert client.refreshed_with == [{"token": "old"}]
-    assert json.loads((tmp_path / GARMIN_CONFIG_PATH).read_text(encoding="utf-8")) == {"token": "new"}
+    assert client.sessions == 1
+    assert json.loads((tmp_path / GARMIN_CONFIG_PATH).read_text(encoding="utf-8")) == {"token": "old"}
     assert client.downloaded_ids == ["remote-1", "remote-2"]
     assert len(result.downloaded) == 2
     for downloaded, fit_bytes, start in zip(result.downloaded, (fit_one, fit_two), (first_start, second_start), strict=True):
@@ -255,7 +259,7 @@ def test_partial_import_failure_preserves_previous_success_time(tmp_path: Path) 
 
 def test_auth_manual_missing_config_and_busy_are_explicit_failures(tmp_path: Path) -> None:
     now = datetime(2030, 1, 8, 12, 0, tzinfo=UTC)
-    manual = FakeClient(pages={None: GarminActivityPage(())}, refresh_result=AuthRefreshResult.manual_required())
+    manual = FakeClient(pages={None: GarminActivityPage(())}, manual_required=True)
     write_auth(tmp_path)
 
     manual_result = run_garmin_sync(tmp_path, manual, now_utc=now)
@@ -265,9 +269,9 @@ def test_auth_manual_missing_config_and_busy_are_explicit_failures(tmp_path: Pat
     assert manual.list_calls == []
 
     missing_root = tmp_path / "missing"
-    missing = run_garmin_sync(missing_root, FakeClient(pages={None: GarminActivityPage(())}), now_utc=now)
+    missing = garmin_sync.run_real_garmin_sync(missing_root, now_utc=now)
     assert missing.ok is False
-    assert missing.code == ErrorCode.CONFIG_UNAVAILABLE
+    assert missing.code == ErrorCode.AUTH_REFRESH_REQUIRED
 
     assert garmin_sync._SYNC_LOCK.acquire(blocking=False) is True
     try:
@@ -283,8 +287,37 @@ def test_state_and_auth_paths_must_stay_inside_instance(tmp_path: Path) -> None:
     outside = Path("../secret.json")
     client = FakeClient(pages={None: GarminActivityPage(())})
 
-    result = run_garmin_sync(tmp_path, client, now_utc=now, auth_config_path=outside)
+    result = run_garmin_sync(tmp_path, client, now_utc=now, state_path=outside)
 
     assert result.ok is False
     assert result.code == ErrorCode.INVALID_ARGUMENT
-    assert client.refreshed_with == []
+    assert client.sessions == 0
+
+def test_di_requires_login_without_constructing_sdk(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    write_auth(tmp_path, {"di_token": "access-secret", "di_refresh_token": "refresh-secret", "di_client_id": "client-id"})
+    before = (tmp_path / GARMIN_CONFIG_PATH).read_bytes()
+
+    def forbidden(name: str) -> Any:
+        pytest.fail("DI must not import SDK")
+
+    monkeypatch.setattr(importlib, "import_module", forbidden)
+    result = garmin_sync.run_real_garmin_sync(tmp_path, now_utc=datetime.now(UTC))
+    assert result.code == ErrorCode.AUTH_REFRESH_REQUIRED
+    assert (tmp_path / GARMIN_CONFIG_PATH).read_bytes() == before
+    assert "secret" not in json.dumps(result.to_json())
+
+
+def test_real_due_and_busy_precede_sdk_import(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    now = datetime.now(UTC)
+    save_sync_state(tmp_path, GarminSyncState(now, now))
+
+    def forbidden(name: str) -> Any:
+        pytest.fail("Not-due or busy must not import SDK")
+
+    monkeypatch.setattr(importlib, "import_module", forbidden)
+    result = garmin_sync.run_real_garmin_sync(tmp_path, now_utc=now)
+    assert result.ok and not result.due
+    with garmin_sync._SYNC_LOCK:
+        result = garmin_sync.run_real_garmin_sync(tmp_path, now_utc=now, force=True)
+    assert result.code == ErrorCode.RUN_BUSY
+    assert not (tmp_path / GARMIN_CONFIG_PATH).exists()
