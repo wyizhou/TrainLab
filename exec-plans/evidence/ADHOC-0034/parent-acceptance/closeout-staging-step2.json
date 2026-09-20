@@ -1,0 +1,7 @@
+{
+  "issue": "H34-CHECK-006",
+  "cumulative_failures": 2,
+  "error": "git add old archive path exit128: the prior attempt had already staged its deletion, so it is no longer in worktree/index. Commit/push not invoked.",
+  "observed_cached_no_renames": "M\tPLAN.md\nD\texec-plans/active/ADHOC-0034-agentsmd-parallel.md\nA\texec-plans/completed/ADHOC-0034-agentsmd-parallel.md\nA\texec-plans/evidence/ADHOC-0034/parent-acceptance/archive-check.json\nA\texec-plans/evidence/ADHOC-0034/parent-acceptance/closeout-review.json\nA\texec-plans/evidence/ADHOC-0034/parent-acceptance/first-commit.json\nA\texec-plans/evidence/ADHOC-0034/parent-acceptance/publication-initial.json\n",
+  "next": "Keep already staged deletion. Stage only existing approved changed paths, then verify full D/A set using --no-renames; no reset/restore or content rewrite."
+}

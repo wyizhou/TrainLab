@@ -1,0 +1,16 @@
+{
+  "issue": "H34-CHECK-006",
+  "failures": 1,
+  "original_error": "AssertionError: default name-only returned rename destination, not both old/new paths; commit was not invoked.",
+  "default_name_status": "M\tPLAN.md\nR086\texec-plans/active/ADHOC-0034-agentsmd-parallel.md\texec-plans/completed/ADHOC-0034-agentsmd-parallel.md\nA\texec-plans/evidence/ADHOC-0034/parent-acceptance/archive-check.json\nA\texec-plans/evidence/ADHOC-0034/parent-acceptance/closeout-review.json\nA\texec-plans/evidence/ADHOC-0034/parent-acceptance/first-commit.json\nA\texec-plans/evidence/ADHOC-0034/parent-acceptance/publication-initial.json\n",
+  "explicit_no_renames_paths": [
+    "PLAN.md",
+    "exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+    "exec-plans/completed/ADHOC-0034-agentsmd-parallel.md",
+    "exec-plans/evidence/ADHOC-0034/parent-acceptance/archive-check.json",
+    "exec-plans/evidence/ADHOC-0034/parent-acceptance/closeout-review.json",
+    "exec-plans/evidence/ADHOC-0034/parent-acceptance/first-commit.json",
+    "exec-plans/evidence/ADHOC-0034/parent-acceptance/publication-initial.json"
+  ],
+  "result": "Expected archive D/A paths present. Corrected checker mode only; no content normalization, deletion or assertion weakening."
+}

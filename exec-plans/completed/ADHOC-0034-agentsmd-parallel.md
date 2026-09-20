@@ -3,7 +3,7 @@
 ## 对应目标
 
 - 功能编号：ADHOC-0034
-- 功能状态：[exec]
+- 功能状态：[completed]
 - 总计划对应条目：[PLAN.md](../../PLAN.md)的ADHOC-0034。
 - 目标及范围和验收要求的引用：用户2026-09-20明确更新最新版agentsmd；[H34-01～07](../evidence/ADHOC-0034/requirements.md)、[Planner拆解](../evidence/ADHOC-0034/planner.md)、[主审核](../evidence/ADHOC-0034/plan-review.md)。固定官方37520a5132bb5f84064e04f18d7a4467ebdc9116，更新规则/模板/技能，保护业务记录；不恢复0033、不升级调度器或运行产品。
 
@@ -13,7 +13,7 @@
 | --- | --- | --- | --- |
 | S1 | [completed] | 来源、保护、隔离分支及方案主审 | 用户授权 |
 | S2 | [completed] | 唯一Harness候选及两套固定组合 | S1 |
-| S3 | [exec] | 独立验证、主验收、原区落地及适用交付 | S2 |
+| S3 | [completed] | 独立验证、主验收、原区落地及适用交付 | S2 |
 
 | 任务编号 | 所属阶段 | 状态 | 输入输出及错误边界 | 依赖 | 检查方法 | 结果与证据（检查命令或人工方式、退出结果及关键证据） |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -22,7 +22,7 @@
 | 0034-T03 | S2 | [completed] | H＋两区各自记录→主最小协调增量、C34/Cuse固定副本及SHA；不整份互盖记录 | T02主核 | 实际未提交差异/必要链接依赖、H一致、保护项不变 | 两物理组合已建立，主脚本恢复后退出0；同版H，各自保留业务记录、Memory只换脚手架行、Cuse0033只加隔离节；179资源及6234旧证据原件核同。首次位置/材料留存；当前按[修正后的交接定义](../evidence/ADHOC-0034/handoff-v2.md)重新提供完整before及landing清单。上游/目标最近复查仍37520a5/af09e3f |
 | 0034-T04 | S3 | [completed] | 固定两组合/客观要求→全新Validator独立结论；不改受审内容 | T03 | 独立正常/禁止/边界、链接/锚点/记录保真/语义检查 | 首次独立失败：H34-V1-001/002交接前置材料不闭合；规则/技能及已提供保护通过，7130项不变；[报告](../evidence/ADHOC-0034/validation-v1/report.md)、[主复核](../evidence/ADHOC-0034/validation-v1/parent-review.md)。方法A修正后，全新V2已通过并主核7315项不变；84审计、17文档/502链接/15语义、394主guard和19相邻均通过。[V2报告](../evidence/ADHOC-0034/validation-v2/report.md)；该独立报告不涵盖主亲验与实际落地，见T05 |
 | 0034-T05 | S3 | [completed] | 独立通过→主亲验、原区按前置SHA落地、最终一致性收据 | T04 | 亲跑检查，H/协调增量等于Cuse，179保护项/38差异/原HEAD分支空暂存保留 | 主新副本六命令全0；实际--apply退出0仅10项安装，126 after一致、315实际链接通过；179资源/6234旧证据/38源码差异、ab43cc4/原分支/空暂存均保留。[主验收与安装](../evidence/ADHOC-0034/parent-acceptance/report.md) |
-| 0034-T06 | S3 | [exec] | 受验版→0034分支适用提交/PR交付；不夹带0033、不推main/自动合并/触发CI | T05 | 重查上游/远端基准、自动触发与合并条件、精确交付树 | 已核远端37520a5/af09e3f，Actions/rules/webhooks均空；首次暂存全文件空白扫描指出7份原始diff/log格式空格，原字节与原件同，其他暂存内容适用扫描0；原收据保留，未推送或PR |
+| 0034-T06 | S3 | [completed] | 受验版→0034分支适用提交/PR交付；不夹带0033、不推main/自动合并/触发CI | T05 | 重查上游/远端基准、自动触发与合并条件、精确交付树 | 已核远端37520a5/af09e3f，Actions/rules/webhooks均空；首次暂存全文件空白扫描指出7份原始diff/log格式空格，原字节与原件同，其他暂存内容适用扫描0；原收据保留。仅0034独立分支已提交ec479be、推送并创建[PR #22](https://github.com/wyizhou/TrainLab/pull/22)，实核OPEN/CLEAN/MERGEABLE、checks空、autoMerge=null；未合并。后续只补真实归档状态 |
 
 ## 流水线与并行开发安排
 
@@ -38,13 +38,13 @@
 
 ## 当前检查点
 
-- 工作目录与分支：原用户工作区保留work/adhoc-0033-ai-coach/ab43cc4和脏源码；本功能独立worktree work/adhoc-0034-agentsmd-parallel/af09e3f，开发前干净。
+- 工作目录与分支：原用户工作区保留work/adhoc-0033-ai-coach/ab43cc4和脏源码；本功能独立worktree work/adhoc-0034-agentsmd-parallel，基准af09e3f，初始交付ec479be；归档状态提交不改受验H，实际PR头以最终交付收据为准。
 - 验收要求与受验版本及未提交改动：H34-01～07；上游37520a5；规划29材料及当前179保护资源/38项source差异，不能用陈旧本地main9db8bb1替代origin/main。
-- 最近完成：V2及主亲验通过；受控安装实际退出0，用户原目录已落地同版H，126 after及原业务保护实核通过；初次失败及所有检查器首错保留。
-- 下一动作：仅0034独立分支核提交范围、提交/推送并创建PR；后置真实状态和归档由主核精确差异，不重写业务记录。
+- 最近完成：V2及主亲验通过，用户原目录同版H已实际安装并保护核对；独立0034分支已交付PR #22，未合并、无CI运行。初次失败及全部检查器首错保留；现归档本执行计划。
+- 下一动作：等待用户确认是否合并PR #22或提供新需求；不自动恢复0033，不继续扩展本功能。
 - 暂停原因：本功能无阻塞；0033暂停，不属于本功能待办。
 - 恢复条件：本功能若发生来源/范围/保护变化先核实并按既有流程；0033只由用户明确新的恢复范围。
-- PR与交付情况：当前实际目录的Harness安装和本地验收已完成；本轮尚未创建PR，不预写远端交付或自动合并。
+- PR与交付情况：当前实际目录安装、本地验收和[PR #22交付](https://github.com/wyizhou/TrainLab/pull/22)已完成。PR保持OPEN、未合并；最终只补真实状态、归档及交付收据，主核差异。
 
 ## 问题记录
 
@@ -52,6 +52,7 @@
 | --- | --- | --- | --- | --- |
 | H34-V1-001 | PLAN前置SHA与所附前置字节属不同记录时点，未分清累计比较基线/当前落地before | 方法A：独立当前before逐项匹配；V2通过并主核，闭合 | 1 | [首次报告](../evidence/ADHOC-0034/validation-v1/report.md)；旧版冻结保留 |
 | H34-V1-002 | 11项prelanding未涵盖0034执行计划/证据全部目标 | 方法A：126精确目标/保留对象、before/不存在与after及追加新建；V2通过并主核，闭合 | 1 | 首验时尚未落地；现在见T05受控安装与保护收据 |
+| H34-CHECK-006 | 归档提交检查误以为name-only会同时列重命名旧/新路径，实际默认仅列新路径 | --no-renames已核D/A；后续重复add已暂存删除旧路径报128，保持原删除、只暂存现存批准文件 | 2（发布暂存交接；不属Harness修复轮） | [首次定位](../evidence/ADHOC-0034/parent-acceptance/closeout-staging-recovery.json)、[暂存状态与后续处理](../evidence/ADHOC-0034/parent-acceptance/closeout-staging-step2.json) |
 | H34-CHECK-005 | 发布暂存全文件空白扫描将7份原始patch/log格式空格报错 | 保留原件并逐字节核同，仅这7份做原始格式分类，其余全部暂存内容空白扫描0；未改配置或证据 | 1（发布检查适用范围） | [原报及适用复核](../evidence/ADHOC-0034/parent-acceptance/publication-whitespace.json) |
 | H34-CHECK-003 | V1检查器误要求技能索引连续以前缀匹配 | 修自身检查器为批准的最小合并精确核对，受审不变 | 1（检查器） | V1报告及checker-correction保留 |
 | H34-CHECK-004 | V2检查器误按basename排除嵌套manifest | 仅改为排除根manifest，7315项前后同SHA | 1（检查器） | V2首版/校正/最终integrity收据保留 |
