@@ -1,0 +1,50 @@
+{
+  "version": 2,
+  "time": "2026-09-20T03:13:20.653725+00:00",
+  "review_root": "/var/folders/dh/4th4rwbd7xlg8qslxz62hbjc0000gn/T/trainlab-adhoc0034-v2-xmleywnc",
+  "prior_review_root": "/var/folders/dh/4th4rwbd7xlg8qslxz62hbjc0000gn/T/trainlab-adhoc0034-review-xlg3_3jx",
+  "combinations": {
+    "C34": {
+      "base": "af09e3f4b7522e9826eb1655bc8a0cf58a79ba4d",
+      "branch": "work/adhoc-0034-agentsmd-parallel"
+    },
+    "Cuse": {
+      "base": "ab43cc4df231ad61aa7ab30793645dcc59d4d8c2",
+      "branch": "work/adhoc-0033-ai-coach"
+    }
+  },
+  "harness_paths": [
+    "AGENTS.md",
+    "README.md",
+    "exec-plans/template.md",
+    "subagent-templates/planner.md",
+    "subagent-templates/developer.md",
+    "subagent-templates/validator.md",
+    "skills/README.md",
+    "skills/web-browser-acceptance/SKILL.md"
+  ],
+  "authoritative_landing": "inputs/landing.json",
+  "current_before": "inputs/before/",
+  "historical_compare_only": "inputs/history-baseline-Cuse/",
+  "public_states": [
+    "states/Goal-example.md",
+    "states/activities/.gitkeep",
+    "states/health/.gitkeep",
+    "states/verification/.gitkeep"
+  ],
+  "excluded_legacy_environment_links": {
+    "exec-plans/evidence/ADHOC-0033/p03-v01-repair-r2/pyenv/bin/python3": {
+      "symlink": "python",
+      "reason": "Historical interpreter link, not an input of this documentation upgrade; protected at original location, not followed."
+    },
+    "exec-plans/evidence/ADHOC-0033/p03-v01-repair-r2/pyenv/bin/python": {
+      "symlink": "/Users/lucas/.local/share/uv/python/cpython-3.12-macos-aarch64-none/bin/python3.12",
+      "reason": "Historical interpreter link, not an input of this documentation upgrade; protected at original location, not followed."
+    },
+    "exec-plans/evidence/ADHOC-0033/p03-v01-repair-r2/pyenv/bin/python3.12": {
+      "symlink": "python",
+      "reason": "Historical interpreter link, not an input of this documentation upgrade; protected at original location, not followed."
+    }
+  },
+  "note": "Existing v1 combination-location files are historical evidence only. Current landing map is exhaustive for install/retain; separately named future evidence is create-only, never directory overwrite."
+}

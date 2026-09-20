@@ -1,0 +1,3169 @@
+{
+  "fixture": "Full actual 126 before/after payloads; synthetic source/reference/old-evidence protection; actual four public states; git adapter only, no Git process",
+  "guard_sha256": "5c3ecd6251208af904e18f8cc5a6d3da77d5da60db0956a0ef043a3ad810fabe",
+  "fixture_manifest": "ac7a6d6aad53e092e681af045a069d17550fd2108e6381b2153d14e3ae0be35c",
+  "total": 394,
+  "failed": 0,
+  "git_adapter_calls": 788,
+  "results": [
+    {
+      "name": "wrong-before:AGENTS.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'AGENTS.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:AGENTS.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'AGENTS.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:MEMORY.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'MEMORY.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:MEMORY.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'MEMORY.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:PLAN.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'PLAN.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:PLAN.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'PLAN.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:README.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'README.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:README.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'README.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/active/ADHOC-0033-ai-coach.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/active/ADHOC-0033-ai-coach.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/active/ADHOC-0033-ai-coach.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/active/ADHOC-0033-ai-coach.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/active/ADHOC-0034-agentsmd-parallel.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/active/ADHOC-0034-agentsmd-parallel.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/baseline.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/baseline.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/baseline.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/baseline.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/baseline/AGENTS.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/baseline/AGENTS.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/baseline/AGENTS.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/baseline/AGENTS.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/baseline/MEMORY.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/baseline/MEMORY.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/baseline/MEMORY.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/baseline/MEMORY.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/baseline/PLAN.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/baseline/PLAN.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/baseline/PLAN.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/baseline/PLAN.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/baseline/README.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/baseline/README.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/baseline/README.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/baseline/README.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/baseline/exec-plans/template.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/baseline/exec-plans/template.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/baseline/exec-plans/template.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/baseline/exec-plans/template.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/baseline/references/README.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/baseline/references/README.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/baseline/references/README.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/baseline/references/README.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/baseline/skills/README.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/baseline/skills/README.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/baseline/skills/README.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/baseline/skills/README.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/baseline/subagent-templates/developer.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/baseline/subagent-templates/developer.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/baseline/subagent-templates/developer.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/baseline/subagent-templates/developer.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/baseline/subagent-templates/planner.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/baseline/subagent-templates/planner.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/baseline/subagent-templates/planner.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/baseline/subagent-templates/planner.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/baseline/subagent-templates/validator.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/baseline/subagent-templates/validator.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/baseline/subagent-templates/validator.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/baseline/subagent-templates/validator.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/combination-location.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/combination-location.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/combination-location.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/combination-location.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/combination-v2-location.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/combination-v2-location.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/combination-v2-location.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/combination-v2-location.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/coordination-before.diff",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/coordination-before.diff')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/coordination-before.diff",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/coordination-before.diff')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/developer-baseline.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer-baseline.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/developer-baseline.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer-baseline.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/developer-command-receipts.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer-command-receipts.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/developer-command-receipts.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer-command-receipts.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/developer-dispatch.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer-dispatch.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/developer-dispatch.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer-dispatch.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/developer-intake.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer-intake.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/developer-intake.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer-intake.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/developer-parent-rerun.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer-parent-rerun.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/developer-parent-rerun.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer-parent-rerun.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/developer-receipt.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer-receipt.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/developer-receipt.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer-receipt.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/developer-task.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer-task.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/developer-task.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer-task.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/developer-tool-ledger.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer-tool-ledger.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/developer-tool-ledger.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer-tool-ledger.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/developer.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/developer.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/developer/candidate.diff",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer/candidate.diff')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/developer/candidate.diff",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer/candidate.diff')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/developer/check-results.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer/check-results.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/developer/check-results.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer/check-results.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/developer/check-stderr.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer/check-stderr.txt')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/developer/check-stderr.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer/check-stderr.txt')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/developer/check_candidate.py",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer/check_candidate.py')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/developer/check_candidate.py",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer/check_candidate.py')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/developer/final-results.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer/final-results.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/developer/final-results.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer/final-results.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/developer/final-stderr.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer/final-stderr.txt')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/developer/final-stderr.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer/final-stderr.txt')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/developer/manual-scenarios.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer/manual-scenarios.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/developer/manual-scenarios.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer/manual-scenarios.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/developer/preflight.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer/preflight.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/developer/preflight.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/developer/preflight.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/file-comparison.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/file-comparison.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/file-comparison.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/file-comparison.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/finalize_freeze.py",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/finalize_freeze.py')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/finalize_freeze.py",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/finalize_freeze.py')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/finalize_v2.py",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/finalize_v2.py')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/finalize_v2.py",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/finalize_v2.py')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/freeze.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/freeze.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/freeze.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/freeze.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/git-status.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/git-status.txt')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/git-status.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/git-status.txt')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/handoff-v2.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/handoff-v2.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/handoff-v2.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/handoff-v2.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/landing_guard.py",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/landing_guard.py')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/landing_guard.py",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/landing_guard.py')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/plan-review.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/plan-review.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/plan-review.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/plan-review.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/planner-command-receipts.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/planner-command-receipts.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/planner-command-receipts.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/planner-command-receipts.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/planner-dispatch.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/planner-dispatch.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/planner-dispatch.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/planner-dispatch.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/planner-evidence/check-results.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/planner-evidence/check-results.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/planner-evidence/check-results.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/planner-evidence/check-results.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/planner-evidence/check_materials.py",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/planner-evidence/check_materials.py')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/planner-evidence/check_materials.py",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/planner-evidence/check_materials.py')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/planner-evidence/first-check-failure.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/planner-evidence/first-check-failure.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/planner-evidence/first-check-failure.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/planner-evidence/first-check-failure.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/planner-inputs.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/planner-inputs.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/planner-inputs.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/planner-inputs.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/planner-receipt.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/planner-receipt.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/planner-receipt.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/planner-receipt.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/planner-task.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/planner-task.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/planner-task.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/planner-task.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/planner-tool-ledger.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/planner-tool-ledger.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/planner-tool-ledger.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/planner-tool-ledger.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/planner.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/planner.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/planner.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/planner.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/planning-checkpoint.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/planning-checkpoint.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/planning-checkpoint.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/planning-checkpoint.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/planning-preservation.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/planning-preservation.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/planning-preservation.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/planning-preservation.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/prefreeze-entry-links.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/prefreeze-entry-links.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/prefreeze-entry-links.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/prefreeze-entry-links.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/prepare-combinations-first.py",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/prepare-combinations-first.py')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/prepare-combinations-first.py",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/prepare-combinations-first.py')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/prepare-first-diagnostic.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/prepare-first-diagnostic.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/prepare-first-diagnostic.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/prepare-first-diagnostic.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/prepare-first-failure.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/prepare-first-failure.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/prepare-first-failure.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/prepare-first-failure.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/prepare_combinations.py",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/prepare_combinations.py')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/prepare_combinations.py",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/prepare_combinations.py')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/prepare_v2.py",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/prepare_v2.py')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/prepare_v2.py",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/prepare_v2.py')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/preserve_planning.py",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/preserve_planning.py')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/preserve_planning.py",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/preserve_planning.py')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/prevalidation-remote.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/prevalidation-remote.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/prevalidation-remote.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/prevalidation-remote.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/protected-old-evidence.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/protected-old-evidence.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/protected-old-evidence.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/protected-old-evidence.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/publication-preflight.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/publication-preflight.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/publication-preflight.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/publication-preflight.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/requirements.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/requirements.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/requirements.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/requirements.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/review-manifest.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/review-manifest.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/review-manifest.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/review-manifest.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/source-before.diff",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/source-before.diff')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/source-before.diff",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/source-before.diff')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/upstream-clone.log",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/upstream-clone.log')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/upstream-clone.log",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/upstream-clone.log')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/upstream.diff",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/upstream.diff')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/upstream.diff",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/upstream.diff')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/upstream.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/upstream.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/upstream.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/upstream.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/upstream/AGENTS.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/upstream/AGENTS.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/upstream/AGENTS.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/upstream/AGENTS.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/upstream/MEMORY.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/upstream/MEMORY.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/upstream/MEMORY.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/upstream/MEMORY.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/upstream/PLAN.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/upstream/PLAN.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/upstream/PLAN.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/upstream/PLAN.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/upstream/README.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/upstream/README.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/upstream/README.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/upstream/README.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/upstream/exec-plans/template.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/upstream/exec-plans/template.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/upstream/exec-plans/template.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/upstream/exec-plans/template.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/upstream/references/README.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/upstream/references/README.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/upstream/references/README.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/upstream/references/README.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/upstream/skills/README.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/upstream/skills/README.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/upstream/skills/README.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/upstream/skills/README.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/upstream/skills/web-browser-acceptance/SKILL.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/upstream/skills/web-browser-acceptance/SKILL.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/upstream/skills/web-browser-acceptance/SKILL.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/upstream/skills/web-browser-acceptance/SKILL.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/upstream/subagent-templates/developer.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/upstream/subagent-templates/developer.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/upstream/subagent-templates/developer.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/upstream/subagent-templates/developer.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/upstream/subagent-templates/planner.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/upstream/subagent-templates/planner.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/upstream/subagent-templates/planner.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/upstream/subagent-templates/planner.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/upstream/subagent-templates/validator.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/upstream/subagent-templates/validator.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/upstream/subagent-templates/validator.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/upstream/subagent-templates/validator.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validation-v1/command-receipts.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/command-receipts.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validation-v1/command-receipts.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/command-receipts.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validation-v1/manifest.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/manifest.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validation-v1/manifest.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/manifest.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validation-v1/parent-review.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/parent-review.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validation-v1/parent-review.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/parent-review.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validation-v1/preservation.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/preservation.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validation-v1/preservation.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/preservation.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validation-v1/report.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/report.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validation-v1/report.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/report.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validation-v1/tool-ledger.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/tool-ledger.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validation-v1/tool-ledger.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/tool-ledger.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/checker-correction.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/checker-correction.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/checker-correction.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/checker-correction.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/final-integrity.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/final-integrity.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/final-integrity.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/final-integrity.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/first-static-exit.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/first-static-exit.txt')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/first-static-exit.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/first-static-exit.txt')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/first-static-results.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/first-static-results.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/first-static-results.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/first-static-results.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/first-static-stderr.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/first-static-stderr.txt')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/first-static-stderr.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/first-static-stderr.txt')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/first-static-stdout.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/first-static-stdout.txt')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/first-static-stdout.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/first-static-stdout.txt')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/handoff-exit.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/handoff-exit.txt')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/handoff-exit.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/handoff-exit.txt')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/handoff-reproduction.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/handoff-reproduction.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/handoff-reproduction.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/handoff-reproduction.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/handoff-stderr.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/handoff-stderr.txt')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/handoff-stderr.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/handoff-stderr.txt')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/initial-integrity.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/initial-integrity.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/initial-integrity.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/initial-integrity.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/links.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/links.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/links.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/links.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/manual-scenarios.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/manual-scenarios.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/manual-scenarios.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/manual-scenarios.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/record-diffs.patch",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/record-diffs.patch')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/record-diffs.patch",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/record-diffs.patch')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/static-exit.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/static-exit.txt')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/static-exit.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/static-exit.txt')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/static-results.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/static-results.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/static-results.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/static-results.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/static-stderr.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/static-stderr.txt')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/static-stderr.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/static-stderr.txt')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/static-stdout.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/static-stdout.txt')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/static-stdout.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/static-stdout.txt')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-tests/mutations/blank-plan-field.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-tests/mutations/blank-plan-field.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-tests/mutations/blank-plan-field.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-tests/mutations/blank-plan-field.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-tests/mutations/empty-business-PLAN.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-tests/mutations/empty-business-PLAN.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-tests/mutations/empty-business-PLAN.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-tests/mutations/empty-business-PLAN.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-tests/mutations/polluted-AGENTS.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-tests/mutations/polluted-AGENTS.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-tests/mutations/polluted-AGENTS.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-tests/mutations/polluted-AGENTS.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-tests/reproduce_handoff.py",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-tests/reproduce_handoff.py')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-tests/reproduce_handoff.py",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-tests/reproduce_handoff.py')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-tests/verify_snapshot.py",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-tests/verify_snapshot.py')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validation-v1/validation-tests/verify_snapshot.py",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/validation-tests/verify_snapshot.py')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validation-v1/workflow-receipt.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/workflow-receipt.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validation-v1/workflow-receipt.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validation-v1/workflow-receipt.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validator-dispatch.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validator-dispatch.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validator-dispatch.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validator-dispatch.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validator-progress-01.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validator-progress-01.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validator-progress-01.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validator-progress-01.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validator-progress-02.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validator-progress-02.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validator-progress-02.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validator-progress-02.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validator-task-v2.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validator-task-v2.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validator-task-v2.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validator-task-v2.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/validator-task.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validator-task.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/validator-task.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/validator-task.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/worktree-create.log",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/worktree-create.log')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/worktree-create.log",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/worktree-create.log')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/evidence/ADHOC-0034/worktree.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/worktree.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/evidence/ADHOC-0034/worktree.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/evidence/ADHOC-0034/worktree.json')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:exec-plans/template.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/template.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:exec-plans/template.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'exec-plans/template.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:skills/README.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'skills/README.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:skills/README.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'skills/README.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "null-meets-file:skills/web-browser-acceptance/SKILL.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'skills/web-browser-acceptance/SKILL.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "null-meets-directory:skills/web-browser-acceptance/SKILL.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'skills/web-browser-acceptance/SKILL.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:subagent-templates/developer.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'subagent-templates/developer.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:subagent-templates/developer.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'subagent-templates/developer.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:subagent-templates/planner.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'subagent-templates/planner.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:subagent-templates/planner.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'subagent-templates/planner.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before:subagent-templates/validator.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'subagent-templates/validator.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "missing-before:subagent-templates/validator.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'subagent-templates/validator.md')",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:AGENTS.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:MEMORY.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:PLAN.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:README.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/active/ADHOC-0033-ai-coach.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/baseline.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/baseline/AGENTS.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/baseline/MEMORY.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/baseline/PLAN.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/baseline/README.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/baseline/exec-plans/template.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/baseline/references/README.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/baseline/skills/README.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/baseline/subagent-templates/developer.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/baseline/subagent-templates/planner.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/baseline/subagent-templates/validator.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/combination-location.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/combination-v2-location.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/coordination-before.diff",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/developer-baseline.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/developer-command-receipts.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/developer-dispatch.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/developer-intake.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/developer-parent-rerun.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/developer-receipt.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/developer-task.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/developer-tool-ledger.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/developer.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/developer/candidate.diff",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/developer/check-results.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/developer/check-stderr.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/developer/check_candidate.py",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/developer/final-results.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/developer/final-stderr.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/developer/manual-scenarios.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/developer/preflight.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/file-comparison.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/finalize_freeze.py",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/finalize_v2.py",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/freeze.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/git-status.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/handoff-v2.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/landing_guard.py",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/plan-review.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/planner-command-receipts.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/planner-dispatch.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/planner-evidence/check-results.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/planner-evidence/check_materials.py",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/planner-evidence/first-check-failure.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/planner-inputs.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/planner-receipt.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/planner-task.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/planner-tool-ledger.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/planner.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/planning-checkpoint.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/planning-preservation.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/prefreeze-entry-links.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/prepare-combinations-first.py",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/prepare-first-diagnostic.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/prepare-first-failure.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/prepare_combinations.py",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/prepare_v2.py",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/preserve_planning.py",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/prevalidation-remote.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/protected-old-evidence.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/publication-preflight.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/requirements.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/review-manifest.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/source-before.diff",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/upstream-clone.log",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/upstream.diff",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/upstream.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/upstream/AGENTS.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/upstream/MEMORY.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/upstream/PLAN.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/upstream/README.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/upstream/exec-plans/template.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/upstream/references/README.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/upstream/skills/README.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/upstream/skills/web-browser-acceptance/SKILL.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/upstream/subagent-templates/developer.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/upstream/subagent-templates/planner.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/upstream/subagent-templates/validator.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validation-v1/command-receipts.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validation-v1/manifest.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validation-v1/parent-review.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validation-v1/preservation.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validation-v1/report.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validation-v1/tool-ledger.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/checker-correction.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/final-integrity.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/first-static-exit.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/first-static-results.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/first-static-stderr.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/first-static-stdout.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/handoff-exit.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/handoff-reproduction.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/handoff-stderr.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/initial-integrity.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/links.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/manual-scenarios.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/record-diffs.patch",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/static-exit.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/static-results.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/static-stderr.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validation-v1/validation-evidence/static-stdout.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validation-v1/validation-tests/mutations/blank-plan-field.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validation-v1/validation-tests/mutations/empty-business-PLAN.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validation-v1/validation-tests/mutations/polluted-AGENTS.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validation-v1/validation-tests/reproduce_handoff.py",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validation-v1/validation-tests/verify_snapshot.py",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validation-v1/workflow-receipt.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validator-dispatch.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validator-progress-01.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validator-progress-02.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validator-task-v2.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/validator-task.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/worktree-create.log",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/evidence/ADHOC-0034/worktree.json",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:exec-plans/template.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:skills/README.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:skills/web-browser-acceptance/SKILL.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:subagent-templates/developer.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:subagent-templates/planner.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-source:subagent-templates/validator.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "omit-existing-evidence",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "omit-0034-plan",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-before-metadata",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "wrong-after-metadata",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "retain-to-install",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: frozen input changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "git-precondition:branch --show-current",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "git-precondition:rev-parse HEAD",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "git-precondition:diff --cached --name-only",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: staging changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "git-precondition:status --short -- source",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: source statuses changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "protected:source/fixture.txt",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: source/reference changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "protected:references/fixture.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: source/reference changed",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "protected:exec-plans/evidence/old/fixture.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: exec-plans/evidence/old/fixture.md",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "protected:states/Goal-example.md",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: states/Goal-example.md",
+      "writes": [],
+      "stdout": ""
+    },
+    {
+      "name": "normal-all126",
+      "expected": "apply 10; retain 116",
+      "pass": true,
+      "error": null,
+      "writes": [
+        "AGENTS.md",
+        "MEMORY.md",
+        "README.md",
+        "exec-plans/active/ADHOC-0033-ai-coach.md",
+        "exec-plans/template.md",
+        "skills/README.md",
+        "skills/web-browser-acceptance/SKILL.md",
+        "subagent-templates/developer.md",
+        "subagent-templates/planner.md",
+        "subagent-templates/validator.md"
+      ],
+      "stdout": "{\n  \"mode\": \"apply\",\n  \"targets\": 126,\n  \"install_count\": 10,\n  \"written\": [\n    \"AGENTS.md\",\n    \"MEMORY.md\",\n    \"README.md\",\n    \"exec-plans/active/ADHOC-0033-ai-coach.md\",\n    \"exec-plans/template.md\",\n    \"skills/README.md\",\n    \"skills/web-browser-acceptance/SKILL.md\",\n    \"subagent-templates/developer.md\",\n    \"subagent-templates/planner.md\",\n    \"subagent-templates/validator.md\"\n  ],\n  \"original_source_and_history_preserved\": true,\n  \"staging_empty\": true,\n  \"manifest_sha256\": \"ac7a6d6aad53e092e681af045a069d17550fd2108e6381b2153d14e3ae0be35c\"\n}\n"
+    },
+    {
+      "name": "normal-after-bytes-and-retain-no-replacement",
+      "pass": true
+    },
+    {
+      "name": "repeat-apply-with-old-before",
+      "expected": "reject before any install",
+      "pass": true,
+      "error": "AssertionError: ('before', 'AGENTS.md')",
+      "writes": [],
+      "stdout": ""
+    }
+  ]
+}

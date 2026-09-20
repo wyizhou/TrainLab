@@ -1,0 +1,13 @@
+{
+  "manifest": "17c0becf800d820b02d5ac824a05891b4379b0070cdbf0d660397a0063b36f1d",
+  "files": 7315,
+  "counts": {
+    "C34": 397,
+    "Cuse": 6760,
+    "inputs": 155,
+    "root": 3
+  },
+  "errors": [],
+  "symlinks": [],
+  "git_present": false
+}

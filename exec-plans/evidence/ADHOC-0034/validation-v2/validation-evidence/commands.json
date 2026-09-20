@@ -1,0 +1,10 @@
+[
+  {"command":"pwd; python3 manifest身份/.git/符号链接只读检查","exit":0,"evidence":"manifest身份在integrity-start-corrected.json重核"},
+  {"command":"python3 -B validation-tests/integrity.py > validation-evidence/integrity-start.json","exit":1,"evidence":"integrity-start.json；自写集合检查误排除两个嵌套manifest，非材料错误"},
+  {"command":"python3 -B validation-tests/integrity.py > validation-evidence/integrity-start-corrected.json","exit":0,"evidence":"integrity-start-corrected.json；只修自身过滤条件"},
+  {"command":"python3 -B validation-tests/audit.py > validation-evidence/audit.log 2>&1","exit":0,"evidence":"audit.log、audit.json、generated-landing.patch、record-deltas.patch；84项"},
+  {"command":"python3 -B validation-tests/guard_cases.py > validation-evidence/guard-cases.log 2>&1","exit":0,"evidence":"guard-cases.log、guard-cases.json；394项"},
+  {"command":"python3 -B validation-tests/docs.py > validation-evidence/docs.log 2>&1","exit":0,"evidence":"docs.log、docs.json；17项检查、502本地链接、15人工语义场景"},
+  {"command":"python3 -B validation-tests/guard_adjacent.py > validation-evidence/guard-adjacent.log 2>&1","exit":0,"evidence":"guard-adjacent.log、guard-adjacent.json；19项"},
+  {"command":"python3 -B validation-tests/integrity.py > validation-evidence/integrity-final.json","exit":0,"evidence":"integrity-final.json、summary.json；7315固定项前后相同"}
+]

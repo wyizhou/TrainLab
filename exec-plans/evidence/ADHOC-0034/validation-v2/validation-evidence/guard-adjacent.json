@@ -1,0 +1,112 @@
+{
+  "cases": [
+    {
+      "name": "normal-protected-symlink-identity",
+      "expected_reject": false,
+      "error": null,
+      "pass": true
+    },
+    {
+      "name": "wrong-manifest-identity",
+      "expected_reject": true,
+      "error": "AssertionError: manifest identity",
+      "pass": true
+    },
+    {
+      "name": "signed-wrong-before",
+      "expected_reject": true,
+      "error": "AssertionError: ('before', 'AGENTS.md')",
+      "pass": true
+    },
+    {
+      "name": "signed-wrong-after",
+      "expected_reject": true,
+      "error": "AssertionError: ('after source', 'AGENTS.md')",
+      "pass": true
+    },
+    {
+      "name": "signed-invalid-action",
+      "expected_reject": true,
+      "error": "AssertionError: AGENTS.md",
+      "pass": true
+    },
+    {
+      "name": "signed-retain-unequal",
+      "expected_reject": true,
+      "error": "AssertionError: AGENTS.md",
+      "pass": true
+    },
+    {
+      "name": "signed-retain-missing-before",
+      "expected_reject": true,
+      "error": "AssertionError: ('before', 'PLAN.md')",
+      "pass": true
+    },
+    {
+      "name": "source-outside-Cuse",
+      "expected_reject": true,
+      "error": "AssertionError: AGENTS.md",
+      "pass": true
+    },
+    {
+      "name": "install-outside-allowlist",
+      "expected_reject": true,
+      "error": "AssertionError: evidence.md",
+      "pass": true
+    },
+    {
+      "name": "target-symlink-refused",
+      "expected_reject": true,
+      "error": "AssertionError: PLAN.md",
+      "pass": true
+    },
+    {
+      "name": "old-link-identity-changed",
+      "expected_reject": true,
+      "error": "AssertionError: exec-plans/evidence/link",
+      "pass": true
+    },
+    {
+      "name": "future-evidence-exclusive-create:exec-plans/evidence/ADHOC-0034/validator-dispatch-v2.json",
+      "pass": true,
+      "method": "Python xb protocol required by handoff; not real future evidence creation"
+    },
+    {
+      "name": "future-evidence-exclusive-create:exec-plans/evidence/ADHOC-0034/freeze-v2.json",
+      "pass": true,
+      "method": "Python xb protocol required by handoff; not real future evidence creation"
+    },
+    {
+      "name": "future-evidence-exclusive-create:exec-plans/evidence/ADHOC-0034/review-manifest-v2.json",
+      "pass": true,
+      "method": "Python xb protocol required by handoff; not real future evidence creation"
+    },
+    {
+      "name": "future-evidence-exclusive-create:exec-plans/evidence/ADHOC-0034/landing-v2.json",
+      "pass": true,
+      "method": "Python xb protocol required by handoff; not real future evidence creation"
+    },
+    {
+      "name": "future-evidence-exclusive-create:exec-plans/evidence/ADHOC-0034/publication-final.json",
+      "pass": true,
+      "method": "Python xb protocol required by handoff; not real future evidence creation"
+    },
+    {
+      "name": "future-evidence-exclusive-create:exec-plans/evidence/ADHOC-0034/delivery.json",
+      "pass": true,
+      "method": "Python xb protocol required by handoff; not real future evidence creation"
+    },
+    {
+      "name": "future-evidence-exclusive-create:exec-plans/evidence/ADHOC-0034/validation-v2/synthetic-future.json",
+      "pass": true,
+      "method": "Python xb protocol required by handoff; not real future evidence creation"
+    },
+    {
+      "name": "future-evidence-exclusive-create:exec-plans/evidence/ADHOC-0034/parent-acceptance/synthetic-future.json",
+      "pass": true,
+      "method": "Python xb protocol required by handoff; not real future evidence creation"
+    }
+  ],
+  "total": 19,
+  "failed": 0
+}

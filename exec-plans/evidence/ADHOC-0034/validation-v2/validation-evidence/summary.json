@@ -1,0 +1,12 @@
+{
+  "integrity_start_equals_final": true,
+  "readonly_fixed_files": 7315,
+  "total_fixed_files": 7315,
+  "actual_guard_sha256": "5c3ecd6251208af904e18f8cc5a6d3da77d5da60db0956a0ef043a3ad810fabe",
+  "audit_checks": 84,
+  "doc_checks": 17,
+  "local_links": 502,
+  "guard_cases": 394,
+  "adjacent_cases": 19,
+  "elapsed_minutes": 9.0
+}

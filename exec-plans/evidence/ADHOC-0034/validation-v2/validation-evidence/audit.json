@@ -1,0 +1,493 @@
+[
+  {
+    "name": "upstream11",
+    "pass": true,
+    "detail": "37520a5132bb5f84064e04f18d7a4467ebdc9116"
+  },
+  {
+    "name": "two_combinations_seven_originals",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "H_equal8",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "protected179",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "old_evidence6231",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "oldlinks3_identity_only",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "C34_delta_allowed",
+    "pass": true,
+    "detail": {
+      "changed": [
+        "AGENTS.md",
+        "MEMORY.md",
+        "PLAN.md",
+        "README.md",
+        "exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+        "exec-plans/template.md",
+        "skills/README.md",
+        "subagent-templates/developer.md",
+        "subagent-templates/planner.md",
+        "subagent-templates/validator.md"
+      ],
+      "new": [
+        "exec-plans/evidence/ADHOC-0034/combination-location.json",
+        "exec-plans/evidence/ADHOC-0034/combination-v2-location.json",
+        "exec-plans/evidence/ADHOC-0034/developer-dispatch.json",
+        "exec-plans/evidence/ADHOC-0034/developer-intake.md",
+        "exec-plans/evidence/ADHOC-0034/developer/candidate.diff",
+        "exec-plans/evidence/ADHOC-0034/developer/check-results.json",
+        "exec-plans/evidence/ADHOC-0034/developer/check-stderr.txt",
+        "exec-plans/evidence/ADHOC-0034/developer/check_candidate.py",
+        "exec-plans/evidence/ADHOC-0034/developer/final-results.json",
+        "exec-plans/evidence/ADHOC-0034/developer/final-stderr.txt",
+        "exec-plans/evidence/ADHOC-0034/developer/manual-scenarios.md",
+        "exec-plans/evidence/ADHOC-0034/developer/preflight.json",
+        "exec-plans/evidence/ADHOC-0034/handoff-v2.md",
+        "exec-plans/evidence/ADHOC-0034/landing_guard.py",
+        "exec-plans/evidence/ADHOC-0034/prepare-combinations-first.py",
+        "exec-plans/evidence/ADHOC-0034/prepare-first-diagnostic.json",
+        "exec-plans/evidence/ADHOC-0034/prepare-first-failure.md",
+        "exec-plans/evidence/ADHOC-0034/prevalidation-remote.json",
+        "exec-plans/evidence/ADHOC-0034/upstream.json",
+        "exec-plans/evidence/ADHOC-0034/validation-v1/parent-review.md",
+        "exec-plans/evidence/ADHOC-0034/validation-v1/report.md",
+        "exec-plans/evidence/ADHOC-0034/validator-task-v2.md",
+        "skills/web-browser-acceptance/SKILL.md"
+      ]
+    }
+  },
+  {
+    "name": "C34_product_baseline",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "landing_exhaustive126",
+    "pass": true,
+    "detail": {
+      "core": 12,
+      "evidence": 114,
+      "missing": [],
+      "extra": []
+    }
+  },
+  {
+    "name": "before_exact125",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "after_exact126",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "install10_retain116",
+    "pass": true,
+    "detail": [
+      "AGENTS.md",
+      "MEMORY.md",
+      "README.md",
+      "exec-plans/active/ADHOC-0033-ai-coach.md",
+      "exec-plans/template.md",
+      "skills/README.md",
+      "skills/web-browser-acceptance/SKILL.md",
+      "subagent-templates/developer.md",
+      "subagent-templates/planner.md",
+      "subagent-templates/validator.md"
+    ]
+  },
+  {
+    "name": "new_skill_null_only",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "append_scope_no_existing",
+    "pass": true,
+    "detail": {
+      "prefixes": [
+        "exec-plans/evidence/ADHOC-0034/validation-v2/",
+        "exec-plans/evidence/ADHOC-0034/parent-acceptance/"
+      ],
+      "files": [
+        "exec-plans/evidence/ADHOC-0034/validator-dispatch-v2.json",
+        "exec-plans/evidence/ADHOC-0034/freeze-v2.json",
+        "exec-plans/evidence/ADHOC-0034/review-manifest-v2.json",
+        "exec-plans/evidence/ADHOC-0034/landing-v2.json",
+        "exec-plans/evidence/ADHOC-0034/publication-final.json",
+        "exec-plans/evidence/ADHOC-0034/delivery.json"
+      ],
+      "operation": "exclusive create (xb), any existing target stops; no existing evidence rewrite"
+    }
+  },
+  {
+    "name": "exact_landing_delta",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "C34_memory_only_harness",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "Cuse_memory_only_harness",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "0033_only_added",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_status38",
+    "pass": true,
+    "detail": {
+      " M": 15,
+      "??": 23
+    }
+  },
+  {
+    "name": "source_diff_hunk:source/README.md:108",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/README.md:119",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/README.md:143",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/package-lock.json:11",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/package-lock.json:596",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/package-lock.json:623",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/package-lock.json:650",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/package-lock.json:679",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/package-lock.json:694",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/package-lock.json:930",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/package-lock.json:1053",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/package-lock.json:1100",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/package-lock.json:1120",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/package-lock.json:1189",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/package-lock.json:1208",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/package-lock.json:1228",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/package-lock.json:1246",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/package-lock.json:1424",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/package-lock.json:1464",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/package-lock.json:1594",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/package-lock.json:1641",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/package-lock.json:1671",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/package-lock.json:1734",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/package-lock.json:2078",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/package-lock.json:2098",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/package-lock.json:2804",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/package-lock.json:2934",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/package-lock.json:2995",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/package-lock.json:3146",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/package-lock.json:3170",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/package-lock.json:3238",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/package-lock.json:3328",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/package-lock.json:3425",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/package-lock.json:3668",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/package.json:14",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/playwright.auth.config.ts:1",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/playwright.config.ts:1",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/playwright.config.ts:14",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/src/App.tsx:3",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/src/App.tsx:60",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/src/App.tsx:91",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/src/App.tsx:209",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/src/App.tsx:242",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/src/styles.css:153",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/tests/e2e/auth-process.js:1",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/tests/e2e/auth-process.js:17",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/tests/e2e/auth-process.js:25",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/frontend/tests/e2e/auth-process.js:50",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/skills/_shared/scripts/trainlab/ai.py:5",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/skills/_shared/scripts/trainlab/ai.py:240",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/skills/_shared/scripts/trainlab/report_service.py:97",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/skills/local-web/scripts/cli.py:5",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/skills/local-web/scripts/cli.py:36",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/skills/local-web/scripts/server.py:2",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/skills/local-web/scripts/server.py:141",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/skills/local-web/scripts/server.py:153",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/tests/e2e_support/auth_transport.py:16",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/tests/e2e_support/serve_auth.py:14",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/tests/e2e_support/serve_auth.py:22",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/tests/e2e_support/serve_auth.py:99",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/tests/e2e_support/serve_auth.py:123",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/tests/e2e_support/serve_web.py:9",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_diff_hunk:source/tests/e2e_support/serve_web.py:154",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source_15_modified_patch",
+    "pass": true,
+    "detail": null
+  },
+  {
+    "name": "source23_untracked_bytes",
+    "pass": true,
+    "detail": null
+  }
+]

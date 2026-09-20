@@ -1,0 +1,85 @@
+PASS upstream11 37520a5132bb5f84064e04f18d7a4467ebdc9116
+PASS two_combinations_seven_originals 
+PASS H_equal8 
+PASS protected179 
+PASS old_evidence6231 
+PASS oldlinks3_identity_only 
+PASS C34_delta_allowed {'changed': ['AGENTS.md', 'MEMORY.md', 'PLAN.md', 'README.md', 'exec-plans/active/ADHOC-0034-agentsmd-parallel.md', 'exec-plans/template.md', 'skills/README.md', 'subagent-templates/developer.md', 'subagent-templates/planner.md', 'subagent-templates/validator.md'], 'new': ['exec-plans/evidence/ADHOC-0034/combination-location.json', 'exec-plans/evidence/ADHOC-0034/combination-v2-location.json', 'exec-plans/evidence/ADHOC-0034/developer-dispatch.json', 'exec-plans/evidence/ADHOC-0034/developer-intake.md', 'exec-plans/evidence/ADHOC-0034/developer/candidate.diff', 'exec-plans/evidence/ADHOC-0034/developer/check-results.json', 'exec-plans/evidence/ADHOC-0034/developer/check-stderr.txt', 'exec-plans/evidence/ADHOC-0034/developer/check_candidate.py', 'exec-plans/evidence/ADHOC-0034/developer/final-results.json', 'exec-plans/evidence/ADHOC-0034/developer/final-stderr.txt', 'exec-plans/evidence/ADHOC-0034/developer/manual-scenarios.md', 'exec-plans/evidence/ADHOC-0034/developer/preflight.json', 'exec-plans/evidence/ADHOC-0034/handoff-v2.md', 'exec-plans/evidence/ADHOC-0034/landing_guard.py', 'exec-plans/evidence/ADHOC-0034/prepare-combinations-first.py', 'exec-plans/evidence/ADHOC-0034/prepare-first-diagnostic.json', 'exec-plans/evidence/ADHOC-0034/prepare-first-failure.md', 'exec-plans/evidence/ADHOC-0034/prevalidation-remote.json', 'exec-plans/evidence/ADHOC-0034/upstream.json', 'exec-plans/evidence/ADHOC-0034/validation-v1/parent-review.md', 'exec-plans/evidence/ADHOC-0034/validation-v1/report.md', 'exec-plans/evidence/ADHOC-0034/validator-task-v2.md', 'skills/web-browser-acceptance/SKILL.md']}
+PASS C34_product_baseline 
+PASS landing_exhaustive126 {'core': 12, 'evidence': 114, 'missing': [], 'extra': []}
+PASS before_exact125 
+PASS after_exact126 
+PASS install10_retain116 ['AGENTS.md', 'MEMORY.md', 'README.md', 'exec-plans/active/ADHOC-0033-ai-coach.md', 'exec-plans/template.md', 'skills/README.md', 'skills/web-browser-acceptance/SKILL.md', 'subagent-templates/developer.md', 'subagent-templates/planner.md', 'subagent-templates/validator.md']
+PASS new_skill_null_only 
+PASS append_scope_no_existing {'prefixes': ['exec-plans/evidence/ADHOC-0034/validation-v2/', 'exec-plans/evidence/ADHOC-0034/parent-acceptance/'], 'files': ['exec-plans/evidence/ADHOC-0034/validator-dispatch-v2.json', 'exec-plans/evidence/ADHOC-0034/freeze-v2.json', 'exec-plans/evidence/ADHOC-0034/review-manifest-v2.json', 'exec-plans/evidence/ADHOC-0034/landing-v2.json', 'exec-plans/evidence/ADHOC-0034/publication-final.json', 'exec-plans/evidence/ADHOC-0034/delivery.json'], 'operation': 'exclusive create (xb), any existing target stops; no existing evidence rewrite'}
+PASS exact_landing_delta 
+PASS C34_memory_only_harness 
+PASS Cuse_memory_only_harness 
+PASS 0033_only_added 
+PASS source_status38 {' M': 15, '??': 23}
+PASS source_diff_hunk:source/README.md:108 
+PASS source_diff_hunk:source/README.md:119 
+PASS source_diff_hunk:source/README.md:143 
+PASS source_diff_hunk:source/frontend/package-lock.json:11 
+PASS source_diff_hunk:source/frontend/package-lock.json:596 
+PASS source_diff_hunk:source/frontend/package-lock.json:623 
+PASS source_diff_hunk:source/frontend/package-lock.json:650 
+PASS source_diff_hunk:source/frontend/package-lock.json:679 
+PASS source_diff_hunk:source/frontend/package-lock.json:694 
+PASS source_diff_hunk:source/frontend/package-lock.json:930 
+PASS source_diff_hunk:source/frontend/package-lock.json:1053 
+PASS source_diff_hunk:source/frontend/package-lock.json:1100 
+PASS source_diff_hunk:source/frontend/package-lock.json:1120 
+PASS source_diff_hunk:source/frontend/package-lock.json:1189 
+PASS source_diff_hunk:source/frontend/package-lock.json:1208 
+PASS source_diff_hunk:source/frontend/package-lock.json:1228 
+PASS source_diff_hunk:source/frontend/package-lock.json:1246 
+PASS source_diff_hunk:source/frontend/package-lock.json:1424 
+PASS source_diff_hunk:source/frontend/package-lock.json:1464 
+PASS source_diff_hunk:source/frontend/package-lock.json:1594 
+PASS source_diff_hunk:source/frontend/package-lock.json:1641 
+PASS source_diff_hunk:source/frontend/package-lock.json:1671 
+PASS source_diff_hunk:source/frontend/package-lock.json:1734 
+PASS source_diff_hunk:source/frontend/package-lock.json:2078 
+PASS source_diff_hunk:source/frontend/package-lock.json:2098 
+PASS source_diff_hunk:source/frontend/package-lock.json:2804 
+PASS source_diff_hunk:source/frontend/package-lock.json:2934 
+PASS source_diff_hunk:source/frontend/package-lock.json:2995 
+PASS source_diff_hunk:source/frontend/package-lock.json:3146 
+PASS source_diff_hunk:source/frontend/package-lock.json:3170 
+PASS source_diff_hunk:source/frontend/package-lock.json:3238 
+PASS source_diff_hunk:source/frontend/package-lock.json:3328 
+PASS source_diff_hunk:source/frontend/package-lock.json:3425 
+PASS source_diff_hunk:source/frontend/package-lock.json:3668 
+PASS source_diff_hunk:source/frontend/package.json:14 
+PASS source_diff_hunk:source/frontend/playwright.auth.config.ts:1 
+PASS source_diff_hunk:source/frontend/playwright.config.ts:1 
+PASS source_diff_hunk:source/frontend/playwright.config.ts:14 
+PASS source_diff_hunk:source/frontend/src/App.tsx:3 
+PASS source_diff_hunk:source/frontend/src/App.tsx:60 
+PASS source_diff_hunk:source/frontend/src/App.tsx:91 
+PASS source_diff_hunk:source/frontend/src/App.tsx:209 
+PASS source_diff_hunk:source/frontend/src/App.tsx:242 
+PASS source_diff_hunk:source/frontend/src/styles.css:153 
+PASS source_diff_hunk:source/frontend/tests/e2e/auth-process.js:1 
+PASS source_diff_hunk:source/frontend/tests/e2e/auth-process.js:17 
+PASS source_diff_hunk:source/frontend/tests/e2e/auth-process.js:25 
+PASS source_diff_hunk:source/frontend/tests/e2e/auth-process.js:50 
+PASS source_diff_hunk:source/skills/_shared/scripts/trainlab/ai.py:5 
+PASS source_diff_hunk:source/skills/_shared/scripts/trainlab/ai.py:240 
+PASS source_diff_hunk:source/skills/_shared/scripts/trainlab/report_service.py:97 
+PASS source_diff_hunk:source/skills/local-web/scripts/cli.py:5 
+PASS source_diff_hunk:source/skills/local-web/scripts/cli.py:36 
+PASS source_diff_hunk:source/skills/local-web/scripts/server.py:2 
+PASS source_diff_hunk:source/skills/local-web/scripts/server.py:141 
+PASS source_diff_hunk:source/skills/local-web/scripts/server.py:153 
+PASS source_diff_hunk:source/tests/e2e_support/auth_transport.py:16 
+PASS source_diff_hunk:source/tests/e2e_support/serve_auth.py:14 
+PASS source_diff_hunk:source/tests/e2e_support/serve_auth.py:22 
+PASS source_diff_hunk:source/tests/e2e_support/serve_auth.py:99 
+PASS source_diff_hunk:source/tests/e2e_support/serve_auth.py:123 
+PASS source_diff_hunk:source/tests/e2e_support/serve_web.py:9 
+PASS source_diff_hunk:source/tests/e2e_support/serve_web.py:154 
+PASS source_15_modified_patch 
+PASS source23_untracked_bytes 
+SUMMARY 84 0
