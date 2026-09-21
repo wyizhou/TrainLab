@@ -1,0 +1,21 @@
+{
+  "time": "2026-09-20T02:00:01.200587+00:00",
+  "url": "https://github.com/wyizhou/agentsmd.git",
+  "head": "37520a5132bb5f84064e04f18d7a4467ebdc9116",
+  "branch": "main",
+  "git": "/var/folders/dh/4th4rwbd7xlg8qslxz62hbjc0000gn/T/trainlab-agentsmd-upstream-3731drur/git",
+  "tree": "/var/folders/dh/4th4rwbd7xlg8qslxz62hbjc0000gn/T/trainlab-agentsmd-upstream-3731drur/tree",
+  "files": {
+    "AGENTS.md": "14c3603e604b8a2f5b2418a5c6f429543a64f2f617a0de7c17424011f4ccdea9",
+    "MEMORY.md": "0f38eee082a214540eff1a0733ba1553ccff70d999e555105c011077997a9d25",
+    "PLAN.md": "5833f72ceb5d2b91f05e1125483aef692d0320572b1420132bf7216442994eb4",
+    "README.md": "7ee2a1296f1d57b0d0e0229df2679063552b7355569e67b3559d4d39ba334e25",
+    "exec-plans/template.md": "47454c0060fd9c581ed22eab128029b55c1ae4a8c5b7a2f0a1485b106b0eb5f3",
+    "references/README.md": "2a8ba436bc6f7d6af50067afa7e1bc00e55aed441afa91df5286f338c64c3daa",
+    "skills/README.md": "3f5f050903733103eddc0e5f4b27ac68799065b1027c09c573e15ed6abd97c38",
+    "skills/web-browser-acceptance/SKILL.md": "a283542667ae5a703e7b6c051f5b97ab7e6d066b2799113b10589fa6fc4f1f93",
+    "subagent-templates/developer.md": "29a885c1826c360ce1c9e1ec353d7fdfbc27757d13a38a6e561e66dfb89c9e5f",
+    "subagent-templates/planner.md": "90153602a3c4e1d801d6b27a223d245d3dcf7ecf1cce463d3d68477a53f759ea",
+    "subagent-templates/validator.md": "9b4ecaff123718acc1a6d6f4631e00518f56ba4dc0282099590853034bba4d7b"
+  }
+}

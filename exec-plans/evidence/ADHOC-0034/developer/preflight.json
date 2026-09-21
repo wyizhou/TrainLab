@@ -1,0 +1,12 @@
+{
+  "result": "passed",
+  "baseline_sha256": "6e78707006789bed4a11ffc4b26ac807c392c36cb0146caadbf173615c9bd751",
+  "baseline_files": 374,
+  "branch": "work/adhoc-0034-agentsmd-parallel",
+  "head": "af09e3f4b7522e9826eb1655bc8a0cf58a79ba4d",
+  "initial_git_status": " M PLAN.md\n?? exec-plans/active/ADHOC-0034-agentsmd-parallel.md\n?? exec-plans/evidence/ADHOC-0034/\n",
+  "upstream_commit": "37520a5132bb5f84064e04f18d7a4467ebdc9116",
+  "upstream_files_verified": 11,
+  "no_staged_files": true,
+  "states_scope": "Only four public baseline-listed tracked placeholders/examples hashed; no private states or original worktree accessed."
+}

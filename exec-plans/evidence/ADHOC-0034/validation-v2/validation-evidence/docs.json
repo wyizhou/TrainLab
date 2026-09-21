@@ -1,0 +1,4749 @@
+{
+  "checks": [
+    {
+      "name": "C34_links_no_new_breaks",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "C34_generic_AI_relative_norms",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "C34_nine_parallel_fields",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "C34_plan_nine_parallel_fields",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "C34_planner_fields",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "C34_developer_fields",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "C34_validator_fields",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Cuse_links_no_new_breaks",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "Cuse_generic_AI_relative_norms",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Cuse_nine_parallel_fields",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Cuse_plan_nine_parallel_fields",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Cuse_planner_fields",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Cuse_developer_fields",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Cuse_validator_fields",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "complete_MIT",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "skill_selfcontained_and_no_browser_for_docs",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "independent_semantic_scenarios15",
+      "pass": true,
+      "detail": null
+    }
+  ],
+  "links": [
+    {
+      "source": "C34/AGENTS.md",
+      "line": 19,
+      "url": "./subagent-templates/planner.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/AGENTS.md",
+      "line": 19,
+      "url": "./subagent-templates/developer.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/AGENTS.md",
+      "line": 19,
+      "url": "./subagent-templates/validator.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 7,
+      "url": "exec-plans/evidence/ADHOC-0034/requirements.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": false
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 7,
+      "url": "exec-plans/completed/ADHOC-0029-agentsmd-upgrade.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": false
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 8,
+      "url": "exec-plans/completed/ADHOC-0030-retire-ci-and-publish.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 9,
+      "url": "exec-plans/completed/ADHOC-0031-local-web-system.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 10,
+      "url": "exec-plans/active/ADHOC-0032-real-garmin-and-web-e2e.md#web-gui认证目标用户最新纠正增量规划已审核",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "heading slug",
+      "inherited": true
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 10,
+      "url": "exec-plans/evidence/ADHOC-0032/auth-maintenance-plan-review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 11,
+      "url": "exec-plans/completed/ADHOC-0031-local-web-system.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 13,
+      "url": "exec-plans/completed/ADHOC-0019-adopt-next-before-api.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 15,
+      "url": "exec-plans/completed/ADHOC-0020-states-activities-decisions.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 16,
+      "url": "exec-plans/active/ADHOC-0023-fit-data-classification-discussion.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 17,
+      "url": "exec-plans/completed/ADHOC-0024-fit-sqlite-parser.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 19,
+      "url": "exec-plans/completed/ADHOC-0025-fit-running-query-tool.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 20,
+      "url": "exec-plans/completed/ADHOC-0027-activity-ai-report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 20,
+      "url": "exec-plans/completed/ADHOC-0028-weekly-ai-report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 31,
+      "url": "PLAN.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 32,
+      "url": "references/garmin-fit-parsing.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 33,
+      "url": "references/longdou.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 34,
+      "url": "exec-plans/active/ADHOC-0018-data-fit-year-cleanup.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 35,
+      "url": "PLAN.md#历史功能与未结束事项非当前执行队列",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "heading slug",
+      "inherited": true
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 39,
+      "url": "exec-plans/completed/ADHOC-0029-agentsmd-upgrade.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 40,
+      "url": "exec-plans/evidence/ADHOC-0032/auth-maintenance-isolation/incident.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 41,
+      "url": "exec-plans/evidence/ADHOC-0032/auth-web-parent/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 42,
+      "url": "exec-plans/evidence/ADHOC-0032/live-garmin-2026-09-18/redacted-summary.json",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 43,
+      "url": "exec-plans/evidence/ADHOC-0032/auth-web-parent/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 44,
+      "url": "exec-plans/evidence/ADHOC-0032/auth-maintenance-parent/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 45,
+      "url": "exec-plans/evidence/ADHOC-0032/auth-maintenance-parent/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 45,
+      "url": "exec-plans/evidence/ADHOC-0032/au32-v1-fix-parent/",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 46,
+      "url": "exec-plans/evidence/ADHOC-0032/restart-developer-report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 46,
+      "url": "exec-plans/evidence/ADHOC-0032/rv-fix-validator-report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 47,
+      "url": "exec-plans/evidence/ADHOC-0032/rv-fix-validator-report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 47,
+      "url": "exec-plans/evidence/ADHOC-0032/parent-acceptance/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 48,
+      "url": "exec-plans/evidence/ADHOC-0031/validator-b7.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 48,
+      "url": "exec-plans/evidence/ADHOC-0031/user-answers-2026-09-18-scheduling.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/MEMORY.md",
+      "line": 48,
+      "url": "exec-plans/evidence/ADHOC-0031/real-check-2026-09-18.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 12,
+      "url": "exec-plans/evidence/ADHOC-0034/requirements.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": false
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 12,
+      "url": "exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": false
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 13,
+      "url": "exec-plans/completed/ADHOC-0029-agentsmd-upgrade.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 14,
+      "url": "exec-plans/completed/ADHOC-0030-retire-ci-and-publish.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 15,
+      "url": "exec-plans/completed/ADHOC-0031-local-web-system.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 16,
+      "url": "exec-plans/active/ADHOC-0032-real-garmin-and-web-e2e.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 17,
+      "url": "exec-plans/active/ADHOC-0023-fit-data-classification-discussion.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 18,
+      "url": "exec-plans/completed/ADHOC-0024-fit-sqlite-parser.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 19,
+      "url": "exec-plans/completed/ADHOC-0025-fit-running-query-tool.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 20,
+      "url": "exec-plans/completed/ADHOC-0026-tools-ai-index.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 21,
+      "url": "exec-plans/completed/ADHOC-0027-activity-ai-report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 22,
+      "url": "exec-plans/completed/ADHOC-0028-weekly-ai-report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 52,
+      "url": "exec-plans/active/ADHOC-0018-data-fit-year-cleanup.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 53,
+      "url": "exec-plans/active/M12-fit-weekly-0001-rebuild.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 54,
+      "url": "exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 55,
+      "url": "exec-plans/completed/ADHOC-0002-repository-root-cleanup.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 56,
+      "url": "exec-plans/completed/ADHOC-0003-generated-and-crash-artifact-cleanup.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 57,
+      "url": "exec-plans/completed/ADHOC-0004-support-directory-classification.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 58,
+      "url": "exec-plans/completed/ADHOC-0005-authentication-health-check.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 59,
+      "url": "exec-plans/completed/ADHOC-0006-garmin-token-sync.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 60,
+      "url": "exec-plans/active/ADHOC-0007-production-backfill-and-monitor.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 61,
+      "url": "exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 62,
+      "url": "exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 63,
+      "url": "exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 64,
+      "url": "exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 65,
+      "url": "exec-plans/completed/ADHOC-0012-current-runtime-tech-debt-audit.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 66,
+      "url": "exec-plans/completed/ADHOC-0013-mcp-and-runtime-adapter-audit.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 67,
+      "url": "exec-plans/completed/ADHOC-0014-m9-local-delivery.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 68,
+      "url": "exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 69,
+      "url": "exec-plans/active/ADHOC-0016-agentforge-governance-update.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 70,
+      "url": "exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 71,
+      "url": "exec-plans/completed/ADHOC-0019-adopt-next-before-api.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 72,
+      "url": "exec-plans/completed/ADHOC-0020-states-activities-decisions.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 73,
+      "url": "exec-plans/completed/ADHOC-0021-garmin-fit-reference.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 74,
+      "url": "exec-plans/completed/ADHOC-0022-longdou-real-fit-reference.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 75,
+      "url": "exec-plans/completed/M1-agentforge-migration-0001-development-harness.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 76,
+      "url": "exec-plans/completed/M1-product-root-0002-source-migration.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 77,
+      "url": "exec-plans/completed/M1-runtime-root-0003-data-switch.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 78,
+      "url": "exec-plans/completed/M10-live-e2e-0001-rolling-week.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 79,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 80,
+      "url": "exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 81,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 82,
+      "url": "exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 83,
+      "url": "exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 84,
+      "url": "exec-plans/completed/M4-source-root-0001-product-consolidation.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 85,
+      "url": "exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 86,
+      "url": "exec-plans/active/M6-activity-evidence-0001-lifecycle-and-preview.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 87,
+      "url": "exec-plans/completed/M7-ai-skills-0001-runtime-closure.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 88,
+      "url": "exec-plans/completed/M8-real-data-0001-ai-coach-closure.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 89,
+      "url": "exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 93,
+      "url": "exec-plans/evidence/ADHOC-0029/history.zip",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 93,
+      "url": "exec-plans/evidence/ADHOC-0029/roadmap-mapping.json",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 97,
+      "url": "exec-plans/active/M12-fit-weekly-0001-rebuild.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 98,
+      "url": "exec-plans/active/M12-fit-weekly-0001-rebuild.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 99,
+      "url": "exec-plans/active/M12-fit-weekly-0001-rebuild.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 100,
+      "url": "exec-plans/active/M12-fit-weekly-0001-rebuild.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 101,
+      "url": "exec-plans/active/M12-fit-weekly-0001-rebuild.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 102,
+      "url": "exec-plans/active/M12-fit-weekly-0001-rebuild.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 103,
+      "url": "exec-plans/completed/M1-agentforge-migration-0001-development-harness.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 104,
+      "url": "exec-plans/completed/M1-product-root-0002-source-migration.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 105,
+      "url": "exec-plans/completed/M1-runtime-root-0003-data-switch.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 106,
+      "url": "exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 107,
+      "url": "exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 108,
+      "url": "exec-plans/completed/M4-source-root-0001-product-consolidation.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 109,
+      "url": "exec-plans/completed/M4-source-root-0001-product-consolidation.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 110,
+      "url": "exec-plans/completed/M4-source-root-0001-product-consolidation.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 111,
+      "url": "exec-plans/completed/M4-source-root-0001-product-consolidation.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 112,
+      "url": "exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 113,
+      "url": "exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 114,
+      "url": "exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 115,
+      "url": "exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 116,
+      "url": "exec-plans/active/M6-activity-evidence-0001-lifecycle-and-preview.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 117,
+      "url": "exec-plans/active/M6-activity-evidence-0001-lifecycle-and-preview.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 118,
+      "url": "exec-plans/active/M6-activity-evidence-0001-lifecycle-and-preview.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 119,
+      "url": "exec-plans/active/M6-activity-evidence-0001-lifecycle-and-preview.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 120,
+      "url": "exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 121,
+      "url": "exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 122,
+      "url": "exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 123,
+      "url": "exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 124,
+      "url": "exec-plans/completed/M7-ai-skills-0001-runtime-closure.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 125,
+      "url": "exec-plans/completed/M7-ai-skills-0001-runtime-closure.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 126,
+      "url": "exec-plans/completed/M7-ai-skills-0001-runtime-closure.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 127,
+      "url": "exec-plans/completed/M7-ai-skills-0001-runtime-closure.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 128,
+      "url": "exec-plans/completed/M7-ai-skills-0001-runtime-closure.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 129,
+      "url": "exec-plans/completed/M8-real-data-0001-ai-coach-closure.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 130,
+      "url": "exec-plans/completed/M8-real-data-0001-ai-coach-closure.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 131,
+      "url": "exec-plans/completed/M8-real-data-0001-ai-coach-closure.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 132,
+      "url": "exec-plans/completed/M8-real-data-0001-ai-coach-closure.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 133,
+      "url": "exec-plans/completed/M8-real-data-0001-ai-coach-closure.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 134,
+      "url": "exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 135,
+      "url": "exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 136,
+      "url": "exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 137,
+      "url": "exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 138,
+      "url": "exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 139,
+      "url": "exec-plans/completed/M10-live-e2e-0001-rolling-week.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 140,
+      "url": "exec-plans/completed/M10-live-e2e-0001-rolling-week.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 141,
+      "url": "exec-plans/completed/M10-live-e2e-0001-rolling-week.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 142,
+      "url": "exec-plans/completed/M10-live-e2e-0001-rolling-week.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 143,
+      "url": "exec-plans/completed/M10-live-e2e-0001-rolling-week.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 144,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 145,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 146,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 147,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 148,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 149,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 150,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 151,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 152,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 153,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 154,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 155,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 156,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 157,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 158,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 159,
+      "url": "exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 160,
+      "url": "exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 161,
+      "url": "exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 162,
+      "url": "exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 166,
+      "url": "exec-plans/tech-debt-tracker.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/PLAN.md",
+      "line": 170,
+      "url": "exec-plans/completed/ADHOC-0029-agentsmd-upgrade.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/README.md",
+      "line": 32,
+      "url": "./AGENTS.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/README.md",
+      "line": 33,
+      "url": "./PLAN.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/README.md",
+      "line": 34,
+      "url": "./exec-plans/template.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/README.md",
+      "line": 35,
+      "url": "./MEMORY.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/README.md",
+      "line": 36,
+      "url": "./subagent-templates/planner.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/README.md",
+      "line": 37,
+      "url": "./subagent-templates/developer.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/README.md",
+      "line": 38,
+      "url": "./subagent-templates/validator.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/README.md",
+      "line": 39,
+      "url": "./references/README.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/README.md",
+      "line": 40,
+      "url": "./skills/README.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/README.md",
+      "line": 41,
+      "url": "./README.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/README.md",
+      "line": 86,
+      "url": "./AGENTS.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+      "line": 7,
+      "url": "../../PLAN.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+      "line": 8,
+      "url": "../evidence/ADHOC-0034/requirements.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+      "line": 8,
+      "url": "../evidence/ADHOC-0034/planner.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+      "line": 8,
+      "url": "../evidence/ADHOC-0034/plan-review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+      "line": 20,
+      "url": "../evidence/ADHOC-0034/planning-preservation.json",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+      "line": 21,
+      "url": "../evidence/ADHOC-0034/developer-intake.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+      "line": 22,
+      "url": "../evidence/ADHOC-0034/handoff-v2.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+      "line": 23,
+      "url": "../evidence/ADHOC-0034/validation-v1/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+      "line": 23,
+      "url": "../evidence/ADHOC-0034/validation-v1/parent-review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+      "line": 31,
+      "url": "../evidence/ADHOC-0034/worktree.json",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+      "line": 53,
+      "url": "../evidence/ADHOC-0034/validation-v1/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+      "line": 56,
+      "url": "../evidence/ADHOC-0034/prepare-first-failure.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+      "line": 57,
+      "url": "../evidence/ADHOC-0034/planner-evidence/first-check-failure.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+      "line": 57,
+      "url": "../evidence/ADHOC-0034/planner-evidence/check-results.json",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "C34/references/README.md",
+      "line": 8,
+      "url": "garmin-fit-parsing.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": false
+    },
+    {
+      "source": "C34/references/README.md",
+      "line": 9,
+      "url": "longdou.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": false
+    },
+    {
+      "source": "C34/references/README.md",
+      "line": 11,
+      "url": "../PLAN.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": false
+    },
+    {
+      "source": "C34/skills/README.md",
+      "line": 6,
+      "url": "./web-browser-acceptance/SKILL.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": false
+    },
+    {
+      "source": "C34/skills/README.md",
+      "line": 8,
+      "url": "../PLAN.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/AGENTS.md",
+      "line": 19,
+      "url": "./subagent-templates/planner.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/AGENTS.md",
+      "line": 19,
+      "url": "./subagent-templates/developer.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/AGENTS.md",
+      "line": 19,
+      "url": "./subagent-templates/validator.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 7,
+      "url": "exec-plans/evidence/ADHOC-0033/requirements.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 8,
+      "url": "exec-plans/evidence/ADHOC-0034/requirements.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": false
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 8,
+      "url": "exec-plans/completed/ADHOC-0029-agentsmd-upgrade.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": false
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 9,
+      "url": "exec-plans/completed/ADHOC-0030-retire-ci-and-publish.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 10,
+      "url": "exec-plans/completed/ADHOC-0031-local-web-system.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 11,
+      "url": "exec-plans/completed/ADHOC-0032-real-garmin-and-web-e2e.md#web-gui认证目标用户最新纠正增量规划已审核",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "heading slug",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 11,
+      "url": "exec-plans/evidence/ADHOC-0032/auth-maintenance-plan-review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 12,
+      "url": "exec-plans/completed/ADHOC-0031-local-web-system.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 14,
+      "url": "exec-plans/completed/ADHOC-0019-adopt-next-before-api.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 16,
+      "url": "exec-plans/completed/ADHOC-0020-states-activities-decisions.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 17,
+      "url": "exec-plans/active/ADHOC-0023-fit-data-classification-discussion.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 18,
+      "url": "exec-plans/completed/ADHOC-0024-fit-sqlite-parser.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 20,
+      "url": "exec-plans/completed/ADHOC-0025-fit-running-query-tool.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 21,
+      "url": "exec-plans/completed/ADHOC-0027-activity-ai-report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 21,
+      "url": "exec-plans/completed/ADHOC-0028-weekly-ai-report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 32,
+      "url": "PLAN.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 33,
+      "url": "references/garmin-fit-parsing.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 34,
+      "url": "references/longdou.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 35,
+      "url": "exec-plans/active/ADHOC-0018-data-fit-year-cleanup.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 36,
+      "url": "PLAN.md#历史功能与未结束事项非当前执行队列",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "heading slug",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 40,
+      "url": "exec-plans/completed/ADHOC-0029-agentsmd-upgrade.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 41,
+      "url": "exec-plans/evidence/ADHOC-0033/p01-parent-acceptance/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 41,
+      "url": "exec-plans/evidence/ADHOC-0033/p02-parent-acceptance/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 42,
+      "url": "exec-plans/evidence/ADHOC-0033/p01-revalidator-r2/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 42,
+      "url": "exec-plans/evidence/ADHOC-0033/p02-parent-acceptance/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 43,
+      "url": "exec-plans/evidence/ADHOC-0033/p02-parent-acceptance/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 44,
+      "url": "exec-plans/evidence/ADHOC-0032/auth-maintenance-isolation/incident.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 45,
+      "url": "exec-plans/evidence/ADHOC-0032/auth-web-parent/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 46,
+      "url": "exec-plans/evidence/ADHOC-0032/live-garmin-2026-09-18/redacted-summary.json",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 47,
+      "url": "exec-plans/evidence/ADHOC-0032/auth-web-parent/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 48,
+      "url": "exec-plans/evidence/ADHOC-0032/auth-maintenance-parent/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 49,
+      "url": "exec-plans/evidence/ADHOC-0032/auth-maintenance-parent/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 49,
+      "url": "exec-plans/evidence/ADHOC-0032/au32-v1-fix-parent/",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 50,
+      "url": "exec-plans/evidence/ADHOC-0032/restart-developer-report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 50,
+      "url": "exec-plans/evidence/ADHOC-0032/rv-fix-validator-report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 51,
+      "url": "exec-plans/evidence/ADHOC-0032/rv-fix-validator-report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 51,
+      "url": "exec-plans/evidence/ADHOC-0032/parent-acceptance/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 52,
+      "url": "exec-plans/evidence/ADHOC-0031/validator-b7.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 52,
+      "url": "exec-plans/evidence/ADHOC-0031/user-answers-2026-09-18-scheduling.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/MEMORY.md",
+      "line": 52,
+      "url": "exec-plans/evidence/ADHOC-0031/real-check-2026-09-18.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 10,
+      "url": "exec-plans/evidence/ADHOC-0033/requirements.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 14,
+      "url": "exec-plans/completed/ADHOC-0029-agentsmd-upgrade.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 15,
+      "url": "exec-plans/completed/ADHOC-0030-retire-ci-and-publish.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 16,
+      "url": "exec-plans/completed/ADHOC-0031-local-web-system.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 17,
+      "url": "exec-plans/completed/ADHOC-0032-real-garmin-and-web-e2e.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 18,
+      "url": "exec-plans/evidence/ADHOC-0034/requirements.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 18,
+      "url": "exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 19,
+      "url": "exec-plans/active/ADHOC-0033-ai-coach.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 20,
+      "url": "exec-plans/active/ADHOC-0023-fit-data-classification-discussion.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 21,
+      "url": "exec-plans/completed/ADHOC-0024-fit-sqlite-parser.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 22,
+      "url": "exec-plans/completed/ADHOC-0025-fit-running-query-tool.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 23,
+      "url": "exec-plans/completed/ADHOC-0026-tools-ai-index.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 24,
+      "url": "exec-plans/completed/ADHOC-0027-activity-ai-report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 25,
+      "url": "exec-plans/completed/ADHOC-0028-weekly-ai-report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 29,
+      "url": "exec-plans/evidence/ADHOC-0034/plan-review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 30,
+      "url": "exec-plans/active/ADHOC-0033-ai-coach.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 32,
+      "url": "exec-plans/active/ADHOC-0033-ai-coach.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 58,
+      "url": "exec-plans/active/ADHOC-0018-data-fit-year-cleanup.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 59,
+      "url": "exec-plans/active/M12-fit-weekly-0001-rebuild.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 60,
+      "url": "exec-plans/completed/ADHOC-0001-agentforge-0.4.2-upgrade.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 61,
+      "url": "exec-plans/completed/ADHOC-0002-repository-root-cleanup.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 62,
+      "url": "exec-plans/completed/ADHOC-0003-generated-and-crash-artifact-cleanup.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 63,
+      "url": "exec-plans/completed/ADHOC-0004-support-directory-classification.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 64,
+      "url": "exec-plans/completed/ADHOC-0005-authentication-health-check.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 65,
+      "url": "exec-plans/completed/ADHOC-0006-garmin-token-sync.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 66,
+      "url": "exec-plans/active/ADHOC-0007-production-backfill-and-monitor.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 67,
+      "url": "exec-plans/completed/ADHOC-0008-runtime-bundle-and-repository-simplification.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 68,
+      "url": "exec-plans/completed/ADHOC-0009-source-data-provenance-audit.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 69,
+      "url": "exec-plans/completed/ADHOC-0010-raw-directory-taxonomy-audit.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 70,
+      "url": "exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 71,
+      "url": "exec-plans/completed/ADHOC-0012-current-runtime-tech-debt-audit.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 72,
+      "url": "exec-plans/completed/ADHOC-0013-mcp-and-runtime-adapter-audit.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 73,
+      "url": "exec-plans/completed/ADHOC-0014-m9-local-delivery.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 74,
+      "url": "exec-plans/completed/ADHOC-0015-agentforge-0.4.4-upgrade.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 75,
+      "url": "exec-plans/active/ADHOC-0016-agentforge-governance-update.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 76,
+      "url": "exec-plans/completed/ADHOC-0017-consolidate-pre-api-baseline.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 77,
+      "url": "exec-plans/completed/ADHOC-0019-adopt-next-before-api.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 78,
+      "url": "exec-plans/completed/ADHOC-0020-states-activities-decisions.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 79,
+      "url": "exec-plans/completed/ADHOC-0021-garmin-fit-reference.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 80,
+      "url": "exec-plans/completed/ADHOC-0022-longdou-real-fit-reference.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 81,
+      "url": "exec-plans/completed/M1-agentforge-migration-0001-development-harness.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 82,
+      "url": "exec-plans/completed/M1-product-root-0002-source-migration.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 83,
+      "url": "exec-plans/completed/M1-runtime-root-0003-data-switch.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 84,
+      "url": "exec-plans/completed/M10-live-e2e-0001-rolling-week.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 85,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 86,
+      "url": "exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 87,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 88,
+      "url": "exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 89,
+      "url": "exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 90,
+      "url": "exec-plans/completed/M4-source-root-0001-product-consolidation.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 91,
+      "url": "exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 92,
+      "url": "exec-plans/active/M6-activity-evidence-0001-lifecycle-and-preview.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 93,
+      "url": "exec-plans/completed/M7-ai-skills-0001-runtime-closure.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 94,
+      "url": "exec-plans/completed/M8-real-data-0001-ai-coach-closure.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 95,
+      "url": "exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 99,
+      "url": "exec-plans/evidence/ADHOC-0029/history.zip",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 99,
+      "url": "exec-plans/evidence/ADHOC-0029/roadmap-mapping.json",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 103,
+      "url": "exec-plans/active/M12-fit-weekly-0001-rebuild.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 104,
+      "url": "exec-plans/active/M12-fit-weekly-0001-rebuild.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 105,
+      "url": "exec-plans/active/M12-fit-weekly-0001-rebuild.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 106,
+      "url": "exec-plans/active/M12-fit-weekly-0001-rebuild.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 107,
+      "url": "exec-plans/active/M12-fit-weekly-0001-rebuild.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 108,
+      "url": "exec-plans/active/M12-fit-weekly-0001-rebuild.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 109,
+      "url": "exec-plans/completed/M1-agentforge-migration-0001-development-harness.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 110,
+      "url": "exec-plans/completed/M1-product-root-0002-source-migration.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 111,
+      "url": "exec-plans/completed/M1-runtime-root-0003-data-switch.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 112,
+      "url": "exec-plans/completed/M2-agentforge-root-layout-0001-project-migration.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 113,
+      "url": "exec-plans/completed/M3-test-fixtures-0001-synthetic-fit-migration.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 114,
+      "url": "exec-plans/completed/M4-source-root-0001-product-consolidation.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 115,
+      "url": "exec-plans/completed/M4-source-root-0001-product-consolidation.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 116,
+      "url": "exec-plans/completed/M4-source-root-0001-product-consolidation.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 117,
+      "url": "exec-plans/completed/M4-source-root-0001-product-consolidation.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 118,
+      "url": "exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 119,
+      "url": "exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 120,
+      "url": "exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 121,
+      "url": "exec-plans/completed/M5-adaptive-coaching-0001-profile-and-preview.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 122,
+      "url": "exec-plans/active/M6-activity-evidence-0001-lifecycle-and-preview.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 123,
+      "url": "exec-plans/active/M6-activity-evidence-0001-lifecycle-and-preview.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 124,
+      "url": "exec-plans/active/M6-activity-evidence-0001-lifecycle-and-preview.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 125,
+      "url": "exec-plans/active/M6-activity-evidence-0001-lifecycle-and-preview.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 126,
+      "url": "exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 127,
+      "url": "exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 128,
+      "url": "exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 129,
+      "url": "exec-plans/completed/ADHOC-0011-state-raw-retention-and-tuning.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 130,
+      "url": "exec-plans/completed/M7-ai-skills-0001-runtime-closure.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 131,
+      "url": "exec-plans/completed/M7-ai-skills-0001-runtime-closure.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 132,
+      "url": "exec-plans/completed/M7-ai-skills-0001-runtime-closure.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 133,
+      "url": "exec-plans/completed/M7-ai-skills-0001-runtime-closure.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 134,
+      "url": "exec-plans/completed/M7-ai-skills-0001-runtime-closure.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 135,
+      "url": "exec-plans/completed/M8-real-data-0001-ai-coach-closure.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 136,
+      "url": "exec-plans/completed/M8-real-data-0001-ai-coach-closure.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 137,
+      "url": "exec-plans/completed/M8-real-data-0001-ai-coach-closure.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 138,
+      "url": "exec-plans/completed/M8-real-data-0001-ai-coach-closure.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 139,
+      "url": "exec-plans/completed/M8-real-data-0001-ai-coach-closure.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 140,
+      "url": "exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 141,
+      "url": "exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 142,
+      "url": "exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 143,
+      "url": "exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 144,
+      "url": "exec-plans/completed/M9-garmin-live-0001-bounded-daily-sync.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 145,
+      "url": "exec-plans/completed/M10-live-e2e-0001-rolling-week.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 146,
+      "url": "exec-plans/completed/M10-live-e2e-0001-rolling-week.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 147,
+      "url": "exec-plans/completed/M10-live-e2e-0001-rolling-week.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 148,
+      "url": "exec-plans/completed/M10-live-e2e-0001-rolling-week.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 149,
+      "url": "exec-plans/completed/M10-live-e2e-0001-rolling-week.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 150,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 151,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 152,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 153,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 154,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 155,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 156,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 157,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 158,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 159,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 160,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 161,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 162,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 163,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 164,
+      "url": "exec-plans/completed/M11-email-presentation-0001-readable-cid-r01.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 165,
+      "url": "exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 166,
+      "url": "exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 167,
+      "url": "exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 168,
+      "url": "exec-plans/active/M11-email-presentation-0001-readable-cid-r02.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 172,
+      "url": "exec-plans/tech-debt-tracker.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/PLAN.md",
+      "line": 176,
+      "url": "exec-plans/completed/ADHOC-0029-agentsmd-upgrade.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/README.md",
+      "line": 32,
+      "url": "./AGENTS.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/README.md",
+      "line": 33,
+      "url": "./PLAN.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/README.md",
+      "line": 34,
+      "url": "./exec-plans/template.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/README.md",
+      "line": 35,
+      "url": "./MEMORY.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/README.md",
+      "line": 36,
+      "url": "./subagent-templates/planner.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/README.md",
+      "line": 37,
+      "url": "./subagent-templates/developer.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/README.md",
+      "line": 38,
+      "url": "./subagent-templates/validator.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/README.md",
+      "line": 39,
+      "url": "./references/README.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/README.md",
+      "line": 40,
+      "url": "./skills/README.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/README.md",
+      "line": 41,
+      "url": "./README.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/README.md",
+      "line": 86,
+      "url": "./AGENTS.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 14,
+      "url": "../../PLAN.md#功能总览",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "heading slug",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 15,
+      "url": "../evidence/ADHOC-0033/requirements.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 15,
+      "url": "../evidence/ADHOC-0033/planner-initial.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 15,
+      "url": "../evidence/ADHOC-0033/plan-review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 15,
+      "url": "../evidence/ADHOC-0033/p02-schema-planner.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 15,
+      "url": "../evidence/ADHOC-0033/p02-schema-review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 31,
+      "url": "../evidence/ADHOC-0033/p01-parent-acceptance/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 34,
+      "url": "../evidence/ADHOC-0033/p01-revalidator-r2/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 34,
+      "url": "../evidence/ADHOC-0033/p01-parent-acceptance/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 35,
+      "url": "../evidence/ADHOC-0033/p02-parent-acceptance/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 38,
+      "url": "../evidence/ADHOC-0033/p02-parent-acceptance/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 39,
+      "url": "../evidence/ADHOC-0033/p03-parent-acceptance/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 40,
+      "url": "../evidence/ADHOC-0033/p03-v01-repair-r3-parent/review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 40,
+      "url": "../evidence/ADHOC-0033/p03-parent-acceptance/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 41,
+      "url": "../evidence/ADHOC-0033/p03-i01-validator-infra-failure/incident.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 41,
+      "url": "../evidence/ADHOC-0033/p03-v01-revalidation/parent-review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 41,
+      "url": "../evidence/ADHOC-0033/p03-parent-acceptance/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 42,
+      "url": "../evidence/ADHOC-0033/p04-tool-schema-observed/triage.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 43,
+      "url": "../evidence/ADHOC-0033/p04-parent-acceptance/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 43,
+      "url": "../evidence/ADHOC-0033/p04-tool-schema-repair-r1-parent/review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 44,
+      "url": "../evidence/ADHOC-0033/p04-tool-schema-validator-task.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 44,
+      "url": "../evidence/ADHOC-0033/p04-tool-schema-validation/freeze.json",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 44,
+      "url": "../evidence/ADHOC-0033/p04-tool-schema-validation/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 44,
+      "url": "../evidence/ADHOC-0033/p04-tool-schema-validation/parent-review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 45,
+      "url": "../evidence/ADHOC-0033/p04-query-stop-validation/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 45,
+      "url": "../evidence/ADHOC-0033/p04-query-stop-validation/parent-review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 46,
+      "url": "../evidence/ADHOC-0033/p04-query-stop-planning/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 46,
+      "url": "../evidence/ADHOC-0033/p04-query-stop-planning/parent-review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 47,
+      "url": "../evidence/ADHOC-0033/p04-stop-recovery/approval.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 47,
+      "url": "../evidence/ADHOC-0033/p04-stop-recovery/planner-task.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 47,
+      "url": "../evidence/ADHOC-0033/p04-stop-recovery/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 47,
+      "url": "../evidence/ADHOC-0033/p04-stop-recovery/plan-review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 47,
+      "url": "../evidence/ADHOC-0033/p04-stop-plan-adjustment/plan-review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 48,
+      "url": "../evidence/ADHOC-0033/p04-stop-plan-adjustment/task.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 48,
+      "url": "../evidence/ADHOC-0033/p04-stop-plan-adjustment/plan-review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 57,
+      "url": "../evidence/ADHOC-0033/p04-stop-plan-adjustment/plan-review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 58,
+      "url": "../evidence/ADHOC-0033/p04-stop-recovery/plan-review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 59,
+      "url": "../evidence/ADHOC-0033/p04-stop-recovery/approval.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 60,
+      "url": "../evidence/ADHOC-0033/p04-query-stop-planning/parent-review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 61,
+      "url": "../evidence/ADHOC-0033/p04-query-stop-validation/parent-review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 62,
+      "url": "../evidence/ADHOC-0033/p04-query-stop-validation/supervisor-decision-01.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 63,
+      "url": "../evidence/ADHOC-0033/p04-query-stop-validation/progress-02.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 64,
+      "url": "../evidence/ADHOC-0033/p04-query-stop-validation/progress-01.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 65,
+      "url": "../evidence/ADHOC-0033/p04-query-stop-validation/attention-01.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 66,
+      "url": "../evidence/ADHOC-0033/p04-job-query-stop-observed/triage.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 67,
+      "url": "../evidence/ADHOC-0033/p04-parent-acceptance/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 67,
+      "url": "../evidence/ADHOC-0033/p04-real-acceptance/post-schema-install.json",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 68,
+      "url": "../evidence/ADHOC-0033/p04-tool-schema-validation/parent-review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 69,
+      "url": "../evidence/ADHOC-0033/p04-tool-schema-validation/attention-01.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 70,
+      "url": "../evidence/ADHOC-0033/p04-tool-schema-repair-r1-parent/review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 70,
+      "url": "../evidence/ADHOC-0033/p04-tool-schema-validation/dispatch.json",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 71,
+      "url": "../evidence/ADHOC-0033/p04-tool-schema-observed/triage.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 71,
+      "url": "../evidence/ADHOC-0033/p04-tool-schema-repair-task.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 72,
+      "url": "../evidence/ADHOC-0033/p04-real-acceptance/pre-real-checkpoint.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 73,
+      "url": "../evidence/ADHOC-0033/p03-parent-acceptance/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 74,
+      "url": "../evidence/ADHOC-0033/p03-v01-revalidation/parent-review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 75,
+      "url": "../evidence/ADHOC-0033/p03-v01-revalidation/progress-01.json",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 76,
+      "url": "../evidence/ADHOC-0033/p03-v01-revalidation/attention-01.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 77,
+      "url": "../evidence/ADHOC-0033/p03-v01-repair-r3-parent/review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 77,
+      "url": "../evidence/ADHOC-0033/p03-v01-revalidator-task.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 77,
+      "url": "../evidence/ADHOC-0033/p03-v01-revalidation/freeze.json",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 77,
+      "url": "../evidence/ADHOC-0033/p03-v01-revalidation/dispatch.json",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 78,
+      "url": "../evidence/ADHOC-0033/p03-v01-resume-20260919/progress-01.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 79,
+      "url": "../evidence/ADHOC-0033/p03-v01-resume-20260919/attention-01.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 80,
+      "url": "../evidence/ADHOC-0033/p03-v01-resume-20260919/recheck.json",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 80,
+      "url": "../evidence/ADHOC-0033/p03-v01-repair-r3-task.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 80,
+      "url": "../evidence/ADHOC-0033/p03-v01-resume-20260919/dispatch.json",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 83,
+      "url": "../evidence/ADHOC-0033/p03-full-validation/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 83,
+      "url": "../evidence/ADHOC-0033/p03-full-validation/parent-review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 83,
+      "url": "../evidence/ADHOC-0033/p03-v01-repair-task.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 83,
+      "url": "../evidence/ADHOC-0033/p03-v01-repair-dispatch.json",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 83,
+      "url": "../evidence/ADHOC-0033/p03-v01-repair-infra-stop/incident.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 83,
+      "url": "../evidence/ADHOC-0033/p03-v01-repair-r2-task.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 83,
+      "url": "../evidence/ADHOC-0033/p03-v01-repair-r2-dispatch.json",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 84,
+      "url": "../evidence/ADHOC-0033/p03-full-validation/interim-ui-observation.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 85,
+      "url": "../evidence/ADHOC-0033/p03-i02-parent/review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 85,
+      "url": "../evidence/ADHOC-0033/p03-full-validation/freeze.json",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 85,
+      "url": "../evidence/ADHOC-0033/p03-full-validator-task.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 85,
+      "url": "../evidence/ADHOC-0033/p03-full-validation/dispatch.json",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 86,
+      "url": "../evidence/ADHOC-0033/p03-repair-r1-parent/incident-and-handoff.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 86,
+      "url": "../evidence/ADHOC-0033/p03-i02-repair-task.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 86,
+      "url": "../evidence/ADHOC-0033/p03-i02-repair-dispatch.json",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 89,
+      "url": "../evidence/ADHOC-0033/p03-i02-observed/parent-triage.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 90,
+      "url": "../evidence/ADHOC-0033/p03-i01-observed/parent-triage.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 90,
+      "url": "../evidence/ADHOC-0033/p03-repair-r1-task.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 90,
+      "url": "../evidence/ADHOC-0033/p03-repair-r1-dispatch.json",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 92,
+      "url": "../evidence/ADHOC-0033/p03-baseline.json",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 93,
+      "url": "../evidence/ADHOC-0033/p02-parent-review/repair-r2-freeze.json",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 94,
+      "url": "../evidence/ADHOC-0033/p03-parent-review/handoff-review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 95,
+      "url": "../evidence/ADHOC-0033/p03-resume/recovery.json",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 95,
+      "url": "../evidence/ADHOC-0033/p03-resume/dispatch.json",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 95,
+      "url": "../evidence/ADHOC-0033/p03-resume/attention-01.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 96,
+      "url": "../evidence/ADHOC-0033/p03-i01-validator-infra-failure/incident.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 96,
+      "url": "../evidence/ADHOC-0033/p03-i01-rerun-dispatch.json",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 97,
+      "url": "../evidence/ADHOC-0033/p03-parent-review/I01-triage.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 98,
+      "url": "../evidence/ADHOC-0033/p02-schema-review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 108,
+      "url": "../evidence/ADHOC-0033/p04-stop-recovery/plan-review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 108,
+      "url": "../evidence/ADHOC-0033/p04-stop-plan-adjustment/plan-review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 109,
+      "url": "../evidence/ADHOC-0033/p04-query-stop-planning/parent-review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 110,
+      "url": "../evidence/ADHOC-0033/p04-tool-schema-observed/triage.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 110,
+      "url": "../evidence/ADHOC-0033/p04-real-acceptance/provider-diagnostic.json",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 111,
+      "url": "../evidence/ADHOC-0033/p03-i02-observed/parent-triage.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 112,
+      "url": "../evidence/ADHOC-0033/p03-full-validation/parent-review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 112,
+      "url": "../evidence/ADHOC-0033/p03-v01-repair-r3-task.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 112,
+      "url": "../evidence/ADHOC-0033/p03-v01-revalidation/parent-review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 113,
+      "url": "../evidence/ADHOC-0033/p03-parent-review/pending-request-review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 113,
+      "url": "../evidence/ADHOC-0033/p03-full-validation/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 114,
+      "url": "../evidence/ADHOC-0033/p03-i01-observed/parent-triage.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 115,
+      "url": "../evidence/ADHOC-0033/p01-developer/failures.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 126,
+      "url": "../evidence/ADHOC-0033/p01-parent-review/dispatch-recovery.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 127,
+      "url": "../evidence/ADHOC-0033/p04-query-stop-planning/parent-review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 130,
+      "url": "../evidence/ADHOC-0033/p04-query-stop-validation/supervisor-decision-01.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 130,
+      "url": "../evidence/ADHOC-0033/p04-query-stop-validation/parent-review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 131,
+      "url": "../evidence/ADHOC-0033/p04-query-stop-validation/npm-failure-01/parent-check.json",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 132,
+      "url": "../evidence/ADHOC-0033/p03-repair-r1-parent/incident-and-handoff.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 132,
+      "url": "../evidence/ADHOC-0033/p04-query-stop-validation/progress-01.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0033-ai-coach.md",
+      "line": 133,
+      "url": "../evidence/ADHOC-0033/p03-i01-validator-infra-failure/incident.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+      "line": 7,
+      "url": "../../PLAN.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+      "line": 8,
+      "url": "../evidence/ADHOC-0034/requirements.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+      "line": 8,
+      "url": "../evidence/ADHOC-0034/planner.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+      "line": 8,
+      "url": "../evidence/ADHOC-0034/plan-review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+      "line": 20,
+      "url": "../evidence/ADHOC-0034/planning-preservation.json",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+      "line": 21,
+      "url": "../evidence/ADHOC-0034/developer-intake.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+      "line": 22,
+      "url": "../evidence/ADHOC-0034/handoff-v2.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+      "line": 23,
+      "url": "../evidence/ADHOC-0034/validation-v1/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+      "line": 23,
+      "url": "../evidence/ADHOC-0034/validation-v1/parent-review.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+      "line": 31,
+      "url": "../evidence/ADHOC-0034/worktree.json",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+      "line": 53,
+      "url": "../evidence/ADHOC-0034/validation-v1/report.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+      "line": 56,
+      "url": "../evidence/ADHOC-0034/prepare-first-failure.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+      "line": 57,
+      "url": "../evidence/ADHOC-0034/planner-evidence/first-check-failure.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+      "line": 57,
+      "url": "../evidence/ADHOC-0034/planner-evidence/check-results.json",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    },
+    {
+      "source": "Cuse/references/README.md",
+      "line": 8,
+      "url": "garmin-fit-parsing.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": false
+    },
+    {
+      "source": "Cuse/references/README.md",
+      "line": 9,
+      "url": "longdou.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": false
+    },
+    {
+      "source": "Cuse/references/README.md",
+      "line": 11,
+      "url": "../PLAN.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": false
+    },
+    {
+      "source": "Cuse/skills/README.md",
+      "line": 6,
+      "url": "./web-browser-acceptance/SKILL.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": false
+    },
+    {
+      "source": "Cuse/skills/README.md",
+      "line": 8,
+      "url": "../PLAN.md",
+      "exists_inside_combo": true,
+      "anchor_ok": true,
+      "anchor_method": "none",
+      "inherited": true
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "N01",
+      "input": "开发A时B规划输入已齐，A尚未合并",
+      "expected": "允许先规划B",
+      "actual": "规则明确支持预期",
+      "AGENTS_line": 23,
+      "method": "独立人工逐场景判读；非调度器运行",
+      "pass": true
+    },
+    {
+      "id": "N02",
+      "input": "A冻结实际差异/依赖，B已主审且写入资源齐",
+      "expected": "允许验证A并开发B",
+      "actual": "规则明确支持预期",
+      "AGENTS_line": 22,
+      "method": "独立人工逐场景判读；非调度器运行",
+      "pass": true
+    },
+    {
+      "id": "N03",
+      "input": "独立功能在独立目录分支，接口及测试资源就绪",
+      "expected": "允许多个Developer",
+      "actual": "规则明确支持预期",
+      "AGENTS_line": 72,
+      "method": "独立人工逐场景判读；非调度器运行",
+      "pass": true
+    },
+    {
+      "id": "E01",
+      "input": "同目录两人分文件写",
+      "expected": "拒绝",
+      "actual": "规则明确支持预期",
+      "AGENTS_line": 71,
+      "method": "独立人工逐场景判读；非调度器运行",
+      "pass": true
+    },
+    {
+      "id": "E02",
+      "input": "独立目录但共用数据库/账号/端口冲突",
+      "expected": "暂停或串行受影响项",
+      "actual": "规则明确支持预期",
+      "AGENTS_line": 72,
+      "method": "独立人工逐场景判读；非调度器运行",
+      "pass": true
+    },
+    {
+      "id": "E03",
+      "input": "B未审核就开发",
+      "expected": "拒绝",
+      "actual": "规则明确支持预期",
+      "AGENTS_line": 23,
+      "method": "独立人工逐场景判读；非调度器运行",
+      "pass": true
+    },
+    {
+      "id": "E04",
+      "input": "规划B所需接口未确定",
+      "expected": "等待必要输入",
+      "actual": "规则明确支持预期",
+      "AGENTS_line": 23,
+      "method": "独立人工逐场景判读；非调度器运行",
+      "pass": true
+    },
+    {
+      "id": "E05",
+      "input": "共享文件在两分支各自修改",
+      "expected": "拒绝；唯一归属",
+      "actual": "规则明确支持预期",
+      "AGENTS_line": 73,
+      "method": "独立人工逐场景判读；非调度器运行",
+      "pass": true
+    },
+    {
+      "id": "E06",
+      "input": "只提供分支名或仍可写原目录作冻结",
+      "expected": "拒绝",
+      "actual": "规则明确支持预期",
+      "AGENTS_line": 60,
+      "method": "独立人工逐场景判读；非调度器运行",
+      "pass": true
+    },
+    {
+      "id": "E07",
+      "input": "各单体通过或无文本冲突即交付组合",
+      "expected": "拒绝；组合独立及主验收",
+      "actual": "规则明确支持预期",
+      "AGENTS_line": 77,
+      "method": "独立人工逐场景判读；非调度器运行",
+      "pass": true
+    },
+    {
+      "id": "B01",
+      "input": "共享责任方修改后消费方继续旧确认",
+      "expected": "必须交接并重核",
+      "actual": "规则明确支持预期",
+      "AGENTS_line": 73,
+      "method": "独立人工逐场景判读；非调度器运行",
+      "pass": true
+    },
+    {
+      "id": "B02",
+      "input": "冻结后依赖变动仍沿旧证据",
+      "expected": "停止受影响检查并重固定/全新复验",
+      "actual": "规则明确支持预期",
+      "AGENTS_line": 61,
+      "method": "独立人工逐场景判读；非调度器运行",
+      "pass": true
+    },
+    {
+      "id": "B03",
+      "input": "A失败但独立B条件满足",
+      "expected": "仅停受影响链；不绕停止线",
+      "actual": "规则明确支持预期",
+      "AGENTS_line": 67,
+      "method": "独立人工逐场景判读；非调度器运行",
+      "pass": true
+    },
+    {
+      "id": "B04",
+      "input": "两种实质修法仍失败或三轮不收敛",
+      "expected": "停并由真实用户决定",
+      "actual": "规则明确支持预期",
+      "AGENTS_line": 65,
+      "method": "独立人工逐场景判读；非调度器运行",
+      "pass": true
+    },
+    {
+      "id": "B05",
+      "input": "仅补写真实结果/状态",
+      "expected": "主核精确差异；规则语义变化仍新验",
+      "actual": "规则明确支持预期",
+      "AGENTS_line": 61,
+      "method": "独立人工逐场景判读；非调度器运行",
+      "pass": true
+    }
+  ],
+  "link_total": 502,
+  "broken": [],
+  "anchor_unchecked": []
+}

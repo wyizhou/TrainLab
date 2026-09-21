@@ -1,0 +1,13 @@
+{
+  "time": "2026-09-20T02:06:49.484067+00:00",
+  "repo": "/Users/lucas/Code/TrainLab",
+  "worktree": "/var/folders/dh/4th4rwbd7xlg8qslxz62hbjc0000gn/T/trainlab-adhoc0034-v77e9mpd/worktree",
+  "materials": "/var/folders/dh/4th4rwbd7xlg8qslxz62hbjc0000gn/T/trainlab-adhoc0034-v77e9mpd/materials",
+  "branch": "work/adhoc-0034-agentsmd-parallel",
+  "base_ref": "refs/remotes/origin/main",
+  "head": "af09e3f4b7522e9826eb1655bc8a0cf58a79ba4d",
+  "clean": true,
+  "current_product_source_count": 179,
+  "current_source_changes": 38,
+  "materials_files": 28
+}

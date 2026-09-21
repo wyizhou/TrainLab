@@ -1,0 +1,7 @@
+{
+  "command": "landing_guard.py --review V2 --manifest-sha 17c0becf800d820b02d5ac824a05891b4379b0070cdbf0d660397a0063b36f1d",
+  "exit": 0,
+  "stdout": "{\n  \"mode\": \"dry-run\",\n  \"targets\": 126,\n  \"install_count\": 10,\n  \"written\": [],\n  \"original_source_and_history_preserved\": true,\n  \"staging_empty\": true,\n  \"manifest_sha256\": \"17c0becf800d820b02d5ac824a05891b4379b0070cdbf0d660397a0063b36f1d\"\n}\n",
+  "stderr": "",
+  "scope": "precondition dry run only; not final acceptance"
+}

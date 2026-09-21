@@ -1,0 +1,13 @@
+{
+  "time": "2026-09-20T02:17:00.891788+00:00",
+  "workflow": "7d8a4a7e-474c-4289-a0a7-04979fa7a30e",
+  "child": "32df763f-c01b-4f6c-8ebe-47d82bc42c5d",
+  "inputs_unchanged": 29,
+  "source_and_reference_unchanged": 179,
+  "source_count": 175,
+  "worktree_clean": true,
+  "old_evidence_protected": 6234,
+  "planner_report_sha256": "e91df6b1f6c0985b58dcdafa496818bf31daeeee4cddd68f46002429b4d8660c",
+  "tool_error_receipts": 1,
+  "note": "Planner checker initially assumed three added PLAN lines; actual two additions independently explained, input unchanged. This is not an upgrade failure."
+}

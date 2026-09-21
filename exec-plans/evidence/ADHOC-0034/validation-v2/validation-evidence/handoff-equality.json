@@ -1,0 +1,22 @@
+[
+  {
+    "path": "exec-plans/evidence/ADHOC-0034/landing_guard.py",
+    "both_same": true,
+    "sha256": "5c3ecd6251208af904e18f8cc5a6d3da77d5da60db0956a0ef043a3ad810fabe"
+  },
+  {
+    "path": "exec-plans/evidence/ADHOC-0034/handoff-v2.md",
+    "both_same": true,
+    "sha256": "9c2ecc34809e6c2b786604b5aa991c279b68f7fc5e85c6d0f8ac14b04332a280"
+  },
+  {
+    "path": "exec-plans/evidence/ADHOC-0034/combination-v2-location.json",
+    "both_same": true,
+    "sha256": "c6c00f4a0c71e99283446956193fe859c319057e5c2fd68e4efe9ad0812e8fe6"
+  },
+  {
+    "path": "exec-plans/active/ADHOC-0034-agentsmd-parallel.md",
+    "both_same": true,
+    "sha256": "49781f17e618ef9955e03c005266e774fcf0555c35cfcf2ab415a432c9f5b8cf"
+  }
+]

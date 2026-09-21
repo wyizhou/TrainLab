@@ -1,0 +1,182 @@
+{
+  "manifest_sha256": "e4466ad36bafcf3b839d0212e0af251c218043b601f5084491ab9982e0645885",
+  "manifest_files_verified": 29,
+  "upstream_commit": "37520a5132bb5f84064e04f18d7a4467ebdc9116",
+  "upstream_files_verified": 11,
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "current_sha256": "d5dadbb4720aa5357af5f043a0fe327b29f09c3c383de8733c8c2a674c12ad60",
+      "upstream_sha256": "14c3603e604b8a2f5b2418a5c6f429543a64f2f617a0de7c17424011f4ccdea9",
+      "comparison_local_matches": true,
+      "worktree_matches_current": true
+    },
+    {
+      "path": "MEMORY.md",
+      "current_sha256": "b65749639f332f8d343e6db55b82391c5de77a786ead0ade52a4628ce4ce48a1",
+      "upstream_sha256": "0f38eee082a214540eff1a0733ba1553ccff70d999e555105c011077997a9d25",
+      "comparison_local_matches": true,
+      "worktree_matches_current": false
+    },
+    {
+      "path": "PLAN.md",
+      "current_sha256": "abaafed03d54b5d5604b66f990eb12abf998fbae71bc02092543cdb421d9990d",
+      "upstream_sha256": "5833f72ceb5d2b91f05e1125483aef692d0320572b1420132bf7216442994eb4",
+      "comparison_local_matches": false,
+      "worktree_matches_current": false
+    },
+    {
+      "path": "README.md",
+      "current_sha256": "b6e07bd00be8815d527699400742ec07dc5c11f0db899855b88237fe918d4a19",
+      "upstream_sha256": "7ee2a1296f1d57b0d0e0229df2679063552b7355569e67b3559d4d39ba334e25",
+      "comparison_local_matches": true,
+      "worktree_matches_current": true
+    },
+    {
+      "path": "exec-plans/template.md",
+      "current_sha256": "17d0d93e3f79e2174bf751a5c8e80acf70aa35807ed8db73050e8faafe842f05",
+      "upstream_sha256": "47454c0060fd9c581ed22eab128029b55c1ae4a8c5b7a2f0a1485b106b0eb5f3",
+      "comparison_local_matches": true,
+      "worktree_matches_current": true
+    },
+    {
+      "path": "references/README.md",
+      "current_sha256": "725db81ce033ea8d1aaac81ffe8c3a044e2b397d61429de8ad296e90d603a1db",
+      "upstream_sha256": "2a8ba436bc6f7d6af50067afa7e1bc00e55aed441afa91df5286f338c64c3daa",
+      "comparison_local_matches": true,
+      "worktree_matches_current": true
+    },
+    {
+      "path": "skills/README.md",
+      "current_sha256": "a88fdc43fe794844ced1ab7e1911f0d87298c44f1ba0098e97e43898aa5f7b0d",
+      "upstream_sha256": "3f5f050903733103eddc0e5f4b27ac68799065b1027c09c573e15ed6abd97c38",
+      "comparison_local_matches": true,
+      "worktree_matches_current": true
+    },
+    {
+      "path": "skills/web-browser-acceptance/SKILL.md",
+      "current_sha256": null,
+      "upstream_sha256": "a283542667ae5a703e7b6c051f5b97ab7e6d066b2799113b10589fa6fc4f1f93",
+      "comparison_local_matches": true,
+      "worktree_matches_current": null
+    },
+    {
+      "path": "subagent-templates/developer.md",
+      "current_sha256": "4bd1ad1fedc44e95ff9eb36aa71ad18c48db3d6861e127f333d760f9daf25c00",
+      "upstream_sha256": "29a885c1826c360ce1c9e1ec353d7fdfbc27757d13a38a6e561e66dfb89c9e5f",
+      "comparison_local_matches": true,
+      "worktree_matches_current": true
+    },
+    {
+      "path": "subagent-templates/planner.md",
+      "current_sha256": "e6ae5034b21d6422c2d6c116360f57c645acba9e71b7efb9b9f1c55b4a00999e",
+      "upstream_sha256": "90153602a3c4e1d801d6b27a223d245d3dcf7ecf1cce463d3d68477a53f759ea",
+      "comparison_local_matches": true,
+      "worktree_matches_current": true
+    },
+    {
+      "path": "subagent-templates/validator.md",
+      "current_sha256": "4f5aa20b33b513b9889336ae2d80841b18f6c6ee5f892becfd5c2697fd6d22b5",
+      "upstream_sha256": "9b4ecaff123718acc1a6d6f4631e00518f56ba4dc0282099590853034bba4d7b",
+      "comparison_local_matches": true,
+      "worktree_matches_current": true
+    }
+  ],
+  "upstream_relative_links": [
+    {
+      "from": "AGENTS.md",
+      "target": "./subagent-templates/planner.md",
+      "exists": true
+    },
+    {
+      "from": "AGENTS.md",
+      "target": "./subagent-templates/developer.md",
+      "exists": true
+    },
+    {
+      "from": "AGENTS.md",
+      "target": "./subagent-templates/validator.md",
+      "exists": true
+    },
+    {
+      "from": "README.md",
+      "target": "./AGENTS.md",
+      "exists": true
+    },
+    {
+      "from": "README.md",
+      "target": "./PLAN.md",
+      "exists": true
+    },
+    {
+      "from": "README.md",
+      "target": "./exec-plans/template.md",
+      "exists": true
+    },
+    {
+      "from": "README.md",
+      "target": "./MEMORY.md",
+      "exists": true
+    },
+    {
+      "from": "README.md",
+      "target": "./subagent-templates/planner.md",
+      "exists": true
+    },
+    {
+      "from": "README.md",
+      "target": "./subagent-templates/developer.md",
+      "exists": true
+    },
+    {
+      "from": "README.md",
+      "target": "./subagent-templates/validator.md",
+      "exists": true
+    },
+    {
+      "from": "README.md",
+      "target": "./references/README.md",
+      "exists": true
+    },
+    {
+      "from": "README.md",
+      "target": "./skills/README.md",
+      "exists": true
+    },
+    {
+      "from": "README.md",
+      "target": "./README.md",
+      "exists": true
+    },
+    {
+      "from": "README.md",
+      "target": "./AGENTS.md",
+      "exists": true
+    },
+    {
+      "from": "skills/README.md",
+      "target": "./web-browser-acceptance/SKILL.md",
+      "exists": true
+    }
+  ],
+  "plan_comparison_timing": {
+    "comparison_sha": "4f6d486fb2232612cfa8ea6b809a20764c313c5a8a389b2d63ca6a97a9207f48",
+    "manifest_current_sha": "abaafed03d54b5d5604b66f990eb12abf998fbae71bc02092543cdb421d9990d",
+    "additions_only": [
+      "| ADHOC-0034 | [plan] | 升级官方最新agentsmd并行开发Harness及随附技能，保留业务记录与未提交产品 | H34-01～07；固定来源、独立验证及主验收，不恢复0033 | 用户2026-09-20明确要求；[客观要求](exec-plans/evidence/ADHOC-0034/requirements.md) |  |",
+      "- **当前任务切换（2026-09-20）**：用户明确要求现在升级agentsmd最新并行开发Harness，登记ADHOC-0034。已查官方最新main为37520a5，当前先做范围/来源与保护核对，再全新规划及后续协作。ADHOC-0033停在规划收尾，尚未启动修复；其源码/证据/失败历史和私人现场保护，不恢复真实服务、付费请求、剩余验收或PR。脚手架升级不等于新业务目标授权，旧业务继续等待用户明确恢复。"
+    ]
+  },
+  "baseline_protected_entries": 179,
+  "baseline_source_entries": 175,
+  "baseline_source_changes": 38,
+  "worktree_head": "af09e3f4b7522e9826eb1655bc8a0cf58a79ba4d",
+  "worktree_branch": "work/adhoc-0034-agentsmd-parallel",
+  "worktree_clean": true,
+  "staging_empty": true,
+  "limits": [
+    "Only provided material hashes verified; original dirty workspace not accessed.",
+    "No network, product, browser, install, or Git write operations.",
+    "Evidence proves source-material consistency, not completed upgrade acceptance."
+  ]
+}

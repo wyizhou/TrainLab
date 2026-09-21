@@ -1,0 +1,10 @@
+{
+  "time": "2026-09-20T03:39:11.572303+00:00",
+  "after_targets_matched": 126,
+  "links_checked": 315,
+  "source_diff_unchanged": true,
+  "source_status_count": 38,
+  "head": "ab43cc4df231ad61aa7ab30793645dcc59d4d8c2",
+  "branch": "work/adhoc-0033-ai-coach",
+  "staging_empty": true
+}

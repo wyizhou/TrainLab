@@ -1,0 +1,54 @@
+{
+  "time": "2026-09-20T02:45:55.524558+00:00",
+  "review_root": "/var/folders/dh/4th4rwbd7xlg8qslxz62hbjc0000gn/T/trainlab-adhoc0034-review-xlg3_3jx",
+  "combinations": {
+    "C34": {
+      "base": "af09e3f4b7522e9826eb1655bc8a0cf58a79ba4d",
+      "branch": "work/adhoc-0034-agentsmd-parallel"
+    },
+    "Cuse": {
+      "base": "ab43cc4df231ad61aa7ab30793645dcc59d4d8c2",
+      "branch": "work/adhoc-0033-ai-coach"
+    }
+  },
+  "harness_paths": [
+    "AGENTS.md",
+    "README.md",
+    "exec-plans/template.md",
+    "subagent-templates/planner.md",
+    "subagent-templates/developer.md",
+    "subagent-templates/validator.md",
+    "skills/README.md",
+    "skills/web-browser-acceptance/SKILL.md"
+  ],
+  "prelanding": {
+    "AGENTS.md": "d5dadbb4720aa5357af5f043a0fe327b29f09c3c383de8733c8c2a674c12ad60",
+    "README.md": "b6e07bd00be8815d527699400742ec07dc5c11f0db899855b88237fe918d4a19",
+    "exec-plans/template.md": "17d0d93e3f79e2174bf751a5c8e80acf70aa35807ed8db73050e8faafe842f05",
+    "subagent-templates/planner.md": "e6ae5034b21d6422c2d6c116360f57c645acba9e71b7efb9b9f1c55b4a00999e",
+    "subagent-templates/developer.md": "4bd1ad1fedc44e95ff9eb36aa71ad18c48db3d6861e127f333d760f9daf25c00",
+    "subagent-templates/validator.md": "4f5aa20b33b513b9889336ae2d80841b18f6c6ee5f892becfd5c2697fd6d22b5",
+    "skills/README.md": "a88fdc43fe794844ced1ab7e1911f0d87298c44f1ba0098e97e43898aa5f7b0d",
+    "skills/web-browser-acceptance/SKILL.md": null,
+    "PLAN.md": "92fe513d84e15c6303ca1c6a22a17b0772e74b7431939ad79d3ec8ee92e28015",
+    "MEMORY.md": "b65749639f332f8d343e6db55b82391c5de77a786ead0ade52a4628ce4ce48a1",
+    "exec-plans/active/ADHOC-0033-ai-coach.md": "637ce32cda7838c2f75ec82a4c413b7ebbabe3229529c4ff7b635b95734b202e"
+  },
+  "excluded_legacy_environment_links": {
+    "exec-plans/evidence/ADHOC-0033/p03-v01-repair-r2/pyenv/bin/python3": {
+      "symlink": "python",
+      "reason": "Historical interpreter link, not an input of this documentation upgrade; protected at original location, not followed."
+    },
+    "exec-plans/evidence/ADHOC-0033/p03-v01-repair-r2/pyenv/bin/python": {
+      "symlink": "/Users/lucas/.local/share/uv/python/cpython-3.12-macos-aarch64-none/bin/python3.12",
+      "reason": "Historical interpreter link, not an input of this documentation upgrade; protected at original location, not followed."
+    },
+    "exec-plans/evidence/ADHOC-0033/p03-v01-repair-r2/pyenv/bin/python3.12": {
+      "symlink": "python",
+      "reason": "Historical interpreter link, not an input of this documentation upgrade; protected at original location, not followed."
+    }
+  },
+  "source_protected": 179,
+  "old_evidence_protected": 6234,
+  "note": "Two physical public combinations, not Git checkouts. No private states/.pi/global data. All 6231 ordinary old evidence files copied; three historical interpreter links protected at original and recorded without following/copying, not review dependencies. Final manifest follows after coordination checkpoint."
+}

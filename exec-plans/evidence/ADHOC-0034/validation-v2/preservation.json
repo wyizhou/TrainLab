@@ -1,0 +1,12 @@
+{
+  "time": "2026-09-20T03:33:55.025194+00:00",
+  "workflow": "092a4c97-f47f-42f2-88b8-7c76c02c1683",
+  "child": "a9dbf5be-5b7a-477d-af7e-146c3f2555a6",
+  "frozen_files_unchanged": 7315,
+  "allowed_added_files": 315,
+  "tool_calls": 50,
+  "tool_error_receipts": 0,
+  "raw_archive_sha256": "7d4295452ae80e6f4761c71003db441a5a583d0337139988496c972fcc55724d",
+  "report_sha256": "59ddabf2d7a04dc69f1d6d13b759c2892f4ac71a924813591ad20b7798a567aa",
+  "parent_copy": "/var/folders/dh/4th4rwbd7xlg8qslxz62hbjc0000gn/T/trainlab-adhoc0034-parent-x1o9jqr1"
+}

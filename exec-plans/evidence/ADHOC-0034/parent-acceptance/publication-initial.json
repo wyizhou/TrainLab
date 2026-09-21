@@ -1,0 +1,11 @@
+{
+  "first_head": "ec479be0a3cc72502430eb9cba3ab4f9aee73c85",
+  "branch": "work/adhoc-0034-agentsmd-parallel",
+  "base": "af09e3f4b7522e9826eb1655bc8a0cf58a79ba4d",
+  "push_exit": 0,
+  "push_stdout": "branch 'work/adhoc-0034-agentsmd-parallel' set up to track 'origin/work/adhoc-0034-agentsmd-parallel'.\n",
+  "push_stderr": "remote: \nremote: Create a pull request for 'work/adhoc-0034-agentsmd-parallel' on GitHub by visiting:        \nremote:      https://github.com/wyizhou/TrainLab/pull/new/work/adhoc-0034-agentsmd-parallel        \nremote: \nTo https://github.com/wyizhou/TrainLab.git\n * [new branch]      work/adhoc-0034-agentsmd-parallel -> work/adhoc-0034-agentsmd-parallel\n",
+  "pr_create_exit": 0,
+  "pr_url": "https://github.com/wyizhou/TrainLab/pull/22",
+  "pr_body": "## 变更\n- 固定采用官方 agentsmd `37520a5132bb5f84064e04f18d7a4467ebdc9116`：7份规则/README/模板/技能原字节，技能索引最小合并。\n- 支持满足输入、目录/分支、共享归属和测试资源隔离条件的流水线/独立功能并行；每目录仍最多一名Developer；固定受审依赖与最终组合独立及主验收不可省略。\n- 保留两区各自PLAN/MEMORY/历史。独立分支基于main `af09e3f`；不包含ADHOC-0033未完成源码或整份计划，不恢复旧业务。\n\n## 验证与实际落地\n- 全新Planner→Developer→独立Validator；首验两项交接材料缺口保留，经方法A修正后由另一全新Validator复验通过。\n- V2固定7315项：84审计、17文档检查/502链接/15语义场景、394项guard主场景、19项相邻检查通过；主在另一物理副本亲跑六命令全部退出0。\n- 当前用户实际工作区已按126目标清单受控安装，仅10项实际写入（8份H+MEMORY+0033隔离节），126 after与315实际链接复核通过；175source+4 references、6234旧证据、38项source差异、原HEAD/分支和空暂存保留。\n- 本次纯规则/文档，不运行产品、Chrome、真实服务或并行调度器，不以此替代业务验收。\n- 原始patch/log格式空格保留，7份原始证据逐字节核同；其他所有暂存内容空白检查通过。原检查失败与分类依据保留，未改Git配置或删弱测试。\n\n## 交付边界\n- 已核上游最新及目标基准不变；Actions工作流0、rules/webhooks空、main明确无保护规则，无新增或主动运行远端CI。\n- 本PR只交付ADHOC-0034；原工作区同版Harness是本地安装，业务改动未随本PR提交。\n- **不自动合并**，由用户确认后合并。完整进度/证据见本功能执行计划与 `exec-plans/evidence/ADHOC-0034/`。\n"
+}
