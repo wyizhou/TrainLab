@@ -1,0 +1,15 @@
+{
+  "subagents": {
+    "agentOverrides": {
+      "agentsmd.planner": {
+        "model": "inherit"
+      },
+      "agentsmd.developer": {
+        "model": "inherit"
+      },
+      "agentsmd.validator": {
+        "model": "inherit"
+      }
+    }
+  }
+}
