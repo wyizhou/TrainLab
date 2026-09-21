@@ -1,0 +1,25 @@
+{
+  "time": "2026-09-20T08:53:27.088969+00:00",
+  "url": "https://github.com/wyizhou/agentsmd.git",
+  "head": "a313e6319b249c2c78e92079f3c0b0b013929660",
+  "files": {
+    ".pi/.gitignore": "a7d5f71e6f7a5ced3fdcc7fcce6e6d81f0634bc2e8362d1995fe7896855e6514",
+    ".pi/APPEND_SYSTEM.md": "170701feeea89d8f2705e66ef67e7e11eb26625cfacfd47d4637c779214b711e",
+    ".pi/agents/developer.md": "1c755f26154c4abc5729bb70cc1799cd5b36bd1810ad4f691f57b16b1c98728f",
+    ".pi/agents/planner.md": "4e7846fc69fbcf9c2690b53d8d2466392e9113a69712c3f297205f20cd2273d5",
+    ".pi/agents/validator.md": "e0941969b71cf75b9091f39e1c514608bb525c25aa08b22be363c36f52bfcb72",
+    ".pi/settings.json": "033b7efc3b4290fda9e042d0db1658c1d975dd497420d60aa85b20ace5dd0ed2",
+    "AGENTS.md": "14c3603e604b8a2f5b2418a5c6f429543a64f2f617a0de7c17424011f4ccdea9",
+    "MEMORY.md": "0f38eee082a214540eff1a0733ba1553ccff70d999e555105c011077997a9d25",
+    "PLAN.md": "5833f72ceb5d2b91f05e1125483aef692d0320572b1420132bf7216442994eb4",
+    "README.md": "5a63a25969e5c0ba261beff4e94a9f00e7b954b19423cd66f6a7b7fae1365edb",
+    "exec-plans/template.md": "47454c0060fd9c581ed22eab128029b55c1ae4a8c5b7a2f0a1485b106b0eb5f3",
+    "references/README.md": "2a8ba436bc6f7d6af50067afa7e1bc00e55aed441afa91df5286f338c64c3daa",
+    "skills/README.md": "3f5f050903733103eddc0e5f4b27ac68799065b1027c09c573e15ed6abd97c38",
+    "skills/web-browser-acceptance/SKILL.md": "a283542667ae5a703e7b6c051f5b97ab7e6d066b2799113b10589fa6fc4f1f93",
+    "subagent-templates/developer.md": "29a885c1826c360ce1c9e1ec353d7fdfbc27757d13a38a6e561e66dfb89c9e5f",
+    "subagent-templates/planner.md": "90153602a3c4e1d801d6b27a223d245d3dcf7ecf1cce463d3d68477a53f759ea",
+    "subagent-templates/validator.md": "9b4ecaff123718acc1a6d6f4631e00518f56ba4dc0282099590853034bba4d7b"
+  },
+  "commit": "a313e6319b249c2c78e92079f3c0b0b013929660\n2026-09-20T16:25:53+08:00\nMerge pull request #12 from wyizhou/feat/pi-role-adapter\n"
+}

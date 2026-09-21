@@ -1,0 +1,73 @@
+{
+  "date": "2026-09-21",
+  "scope": "固定两组合独立验证及主本地适配验收；非业务产品验收",
+  "upstream_commit": "a313e6319b249c2c78e92079f3c0b0b013929660",
+  "freeze_sha256": "f5988f253cb0d13b62e1a62626690675484767da4c35887e2147dd05ebdd9385",
+  "validator_workflow": "7f91cdbf-34d0-4a01-9ef7-dc3a34e48741",
+  "validator_run": "c74b772c-21d5-4136-88cd-87037222e849",
+  "validator_report_sha256": "32f05434b3a81c0539b13d41f1b1077e31faa80e834fcd1b8fb481a2aa66dfe9",
+  "validator_result_artifacts": {
+    "guard-start-corrected.json": "afb90603eaee75f188508cfe33fc07c5e44f9174a2e71fd2155ed19922ab1f2a",
+    "guard-end.json": "afb90603eaee75f188508cfe33fc07c5e44f9174a2e71fd2155ed19922ab1f2a",
+    "verify-results.json": "d4a20a3fc05e2f2b645107f1b24f5b211d1915b9472b00469a290faf4edfe306",
+    "config-boundaries.json": "d516450fa4f6cfa6e9f304cf038cacc7f953b4f04d52ffd068dbfff55c47e974",
+    "priority-boundaries.json": "1b088b21f8086ee1643e05756ab213a743418db73586ef03e8f6a52761a49a0b",
+    "supplement-results.json": "b4bb2f8dcedfb1ffeb2b0ca4e6297bc810b6166b92916657dc012c61d7a4c525",
+    "final-extra-results.json": "707a267f3f18084ba3fd2de4a4017deda5f0d28ea9074f937ca9cb56cca83d1a",
+    "self-runtime.json": "322f3ec5a877c36450be7b10a60aabdfb631ea94cdc94286119be018a7fb332e"
+  },
+  "validator_assertion_counts": [
+    37,
+    18,
+    9,
+    13,
+    27
+  ],
+  "input_count": 93,
+  "dependency_count": 8,
+  "original_files": 18,
+  "candidate_files": 21,
+  "protected_objects": 6825,
+  "source_change_entries": 38,
+  "source_diff_sha256": "2b02edce517ee647031a9775f56adc515dab509f6435a8eac81b5b314d53d5f0",
+  "combinations": {
+    "original": {
+      "branch": "work/adhoc-0033-ai-coach",
+      "head": "ab43cc4df231ad61aa7ab30793645dcc59d4d8c2",
+      "diff_sha256": "984fe0bfe3cc88679cc94bb1eaba48864a586090873bac63c7f38978e57ba120"
+    },
+    "candidate": {
+      "branch": "work/adhoc-0035-agentsmd-role-adapter",
+      "head": "07cc51608f7cf3a9c65bec6767ddfeb6076e3a99",
+      "diff_sha256": "519c6ffef056666c0e85b31a2ad277e4db16d90e7192cd388f80a9617aefceed"
+    }
+  },
+  "parent_rerun_exit_codes": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "parent_extra_status_parser_cases": 7,
+  "parent_result_artifacts": {
+    "guard-start-corrected.json": "1b5657e40eb0c4724d5c91f7cd342e954f4d7103409a8f6ca69c52a3f9d1b37e",
+    "guard-end.json": "1b5657e40eb0c4724d5c91f7cd342e954f4d7103409a8f6ca69c52a3f9d1b37e",
+    "verify-results.json": "d4a20a3fc05e2f2b645107f1b24f5b211d1915b9472b00469a290faf4edfe306",
+    "config-boundaries.json": "643e12e6881332c10ed81f094007af01cde1a6869d2f2cb12797b6ae63b6b51c",
+    "priority-boundaries.json": "1b088b21f8086ee1643e05756ab213a743418db73586ef03e8f6a52761a49a0b",
+    "final-extra-results.json": "707a267f3f18084ba3fd2de4a4017deda5f0d28ea9074f937ca9cb56cca83d1a",
+    "status-parser-boundaries.json": "6d2846ee52951b4305ce0f177dfe3f89efb6fe671aa9ef8e930aa837d6a9f225"
+  },
+  "main_append": "主直接核当前有效上下文；子独立完整prompt复核无法判断，未伪造独立宿主证据。",
+  "accepted_for_local_adapter": true,
+  "delivery_state": "尚待T05提交/推送/依赖PR",
+  "historical_failures": {
+    "H35-INFRA-001": 1,
+    "H35-INFRA-002": 1,
+    "H35-CHECK-LINK-001": 2,
+    "H35-CHECK-PATH-001": 1
+  },
+  "failure_count_scope": "基础设施/检查器事件计数；均保留原错；无受审产品修复轮次。"
+}
